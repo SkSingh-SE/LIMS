@@ -1,0 +1,10 @@
+.table thead th {
+    cursor: pointer;
+  }
+  .table thead th:hover {
+    background-color: #f8f9fa;
+  }
+  .card .card-header{
+    padding: 0.5rem 1rem !important;
+  }
+  

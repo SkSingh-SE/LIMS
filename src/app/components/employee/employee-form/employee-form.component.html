@@ -1,0 +1,745 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <!-- Form Wizard Start -->
+                <div class="form-wizard mt-0">
+                    <div class=" overflow-x-auto scroll-sm">
+                        <ul class="nav nav-tabs form-wizard-list ">
+                            <li *ngFor="let header of formHeaders" class="nav-item cursor-pointer"
+                                [class.activated]="currentStep() > header.key" (click)="setActiveForm(header.key)">
+                                <span class="nav-link" [class.active]="activeFormKey === header.key">{{header.label}}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content">
+
+                        <form action="#" method="post">
+                            <fieldset *ngIf="activeFormKey === 1" class="wizard-fieldset show tab-pane fade m-2">
+                                <form [formGroup]="personalInfoForm" (ngSubmit)="submitForm()">
+                                    <!-- Basic Information -->
+                                    <div>
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">Basic
+                                            Information</h6>
+                                        <div class="row gy-1">
+                                            <!-- Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Full Name <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Name" formControlName="name" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('name')?.invalid && personalInfoForm.get('name')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Date of Birth -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Date of Birth <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="date" class="form-control wizard-required"
+                                                        placeholder="Select Date" formControlName="dateOfBirth"
+                                                        required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('dateOfBirth')?.invalid && personalInfoForm.get('dateOfBirth')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Blood Group -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Blood Group</label>
+                                                <div class="position-relative">
+                                                    <select class="form-control form-select"
+                                                        formControlName="bloodGroup">
+                                                        <option value="">Select Blood Group</option>
+                                                        <option *ngFor="let bloodGroup of bloodGroups"
+                                                            [value]="bloodGroup">
+                                                            {{bloodGroup}}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Mobile Number -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Mobile Number <span
+                                                        class="text-danger">*</span>
+                                                    <span
+                                                        *ngIf="personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched"
+                                                        class="text-danger">(Max: 15 characters)</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Mobile Number" formControlName="mobileNo"
+                                                        maxlength="15" (input)="limitLength($event, 15)" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched}">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Emergency Mobile Number -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Emergency Mobile Number <span
+                                                        class="text-danger">*</span> </label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Mobile Number"
+                                                        formControlName="emergencyMobileNo" required maxlength="15"
+                                                        (input)="limitLength($event, 15)">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('emergencyMobileNo')?.invalid && personalInfoForm.get('emergencyMobileNo')?.touched}">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Email -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Email <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="email" class="form-control wizard-required"
+                                                        formControlName="emailId" placeholder="Enter Email" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('emailId')?.invalid && personalInfoForm.get('emailId')?.touched && personalInfoForm.get('emailId')?.dirty}">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Gender -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Gender <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative ">
+                                                    <select class="form-control form-select wizard-required"
+                                                        formControlName="gender">
+                                                        <option value="">Select Gender</option>
+                                                        <option value="Male">Male</option>
+                                                        <option value="Female">Female</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('gender')?.invalid && personalInfoForm.get('gender')?.touched}">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <!-- Marital Status -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Marital Status <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <select class="form-control form-select wizard-required"
+                                                        formControlName="maritalStatus">
+                                                        <option value="">Select Marital Status</option>
+                                                        <option *ngFor="let maritalStatus of maritalStatuses"
+                                                            [value]="maritalStatus">{{maritalStatus}}</option>
+                                                    </select>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('maritalStatus')?.invalid && personalInfoForm.get('maritalStatus')?.touched}">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Spouse Name (Conditional) -->
+
+                                            <div class="col-auto col-md-4 col-lg-3"
+                                                *ngIf="personalInfoForm.get('maritalStatus')?.value === 'Married'">
+                                                <label class="form-label">Spouse Name</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Spouse Name" formControlName="spouseName">
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                    <!-- Residential Address -->
+                                    <div class="mt-2">
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">
+                                            Residential Address</h6>
+                                        <div class="row gy-1">
+                                            <!-- Address Line 1 -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Address Line 1 <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Address"
+                                                        formControlName="residentialAddressLine1" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialAddressLine1')?.invalid && personalInfoForm.get('residentialAddressLine1')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Address Line 2 -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Address Line 2 <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Address"
+                                                        formControlName="residentialAddressLine2" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialAddressLine2')?.invalid && personalInfoForm.get('residentialAddressLine2')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Pin Code -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">PIN Code <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="number" class="form-control wizard-required"
+                                                        formControlName="residentialPinCode"
+                                                        placeholder="Enter PIN Code" (input)="limitLength($event, 6)"
+                                                        (input)="fetchLocationData('residentialPinCode','residentialCity', 'residentialState', 'residentialCountry')"
+                                                        required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialPinCode')?.invalid && personalInfoForm.get('residentialPinCode')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3"
+                                                *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
+                                                <label class="form-label">Area <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+
+                                                    <select class="form-control form-select"
+                                                        formControlName="residentialArea">
+                                                        <option value="">Select Area</option>
+                                                        <option *ngFor="let area of areas" [value]="area">{{area}}
+                                                        </option>
+                                                    </select>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialArea')?.invalid && personalInfoForm.get('residentialArea')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">City <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="State" formControlName="residentialCity" readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialCity')?.invalid && personalInfoForm.get('residentialCity')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">State <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="State" formControlName="residentialState" readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialState')?.invalid && personalInfoForm.get('residentialState')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Country <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Country" formControlName="residentialCountry"
+                                                        readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('residentialCountry')?.invalid && personalInfoForm.get('residentialCountry')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <!-- Permanent Address Checkbox -->
+                                    <div class="mt-2">
+                                        <div class="col-12  ms-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input mt-1"
+                                                    id="sameAsResidential" formControlName="sameAsResidential"
+                                                    (change)="copyResidentialAddress()">
+                                                <label class="form-check-label" for="sameAsResidential">Same as
+                                                    Residential Address</label>
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+                                    <!-- Permanent Address -->
+                                    <div *ngIf="!personalInfoForm.get('sameAsResidential')?.value">
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">
+                                            Permanent
+                                            Address</h6>
+                                        <div class="row gy-1">
+                                            <!-- Address Line 1 -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Address Line 1 <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Address"
+                                                        formControlName="permanentAddressLine1" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentAddressLine1')?.invalid && personalInfoForm.get('permanentAddressLine1')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Address Line 2 -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Address Line 2 <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Address"
+                                                        formControlName="permanentAddressLine2" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentAddressLine2')?.invalid && personalInfoForm.get('permanentAddressLine2')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Pin Code -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">PIN Code <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="number" class="form-control wizard-required"
+                                                        formControlName="permanentPinCode"
+                                                        (input)="fetchLocationData('permanentPinCode', 'permanentCity','permanentState', 'permanentCountry')"
+                                                        placeholder="Enter PIN Code" (input)="limitLength($event, 6)"
+                                                        required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentPinCode')?.invalid && personalInfoForm.get('permanentPinCode')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3"
+                                                *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
+                                                <label class="form-label">Area <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <select class="form-control form-select"
+                                                        formControlName="permanentArea">
+                                                        <option value="">Select Area</option>
+                                                        <option *ngFor="let area of areas" [value]="area">{{area}}
+                                                        </option>
+                                                    </select>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentArea')?.invalid && personalInfoForm.get('permanentArea')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">City <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="City" formControlName="permanentCity" readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentCity')?.invalid && personalInfoForm.get('permanentCity')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">State <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="State" formControlName="permanentState" readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentState')?.invalid && personalInfoForm.get('permanentState')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Country <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Country" formControlName="permanentCountry"
+                                                        readonly>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('permanentCountry')?.invalid && personalInfoForm.get('permanentCountry')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Family Details -->
+                                    <div class="mt-2">
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">
+                                            Family
+                                            Details</h6>
+                                        <div class="row gy-1">
+                                            <!-- Father Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Father Name*</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Father Name" formControlName="fatherName"
+                                                        required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('fatherName')?.invalid && personalInfoForm.get('fatherName')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Mother Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Mother Name*</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Mother Name" formControlName="motherName"
+                                                        required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('motherName')?.invalid && personalInfoForm.get('motherName')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Employment Details -->
+                                    <div class="mt-2">
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">
+                                            Employment Details</h6>
+                                        <div class="row gy-1">
+                                            <!-- Designation -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Designation</label>
+                                                <select class="form-control form-select"
+                                                    formControlName="designationID">
+                                                    <option value="">Select Designation</option>
+                                                    <option *ngFor="let designation of designations"
+                                                        [value]="designation">
+                                                        {{designation}}</option>
+                                                </select>
+                                            </div>
+                                            <!-- Date of Joining -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label
+                                            ">Date of Joining <span class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="date" class="form-control wizard-required"
+                                                        placeholder="Select Date" formControlName="dateOfJoin" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('dateOfJoin')?.invalid && personalInfoForm.get('dateOfJoin')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Department -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Department</label>
+                                                <div class="position-relative">
+                                                    <select class="form-control form-select wizard-required"
+                                                        formControlName="departmentID">
+                                                        <option value="">Select Department</option>
+                                                        <option *ngFor="let department of departments"
+                                                            [value]="department">
+                                                            {{department}}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <!-- Reporting Manager -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Reporting Manager</label>
+                                                <div class="position-relative">
+                                                    <select class="form-control form-select wizard-required"
+                                                        formControlName="reportingManagerID">
+                                                        <option value="">Select RM</option>
+                                                        <option *ngFor="let rm of reportingManagers" [value]="rm">{{rm}}
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <!-- Relevant Experience -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Relevant Experience <span
+                                                        class="text-danger">*</span></label>
+                                                <div class="position-relative">
+                                                    <input type="number" class="form-control wizard-required"
+                                                        placeholder="Enter Relevant Experience"
+                                                        formControlName="relevantExperienceYears" required>
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('relevantExperienceYears')?.invalid && personalInfoForm.get('relevantExperienceYears')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bank Details -->
+                                    <div class="mt-2">
+                                        <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">Bank
+                                            &
+                                            Other Details</h6>
+                                        <div class="row gy-1">
+                                            <!-- PAN Number -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">PAN Number</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control" formControlName="panNumber"
+                                                        placeholder="Enter PAN Number" maxlength="16"
+                                                        [value]="personalInfoForm.get('panNumber')?.value | uppercase">
+                                                </div>
+                                            </div>
+                                            <!-- Bank Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Bank Name</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Bank Name" formControlName="bankName">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('bankName')?.invalid && personalInfoForm.get('bankName')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Account Number -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label
+                                            ">Account Number</label>
+                                                <div class="position-relative">
+                                                    <input type="number" class="form-control wizard-required"
+                                                        placeholder="Enter Account Number"
+                                                        formControlName="accountNumber">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('accountNumber')?.invalid && personalInfoForm.get('accountNumber')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Account Holder Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Account Holder Name</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Account Holder Name"
+                                                        formControlName="accountHolderName">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('accountHolderName')?.invalid && personalInfoForm.get('accountHolderName')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- IFSC Code -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label
+                                            ">IFSC Code</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter IFSC Code" formControlName="ifscCode">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('ifscCode')?.invalid && personalInfoForm.get('ifscCode')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Branch Name -->
+                                            <div class="col-auto col-md-4 col-lg-3">
+                                                <label class="form-label">Branch Name</label>
+                                                <div class="position-relative">
+                                                    <input type="text" class="form-control wizard-required"
+                                                        placeholder="Enter Branch Name" formControlName="branch">
+                                                    <div class="wizard-form-error"
+                                                        [ngClass]="{'d-block': personalInfoForm.get('branch')?.invalid && personalInfoForm.get('branch')?.touched}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <!-- Submit Button -->
+                                    <div class="form-group text-end">
+                                        <button type="submit" class="btn btn-primary px-4"
+                                            [disabled]="personalInfoForm.invalid">Save</button>
+                                    </div>
+                                </form>
+                            </fieldset>
+
+
+                            <fieldset *ngIf="activeFormKey === 2" class="wizard-fieldset show tab-pane fade m-2 ">
+                                <h6 class="text-md text-neutral-500">Account Information</h6>
+                                <div class="row gy-1">
+                                    <div class="col-12">
+                                        <label class="form-label">User Name*</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control wizard-required"
+                                                placeholder="Enter User Name" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label">Card Number*</label>
+                                        <div class="position-relative">
+                                            <input type="number" class="form-control wizard-required"
+                                                placeholder="Enter Card Number " required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label">Card Expiration(MM/YY)*</label>
+                                        <div class="position-relative">
+                                            <input type="number" class="form-control wizard-required"
+                                                placeholder="Enter Card Expiration" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label">CVV Number*</label>
+                                        <div class="position-relative">
+                                            <input type="number" class="form-control wizard-required"
+                                                placeholder="CVV Number" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Password*</label>
+                                        <div class="position-relative">
+                                            <input type="password" class="form-control wizard-required"
+                                                placeholder="Enter Password" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                        <button type="button"
+                                            class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                        <button type="button"
+                                            class="form-wizard-next-btn btn btn-primary-600 px-32">Next</button>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset *ngIf="activeFormKey === 3" class="wizard-fieldset show tab-pane fade m-2">
+                                <h6 class="text-md text-neutral-500">Bank Information</h6>
+                                <div class="row gy-1">
+                                    <div class="col-sm-6">
+                                        <label class="form-label">Bank Name*</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control wizard-required"
+                                                placeholder="Enter Bank Name" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label">Branch Name*</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control wizard-required"
+                                                placeholder="Enter Branch Name" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label">Account Name*</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control wizard-required"
+                                                placeholder="Enter Account Name" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label">Account Number*</label>
+                                        <div class="position-relative">
+                                            <input type="number" class="form-control wizard-required"
+                                                placeholder="Enter Account Number" required>
+                                            <div class="wizard-form-error"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                        <button type="button"
+                                            class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                        <button type="button"
+                                            class="form-wizard-next-btn btn btn-primary-600 px-32">Next</button>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane fade m-2">
+                                <div class="text-center mb-40">
+                                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
+                                    <h6 class="text-md text-neutral-600">Congratulations </h6>
+                                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
+                                    </p>
+                                </div>
+                                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                    <button type="button"
+                                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                    <button type="button"
+                                        class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                                </div>
+                            </fieldset>
+                            <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane fade m-2">
+                                <div class="text-center mb-40">
+                                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
+                                    <h6 class="text-md text-neutral-600">Congratulations </h6>
+                                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
+                                    </p>
+                                </div>
+                                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                    <button type="button"
+                                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                    <button type="button"
+                                        class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                                </div>
+                            </fieldset>
+                            <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane fade m-2">
+                                <div class="text-center mb-40">
+                                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
+                                    <h6 class="text-md text-neutral-600">Congratulations </h6>
+                                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
+                                    </p>
+                                </div>
+                                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                    <button type="button"
+                                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                    <button type="button"
+                                        class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                                </div>
+                            </fieldset>
+                            <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane fade m-2">
+                                <div class="text-center mb-40">
+                                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
+                                    <h6 class="text-md text-neutral-600">Congratulations </h6>
+                                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
+                                    </p>
+                                </div>
+                                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                    <button type="button"
+                                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                    <button type="button"
+                                        class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                                </div>
+                            </fieldset>
+                            <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane fade m-2">
+                                <div class="text-center mb-40">
+                                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
+                                    <h6 class="text-md text-neutral-600">Congratulations </h6>
+                                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
+                                    </p>
+                                </div>
+                                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                                    <button type="button"
+                                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
+                                    <button type="button"
+                                        class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+                <!-- Form Wizard End -->
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+.form-wizard-list .count{
+    line-height: 35px !important;
+}
+
+select  {
+    font-size: 14px !important;
+    font-weight:400;
+    font-family: inherit;
+    line-height: 30px;
+    color: rgb(143, 143, 143) !important;
+}
+.nav-tabs .nav-link {
+    color: #1A1A80; /* Custom color */
+}
+
+.nav-tabs .nav-link:hover {
+    color: #E18D04; /* Hover color */
+}
+
+.nav-tabs .nav-link.active {
+    color: #DA271C !important; /* Active tab color */
+    background-color: #f8f9fa; /* Optional background color */
+    border-color: #dee2e6 #dee2e6 #fff;
+}

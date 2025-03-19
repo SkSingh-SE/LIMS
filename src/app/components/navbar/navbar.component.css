@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+/* Ensure the content container adjusts to navbar height */
+:host ::ng-deep .content-container {
+    padding-top: var(--nav-height);
+    min-height: 100vh;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+.nav-content {
+    max-height: 60px;
+}
+
+.menu-container {
+    flex-grow: 1;
+    padding: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+
+}
+.menu2-container {
+    flex-grow: 1;
+    padding: 6px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+
+}
+
+/* Updated Menu Item Styling */
+.menu-container .menu-item {
+    text-align: center;
+    align-items: center;
+    color: white;
+    padding: 5px 8px;
+    transition: background 0.3s ease-in-out, color 0.3s;
+    cursor: pointer;
+}
+.menu2-container .menu2-item {
+    text-align: center;
+    align-items: center;
+    color: white;
+    padding: 5px 8px;
+    transition: background 0.3s ease-in-out, color 0.3s;
+    cursor: pointer;
+}
+
+.submenu-container {
+    flex-grow: 1;
+    padding: 5px 5px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: #EFEFEF;
+
+}
+
+/* Updated Menu Item Styling */
+.submenu-container .submenu-item {
+    text-align: center;
+    align-items: center;
+    padding: 5px 5px;
+    transition: background 0.3s ease-in-out, color 0.3s;
+    cursor: pointer;
+}
+
+/* Hover and Active State */
+.submenu-container .submenu-item:hover,
+.submenu-container .submenu-item.active {
+    background-color: rgb(255, 255, 255);
+    border-radius: 5px;
+    border: shadow black;
+    color: black;
+}
+
+/* Hover and Active State */
+.menu-container .menu-item:hover,
+.menu-container .menu-item.active {
+    background-color: rgba(255, 255, 255, 0.92);
+    border-radius: 5px;
+    color: black;
+}
+
+
+/* Increased Icon Size */
+.menu-container .menu-item i {
+    font-size: 16px;
+}
+
+.dropdown-menu {
+    min-width: 150px;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .menu-container {
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .menu-container .menu-item {
+        padding: 5px 8px;
+        font-size: 14px;
+    }
+
+    .menu-container .menu-item i {
+        font-size: 16px;
+    }
+}
+
+.rotate-up {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out;
+}
+
+.rotate-down {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease-in-out;
+}

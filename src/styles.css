@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+    --nav-height: 60px;
+    --transition-speed: 0.3s;
+    /* Default value, will be updated by JavaScript */
+}
+
+body {
+    margin: 0;
+    font-family: var(--bs-font-sans-serif);
+}
+
+.content-container {
+    margin-top: var(--nav-height);
+    min-height: 100vh;
+    transition: margin-top var(--transition-speed) ease-in-out;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+.card-form-header {
+    font-family: 'Poppins', none;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: lighter;
+    background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
+    
+}
+.header-font {
+    font-family: 'Poppins', none;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: lighter;
+}

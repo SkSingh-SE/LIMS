@@ -1,0 +1,95 @@
+<div class="fluid-container mt-4 d-flex flex-column align-items-center">
+    <div class="card w-100">
+        <div
+            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+            <h5 class="text-center text-md">Designation List</h5>
+            <a routerLink="/designation/create" class="btn btn-outline-light">
+                <i class="bi bi-plus-lg"></i> Add Designation
+            </a>
+        </div>
+        
+        <div  class="card-body h-100">
+            <div *ngIf="isLoading()">
+                <app-global-loader type="table" [rows]="10" [fields]="7"></app-global-loader>
+              </div>
+            <!-- Loading Spinner -->
+            <!-- <div *ngIf="isLoading()" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Loading designation list...</p>
+            </div> -->
+
+            <!-- Search & Filters -->
+            <div *ngIf="filteredDesignations.length > 0" class="d-flex justify-content-between mb-1">
+                <input type="text" class="form-control w-25" placeholder="Search..." [(ngModel)]="searchTerm"
+                    (input)="applyFilters()">
+
+            </div>
+
+            <div *ngIf="filteredDesignations.length > 0" class="table-responsive card-body shadow-lg rounded p-3 bg-white">
+                <table class="table table-striped table-hover align-middle w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th (click)="applySorting('id')">SN</th>
+                            <th (click)="applySorting('name')">Name
+                                <i class="bi " [ngClass]="{
+                                    'bi-caret-up': sortBy['name'] === true,
+                                    'bi-caret-down': sortBy['name'] === false
+                                  }"></i>
+                            </th>
+                            <th (click)="applySorting('description')">Description <i class="bi " [ngClass]="{
+                                'bi-caret-up': sortBy['description'] === true,
+                                'bi-caret-down': sortBy['description'] === false
+                              }"></i>
+                            </th>
+                            <th (click)="applySorting('createdOn')">Created At <i class="bi bi-caret-down" [ngClass]="{
+                                'bi-caret-up': sortBy['createdOn'] === true,
+                                'bi-caret-down': sortBy['createdOn'] === false
+                              }"></i></th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let designation of filteredDesignations; let i = index">
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ designation.name }}</td>
+                            <td>{{ designation.description }}</td>
+                            <td>{{ designation.createdOn | date: 'medium' }}</td>
+                            <td><span class="badge rounded-pill bg-success">Active</span></td>
+                            <td class="d-flex justify-content-center gap-2">
+                                <a [routerLink]="['/designation/edit', designation.id]"
+                                    class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i></a>
+                                <a [routerLink]="['/designation/details', designation.id]"
+                                    class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+                    </select>
+                    <ul class="pagination">
+                        <li class="page-item" [class.disabled]="pageNumber === 1">
+                            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
+                        </li>
+                        <li *ngFor="let page of totalPages" [class.active]="pageNumber === page">
+                            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+                        </li>
+                        <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+                            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div *ngIf="filteredDesignations.length == 0 && !isLoading()" class="w-100 h-100 text-center">
+                <span>No Record</span>
+            </div>
+        </div>
+    </div>
+</div>

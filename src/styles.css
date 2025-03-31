@@ -8,6 +8,8 @@
     /* Default value, will be updated by JavaScript */
 }
 
+
+  
 body {
     margin: 0;
     font-family: var(--bs-font-sans-serif);
@@ -36,3 +38,13 @@ body {
     font-style: normal;
     font-weight: lighter;
 }
+/* @media (max-width: 768px) {
+    body {
+        zoom: 0.9;
+      }
+  }
+  @media (min-width: 1200px) {
+    body {
+        zoom: 1;
+      }
+  } */

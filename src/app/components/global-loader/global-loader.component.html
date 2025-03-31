@@ -1,35 +1,54 @@
 <div *ngIf="loaderService.loading$ | async" class="loader-overlay">
-    <div class="skeleton-container h-100" [ngSwitch]="type">
-      <!-- Table Skeleton -->
-      <div *ngSwitchCase="'table'" class="skeleton-table">
-        <div class="skeleton skeleton-header"></div>
-        <div *ngFor="let row of [].constructor(rows)" class="skeleton-row flex justify-content-between">
-          <div class="skeleton skeleton-cell" *ngFor="let col of [].constructor(fields)"></div>
-        </div>
-      </div>
-  
-      <!-- Card Skeleton -->
-      <div *ngSwitchCase="'card'" class="skeleton-card">
-        <div class="skeleton skeleton-image"></div>
-        <div class="skeleton skeleton-title"></div>
-        <div class="skeleton skeleton-text" *ngFor="let i of [].constructor(fields)"></div>
-      </div>
-  
-      <!-- List Skeleton -->
-      <div *ngSwitchCase="'list'" class="skeleton-list">
-        <div *ngFor="let item of [].constructor(rows)" class="skeleton skeleton-item"></div>
-      </div>
-  
-      <!-- Form Skeleton -->
-      <div *ngSwitchCase="'form'" class="skeleton-form">
-        <div *ngFor="let field of [].constructor(fields)" class="skeleton skeleton-input"></div>
-        <div class="skeleton skeleton-button"></div>
-      </div>
-  
-      <!-- Default Loader -->
-      <div *ngSwitchDefault class="skeleton-default">
-        <div class="skeleton skeleton-block"></div>
+  <div class="skeleton-container h-100" [ngSwitch]="type">
+    <!-- Table Skeleton -->
+    <div *ngSwitchCase="'table'" class="skeleton-table">
+      <div class="skeleton skeleton-header"></div>
+      <div *ngFor="let row of [].constructor(rows)" class="skeleton-row flex justify-content-between">
+        <div class="skeleton skeleton-cell" *ngFor="let col of [].constructor(fields)"></div>
       </div>
     </div>
+
+    <!-- Card Skeleton -->
+    <div *ngSwitchCase="'card'" class="skeleton-card">
+      <div class="skeleton skeleton-image"></div>
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-text" *ngFor="let i of [].constructor(fields)"></div>
+    </div>
+
+    <!-- List Skeleton -->
+    <div *ngSwitchCase="'list'" class="skeleton-list">
+      <div *ngFor="let item of [].constructor(rows)" class="skeleton skeleton-item"></div>
+    </div>
+
+    <!-- Form Skeleton -->
+    <div *ngSwitchCase="'form'" class="skeleton-form">
+      <div *ngFor="let field of [].constructor(fields)" class="skeleton skeleton-input"></div>
+      <div class="skeleton skeleton-button"></div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <!-- <div *ngSwitchCase="'loader'" class="loader-container">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div> -->
+
+    <!-- Logo Loader -->
+    <div *ngSwitchCase="'loader'" class="logo-loader">
+      <img src="LIMS.png" alt="Loading..." class="logo-animation" />
+      <div class="dots-container">
+        <span class="dot dot1"></span>
+        <span class="dot dot2"></span>
+        <span class="dot dot3"></span>
+      </div>
+    </div>
+
+
+    <!-- Default Loader -->
+    <div *ngSwitchDefault class="skeleton-default">
+      <div class="skeleton skeleton-block"></div>
+    </div>
+
+
   </div>
-  
+</div>

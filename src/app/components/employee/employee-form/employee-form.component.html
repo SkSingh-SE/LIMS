@@ -5,7 +5,7 @@
                 <!-- Form Wizard Start -->
                 <div class="form-wizard mt-0">
                     <div class=" overflow-x-auto scroll-sm">
-                        <ul class="nav nav-tabs form-wizard-list ">
+                        <ul class="nav nav-tabs form-wizard-list list2">
                             <li *ngFor="let header of formHeaders" class="nav-item cursor-pointer"
                                 [class.activated]="currentStep() > header.key" (click)="setActiveForm(header.key)">
                                 <span class="nav-link" [class.active]="activeFormKey === header.key">{{header.label}}

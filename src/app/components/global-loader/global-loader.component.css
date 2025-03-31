@@ -75,9 +75,81 @@
     width: 50%;
     height: 30px;
   }
+  .loader-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.8); /* Optional: Adds a light overlay */
+    z-index: 1050; /* Ensures it appears above other content */
+  }
+  
   
   @keyframes loading {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
   
+  /* Loader Container */
+.logo-loader {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.85); /* Slightly transparent white */
+  z-index: 1050;
+}
+
+/* Pulsating Logo */
+.logo-animation {
+  width: 90px; /* Slightly larger */
+  height: auto;
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+/* Logo Pulse Animation */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Dots Container */
+.dots-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* Animated Dots */
+.dot {
+  width: 10px;
+  height: 10px;
+  margin: 0 6px;
+  background-color: red;
+  border-radius: 50%;
+  animation: fadeInOut 1.5s infinite ease-in-out;
+}
+
+/* Delay for Smooth Sequence */
+.dot1 { animation-delay: 0s; }
+.dot2 { animation-delay: 0.4s; }
+.dot3 { animation-delay: 0.8s; }
+
+/* Smooth Fade Animation */
+@keyframes fadeInOut {
+  0% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.4; transform: scale(1); }
+}

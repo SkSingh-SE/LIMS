@@ -1,24 +1,48 @@
-.form-wizard-list .count{
+.form-wizard-list .count {
     line-height: 35px !important;
 }
 
-select  {
-    font-size: 14px !important;
-    font-weight:400;
-    font-family: inherit;
-    line-height: 30px;
-    color: rgb(143, 143, 143) !important;
-}
+
 .nav-tabs .nav-link {
-    color: #1A1A80; /* Custom color */
+    color: #1A1A80;
+    /* Custom color */
 }
 
 .nav-tabs .nav-link:hover {
-    color: #E18D04; /* Hover color */
+    color: #FF2C1F;
+    /* Hover color */
+    border-color: #FF2C1F;
 }
 
 .nav-tabs .nav-link.active {
-    color: #DA271C !important; /* Active tab color */
-    background-color: #f8f9fa; /* Optional background color */
-    border-color: #dee2e6 #dee2e6 #fff;
+    color: #fff !important;
+    /* Active tab color */
+    border-color: #FF2C1F;
+    background: #FF2C1F;
+    border-bottom: 0;
+
 }
+
+.card {
+    border-color: #FF2C1F !important;
+    border-radius: 10px;
+    background: transparent;
+    border: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.card .card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background: #FF2C1F;
+}
+
+input::file-selector-button {
+    color: #fff;
+    background-color: #FF2C1F;
+}
+.input-file {
+    cursor: pointer !important;
+  }

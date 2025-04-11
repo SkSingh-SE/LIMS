@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, Renderer2, signal, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ListDesignationComponent } from '../designation/list-designation/list-designation.component';
+import { AuthService } from '../../services/auth.service';
 
 interface SubMenuItem {
   title: string,
@@ -28,7 +29,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   navbarHeight: number = 64;
   private resizeObserver!: ResizeObserver;
 
-  constructor(private renderer: Renderer2, private cdr: ChangeDetectorRef) { }
+  constructor(private renderer: Renderer2, private cdr: ChangeDetectorRef, private authService: AuthService) { }
   ngAfterViewInit() {
     this.updateNavbarHeight();
   }
@@ -210,20 +211,33 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
     setTimeout(() => {
       this.updateNavbarHeight();
       this.cdr.detectChanges(); // Ensure Angular detects this change
-    }, 0);
+    }, 300);
+  }
+  closeSubMenu(){
+    this.isSubMenuOpen.set(false);
+    setTimeout(() => {
+      this.updateNavbarHeight();
+      this.cdr.detectChanges(); // Ensure Angular detects this change
+    }, 300);
   }
 
   setActiveSubMenu(submenu: SubMenuItem) {
-    debugger;
     this.activeSubmenu.set(submenu.title);
     this.isMenu2Open.set(false);
   }
   menuOpenClose() {
     this.isMenu2Open.set(!this.isMenu2Open());
+    setTimeout(() => {
+      this.updateNavbarHeight();
+      this.cdr.detectChanges(); // Ensure Angular detects this change
+    }, 300);
   }
 
   @HostListener('window:resize')
   onResize() {
     this.updateNavbarHeight();
+  }
+  logout(){
+    this.authService.logout();
   }
 }

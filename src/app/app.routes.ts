@@ -7,11 +7,15 @@ import { CreateDesignationComponent } from './components/designation/create-desi
 import { FileUploadComponent } from './components/file-upload/file-upload.component';
 import { EmployeeListComponent } from './components/employee/employee-list/employee-list.component';
 import { EmployeeFormComponent } from './components/employee/employee-form/employee-form.component';
+import { LoginComponent } from './components/login/login.component';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
+    { path: 'login', component: LoginComponent },
     {
         path: '',
         component: LayoutComponent,
+        canActivate: [authGuard],
         children: [
             { path: 'designation', component: ListDesignationComponent },  // List Page
             { path: 'designation/create', component: CreateDesignationComponent },  // Create Page
@@ -22,5 +26,6 @@ export const routes: Routes = [
             { path: 'employee/create', component: EmployeeFormComponent },
             { path: 'employee/edit/:id', component: EmployeeFormComponent },
         ]
-    }
+    },
+    { path: '**', redirectTo: '/login' }
 ];

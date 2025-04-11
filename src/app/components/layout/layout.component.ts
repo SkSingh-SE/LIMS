@@ -2,10 +2,12 @@ import { Component, HostListener, ViewChild } from '@angular/core';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { GlobalLoaderComponent } from '../global-loader/global-loader.component';
+import { ToastComponent } from '../toast/toast.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [CommonModule,NavbarComponent,RouterOutlet],
+  imports: [CommonModule,NavbarComponent,GlobalLoaderComponent,ToastComponent,RouterOutlet],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

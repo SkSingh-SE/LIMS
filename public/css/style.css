@@ -8562,10 +8562,10 @@ h6, .h6 {
   font-weight: 600;
 }
 
-.btn.btn-sm {
+/* .btn.btn-sm {
   padding: 0.5rem 0.875rem;
   font-size: 0.875rem;
-}
+} */
 
 .btn-success {
   background-color: var(--success-main);
@@ -12358,18 +12358,18 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
   font-size: 1.125rem;
 }
 
-.form-select.form-select-sm {
+/* .form-select.form-select-sm {
   height: 40px;
   font-size: 0.875rem;
-}
+} */
 
 [dir=rtl] .form-select {
   background-position-x: left;
 }
 
-.form-select, .form-control:not(textarea) {
+/* .form-select, .form-control:not(textarea) {
   height: 2.75rem;
-}
+} */
 
 .form-control[type=file] {
   line-height: 2;
@@ -12388,14 +12388,14 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
   line-height: 2.1;
 }
 
-.form-control.form-control-sm {
+/* .form-control.form-control-sm {
   height: 40px;
   font-size: 0.875rem;
-}
+} */
 
-.form-control.form-control-sm[type=file] {
+/* .form-control.form-control-sm[type=file] {
   line-height: 2.2;
-}
+} */
 
 .invoive-form-control {
   width: 130px;

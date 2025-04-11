@@ -18,8 +18,12 @@
     flex-grow: 1;
     padding: 10px 0;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
+    flex-wrap: nowrap; /* Prevents wrapping */
+    justify-content: flex-start; /* Align items to start */
+    gap: 10px; /* Adds spacing between menu items */
+    overflow-x: auto; /* Enables horizontal scrolling */
+    white-space: nowrap; /* Prevents text from wrapping */
+    scrollbar-width: thin;
 
 }
 .menu2-container {

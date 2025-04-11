@@ -10,12 +10,6 @@
       </div>
 
       <div class="card-body">
-          <!-- Loading Indicator -->
-                  <!-- Loading Spinner -->
-        <div *ngIf="isLoading" class="w-100 h-100">
-          <app-global-loader type="loader" [rows]="10" [fields]="7"></app-global-loader>
-      </div>
-
           <!-- Error Message -->
           <div *ngIf="errorMessage" class="alert alert-danger text-center fw-bold">
               {{ errorMessage }}

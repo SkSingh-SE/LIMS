@@ -8,8 +8,8 @@
         </div>
         <div class="d-flex w-100 navbar-background">
             <!-- Menu Section -->
-            <div class="menu-container d-flex justify-content-around mx-2 w-100 overflow-x-auto">
-                <div *ngFor="let menu of menuItems" class="menu-item header-font" (click)="openSubMenu(menu)"
+            <div class="menu-container d-flex mx-2">
+                <div *ngFor="let menu of menuItems" class="menu-item header-font" (click)="openSubMenu(menu)" 
                     [ngClass]="{'active': activeMenu() === menu.title}">
                     <div class="d-flex gap-2 align-items-center">
                         <i class=" bi " [class]="menu.icon"></i>
@@ -67,7 +67,7 @@
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item" href="#">Logout</a></li>
+                        <li><a class="dropdown-item btn" (click)="logout()">Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -88,8 +88,8 @@
         </div>
     </div>
     }
-    @if(subMenus().length > 0){
-    <div class="card card-body flex-row gap-2 submenu-container">
+    @if(subMenus().length > 0 && isSubMenuOpen()){
+    <div class="card card-body flex-row gap-2 submenu-container" (mouseleave)="closeSubMenu()">
         <div *ngFor="let subMenuItem of subMenus()" class="submenu-item px-2 " (click)="setActiveSubMenu(subMenuItem)"
             [ngClass]="{'active': activeSubmenu() === subMenuItem.title}">
             

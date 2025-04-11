@@ -1,9 +1,12 @@
+<app-toast></app-toast>
 <app-navbar></app-navbar>
+<app-global-loader></app-global-loader>
 <div class="content-container">
     <router-outlet>
-    </router-outlet>
-    <button *ngIf="isVisible" class="btn btn-danger btn-floating btn-outline-dark" id="btn-back-to-top"
+        <button *ngIf="isVisible" class="btn btn-danger btn-floating btn-outline-dark" id="btn-back-to-top"
         (click)="scrollToTop()">
         <i class="bi bi-arrow-up"></i>
     </button>
+    </router-outlet>
+   
 </div>

@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class EmployeeService {
-private apiUrl = environment.apiUrl +"/EmployeeMaster";
+  private apiUrl = environment.apiUrl +"/EmployeeMaster";
   constructor(private http: HttpClient) { }
 
   getAllEmployees(filter:any): Observable<any> {
@@ -25,7 +25,17 @@ private apiUrl = environment.apiUrl +"/EmployeeMaster";
   deleteEmployee(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
-  getEmployeeDropdown(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown`);
+  getEmployeeDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
+  getAreasWithPinCode(pincode: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/AreaMaster/getAreaWithPincode?pincode=${pincode}`);
+  }
+  updateQualifications(qualifications: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/qualification/update`, qualifications);
+  }
+  updateDocuments(documents: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/document/update`, documents);
+  }
+
 }

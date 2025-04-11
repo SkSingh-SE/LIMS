@@ -65,3 +65,20 @@
   justify-content: center;
 }
 
+.table-responsive {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+th.sticky-column, td.sticky-column {
+  position: sticky;
+  background: white;
+  z-index: 100;
+}
+
+/* Ensure last sticky column (Actions) sticks */
+th.sticky-actions, td.sticky-actions {
+  position: sticky;
+  right: 0;
+}
+

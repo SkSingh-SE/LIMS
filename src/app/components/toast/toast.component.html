@@ -1,0 +1,26 @@
+<div *ngIf="toastService.toasts.length > 0" aria-live="polite" aria-atomic="true"
+  class="position-fixed top-0 end-0 p-3 me-4" style="z-index: 1050;">
+  <div class="toast-container">
+    <div *ngFor="let toast of toastService.toasts" class="toast show fade slide-in" role="alert" aria-live="assertive"
+      aria-atomic="true" [ngClass]="getToastClass(toast.type)">
+      <div class="toast-header">
+        <strong class="me-auto">
+          <span *ngIf="toast.type === 'success'">✅ Success</span>
+          <span *ngIf="toast.type === 'error'">❌ Error</span>
+          <span *ngIf="toast.type === 'warning'">⚠️ Warning</span>
+          <span *ngIf="toast.type === 'info'">ℹ️ Info</span>
+        </strong>
+        <small class="text-muted">Just now</small>
+        <button type="button" class="btn-close" (click)="toastService.remove(toast)"></button>
+      </div>
+      <div class="toast-body">
+        {{ toast.message }}
+      </div>
+      <!-- Progress Bar -->
+      <div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="25" aria-valuemin="0"
+        aria-valuemax="100">
+        <div class="progress-bar" [style.width.%]="toast.progress"></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DesignationService } from '../../../services/designation.service';
 import { CommonModule } from '@angular/common';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-update-designation',
@@ -19,7 +20,8 @@ export class UpdateDesignationComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private designationService: DesignationService
+    private designationService: DesignationService,
+    private toastService: ToastService
   ) { }
 
   ngOnInit() {
@@ -49,8 +51,10 @@ export class UpdateDesignationComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
+        this.router.navigate(['/designation']);
         console.error('Error loading designation:', err);
         this.isLoading.set(false);
+        this.toastService.show("Something went wrong",'error');
       }
 
     });
@@ -63,13 +67,14 @@ export class UpdateDesignationComponent implements OnInit {
     const updatedData = this.updateForm.value;
     this.designationService.updateDesignation(this.designationId, updatedData).subscribe({
       next: () => {
-        alert('Designation updated successfully!');
         this.router.navigate(['/designation']);
         this.isLoading.set(false);
+        this.toastService.show(`${this.updateForm.value.name} updated successfully!`,'success');
       },
       error: (err) => {
-        console.error('Error updating designation:', err);
+        console.error(`Error updating ${this.updateForm.value.name} designation:`, err);
         this.isLoading.set(false);
+        this.toastService.show('Something went wrong!','error');
       }
     });
   }

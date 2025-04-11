@@ -8,118 +8,47 @@
             </a>
         </div>
         <!-- Loading Spinner -->
-        <div *ngIf="isLoading()" class="w-100 h-100">
+        <!-- <div *ngIf="isLoading()" class="w-100 h-100">
             <app-global-loader type="loader" [rows]="10" [fields]="7"></app-global-loader>
-        </div>
+        </div> -->
 
         <div *ngIf="!isLoading()" class="card-body">
-            
+
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()">
+                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+                        (keydown.enter)="onSearch()">
                     <div class="input-group-text pe-auto" (click)="onSearch()">
                         <i class="bi bi-search"></i>
                     </div>
                 </div>
             </div>
-            
-            
-            <div *ngIf="filteredDesignations.length > 0" class="table-responsive ">
+
+
+            <div *ngIf="filteredDesignations.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
-                            <th class="">
+                            <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
-                                    <span class="dt-column-order"> Name</span>
+                                    <span class="dt-column-order">{{ column.label }}</span>
                                     <span class="d-flex flex-column ms-2 mt-2">
                                         <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === 'id' && sortOrder === 'asc'}"
-                                            (click)="applySorting('id')"></i>
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                                            (click)="applySorting(column.key)"></i>
                                         <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === 'id' && sortOrder === 'desc'}"
-                                            (click)="applySorting('id')"></i>
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                                            (click)="applySorting(column.key)"></i>
                                     </span>
-
-                                </div>
-                            </th>
-
-                            <th class="">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order"> Name</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === 'name' && sortOrder === 'asc'}"
-                                            (click)="applySorting('name')"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === 'name' && sortOrder === 'desc'}"
-                                            (click)="applySorting('name')"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter('name')" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal('name', $event)"><i class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter('name')" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter('name')"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-
-                            <th class="">
-                                <div class="d-flex  align-items-center">
-                                    <span class="dt-column-order"> Description</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === 'description' && sortOrder === 'asc'}"
-                                            (click)="applySorting('description')"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === 'description' && sortOrder === 'desc'}"
-                                            (click)="applySorting('description')"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter('description')" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal('description', $event)"><i
+                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                        (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter('description')" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter('description')"><i
-                                            class="bi bi-x-lg text-danger"></i></span>
+                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
+                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                                 </div>
                             </th>
-
-                            <th class="">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">Created At</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === 'createdOn' && sortOrder === 'asc'}"
-                                            (click)="applySorting('createdOn')"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === 'createdOn' && sortOrder === 'desc'}"
-                                            (click)="applySorting('createdOn')"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter('createdOn')" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal('createdOn', $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter('createdOn')" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter('createdOn')"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                            <th class="">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">Created By</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === 'createdBy' && sortOrder === 'asc'}"
-                                            (click)="applySorting('createdBy')"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === 'createdBy' && sortOrder === 'desc'}"
-                                            (click)="applySorting('createdBy')"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter('createdBy')" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal('createdBy', $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter('createdBy')" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter('createdBy')"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                            
-                            <th class=" align-middle text-center">Actions</th>
+                            <th class="align-middle text-center">Actions</th>
                         </tr>
 
 
@@ -129,46 +58,49 @@
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ designation.name }}</td>
                             <td>{{ designation.description }}</td>
-                            <td>{{ designation.createdOn | date: 'medium' }}</td>
+                            <td>{{ designation.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td>{{designation.createdBy}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/designation/details', designation.id]" class="icon-link" title="View">
+                                    <a [routerLink]="['/designation/details', designation.id]" class="icon-link"
+                                        title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/designation/edit', designation.id]" class="icon-link" title="Edit">
+                                    <a [routerLink]="['/designation/edit', designation.id]" class="icon-link"
+                                        title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/designation/delete', designation.id]" class="icon-link" title="Delete">
+                                    <a [routerLink]="['/designation/delete', designation.id]" class="icon-link"
+                                        title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
                             </td>
-                            
-                            
+
+
                         </tr>
                     </tbody>
                 </table>
 
-                <!-- Pagination -->
-                <div class="d-flex justify-content-between align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                    <ul class="pagination">
-                        <li class="page-item " [class.disabled]="pageNumber === 1">
-                            <a class="page-link " (click)="onPageChange(pageNumber - 1)">Previous</a>
-                        </li>
-                        <li *ngFor="let page of totalPages" [class.active]="pageNumber === page">
-                            <a class="page-link " (click)="onPageChange(page)">{{ page }}</a>
-                        </li>
-                        <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                            <a class="page-link " (click)="onPageChange(pageNumber + 1)">Next</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
 
+            </div>
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center">
+                <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+                    <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+                </select>
+                <ul class="pagination">
+                    <li class="page-item " [class.disabled]="pageNumber === 1">
+                        <a class="page-link " (click)="onPageChange(pageNumber - 1)">Previous</a>
+                    </li>
+                    <li *ngFor="let page of totalPages" [class.active]="pageNumber === page">
+                        <a class="page-link " (click)="onPageChange(page)">{{ page }}</a>
+                    </li>
+                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+                        <a class="page-link " (click)="onPageChange(pageNumber + 1)">Next</a>
+                    </li>
+                </ul>
+            </div>
             <div *ngIf="filteredDesignations.length == 0 && !isLoading()" class="w-100 h-100 text-center">
                 <span>No Record</span>
             </div>
@@ -186,21 +118,24 @@
         <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumn | titlecase }}</label>
 
         <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="columnTypes[filterColumn!] === 'string'" value="Contains">Contains</option>
-            <option *ngIf="columnTypes[filterColumn!] === 'date'" value="Between">Between</option>
+            <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+            <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
             <option value="Equal">Equal</option>
             <option value="NotEqual">Not Equal</option>
-            <option *ngIf="columnTypes[filterColumn!] !== 'string'" value="GreaterThan">Greater Than</option>
-            <option *ngIf="columnTypes[filterColumn!] !== 'string'" value="LessThan">Less Than</option>
+            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
         </select>
 
-        <input *ngIf="columnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" />
-        <input *ngIf="columnTypes[filterColumn!] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" />
-        <input *ngIf="columnTypes[filterColumn!] === 'date'" type="date" class="form-control mb-2"
-            [(ngModel)]="filterValue" />
-        <input *ngIf="filterType === 'Between'" type="date" class="form-control mb-2" [(ngModel)]="filterValue2" />
+        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+            class="form-control mb-2" [(ngModel)]="filterValue" />
+        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+        </div>
 
         <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
     </div>

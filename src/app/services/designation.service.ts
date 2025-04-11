@@ -32,7 +32,7 @@ export class DesignationService {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
 
-  getDesignationDropdown(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown`);
+  getDesignationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 }

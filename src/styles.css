@@ -9,7 +9,7 @@
 }
 
 
-  
+
 body {
     margin: 0;
     font-family: var(--bs-font-sans-serif);
@@ -17,27 +17,30 @@ body {
 
 .content-container {
     margin-top: var(--nav-height);
-    min-height: 100vh;
+    min-height: fit-content;
     transition: margin-top var(--transition-speed) ease-in-out;
 }
 
 .navbar-background {
     background-color: #DA261C !important;
 }
+
 .card-form-header {
     font-family: 'Poppins', none;
     font-size: 12px;
     font-style: normal;
     font-weight: lighter;
     background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-    
+
 }
+
 .header-font {
     font-family: 'Poppins', none;
     font-size: 14px;
     font-style: normal;
     font-weight: lighter;
 }
+
 /* @media (max-width: 768px) {
     body {
         zoom: 0.9;
@@ -48,3 +51,27 @@ body {
         zoom: 1;
       }
   } */
+
+.input-group-text.is-invalid {
+    border: 1px solid #dc3545 !important;
+    border-radius: 0.375rem;
+}
+
+.input-group .form-control {
+    border-right: none !important;
+}
+
+.card .card-header {
+    padding: 0.5rem 0.5rem !important;
+    height: 47px !important;
+}
+
+.form-control {
+    color: rgb(143, 143, 143) !important;
+}
+
+select {
+    font-size: 14px;
+    /* Adjust font size */
+    color: rgb(143, 143, 143);
+}

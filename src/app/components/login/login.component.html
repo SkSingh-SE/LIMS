@@ -1,0 +1,64 @@
+<div class="d-flex align-items-center justify-content-center bg-cover">
+    <div class="card login-card shadow-lg d-flex  justify-content-center">
+        <div class="row ">
+            <!-- Logo Section -->
+            <div class="col-5 logo-section d-flex align-items-center justify-content-center ms-2 ">
+                <img src="/images/login_logo.png" alt="Logo" class="img-fluid" />
+            </div>
+            <div class="col-auto ms-auto me-auto d-flex flex-column justify-content-center align-items-center py-4">
+                <div class="vr h-100 verticle-line"></div>
+            </div>
+            <!-- Login Form Section -->
+            <div class="col-md-6 p-4 me-2">
+                <h5 class="text-uppercase fw-bold text-dark mb-4 d-flex flex-column">
+                    <span class="border-danger header-border"></span>
+                    <span class="pb-1">Login</span>
+                </h5>
+
+                <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="text" id="email" class="form-control" formControlName="email"
+                            placeholder="Enter Email" 
+                            [ngClass]="{'is-invalid': loginForm.get('email')?.touched && loginForm.get('email')?.invalid}"/>
+                        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                            class="text-danger">
+                            Email is required.
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3 position-relative">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
+                                formControlName="password" placeholder="Enter Password"
+                                aria-describedby="password-icon"
+                                [ngClass]="{'is-invalid': loginForm.get('password')?.touched && loginForm.get('password')?.invalid}" />
+                            <span type="button" (click)="togglePassword()" class="input-group-text" id="password-icon"
+                            [ngClass]="{'is-invalid': loginForm.get('password')?.touched && loginForm.get('password')?.invalid}"
+                            ><i class="bi"
+                                    [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i></span>
+                        </div>
+                        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                            class="text-danger">
+                            Password is required.
+                        </div>
+                    </div>
+
+                    <!-- Login Button -->
+                    <div class="d-grid">
+                        
+                        <button class="btn btn-danger" type="submit" [disabled]="loginForm.invalid">
+                            <span *ngIf="isLoading()" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span *ngIf="isLoading()" class="ms-2" role="status">Loading...</span>
+                            <span *ngIf="!isLoading()">Login</span>
+                          </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>

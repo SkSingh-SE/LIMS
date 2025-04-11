@@ -8,7 +8,7 @@ import { GlobalLoaderComponent } from '../../global-loader/global-loader.compone
 
 @Component({
   selector: 'app-details-designation',
-  imports: [FormsModule,CommonModule,RouterLink,GlobalLoaderComponent],
+  imports: [FormsModule,CommonModule,RouterLink],
   templateUrl: './details-designation.component.html',
   styleUrl: './details-designation.component.css'
 })

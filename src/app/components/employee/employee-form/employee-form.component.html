@@ -1,5 +1,5 @@
 <!-- Form Wizard Start -->
-<div class="form-wizard p-2 ">
+<div class="form-wizard m-1 ">
     <div class=" mx-3">
         <ul class="nav nav-tabs form-wizard-list list2 border-bottom-0">
             <li *ngFor="let header of formHeaders" class="nav-item cursor-pointer"
@@ -65,8 +65,8 @@
                             <div class="col-auto col-md-4 col-lg-3">
                                 <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
                                 <input type="tel" class="form-control" formControlName="mobileNo"
-                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid}" />
+                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly [ngClass]="{'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid}" />
+
                                 <span
                                     *ngIf="personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched"
                                     class="text-danger text-sm">
@@ -296,8 +296,7 @@
 
                                 <!-- Address Line 2 -->
                                 <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="permanentAddressLine2" class="form-label">Address Line 2 <span
-                                            class="text-danger">*</span></label>
+                                    <label for="permanentAddressLine2" class="form-label">Address Line 2 </label>
                                     <textarea type="text" id="permanentAddressLine2" class="form-control"
                                         placeholder="Enter Address" formControlName="permanentAddressLine2" rows="4"
                                         [ngClass]="{'is-invalid': personalInfoForm.get('permanentAddressLine2')?.touched && personalInfoForm.get('permanentAddressLine2')?.invalid}"> </textarea>
@@ -393,8 +392,7 @@
                             <div class="row gy-1">
                                 <!-- Father Name -->
                                 <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="fatherName" class="form-label">Father Name <span
-                                            class="text-danger">*</span></label>
+                                    <label for="fatherName" class="form-label">Father Name </label>
                                     <input type="text" id="fatherName" class="form-control" formControlName="fatherName"
                                         placeholder="Enter Father Name"
                                         [ngClass]="{'is-invalid': personalInfoForm.get('fatherName')?.touched && personalInfoForm.get('fatherName')?.invalid}" />
@@ -405,8 +403,7 @@
 
                                 <!-- Mother Name -->
                                 <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="motherName" class="form-label">Mother Name <span
-                                            class="text-danger">*</span></label>
+                                    <label for="motherName" class="form-label">Mother Name </label>
                                     <input type="text" id="motherName" class="form-control" formControlName="motherName"
                                         placeholder="Enter Mother Name"
                                         [ngClass]="{'is-invalid': personalInfoForm.get('motherName')?.touched && personalInfoForm.get('motherName')?.invalid}" />
@@ -430,8 +427,7 @@
 
                                     <app-searchable-dropdown [placeholder]="'Search Designation'"
                                         [labelName]="'Designation'" [fetchDataFn]="getDesignations"
-                                        (itemSelected)="onDesignationSelected($event)"
-                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="onDesignationSelected($event)" [isDisabled]="isViewMode"
                                         [selectedItem]="personalInfoForm.get('designationID')?.value">
                                     </app-searchable-dropdown>
                                 </div>
@@ -451,8 +447,7 @@
                                 <div class="col-auto col-md-4 col-lg-3">
                                     <app-searchable-dropdown [placeholder]="'Search department'"
                                         [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                                        (itemSelected)="onDepartmentSelected($event)"
-                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="onDepartmentSelected($event)" [isDisabled]="isViewMode"
                                         [selectedItem]="personalInfoForm.get('departmentID')?.value">
                                     </app-searchable-dropdown>
                                 </div>
@@ -461,8 +456,7 @@
                                 <div class="col-auto col-md-4 col-lg-3">
                                     <app-searchable-dropdown [placeholder]="'Search employee'"
                                         [labelName]="'Reporting Manager'" [fetchDataFn]="getEmployees"
-                                        (itemSelected)="onEmployeeSelected($event)"
-                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="onEmployeeSelected($event)" [isDisabled]="isViewMode"
                                         [selectedItem]="personalInfoForm.get('reportingManagerID')?.value">
                                     </app-searchable-dropdown>
                                 </div>
@@ -561,7 +555,8 @@
 
 
                         <!-- Submit Button -->
-                        <div class="form-group text-end">
+                        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
+                            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
                             <button type="submit" class="btn btn-primary px-4">Save</button>
                         </div>
 
@@ -581,7 +576,8 @@
                             <label class="text-danger-600 fw-bold border-bottom border-danger">Qualification
                                 Details</label>
                         </div>
-                        <button type="button" class="btn btn-outline-danger-600 mb-2 " (click)="addQualification()" [disabled]="isViewMode">
+                        <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2 "
+                            (click)="addQualification()">
                             <i class="bi bi-plus-circle-dotted"></i> Add Row
                         </button>
                     </div>
@@ -595,12 +591,24 @@
                                         <th class="fw-medium px-2">Education Qualification</th>
                                         <th class="fw-medium px-2">Name of school/University</th>
                                         <th class="fw-medium px-2">Passing Year</th>
-                                        <th class="fw-medium text-center">Action</th>
+                                        <th *ngIf="!isViewMode" class="fw-medium text-center">Action</th>
                                     </tr>
                                 </thead>
 
 
                                 <tbody formArrayName="qualifications">
+                                    <tr *ngIf="qualificationArray.length === 0">
+                                        <td colspan="5">
+                                            <div
+                                                class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                                                <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                                                <div class="fw-semibold">No qualification records found</div>
+                                                <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to add
+                                                    a qualification.</small>
+                                            </div>
+                                        </td>
+                                    </tr>
+
                                     <tr *ngFor="let group of qualificationArray.controls; let i = index"
                                         [formGroupName]="i" class="align-content-center">
                                         <td class="align-middle px-2">{{ i + 1 | number: '2.0' }}</td>
@@ -642,7 +650,7 @@
                                         </td>
 
                                         <!-- Delete Button -->
-                                        <td class="text-center">
+                                        <td *ngIf="!isViewMode" class="text-center">
                                             <button class="btn btn-link text-danger" (click)="removeQualification(i)">
                                                 <i class="bi bi-trash-fill fs-5"></i>
                                             </button>
@@ -653,9 +661,10 @@
                             </table>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-warning">Cancel</button>
-                        <button type="button" class="btn btn-success" (click)="saveQualification()" [disabled]="isViewMode">Save</button>
+                    <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+                        <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+                        <button *ngIf="qualificationArray.length > 0" type="button" class="btn btn-success"
+                            (click)="saveQualification()" [disabled]="isViewMode">Save</button>
                     </div>
                 </div>
             </fieldset>
@@ -677,26 +686,28 @@
                                 <ng-container *ngFor="let key of predefinedKeys">
                                     <div class="col-auto col-md-4 col-lg-3 mb-1">
                                         <label class="form-label">{{ keyLabels[key] }}</label>
-
                                         <ng-container
-                                            *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FileName; else uploadField">
+                                            *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath else uploadField">
                                             <div
                                                 class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
-                                                <span class="text-truncate me-2" type="button" (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
+                                                <span class="text-truncate me-2" type="button"
+                                                    (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
                                                     title="{{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}">
-                                                     <i class="bi bi-file-earmark-fill"></i> {{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}
+                                                    <i class="bi bi-file-earmark-fill"></i> {{
+                                                    documentsForm.get('predefined')?.get(key)?.value?.FileName }}
                                                 </span>
-                                                <button type="button" class="btn btn-sm btn-link text-danger p-0"
+                                                <button *ngIf="!isViewMode" type="button"
+                                                    class="btn btn-sm btn-link text-danger p-0"
                                                     (click)="removePredefinedFile(key)">
                                                     <i class="bi bi-trash-fill fs-6 me-1"></i>
                                                 </button>
-                                                
+
                                             </div>
                                         </ng-container>
 
                                         <ng-template #uploadField>
                                             <input class="form-control form-control-sm input-file" type="file"
-                                            [accept]="getAcceptType(key)"
+                                                [accept]="getAcceptType(key)" [disabled]="isViewMode"
                                                 id="formFile_{{key}}" readonly (change)="onFileChange($event, key)" />
                                         </ng-template>
                                     </div>
@@ -712,71 +723,97 @@
                                     <label class="text-danger-600 fw-bold border-bottom border-danger">Additional
                                         Documents</label>
                                 </div>
-                                <button type="button" class="btn btn-outline-danger-600 mb-2"
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2"
                                     (click)="addAdditionalDocument()">
                                     <i class="bi bi-plus-circle-dotted"></i> Add Row
                                 </button>
                             </div>
 
-                            <div *ngIf="additionalDocuments.controls.length > 0" class="table-responsive">
+                            <div class="table-responsive">
                                 <table class="table table-sm table-light table-borderless">
-                                  <thead class="table-light">
-                                    <tr>
-                                      <th scope="col" class="text-center fw-medium px-3">S.L</th>
-                                      <th scope="col" class="text-center fw-medium px-3">Document Name</th>
-                                      <th scope="col" class="text-center fw-medium px-3">Document Image</th>
-                                      <th scope="col" class="text-center fw-medium px-3">Action</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody formArrayName="additionalDocuments">
-                                    <tr *ngFor="let doc of additionalDocuments.controls; let i = index" [formGroupName]="i">
-                                      <!-- Serial Number -->
-                                      <td class="text-center align-middle px-3">{{ i + 1 | number: '2.0' }}</td>
-                              
-                                      <!-- Document Name -->
-                                      <td class="text-center align-middle px-3">
-                                        <div class="d-flex justify-content-center">
-                                          <input class="form-control w-100" style="max-width: 220px;" formControlName="DocumentType" placeholder="Enter Document Name" />
-                                        </div>
-                                      </td>
-                              
-                                      <!-- Document Image -->
-                                      <td class="text-center align-middle px-3">
-                                        <div class="d-flex justify-content-center">
-                                          <ng-container *ngIf="doc.value?.FileName; else fileInputField">
-                                            <div class="d-flex align-items-center gap-2 flex-wrap border shadow-sm px-1" style="max-width: 250px;">
-                                              <span class="text-truncate text-muted flex-grow-1 ms-1" type="button" title="{{ doc.value.FileName }}" (click)="openFileInNewTab(doc.value?.FilePath)">
-                                                <i class="bi bi-file-earmark-fill"></i> {{ doc.value.FileName }}
-                                              </span>
-                                              <button type="button" class="btn btn-sm btn-link text-danger " (click)="removeAdditionalFile(i)">
-                                                <i class="bi bi-x-circle fs-5"></i>
-                                              </button>
-                                            </div>
-                                          </ng-container>
-                              
-                                          <ng-template #fileInputField>
-                                            <input type="file" class="form-control form-control-sm input-file" style="max-width: 250px;"
-                                              (change)="onAdditionalFileChange($event, i)" readonly />
-                                          </ng-template>
-                                        </div>
-                                      </td>
-                              
-                                      <!-- Delete Row -->
-                                      <td class="text-center align-middle px-3">
-                                        <button type="button" class="btn btn-link text-danger" (click)="removeAdditionalDocument(i)">
-                                          <i class="bi bi-trash-fill fs-5"></i>
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  </tbody>
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col" class="text-center fw-medium px-3">S.L</th>
+                                            <th scope="col" class="text-center fw-medium px-3">Document Name</th>
+                                            <th scope="col" class="text-center fw-medium px-3">Document Image</th>
+                                            <th *ngIf="!isViewMode" scope="col" class="text-center fw-medium px-3">
+                                                Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody formArrayName="additionalDocuments">
+                                        <tr *ngIf="additionalDocuments.length === 0">
+                                            <td colspan="4">
+                                                <div
+                                                    class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                                                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                                                    <div class="fw-semibold">No additional document found</div>
+                                                    <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to
+                                                        add a document.</small>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr *ngFor="let doc of additionalDocuments.controls; let i = index"
+                                            [formGroupName]="i">
+                                            <!-- Serial Number -->
+                                            <td class="text-center align-middle px-3">{{ i + 1 | number: '2.0' }}</td>
+
+                                            <!-- Document Name -->
+                                            <td class="text-center align-middle px-3">
+                                                <div class="d-flex justify-content-center">
+                                                    <input class="form-control w-100" style="max-width: 220px;"
+                                                        formControlName="DocumentType"
+                                                        placeholder="Enter Document Name" />
+                                                </div>
+                                            </td>
+
+                                            <!-- Document Image -->
+                                            <td class="text-center align-middle px-3">
+                                                <div class="d-flex justify-content-center">
+                                                    <ng-container *ngIf="doc.value?.FilePath; else fileInputField">
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap border shadow-sm px-1"
+                                                            style="max-width: 250px;">
+                                                            <span class="text-truncate text-muted flex-grow-1 ms-1"
+                                                                type="button" title="{{ doc.value.FileName }}"
+                                                                (click)="openFileInNewTab(doc.value?.FilePath)">
+                                                                <i class="bi bi-file-earmark-fill"></i> {{
+                                                                doc.value.FileName }}
+                                                            </span>
+                                                            <button *ngIf="!isViewMode" type="button"
+                                                                class="btn btn-sm btn-link text-danger "
+                                                                (click)="removeAdditionalFile(i)">
+                                                                <i class="bi bi-x-circle fs-5"></i>
+                                                            </button>
+                                                        </div>
+                                                    </ng-container>
+
+                                                    <ng-template #fileInputField>
+                                                        <input type="file"
+                                                            class="form-control form-control-sm input-file"
+                                                            style="max-width: 250px;"
+                                                            (change)="onAdditionalFileChange($event, i)" readonly />
+                                                    </ng-template>
+                                                </div>
+                                            </td>
+
+                                            <!-- Delete Row -->
+                                            <td class="text-center align-middle px-3">
+                                                <button *ngIf="!isViewMode" type="button"
+                                                    class="btn btn-link text-danger"
+                                                    (click)="removeAdditionalDocument(i)">
+                                                    <i class="bi bi-trash-fill fs-5"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
-                              </div>
-                              
+                            </div>
+
                         </div>
 
                         <!-- Buttons -->
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button type="button" class="btn btn-warning">Cancel</button>
+                        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
+                            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
                             <button type="submit" class="btn btn-success">Save</button>
                         </div>
                     </form>
@@ -787,66 +824,42 @@
             <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane fade m-2">
                 <div class="text-center mb-40">
                     <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Congratulations </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
-                    </p>
+                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
+                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
                 </div>
-                <div class="form-group d-flex align-items-center justify-content-end gap-8">
+                <!-- <div class="form-group d-flex align-items-center justify-content-end gap-8">
                     <button type="button"
                         class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
                     <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
-                </div>
+                </div> -->
             </fieldset>
             <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane fade m-2">
                 <div class="text-center mb-40">
                     <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Congratulations </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
-                    </p>
+                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
+                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
                 </div>
-                <div class="form-group d-flex align-items-center justify-content-end gap-8">
-                    <button type="button"
-                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
-                    <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
-                </div>
+
             </fieldset>
             <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane fade m-2">
                 <div class="text-center mb-40">
                     <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Congratulations </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
-                    </p>
-                </div>
-                <div class="form-group d-flex align-items-center justify-content-end gap-8">
-                    <button type="button"
-                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
-                    <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
+                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
                 </div>
             </fieldset>
             <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane fade m-2">
                 <div class="text-center mb-40">
                     <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Congratulations </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
-                    </p>
-                </div>
-                <div class="form-group d-flex align-items-center justify-content-end gap-8">
-                    <button type="button"
-                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
-                    <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
+                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
                 </div>
             </fieldset>
             <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane fade m-2">
                 <div class="text-center mb-40">
                     <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Congratulations </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Well done! You have successfully completed.
-                    </p>
-                </div>
-                <div class="form-group d-flex align-items-center justify-content-end gap-8">
-                    <button type="button"
-                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
-                    <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
+                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
+                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
                 </div>
             </fieldset>
         </div>

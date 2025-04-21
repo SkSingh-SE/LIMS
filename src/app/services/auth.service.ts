@@ -8,12 +8,12 @@ import { environment } from '../../environments/environment.development';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl +"/Auth";// Replace with actual API URL
+  private apiUrl = environment.apiUrl + "/Auth";// Replace with actual API URL
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router) { }
 
   login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post<any>(this.apiUrl+'/login', credentials, { observe: 'response' }).pipe(
+    return this.http.post<any>(this.apiUrl + '/login', credentials, { observe: 'response' }).pipe(
       map((response: HttpResponse<any>) => {
         if (response.status === 200 && response.body) {
           this.saveUserData(response.body); // Save user data
@@ -28,6 +28,15 @@ export class AuthService {
     );
   }
 
+  refreshToken(accessToken: string): Observable<any> {
+    const headers = {
+      Authorization: `Bearer ${accessToken}`
+    };
+  
+    return this.http.get<any>(this.apiUrl + '/refresh-token', { headers });
+  }
+  
+
   saveUserData(userData: any): void {
     localStorage.setItem('userData', JSON.stringify(userData));
     const expirationTime = Date.now() + userData.expiresInSecond * 1000; // Convert seconds to milliseconds
@@ -40,19 +49,31 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    const userData = localStorage.getItem('userData');
     const expiration = localStorage.getItem('tokenExpiration');
-  
-    if (!userData || !expiration || Date.now() > Number(expiration)) {
-      localStorage.clear();
+    const userData = this.getUserData();
+  alert('isLoggedIn called');
+    if (!userData || !expiration) {
       return false;
     }
-    return true;
+  
+    return Date.now() < Number(expiration);
   }
 
   logout() {
     localStorage.removeItem('userData');
     localStorage.removeItem('tokenExpiration');
     this.router.navigate(['/login']);
+  }
+
+  isTokenExpiringSoon(): boolean {
+    const thresholdInSeconds = 60;
+    const expiration = localStorage.getItem('tokenExpiration');
+
+    if (!expiration) {
+      return false;
+    }
+    const expirationTime = Number(expiration); // in ms
+    const currentTime = Date.now();
+    return expirationTime - currentTime < thresholdInSeconds * 1000;
   }
 }

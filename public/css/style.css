@@ -12485,7 +12485,7 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
 }
 
 .form-check.style-check .form-check-input:checked {
-  border-color: var(--primary-600) !important;
+  border-color: none !important;
 }
 
 .form-check.style-check .form-check-input:checked::after {
@@ -12507,7 +12507,6 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
 
 .form-check .form-check-input:checked[type=radio] {
   background-image: none;
-  border-color: var(--primary-600);
 }
 
 .form-check .form-check-input:checked::before {
@@ -12518,6 +12517,7 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
 
 .form-check .form-check-input:checked ~ label {
   color: var(--text-primary-light) !important;
+  border-color: none !important;
 }
 
 .form-check .form-check-input::before {
@@ -12525,7 +12525,7 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
   content: "";
   width: calc(100% - 4px);
   height: calc(100% - 4px);
-  background-color: var(--primary-600);
+  background-color: var(--red);
   border-radius: inherit;
   left: 50%;
   top: 50%;
@@ -12550,7 +12550,7 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
 }
 
 .checked-primary .form-check-input:checked ~ label {
-  color: var(--primary-600) !important;
+  color: none !important;
 }
 
 .checked-success .form-check-input:checked[type=radio] {

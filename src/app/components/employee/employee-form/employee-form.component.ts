@@ -4,14 +4,14 @@ import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Va
 import { EmployeeService } from '../../../services/employee.service';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { ToastService } from '../../../services/toast.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DesignationService } from '../../../services/designation.service';
 import { DepartmentService } from '../../../services/department.service';
 import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 @Component({
   selector: 'app-employee-form',
-  imports: [FormsModule, CommonModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
@@ -80,13 +80,9 @@ export class EmployeeFormComponent {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.employeeId = Number(params.get('id'));
-
-      if (this.employeeId) {
-        this.loadEmployee();
-      }
     });
     const state = history.state as { mode?: string };
-   
+
     if (state && state.mode === 'view') {
       this.isViewMode = true;
     } else {
@@ -133,7 +129,7 @@ export class EmployeeFormComponent {
       permanentCity: [{ value: '', disabled: true }],
       permanentState: [{ value: '', disabled: true }],
       permanentCountry: [{ value: '', disabled: true }],
-      panNumber: ['', [Validators.maxLength(10), Validators.minLength(10), Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
+      panNumber: ['', [Validators.required, Validators.maxLength(10), Validators.minLength(10), Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       bankName: ['', Validators.maxLength(100)],
       branch: ['', Validators.maxLength(100)],
       accountHolderName: ['', Validators.maxLength(100)],
@@ -151,20 +147,22 @@ export class EmployeeFormComponent {
     });
 
     this.initForm();
-    
-    if(this.isViewMode){
-
+    if (this.isViewMode) {
       this.personalInfoForm.disable();
       this.qualificationArray.controls.forEach(control => control.disable());
-      this.documentsForm.disable();
+    }
+    if (this.employeeId) {
+      this.loadEmployee();
     }
   }
 
 
   setActiveForm(key: number) {
-    if(this.employeeId > 0){
+    if (this.employeeId > 0) {
       this.activeFormKey = key;
       this.currentStep.set(key);
+    } else if (this.activeFormKey !== key) {
+      this.toastService.show('Please save the employee first.', 'warning');
     }
   }
   loadEmployee() {
@@ -245,8 +243,9 @@ export class EmployeeFormComponent {
         // Create new employee
         this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
           next: (response) => {
+            this.loadEmployee();
+            this.employeeId = response.id;
             this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
-            this.personalInfoForm.reset(); // Optional: reset form after save
           },
           error: (error) => {
             console.error('Error creating employee:', error);
@@ -280,6 +279,10 @@ export class EmployeeFormComponent {
             this.residentialAreas = response;
             if (updateOtherFields) {
               this.fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry', true);
+              if (this.personalInfoForm.get('residentialPinCode')?.value === this.personalInfoForm.get('permanentPinCode')?.value) {
+                this.permanentAreas = response;
+                this.personalInfoForm.patchValue({sameAsResidential: true});
+              }
             }
           } else {
             this.permanentAreas = response;
@@ -313,15 +316,18 @@ export class EmployeeFormComponent {
 
   copyResidentialAddress() {
     if (this.personalInfoForm.get('sameAsResidential')?.value) {
+      this.permanentAreas = this.residentialAreas;
       this.personalInfoForm.patchValue({
         permanentAddressLine1: this.personalInfoForm.get('residentialAddressLine1')?.value,
         permanentAddressLine2: this.personalInfoForm.get('residentialAddressLine2')?.value,
         permanentPinCode: this.personalInfoForm.get('residentialPinCode')?.value,
         permanentAreaID: this.personalInfoForm.get('residentialAreaID')?.value,
+        permanentCity: this.personalInfoForm.get('residentialCity')?.value,
         permanentState: this.personalInfoForm.get('residentialState')?.value,
         permanentCountry: this.personalInfoForm.get('residentialCountry')?.value
       });
     } else {
+      this.permanentAreas = [];
       this.personalInfoForm.patchValue({
         permanentAddressLine1: '',
         permanentAddressLine2: '',
@@ -349,17 +355,17 @@ export class EmployeeFormComponent {
         schoolOrUniversity: [q.schoolOrUniversity || ''],
         passingYear: [q.passingYear || '']
       });
-  
+
       if (this.isViewMode) {
         group.disable(); // Disable the whole group in view mode
       }
-  
+
       this.qualificationArray.push(group);
     });
   }
 
   createRow(data?: any): FormGroup {
-    const group =  this.fb.group({
+    const group = this.fb.group({
       id: [data?.id || 0],
       employeeId: [data?.employeeID || this.employeeId || 0],
       qualification: [data?.qualification || '', Validators.required],
@@ -390,6 +396,7 @@ export class EmployeeFormComponent {
       }));
       this.employeeService.updateQualifications(payload).subscribe({
         next: (response) => {
+          this.loadEmployee();
           this.toastService.show(`${response.message || 'Qualification updated successfully.'}`, 'success');
 
         },
@@ -423,11 +430,9 @@ export class EmployeeFormComponent {
       }));
     });
   }
-
   get additionalDocuments(): FormArray {
     return this.documentsForm.get('additionalDocuments') as FormArray;
   }
-
   addAdditionalDocument() {
     const group = this.fb.group({
       DocumentType: ['', Validators.required],
@@ -440,11 +445,9 @@ export class EmployeeFormComponent {
     });
     this.additionalDocuments.push(group);
   }
-
   removeAdditionalDocument(index: number) {
     this.additionalDocuments.removeAt(index);
   }
-
   onFileChange(event: any, key: string) {
     const file = event.target.files[0];
     if (file) {
@@ -463,10 +466,18 @@ export class EmployeeFormComponent {
         return;
       }
 
+      let previewUrl = '';
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewUrl = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+
       const control = (this.documentsForm.get('predefined') as FormGroup).get(key) as FormGroup;
       control.patchValue({
         file,
-        FileName: file.name
+        FileName: file.name,
+        previewUrl
       });
     }
   }
@@ -479,7 +490,8 @@ export class EmployeeFormComponent {
     if (control && control instanceof FormGroup) {
       control.patchValue({
         File: null,
-        FileName: ''
+        FileName: '',
+        FilePath: ''
       });
     }
   }
@@ -507,14 +519,19 @@ export class EmployeeFormComponent {
     const group = this.additionalDocuments.at(index) as FormGroup;
     group.patchValue({
       File: null,
-      FileName: null
+      FileName: '',
+      FilePath: ''
     });
   }
 
   openFileInNewTab(filePath: string): void {
-    const baseUrl = 'https://localhost:7049/';
-    const fullUrl = baseUrl + filePath;
-    window.open(fullUrl, '_blank');
+    if (filePath) {
+      const baseUrl = 'https://localhost:7049/';
+      const fullUrl = baseUrl + filePath;
+      window.open(fullUrl, '_blank');
+    } else {
+
+    }
   }
 
   loadEmployeeDocuments(data: any[]) {
@@ -545,6 +562,11 @@ export class EmployeeFormComponent {
       });
       this.additionalDocuments.push(group);
     });
+
+    // 🔒 Disable the entire form if in view mode
+    if (this.isViewMode) {
+      this.documentsForm.disable();
+    }
   }
 
 

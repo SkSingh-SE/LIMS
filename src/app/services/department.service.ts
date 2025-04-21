@@ -24,7 +24,7 @@ export class DepartmentService {
       return this.http.post<any>(`${this.apiUrl}/create`, designation);
     }
   
-    updateDepartment(id: number, designation: any): Observable<any> {
+    updateDepartment( designation: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, designation);
     }
   

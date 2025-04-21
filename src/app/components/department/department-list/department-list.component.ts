@@ -1,37 +1,32 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
-import { EmployeeService } from '../../../services/employee.service';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { DepartmentService } from '../../../services/department.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
-  selector: 'app-employee-list',
+  selector: 'app-department-list',
   imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './employee-list.component.html',
-  styleUrl: './employee-list.component.css'
+  templateUrl: './department-list.component.html',
+  styleUrl: './department-list.component.css'
 })
-export class EmployeeListComponent implements OnInit {
+export class DepartmentListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'emailId', type: 'string', label: 'Email', filter: true },
-    { key: 'dateOfJoin', type: 'date', label: 'DOJ', filter: true },
-    { key: 'dateOfBirth', type: 'date', label: 'DOB', filter: true },
-    { key: 'gender', type: 'string', label: 'Gender', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Department', filter: true },
-    { key: 'designationName', type: 'string', label: 'Designation', filter: true }
+    { key: 'description', type: 'string', label: 'Description', filter: true },
+    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    emailId: 'string',
-    dateOfJoin: 'date',
-    dateOfBirth: 'date',
-    gender: 'string',
-    departmentName: 'string',
-    designationName: 'string'
+    description: 'string',
+    createdBy: 'string',
+    createdOn: 'date'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -42,9 +37,9 @@ export class EmployeeListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  employeeForm: FormGroup;
-  employeeList: any[] = [];
-  filteredEmployeeList: any[] = [];
+  departmentForm: FormGroup;
+  departmentList: any[] = [];
+  filteredDepartmentList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -65,8 +60,8 @@ export class EmployeeListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService) {
-    this.employeeForm = this.fb.group({
+  constructor(private fb: FormBuilder, private departmentService: DepartmentService, private toastService: ToastService) {
+    this.departmentForm = this.fb.group({
       searchTerm: '',
       sortByColumn: '',
       sortOrder: '',
@@ -84,23 +79,22 @@ export class EmployeeListComponent implements OnInit {
 
   fetchData() {
 
-    this.employeeService.getAllEmployees(this.payload).subscribe({
-      next: (response) => {
-        this.employeeList = response?.items || [];
+    this.departmentService.getAllDepartments(this.payload).subscribe(
+      (response) => {
+        this.departmentList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.filteredEmployeeList = this.employeeList;
+        this.filteredDepartmentList = this.departmentList;
         this.isLoading.set(false);
       },
-      error: (error) => {
+      (error) => {
         console.error('Error fetching designations:', error);
-        this.employeeList = this.filteredEmployeeList = [];
+        this.departmentList = this.filteredDepartmentList = [];
         this.isLoading.set(false);
       }
 
-    });
-
+    );
   }
 
   applySorting(column: string) {
@@ -125,7 +119,6 @@ export class EmployeeListComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
-    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -212,6 +205,21 @@ export class EmployeeListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  deleteDepartment() {
+    const confirmed = window.confirm('Are you sure you want to delete this department?');
+    if (confirmed) {
+      this.departmentService.deleteDepartment(1).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    }
   }
 
 }

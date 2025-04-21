@@ -2,9 +2,9 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Employee List</label>
-            <a routerLink="/employee/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Employee
+            <label class="text-center text-md fw-medium ms-3">Department List</label>
+            <a routerLink="/department/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add Department
             </a>
         </div>
 
@@ -22,7 +22,7 @@
             </div>
 
 
-            <div *ngIf="filteredEmployeeList.length > 0 || filters.length > 0" class="table-responsive ">
+            <div *ngIf="filteredDepartmentList.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
@@ -50,31 +50,23 @@
 
                     </thead>
                     <tbody>
-                        <tr *ngFor="let employee of filteredEmployeeList; let i = index" class="text-sm">
+                        <tr *ngFor="let department of filteredDepartmentList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ employee.name }}</td>
-                            <td>{{ employee.emailId }}</td>
-                            <td>{{ employee.dateOfJoin | date:"dd MMM, yyyy" }}</td>
-                            <td>{{ employee.dateOfBirth | date:"dd MMM, yyyy" }}</td>
-                            <td>{{employee.gender}}</td>
-                            <td>{{employee.departmentName}}</td>
-                            <td>{{employee.designationName}}</td>
+                            <td>{{ department.name }}</td>
+                            <td>{{ department.description }}</td>
+                            <td>{{ department.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+                            <td>{{department.createdBy}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/employee/details', employee.id]"
-                                    [state]="{ mode: 'view' }" 
-                                     class="icon-link"
-                                        title="View">
+                                    <a [routerLink]="['/department/details', department.id]" [state]="{ mode: 'view' }"
+                                        class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/employee/edit', employee.id]" 
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
+                                    <a [routerLink]="['/department/edit', department.id]" [state]="{ mode: 'edit' }"
+                                        class="icon-link" title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/employee/delete', employee.id]" class="icon-link"
-                                        title="Delete">
+                                    <a (click)="deleteDepartment()" class="icon-link" title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -85,7 +77,7 @@
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="filteredEmployeeList.length == 0 && !isLoading()"
+            <div *ngIf="filteredDepartmentList.length == 0 && !isLoading()"
                 class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
@@ -93,28 +85,29 @@
 
                 </div>
             </div>
-           <!-- Pagination -->
-           <div class="d-flex justify-content-between align-items-center">
-            <!-- Page Size Selector -->
-            <div class="d-flex align-items-center">
-                <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                    <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                </select>
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Page Size Selector -->
+                <div class="d-flex align-items-center">
+                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+                    </select>
+                </div>
+
+                <!-- Pagination Controls -->
+                <ul class="pagination mb-0 d-flex align-items-center">
+                    <li class="page-item" [class.disabled]="pageNumber === 1">
+                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
+                    </li>
+                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
+                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+                    </li>
+                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+                    </li>
+                </ul>
             </div>
 
-            <!-- Pagination Controls -->
-            <ul class="pagination mb-0 d-flex align-items-center">
-                <li class="page-item" [class.disabled]="pageNumber === 1">
-                    <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                </li>
-                <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                    <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                </li>
-                <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                    <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                </li>
-            </ul>
-        </div>
         </div>
     </div>
 </div>
@@ -129,12 +122,15 @@
         <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
 
         <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
-            <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains
+            </option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
             <option value="Equal">Equal</option>
             <option value="NotEqual">Not Equal</option>
-            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
-            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater
+                Than</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than
+            </option>
         </select>
 
         <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"

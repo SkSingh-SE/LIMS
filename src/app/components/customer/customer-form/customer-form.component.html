@@ -1,0 +1,671 @@
+<div class="card shadow-lg">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="text-center">Customer Basic Information</h6>
+    </div>
+    <div class="card-body ">
+        <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+            <div class="row gy-1">
+                <!-- Customer Name -->
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control " formControlName="name" placeholder="Enter Customer Name"
+                        [ngClass]="{ 'is-invalid': customerForm.get('name')?.touched && customerForm.get('name')?.invalid }" />
+                    <div *ngIf="customerForm.get('name')?.touched && customerForm.get('name')?.invalid"
+                        class="text-danger text-sm">
+                        Name is required.
+                    </div>
+                    
+                </div>
+                <!-- Tally Ledger Name -->
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Tally Ledger Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control " formControlName="tallyLedgerName"
+                        placeholder="Enter Tally Ledger Name"
+                        [ngClass]="{ 'is-invalid': customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid }" />
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input mt-1 " formControlName="sameAsCustomerName"
+                                id="sameAsCustomerName" (click)="copyCustomerNameToLedgerName($event)" />
+                            <label class="form-check-label" for="sameAsCustomerName" >Same as Customer Name</label>
+                        </div>
+                    <div *ngIf="customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid"
+                        class="text-danger text-sm">Tally Ledger Name is required.</div>
+                </div>
+
+                <!-- Customer Type -->
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Customer Type <span class="text-danger">*</span></label>
+                    <select class="form-control form-select " formControlName="customerTypeID"
+                        [ngClass]="{ 'is-invalid': customerForm.get('customerTypeID')?.touched && customerForm.get('customerTypeID')?.invalid }">
+                        <option value="0">Select Type</option>
+                        <option *ngFor="let type of customerTypes" [value]="type.id">{{ type.name }}</option>
+                    </select>
+                    <div *ngIf="customerForm.get('customerTypeID')?.touched && customerForm.get('customerTypeID')?.value == 0"
+                        class="text-danger text-sm">Customer type is required.</div>
+                </div>
+
+                <!-- GST No -->
+                <div class="col-6 col-md-3">
+                    <label class="form-label">GST No <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control " formControlName="gstNo" placeholder="Enter GST No." />
+                    <div *ngIf="customerForm.get('gstNo')?.touched && !customerForm.get('gstna')?.value && customerForm.get('gstNo')?.invalid"
+                        class="text-danger text-sm">Invalid GST No.</div>
+                    <div class="form-check mt-1">
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="gstna" id="gstna" />
+                        <label class="form-check-label" for="gstna">GST not applicable</label>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="row mb-1">
+                <!-- Address -->
+                <div class=" col-md-4 col-lg-3">
+                    <label class="form-label">Address <span class="text-danger">*</span></label>
+                    <textarea class="form-control" formControlName="address" rows="4"
+                        placeholder="Enter Address"></textarea>
+                </div>
+                <div class="col">
+                    <div class="row">
+                        <!-- PIN Code -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">PIN Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" formControlName="pinCode" maxlength="6"
+                                appNumberOnly (input)="fetchAreaData('pinCode',true)"
+                                placeholder="Enter PIN Code"
+                                [ngClass]="{'is-invalid': customerForm.get('pinCode')?.touched && customerForm.get('pinCode')?.invalid}" />
+                            <span *ngIf="customerForm.get('pinCode')?.invalid && customerForm.get('pinCode')?.touched"
+                                class="text-danger text-sm">PIN Code is required.</span>
+                        </div>
+
+                        <!-- Area -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Area <span class="text-danger">*</span></label>
+                            <select class="form-control form-select" formControlName="areaID"
+                                (change)="fetchLocationData('areaID', 'city', 'state', 'country')">
+                                <option value=0>Select Area</option>
+                                <option *ngFor="let area of areas" [value]="area.areaId">{{ area.areaName }}</option>
+                            </select>
+                            <span *ngIf="customerForm.get('areaID')?.invalid && customerForm.get('areaID')?.touched"
+                                class="text-danger text-sm">Area is required.</span>
+                        </div>
+
+                        <!-- City -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">City <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" formControlName="city" placeholder="City" readonly
+                                [ngClass]="{'is-invalid': customerForm.get('city')?.touched && customerForm.get('city')?.invalid}" />
+                            <span *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched"
+                                class="text-danger text-sm">City is required.</span>
+                        </div>
+
+                        <!-- State -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">State <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" formControlName="state" placeholder="State" readonly
+                                [ngClass]="{'is-invalid': customerForm.get('state')?.touched && customerForm.get('state')?.invalid}" />
+                            <span *ngIf="customerForm.get('state')?.invalid && customerForm.get('state')?.touched"
+                                class="text-danger text-sm">State is required.</span>
+                        </div>
+
+                        <!-- Country -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Country <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" formControlName="country" placeholder="Country"
+                                readonly
+                                [ngClass]="{'is-invalid': customerForm.get('country')?.touched && customerForm.get('country')?.invalid}" />
+                            <span *ngIf="customerForm.get('country')?.invalid && customerForm.get('country')?.touched"
+                                class="text-danger text-sm">Country is required.</span>
+                        </div>
+                        <!-- Sample Return -->
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Sample Return <span class="text-danger">*</span></label><br />
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn"
+                                    [value]="true" id="sampleYes" />
+                                <label class="form-check-label" for="sampleYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn"
+                                    [value]="false" id="sampleNo" />
+                                <label class="form-check-label" for="sampleNo">No</label>
+                            </div>
+                            <div *ngIf="customerForm.get('sampleReturn')?.touched && customerForm.get('sampleReturn')?.invalid"
+                                class="text-danger text-sm">Please select sample return option.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dispatch Mode -->
+            <div class="row gy-3 align-items-center mb-2">
+                <div class="col-12 col-md-3">
+                    <label class="form-label mb-0">Dispatch Mode <span class="text-danger">*</span></label>
+                </div>
+
+                <div class="col-12 col-md-9">
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check form-check-inline" *ngFor="let mode of dispatchModes">
+                            <input class="form-check-input mt-1" type="checkbox" [value]="mode.id"
+                                (change)="onDispatchModeChange($event)"
+                                [checked]="selectedDispatchModes.includes(mode.id)" />
+                            <label class="form-check-label">{{ mode.name }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div formArrayName="contactPersons">
+                <div *ngIf="contact1" [formGroup]="contact1" class="mb-2">
+                    <label class="text-danger fw-bold border-bottom border-danger">Contact Info 1</label>
+                    <div class="row gx-3 gy-3 align-items-end">
+                        <!-- Salutation -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label d-block mb-2">Salutation:</label>
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <div class="form-check form-check-inline"
+                                    *ngFor="let sal of ['Mr.', 'Mrs.', 'Ms.', 'Dr']; let j = index">
+                                    <input class="form-check-input mt-1" type="radio" [value]="sal"
+                                        formControlName="salutation" [id]="'salutation' + sal+ 'contact1'">
+                                    <label class="form-check-label" [for]="'salutation' + sal + 'contact1'">{{
+                                        sal
+                                        }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Contact Person -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Contact Person:</label>
+                            <input type="text" class="form-control" formControlName="name"
+                                placeholder="Enter Contact Person" />
+                        </div>
+
+                        <!-- Mobile -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Mobile No:</label>
+                            <input type="text" class="form-control" formControlName="mobileNo"
+                                placeholder="Enter Mobile No." />
+                        </div>
+
+                        <!-- Telephone -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Telephone No:</label>
+                            <input type="text" class="form-control" formControlName="telephoneNo"
+                                placeholder="Enter Telephone No" />
+                        </div>
+                    </div>
+
+                    <div class="row gx-3 gy-3">
+                        <!-- Delivery Address -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Delivery Address:</label>
+                            <textarea class="form-control" formControlName="billReportDeliveryAddress"
+                                placeholder="Enter Your Delivery Address" rows="4"></textarea>
+                        </div>
+                        <div class="col-6 col-md-8 col-lg-9">
+                            <div class="row">
+                                <!-- Email -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Email:</label>
+                                    <input type="email" class="form-control" formControlName="emailId"
+                                        placeholder="Enter Email" />
+                                </div>
+
+                                <!-- Department -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Department:</label>
+                                    <select class="form-select" formControlName="departmentID">
+                                        <option value="0" disabled>Select Department</option>
+                                        <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name
+                                            }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Bill / Report -->
+                                <div class="col-12 col-md-6 col-lg-4 d-flex align-items-center gap-4 mt-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox" formControlName="sendBill"
+                                            [id]="'sendBill' + 'contact1'">
+                                        <label class="form-check-label"
+                                            [for]="'sendBill' + 'contact1'">Bill</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox"
+                                            formControlName="sendReport" [id]="'sendReport' + 'contact1'">
+                                        <label class="form-check-label"
+                                            [for]="'sendReport' +  'contact1'">Report</label>
+                                    </div>
+                                </div>
+
+                                <!-- WhatsApp -->
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">WhatsApp <span class="text-danger">*</span></label><br />
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="true"
+                                            formControlName="isWhatsappNo" [id]="'whatsappYes' + 'contact1'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappYes' + 'contact1'">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="false"
+                                            formControlName="isWhatsappNo" [id]="'whatsappNo' + 'contact1'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappNo' + 'contact1'">No</label>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="contact2" [formGroup]="contact2" class="mb-3">
+                    <label class="text-danger fw-bold border-bottom border-danger">Contact Info 2</label>
+                    <div class="row gx-3 gy-3 align-items-end">
+                        <!-- Salutation -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label d-block mb-2">Salutation:</label>
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <div class="form-check form-check-inline"
+                                    *ngFor="let sal of ['Mr.', 'Mrs.', 'Ms.', 'Dr']; let j = index">
+                                    <input class="form-check-input mt-1" type="radio" [value]="sal"
+                                        formControlName="salutation" [id]="'salutation' + sal+ 'contact2' ">
+                                    <label class="form-check-label" [for]="'salutation' + sal + 'contact2'">{{
+                                        sal
+                                        }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Contact Person -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Contact Person:</label>
+                            <input type="text" class="form-control" formControlName="name"
+                                placeholder="Enter Contact Person" />
+                        </div>
+
+                        <!-- Mobile -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Mobile No:</label>
+                            <input type="text" class="form-control" formControlName="mobileNo"
+                                placeholder="Enter Mobile No." />
+                        </div>
+
+                        <!-- Telephone -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Telephone No:</label>
+                            <input type="text" class="form-control" formControlName="telephoneNo"
+                                placeholder="Enter Telephone No" />
+                        </div>
+                    </div>
+
+                    <div class="row gx-3 gy-3">
+                        <!-- Delivery Address -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Delivery Address:</label>
+                            <textarea class="form-control" formControlName="billReportDeliveryAddress"
+                                placeholder="Enter Your Delivery Address" rows="4"></textarea>
+                        </div>
+                        <div class="col-6 col-md-8 col-lg-9">
+                            <div class="row">
+                                <!-- Email -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Email:</label>
+                                    <input type="email" class="form-control" formControlName="emailId"
+                                        placeholder="Enter Email" />
+                                </div>
+
+                                <!-- Department -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Department:</label>
+                                    <select class="form-select" formControlName="departmentID">
+                                        <option value="0" disabled>Select Department</option>
+                                        <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name
+                                            }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Bill / Report -->
+                                <div class="col-12 col-md-6 col-lg-4 d-flex align-items-center gap-4 mt-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox" formControlName="sendBill"
+                                            [id]="'sendBill' + 'contact2'">
+                                        <label class="form-check-label"
+                                            [for]="'sendBill' + 'contact2'">Bill</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox"
+                                            formControlName="sendReport" [id]="'sendReport' + 'contact2'">
+                                        <label class="form-check-label"
+                                            [for]="'sendReport' +  'contact2'">Report</label>
+                                    </div>
+                                </div>
+
+                                <!-- WhatsApp -->
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">WhatsApp <span class="text-danger">*</span></label><br />
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="true"
+                                            formControlName="isWhatsappNo" [id]="'whatsappYes' + 'contact2'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappYes' + 'contact2'">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="false"
+                                            formControlName="isWhatsappNo" [id]="'whatsappNo' + 'contact2'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappNo' + 'contact2'">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="accountant" [formGroup]="accountant" class="mb-3 ">
+                    <label class="text-danger fw-bold border-bottom border-danger">Account Info</label>
+                    <div class="row gx-3 gy-3 align-items-end ">
+                        <!-- Salutation -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label d-block mb-2">Salutation:</label>
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <div class="form-check form-check-inline"
+                                    *ngFor="let sal of ['Mr.', 'Mrs.', 'Ms.', 'Dr']; let j = index">
+                                    <input class="form-check-input mt-1" type="radio" [value]="sal"
+                                        formControlName="salutation" [id]="'salutation' + sal+ 'account' ">
+                                    <label class="form-check-label"
+                                        [for]="'salutation' + sal + 'account'">{{ sal
+                                        }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Contact Person -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Contact Person:</label>
+                            <input type="text" class="form-control" formControlName="name"
+                                placeholder="Enter Contact Person" />
+                        </div>
+
+                        <!-- Mobile -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Mobile No:</label>
+                            <input type="text" class="form-control" formControlName="mobileNo"
+                                placeholder="Enter Mobile No." />
+                        </div>
+
+                        <!-- Telephone -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Telephone No:</label>
+                            <input type="text" class="form-control" formControlName="telephoneNo"
+                                placeholder="Enter Telephone No" />
+                        </div>
+                    </div>
+
+                    <div class="row gx-3 gy-3">
+                        <!-- Delivery Address -->
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label">Delivery Address:</label>
+                            <textarea class="form-control" formControlName="billReportDeliveryAddress"
+                                placeholder="Enter Your Delivery Address" rows="4"></textarea>
+                        </div>
+                        <div class="col-6 col-md-8 col-lg-9">
+                            <div class="row">
+                                <!-- Email -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Email:</label>
+                                    <input type="email" class="form-control" formControlName="emailId"
+                                        placeholder="Enter Email" />
+                                </div>
+
+                                <!-- Department -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Department:</label>
+                                    <select class="form-select" formControlName="departmentID">
+                                        <option value="0" disabled>Select Department</option>
+                                        <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name
+                                            }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Bill / Report -->
+                                <div class="col-12 col-md-6 col-lg-4 d-flex align-items-center gap-4 mt-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox" formControlName="sendBill"
+                                            [id]="'sendBill' + 'account'">
+                                        <label class="form-check-label"
+                                            [for]="'sendBill' + 'account'">Bill</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input mt-1" type="checkbox"
+                                            formControlName="sendReport" [id]="'sendReport' + 'account'">
+                                        <label class="form-check-label"
+                                            [for]="'sendReport' +  'account'">Report</label>
+                                    </div>
+                                </div>
+
+                                <!-- WhatsApp -->
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">WhatsApp <span class="text-danger">*</span></label><br />
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="true"
+                                            formControlName="isWhatsappNo"
+                                            [id]="'whatsappYes' + 'account'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappYes' + 'account'">Yes</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input mt-1" type="radio" [value]="false"
+                                            formControlName="isWhatsappNo" [id]="'whatsappNo' + 'account'">
+                                        <label class="form-check-label"
+                                            [for]="'whatsappNo' + 'account'">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" formArrayName="contactPersons">
+                <!-- Dynamic Multi Contacts -->
+                <ng-container>
+                    <!-- Add Contact Button -->
+                    <div class="text-end mb-1">
+                        <button type="button" class="btn btn-primary" (click)="addContact()">
+                            <i class="bi bi-plus-circle"></i> Add Contact
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <label class="text-danger fw-bold border-bottom border-danger mb-2">Multi Contacts</label>
+                        <table class="table table-light table-borderless">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Contact Person</th>
+                                    <th>Department</th>
+                                    <th>Email</th>
+                                    <th>Mobile</th>
+                                    <th>Address</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ng-container *ngFor="let contact of contactPersonsArray.controls; let i = index">
+                                    <tr [formGroupName]="i" *ngIf="contact.get('type')?.value === 'dynamic'">
+
+                                        <td><input class="form-control" formControlName="name"
+                                                placeholder="Enter Contact Person" /></td>
+                                        <td>
+                                            <select formControlName="departmentID" class="form-select">
+                                                <option value="0" disabled>Select Department</option>
+                                                <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name
+                                                    }}</option>
+                                            </select>
+                                        </td>
+                                        <td><input class="form-control" formControlName="emailId"
+                                                placeholder="Enter Email" /></td>
+                                        <td><input class="form-control" formControlName="mobileNo"
+                                                placeholder="Enter Mobile No" /></td>
+                                        <td><textarea class="form-control" formControlName="billReportDeliveryAddress"
+                                                placeholder="Enter Address" rows="2"></textarea>
+                                        </td>
+                                        <td class="text-center">
+                                            <a (click)="removeDynamicContact(contact)" class="icon-link" title="Delete">
+                                                <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- Account Section -->
+            <div class="border-top mb-1">
+                <label class="text-danger fw-bold border-bottom border-danger">Account</label>
+                <div class="row g-3 mb-2">
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">Special Accounting Case</label>
+                        <input type="text" class="form-control" placeholder="Enter special accounting case"
+                            formControlName="specialAccountingCase" />
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">Credit Limit Amount</label>
+                        <input type="text" class="form-control" placeholder="Enter credit limit amount"
+                            formControlName="creditLimitAmount" />
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">Credit Limit Time</label>
+                        <select class="form-select" formControlName="creditLimitTime">
+                            <option value=0>Select Days</option>
+                            <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox" formControlName="constantDiscount" />
+                            <label class="form-label text-center">Constat Discount</label>
+                        </div>
+                        <select *ngIf="customerForm.get('constantDiscount')?.value" class="form-select" formControlName="constantDiscountPercentage">
+                            <option value=0>Select Discount</option>
+                            <option *ngFor="let d of discountOptions" [value]="d.value">{{ d.name }}</option>
+                        </select>
+                    </div>
+
+
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox" formControlName="weeklyBillingCustomer" />
+                            <label class="form-check-label">Weekly Billing Customer</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox" formControlName="monthlyBillingCustomer" />
+                            <label class="form-check-label">Monthly Billing Customer</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox"
+                                formControlName="directTaxInvoiceNoPerforma" />
+                            <label class="form-check-label">Direct Tax Invoice, No Performa Invoice</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox" formControlName="billingEvery" />
+                            <label class="form-check-label">Billing Days</label>
+                        </div>
+                        <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select mt-2" formControlName="billingEveryDays">
+                            <option value=0>Select Days</option>
+                            <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox"
+                                formControlName="performaInvoiceRequiredBeforeTesting" />
+                            <label class="form-check-label">Performa Invoice Required before testing.</label>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- D-Testo Section -->
+            <div class="border-top mb-1">
+                <label class="text-danger fw-bold border-bottom border-danger">D-Testo</label>
+                <div class="row g-3 mb-1">
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">D-Testo Login Id:</label>
+                        <input type="text" class="form-control mt-1" placeholder="Enter D-Testo Login Id"
+                            formControlName="dTestoLoginId" />
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">D-Testo Login Password:</label>
+                        <input type="password" class="form-control mt-1" placeholder="Enter Password"
+                            formControlName="dTestoPassword" />
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label d-block">D-Testo Login Active:</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input mt-1" type="radio" value="true"
+                                formControlName="dTestoActive" id="dTestoActiveYes" />
+                            <label class="form-check-label" for="dTestoActiveYes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input mt-1" type="radio" value="false"
+                                formControlName="dTestoActive" id="dTestoActiveNo" />
+                            <label class="form-check-label" for="dTestoActiveNo">No</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label d-block">Company Verified:</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input mt-1" type="radio" value="true"
+                                formControlName="companyVerified" id="companyVerifiedYes" />
+                            <label class="form-check-label" for="companyVerifiedYes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input mt-1" type="radio" value="false"
+                                formControlName="companyVerified" id="companyVerifiedNo" />
+                            <label class="form-check-label" for="companyVerifiedNo">No</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-1">
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input mt-1" type="checkbox" formControlName="blockDTestoUser"
+                                id="blockDTestoUser" />
+                            <label class="form-check-label" for="blockDTestoUser">Block D-Testo user</label>
+                        </div>
+                    </div>
+                    <div *ngIf="customerForm.get('blockDTestoUser')?.value" class="col-6 col-md-4 col-lg-3">
+                        <label class="form-label">Block Reason</label>
+                        <input type="password" class="form-control mt-1" placeholder="Enter Reason"
+                            formControlName="blockReason" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mb-1">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>

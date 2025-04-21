@@ -66,12 +66,25 @@ body {
     height: 47px !important;
 }
 
-.form-control {
-    color: rgb(143, 143, 143) !important;
+.form-select::placeholder,
+.form-control::placeholder,
+textarea::placeholder,
+input[type="date"]::placeholder,
+select:invalid {
+  color: #6B7280 !important;
+  font-size: 14px !important;
+    font-weight: 400 !important;
 }
 
-select {
-    font-size: 14px;
-    /* Adjust font size */
-    color: rgb(143, 143, 143);
+.form-control, .form-select {
+    font-size: 14px !important;
+    color: #6B7280 !important;
+    font-weight: 400 !important;
 }
+.form-check-input:checked {
+    background-color: transparent !important;
+    border-color: #FF2C1F !important;
+}
+
+
+

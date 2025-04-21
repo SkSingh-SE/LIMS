@@ -1,12 +1,14 @@
 #btn-back-to-top {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 60px;
+  right: 40px;
   display: block;
   z-index: 1000;
   transition: opacity 0.3s ease-in-out;
+  opacity: 0.5;
 }
 
 #btn-back-to-top:hover {
   opacity: 0.8;
+  background-color: #fe0303;
 }

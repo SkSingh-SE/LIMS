@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, Renderer2, signal, ViewChild } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import { ListDesignationComponent } from '../designation/list-designation/list-designation.component';
 import { AuthService } from '../../services/auth.service';
 
@@ -20,7 +20,7 @@ interface MenuItem {
 
 @Component({
   selector: 'app-navbar',
-  imports: [CommonModule],
+  imports: [CommonModule,RouterModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
@@ -57,10 +57,9 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-people',
       isExpanded: false,
       submenu: [
-        { title: 'User Master', route: '/administration/user-master', color: this.getRandomColor() },
-        { title: 'Department Master', route: '/administration/department-master', color: this.getRandomColor() },
-        { title: 'Employee Master', route: '/administration/employee-master', color: this.getRandomColor() },
-        { title: 'Designation Master', route: '/administration/designation-master', color: this.getRandomColor() },
+        { title: 'Department Master', route: '/department', color: this.getRandomColor() },
+        { title: 'Employee Master', route: '/employee', color: this.getRandomColor() },
+        { title: 'Designation Master', route: '/designation', color: this.getRandomColor() },
         { title: 'Role Master', route: '/administration/role-master', color: this.getRandomColor() },
         { title: 'Country Master', route: '/administration/country-master', color: this.getRandomColor() },
         { title: 'State Master', route: '/administration/state-master', color: this.getRandomColor() },

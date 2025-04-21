@@ -1,0 +1,13 @@
+.mat-form-field-small .mat-form-field-wrapper {
+  padding-bottom: 0.25em;
+  font-size: 0.75rem;
+  min-height: 32px;
+}
+
+.mat-form-field-small .mat-select-trigger {
+  height: 32px;
+  line-height: 32px;
+  font-size: 0.75rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}

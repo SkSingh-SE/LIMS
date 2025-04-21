@@ -13,12 +13,32 @@ export class NumberOnlyDirective {
   }
 
   @HostListener('keydown', ['$event']) onKeyDown(event: KeyboardEvent) {
-    const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
-    if (allowedKeys.includes(event.key)) return;
+    const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Control', 'v', 'c', 'x'];
+    const ctrlCmd = event.ctrlKey || event.metaKey;
 
-    if (!/^\d$/.test(event.key)) {
-      event.preventDefault(); // Blocks non-numeric keys
+    // Allow Ctrl+C, Ctrl+V, Ctrl+X
+    if (
+      ctrlCmd &&
+      ['c', 'v', 'x', 'a'].includes(event.key.toLowerCase())
+    ) {
+      return;
     }
+
+    // Allow navigation and backspace
+    if (allowedKeys.includes(event.key)) {
+      return;
+    }
+
+    // Block non-digit characters
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  @HostListener('paste', ['$event']) onPaste(event: ClipboardEvent) {
+    const pastedInput: string = (event.clipboardData?.getData('text/plain') ?? '').replace(/[^0-9]/g, '');
+    event.preventDefault();
+    document.execCommand('insertText', false, pastedInput);
   }
 
 }

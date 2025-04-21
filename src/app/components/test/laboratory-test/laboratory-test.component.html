@@ -1,0 +1,74 @@
+<div class="m-2">
+    <div class="card shadow rounded">
+        <div class="card-header bg-danger text-white fw-semibold fs-6">
+            Create Laboratory Test
+        </div>
+        <div class="card-body">
+            <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Department <span class="text-danger">*</span></label>
+                        <input type="text" formControlName="department" class="form-control"
+                            placeholder="Enter Department" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Test Group <span class="text-danger">*</span></label>
+                        <input type="text" formControlName="testGroup" class="form-control"
+                            placeholder="Enter Test Group" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Test Sub Group <span class="text-danger">*</span></label>
+                        <input type="text" formControlName="testSubGroup" class="form-control"
+                            placeholder="Enter Test Sub Group" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Test Type <span class="text-danger">*</span></label>
+                        <select formControlName="testType" class="form-select">
+                            <option value="">-- Select Test Type --</option>
+                            <option *ngFor="let type of testTypes" [value]="type">{{ type }}</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Invoice Case <span class="text-danger">*</span></label>
+                        <div #dropdownContainer class="position-relative">
+                          <button class="btn btn-outline-secondary w-100 text-start" type="button" (click)="toggleDropdown()">
+                            <span *ngIf="labTestForm.get('invoiceCase')?.value?.length; else noInvoiceCases">
+                              {{ labTestForm.get('invoiceCase')?.value.join(', ') }}
+                            </span>
+                            <ng-template #noInvoiceCases>Select Invoice Cases</ng-template>
+                          </button>
+                          <ul *ngIf="dropdownOpen" class="dropdown-menu show w-100" style="max-height: 200px; overflow-y: auto; display: block; position: absolute; top: 100%; left: 0; z-index: 1000;">
+                            <li *ngFor="let caseItem of invoiceCases" class="dropdown-item">
+                              <div class="">
+                                <input class="form-check-input" type="checkbox" [id]="caseItem" [checked]="isInvoiceCaseSelected(caseItem)" (change)="toggleInvoiceCase(caseItem)" />
+                                <label class="form-check-label ms-2" [for]="caseItem">{{ caseItem }}</label>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Test Charge <span class="text-danger">*</span></label>
+                        <input type="number" formControlName="testCharge" class="form-control" placeholder="₹ Amount" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Sample Size Required <span class="text-danger">*</span></label>
+                        <input type="text" formControlName="sampleSizeRequired" class="form-control"
+                            placeholder="Size (g/mL)" />
+                    </div>
+                </div>
+
+          <div class="text-end mt-4">
+            <button type="submit" class="btn btn-danger" [disabled]="labTestForm.invalid">Save Test</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>

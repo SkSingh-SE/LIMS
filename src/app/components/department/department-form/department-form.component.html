@@ -1,0 +1,84 @@
+<!-- Modal for Add/Edit/Update Department -->
+<div id="departmentModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+  aria-labelledby="departmentModalLabel" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="departmentModalLabel">
+          {{formTitle}}
+        </label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+            <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Department"
+              required
+              [ngClass]="{'is-invalid': departmentForm.get('name')?.touched && departmentForm.get('name')?.invalid}"
+              [attr.disabled]="isViewMode ? true : null" />
+            <span *ngIf="departmentForm.get('name')?.invalid && departmentForm.get('name')?.touched"
+              class="text-danger text-sm">
+              Name is required.
+            </span>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <input type="text" id="description" class="form-control" formControlName="description"
+              placeholder="Enter Department Description" required [attr.disabled]="isViewMode ? true : null" />
+          </div>
+        </div>
+        <div *ngIf="!isViewMode" class="modal-footer">
+          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="departmentForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- <div class="d-flex justify-content-center align-items-center form-size bg-light">
+    <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px; border-radius: 1rem;">
+      <h5 class="mb-3 text-center text-danger">Department Details</h5>
+  
+      <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="name" class="form-label">Name</label>
+          <input
+            type="text"
+            id="name"
+            class="form-control"
+            formControlName="name"
+            placeholder="Enter department name"
+          />
+          <div class="text-danger small" *ngIf="departmentForm.get('name')?.touched && departmentForm.get('name')?.invalid">
+            Name is required.
+          </div>
+        </div>
+  
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <input
+            type="text"
+            id="description"
+            class="form-control"
+            formControlName="description"
+            placeholder="Enter description"
+          />
+          <div class="text-danger small" *ngIf="departmentForm.get('description')?.touched && departmentForm.get('description')?.invalid">
+            Description is required.
+          </div>
+        </div>
+  
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="departmentForm.invalid">Save</button>
+        </div>
+      </form>
+    </div>
+  </div> -->

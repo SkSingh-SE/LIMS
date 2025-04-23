@@ -17,6 +17,8 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { CompanyCategoryService } from '../../../services/company-category.service';
 import { ToastService } from '../../../services/toast.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DispatchModeService } from '../../../services/dispatch-mode.service';
 
 @Component({
   selector: 'app-customer-form',
@@ -30,7 +32,7 @@ export class CustomerFormComponent implements OnInit {
   customerForm!: FormGroup;
   areas: any[] = [];
   departments: any[] = [];
-  customerTypes: any[] = ['Walk in','Credit Customer'];
+  customerTypes: any[] = ['Walk in', 'Credit Customer'];
   companyCategory: any[] = [];
   dispatchModes = [
     { id: 1, name: 'Email' },
@@ -55,20 +57,33 @@ export class CustomerFormComponent implements OnInit {
     { value: 'No GST applicable', name: 'No GST applicable' },
     { value: 'Bill in $', name: 'Bill in $' },
     { value: 'Govt X% GST', name: 'Govt X% GST' },
-  ];  
+  ];
   isViewMode: boolean = false;
   selectedCompanyCategoryIds: number[] = [];
-
+  customerId: number = 0;
   constructor(
     private fb: FormBuilder,
     private employeeService: EmployeeService,
     private customerService: CustomerService,
     private departmentService: DepartmentService,
     private companyCategoryService: CompanyCategoryService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private route: ActivatedRoute, private router: Router,
+    private dispatchModeService: DispatchModeService
   ) { }
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      this.customerId = Number(params.get('id'));
+    });
+    const state = history.state as { mode?: string };
+
+    if (state && state.mode === 'view') {
+      this.isViewMode = true;
+    } else {
+      this.isViewMode = false;
+    }
+
     this.customerForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
       legalName: [''],
@@ -80,7 +95,7 @@ export class CustomerFormComponent implements OnInit {
       state: ['', [Validators.required]],
       country: ['', [Validators.required]],
       pinCode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
-      customerType: ['',[Validators.required]],
+      customerType: ['', [Validators.required]],
       isBlock: [false],
       industryID: [0],
       gstNo: ['', [Validators.required,
@@ -112,11 +127,19 @@ export class CustomerFormComponent implements OnInit {
       blockReason: [''],
       contactPersons: this.fb.array([]),
       customerCompanyCategories: this.fb.array([], Validators.required),
-      customerDispatchModes: this.fb.array([],Validators.required),
+      customerDispatchModes: this.fb.array([], Validators.required),
     });
 
     this.initFixedContacts();
     this.fetchCompanyCategoryDropdown();
+    this.fetchDispatchModeDropdown();
+
+    if (this.isViewMode) {
+      this.customerForm.disable();
+    }
+    if (this.customerId) {
+      this.loadCustomer();
+    }
   }
 
   /* ===== FormArray Getters ===== */
@@ -170,7 +193,7 @@ export class CustomerFormComponent implements OnInit {
       name: ['', isRequired ? Validators.required : []],
       departmentID: [0],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
-      mobileNo: ['', isRequired ? [Validators.required,  Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)] : [Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)]],
+      mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)] : [Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)]],
       isWhatsappNo: [false],
       telephoneNo: [''],
       sendBill: [false],
@@ -198,7 +221,7 @@ export class CustomerFormComponent implements OnInit {
     this.customerForm.markAllAsTouched();
     console.log('Form Submitted', this.customerForm.value);
     if (this.customerForm.valid) {
-     this.customerService.createCustomer(this.customerForm.value).subscribe({
+      this.customerService.createCustomer(this.customerForm.value).subscribe({
         next: resp => {
           this.toastService.show(resp.message, 'success');
         },
@@ -208,10 +231,10 @@ export class CustomerFormComponent implements OnInit {
       });
     }
     this.logInvalidControls(this.customerForm);
-    
+
   }
 
- 
+
 
   /* ===== Area / Location ===== */
   fetchAreaData(pinControl: string, updateOtherFields: boolean = false): void {
@@ -249,6 +272,16 @@ export class CustomerFormComponent implements OnInit {
       }
     });
   }
+  fetchDispatchModeDropdown(): void {
+    this.dispatchModeService.getDispatchModeDropdown('', 0, 100).subscribe({
+      next: resp => {
+        this.dispatchModes = resp;
+      },
+      error: err => {
+        console.error('Error fetching dispatch modes', err);
+      }
+    });
+  }
   copyCustomerNameToLedgerName(event: MouseEvent): void {
     const target = event.target as HTMLInputElement;
     if (target && target.type === 'checkbox') {
@@ -263,7 +296,7 @@ export class CustomerFormComponent implements OnInit {
   getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.departmentService.getDepartmentDropdown(term, page, pageSize);
   };
-  
+
   onDepartmentSelected(item: any, targetFormGroup: FormGroup) {
     targetFormGroup.patchValue({ departmentID: item.id });
   }
@@ -274,9 +307,9 @@ export class CustomerFormComponent implements OnInit {
   onCategoryToggle(event: Event) {
     const checkbox = event.target as HTMLInputElement;
     const id = +checkbox.value;
-  
+
     const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
-  
+
     if (checkbox.checked) {
       const exists = formArray.controls.some(ctrl => ctrl.get('companyCategoryID')?.value === id);
       if (!exists) {
@@ -294,9 +327,9 @@ export class CustomerFormComponent implements OnInit {
   onDispatchModeToggle(event: Event) {
     const checkbox = event.target as HTMLInputElement;
     const id = +checkbox.value;
-  
+
     const formArray = this.customerForm.get('customerDispatchModes') as FormArray;
-  
+
     if (checkbox.checked) {
       const exists = formArray.controls.some(ctrl => ctrl.get('dispatchModeID')?.value === id);
       if (!exists) {
@@ -310,8 +343,8 @@ export class CustomerFormComponent implements OnInit {
     }
     formArray.markAsTouched();
   }
-  
-  
+
+
   isCategorySelected(id: number): boolean {
     const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
     return formArray.controls.some(ctrl => ctrl.get('companyCategoryID')?.value === id);
@@ -321,17 +354,17 @@ export class CustomerFormComponent implements OnInit {
     return this.customerDispatchModesArray.controls
       .some(ctrl => ctrl.get('dispatchModeID')?.value === id);
   }
-  
-  
+
+
   getSelectedCategories() {
     const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
     const selectedIds = formArray.controls.map(ctrl => ctrl.get('companyCategoryID')?.value);
     return this.companyCategory.filter(cat => selectedIds.includes(cat.id));
   }
-  
+
   getSelectedCategoriesText(): string {
     const selected = this.getSelectedCategories();
-  
+
     if (selected.length === 1) {
       return selected[0].name;
     } else if (selected.length > 1) {
@@ -339,7 +372,7 @@ export class CustomerFormComponent implements OnInit {
     }
     return '';
   }
-  
+
   createCompanyCategory(companyCategoryID: number): FormGroup {
     return this.fb.group({
       id: [0],
@@ -354,12 +387,12 @@ export class CustomerFormComponent implements OnInit {
       dispatchModeID: [dispatchModeID]
     });
   }
-  
+
   logInvalidControls(formGroup: FormGroup, parentKey: string = ''): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
-  
+
       if (control instanceof FormGroup) {
         this.logInvalidControls(control, fullKey); // Recursive for nested groups
       } else if (control instanceof FormArray) {
@@ -371,5 +404,18 @@ export class CustomerFormComponent implements OnInit {
       }
     });
   }
-  
+
+  loadCustomer(): void {
+    this.customerService.getCustomerById(this.customerId).subscribe({
+      next: (response) => {
+        this.customerForm.patchValue(response);
+        this.customerForm.get('contactPersons')?.patchValue(response.contactPersons);
+        this.customerForm.get('customerCompanyCategories')?.setValue(response.customerCompanyCategories);
+        this.customerForm.get('customerDispatchModes')?.setValue(response.customerDispatchModes);
+      },
+      error: (error) => {
+        console.error('Error fetching customer data:', error);
+      }
+    });
+  }
 }

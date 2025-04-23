@@ -1,6 +1,6 @@
 <div class="position-relative w-100">
-    <label for="exampleDataList" class="form-label">{{labelName}} <span *ngIf="required" class="text-danger">*</span></label>
-    <input type="text" id="exampleDataList" class="form-control" [placeholder]="placeholder" name="searchInput" [(ngModel)]="selectedLabel"
+    <label *ngIf="!hideLabel" [for]="randomId" class="form-label">{{labelName}} <span *ngIf="required" class="text-danger">*</span></label>
+    <input type="text" [id]="randomId" class="form-control" [placeholder]="placeholder" name="searchInput" [(ngModel)]="selectedLabel"
         [required]="required" #inputRef="ngModel"
         [ngClass]="{ 'is-invalid': required && inputRef.invalid && inputRef.touched }"
         [disabled]="isDisabled"

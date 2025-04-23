@@ -10,8 +10,10 @@ import { DepartmentListComponent } from './components/department/department-list
 import { DepartmentFormComponent } from './components/department/department-form/department-form.component';
 import { DesignationFormComponent } from './components/designation/designation-form/designation-form.component';
 import { LaboratoryTestComponent } from './components/test/laboratory-test/laboratory-test.component';
-import { CustomerTypeComponent } from './components/customer/customer-type/customer-type.component';
 import { CustomerFormComponent } from './components/customer/customer-form/customer-form.component';
+import { CompanyCategoryComponent } from './components/company-category/company-category.component';
+import { CustomerListComponent } from './components/customer/customer-list/customer-list.component';
+import { TaxComponent } from './components/tax/tax.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -33,8 +35,12 @@ export const routes: Routes = [
             { path: 'department/create', component: DepartmentFormComponent},
             { path: 'department/edit/:id', component: DepartmentFormComponent }, 
             { path: 'department/details/:id', component: DepartmentFormComponent },
-            { path: 'customer-type', component: CustomerTypeComponent },
-            { path: 'customer', component: CustomerFormComponent },
+            { path: 'company-category', component: CompanyCategoryComponent },
+            { path: 'customer', component: CustomerListComponent },
+            { path: 'customer/create', component: CustomerFormComponent },
+            { path: 'customer/edit/:id', component: CustomerFormComponent },
+            { path: 'customer/details/:id', component: CustomerFormComponent },
+            { path: 'tax', component: TaxComponent },
             { path: 'test', component: LaboratoryTestComponent },
         ]
     },

@@ -8,31 +8,31 @@ import { Observable } from 'rxjs';
 })
 export class CustomerService {
 
-  private apiUrl = environment.apiUrl +"/CustomerTypeMaster"; // Replace with actual API
-  private customerTypeUrl = environment.apiUrl +"/CustomerType"; 
+  private apiUrl = environment.apiUrl +"/CustomerMaster"; // Replace with actual API
+  private CustomerUrl = environment.apiUrl +"/Customer"; 
     constructor(private http: HttpClient) {}
   
-    getAllCustomerTypes(filter:any): Observable<any> {
-      return this.http.post<any>(this.customerTypeUrl+"/list", filter);
+    getAllCustomers(filter:any): Observable<any> {
+      return this.http.post<any>(this.CustomerUrl+"/list", filter);
     }
   
-    getCustomerTypeById(id: number): Observable<any> {
-      return this.http.get<any>(`${this.customerTypeUrl}/details/${id}`);
+    getCustomerById(id: number): Observable<any> {
+      return this.http.get<any>(`${this.CustomerUrl}/details/${id}`);
     }
   
-    createCustomerType(designation: any): Observable<any> {
-      return this.http.post<any>(`${this.customerTypeUrl}/create`, designation);
+    createCustomer(designation: any): Observable<any> {
+      return this.http.post<any>(`${this.CustomerUrl}/create`, designation);
     }
   
-    updateCustomerType( designation: any): Observable<any> {
-      return this.http.put<any>(`${this.customerTypeUrl}/update`, designation);
+    updateCustomer( designation: any): Observable<any> {
+      return this.http.put<any>(`${this.CustomerUrl}/update`, designation);
     }
   
-    deleteCustomerType(id: number): Observable<any> {
-      return this.http.delete<any>(`${this.customerTypeUrl}/delete/${id}`);
+    deleteCustomer(id: number): Observable<any> {
+      return this.http.delete<any>(`${this.CustomerUrl}/delete/${id}`);
     }
 
-    getCustomerTypeDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
-      return this.http.get<any>(`${this.customerTypeUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    getCustomerDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+      return this.http.get<any>(`${this.CustomerUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 }

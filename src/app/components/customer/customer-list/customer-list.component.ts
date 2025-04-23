@@ -1,35 +1,33 @@
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ToastService } from '../../../services/toast.service';
+import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { CustomerService } from '../../../services/customer.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Modal } from 'bootstrap';
+import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-customer-type',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './customer-type.component.html',
-  styleUrl: './customer-type.component.css'
+  selector: 'app-customer-list',
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './customer-list.component.html',
+  styleUrl: './customer-list.component.css'
 })
-export class CustomerTypeComponent implements OnInit {
+export class CustomerListComponent  implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
-  @ViewChild('modalRef') modalElement!: ElementRef;
-  private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
-    { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
+    { key: 'CustomerType', type: 'string', label: 'Customer Type', filter: true },
+    { key: 'PinCode', type: 'string', label: 'Pin Code', filter: true },
+    { key: 'GSTNo', type: 'string', label: 'GST', filter: true },
+    { key: 'SampleReturn', type: 'string', label: 'Sample Return', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    description: 'string',
-    createdBy: 'string',
-    createdOn: 'date'
+    CustomerType: 'string',
+    PinCode: 'string',
+    GSTNo: 'string',
+    SampleReturn: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -40,7 +38,8 @@ export class CustomerTypeComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  filteredCustomerTypeList: any[] = [];
+  customerForm: FormGroup;
+  customerList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -61,16 +60,13 @@ export class CustomerTypeComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  // form
-  customerTypeForm!: FormGroup;
-  isEditMode: boolean = false;
-  isViewMode: boolean = true;
-  customerTypeObject: any = null;
-  customerTypeId: number = 0;
-  formTitle = 'Customer Type Form';
-
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private customerService: CustomerService, private toastService: ToastService) {
-
+  constructor(private fb: FormBuilder, private customerService: CustomerService) {
+    this.customerForm = this.fb.group({
+      searchTerm: '',
+      sortByColumn: '',
+      sortOrder: '',
+      filters: this.fb.group({})
+    });
   }
 
   getDesignationValue(designation: any, key: string): any {
@@ -79,45 +75,24 @@ export class CustomerTypeComponent implements OnInit {
 
   ngOnInit() {
     this.fetchData();
-
-    this.customerTypeForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required],
-      description: ['', Validators.required],
-    });
   }
 
   fetchData() {
-    this.customerService.getAllCustomerTypes(this.payload).subscribe({
-      next:(response) => {
-        this.filteredCustomerTypeList = response?.items || [];
+
+    this.customerService.getAllCustomers(this.payload).subscribe({
+      next: (response) => {
+        this.customerList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
-      error:(error) => {
-        this.toastService.show(error.message, 'error');
-        this.filteredCustomerTypeList = [];
+      error: (error) => {
+        console.error('Error fetching designations:', error);
+        this.customerList = [];
         this.isLoading.set(false);
       }
-    }
 
-    );
-  }
-  loadCustomerTypeData(): void {
-    this.customerService.getCustomerTypeById(this.customerTypeId).subscribe({
-      next: (response) => {
-        this.customerTypeObject = response;
-        this.customerTypeForm.patchValue({
-          id: this.customerTypeObject.id || 0,
-          name: this.customerTypeObject.name,
-          description: this.customerTypeObject.description
-        });
-      },
-      error: (error) => {
-        console.error('Error fetching department data:', error);
-      }
     });
 
   }
@@ -144,6 +119,7 @@ export class CustomerTypeComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
+    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -232,82 +208,5 @@ export class CustomerTypeComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteCustomerType(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this department?');
-    if (confirmed) {
-      this.customerService.deleteCustomerType(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
-  }
-  openModal(type: string, id: number): void {
-    if (id > 0) {
-      debugger;
-      this.customerTypeId = id;
-      this.loadCustomerTypeData();
-    }
-    if (type === 'create') {
-      this.isEditMode = false;
-      this.isViewMode = false;
-      this.customerTypeForm.reset();
-      this.formTitle = 'Create Customer Type';
-      this.customerTypeForm.enable();
-    } else if (type === 'edit') {
-      this.isEditMode = true;
-      this.isViewMode = false;
-      this.formTitle = 'Edit Customer Type';
-      this.customerTypeForm.enable();
-    }
-    else if (type === 'view') {
-      this.isViewMode = true;
-      this.isEditMode = false;
-      this.formTitle = 'View Customer Type';
-      this.customerTypeForm.disable();
-    }
-
-    this.bsModal = new Modal(this.modalElement.nativeElement);
-    this.bsModal.show();
-  }
-
-  closeModal(): void {
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
-  }
-
-  onSubmit(): void {
-    if (this.customerTypeForm.valid) {
-      let formData = this.customerTypeForm.value;
-      if (this.isEditMode) {
-        this.customerService.updateCustomerType(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.customerService.createCustomerType(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
-    }
-  }
-
 }
+

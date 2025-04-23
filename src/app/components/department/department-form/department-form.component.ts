@@ -59,10 +59,7 @@ export class DepartmentFormComponent implements OnInit, AfterViewInit {
     this.departmentService.getDepartmentById(this.departmentId).subscribe({
       next: (response) => {
         this.departmentObject = response;
-        this.departmentForm.patchValue({
-          name: this.departmentObject.name,
-          description: this.departmentObject.description
-        });
+        this.departmentForm.patchValue(this.departmentObject);
       },
       error: (error) => {
         console.error('Error fetching department data:', error);

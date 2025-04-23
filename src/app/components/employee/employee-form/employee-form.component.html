@@ -65,7 +65,8 @@
                             <div class="col-auto col-md-4 col-lg-3">
                                 <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
                                 <input type="tel" class="form-control" formControlName="mobileNo"
-                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly [ngClass]="{'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid}" />
+                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
+                                    [ngClass]="{'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid}" />
 
                                 <span
                                     *ngIf="personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched"
@@ -266,7 +267,7 @@
                         </div>
                         <!-- Permanent Address Checkbox -->
                         <div class="mt-2">
-                            <div class="col-12 ms-2">
+                            <div class="form-check col-12 ms-2">
                                 <input type="checkbox" class="form-check-input mt-1 me-2" id="sameAsResidential"
                                     formControlName="sameAsResidential" (change)="copyResidentialAddress()">
                                 <label class="form-label" for="sameAsResidential">Same as Residential
@@ -557,7 +558,7 @@
                         <!-- Submit Button -->
                         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
                             <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4">Save</button>
+                            <button type="submit" class="btn btn-success px-3">Save</button>
                         </div>
 
                     </div>

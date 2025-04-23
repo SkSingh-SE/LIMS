@@ -19,6 +19,7 @@ export class SearchableDropdownComponent {
   @Input() fetchDataFn!: (searchTerm: string, page: number, pageSize: number) => Observable<any[]>; // Pass API call from parent
   @Output() itemSelected = new EventEmitter<any>();
   @Input() selectedItem: any;
+  @Input() hideLabel: boolean = false;
 
   searchTerm: string = '';
   dropdownData: any[] = [];
@@ -28,6 +29,8 @@ export class SearchableDropdownComponent {
   hasMore = true;
   showDropdown = false;
   selectedLabel: string = '';
+  randomId = 'input-' + Math.random().toString(36).substring(2, 10);
+
 
   private searchSubject = new Subject<string>();
   private subscription = new Subscription();

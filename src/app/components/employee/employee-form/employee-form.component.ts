@@ -135,9 +135,9 @@ export class EmployeeFormComponent {
       accountHolderName: ['', Validators.maxLength(100)],
       accountNumber: ['', [Validators.maxLength(20), Validators.pattern(/^\d+$/)]],
       ifscCode: ['', [Validators.maxLength(11), Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
-      departmentID: [''],
-      reportingManagerID: [''],
-      designationID: [''],
+      departmentID: [null],
+      reportingManagerID: [null],
+      designationID: [null],
       dateOfJoin: [''],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
     });

@@ -14,6 +14,16 @@ import { CustomerFormComponent } from './components/customer/customer-form/custo
 import { CompanyCategoryComponent } from './components/company-category/company-category.component';
 import { CustomerListComponent } from './components/customer/customer-list/customer-list.component';
 import { TaxComponent } from './components/tax/tax.component';
+import { BankComponent } from './components/bank/bank.component';
+import { CourierComponent } from './components/courier/courier.component';
+import { TPIComponent } from './components/tpi/tpi.component';
+import { DimensionalFactorComponent } from './components/dimensional-factor/dimensional-factor.component';
+import { HeatTreatmentComponent } from './components/heat-treatment/heat-treatment.component';
+import { ProductConditionComponent } from './components/product-condition/product-condition.component';
+import { SpecimenOrientationComponent } from './components/specimen-orientation/specimen-orientation.component';
+import { ParameterComponent } from './components/parameter/parameter.component';
+import { ChemicalParameterComponent } from './components/parameter/chemical-parameter/chemical-parameter.component';
+import { MechanicalParameterComponent } from './components/parameter/mechanical-parameter/mechanical-parameter.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -42,6 +52,16 @@ export const routes: Routes = [
             { path: 'customer/details/:id', component: CustomerFormComponent },
             { path: 'tax', component: TaxComponent },
             { path: 'test', component: LaboratoryTestComponent },
+            { path: 'bank', component: BankComponent },
+            { path: 'courier', component: CourierComponent },
+            { path: 'tpi', component: TPIComponent },
+            { path: 'dimesional-factor', component: DimensionalFactorComponent },
+            { path: 'heat-treatment', component: HeatTreatmentComponent },
+            { path: 'product-condition', component: ProductConditionComponent },
+            { path: 'specimen-orientation', component: SpecimenOrientationComponent },
+            { path: 'parameter', component: ParameterComponent },
+            { path: 'chemical-parameter', component: ChemicalParameterComponent },
+            { path: 'mechanical-parameter', component: MechanicalParameterComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

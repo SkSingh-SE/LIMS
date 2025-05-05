@@ -6,33 +6,33 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class TaxService {
+export class SpecimenOrientationService {
 
-  private apiUrl = environment.apiUrl +"/Tax"; // Replace with actual API
+  private apiUrl = environment.apiUrl +"/SpecimenOrientationMaster"; 
   
     constructor(private http: HttpClient) {}
   
-    getAllTaxes(filter:any): Observable<any> {
+    getAllSpecimenOrientations(filter:any): Observable<any> {
       return this.http.post<any>(this.apiUrl+"/list", filter);
     }
   
-    getTaxById(id: number): Observable<any> {
+    getSpecimenOrientationById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
   
-    createTax(payload: any): Observable<any> {
+    createSpecimenOrientation(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }
   
-    updateTax( payload: any): Observable<any> {
+    updateSpecimenOrientation( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
   
-    deleteTax(id: number): Observable<any> {
+    deleteSpecimenOrientation(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
-    getTaxDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    getSpecimenOrientationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 }

@@ -6,33 +6,33 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class TaxService {
+export class ProductConditionService {
 
-  private apiUrl = environment.apiUrl +"/Tax"; // Replace with actual API
+  private apiUrl = environment.apiUrl +"/ProductConditionMaster"; 
   
     constructor(private http: HttpClient) {}
   
-    getAllTaxes(filter:any): Observable<any> {
+    getAllProductConditions(filter:any): Observable<any> {
       return this.http.post<any>(this.apiUrl+"/list", filter);
     }
   
-    getTaxById(id: number): Observable<any> {
+    getProductConditionById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
   
-    createTax(payload: any): Observable<any> {
+    createProductCondition(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }
   
-    updateTax( payload: any): Observable<any> {
+    updateProductCondition( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
   
-    deleteTax(id: number): Observable<any> {
+    deleteProductCondition(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
-    getTaxDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    getProductConditionDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 }

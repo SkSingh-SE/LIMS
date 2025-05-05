@@ -3,32 +3,28 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
+import { SpecimenOrientationService } from '../../services/specimen-orientation.service';
 import { ToastService } from '../../services/toast.service';
-import { TaxService } from '../../services/tax.service';
 
 @Component({
-  selector: 'app-tax',
+  selector: 'app-specimen-orientation',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './tax.component.html',
-  styleUrl: './tax.component.css'
+  templateUrl: './specimen-orientation.component.html',
+  styleUrl: './specimen-orientation.component.css'
 })
-export class TaxComponent implements OnInit {
+export class SpecimenOrientationComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'rate', type: 'number', label: 'Rate', filter: true },
-    { key: 'date', type: 'date', label: 'Date', filter: true },
+    { key: 'name', type: 'string', label: 'Agency Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    rate: 'string',
-    date: 'date',
     createdOn: 'date'
   };
 
@@ -40,7 +36,7 @@ export class TaxComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  taxList: any[] = [];
+  SpecimenOrientationList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -62,37 +58,30 @@ export class TaxComponent implements OnInit {
   };
 
   // form
-  taxForm!: FormGroup;
+  SpecimentOrientationForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  taxId: number = 0;
-  formTitle = 'Tax Form';
+  specimenOrientationId: number = 0;
+  formTitle = 'Specimen Orientation Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private taxService: TaxService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private specimenOrientationService: SpecimenOrientationService, private toastService: ToastService) {
 
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();
-
-    this.taxForm = this.fb.group({
+    this.SpecimentOrientationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      date: ['', Validators.required],
-      rate: ['', Validators.required],
-      remark: [''],
+      name: ['', Validators.required]
     });
   }
 
   fetchData() {
-    this.taxService.getAllTaxes(this.payload).subscribe({
+    this.specimenOrientationService.getAllSpecimenOrientations(this.payload).subscribe({
       next: (response) => {
-        this.taxList = response?.items || [];
+        this.SpecimenOrientationList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -100,26 +89,18 @@ export class TaxComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.taxList = [];
+        this.SpecimenOrientationList = [];
         this.isLoading.set(false);
       }
     }
 
     );
   }
-  loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+  getDetails(): void {
+    this.specimenOrientationService.getSpecimenOrientationById(this.specimenOrientationId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.taxForm.patchValue({
-          id: this.customerTypeObject.id || 0,
-          name: this.customerTypeObject.name,
-          rate: this.customerTypeObject.rate,
-          date: this.customerTypeObject.date
-            ? this.customerTypeObject.date.toString().split('T')[0]
-            : '', // Format date to YYYY-MM-DD
-          remark: this.customerTypeObject.remark
-        });
+        this.SpecimentOrientationForm.patchValue(response);
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -237,11 +218,11 @@ export class TaxComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteCustomerType(id: number): void {
+  deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.taxService.deleteTax(id).subscribe({
+      this.specimenOrientationService.deleteSpecimenOrientation(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -254,28 +235,27 @@ export class TaxComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      debugger;
-      this.taxId = id;
-      this.loadCustomerTypeData();
+      this.specimenOrientationId = id;
+      this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.taxForm.reset();
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.SpecimentOrientationForm.reset();
+      this.formTitle = 'Specimen Orientation Form';
+      this.SpecimentOrientationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.formTitle = 'Specimen Orientation Form';
+      this.SpecimentOrientationForm.enable();
       
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Tax';
-      this.taxForm.disable();
+      this.formTitle = 'View Specimen Orientation';
+      this.SpecimentOrientationForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -289,10 +269,10 @@ export class TaxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
+    if (this.SpecimentOrientationForm.valid) {
+      let formData = this.SpecimentOrientationForm.value;
       if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
+        this.specimenOrientationService.updateSpecimenOrientation(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -304,7 +284,7 @@ export class TaxComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
+        this.specimenOrientationService.createSpecimenOrientation(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -319,4 +299,6 @@ export class TaxComponent implements OnInit {
   }
 
 }
+
+
 

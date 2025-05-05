@@ -1,35 +1,35 @@
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
+import { BankService } from '../../services/bank.service';
 import { ToastService } from '../../services/toast.service';
-import { TaxService } from '../../services/tax.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-tax',
+  selector: 'app-bank',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './tax.component.html',
-  styleUrl: './tax.component.css'
+  templateUrl: './bank.component.html',
+  styleUrl: './bank.component.css'
 })
-export class TaxComponent implements OnInit {
+export class BankComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'rate', type: 'number', label: 'Rate', filter: true },
-    { key: 'date', type: 'date', label: 'Date', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'bankName', type: 'string', label: 'Bank Name', filter: true },
+    { key: 'accountHolderName', type: 'string', label: 'Account Holder Name', filter: true },
+    { key: 'accountNumber', type: 'string', label: 'Account Number', filter: true },
+    { key: 'createdOn', type: 'string', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
-    rate: 'string',
-    date: 'date',
-    createdOn: 'date'
+    bankName: 'string',
+    accountHolderName: 'string',
+    accountNumber: 'string',
+    accountType: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -40,7 +40,7 @@ export class TaxComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  taxList: any[] = [];
+  bankList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -62,37 +62,45 @@ export class TaxComponent implements OnInit {
   };
 
   // form
-  taxForm!: FormGroup;
+  bankForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  taxId: number = 0;
-  formTitle = 'Tax Form';
+  bankId: number = 0;
+  formTitle = 'Bank Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private taxService: TaxService, private toastService: ToastService) {
+  accountTypes= [
+    { id: 1, name: 'Saving' },
+    { id: 2, name: 'Current' },
+    { id: 3, name: 'Fixed Deposit' },
+    { id: 4, name: 'Recurring Deposit' },
+    { id: 5, name: 'NRE' },
+    { id: 6, name: 'NRO' },
+    { id: 7, name: 'FCNR' },
+    { id: 8, name: 'Others' }
+  ];
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private bankService: BankService, private toastService: ToastService) {
 
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();
-
-    this.taxForm = this.fb.group({
+    this.bankForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      date: ['', Validators.required],
-      rate: ['', Validators.required],
-      remark: [''],
+      bankName: ['', Validators.required],
+      accountHolderName: ['', Validators.required],
+      accountNumber: ['', Validators.required],
+      accountType: ['', Validators.required],
+      branchName: [''],
+      ifscCode: [''],
     });
   }
 
   fetchData() {
-    this.taxService.getAllTaxes(this.payload).subscribe({
+    this.bankService.getAllBanks(this.payload).subscribe({
       next: (response) => {
-        this.taxList = response?.items || [];
+        this.bankList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -100,25 +108,25 @@ export class TaxComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.taxList = [];
+        this.bankList = [];
         this.isLoading.set(false);
       }
     }
 
     );
   }
-  loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+  loadBankData(): void {
+    this.bankService.getBankById(this.bankId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.taxForm.patchValue({
+        this.bankForm.patchValue({
           id: this.customerTypeObject.id || 0,
-          name: this.customerTypeObject.name,
-          rate: this.customerTypeObject.rate,
-          date: this.customerTypeObject.date
-            ? this.customerTypeObject.date.toString().split('T')[0]
-            : '', // Format date to YYYY-MM-DD
-          remark: this.customerTypeObject.remark
+          bankName: this.customerTypeObject.bankName,
+          accountHolderName: this.customerTypeObject.accountHolderName,
+          accountNumber: this.customerTypeObject.accountNumber,
+          accountType: this.customerTypeObject.accountType,
+          branchName: this.customerTypeObject.branchName,
+          ifscCode: this.customerTypeObject.ifscCode,
         });
       },
       error: (error) => {
@@ -237,11 +245,11 @@ export class TaxComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteCustomerType(id: number): void {
+  deleteBank(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.taxService.deleteTax(id).subscribe({
+      this.bankService.deleteBank(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -254,28 +262,27 @@ export class TaxComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      debugger;
-      this.taxId = id;
-      this.loadCustomerTypeData();
+      this.bankId = id;
+      this.loadBankData();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.taxForm.reset();
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.bankForm.reset();
+      this.formTitle = 'Bank Form';
+      this.bankForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.formTitle = 'Bank Form';
+      this.bankForm.enable();
       
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Tax';
-      this.taxForm.disable();
+      this.formTitle = 'View Bank';
+      this.bankForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -289,10 +296,10 @@ export class TaxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
+    if (this.bankForm.valid) {
+      let formData = this.bankForm.value;
       if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
+        this.bankService.updateBank(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -304,7 +311,7 @@ export class TaxComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
+        this.bankService.createBank(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -319,4 +326,5 @@ export class TaxComponent implements OnInit {
   }
 
 }
+
 

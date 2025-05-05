@@ -6,33 +6,34 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class TaxService {
+export class ParameterUnitService {
 
-  private apiUrl = environment.apiUrl +"/Tax"; // Replace with actual API
+  private apiUrl = environment.apiUrl +"/ParameterUnitMaster"; 
   
     constructor(private http: HttpClient) {}
   
-    getAllTaxes(filter:any): Observable<any> {
+    getAllParameterUnits(filter:any): Observable<any> {
       return this.http.post<any>(this.apiUrl+"/list", filter);
     }
   
-    getTaxById(id: number): Observable<any> {
+    getParameterUnitById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
   
-    createTax(payload: any): Observable<any> {
+    createParameterUnit(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }
   
-    updateTax( payload: any): Observable<any> {
+    updateParameterUnit( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
   
-    deleteTax(id: number): Observable<any> {
+    deleteParameterUnit(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
-    getTaxDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    getParameterUnitDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+  
 }

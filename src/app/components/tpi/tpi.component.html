@@ -2,14 +2,13 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Tax List</label>
+            <label class="text-center text-md fw-medium ms-3">TPI List</label>
             <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Tax
+                <i class="bi bi-plus-lg"></i> Create TPI
             </a>
         </div>
 
         <div *ngIf="!isLoading()" class="card-body">
-
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -22,7 +21,7 @@
             </div>
 
 
-            <div *ngIf="taxList.length > 0 || filters.length > 0" class="table-responsive ">
+            <div *ngIf="TPIList.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
@@ -50,11 +49,11 @@
 
                     </thead>
                     <tbody>
-                        <tr *ngFor="let customerType of taxList; let i = index" class="text-sm">
+                        <tr *ngFor="let customerType of TPIList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.rate }}</td>
-                            <td>{{ customerType.date | date:"dd MMM, yyyy hh:mm a" }}</td>
+                            <td>{{ customerType.agencyName }}</td>
+                            <td>{{ customerType.emailId }}</td>
+                            <td>{{ customerType.contactNo}}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
@@ -64,7 +63,7 @@
                                     <a (click)="openModal('edit',customerType.id)" class="icon-link" title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a (click)="deleteCustomerType(customerType.id)" class="icon-link" title="Delete">
+                                    <a (click)="deleteTPIFn(customerType.id)" class="icon-link" title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -77,8 +76,7 @@
 
 
             </div>
-            <div *ngIf="taxList.length == 0 && !isLoading()"
-                class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="TPIList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -89,26 +87,26 @@
             <div class="d-flex justify-content-between align-items-center">
                 <!-- Page Size Selector -->
                 <div class="d-flex align-items-center">
-                  <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                    <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                  </select>
+                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+                    </select>
                 </div>
-              
+
                 <!-- Pagination Controls -->
                 <ul class="pagination mb-0 d-flex align-items-center">
-                  <li class="page-item" [class.disabled]="pageNumber === 1">
-                    <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                  </li>
-                  <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                    <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                  </li>
-                  <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                    <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                  </li>
+                    <li class="page-item" [class.disabled]="pageNumber === 1">
+                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
+                    </li>
+                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
+                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+                    </li>
+                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+                    </li>
                 </ul>
-              </div>
-              
-            
+            </div>
+
+
         </div>
     </div>
 </div>
@@ -161,61 +159,53 @@
                 <button type="button" class="btn-close btn-close-white" aria-label="Close"
                     (click)="closeModal()"></button>
             </div>
-            <form [formGroup]="taxForm" (ngSubmit)="onSubmit()">
+            <form [formGroup]="TPIForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
                     <!-- Name Field -->
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Tax Name" required
-                            [ngClass]="{'is-invalid': taxForm.get('name')?.touched && taxForm.get('name')?.invalid}"
+                    <div class="mb-1 ">
+                        <label for="name" class="form-label">Agency Name <span class="text-danger">*</span></label>
+                        <input type="text" id="name" class="form-control" formControlName="agencyName"
+                            placeholder="Enter Agency Name" required
+                            [ngClass]="{'is-invalid': TPIForm.get('agencyName')?.touched && TPIForm.get('agencyName')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="taxForm.get('name')?.invalid && taxForm.get('name')?.touched"
+                        <span *ngIf="TPIForm.get('agencyName')?.invalid && TPIForm.get('agencyName')?.touched"
                             class="text-danger text-sm">
                             Name is required.
                         </span>
                     </div>
 
-
-                    <!-- Date Field -->
-                    <div class="mb-3">
-                        <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
-                        <input type="date" id="date" class="form-control" formControlName="date" required
-                            [ngClass]="{'is-invalid': taxForm.get('date')?.touched && taxForm.get('date')?.invalid}"
+                    <!-- Email Field -->
+                    <div class="mb-1">
+                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" id="email" class="form-control" formControlName="emailId"
+                            placeholder="Enter Email" required
+                            [ngClass]="{'is-invalid': TPIForm.get('emailId')?.touched && TPIForm.get('emailId')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="taxForm.get('date')?.invalid && taxForm.get('date')?.touched"
+                        <span *ngIf="TPIForm.get('emailId')?.invalid && TPIForm.get('emailId')?.touched"
                             class="text-danger text-sm">
-                            Date is required.
+                            Email is required.
                         </span>
                     </div>
 
-                    <!-- Rate Field -->
-                    <div class="mb-3">
-                        <label for="rate" class="form-label">Rate (%) <span class="text-danger">*</span></label>
-                        <input type="number" id="rate" class="form-control" formControlName="rate" required
-                            placeholder="Enter Tax Rate"
-                            [ngClass]="{'is-invalid': taxForm.get('rate')?.touched && taxForm.get('rate')?.invalid}"
+                    <!--Contact No-->
+                    <div class="mb-1">
+                        <label for="contactNo" class="form-label">Contact No <span class="text-danger">*</span></label>
+                        <input type="text" id="contactNo" class="form-control" formControlName="contactNo"
+                            placeholder="Enter Contact No" required
+                            maxlength="12" appNumberOnly
+                            [ngClass]="{'is-invalid': TPIForm.get('contactNo')?.touched && TPIForm.get('contactNo')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="taxForm.get('rate')?.invalid && taxForm.get('rate')?.touched"
+                        <span *ngIf="TPIForm.get('contactNo')?.invalid && TPIForm.get('contactNo')?.touched"
                             class="text-danger text-sm">
-                            Rate is required.
+                            Contact No is required.
                         </span>
-                    </div>
-
-                    <!-- Remark Field -->
-                    <div class="mb-3">
-                        <label for="remark" class="form-label">Remark</label>
-                        <textarea id="remark" class="form-control" formControlName="remark" rows="3"
-                            placeholder="Enter Remark"
-                            [attr.disabled]="isViewMode ? true : null"></textarea>
                     </div>
                 </div>
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white"
-                        [disabled]="taxForm.invalid">
+                    <button type="submit" class="btn navbar-background text-white" [disabled]="TPIForm.invalid">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

@@ -73,9 +73,6 @@ export class CompanyCategoryComponent implements OnInit {
 
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();
@@ -234,7 +231,7 @@ export class CompanyCategoryComponent implements OnInit {
 
   deleteCustomerType(id: number): void {
     if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this department?');
+    const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
       this.companyCategoryService.deleteCompanyCategory(id).subscribe({
         next: (response) => {

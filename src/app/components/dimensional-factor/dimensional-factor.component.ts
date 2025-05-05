@@ -1,34 +1,30 @@
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
+import { DimensionalFactorService } from '../../services/dimensional-factor.service';
 import { ToastService } from '../../services/toast.service';
-import { TaxService } from '../../services/tax.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-tax',
+  selector: 'app-dimensional-factor',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './tax.component.html',
-  styleUrl: './tax.component.css'
+  templateUrl: './dimensional-factor.component.html',
+  styleUrl: './dimensional-factor.component.css'
 })
-export class TaxComponent implements OnInit {
+export class DimensionalFactorComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'rate', type: 'number', label: 'Rate', filter: true },
-    { key: 'date', type: 'date', label: 'Date', filter: true },
+    { key: 'name', type: 'string', label: 'Agency Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    rate: 'string',
-    date: 'date',
     createdOn: 'date'
   };
 
@@ -40,7 +36,7 @@ export class TaxComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  taxList: any[] = [];
+  DimensionalFactorList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -62,37 +58,30 @@ export class TaxComponent implements OnInit {
   };
 
   // form
-  taxForm!: FormGroup;
+  DimensionalFactorForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  taxId: number = 0;
-  formTitle = 'Tax Form';
+  dimensionalFactorId: number = 0;
+  formTitle = 'Dimensional Factor Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private taxService: TaxService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private dimensionalService: DimensionalFactorService, private toastService: ToastService) {
 
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();
-
-    this.taxForm = this.fb.group({
+    this.DimensionalFactorForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      date: ['', Validators.required],
-      rate: ['', Validators.required],
-      remark: [''],
+      name: ['', Validators.required]
     });
   }
 
   fetchData() {
-    this.taxService.getAllTaxes(this.payload).subscribe({
+    this.dimensionalService.getAllDimensionalFactors(this.payload).subscribe({
       next: (response) => {
-        this.taxList = response?.items || [];
+        this.DimensionalFactorList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -100,26 +89,18 @@ export class TaxComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.taxList = [];
+        this.DimensionalFactorList = [];
         this.isLoading.set(false);
       }
     }
 
     );
   }
-  loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+  getDetails(): void {
+    this.dimensionalService.getDimensionalFactorById(this.dimensionalFactorId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.taxForm.patchValue({
-          id: this.customerTypeObject.id || 0,
-          name: this.customerTypeObject.name,
-          rate: this.customerTypeObject.rate,
-          date: this.customerTypeObject.date
-            ? this.customerTypeObject.date.toString().split('T')[0]
-            : '', // Format date to YYYY-MM-DD
-          remark: this.customerTypeObject.remark
-        });
+        this.DimensionalFactorForm.patchValue(response);
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -237,11 +218,11 @@ export class TaxComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteCustomerType(id: number): void {
+  deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.taxService.deleteTax(id).subscribe({
+      this.dimensionalService.deleteDimensionalFactor(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -254,28 +235,27 @@ export class TaxComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      debugger;
-      this.taxId = id;
-      this.loadCustomerTypeData();
+      this.dimensionalFactorId = id;
+      this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.taxForm.reset();
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.DimensionalFactorForm.reset();
+      this.formTitle = 'Dimensional Factor Form';
+      this.DimensionalFactorForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.formTitle = 'Dimensional Factor Form';
+      this.DimensionalFactorForm.enable();
       
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Tax';
-      this.taxForm.disable();
+      this.formTitle = 'View Dimensional Factor';
+      this.DimensionalFactorForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -289,10 +269,10 @@ export class TaxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
+    if (this.DimensionalFactorForm.valid) {
+      let formData = this.DimensionalFactorForm.value;
       if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
+        this.dimensionalService.updateDimensionalFactor(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -304,7 +284,7 @@ export class TaxComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
+        this.dimensionalService.createDimensionalFactor(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -319,4 +299,5 @@ export class TaxComponent implements OnInit {
   }
 
 }
+
 

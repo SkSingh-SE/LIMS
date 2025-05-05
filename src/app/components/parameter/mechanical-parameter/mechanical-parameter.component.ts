@@ -3,32 +3,37 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
-import { ToastService } from '../../services/toast.service';
-import { TaxService } from '../../services/tax.service';
+import { ParameterService } from '../../../services/parameter.service';
+import { ToastService } from '../../../services/toast.service';
+import { ParameterUnitService } from '../../../services/parameter-unit.service';
 
 @Component({
-  selector: 'app-tax',
+  selector: 'app-mechanical-parameter',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './tax.component.html',
-  styleUrl: './tax.component.css'
+  templateUrl: './mechanical-parameter.component.html',
+  styleUrl: './mechanical-parameter.component.css'
 })
-export class TaxComponent implements OnInit {
+export class MechanicalParameterComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'rate', type: 'number', label: 'Rate', filter: true },
-    { key: 'date', type: 'date', label: 'Date', filter: true },
+    { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
+    { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
+    { key: 'rate', type: 'string', label: 'Rate', filter: true },
+    { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
+    { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    rate: 'string',
-    date: 'date',
+    aliasName: 'string',
+    rate: 'number',
+    unitName: 'string',
+    factor: 'string',
     createdOn: 'date'
   };
 
@@ -40,7 +45,8 @@ export class TaxComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  taxList: any[] = [];
+  ParameterList: any[] = [];
+  ParameterUnits: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -62,37 +68,42 @@ export class TaxComponent implements OnInit {
   };
 
   // form
-  taxForm!: FormGroup;
+  ParameterForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  taxId: number = 0;
-  formTitle = 'Tax Form';
+  parameterId: number = 0;
+  formTitle = 'Parameter Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private taxService: TaxService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService) {
+    this.route.params.subscribe(params => {
+      this.parameterId = params['id'] || 0;
+      if (this.parameterId > 0) {
+        this.getDetails();
+      }
+    });
 
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();
-
-    this.taxForm = this.fb.group({
+    this.fetchParameterUnits();
+    this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      date: ['', Validators.required],
-      rate: ['', Validators.required],
-      remark: [''],
+      aliasName: [''],
+      parameterUnitID: [0, Validators.required],
+      rate: [0],
+      note: [''],
+      parameterType: ['Mechanical', Validators.required],
     });
   }
 
   fetchData() {
-    this.taxService.getAllTaxes(this.payload).subscribe({
+    this.parameterService.getAllMechanicalParameters(this.payload).subscribe({
       next: (response) => {
-        this.taxList = response?.items || [];
+        this.ParameterList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -100,26 +111,28 @@ export class TaxComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.taxList = [];
+        this.ParameterList = [];
         this.isLoading.set(false);
       }
     }
-
     );
   }
-  loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+  fetchParameterUnits() {
+    this.parameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
+      next: (response) => {
+        this.ParameterUnits = response?.items || [];
+      },
+      error: (error) => {
+        console.error('Error fetching parameter units:', error);
+      }
+    });
+  }
+
+  getDetails(): void {
+    this.parameterService.getParameterById(this.parameterId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.taxForm.patchValue({
-          id: this.customerTypeObject.id || 0,
-          name: this.customerTypeObject.name,
-          rate: this.customerTypeObject.rate,
-          date: this.customerTypeObject.date
-            ? this.customerTypeObject.date.toString().split('T')[0]
-            : '', // Format date to YYYY-MM-DD
-          remark: this.customerTypeObject.remark
-        });
+        this.ParameterForm.patchValue(response);
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -237,11 +250,11 @@ export class TaxComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteCustomerType(id: number): void {
+  deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.taxService.deleteTax(id).subscribe({
+      this.parameterService.deleteParameter(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -254,28 +267,27 @@ export class TaxComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      debugger;
-      this.taxId = id;
-      this.loadCustomerTypeData();
+      this.parameterId = id;
+      this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.taxForm.reset();
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.ParameterForm.reset();
+      this.formTitle = 'Parameter Form';
+      this.ParameterForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Tax Form';
-      this.taxForm.enable();
+      this.formTitle = 'Parameter Form';
+      this.ParameterForm.enable();
       
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Tax';
-      this.taxForm.disable();
+      this.formTitle = 'View Parameter';
+      this.ParameterForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -289,10 +301,10 @@ export class TaxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
+    if (this.ParameterForm.valid) {
+      let formData = this.ParameterForm.value;
       if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
+        this.parameterService.updateParameter(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -304,7 +316,7 @@ export class TaxComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
+        this.parameterService.createParameter(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -319,4 +331,6 @@ export class TaxComponent implements OnInit {
   }
 
 }
+
+
 

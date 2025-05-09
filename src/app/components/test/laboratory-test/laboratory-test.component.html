@@ -1,74 +1,59 @@
-<div class="m-2">
-    <div class="card shadow rounded">
-        <div class="card-header bg-danger text-white fw-semibold fs-6">
-            Create Laboratory Test
-        </div>
-        <div class="card-body">
-            <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Department <span class="text-danger">*</span></label>
-                        <input type="text" formControlName="department" class="form-control"
-                            placeholder="Enter Department" />
-                    </div>
+<div class="container mt-4">
+  <form [formGroup]="labTestForm">
+    <div formArrayName="selections">
+      <div *ngFor="let selection of selections.controls; let i = index" [formGroupName]="i" class="mb-4 p-3 border rounded">
 
-                    <div class="col-md-6">
-                        <label class="form-label">Test Group <span class="text-danger">*</span></label>
-                        <input type="text" formControlName="testGroup" class="form-control"
-                            placeholder="Enter Test Group" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Test Sub Group <span class="text-danger">*</span></label>
-                        <input type="text" formControlName="testSubGroup" class="form-control"
-                            placeholder="Enter Test Sub Group" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Test Type <span class="text-danger">*</span></label>
-                        <select formControlName="testType" class="form-select">
-                            <option value="">-- Select Test Type --</option>
-                            <option *ngFor="let type of testTypes" [value]="type">{{ type }}</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Invoice Case <span class="text-danger">*</span></label>
-                        <div #dropdownContainer class="position-relative">
-                          <button class="btn btn-outline-secondary w-100 text-start" type="button" (click)="toggleDropdown()">
-                            <span *ngIf="labTestForm.get('invoiceCase')?.value?.length; else noInvoiceCases">
-                              {{ labTestForm.get('invoiceCase')?.value.join(', ') }}
-                            </span>
-                            <ng-template #noInvoiceCases>Select Invoice Cases</ng-template>
-                          </button>
-                          <ul *ngIf="dropdownOpen" class="dropdown-menu show w-100" style="max-height: 200px; overflow-y: auto; display: block; position: absolute; top: 100%; left: 0; z-index: 1000;">
-                            <li *ngFor="let caseItem of invoiceCases" class="dropdown-item">
-                              <div class="">
-                                <input class="form-check-input" type="checkbox" [id]="caseItem" [checked]="isInvoiceCaseSelected(caseItem)" (change)="toggleInvoiceCase(caseItem)" />
-                                <label class="form-check-label ms-2" [for]="caseItem">{{ caseItem }}</label>
-                              </div>
-                            </li>
-                          </ul>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label">Test Charge <span class="text-danger">*</span></label>
-                        <input type="number" formControlName="testCharge" class="form-control" placeholder="₹ Amount" />
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label">Sample Size Required <span class="text-danger">*</span></label>
-                        <input type="text" formControlName="sampleSizeRequired" class="form-control"
-                            placeholder="Size (g/mL)" />
-                    </div>
-                </div>
-
-          <div class="text-end mt-4">
-            <button type="submit" class="btn btn-danger" [disabled]="labTestForm.invalid">Save Test</button>
+        <div class="row mb-2">
+          <div class="col-md-4">
+            <label class="form-label">Lab Department</label>
+            <select class="form-select" formControlName="department">
+              <option [ngValue]="''">Select Department</option>
+              <option *ngFor="let dept of labDepartments" [value]="dept.name">{{ dept.name }}</option>
+            </select>
           </div>
-        </form>
+
+          <div class="col-md-4">
+            <label class="form-label">Test Method</label>
+            <select class="form-select" formControlName="method">
+              <option [ngValue]="''">Select Method</option>
+              <option *ngFor="let method of testMethodsForSelectedDepartment" [value]="method.name">
+                {{ method.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Sub-group</label>
+            <select class="form-select" formControlName="subGroupName">
+              <option [ngValue]="''">Select Sub-Group</option>
+              <option *ngFor="let sg of selectedMethod?.subGroups || []" [value]="sg.name">
+                {{ sg.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="selection.value.subGroupName">
+          <ng-container *ngFor="let ic of selectedSubGroup?.invoiceCases || []">
+            <div class="col-md-6">
+              <label class="form-label">{{ ic.label }}</label>
+              <select class="form-select" [formControlName]="ic.label">
+                <option [ngValue]="''">Select Option</option>
+                <option *ngFor="let opt of ic.options" [value]="opt.value">
+                  {{ opt.label }} - ₹{{ opt.basePrice }}
+                </option>
+              </select>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="mt-2">
+          <strong>Total Price:</strong> ₹{{ calculateTotalPrice(i) }}
+        </div>
 
       </div>
     </div>
-  </div>
+
+    <button class="btn btn-primary" type="button" (click)="addTest()">Add Test</button>
+  </form>
+</div>

@@ -1,4 +1,4 @@
-<div class=" card shadow-lg m-2">
+<div class="card shadow-lg m-2">
     <div class="card-header card-form-header text-white text-center">
         <h6 class="text-center">Customer Form</h6>
     </div>
@@ -52,12 +52,12 @@
                             {{ getSelectedCategoriesText() || 'Select Company Categories' }}
                         </button>
                         <ul class="dropdown-menu w-100 shadow p-2" style="max-height: 250px; overflow-y: auto;">
-                            <li *ngFor="let cat of companyCategory">
+                            <li class="hover-bg" *ngFor="let cat of companyCategory" >
                                 <div class="form-check">
                                     <input class="form-check-input mt-1" type="checkbox" [id]="'cat-' + cat.id"
                                         [value]="cat.id" (change)="onCategoryToggle($event)"
                                         [checked]="isCategorySelected(cat.id)">
-                                    <label class="form-check-label ms-2" [for]="'cat-' + cat.id">{{ cat.name }}</label>
+                                    <label class="form-check-label ms-2" [for]="'cat-' + cat.id" (click)="$event.stopPropagation()">{{ cat.name }}</label>
                                 </div>
                             </li>
                         </ul>
@@ -499,22 +499,22 @@
                 <ng-container>
                   <!-- Add Contact Button -->
                   <div class="text-end mb-1">
-                    <button type="button" class="btn btn-primary" (click)="addContact()">
-                      <i class="bi bi-plus-circle"></i> Add Contact
+                    <button type="button" class="btn btn-outline-danger-600" (click)="addContact()">
+                      <i class="bi bi-plus-circle-dotted"></i> Add Contact
                     </button>
                   </div>
               
                   <div class="table-responsive overflow-visible">
                     <label class="text-danger fw-bold border-bottom border-danger mb-2 d-inline-block">Multi Contacts</label>
-                    <table class="table table-light table-borderless align-middle mb-0">
-                      <thead class="table-light">
-                        <tr class="text-nowrap">
-                          <th >Contact Person</th>
-                          <th >Department</th>
-                          <th>Email</th>
-                          <th>Mobile</th>
-                          <th >Address</th>
-                          <th class="text-center" >Action</th>
+                    <table class="table table-sm table-light table-borderless align-middle mb-0">
+                      <thead class="">
+                        <tr class="text-nowrap text-muted small">
+                          <th class="fw-medium px-2">Contact Person</th>
+                          <th class="fw-medium px-2">Department</th>
+                          <th class="fw-medium px-2">Email</th>
+                          <th class="fw-medium px-2">Mobile</th>
+                          <th class="fw-medium px-2">Address</th>
+                          <th class="fw-medium text-center" >Action</th>
                         </tr>
                       </thead>
                       <tbody>

@@ -55,7 +55,7 @@
                             <td>{{ customerType.name }}</td>
                             <td>{{ customerType.description }}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
-                            <td>{{customerType.createdBy}}</td>
+                            
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a (click)="openModal('view',customerType.id)" class="icon-link" title="View">

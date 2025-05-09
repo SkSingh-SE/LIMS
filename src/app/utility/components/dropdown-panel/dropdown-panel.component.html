@@ -1,0 +1,10 @@
+<ul class="list-group" style="max-height: 200px; overflow-y: auto;">
+    <li class="list-group-item cursor-pointer"
+        *ngFor="let item of items"
+        (click)="onSelect(item)">
+      {{ item.name }}
+    </li>
+    <li *ngIf="items.length == 0" class="list-group-item  text-muted"><span class="fw-lighter fst-italic fs-6"> No Record</span></li>
+
+  </ul>
+  

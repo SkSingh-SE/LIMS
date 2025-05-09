@@ -22,7 +22,6 @@ export class MechanicalParameterComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
-    { key: 'rate', type: 'string', label: 'Rate', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
@@ -31,7 +30,6 @@ export class MechanicalParameterComponent implements OnInit {
     id: 'number',
     name: 'string',
     aliasName: 'string',
-    rate: 'number',
     unitName: 'string',
     factor: 'string',
     createdOn: 'date'
@@ -89,6 +87,9 @@ export class MechanicalParameterComponent implements OnInit {
   ngOnInit() {
     this.fetchData();
     this.fetchParameterUnits();
+    this.initForm();
+  }
+  initForm() {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
@@ -99,7 +100,6 @@ export class MechanicalParameterComponent implements OnInit {
       parameterType: ['Mechanical', Validators.required],
     });
   }
-
   fetchData() {
     this.parameterService.getAllMechanicalParameters(this.payload).subscribe({
       next: (response) => {
@@ -120,7 +120,7 @@ export class MechanicalParameterComponent implements OnInit {
   fetchParameterUnits() {
     this.parameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
       next: (response) => {
-        this.ParameterUnits = response?.items || [];
+        this.ParameterUnits = response || [];
       },
       error: (error) => {
         console.error('Error fetching parameter units:', error);
@@ -273,7 +273,7 @@ export class MechanicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.ParameterForm.reset();
+      this.initForm();
       this.formTitle = 'Parameter Form';
       this.ParameterForm.enable();
     } else if (type === 'edit') {

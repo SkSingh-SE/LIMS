@@ -21,9 +21,13 @@ import { DimensionalFactorComponent } from './components/dimensional-factor/dime
 import { HeatTreatmentComponent } from './components/heat-treatment/heat-treatment.component';
 import { ProductConditionComponent } from './components/product-condition/product-condition.component';
 import { SpecimenOrientationComponent } from './components/specimen-orientation/specimen-orientation.component';
-import { ParameterComponent } from './components/parameter/parameter.component';
 import { ChemicalParameterComponent } from './components/parameter/chemical-parameter/chemical-parameter.component';
 import { MechanicalParameterComponent } from './components/parameter/mechanical-parameter/mechanical-parameter.component';
+import { StandardOrgnizationComponent } from './components/standard-orgnization/standard-orgnization.component';
+import { UniversalCodeTypeComponent } from './components/universal-code-type/universal-code-type.component';
+import { InvoiceCaseComponent } from './components/test/invoice-case/invoice-case.component';
+import { MaterialSpecificationComponent } from './components/material-specification/material-specification.component';
+import { MetalClassificationComponent } from './components/metal-classification/metal-classification.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -51,7 +55,7 @@ export const routes: Routes = [
             { path: 'customer/edit/:id', component: CustomerFormComponent },
             { path: 'customer/details/:id', component: CustomerFormComponent },
             { path: 'tax', component: TaxComponent },
-            { path: 'test', component: LaboratoryTestComponent },
+            { path: 'test', component: InvoiceCaseComponent },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'tpi', component: TPIComponent },
@@ -59,9 +63,12 @@ export const routes: Routes = [
             { path: 'heat-treatment', component: HeatTreatmentComponent },
             { path: 'product-condition', component: ProductConditionComponent },
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
-            { path: 'parameter', component: ParameterComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
+            { path: 'standard-organization', component: StandardOrgnizationComponent },
+            { path: 'universal-code-type', component: UniversalCodeTypeComponent },
+            { path: 'material-specification', component: MaterialSpecificationComponent },
+            { path: 'metal-classification', component: MetalClassificationComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

@@ -79,7 +79,10 @@ export class TaxComponent implements OnInit {
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
 
+  initForm() {
     this.taxForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
@@ -261,7 +264,7 @@ export class TaxComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.taxForm.reset();
+      this.initForm();
       this.formTitle = 'Tax Form';
       this.taxForm.enable();
     } else if (type === 'edit') {
@@ -269,7 +272,7 @@ export class TaxComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Tax Form';
       this.taxForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;

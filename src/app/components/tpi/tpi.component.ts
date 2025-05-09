@@ -77,6 +77,9 @@ export class TPIComponent implements OnInit {
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
+  initForm() {
     this.TPIForm = this.fb.group({
       id: [0],
       agencyName: ['', Validators.required],
@@ -84,6 +87,7 @@ export class TPIComponent implements OnInit {
       contactNo: ['', Validators.required]
     });
   }
+
 
   fetchData() {
     this.tpiService.getAllTPIs(this.payload).subscribe({
@@ -248,7 +252,7 @@ export class TPIComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.TPIForm.reset();
+      this.initForm();
       this.formTitle = 'TPI Form';
       this.TPIForm.enable();
     } else if (type === 'edit') {

@@ -52,6 +52,9 @@
                         <tr *ngFor="let item of ParameterList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ item.name }}</td>
+                            <td>{{ item.aliasName }}</td>
+                            <td>{{ item.unitName }}</td>
+                            <td>{{ item.factor }}</td>
                             <td>{{ item.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
@@ -200,13 +203,13 @@
                         </span>
                     </div>
                     <!--Rate-->
-                    <div class="mb-1 ">
+                    <!-- <div class="mb-1 ">
                         <label for="rate" class="form-label">Rate</label>
                         <input type="number" id="rate" class="form-control" formControlName="rate"
                             placeholder="Enter Rate"
                             [attr.disabled]="isViewMode ? true : null" />
                         
-                    </div>
+                    </div> -->
                     <!--Note-->
                     <div class="mb-1 ">
                         <label for="note" class="form-label">Note</label>

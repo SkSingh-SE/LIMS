@@ -87,19 +87,23 @@ export class ChemicalParameterComponent implements OnInit {
 
 
   ngOnInit() {
+    this.initForm();
     this.fetchData();
     this.fetchParameterUnits();
+  }
+
+  initForm() {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
       aliasName: [''],
-      parameterUnitID: ['', Validators.required],
+      parameterUnitID: [0, Validators.required],
       rate: [0],
       note: [''],
+      isSpecial: [false],
       parameterType: ['Chemical', Validators.required],
     });
   }
-
   fetchData() {
     this.parameterService.getAllChemicalParameters(this.payload).subscribe({
       next: (response) => {
@@ -120,7 +124,7 @@ export class ChemicalParameterComponent implements OnInit {
   fetchParameterUnits() {
     this.parameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
       next: (response) => {
-        this.ParameterUnits = response?.items || [];
+        this.ParameterUnits = response || [];
       },
       error: (error) => {
         console.error('Error fetching parameter units:', error);
@@ -273,7 +277,7 @@ export class ChemicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.ParameterForm.reset();
+      this.initForm();
       this.formTitle = 'Parameter Form';
       this.ParameterForm.enable();
     } else if (type === 'edit') {
@@ -281,7 +285,7 @@ export class ChemicalParameterComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Parameter Form';
       this.ParameterForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;

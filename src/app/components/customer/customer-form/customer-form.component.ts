@@ -40,7 +40,6 @@ export class CustomerFormComponent implements OnInit {
     { id: 3, name: 'Courier' },
     { id: 4, name: 'Self pickup' }
   ];
-  selectedDispatchModes: string[] = [];
   discountOptions = [
     { name: '5%', value: 5 },
     { name: '10%', value: 10 },
@@ -85,6 +84,7 @@ export class CustomerFormComponent implements OnInit {
     }
 
     this.customerForm = this.fb.group({
+      id: [0],
       name: ['', [Validators.required, Validators.maxLength(100)]],
       legalName: [''],
       tallyLedgerName: ['', [Validators.required]],
@@ -221,17 +221,32 @@ export class CustomerFormComponent implements OnInit {
     this.customerForm.markAllAsTouched();
     console.log('Form Submitted', this.customerForm.value);
     if (this.customerForm.valid) {
-      this.customerService.createCustomer(this.customerForm.value).subscribe({
-        next: resp => {
-          this.toastService.show(resp.message, 'success');
-        },
-        error: err => {
-          this.toastService.show(err.message, 'error');
-        }
-      });
+      if (this.customerId > 0) {
+        this.customerService.updateCustomer(this.customerForm.value).subscribe({
+          next: resp => {
+            this.toastService.show(resp.message, 'success');
+            this.router.navigate(['/customer']);
+          },
+          error: err => {
+            this.toastService.show(err.message, 'error');
+          }
+        });
+      }
+      else {
+        this.customerForm.patchValue({ customerID: 0 });
+        this.customerService.createCustomer(this.customerForm.value).subscribe({
+          next: resp => {
+            this.toastService.show(resp.message, 'success');
+            this.router.navigate(['/customer']);
+          },
+          error: err => {
+            this.toastService.show(err.message, 'error');
+          }
+        });
+      }
+
     }
     this.logInvalidControls(this.customerForm);
-
   }
 
 
@@ -241,11 +256,18 @@ export class CustomerFormComponent implements OnInit {
     const pin = this.customerForm.get(pinControl)?.value?.toString() ?? '';
     if (pin.length === 6) {
       this.employeeService.getAreasWithPinCode(pin).subscribe({
-        next: resp => {
-          this.areas = resp;
-          if (updateOtherFields) {
+        next: (resp) => {
+          this.areas = resp || [];
+          if (this.areas.length === 0) {
+            this.toastService.show('No areas found for the entered pincode.', 'warning');
+          }
+          if (updateOtherFields && this.areas.length > 0) {
             this.fetchLocationData('areaID', 'city', 'state', 'country');
           }
+        },
+        error: (error) => {
+          console.error('Error fetching areas:', error);
+          this.toastService.show('Failed to fetch areas for the entered pincode.', 'error');
         }
       });
     }
@@ -304,16 +326,16 @@ export class CustomerFormComponent implements OnInit {
     return control as FormGroup;
   }
 
-  onCategoryToggle(event: Event) {
+  onCategoryToggle(event: Event): void {
     const checkbox = event.target as HTMLInputElement;
     const id = +checkbox.value;
 
-    const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
+    const formArray = this.customerCompanyCategoriesArray;
 
     if (checkbox.checked) {
       const exists = formArray.controls.some(ctrl => ctrl.get('companyCategoryID')?.value === id);
       if (!exists) {
-        formArray.push(this.createCompanyCategory(id));
+        formArray.push(this.createCompanyCategory({ companyCategoryID: id }));
       }
     } else {
       const index = formArray.controls.findIndex(ctrl => ctrl.get('companyCategoryID')?.value === id);
@@ -333,7 +355,7 @@ export class CustomerFormComponent implements OnInit {
     if (checkbox.checked) {
       const exists = formArray.controls.some(ctrl => ctrl.get('dispatchModeID')?.value === id);
       if (!exists) {
-        formArray.push(this.createDispatch(id));
+        formArray.push(this.createDispatch({ dispatchModeID: id }));
       }
     } else {
       const index = formArray.controls.findIndex(ctrl => ctrl.get('dispatchModeID')?.value === id);
@@ -373,18 +395,18 @@ export class CustomerFormComponent implements OnInit {
     return '';
   }
 
-  createCompanyCategory(companyCategoryID: number): FormGroup {
+  createCompanyCategory(companyCategory?: any): FormGroup {
     return this.fb.group({
-      id: [0],
-      customerID: [0],
-      companyCategoryID: [companyCategoryID]
+      id: [companyCategory?.id || 0],
+      customerID: [companyCategory?.customerID || 0],
+      companyCategoryID: [companyCategory?.companyCategoryID || 0]
     });
   }
-  private createDispatch(dispatchModeID: number): FormGroup {
+  private createDispatch(dispatchMode?: any): FormGroup {
     return this.fb.group({
-      id: [0],
-      customerID: [0],
-      dispatchModeID: [dispatchModeID]
+      id: [dispatchMode?.id || 0],
+      customerID: [dispatchMode?.customerID || 0],
+      dispatchModeID: [dispatchMode?.dispatchModeID || 0]
     });
   }
 
@@ -408,10 +430,44 @@ export class CustomerFormComponent implements OnInit {
   loadCustomer(): void {
     this.customerService.getCustomerById(this.customerId).subscribe({
       next: (response) => {
+        // Clear existing contacts in the FormArray
+        this.contactPersonsArray.clear();
+
+
+        // Add fixed contacts (contact1, contact2, accountant)
+        this.initFixedContacts();
+
+        // Add dynamic contacts
+        if (response.contactPersons && response.contactPersons.length > 0) {
+          response.contactPersons.forEach((contact: any) => {
+            if (contact.type === 'dynamic') {
+              this.contactPersonsArray.push(this.createContact('dynamic'));
+            }
+          });
+        }
+
+        // Populate company categories
+        const companyCategoriesArray = this.customerCompanyCategoriesArray;
+        companyCategoriesArray.clear();
+        if (response.customerCompanyCategories && response.customerCompanyCategories.length > 0) {
+          response.customerCompanyCategories.forEach((category: any) => {
+            companyCategoriesArray.push(this.createCompanyCategory(category)); // Pass the full company category object
+          });
+        }
+
+        // Populate dispatch modes
+        const dispatchModesArray = this.customerDispatchModesArray;
+        dispatchModesArray.clear();
+        if (response.customerDispatchModes && response.customerDispatchModes.length > 0) {
+          response.customerDispatchModes.forEach((mode: any) => {
+            dispatchModesArray.push(this.createDispatch(mode));
+
+          });
+        }
+
         this.customerForm.patchValue(response);
-        this.customerForm.get('contactPersons')?.patchValue(response.contactPersons);
-        this.customerForm.get('customerCompanyCategories')?.setValue(response.customerCompanyCategories);
-        this.customerForm.get('customerDispatchModes')?.setValue(response.customerDispatchModes);
+        this.fetchAreaData('pinCode', true);
+        this.selectedCompanyCategoryIds = response.customerCompanyCategories.map((cat: any) => cat.companyCategoryID);
       },
       error: (error) => {
         console.error('Error fetching customer data:', error);

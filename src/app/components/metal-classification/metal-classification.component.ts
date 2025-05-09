@@ -3,16 +3,16 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
-import { HeatTreatmentService } from '../../services/heat-treatment.service';
+import { MetalClassificationService } from '../../services/metal-classification.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
-  selector: 'app-heat-treatment',
+  selector: 'app-metal-classification',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './heat-treatment.component.html',
-  styleUrl: './heat-treatment.component.css'
+  templateUrl: './metal-classification.component.html',
+  styleUrl: './metal-classification.component.css'
 })
-export class HeatTreatmentComponent implements OnInit {
+export class MetalClassificationComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
@@ -28,6 +28,7 @@ export class HeatTreatmentComponent implements OnInit {
     createdOn: 'date'
   };
 
+  // common filter variables
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
   filterColumn: string = 'string';
   filterColumnTitle: string = 'string';
@@ -36,7 +37,6 @@ export class HeatTreatmentComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  HeatTreatmentList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -57,31 +57,31 @@ export class HeatTreatmentComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  // form
-  HeatTreatmentForm!: FormGroup;
+  // form base varryable
+  MetalClassificationForm!: FormGroup;
+  MetalClassificationList: any[] = [];
+  metalClassificationId: number = 0;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  heatTreatmentId: number = 0;
-  formTitle = 'Heat Treatment Form';
+  formTitle = 'Metal Classification Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private heatTreatmentService: HeatTreatmentService, private toastService: ToastService) {
-
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private metalclassificationService: MetalClassificationService, private toastService: ToastService) {
   }
-
-
   ngOnInit() {
     this.fetchData();
-    this.HeatTreatmentForm = this.fb.group({
+    this.initForm();
+  }
+initForm() {
+    this.MetalClassificationForm = this.fb.group({
       id: [0],
       name: ['', Validators.required]
     });
   }
-
   fetchData() {
-    this.heatTreatmentService.getAllHeatTreatments(this.payload).subscribe({
+    this.metalclassificationService.getAllMetalClassifications(this.payload).subscribe({
       next: (response) => {
-        this.HeatTreatmentList = response?.items || [];
+        this.MetalClassificationList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -89,7 +89,7 @@ export class HeatTreatmentComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.HeatTreatmentList = [];
+        this.MetalClassificationList = [];
         this.isLoading.set(false);
       }
     }
@@ -97,10 +97,10 @@ export class HeatTreatmentComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.heatTreatmentService.getHeatTreatmentById(this.heatTreatmentId).subscribe({
+    this.metalclassificationService.getMetalClassificationById(this.metalClassificationId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.HeatTreatmentForm.patchValue(response);
+        this.MetalClassificationForm.patchValue(response);
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -222,7 +222,7 @@ export class HeatTreatmentComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.heatTreatmentService.deleteHeatTreatment(id).subscribe({
+      this.metalclassificationService.deleteMetalClassification(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -235,27 +235,27 @@ export class HeatTreatmentComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      this.heatTreatmentId = id;
+      this.metalClassificationId = id;
       this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.HeatTreatmentForm.reset();
-      this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
+      this.MetalClassificationForm.reset();
+      this.formTitle = 'Metal Classification Form';
+      this.MetalClassificationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
+      this.formTitle = 'Metal Classification Form';
+      this.MetalClassificationForm.enable();
       
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Heat Treatment';
-      this.HeatTreatmentForm.disable();
+      this.formTitle = 'View Metal Classification';
+      this.MetalClassificationForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -269,10 +269,10 @@ export class HeatTreatmentComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.HeatTreatmentForm.valid) {
-      let formData = this.HeatTreatmentForm.value;
+    if (this.MetalClassificationForm.valid) {
+      let formData = this.MetalClassificationForm.value;
       if (this.isEditMode) {
-        this.heatTreatmentService.updateHeatTreatment(formData).subscribe({
+        this.metalclassificationService.updateMetalClassification(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -284,7 +284,7 @@ export class HeatTreatmentComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.heatTreatmentService.createHeatTreatment(formData).subscribe({
+        this.metalclassificationService.createMetalClassification(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();

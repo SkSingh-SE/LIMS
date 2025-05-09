@@ -12,4 +12,7 @@
   .badge span {
     font-weight: bold;
   }
-  
+  .hover-bg:hover {
+    background-color: #f8f9fa; /* light gray */
+    cursor: pointer;
+  }

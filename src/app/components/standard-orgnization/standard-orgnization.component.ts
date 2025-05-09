@@ -3,24 +3,23 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
-import { ParameterService } from '../../services/parameter.service';
+import { StandardOrgnizationService } from '../../services/standard-orgnization.service';
 import { ToastService } from '../../services/toast.service';
-import { ParameterUnitService } from '../../services/parameter-unit.service';
 
 @Component({
-  selector: 'app-parameter',
+  selector: 'app-standard-orgnization',
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './parameter.component.html',
-  styleUrl: './parameter.component.css'
+  templateUrl: './standard-orgnization.component.html',
+  styleUrl: './standard-orgnization.component.css'
 })
-export class ParameterComponent implements OnInit {
+export class StandardOrgnizationComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Agency Name', filter: true },
+    { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
@@ -37,8 +36,8 @@ export class ParameterComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  ParameterList: any[] = [];
-  ParameterUnits: any[] = [];
+  StandardOrganizationList: any[] = [];
+  standardOrganizationId: number = 0;
 
   pageNumber = 1;
   pageSize = 10;
@@ -60,42 +59,31 @@ export class ParameterComponent implements OnInit {
   };
 
   // form
-  ParameterForm!: FormGroup;
+  StandardOrganizationForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  parameterId: number = 0;
-  formTitle = 'Parameter Form';
+  formTitle = 'Specimen Orientation Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService) {
-    this.route.params.subscribe(params => {
-      this.parameterId = params['id'] || 0;
-      if (this.parameterId > 0) {
-        this.getDetails();
-      }
-    });
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private standardOrgService: StandardOrgnizationService, private toastService: ToastService) {
 
   }
 
 
   ngOnInit() {
     this.fetchData();
-    this.fetchParameterUnits();
-    this.ParameterForm = this.fb.group({
+    this.initForm();
+  }
+  initForm() {
+    this.StandardOrganizationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      aliasName: [''],
-      parameterUnitID: [0, Validators.required],
-      rate: [0],
-      note: [''],
-      parameterType: ['Chemical', Validators.required],
+      name: ['', Validators.required]
     });
   }
-
   fetchData() {
-    this.parameterService.getAllChemicalParameters(this.payload).subscribe({
+    this.standardOrgService.getAllStandardOrganizations(this.payload).subscribe({
       next: (response) => {
-        this.ParameterList = response?.items || [];
+        this.StandardOrganizationList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -103,28 +91,18 @@ export class ParameterComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.ParameterList = [];
+        this.StandardOrganizationList = [];
         this.isLoading.set(false);
       }
     }
+
     );
   }
-  fetchParameterUnits() {
-    this.parameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
-      next: (response) => {
-        this.ParameterUnits = response?.items || [];
-      },
-      error: (error) => {
-        console.error('Error fetching parameter units:', error);
-      }
-    });
-  }
-
   getDetails(): void {
-    this.parameterService.getParameterById(this.parameterId).subscribe({
+    this.standardOrgService.getStandardOrganizationById(this.standardOrganizationId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
-        this.ParameterForm.patchValue(response);
+        this.StandardOrganizationForm.patchValue(response);
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -246,7 +224,7 @@ export class ParameterComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.parameterService.deleteParameter(id).subscribe({
+      this.standardOrgService.deleteStandardOrganization(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -259,27 +237,27 @@ export class ParameterComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      this.parameterId = id;
+      this.standardOrganizationId = id;
       this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.ParameterForm.reset();
-      this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
+      this.initForm();
+      this.formTitle = 'Specimen Orientation Form';
+      this.StandardOrganizationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
-      
+      this.formTitle = 'Specimen Orientation Form';
+      this.StandardOrganizationForm.enable();
+
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Parameter';
-      this.ParameterForm.disable();
+      this.formTitle = 'View Specimen Orientation';
+      this.StandardOrganizationForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -293,10 +271,10 @@ export class ParameterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.ParameterForm.valid) {
-      let formData = this.ParameterForm.value;
+    if (this.StandardOrganizationForm.valid) {
+      let formData = this.StandardOrganizationForm.value;
       if (this.isEditMode) {
-        this.parameterService.updateParameter(formData).subscribe({
+        this.standardOrgService.updateStandardOrganization(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -308,7 +286,7 @@ export class ParameterComponent implements OnInit {
         });
       } else {
         formData.id = 0;
-        this.parameterService.createParameter(formData).subscribe({
+        this.standardOrgService.createStandardOrganization(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.closeModal();
@@ -323,5 +301,6 @@ export class ParameterComponent implements OnInit {
   }
 
 }
+
 
 

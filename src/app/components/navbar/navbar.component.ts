@@ -60,17 +60,10 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
         { title: 'Department Master', route: '/department', color: this.getRandomColor() },
         { title: 'Employee Master', route: '/employee', color: this.getRandomColor() },
         { title: 'Designation Master', route: '/designation', color: this.getRandomColor() },
-        { title: 'Role Master', route: '/administration/role-master', color: this.getRandomColor() },
-        { title: 'Country Master', route: '/administration/country-master', color: this.getRandomColor() },
-        { title: 'State Master', route: '/administration/state-master', color: this.getRandomColor() },
-        { title: 'City Master', route: '/administration/city-master', color: this.getRandomColor() },
-        { title: 'Area Master', route: '/administration/area-master', color: this.getRandomColor() },
-        { title: 'Pincode Master', route: '/administration/pincode-master', color: this.getRandomColor() },
-        { title: 'Menu Master', route: '/administration/menu-master', color: this.getRandomColor() },
-        { title: 'Permission Master', route: '/administration/permission-master', color: this.getRandomColor() },
-        { title: 'Role Permission', route: '/administration/role-permission', color: this.getRandomColor() },
-        { title: 'Currency Master', route: '/administration/currency-master', color: this.getRandomColor() },
-        { title: 'Company Master', route: '/administration/company-master', color: this.getRandomColor() },
+        { title: 'Tax Master', route: '/tax', color: this.getRandomColor() },
+        { title: 'Bank Master', route: '/bank', color: this.getRandomColor() },
+        { title: 'Courier Master', route: '/courier', color: this.getRandomColor() },
+        { title: 'TPI Master', route: '/tpi', color: this.getRandomColor() },
       ]
     },
     {
@@ -79,11 +72,14 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-box',
       isExpanded: false,
       submenu: [
-        { title: 'Dimensional Factors Master', route: '/specification/dimensional-factors', color: this.getRandomColor() },
-        { title: 'Heat Treatment Master', route: '/specification/heat-treatment', color: this.getRandomColor() },
-        { title: 'Parameter Master', route: '/specification/parameter', color: this.getRandomColor() },
-        { title: 'Product Category Master', route: '/specification/product-category', color: this.getRandomColor() },
-        { title: 'Product Condition Master', route: '/specification/product-condition', color: this.getRandomColor() },
+        { title: 'Dimensional Factors Master', route: '/dimesional-factor', color: this.getRandomColor() },
+        { title: 'Heat Treatment Master', route: '/heat-treatment', color: this.getRandomColor() },
+        { title: 'Chemical Parameter Master', route: '/chemical-parameter', color: this.getRandomColor() },
+        { title: 'Mechanical Parameter Master', route: '/mechanical-parameter', color: this.getRandomColor() },
+        { title: 'Product Condition Master', route: '/product-condition', color: this.getRandomColor() },
+        { title: 'Specimen Orientation Master', route: '/specimen-orientation', color: this.getRandomColor() },
+        { title: 'Standard Organization Master', route: '/standard-organization', color: this.getRandomColor() },
+        { title: 'Universal Code Type Master', route: '/universal-code-type', color: this.getRandomColor() },
       ]
     },
     {
@@ -104,10 +100,8 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-people',
       isExpanded: false,
       submenu: [
-        { title: 'Customer Type Master', route: '/customer/type-master', color: this.getRandomColor() },
-        { title: 'Industry Master', route: '/customer/industry-master', color: this.getRandomColor() },
-        { title: 'Item Master', route: '/customer/item-master', color: this.getRandomColor() },
-        { title: 'DispatchMode Master', route: '/customer/dispatch-mode', color: this.getRandomColor() },
+        { title: 'Company Category', route: '/company-category', color: this.getRandomColor() },
+        { title: 'Customer Master', route: '/customer', color: this.getRandomColor() }
       ]
     },
     {
@@ -226,6 +220,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   }
   menuOpenClose() {
     this.isMenu2Open.set(!this.isMenu2Open());
+    console.log("menu2 open close ", this.isMenu2Open());
     setTimeout(() => {
       this.updateNavbarHeight();
       this.cdr.detectChanges(); // Ensure Angular detects this change

@@ -19,7 +19,7 @@ export class SpecimenOrientationComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Agency Name', filter: true },
+    { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
@@ -72,12 +72,14 @@ export class SpecimenOrientationComponent implements OnInit {
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
+  initForm() {
     this.SpecimentOrientationForm = this.fb.group({
       id: [0],
       name: ['', Validators.required]
     });
   }
-
   fetchData() {
     this.specimenOrientationService.getAllSpecimenOrientations(this.payload).subscribe({
       next: (response) => {
@@ -241,7 +243,7 @@ export class SpecimenOrientationComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.SpecimentOrientationForm.reset();
+      this.initForm();
       this.formTitle = 'Specimen Orientation Form';
       this.SpecimentOrientationForm.enable();
     } else if (type === 'edit') {
@@ -249,7 +251,7 @@ export class SpecimenOrientationComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Specimen Orientation Form';
       this.SpecimentOrientationForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;

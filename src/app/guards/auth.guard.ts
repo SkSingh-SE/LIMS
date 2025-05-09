@@ -16,7 +16,6 @@ export const authGuard: CanActivateFn = (route, state) => {
   }
 
   if (isTokenExpiring) {
-    alert('Token is expiring soon, refreshing...');
     // If the token is about to expire, try to refresh it
     return authService.refreshToken(userData.token).pipe(
       map((newTokenData) => {

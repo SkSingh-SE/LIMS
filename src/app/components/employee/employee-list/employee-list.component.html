@@ -57,8 +57,8 @@
                             <td>{{ employee.dateOfJoin | date:"dd MMM, yyyy" }}</td>
                             <td>{{ employee.dateOfBirth | date:"dd MMM, yyyy" }}</td>
                             <td>{{employee.gender}}</td>
-                            <td>{{employee.departmentName}}</td>
-                            <td>{{employee.designationName}}</td>
+                            <td>{{employee.departmentName || "-"}}</td>
+                            <td>{{employee.designationName || "-"}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/employee/details', employee.id]"

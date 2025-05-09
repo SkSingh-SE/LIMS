@@ -53,12 +53,10 @@
                         <tr *ngFor="let employee of customerList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ employee.name }}</td>
-                            <td>{{ employee.emailId }}</td>
-                            <td>{{ employee.dateOfJoin | date:"dd MMM, yyyy" }}</td>
-                            <td>{{ employee.dateOfBirth | date:"dd MMM, yyyy" }}</td>
-                            <td>{{employee.gender}}</td>
-                            <td>{{employee.departmentName}}</td>
-                            <td>{{employee.designationName}}</td>
+                            <td>{{ employee.customerType }}</td>
+                            <td>{{ employee.pinCode }}</td>
+                            <td>{{ employee.gstNo }}</td>
+                            <td>{{employee.sampleReturn}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/customer/details', employee.id]"

@@ -1,0 +1,23 @@
+.wide-input {
+    min-width: 170px;
+  }
+  .custom-scroll {
+    scroll-behavior: smooth;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .custom-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #999;
+    border-radius: 10px;
+  }
+  
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #999 #f1f1f1;
+  }
+  

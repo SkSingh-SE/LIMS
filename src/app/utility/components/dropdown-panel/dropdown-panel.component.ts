@@ -10,8 +10,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export class DropdownPanelComponent {
   @Input() items: any[] = [];
   @Output() selectItem = new EventEmitter<any>();
+  @Output() onScroll = new EventEmitter<any>();
 
   onSelect(item: any) {
     this.selectItem.emit(item);
+  }
+  onScrollEvent(event: any) {
+    this.onScroll.emit(event);
   }
 }

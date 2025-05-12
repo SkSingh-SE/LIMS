@@ -185,7 +185,7 @@ export class CustomerFormComponent implements OnInit {
   private createContact(type: string): FormGroup {
     const isRequired = ['contact1', 'contact2', 'accountant'].includes(type);
 
-    return this.fb.group({
+    const contact = this.fb.group({
       id: [0],
       key: [type],
       type: [type],
@@ -201,6 +201,11 @@ export class CustomerFormComponent implements OnInit {
       billReportDeliveryAddress: [''],
       customerID: [0]
     });
+    if (this.isViewMode) {
+      contact.disable();
+    }
+    return contact;
+
   }
 
 

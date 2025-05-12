@@ -14,7 +14,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   showPassword = signal(false);
   isLoading = signal(false);
-
+errorMessage = signal('');
   constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this.loginForm = this.fb.group({
       email: ['', Validators.required],
@@ -37,9 +37,11 @@ export class LoginComponent {
           this.authService.saveUserData(data);
           this.router.navigate(['/designation']);
           this.isLoading.set(false);
+          this.errorMessage.set('');
         },
         error: (err) => {
-          console.error('Error while login:', err);
+          this.errorMessage.set(err.message);
+          console.error('Login failed', err.message);
           this.isLoading.set(false);
         }
       });

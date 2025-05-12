@@ -178,12 +178,14 @@ export class SearchableDropdownComponent {
       const matched = this.dropdownData.find(x => x.id === this.selectedItem);
       if (matched) {
         this.selectedLabel = matched.name;
+        this.selectItem(matched);
       } else {
         this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
           const found = data.find(x => x.id === this.selectedItem);
           if (found) {
             this.dropdownData = [found, ...this.dropdownData];
             this.selectedLabel = found.name;
+            this.selectItem(found);
           }
         });
       }
@@ -204,7 +206,7 @@ export class SearchableDropdownComponent {
     const inputWidth = inputRect.width;
 
     const positionStrategy = this.overlay.position()
-      .flexibleConnectedTo(this.inputRef)
+      .flexibleConnectedTo(this.inputRef.nativeElement)
       .withPositions([
         {
           originX: 'start',
@@ -212,18 +214,23 @@ export class SearchableDropdownComponent {
           overlayX: 'start',
           overlayY: 'top',
         },
+        {
+          originX: 'start',
+          originY: 'top',
+          overlayX: 'start',
+          overlayY: 'bottom',
+        },
       ])
       .withFlexibleDimensions(false)
       .withPush(false);
 
-
     if (!this.overlayRef) {
       this.overlayRef = this.overlay.create({
         positionStrategy,
-        hasBackdrop: false, // handle backdrop manually
         scrollStrategy: this.overlay.scrollStrategies.reposition(),
+        hasBackdrop: false, // No backdrop for dropdown
         minWidth: inputWidth,
-        maxWidth: inputWidth
+        maxWidth: inputWidth,
       });
     }
 
@@ -234,6 +241,10 @@ export class SearchableDropdownComponent {
 
       this.dropdownComponentRef.instance.selectItem.subscribe((item: any) => {
         this.selectItem(item);
+      });
+
+      this.dropdownComponentRef.instance.onScroll.subscribe((event: any) => {
+        this.onScroll(event);
       });
 
       setTimeout(() => {
@@ -264,6 +275,24 @@ export class SearchableDropdownComponent {
     this.closeDropdown();
   }
 
+  onScroll(event: any) {
+    const div = event.target;
+    if (div.scrollTop + div.clientHeight >= div.scrollHeight - 5) {
+      this.loadMore();
+    }
+  }
+  loadMore() {
+    if (this.loading || !this.hasMore) return;
+    this.loading = true;
+
+    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe((data: any[]) => {
+      this.dropdownData = [...this.dropdownData, ...data];
+      this.hasMore = data.length === this.pageSize;
+      this.pageNo++;
+      this.loading = false;
+      this.openDropdownPanel();
+    });
+  }
   closeDropdown(): void {
     if (this.overlayRef?.hasAttached()) {
       this.overlayRef.detach();

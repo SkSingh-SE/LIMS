@@ -47,24 +47,35 @@
                 <div>
                     <label class="form-label">Company Categories <span class="text-danger">*</span></label>
                     <div class="dropdown">
-                        <button class="form-control dropdown-toggle d-flex justify-content-between align-items-center"
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ getSelectedCategoriesText() || 'Select Company Categories' }}
-                        </button>
-                        <ul class="dropdown-menu w-100 shadow p-2" style="max-height: 250px; overflow-y: auto;">
-                            <li class="hover-bg" *ngFor="let cat of companyCategory" >
-                                <div class="form-check">
-                                    <input class="form-check-input mt-1" type="checkbox" [id]="'cat-' + cat.id"
-                                        [value]="cat.id" (change)="onCategoryToggle($event)"
-                                        [checked]="isCategorySelected(cat.id)">
-                                    <label class="form-check-label ms-2" [for]="'cat-' + cat.id" (click)="$event.stopPropagation()">{{ cat.name }}</label>
-                                </div>
-                            </li>
-                        </ul>
+                      <button class="form-control dropdown-toggle d-flex justify-content-between align-items-center"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        [disabled]="isViewMode">
+                        {{ getSelectedCategoriesText() || 'Select Company Categories' }}
+                      </button>
+                      <ul class="dropdown-menu w-100 shadow p-2" [class.disabled]="isViewMode" style="max-height: 250px; overflow-y: auto;">
+                        <li class="hover-bg" *ngFor="let cat of companyCategory">
+                          <div class="form-check">
+                            <input class="form-check-input mt-1"
+                              type="checkbox"
+                              [id]="'cat-' + cat.id"
+                              [value]="cat.id"
+                              (change)="onCategoryToggle($event)"
+                              [checked]="isCategorySelected(cat.id)"
+                              [disabled]="isViewMode">
+                            <label class="form-check-label ms-2" [for]="'cat-' + cat.id" (click)="$event.stopPropagation()">
+                              {{ cat.name }}
+                            </label>
+                          </div>
+                        </li>
+                      </ul>
                     </div>
+                  
                     <div *ngIf="customerForm.get('customerCompanyCategories')?.touched && customerForm.get('customerCompanyCategories')?.invalid"
-                        class="text-danger text-sm">At least one Company Category is required.</div>
-                </div>
+                      class="text-danger text-sm">
+                      At least one Company Category is required.
+                    </div>
+                  </div>
+                  
 
                 <!-- GST No -->
                 <div>
@@ -156,7 +167,7 @@
                 <div class="d-flex flex-wrap gap-2">
                     <div class="form-check form-check-inline" *ngFor="let mode of dispatchModes">
                         <input type="checkbox" class="form-check-input mt-1" [value]="mode.id"
-                            [checked]="isDispatchModeSelected(mode.id)" (change)="onDispatchModeToggle($event)" />
+                            [checked]="isDispatchModeSelected(mode.id)" (change)="onDispatchModeToggle($event)" [disabled]="isViewMode" />
                         <label class="form-check-label small">{{ mode.name }}</label>
                     </div>
                 </div>

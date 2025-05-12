@@ -54,7 +54,11 @@
                             <span *ngIf="isLoading()" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                             <span *ngIf="isLoading()" class="ms-2" role="status">Loading...</span>
                             <span *ngIf="!isLoading()">Login</span>
+                            
                           </button>
+                        <div *ngIf="errorMessage()" class="alert alert-danger p-1 mt-1 text-center small" role="alert">
+                            {{ errorMessage() }}
+                        </div>
                     </div>
                 </form>
 

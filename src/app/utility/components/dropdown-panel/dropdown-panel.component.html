@@ -1,4 +1,4 @@
-<ul class="list-group" style="max-height: 200px; overflow-y: auto;">
+<ul class="list-group " style="max-height: 200px; overflow-y: auto;" (scroll)="onScrollEvent($event)">
     <li class="list-group-item cursor-pointer"
         *ngFor="let item of items"
         (click)="onSelect(item)">

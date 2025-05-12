@@ -1,31 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Modal } from 'bootstrap';
-import { ProductConditionService } from '../../services/product-condition.service';
-import { ToastService } from '../../services/toast.service';
+import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { MaterialSpecificationService } from '../../../services/material-specification.service';
 
 @Component({
-  selector: 'app-product-condition',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './product-condition.component.html',
-  styleUrl: './product-condition.component.css'
+  selector: 'app-material-specification-list',
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './material-specification-list.component.html',
+  styleUrl: './material-specification-list.component.css'
 })
-export class ProductConditionComponent implements OnInit {
+export class MaterialSpecificationListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
-  @ViewChild('modalRef') modalElement!: ElementRef;
-  private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
+    { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
+    { key: 'standard', type: 'string', label: 'Standard', filter: true },
+    { key: 'standardYear', type: 'number', label: 'StandardYear', filter: true },
+    { key: 'grade', type: 'string', label: 'Grade', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
-    createdOn: 'date'
+    specificationCode: 'string',
+    standard: 'string',
+    standardOrganizationName: 'string',
+    standardYear: 'number',
+    grade: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -36,7 +38,8 @@ export class ProductConditionComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  ProductConditionList: any[] = [];
+  // materialSpecificationListForm: FormGroup;
+  materialSpeficationList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -57,58 +60,41 @@ export class ProductConditionComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  // form
-  ProductConditionForm!: FormGroup;
-  isEditMode: boolean = false;
-  isViewMode: boolean = true;
-  customerTypeObject: any = null;
-  productConditionId: number = 0;
-  formTitle = 'Product Condition Form';
-
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productConditionService: ProductConditionService, private toastService: ToastService) {
-
+  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService) {
+    // this.materialSpecificationListForm = this.fb.group({
+    //   searchTerm: '',
+    //   sortByColumn: '',
+    //   sortOrder: '',
+    //   filters: this.fb.group({})
+    // });
   }
 
+  getDesignationValue(designation: any, key: string): any {
+    return designation[key];
+  }
 
   ngOnInit() {
     this.fetchData();
-    this.initForm();
-  }
-  initForm() {
-    this.ProductConditionForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required]
-    });
   }
 
   fetchData() {
-    this.productConditionService.getAllProductConditions(this.payload).subscribe({
+
+    this.materialSpecificationService.getAllMaterialSpecifications(this.payload).subscribe({
       next: (response) => {
-        this.ProductConditionList = response?.items || [];
+        this.materialSpeficationList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
-        this.ProductConditionList = [];
+        console.error('Error fetching designations:', error);
+        this.materialSpeficationList = [];
         this.isLoading.set(false);
       }
-    }
 
-    );
-  }
-  getDetails(): void {
-    this.productConditionService.getProductConditionById(this.productConditionId).subscribe({
-      next: (response) => {
-        this.customerTypeObject = response;
-        this.ProductConditionForm.patchValue(response);
-      },
-      error: (error) => {
-        console.error('Error fetching tax data:', error);
-      }
     });
+
   }
 
   applySorting(column: string) {
@@ -133,6 +119,7 @@ export class ProductConditionComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
+    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -221,86 +208,5 @@ export class ProductConditionComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.productConditionService.deleteProductCondition(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
-  }
-  openModal(type: string, id: number): void {
-    if (id > 0) {
-      this.productConditionId = id;
-      this.getDetails();
-    }
-    if (type === 'create') {
-      this.isEditMode = false;
-      this.isViewMode = false;
-      this.initForm();
-      this.formTitle = 'Product Condition Form';
-      this.ProductConditionForm.enable();
-    } else if (type === 'edit') {
-      this.isEditMode = true;
-      this.isViewMode = false;
-      this.formTitle = 'Product Condition Form';
-      this.ProductConditionForm.enable();
-      
-    }
-    else if (type === 'view') {
-      this.isViewMode = true;
-      this.isEditMode = false;
-      this.formTitle = 'View Product Condition';
-      this.ProductConditionForm.disable();
-    }
-
-    this.bsModal = new Modal(this.modalElement.nativeElement);
-    this.bsModal.show();
-  }
-
-  closeModal(): void {
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
-  }
-
-  onSubmit(): void {
-    if (this.ProductConditionForm.valid) {
-      let formData = this.ProductConditionForm.value;
-      if (this.isEditMode) {
-        this.productConditionService.updateProductCondition(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.productConditionService.createProductCondition(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
-    }
-  }
-
 }
-
 

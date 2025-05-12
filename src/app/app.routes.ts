@@ -26,8 +26,12 @@ import { MechanicalParameterComponent } from './components/parameter/mechanical-
 import { StandardOrgnizationComponent } from './components/standard-orgnization/standard-orgnization.component';
 import { UniversalCodeTypeComponent } from './components/universal-code-type/universal-code-type.component';
 import { InvoiceCaseComponent } from './components/test/invoice-case/invoice-case.component';
-import { MaterialSpecificationComponent } from './components/material-specification/material-specification.component';
 import { MetalClassificationComponent } from './components/metal-classification/metal-classification.component';
+import { MaterialSpecificationFormComponent } from './components/material-specification/material-specification-form/material-specification-form.component';
+import { MaterialSpecificationListComponent } from './components/material-specification/material-specification-list/material-specification-list.component';
+import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
+import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
+import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -67,7 +71,15 @@ export const routes: Routes = [
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
             { path: 'standard-organization', component: StandardOrgnizationComponent },
             { path: 'universal-code-type', component: UniversalCodeTypeComponent },
-            { path: 'material-specification', component: MaterialSpecificationComponent },
+            { path: 'material-specification', component: MaterialSpecificationListComponent },
+            { path: 'material-specification/create', component: MaterialSpecificationFormComponent },
+            { path: 'material-specification/edit/:id', component: MaterialSpecificationFormComponent },
+            { path: 'material-specification/details/:id', component: MaterialSpecificationFormComponent },
+            { path: 'custom-material-specification', component: CustomMaterialSpecificationListComponent },
+            { path: 'custom-material-specification/create', component: CustomMaterialSpecificationFormComponent },
+            { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent },
+            { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
+            { path: 'product-specification', component: ProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
         ]
     },

@@ -52,7 +52,7 @@
                     <tbody>
                         <tr *ngFor="let material of materialSpeficationList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ material.specificationCode }}</td>
+                            <td>{{ material.aliasName }}</td>
                             <td>{{ material.standardOrganizationName }}</td>
                             <td>{{ material.standard }}</td>
                             <td>{{ material.standardYear }}</td>
@@ -71,6 +71,16 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
+                                     <a
+  [routerLink]="['/material-specification/edit', material.id]"
+  [state]="{ mode: 'copy' }"
+  class="icon-link d-flex align-items-center justify-content-center rounded-3 shadow-lg bg-info"
+  style="width: 30px; height: 30px;"
+  title="Copy"
+>
+  <i class="bi bi-copy"></i>
+</a>
+
                                     <a  class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">

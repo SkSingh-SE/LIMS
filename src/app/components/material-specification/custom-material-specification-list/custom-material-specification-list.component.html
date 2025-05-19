@@ -52,9 +52,8 @@
                     <tbody>
                         <tr *ngFor="let material of materialSpeficationList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ material.specificationCode }}</td>
-                            <td>{{ material.standardOrganizationName }}</td>
-                            <td>{{ material.standard }}</td>
+                            <td>{{ material.aliasName }}</td>
+                            <td>{{ material.part }}</td>
                             <td>{{ material.standardYear }}</td>
                             <td>{{material.grade}}</td>
                             <td class="text-center">

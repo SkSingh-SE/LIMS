@@ -89,7 +89,7 @@
     </div>
     }
     @if(subMenus().length > 0 && isSubMenuOpen()){
-    <div class="card card-body flex-row gap-2 submenu-container" (mouseleave)="closeSubMenu()">
+    <div class="card card-body flex-row submenu-container" (mouseleave)="closeSubMenu()">
         <div *ngFor="let subMenuItem of subMenus()" class="submenu-item px-2 " (click)="setActiveSubMenu(subMenuItem)"
             [ngClass]="{'active': activeSubmenu() === subMenuItem.title}">
             

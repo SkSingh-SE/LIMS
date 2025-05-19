@@ -80,6 +80,11 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
         { title: 'Specimen Orientation Master', route: '/specimen-orientation', color: this.getRandomColor() },
         { title: 'Standard Organization Master', route: '/standard-organization', color: this.getRandomColor() },
         { title: 'Universal Code Type Master', route: '/universal-code-type', color: this.getRandomColor() },
+        { title: 'Metal Classification', route: '/metal-classification', color: this.getRandomColor() },
+        { title: 'Material Specification', route: '/material-specification', color: this.getRandomColor() },
+        { title: 'Custom Material Specification', route: '/custom-material-specification', color: this.getRandomColor() },
+        { title: 'Product Specification', route: '/product-specification', color: this.getRandomColor() },
+        { title: 'Custom Product Specification', route: '/custom-product-specification', color: this.getRandomColor() },
       ]
     },
     {

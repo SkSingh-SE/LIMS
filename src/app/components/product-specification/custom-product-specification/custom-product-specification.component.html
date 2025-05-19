@@ -1,0 +1,185 @@
+<div class="card shadow-lg m-2">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="text-center">Custom Product Specification Form</h6>
+    </div>
+    <div class="card-body ">
+        <form [formGroup]="specificationForm" (ngSubmit)="onSubmit()">
+            <!-- Row for basic info -->
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1">
+
+                <!--Specification Name Field -->
+                <div class="">
+                    <label for="name" class="form-label">Specification Name <span class="text-danger">*</span></label>
+                    <input type="text" id="name" class="form-control" formControlName="specificationName"
+                        placeholder="Enter Specification" required
+                        [ngClass]="{'is-invalid': specificationForm.get('specificationName')?.touched && specificationForm.get('specificationName')?.invalid}"
+                        [attr.disabled]="isViewMode ? true : null" />
+                    <span
+                        *ngIf="specificationForm.get('specificationName')?.invalid && specificationForm.get('specificationName')?.touched"
+                        class="text-danger text-sm">
+                        Specification is required.
+                    </span>
+                </div>
+
+                <!-- Specification Code-->
+                <div class=" ">
+                    <label for="code" class="form-label">Specification Code <span class="text-danger">*</span></label>
+                    <input type="text" id="code" class="form-control" formControlName="specificationCode"
+                        placeholder="Enter Specification Code" required
+                        [ngClass]="{'is-invalid': specificationForm.get('specificationCode')?.touched && specificationForm.get('specificationCode')?.invalid}"
+                        [attr.disabled]="isViewMode ? true : null" />
+                    <span
+                        *ngIf="specificationForm.get('specificationCode')?.invalid && specificationForm.get('specificationCode')?.touched"
+                        class="text-danger text-sm">
+                        Specification Code is required.
+                    </span>
+                </div>
+                <!-- Alias Name Required-->
+                <div>
+                    <label for="aliasName" class="form-label">Alias Name <span class="text-danger">*</span></label>
+                    <input type="text" id="aliasName" class="form-control" formControlName="aliasName"
+                        placeholder="Enter Alias Name" [attr.disabled]="isViewMode ? true : null"
+                        [ngClass]="{'is-invalid': specificationForm.get('aliasName')?.touched && specificationForm.get('aliasName')?.invalid}"
+                        required />
+                    <span
+                        *ngIf="specificationForm.get('aliasName')?.invalid && specificationForm.get('aliasName')?.touched"
+                        class="text-danger text-sm">
+                        Alias Name is required.
+                    </span>
+                </div>
+
+
+            </div>
+            <!-- Material Mapping Section -->
+            <div class="">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold fs-6 mb-0">Product Specification Grade</label>
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger" (click)="addMaterial()">
+                        <i class="bi bi-plus-circle-dotted"></i> Add Line
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle " formArrayName="materialMapping" style="min-width: 1200px;">
+                        <thead>
+                            <tr class="text-nowrap text-muted small">
+                                <th class="fw-medium px-2">Specification Name</th>
+                                <th class="fw-medium px-2">Material Specification</th>
+                                <th class="fw-medium px-2 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let material of materialMapping.controls; let i = index" [formGroupName]="i">
+                                <td>
+                                    <div class="">
+                                        <input type="text" id="name" class="form-control"
+                                            [value]="specificationForm.get('specificationName')?.value" placeholder="Enter Specification"
+                                            [disabled]="true" />
+
+                                    </div>
+                                </td>
+                                <td>
+                                    <app-searchable-dropdown class="w-100" [placeholder]="'Search Specification'"
+                                        [labelName]="'Material Specification'" [fetchDataFn]="getMaterialSpecification"
+                                        (itemSelected)="onMaterialSelected($event,i)" [hideLabel]="true"
+                                        [required]="true" [isDisabled]="isViewMode"
+                                        [selectedItem]="specificationForm.get('materiaSpecificationID')?.value">
+                                    </app-searchable-dropdown>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-danger" (click)="removeMaterial(i)">
+                                        <i class="bi bi-dash-circle-dotted"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+
+            </div>
+
+            <!-- Test Mapping Section -->
+            <div class="">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold fs-6 mb-0">Product Test Group</label>
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger" (click)="addTest()">
+                        <i class="bi bi-plus-circle-dotted"></i> Add Group
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle " formArrayName="testMapping" style="min-width: 1200px;">
+                        <thead>
+                            <tr class="text-nowrap text-muted small">
+                                <th class="fw-medium px-2">Specification Name</th>
+                                <th class="fw-medium px-2">Test Required</th>
+                                <th class="fw-medium px-2">Per Batch Testing</th>
+                                <th class="fw-medium px-2">Test Method</th>
+                                <th class="fw-medium px-2">Year</th>
+                                <th class="fw-medium px-2 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let material of testMapping.controls; let i = index" [formGroupName]="i">
+                                <td>
+                                    <div class="">
+                                        <input type="text" id="name" class="form-control"
+                                            [value]="specificationForm.get('specificationName')?.value" placeholder="Enter Specification"
+                                            [disabled]="true" />
+
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" id="name" class="form-control"
+                                        formControlName="testRequired" placeholder="Enter Test Required"
+                                        [ngClass]="{'is-invalid': testMapping.get('testRequired')?.touched && testMapping.get('testRequired')?.invalid}"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                        
+                                    <span *ngIf="testMapping.get('testRequired')?.invalid && testMapping.get('testRequired')?.touched"
+                                        class="text-danger text-sm">
+                                        Test Required is required.
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="text" id="name" class="form-control"
+                                        formControlName="perBatchTesting" placeholder="Enter Per Batch Testing"
+                                        [ngClass]="{'is-invalid': testMapping.get('perBatchTesting')?.touched && testMapping.get('perBatchTesting')?.invalid}"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                        
+                                    <span *ngIf="testMapping.get('perBatchTesting')?.invalid && testMapping.get('perBatchTesting')?.touched"
+                                        class="text-danger text-sm">
+                                        Per Batch Testing is required.
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="text" id="name" class="form-control"
+                                        formControlName="testMethod" placeholder="Enter Test Method"
+                                        [ngClass]="{'is-invalid': testMapping.get('testMethod')?.touched && testMapping.get('testMethod')?.invalid}"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <span *ngIf="testMapping.get('testMethod')?.invalid && testMapping.get('testMethod')?.touched"
+                                        class="text-danger text-sm">
+                                        Test Method is required.
+                                        </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-danger" (click)="removeMaterial(i)">
+                                        <i class="bi bi-dash-circle-dotted"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+
+            </div>
+
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+                <a class="btn btn-warning">Cancel</a>
+                <button type="submit" class="btn btn-success px-3">Save</button>
+            </div>
+
+        </form>
+    </div>
+</div>

@@ -32,6 +32,7 @@ import { MaterialSpecificationListComponent } from './components/material-specif
 import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
 import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
+import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -80,6 +81,7 @@ export const routes: Routes = [
             { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent },
             { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
             { path: 'product-specification', component: ProductSpecificationComponent },
+            { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
         ]
     },

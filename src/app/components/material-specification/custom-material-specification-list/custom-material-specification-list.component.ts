@@ -14,19 +14,17 @@ import { MaterialSpecificationService } from '../../../services/material-specifi
 export class CustomMaterialSpecificationListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
-  columns = [
+ columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
-    { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
-    { key: 'standard', type: 'string', label: 'Standard', filter: true },
-    { key: 'standardYear', type: 'number', label: 'StandardYear', filter: true },
+    { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
+    { key: 'part', type: 'string', label: 'Part', filter: true },
+    { key: 'standardYear', type: 'number', label: 'Year', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    specificationCode: 'string',
-    standard: 'string',
-    standardOrganizationName: 'string',
+    aliasName: 'string',
+    part: 'string',
     standardYear: 'number',
     grade: 'string'
   };

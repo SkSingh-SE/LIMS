@@ -15,16 +15,21 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { Observable } from 'rxjs';
+import { Modal } from 'bootstrap';
+import { Select2, Select2Option, Select2SearchEvent, Select2UpdateEvent, Select2UpdateValue, Select2Value } from 'ng-select2-component';
 
 @Component({
   selector: 'app-material-specification-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, Select2],
   templateUrl: './material-specification-form.component.html',
   styleUrl: './material-specification-form.component.css'
 })
 export class MaterialSpecificationFormComponent implements OnInit {
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollButton') scrollButton!: ElementRef;
+
+  @ViewChild('modalRef') modalElement!: ElementRef;
+  private bsModal!: Modal;
 
   materialSpecificationId: number = 0;
   materialSpecifications: any = null;
@@ -35,14 +40,18 @@ export class MaterialSpecificationFormComponent implements OnInit {
   parameterUnits: any[] = [];
   specimenOriantations: any[] = [];
   testMethods: any[] = [
-    { id: 1, name: 'Test Method 1' },
-    { id: 2, name: 'Test Method 2' },
-    { id: 3, name: 'Test Method 3' },
-    { id: 4, name: 'Test Method 4' },
-    { id: 5, name: 'Test Method 5' },
+    { value: 1, label: 'Test Method 1' },
+    { value: 2, label: 'Test Method 2' },
+    { value: 3, label: 'Test Method 3' },
+    { value: 4, label: 'Test Method 4' },
+    { value: 5, label: 'Test Method 5' },
   ];
+
   selectedStandardOrganization: any = null;
   private scrollTimeout: any;
+  currentRowIndex: number = 0;
+  productConditionsData: any[] = [];
+  filteredProductOptions: any[] = [];
 
   constructor(private fb: FormBuilder, private standardOrganizationService: StandardOrgnizationService,
     private parameterService: ParameterService, private prameterUnitService: ParameterUnitService,
@@ -57,15 +66,19 @@ export class MaterialSpecificationFormComponent implements OnInit {
     });
     const state = history.state as { mode?: string };
 
-    if (state && state.mode === 'view') {
-      this.isViewMode = true;
-    } else {
-      this.isViewMode = false;
+    if (state) {
+      if (state.mode === 'view') {
+        this.isViewMode = true;
+      }
+      if (state.mode === 'edit') {
+        this.isEditMode = true;
+      }
     }
 
     this.initForm();
     this.getParameterUnit();
     this.getSpecimenOrientation();
+    this.getProductConditionDropdown();
 
     if (this.isViewMode) {
       this.MaterialSpecificationForm.disable();
@@ -75,7 +88,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
       this.loadMaterialSpecification();
     }
   }
-  
+
   ngAfterViewInit() {
     this.updateButtonPosition();
   }
@@ -90,15 +103,15 @@ export class MaterialSpecificationFormComponent implements OnInit {
     requestAnimationFrame(() => {
       const scrollEl = this.scrollContainer.nativeElement;
       const btnEl = this.scrollButton.nativeElement;
-  
+
       const visibleRight = scrollEl.scrollLeft + scrollEl.clientWidth;
-  
+
       // Hide button if at end
       if (visibleRight >= scrollEl.scrollWidth - 1) {
         btnEl.style.display = 'none';
       } else {
         btnEl.style.display = 'block';
-        btnEl.style.left = `${visibleRight - btnEl.offsetWidth - 10}px`;
+        btnEl.style.left = `${visibleRight - btnEl.offsetWidth - 20}px`;
       }
     });
   }
@@ -108,7 +121,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
       this.updateButtonPosition();
     }, 10); // Adjust delay as needed
   }
-  
+
 
   initForm() {
     this.MaterialSpecificationForm = this.fb.group({
@@ -124,16 +137,18 @@ export class MaterialSpecificationFormComponent implements OnInit {
       aliasName: [{ value: '', disabled: true }, Validators.required],
       metalCalssificationID: [''],
       isCustom: [false],
+      type: [0, Validators.required],
       specificationLines: this.fb.array([])
     });
   }
   get specificationLines() {
     return this.MaterialSpecificationForm.get('specificationLines') as FormArray;
   }
+
   addSpecificationLine() {
     const specificationLine = this.fb.group({
       id: [0],
-      specificationHeaderID: [0],
+      specificationHeaderID: [this.MaterialSpecificationForm.get('id')?.value || 0],
       propertyType: [''],
       manualSelection: [false],
       parameterID: [''],
@@ -150,16 +165,67 @@ export class MaterialSpecificationFormComponent implements OnInit {
       lowerLimitValue: [null],
       upperLimitValue: [null],
       heatTreatmentID: [''],
-      productConditionID1: [''],
-      productConditionID2: [''],
-      laboratoryTestID1: [''],
-      laboratoryTestID2: [''],
+      productConditions: this.fb.array([]),
+      laboratoryTests: this.fb.array([]),
+      productConditionIDs: this.fb.control([]),
+      laboratoryTestIDs: this.fb.control([])
     });
     this.specificationLines.push(specificationLine);
   }
   removeSpecificationLine(index: number) {
     this.specificationLines.removeAt(index);
   }
+  copySpecificationLine(index: number) {
+    const originalLine = this.specificationLines.at(index) as FormGroup;
+    const originalValue = originalLine.getRawValue();
+
+    // Deep clone productConditions
+    const clonedProductConditions = (originalValue.productConditions || []).map((condition: any) =>
+      this.fb.group({
+        specificationLineID: [0], // reset ID
+        productConditionID: [condition.productConditionID],
+        productConditionName: [condition.productConditionName]
+      })
+    );
+
+    // Deep clone laboratoryTests
+    const clonedLaboratoryTests = (originalValue.laboratoryTests || []).map((test: any) =>
+      this.fb.group({
+        specificationLineID: [0], // reset ID
+        laboratoryTestID: [test.laboratoryTestID],
+        laboratoryTestName: [test.laboratoryTestName]
+      })
+    );
+
+    // Create new line
+    const newLine = this.fb.group({
+      id: [0], // always reset to 0 when copying
+      specificationHeaderID: [originalValue.specificationHeaderID],
+      propertyType: [originalValue.propertyType],
+      manualSelection: [originalValue.manualSelection],
+      parameterID: [originalValue.parameterID],
+      minValue: [originalValue.minValue],
+      maxValue: [originalValue.maxValue],
+      notes: [originalValue.notes],
+      parameterUnitID: [originalValue.parameterUnitID],
+      minValueEquation: [originalValue.minValueEquation],
+      maxValueEquation: [originalValue.maxValueEquation],
+      minTolerance: [originalValue.minTolerance],
+      maxTolerance: [originalValue.maxTolerance],
+      specimenOrientationID: [originalValue.specimenOrientationID],
+      dimensionalFactorID: [originalValue.dimensionalFactorID],
+      lowerLimitValue: [originalValue.lowerLimitValue],
+      upperLimitValue: [originalValue.upperLimitValue],
+      heatTreatmentID: [originalValue.heatTreatmentID],
+      productConditionIDs: this.fb.control([...originalValue.productConditionIDs || []]),
+      laboratoryTestIDs: this.fb.control([...originalValue.laboratoryTestIDs || []]),
+      productConditions: this.fb.array(clonedProductConditions),
+      laboratoryTests: this.fb.array(clonedLaboratoryTests)
+    });
+
+    this.specificationLines.insert(index + 1, newLine);
+  }
+
 
   loadMaterialSpecification() {
     this.materialSpecificationService.getMaterialSpecificationById(this.materialSpecificationId).subscribe({
@@ -181,6 +247,20 @@ export class MaterialSpecificationFormComponent implements OnInit {
         });
         if (this.materialSpecifications.specificationLines) {
           for (const line of this.materialSpecifications.specificationLines) {
+
+            let selectedIds: any[] = [];
+            let selectedTestIds: any[] = [];
+            if (line.productConditions) {
+              line.productConditions.forEach((conditions: any) => {
+                selectedIds.push(conditions.productConditionID);
+              });
+            }
+            if (line.laboratoryTests) {
+              line.laboratoryTests.forEach((test: any) => {
+                selectedTestIds.push(test.laboratoryTestID);
+              });
+            }
+
             const specificationLine = this.fb.group({
               id: [line.id],
               specificationHeaderID: [line.specificationHeaderID],
@@ -200,18 +280,35 @@ export class MaterialSpecificationFormComponent implements OnInit {
               lowerLimitValue: [line.lowerLimitValue],
               upperLimitValue: [line.upperLimitValue],
               heatTreatmentID: [line.heatTreatmentID],
-              productConditionID1: [line.productConditionID1],
-              productConditionID2: [line.productConditionID2],
-              laboratoryTestID1: [line.laboratoryTestID1],
-              laboratoryTestID2: [line.laboratoryTestID2]
+              laboratoryTestIDs: [selectedTestIds],
+              productConditionIDs: [selectedIds],
+              productConditions: this.fb.array(
+                line?.productConditions?.map((condition: any) => {
+                  return this.fb.group({
+                    specificationLineID: [condition.specificationLineID],
+                    productConditionID: [condition.productConditionID],
+                    productConditionName: [condition.productConditionName]
+                  });
+                }) || []
+              ),
+              laboratoryTests: this.fb.array(
+                line?.laboratoryTests?.map((test: any) => {
+                  return this.fb.group({
+                    specificationLineID: [test.specificationLineID],
+                    laboratoryTestID: [test.laboratoryTestID],
+                    laboratoryTestName: [test.laboratoryTestName]
+                  });
+                }) || []
+              )
             });
+
             this.specificationLines.push(specificationLine);
           }
         }
-        if(this.isViewMode) {
+        if (this.isViewMode) {
           this.MaterialSpecificationForm.disable();
           this.specificationLines.controls.forEach(control => control.disable());
-        }else{
+        } else {
           this.MaterialSpecificationForm.enable();
           this.specificationLines.controls.forEach(control => control.enable());
         }
@@ -258,37 +355,41 @@ export class MaterialSpecificationFormComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('Form submitted:', this.MaterialSpecificationForm.getRawValue());
-    if (this.MaterialSpecificationForm.valid) {
-      const formValue = this.MaterialSpecificationForm.getRawValue();
-      if (this.materialSpecificationId > 0) {
-        this.materialSpecificationService.updateMaterialSpecification(formValue).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/material-specification']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-            console.error('Error updating Material Specification:', error);
-          }
-        });
-      } else {
-        this.materialSpecificationService.createMaterialSpecification(formValue).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/material-specification']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-            console.error('Error creating Material Specification:', error);
-          }
-        });
-      }
-    }
+    const formValue = this.MaterialSpecificationForm.getRawValue();
+    if (this.MaterialSpecificationForm.valid)
+      this.saveData(formValue);
     else {
       this.toastService.show('Please fill all required fields.', 'warning');
-      this.MaterialSpecificationForm.markAllAsTouched(); 
+      this.MaterialSpecificationForm.markAllAsTouched();
     }
+
+  }
+
+  saveData(formValue: any) {
+    if (this.isEditMode) {
+      this.materialSpecificationService.updateMaterialSpecification(formValue).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/material-specification']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+          console.error('Error updating Material Specification:', error);
+        }
+      });
+    } else {
+      this.materialSpecificationService.createMaterialSpecification(formValue).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/material-specification']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+          console.error('Error creating Material Specification:', error);
+        }
+      });
+    }
+
   }
 
   getStandardOrganization = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -315,17 +416,20 @@ export class MaterialSpecificationFormComponent implements OnInit {
     const specificationLine = this.specificationLines.at(index) as FormGroup;
     specificationLine.patchValue({ heatTreatmentID: item.id });
   }
-  getProductCondition = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
-  };
-  onProductConditionSelected(item: any, index: number, controlName: string) {
-    // Check if the control name is valid
-    if (controlName !== 'productConditionID1' && controlName !== 'productConditionID2') {
-      console.error('Invalid control name:', controlName);
-      return;
-    }
-    const specificationLine = this.specificationLines.at(index) as FormGroup;
-    specificationLine.patchValue({ [controlName]: item.id });
+  getProductConditionDropdown() {
+    this.productConditionService.getProductConditionDropdown("", 0, 100).subscribe({
+      next: (data) => {
+        this.filteredProductOptions = data.map((item: any) => ({
+          label: item.name,
+          value: item.id
+        } as any)
+        );
+        this.productConditionsData = this.filteredProductOptions;
+      },
+      error: (error) => {
+        console.error('Error fetching product conditions:', error);
+      }
+    });
   }
 
   getDimensionalFactor = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -363,5 +467,89 @@ export class MaterialSpecificationFormComponent implements OnInit {
       }
     });
   }
+
+  openModal(index: number): void {
+    this.currentRowIndex = index;
+    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
+  }
+
+  onProductConditionChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
+    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
+    const productConditionsArray = line.get('productConditions') as FormArray;
+
+    // Reset and rebuild array
+    productConditionsArray.clear();
+    selectedIds?.options?.forEach(item => {
+      const selectedOption = this.productConditionsData.find((x: any) => x.value === item.value) as Select2Option;
+      if (selectedOption) {
+        productConditionsArray.push(this.fb.group({
+          id: [0],
+          specificationLineID: [line.get('id')?.value || 0],
+          productConditionID: [item.value],
+          productConditionName: [selectedOption?.label || '']
+        }));
+      }
+    });
+  }
+
+  onProductConditionSearch(term: Select2SearchEvent<Select2UpdateValue>) {
+    console.log('Search term:', term.search);
+    this.filteredProductOptions = this.productConditionsData.filter((option) =>
+      option.label.toLowerCase().includes(term.search.toLowerCase())
+    );
+
+  }
+  onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
+    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
+    const labTestsArray = line.get('laboratoryTests') as FormArray;
+    // Reset and rebuild array
+    labTestsArray.clear();
+    selectedIds?.options?.forEach(item => {
+      const selectedOption = this.testMethods.find((x: any) => x.value === item.value) as Select2Option;
+      if (selectedOption) {
+        labTestsArray.push(this.fb.group({
+          id: [0],
+          specificationLineID: [line.get('id')?.value || 0],
+          laboratoryTestID: [item.value],
+          laboratoryTestName: [selectedOption?.label || '']
+        }));
+      }
+    });
+  }
+
+  copyMaterialSpecification() {
+    const raw = this.MaterialSpecificationForm.getRawValue();
+    raw.id = 0;
+    raw.specificationLines.forEach((line: any) => {
+      line.id = 0;
+      line.specificationHeaderID = 0;
+      line.productConditions?.forEach((pc: any) => pc.specificationLineID = 0);
+      line.laboratoryTests?.forEach((lt: any) => lt.specificationLineID = 0);
+    });
+    this.isEditMode = false;
+    this.saveData(raw);
+
+  }
+
+  // spinning icon
+  spinningIndex: number | null = null;
+  rotateOnce(index: number) {
+    this.spinningIndex = index;
+    setTimeout(() => {
+      if (this.spinningIndex === index) {
+        this.spinningIndex = null;
+      }
+    }, 1000);
+
+    this.openModal(index); // optional
+  }
+
 
 }

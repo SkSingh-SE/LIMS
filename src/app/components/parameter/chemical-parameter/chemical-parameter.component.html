@@ -151,7 +151,7 @@
 </div>
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="customerTypeModal" class="modal fade modal-fade modal-lg" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -163,7 +163,7 @@
                     (click)="closeModal()"></button>
             </div>
             <form [formGroup]="ParameterForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
+                <div class="modal-body row row-cols-2">
                     <!-- Name Field -->
                     <div class="mb-1 ">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
@@ -197,7 +197,7 @@
                             [attr.disabled]="isViewMode ? true : null">
                             <option value="0" disabled selected>Select Parameter Unit</option>
                             <option *ngFor="let unit of ParameterUnits" [value]="unit.id">{{ unit.name }}</option>
-                            
+
                         </select>
                         <span
                             *ngIf="ParameterForm.get('parameterUnitID')?.invalid && ParameterForm.get('parameterUnitID')?.touched"
@@ -205,27 +205,38 @@
                             Parameter Unit is required.
                         </span>
                     </div>
-                    <!--Rate-->
-                    <div class="mb-1 ">
-                        <label for="rate" class="form-label">Rate</label>
-                        <input type="number" id="rate" class="form-control" formControlName="rate"
-                            placeholder="Enter Rate"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        
+                
+                    <div class="d-flex gap-3 mt-3">
+                        <!-- Normal -->
+                        <div class="form-check">
+                            <input type="radio" id="normal" class="form-check-input mt-1" formControlName="elementType"
+                                value="normal" [attr.disabled]="isViewMode ? true : null" />
+                            <label for="normal" class="form-check-label">Normal</label>
+                        </div>
+
+                        <!-- Special -->
+                        <div class="form-check">
+                            <input type="radio" id="special" class="form-check-input mt-1" formControlName="elementType"
+                                value="special" [attr.disabled]="isViewMode ? true : null" />
+                            <label for="special" class="form-check-label">Special</label>
+                        </div>
+
+                        <!-- Super Special -->
+                        <div class="form-check">
+                            <input type="radio" id="superSpecial" class="form-check-input mt-1"
+                                formControlName="elementType" value="super"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <label for="superSpecial" class="form-check-label">Super Special</label>
+                        </div>
                     </div>
-                    <!--Is Special-->
-                    <div class="mb-1 form-check">
-                        <input type="checkbox" id="isSpecial" class="form-check-input mt-1" formControlName="isSpecial"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <label for="isSpecial" class="form-check-label form-label">Is Special</label>
-                    </div>
+
                     <!--Note-->
                     <div class="">
                         <label for="note" class="form-label">Note</label>
                         <textarea id="note" class="form-control" formControlName="note" placeholder="Enter Note"
                             [ngClass]="{'is-invalid': ParameterForm.get('note')?.touched && ParameterForm.get('note')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null"></textarea>
-                        
+
                     </div>
 
                 </div>

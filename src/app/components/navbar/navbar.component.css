@@ -57,10 +57,11 @@
     flex-grow: 1;
     padding: 5px 5px;
     display: flex;
+    font-weight: bold;
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
-    background-color: #DECE9C;
+    background-color: #ceccc5d2;
 
 }
 

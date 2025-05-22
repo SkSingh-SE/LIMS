@@ -4,7 +4,7 @@
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
             <label class="text-center text-md fw-medium ms-3">Product Specification List</label>
             <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Specification Condition
+                <i class="bi bi-plus-lg"></i> Create Product Specification
             </a>
         </div>
 
@@ -53,7 +53,7 @@
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td class="wide-input">{{ customerType.specificationName }}</td>
                             <td class="wide-input">{{ customerType.aliasName }}</td>
-                            <td  class="wide-input">{{ customerType.materialSpecification }}</td>
+                            <td class="wide-input">{{ customerType.materialSpecification }}</td>
                             <td class="wide-input">{{ customerType.specificationCode }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
@@ -150,7 +150,7 @@
 
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="customerTypeModal" class="modal fade modal-fade modal-lg" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -162,7 +162,7 @@
                     (click)="closeModal()"></button>
             </div>
             <form [formGroup]="ProductSpecificationForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body row row-cols-1 row-gap-1 position-relative">
+                <div class="modal-body row row-cols-2 row-gap-2 position-relative">
 
                     <!--Specification Name Field -->
                     <div class="">
@@ -183,10 +183,10 @@
                     <div class=" ">
                         <label for="code" class="form-label">Specification Code <span
                                 class="text-danger">*</span></label>
-                        <input type="text" id="code" class="form-control" formControlName="specificationCode"
+                        <textarea type="text" id="code" class="form-control" formControlName="specificationCode"
                             placeholder="Enter Specification Code" required
                             [ngClass]="{'is-invalid': ProductSpecificationForm.get('specificationCode')?.touched && ProductSpecificationForm.get('specificationCode')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
+                            [attr.disabled]="isViewMode ? true : null"> </textarea>
                         <span
                             *ngIf="ProductSpecificationForm.get('specificationCode')?.invalid && ProductSpecificationForm.get('specificationCode')?.touched"
                             class="text-danger text-sm">
@@ -209,14 +209,33 @@
                     </div>
 
                     <div>
-                        <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Specification'"
-                            [labelName]="'Material Specification'" [fetchDataFn]="getMaterialSpecification"
+                        <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Grade'"
+                            [labelName]="'Material Specification Grade'" [fetchDataFn]="getMaterialSpecification"
                             (itemSelected)="onMaterialSelected($event)" [hideLabel]="false" [required]="true"
                             [isDisabled]="isViewMode"
                             [selectedItem]="ProductSpecificationForm.get('materiaSpecificationID')?.value">
                         </app-searchable-dropdown-modal>
 
                     </div>
+                    <!--Size-->
+                    <div>
+                        <label class="form-label">Size</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" aria-label="Sizing example input"
+                                aria-describedby="inputGroup-sizing-default" formControlName="size"
+                                placeholder="Enter size" [maxLength]="10" appDecimalOnly>
+                            <span class="input-group-text" id="inputGroup-sizing-default">mm</span>
+                        </div>
+                    </div>
+
+                   <div>
+                            <label class="form-label">Test Method Standard</label>
+                            <ng-select2 [data]="testMethods" [multiple]="true" [placeholder]="'Select Test Methods'"
+                                formControlName="testMethods" [customSearchEnabled]="true"
+                                (update)="onLaboratoryTestChange($event)" >
+                            </ng-select2>
+                        </div>
+
                 </div>
 
                 <!-- Modal Footer -->
@@ -227,10 +246,10 @@
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>
-                
+
             </form>
 
         </div>
     </div>
-    
+
 </div>

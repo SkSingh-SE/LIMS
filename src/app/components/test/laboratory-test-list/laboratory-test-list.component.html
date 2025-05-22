@@ -2,9 +2,9 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Material Specification List</label>
-            <a routerLink="/material-specification/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Material Specification
+            <label class="text-center text-md fw-medium ms-3">Laboratory Test List</label>
+            <a routerLink="/test/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add Laboratory Test
             </a>
         </div>
 
@@ -22,7 +22,7 @@
             </div>
 
 
-            <div *ngIf="materialSpeficationList.length > 0 || filters.length > 0" class="table-responsive ">
+            <div *ngIf="labTestList.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
@@ -50,37 +50,30 @@
 
                     </thead>
                     <tbody>
-                        <tr *ngFor="let material of materialSpeficationList; let i = index" class="text-sm">
+                        <tr *ngFor="let lab of labTestList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ material.aliasName }}</td>
-                            <td>{{ material.standardOrganizationName }}</td>
-                            <td>{{ material.standard }}</td>
-                            <td>{{ material.standardYear }}</td>
-                            <td>{{material.grade}}</td>
+                            <td>{{ lab.name }}</td>
+                            <td>{{ lab.departmentName }}</td>
+                            <td>{{ lab.subMethodName }}</td>
+                            <td>{{ lab.invoiceCase }}</td>
+                            <td>{{lab.testCharge}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/material-specification/details', material.id]"
+                                    <a [routerLink]="['/test/details', lab.id]"
                                     [state]="{ mode: 'view' }" 
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/material-specification/edit', material.id]" 
+                                    <a [routerLink]="['/test/edit', lab.id]" 
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-    
-                                    <a [routerLink]="['/material-specification/edit', material.id]" 
-                                    [state]="{ mode: 'copy' }"
-                                    class="icon-link"
-                                        title="Copy">
-                                        <img src="/icons/copy.svg" alt="Copy" class="icon-svg">
-                                    </a>
 
                                     <a  class="icon-link"
-                                        title="Delete">
+                                        title="Delete" (click)="deleteFn(lab.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -91,7 +84,7 @@
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="materialSpeficationList.length == 0 && !isLoading()"
+            <div *ngIf="labTestList.length == 0 && !isLoading()"
                 class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>

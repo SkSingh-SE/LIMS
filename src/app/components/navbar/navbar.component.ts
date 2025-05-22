@@ -64,6 +64,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
         { title: 'Bank Master', route: '/bank', color: this.getRandomColor() },
         { title: 'Courier Master', route: '/courier', color: this.getRandomColor() },
         { title: 'TPI Master', route: '/tpi', color: this.getRandomColor() },
+        { title: 'Supplier Master', route: '/supplier', color: this.getRandomColor() },
       ]
     },
     {
@@ -93,10 +94,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-file-earmark',
       isExpanded: false,
       submenu: [
-        { title: 'Equipment Type Master', route: '/test/equipment-type', color: this.getRandomColor() },
-        { title: 'Make Master', route: '/test/make', color: this.getRandomColor() },
-        { title: 'Lab Department Master', route: '/test/lab-department', color: this.getRandomColor() },
-        { title: 'Equipment Master', route: '/test/equipment', color: this.getRandomColor() },
+        { title: 'Laboratory Test', route: '/test', color: this.getRandomColor() },
       ]
     },
     {

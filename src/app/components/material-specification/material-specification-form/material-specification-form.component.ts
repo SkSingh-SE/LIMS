@@ -36,6 +36,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
   MaterialSpecificationForm!: FormGroup;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  isCopyMode: boolean = false;
   standardOrganizations: any[] = [];
   parameterUnits: any[] = [];
   specimenOriantations: any[] = [];
@@ -73,6 +74,9 @@ export class MaterialSpecificationFormComponent implements OnInit {
       if (state.mode === 'edit') {
         this.isEditMode = true;
       }
+      if (state.mode === 'copy') {
+        this.isCopyMode = true;
+      }
     }
 
     this.initForm();
@@ -86,6 +90,8 @@ export class MaterialSpecificationFormComponent implements OnInit {
     }
     if (this.materialSpecificationId) {
       this.loadMaterialSpecification();
+    }else{
+      this.addSpecificationLine();
     }
   }
 
@@ -500,10 +506,16 @@ export class MaterialSpecificationFormComponent implements OnInit {
   }
 
   onProductConditionSearch(term: Select2SearchEvent<Select2UpdateValue>) {
-    console.log('Search term:', term.search);
-    this.filteredProductOptions = this.productConditionsData.filter((option) =>
-      option.label.toLowerCase().includes(term.search.toLowerCase())
-    );
+    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
+    const selectedIDs = line.get('productConditionIDs')?.value || [];
+    const searchTerm = term.search.toLowerCase();
+
+    this.filteredProductOptions = this.productConditionsData.filter((option) => {
+      const isSelected = selectedIDs.includes(option.value);
+      const matchesSearch = option.label.toLowerCase().includes(searchTerm);
+
+      return isSelected || matchesSearch;
+    });
 
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {

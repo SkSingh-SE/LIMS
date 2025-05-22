@@ -1,0 +1,181 @@
+<div class="card shadow-lg m-2">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="text-center">Supplier Form</h6>
+    </div>
+    <div class="card-body ">
+        <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()">
+            <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2">
+
+                <!--Name-->
+                <div>
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="name" placeholder="Enter Name"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid }" />
+                    <div *ngIf="supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid"
+                        class="text-danger text-sm">Name is required.</div>
+                </div>
+                <!--Product Type-->
+                <div>
+                    <label class="form-label">Product Type <span class="text-danger">*</span></label>
+                    <!-- <input type="text" class="form-control" formControlName="productType"
+                        placeholder="Enter Product Type" maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('productType')?.touched && supplierForm.get('productType')?.invalid }" /> -->
+                        <select class="form-control form-select" formControlName="productType"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('productType')?.touched && supplierForm.get('productType')?.invalid }">
+                        <option value="Product" [defaultSelected]="true">Product </option>
+                        <option value="Service Supplied">Service Supplied</option>
+                    </select>
+                    <div *ngIf="supplierForm.get('productType')?.touched && supplierForm.get('productType')?.invalid"
+                        class="text-danger text-sm">Product Type is required.</div>
+                </div>
+                <!--Contact Person 1-->
+                <div>
+                    <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="contactPerson1"
+                        placeholder="Enter Contact Person 1" maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid }" />
+                    <div *ngIf="supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid"
+                        class="text-danger text-sm">Contact Person 1 is required.</div>
+                </div>
+                <!--Contact No 1-->
+                <div>
+                    <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="contactNo1"
+                        placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
+                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo1')?.touched && supplierForm.get('contactNo1')?.invalid }" />
+                    <div *ngIf="supplierForm.get('contactNo1')?.touched && supplierForm.get('contactNo1')?.invalid"
+                        class="text-danger text-sm">Contact No 1 is required.</div>
+                </div>
+
+                <!--Email Id 1-->
+                <div>
+                    <label class="form-label">Email Id 1 <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId1')?.touched && supplierForm.get('emailId1')?.invalid }" />
+                    <div *ngIf="supplierForm.get('emailId1')?.touched && supplierForm.get('emailId1')?.invalid"
+                        class="text-danger text-sm">Email Id 1 is required and must be a valid email address.</div>
+                </div>
+
+                <!--Contact Person 2-->
+                <div>
+                    <label class="form-label">Contact Person 2</label>
+                    <input type="text" class="form-control" formControlName="contactPerson2"
+                        placeholder="Enter Contact Person 2" maxlength="100" />
+                </div>
+
+                <!--Contact No 2-->
+                <div>
+                    <label class="form-label">Contact No 2</label>
+                    <input type="text" class="form-control" formControlName="contactNo2"
+                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly />
+                </div>
+
+                <!--Email Id 2-->
+                <div>
+                    <label class="form-label">Email Id 2</label>
+                    <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId2')?.touched && supplierForm.get('emailId2')?.invalid }" />
+                    <div *ngIf="supplierForm.get('emailId2')?.touched && supplierForm.get('emailId2')?.invalid"
+                        class="text-danger text-sm">Email Id 2 must be a valid email address.</div>
+                </div>
+
+                <!--Contact Person 3-->
+                <div>
+                    <label class="form-label">Contact Person 3</label>
+                    <input type="text" class="form-control" formControlName="contactPerson3"
+                        placeholder="Enter Contact Person 3" maxlength="100" />
+                </div>
+
+                <!--Contact No 3-->
+                <div>
+                    <label class="form-label">Contact No 3</label>
+                    <input type="text" class="form-control" formControlName="contactNo3"
+                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly />
+                </div>
+
+                <!--Email Id 3-->
+                <div>
+                    <label class="form-label">Email Id 3</label>
+                    <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId3')?.touched && supplierForm.get('emailId3')?.invalid }" />
+                    <div *ngIf="supplierForm.get('emailId3')?.touched && supplierForm.get('emailId3')?.invalid"
+                        class="text-danger text-sm">Email Id 3 must be a valid email address.</div>
+                </div>
+
+                <!--Note-->
+                <div>
+                    <label class="form-label">Note</label>
+                    <textarea class="form-control" formControlName="note" placeholder="Enter Note"></textarea>
+                </div>
+
+                <!--Present Status-->
+                <div>
+                    <label class="form-label">Present Status <span class="text-danger">*</span></label>
+                    <select class="form-control form-select" formControlName="presentStatus"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('presentStatus')?.touched && supplierForm.get('presentStatus')?.invalid }">
+                        <option value="1">Enlisted</option>
+                        <option value="2">Delisted</option>
+                    </select>
+                    <div *ngIf="supplierForm.get('presentStatus')?.touched && supplierForm.get('presentStatus')?.invalid"
+                        class="text-danger text-sm">Present Status is required.</div>
+                </div>
+
+                <!--Agreement File Path-->
+                <div>
+                    <label class="form-label">Agreement File</label>
+                    <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value; else uploadField">
+                        <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                            <span class="text-truncate me-2" type="button"
+                                (click)="openFileInNewTab(supplierForm.get('agreementFilePath')?.value)"
+                                title="{{ supplierForm.get('agreementFilePath')?.value }}">
+                                <i class="bi bi-file-earmark-fill"></i> {{supplierForm.get('fileName')?.value }}
+                            </span>
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
+                                (click)="removeFile()">
+                                <i class="bi bi-trash-fill fs-6 me-1"></i>
+                            </button>
+                        </div>
+                    </ng-container>
+
+                    <ng-template #uploadField>
+                        <input class="form-control form-control-sm input-file" type="file"
+                             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                            [disabled]="isViewMode" (change)="onFileChange($event)" />
+                    </ng-template>
+                </div>
+
+
+
+                <!-- <div>
+                    <div class="form-check">
+                        <label class="form-label">Supplier Approved</label>
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="supplierApproved" />
+                    </div>
+
+                    <div class="form-check">
+                        <label class="form-label">Is Blacklisted</label>
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="isBlacklisted" />
+                    </div>
+
+                </div>
+                <div *ngIf="supplierForm.get('isBlacklisted')?.value">
+                    <label class="form-label">Reason For Blacklisting</label>
+                    <textarea class="form-control" formControlName="reasonForBlacklisting"
+                        placeholder="Enter Reason For Blacklisting"></textarea>
+                </div> -->
+
+
+            </div>
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+
+                <a [routerLink]="['/supplier']" class="btn btn-warning">Cancel</a>
+                <button type="submit" class="btn btn-success px-3">Save</button>
+            </div>
+
+        </form>
+    </div>
+</div>

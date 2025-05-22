@@ -22,7 +22,6 @@ export class ChemicalParameterComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
-    { key: 'rate', type: 'string', label: 'Rate', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
@@ -31,7 +30,6 @@ export class ChemicalParameterComponent implements OnInit {
     id: 'number',
     name: 'string',
     aliasName: 'string',
-    rate: 'number',
     unitName: 'string',
     factor: 'string',
     createdOn: 'date'
@@ -98,9 +96,8 @@ export class ChemicalParameterComponent implements OnInit {
       name: ['', Validators.required],
       aliasName: [''],
       parameterUnitID: [0, Validators.required],
-      rate: [0],
       note: [''],
-      isSpecial: [false],
+      elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
     });
   }
@@ -333,6 +330,31 @@ export class ChemicalParameterComponent implements OnInit {
       }
     }
   }
+
+ onChangeElement(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const controlName = target.name;
+
+  if (controlName === 'isSpecial' && target.checked) {
+    this.ParameterForm.patchValue({
+      isSpecial: true,
+      isSuperSpecial: false
+    });
+  }
+
+  if (controlName === 'isSuperSpecial' && target.checked) {
+    this.ParameterForm.patchValue({
+      isSpecial: false,
+      isSuperSpecial: true
+    });
+  }
+
+  // Optional: If unchecked both, it's considered Normal
+  if (!this.ParameterForm.get('isSpecial')?.value && !this.ParameterForm.get('isSuperSpecial')?.value) {
+    // it's 'Normal' by logic, no flag needed
+    console.log('Element is Normal');
+  }
+}
 
 }
 

@@ -5,7 +5,10 @@
 :root {
     --nav-height: 60px;
     --transition-speed: 0.3s;
-    --select2-multiple-height: 30px !important;
+    --primary-color: #d50a0ace;
+    /* Bootstrap 5 primary color by default */
+    --primary-hover: #d50a0ace;
+    --select2-multiple-height: 35px !important;
     --select2-option-highlighted-background: #d50a0ace;
     --select2-selection-choice-line-height: 23px;
     /* Default value, will be updated by JavaScript */
@@ -74,20 +77,19 @@ body {
 textarea::placeholder,
 input[type="date"]::placeholder,
 select:invalid {
-  color: #6B7280 !important;
-  font-size: 14px !important;
+    color: #6B7280 !important;
+    font-size: 14px !important;
     font-weight: 400 !important;
 }
 
-.form-control, .form-select {
+.form-control,
+.form-select {
     font-size: 14px !important;
     color: #6B7280 !important;
     font-weight: 400 !important;
 }
+
 .form-check-input:checked {
     background-color: transparent !important;
     border-color: #FF2C1F !important;
 }
-
-
-

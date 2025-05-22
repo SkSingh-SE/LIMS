@@ -18,6 +18,9 @@ export class SearchableDropdownModalComponent {
   @Output() itemSelected = new EventEmitter<any>();
   @Input() selectedItem: any;
   @Input() hideLabel: boolean = false;
+  @Input() isMultiSelect: boolean = false;
+  @Output() itemsSelected = new EventEmitter<any[]>();
+  selectedItems: any[] = [];
 
 
 
@@ -100,21 +103,60 @@ export class SearchableDropdownModalComponent {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedItem'] && changes['selectedItem'].currentValue) {
-      const matchedItem = this.dropdownData.find(item => item.id == this.selectedItem);
-      if (matchedItem) {
-        this.selectedLabel = matchedItem.name;
-        this.selectItem(matchedItem);
-      } else if(this.dropdownData.length == 0) {
-        // Fetch the item if not in dropdownData
-        this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data) => {
-          const found = data.find(item => item.id == this.selectedItem);
-          if (found) {
-            this.dropdownData = [found, ...this.dropdownData];
-            this.selectedLabel = found.name;
-            this.selectItem(found);
+      if (this.isMultiSelect && Array.isArray(this.selectedItem)) {
+        // Handle multiple IDs
+        this.selectedItems = [];
+        this.selectedItem.forEach((id: any) => {
+          const matchedItem = this.dropdownData.find(item => item.id == id);
+          if (matchedItem) {
+            this.selectedItems.push(matchedItem);
+          } else {
+            this.fetchDataFn(id, 0, 1).subscribe((data) => {
+              const found = data.find(item => item.id == id);
+              if (found) {
+                this.selectedItems.push(found);
+              }
+            });
           }
         });
+      } else if (!this.isMultiSelect) {
+        // single select logic
+        const matchedItem = this.dropdownData.find(item => item.id == this.selectedItem);
+        if (matchedItem) {
+          this.selectedLabel = matchedItem.name;
+          this.selectItem(matchedItem);
+        } else if (this.dropdownData.length == 0) {
+          this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data) => {
+            const found = data.find(item => item.id == this.selectedItem);
+            if (found) {
+              this.dropdownData = [found, ...this.dropdownData];
+              this.selectedLabel = found.name;
+              this.selectItem(found);
+            }
+          });
+        }
       }
     }
+
+
   }
+
+  toggleItem(item: any): void {
+    const index = this.selectedItems.findIndex(i => i.id === item.id);
+    if (index > -1) {
+      this.selectedItems.splice(index, 1);
+    } else {
+      this.selectedItems.push(item);
+    }
+    this.itemsSelected.emit(this.selectedItems);
+  }
+
+  isSelected(item: any): boolean {
+    return this.selectedItems.some(i => i.id === item.id);
+  }
+
+  getSelectedLabels(): string {
+    return this.selectedItems.map(i => i.name).join(', ');
+  }
+
 }

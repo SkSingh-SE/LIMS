@@ -33,6 +33,9 @@ import { CustomMaterialSpecificationListComponent } from './components/material-
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
 import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
 import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
+import { SupplierListComponent } from './components/supplier/supplier-list/supplier-list.component';
+import { SupplierFormComponent } from './components/supplier/supplier-form/supplier-form.component';
+import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -60,7 +63,10 @@ export const routes: Routes = [
             { path: 'customer/edit/:id', component: CustomerFormComponent },
             { path: 'customer/details/:id', component: CustomerFormComponent },
             { path: 'tax', component: TaxComponent },
-            { path: 'test', component: InvoiceCaseComponent },
+            { path: 'test', component: LaboratoryTestListComponent },
+            { path: 'test/create', component: LaboratoryTestComponent },
+            { path: 'test/edit/:id', component: LaboratoryTestComponent },
+            { path: 'test/details/:id', component: LaboratoryTestComponent },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'tpi', component: TPIComponent },
@@ -83,6 +89,10 @@ export const routes: Routes = [
             { path: 'product-specification', component: ProductSpecificationComponent },
             { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
+            { path: 'supplier', component: SupplierListComponent },
+            { path: 'supplier/create', component: SupplierFormComponent },
+            { path: 'supplier/edit/:id', component: SupplierFormComponent },
+            { path: 'supplier/details/:id', component: SupplierFormComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

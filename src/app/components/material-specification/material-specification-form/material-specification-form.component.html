@@ -106,7 +106,7 @@
 
                 <div #scrollContainer class="table-responsive position-relative custom-scroll" (scroll)="onScroll()"
                     style="max-height: calc(100vh - 200px);">
-                    <table class="table align-middle " formArrayName="specificationLines" style="min-width: 1200px;">
+                    <table class="table table-borderless table-light align-middle " formArrayName="specificationLines" style="min-width: 1200px;">
                         <thead>
                             <tr class="text-nowrap text-muted small">
                                 <th class="fw-medium text-center">Actions</th>
@@ -134,16 +134,16 @@
                                     <td class="text-center">
                                         <div class="d-flex flex-row gap-1">
 
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                            <button type="button" class="btn btn-sm btn-danger"
                                                 (click)="specificationLines.removeAt(i)">
                                                 <i class="bi bi-dash-circle-dotted"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                            <button type="button" class="btn btn-sm btn-warning"
                                                 (click)="rotateOnce(i)" [disabled]="isViewMode">
                                                 <i class="bi bi-gear "
                                                     [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success"
+                                            <button type="button" class="btn btn-sm btn-success"
                                                 (click)="copySpecificationLine(i)" [disabled]="isViewMode">
                                                 <i class="bi-copy"></i>
 
@@ -151,7 +151,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="form-check">
+                                        <div class="form-check mt-1">
                                             <input class="form-check-input mt-1" type="checkbox"
                                                 formControlName="manualSelection" />
                                         </div>
@@ -241,12 +241,13 @@
             </div>
 
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+                
+                <a [routerLink]="['/material-specification']" class="btn btn-warning">Cancel</a>
                 <!--Copy and Save -->
-                <button type="button" class="btn btn-danger" (click)="copyMaterialSpecification()">
-                    <i class="bi bi-files"></i> Copy & Save
+                 <button type="button" class="btn " [ngClass]="{'btn-danger': !isCopyMode, 'btn-success': isCopyMode }" (click)="copyMaterialSpecification()">
+                    <i class="bi bi-files"></i> {{!isCopyMode ? 'Copy & Save' : 'Save' }}
                 </button>
-                <a class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
+                <button *ngIf="!isCopyMode" type="submit" class="btn btn-success px-3">Save</button>
             </div>
 
         </form>

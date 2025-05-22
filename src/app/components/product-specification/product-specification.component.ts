@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ProductSpecificationService } from '../../services/product-specification.service';
@@ -8,10 +8,12 @@ import { CommonModule } from '@angular/common';
 import { MaterialSpecificationService } from '../../services/material-specification.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownModalComponent } from '../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { DecimalOnlyDirective } from '../../utility/directives/decimal-only.directive';
+import { Select2, Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select2-component';
 
 @Component({
   selector: 'app-product-specification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective,Select2],
   templateUrl: './product-specification.component.html',
   styleUrl: './product-specification.component.css'
 })
@@ -72,6 +74,14 @@ export class ProductSpecificationComponent implements OnInit {
   productSpecificationId: number = 0;
   formTitle = 'Product Specfication Form';
 
+  testMethods: any[] = [
+    { value: 1, label: 'Test Method 1' },
+    { value: 2, label: 'Test Method 2' },
+    { value: 3, label: 'Test Method 3' },
+    { value: 4, label: 'Test Method 4' },
+    { value: 5, label: 'Test Method 5' },
+  ];
+
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
@@ -95,6 +105,8 @@ export class ProductSpecificationComponent implements OnInit {
       specificationCode: ['', Validators.required],
       materiaSpecificationID: ['', Validators.required],
       isCustom: [false],
+      size:[''],
+      testMethods:['']
     });
   }
 
@@ -325,7 +337,22 @@ export class ProductSpecificationComponent implements OnInit {
     debugger;
     this.ProductSpecificationForm.patchValue({ materiaSpecificationID: item.id });
   }
-
+onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
+    const line = this.ProductSpecificationForm.get('testMethods') as FormArray;
+    // Reset and rebuild array
+    line.clear();
+    selectedIds?.options?.forEach(item => {
+      const selectedOption = this.testMethods.find((x: any) => x.value === item.value) as Select2Option;
+      if (selectedOption) {
+        line.push(this.fb.group({
+          id: [0],
+          specificationLineID: [line.get('id')?.value || 0],
+          laboratoryTestID: [item.value],
+          laboratoryTestName: [selectedOption?.label || '']
+        }));
+      }
+    });
+  }
 }
 
 

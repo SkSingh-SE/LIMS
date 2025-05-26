@@ -1,10 +1,17 @@
-<div class="card shadow-lg m-2">
+<div class="card shadow-lg m-5">
   <div class="card-header card-form-header text-white text-center">
     <h6 class="text-center">Laboratory Test Form</h6>
   </div>
-  <div class="card-body ">
+  <div class="card-body m-4">
     <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1 mb-2">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-2 row-gap-lg-1 mb-2">
+        <div>
+          <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
+            [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)" [isDisabled]="isViewMode"
+            [required]="true" [selectedItem]="labTestForm.get('labDepartmentID')?.value">
+          </app-searchable-dropdown>
+        </div>
+
         <div>
           <label for="name" class="form-label">Test Name <span class="text-danger"> *</span></label>
           <input type="text" class="form-control" id="name" formControlName="name" placeholder="Enter Test Name"
@@ -13,94 +20,32 @@
           <span *ngIf="labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid"
             class="text-danger text-sm">Name is required.</span>
         </div>
-
-        <!-- <div>
-          <label class="form-label">Caption</label>
-          <input class="form-control" formControlName="caption" placeholder="Enter Caption" />
-        </div> -->
+        <div>
+          <label for="subGroup" class="form-label">Sub Group <span class="text-danger"> *</span></label>
+          <input type="text" class="form-control" id="subGroup" formControlName="subGroup"
+            placeholder="Enter Sub Group" maxlength="100"
+            [ngClass]="{ 'is-invalid': labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid }">
+          <span *ngIf="labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid"
+            class="text-danger text-sm">Sub Group is required.</span>
+        </div>
 
         <div>
-          <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
-            [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)" [isDisabled]="isViewMode"
-            [required]="true" [selectedItem]="labTestForm.get('labDepartmentID')?.value">
-          </app-searchable-dropdown>
-        </div>
-      </div>
-      <div class="">
-        <div class="d-flex justify-content-between align-items-center mb-1 ">
-          <label class="text-danger fw-bold border-bottom border-danger mb-2 d-inline-block">Sub Groups</label>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger mt-1 " (click)="addSubGroup()">
-            <i class="bi bi-plus-circle-dotted"></i> Add SubGroup
-          </button>
-        </div>
-
-        <div class="table-responsive" style="max-height: 70vh; overflow: auto;">
-          <table class="table table-borderless table-light align-middle " formArrayName="subGroups">
-            <thead>
-              <tr class="text-nowrap text-muted small">
-                <th class="fw-medium">SN</th>
-                <th class="fw-medium px-2 wid-input">Sub Group <span class="text-danger">*</span></th>
-                <th class="fw-medium px-2 wid-input">Sample Size <span class="text-danger">*</span></th>
-                <th class="fw-medium px-2 wid-input">Test Charge <span class="text-danger">*</span></th>
-                <th class="fw-medium px-2 wid-input">Invoice Case</th>
-                <th *ngIf="!isViewMode" class="fw-medium text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngFor="let group of subGroups.controls; let i = index" [formGroupName]="i">
-                <tr>
-                  <td>
-                    {{i+1}}
-                  </td>
-                  <td class="wid-input">
-                    <input type="text" class="form-control" formControlName="name" placeholder="Enter Sub Group"
-                      maxlength="100"
-                      [ngClass]="{ 'is-invalid': group.get('name')?.touched && labTestForm.get('name')?.invalid }">
-
-                  </td>
-                  <td class="wid-input">
-                    <div class="input-group ">
-                      <input type="text" class="form-control" formControlName="sampleSize" placeholder="Enter Size"
-                        maxlength="10" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default"
-                        appDecimalOnly
-                        [ngClass]="{ 'is-invalid': group.get('sampleSize')?.touched && group.get('sampleSize')?.invalid }">
-                      <span class="input-group-text" id="inputGroup-sizing-default"
-                        [ngClass]="{ 'is-invalid': group.get('sampleSize')?.touched && group.get('sampleSize')?.invalid }">mm</span>
-                    </div>
-
-                  </td>
-                  <td class="wid-input">
-                    <input type="text" class="form-control" formControlName="testCharge" placeholder="Enter Test Charge"
-                      maxlength="10" appNumberOnly
-                      [ngClass]="{ 'is-invalid': group.get('testCharge')?.touched && group.get('testCharge')?.invalid }">
-
-                  </td>
-                  <td class="wid-input">
-                    <select class="form-control form-select" formControlName="invoiceCase">
-                      <option value="" disabled selected>Select Invoice Case</option>
-                      <option *ngFor="let option of invoiceCaseOptions" [value]="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </td>
-                  <td *ngIf="!isViewMode" class="text-center align-middle">
-                    <button type="button" (click)="removeSubGroup(i)" class="btn btn-link p-0" title="Delete">
-                      <img src="/icons/delete.svg" alt="Delete" class="icon-svg" height="30" width="30" />
-                    </button>
-                  </td>
-                </tr>
-              </ng-container>
-            </tbody>
-          </table>
+          <label class="form-label">Invoice Case</label>
+          <ng-select2 class="custom" [data]="filteredInvoiceCaseOptions" [multiple]="true" [placeholder]="'Select Test Methods'"
+            formControlName="invoiceCases"
+            [readonly]="isViewMode" [customSearchEnabled]="true" (update)="onInvoiceCaseChange($event)"
+            (search)="onInvoiceCaseSearch($event)">
+          </ng-select2>
         </div>
 
 
       </div>
-       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-                
-                <a [routerLink]="['/test']"  class="btn btn-warning">Cancel</a>
-                <button [disabled]="labTestForm.invalid" type="submit" class="btn btn-success px-3">Save</button>
-            </div>
+
+      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+
+        <a [routerLink]="['/test']" class="btn btn-warning">Cancel</a>
+        <button [disabled]="labTestForm.invalid" type="submit" class="btn btn-success px-3">Save</button>
+      </div>
     </form>
   </div>
 </div>

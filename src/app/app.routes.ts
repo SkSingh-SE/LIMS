@@ -36,6 +36,8 @@ import { CustomProductSpecificationComponent } from './components/product-specif
 import { SupplierListComponent } from './components/supplier/supplier-list/supplier-list.component';
 import { SupplierFormComponent } from './components/supplier/supplier-form/supplier-form.component';
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
+import { TestMethodSpecificationComponent } from './components/test/test-method-specification/test-method-specification.component';
+import { TestMethodSpecificationListComponent } from './components/test/test-method-specification-list/test-method-specification-list.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -93,6 +95,10 @@ export const routes: Routes = [
             { path: 'supplier/create', component: SupplierFormComponent },
             { path: 'supplier/edit/:id', component: SupplierFormComponent },
             { path: 'supplier/details/:id', component: SupplierFormComponent },
+            { path: 'test-specification', component: TestMethodSpecificationListComponent },
+            { path: 'test-specification/create', component: TestMethodSpecificationComponent },
+            { path: 'test-specification/edit/:id', component: TestMethodSpecificationComponent },
+            { path: 'test-specification/details/:id', component: TestMethodSpecificationComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

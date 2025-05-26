@@ -1,32 +1,34 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
-  selector: 'app-laboratory-test-list',
-  imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './laboratory-test-list.component.html',
-  styleUrl: './laboratory-test-list.component.css'
+  selector: 'app-test-method-specification-list',
+  imports: [CommonModule,RouterModule,FormsModule],
+  templateUrl: './test-method-specification-list.component.html',
+  styleUrl: './test-method-specification-list.component.css'
 })
-export class LaboratoryTestListComponent implements OnInit {
+export class TestMethodSpecificationListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'invoiceCase', type: 'string', label: 'Invoice Case', filter: true }
+    { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
+    { key: 'testMethodStandard', type: 'string', label: 'Standard', filter: true },
+    { key: 'isDisabled', type: 'number', label: 'Disabled', filter: true },
+    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    departmentName: 'string',
-    subGroup: 'string',
-    invoiceCase: 'string'
+    standardOrganizationName: 'string',
+    testMethodStandard: 'string',
+    isDisabled: 'string',
+    createdOn: 'date'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -37,7 +39,8 @@ export class LaboratoryTestListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  labTestList: any[] = [];
+
+  testMethodSpecificationList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -58,7 +61,9 @@ export class LaboratoryTestListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private testMethodService: TestMethodSpecificationService, private toastService: ToastService) {
+    this.isLoading.set(true);
+   
   }
 
   ngOnInit() {
@@ -67,17 +72,16 @@ export class LaboratoryTestListComponent implements OnInit {
 
   fetchData() {
 
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
+    this.testMethodService.getAllTestMethodSpecifications(this.payload).subscribe({
       next: (response) => {
-        this.labTestList = response?.items || [];
+        this.testMethodSpecificationList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error fetching list:', error);
-        this.labTestList = [];
+        this.testMethodSpecificationList = [];
         this.isLoading.set(false);
       }
 
@@ -195,11 +199,11 @@ export class LaboratoryTestListComponent implements OnInit {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
   }
-  deleteFn(id: number): void {
+ deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
+      this.testMethodService.deleteTestMethodSpecification(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -210,6 +214,5 @@ export class LaboratoryTestListComponent implements OnInit {
       });
     }
   }
-
 }
 

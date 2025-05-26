@@ -1,6 +1,10 @@
 <div class="position-relative w-100">
-    <label *ngIf="!hideLabel" class="form-label">{{ labelName }} <span *ngIf="required"
-            class="text-danger">*</span></label>
-    <input #inputRef type="text" class="form-control" [placeholder]="placeholder" [(ngModel)]="selectedLabel"
-        [disabled]="isDisabled" (input)="handleInput($event)" (focus)="onFocus()" autocomplete="off" />
+        <label *ngIf="!hideLabel" class="form-label">{{ labelName }} <span *ngIf="required"
+                        class="text-danger">*</span></label>
+        <input #inputRef #modelRef="ngModel" type="text" class="form-control" [placeholder]="placeholder"
+                [(ngModel)]="selectedLabel" [disabled]="isDisabled" (input)="handleInput($event)" (focus)="onFocus()"
+                autocomplete="off" [required]="required" [ngClass]="{ 'is-invalid': required && modelRef.invalid && modelRef.touched }" />
+        <div *ngIf="required && modelRef.invalid && modelRef.touched" class="invalid-feedback">
+                {{ labelName }} is required.
+        </div>
 </div>

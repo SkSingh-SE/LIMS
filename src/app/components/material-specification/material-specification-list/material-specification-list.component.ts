@@ -61,17 +61,8 @@ export class MaterialSpecificationListComponent implements OnInit {
   };
 
   constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService) {
-    // this.materialSpecificationListForm = this.fb.group({
-    //   searchTerm: '',
-    //   sortByColumn: '',
-    //   sortOrder: '',
-    //   filters: this.fb.group({})
-    // });
   }
 
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
 
   ngOnInit() {
     this.fetchData();

@@ -9,11 +9,14 @@ import { MaterialSpecificationService } from '../../services/material-specificat
 import { Observable } from 'rxjs';
 import { SearchableDropdownModalComponent } from '../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 import { DecimalOnlyDirective } from '../../utility/directives/decimal-only.directive';
-import { Select2, Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select2-component';
+import { Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select2-component';
+import { LaboratoryTestService } from '../../services/laboratory-test.service';
+import { MetalClassificationService } from '../../services/metal-classification.service';
+import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
 
 @Component({
   selector: 'app-product-specification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective,Select2],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective],
   templateUrl: './product-specification.component.html',
   styleUrl: './product-specification.component.css'
 })
@@ -22,7 +25,7 @@ export class ProductSpecificationComponent implements OnInit {
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
-   columns = [
+  columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'specificationName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
@@ -82,7 +85,7 @@ export class ProductSpecificationComponent implements OnInit {
     { value: 5, label: 'Test Method 5' },
   ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService:TestMethodSpecificationService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
       if (this.productSpecificationId > 0) {
@@ -103,10 +106,12 @@ export class ProductSpecificationComponent implements OnInit {
       specificationName: ['', Validators.required],
       aliasName: ['', Validators.required],
       specificationCode: ['', Validators.required],
-      materiaSpecificationID: ['', Validators.required],
+      gradeID : ['', Validators.required],
+      laboratoryTestID: ['', Validators.required],
+      metalClassificationID: ['', Validators.required],
+      testMethodSpecificationID: ['', Validators.required],
       isCustom: [false],
-      size:[''],
-      testMethods:['']
+      size: [''],
     });
   }
 
@@ -330,14 +335,31 @@ export class ProductSpecificationComponent implements OnInit {
       }
     }
   }
-  getMaterialSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.materialSpecificationService.getMaterialSpecificationDropdown(term, page, pageSize);
+  getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
   };
-  onMaterialSelected(item: any) {
-    debugger;
-    this.ProductSpecificationForm.patchValue({ materiaSpecificationID: item.id });
+  getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+  };
+  getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
+  };
+  getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+  };
+  onGradeSelected(item: any) {
+    this.ProductSpecificationForm.patchValue({ gradeID : item.id });
   }
-onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
+  onLaboratorySelected(item:any){
+    this.ProductSpecificationForm.patchValue({ laboratoryTestID: item.id });
+  }
+  onMetalSelected(item:any){
+    this.ProductSpecificationForm.patchValue({ metalClassificationID: item.id });
+  }
+  onTestSpecificationSelected(item:any){
+    this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id });
+  }
+  onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const line = this.ProductSpecificationForm.get('testMethods') as FormArray;
     // Reset and rebuild array
     line.clear();

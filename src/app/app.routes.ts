@@ -38,6 +38,13 @@ import { SupplierFormComponent } from './components/supplier/supplier-form/suppl
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
 import { TestMethodSpecificationComponent } from './components/test/test-method-specification/test-method-specification.component';
 import { TestMethodSpecificationListComponent } from './components/test/test-method-specification-list/test-method-specification-list.component';
+import { ScopeComponent } from './components/iso/scope/scope.component';
+import { ScopeListComponent } from './components/iso/scope-list/scope-list.component';
+import { OEMFormComponent } from './components/equipment/oem-form/oem-form.component';
+import { OemListComponent } from './components/equipment/oem-list/oem-list.component';
+import { EquipmentFormComponent } from './components/equipment/equipment-form/equipment-form.component';
+import { EquipmentListComponent } from './components/equipment/equipment-list/equipment-list.component';
+import { InvoiceCaseConfigurationComponent } from './components/test/invoice-case-configuration/invoice-case-configuration.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -99,6 +106,20 @@ export const routes: Routes = [
             { path: 'test-specification/create', component: TestMethodSpecificationComponent },
             { path: 'test-specification/edit/:id', component: TestMethodSpecificationComponent },
             { path: 'test-specification/details/:id', component: TestMethodSpecificationComponent },
+            { path: 'scope', component: ScopeListComponent },
+            { path: 'scope/create', component: ScopeComponent },
+            { path: 'scope/edit/:id', component: ScopeComponent },
+            { path: 'scope/details/:id', component: ScopeComponent },
+            { path: 'invoice-case', component: InvoiceCaseComponent },
+            { path: 'oem', component: OemListComponent },
+            { path: 'oem/create', component: OEMFormComponent },
+            { path: 'oem/edit/:id', component: OEMFormComponent },
+            { path: 'oem/details/:id', component: OEMFormComponent },
+            { path: 'equipment', component: EquipmentListComponent },
+            { path: 'equipment/create', component: EquipmentFormComponent },
+            { path: 'equipment/edit/:id', component: EquipmentFormComponent },
+            { path: 'equipment/details/:id', component: EquipmentFormComponent },
+            { path: 'invoice-case-config', component: InvoiceCaseConfigurationComponent},
         ]
     },
     { path: '**', redirectTo: '/login' }

@@ -8,7 +8,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-supplier-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective,RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink],
   templateUrl: './supplier-form.component.html',
   styleUrl: './supplier-form.component.css'
 })
@@ -43,9 +43,9 @@ export class SupplierFormComponent implements OnInit {
   }
   initForm() {
     this.supplierForm = this.fb.group({
-      id:[0],
+      id: [0],
       name: ['', Validators.required],
-      productType: ['', Validators.required],
+      productType: ['Product', Validators.required],
       contactPerson1: ['', Validators.required],
       contactNo1: ['', Validators.required],
       emailId1: ['', [Validators.required, Validators.email]],
@@ -55,7 +55,7 @@ export class SupplierFormComponent implements OnInit {
       contactPerson3: [''],
       contactNo3: [''],
       emailId3: ['', Validators.email],
-      note: [''],
+      address: [''],
       presentStatus: [1, Validators.required],
       uploadReferenceID: [null],
       agreementFilePath: [''],
@@ -83,7 +83,7 @@ export class SupplierFormComponent implements OnInit {
     this.supplierService.getSupplierById(id).subscribe({
       next: (response) => {
         this.supplierForm.patchValue(response);
-        if(this.isViewMode){
+        if (this.isViewMode) {
           this.supplierForm.disable();
         }
       },
@@ -96,7 +96,7 @@ export class SupplierFormComponent implements OnInit {
     if (this.supplierForm.valid) {
       const raw = this.supplierForm.getRawValue();
       const formData = new FormData();
-      formData.append('id',raw.id);
+      formData.append('id', raw.id);
       formData.append('name', raw.name);
       formData.append('productType', raw.productType);
       formData.append('contactPerson1', raw.contactPerson1 || '');
@@ -108,7 +108,7 @@ export class SupplierFormComponent implements OnInit {
       formData.append('emailId1', raw.emailId1 || '');
       formData.append('emailId2', raw.emailId2 || '');
       formData.append('emailId3', raw.emailId3 || '');
-      formData.append('note', raw.note || '');
+      formData.append('address', raw.address || '');
       formData.append('presentStatus', raw.presentStatus.toString());
       formData.append('uploadReferenceID', raw.uploadReferenceID ?? '');
       formData.append('agreementFilePath', raw.agreementFilePath || '');
@@ -196,4 +196,23 @@ export class SupplierFormComponent implements OnInit {
     this.supplierForm.get('agreementFilePath')?.reset();
     this.supplierForm.get('fileName')?.reset();
   }
+  checkPhoneNumber(event: any): void {
+    const input: string = event.target.value;
+    if (input) {
+      const length = input.length;
+
+      if (length === 12 && !input.startsWith('91')) {
+        this.toastService.show('Phone number must start with "91" if it has 12 digits.', 'warning');
+        event.target.value = '';
+        return;
+      }
+
+      if (input.startsWith('0') && length > 11) {
+        this.toastService.show('Invalid phone number starting with "0".', 'warning');
+        event.target.value = '';
+        return;
+      }
+    }
+  }
+
 }

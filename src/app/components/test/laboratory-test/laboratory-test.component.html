@@ -2,7 +2,7 @@
   <div class="card-header card-form-header text-white text-center">
     <h6 class="text-center">Laboratory Test Form</h6>
   </div>
-  <div class="card-body m-4">
+  <div class="card-body">
     <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-2 row-gap-lg-1 mb-2">
         <div>
@@ -27,6 +27,12 @@
             [ngClass]="{ 'is-invalid': labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid }">
           <span *ngIf="labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid"
             class="text-danger text-sm">Sub Group is required.</span>
+        </div>
+        <div>
+          <app-searchable-dropdown [placeholder]="'Search metals'" [labelName]="'Metal Classification'"
+            [fetchDataFn]="getMetalClassifications" (itemSelected)="onMetalClassificationSelected($event)" [isDisabled]="isViewMode"
+            [required]="true" [selectedItem]="labTestForm.get('metalClassificationID')?.value">
+          </app-searchable-dropdown>
         </div>
 
         <div>

@@ -8,6 +8,7 @@ import { LaboratoryTestService } from '../../../services/laboratory-test.service
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Select2, Select2Option, Select2SearchEvent, Select2UpdateEvent, Select2UpdateValue } from 'ng-select2-component';
+import { MetalClassificationService } from '../../../services/metal-classification.service';
 
 
 @Component({
@@ -49,10 +50,10 @@ export class LaboratoryTestComponent implements OnInit {
     { label: '40mm', value: '40mm' },
     { label: '45mm', value: '45mm' }
   ];
-filteredInvoiceCaseOptions = this.invoiceCaseOptions;
+  filteredInvoiceCaseOptions = this.invoiceCaseOptions;
 
   constructor(private fb: FormBuilder, private departmentService: DepartmentService,
-    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService) {
+    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService) {
 
   }
   ngOnInit(): void {
@@ -84,7 +85,8 @@ filteredInvoiceCaseOptions = this.invoiceCaseOptions;
       labDepartmentID: [0, Validators.required],
       subGroup: ['', Validators.required],
       invoiceCase: [''],
-      invoiceCases: [[]]
+      invoiceCases: [[]],
+      metalClassificationID: [0, Validators.required],
     });
   }
 
@@ -93,8 +95,8 @@ filteredInvoiceCaseOptions = this.invoiceCaseOptions;
       next: (response) => {
         this.labTestForm.patchValue(response);
         const invoiceCases = response?.invoiceCase?.split(',');
-        if(invoiceCases)
-          this.labTestForm.patchValue({invoiceCases : invoiceCases})
+        if (invoiceCases)
+          this.labTestForm.patchValue({ invoiceCases: invoiceCases })
       },
       error: (error) => {
         console.error(error);
@@ -137,6 +139,14 @@ filteredInvoiceCaseOptions = this.invoiceCaseOptions;
   onDepartmentSelected(item: any) {
     this.labTestForm.patchValue({ labDepartmentID: item.id });
   }
+
+  getMetalClassifications = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
+  };
+
+  onMetalClassificationSelected(item: any) {
+    this.labTestForm.patchValue({ metalClassificationID: item.id });
+  }
   onInvoiceCaseChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const invoiceCases: string[] = [];
 
@@ -151,17 +161,17 @@ filteredInvoiceCaseOptions = this.invoiceCaseOptions;
 
     this.labTestForm.patchValue({ invoiceCase: invoiceCases.join(',') });
   }
-   onInvoiceCaseSearch(term: Select2SearchEvent<Select2UpdateValue>) {
-     
-      const selectedIDs = this.labTestForm.get('invoiceCase')?.value || [];
-      const searchTerm = term.search.toLowerCase();
-  
-      this.filteredInvoiceCaseOptions = this.invoiceCaseOptions.filter((option) => {
-        const isSelected = selectedIDs.includes(option.value);
-        const matchesSearch = option.label.toLowerCase().includes(searchTerm);
-  
-        return isSelected || matchesSearch;
-      });
-  
-    }
+  onInvoiceCaseSearch(term: Select2SearchEvent<Select2UpdateValue>) {
+
+    const selectedIDs = this.labTestForm.get('invoiceCase')?.value || [];
+    const searchTerm = term.search.toLowerCase();
+
+    this.filteredInvoiceCaseOptions = this.invoiceCaseOptions.filter((option) => {
+      const isSelected = selectedIDs.includes(option.value);
+      const matchesSearch = option.label.toLowerCase().includes(searchTerm);
+
+      return isSelected || matchesSearch;
+    });
+
+  }
 }

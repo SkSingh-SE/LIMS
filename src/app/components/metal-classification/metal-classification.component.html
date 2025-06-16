@@ -20,7 +20,6 @@
                 </div>
             </div>
 
-
             <div *ngIf="MetalClassificationList.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table align-middle w-100">
                     <thead class="table-light">
@@ -74,7 +73,8 @@
 
 
             </div>
-            <div *ngIf="MetalClassificationList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="MetalClassificationList.length == 0 && !isLoading()"
+                class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -166,10 +166,18 @@
                             placeholder="Enter Name" required
                             [ngClass]="{'is-invalid': MetalClassificationForm.get('name')?.touched && MetalClassificationForm.get('name')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="MetalClassificationForm.get('name')?.invalid && MetalClassificationForm.get('name')?.touched"
+                        <span
+                            *ngIf="MetalClassificationForm.get('name')?.invalid && MetalClassificationForm.get('name')?.touched"
                             class="text-danger text-sm">
                             Name is required.
                         </span>
+                    </div>
+                    <div>
+                        <app-multi-select-dropdown [placeholder]="'Select multiple items...'" [required]="true"
+                            [isDisabled]="false" [labelName]="'Parameter'" [fetchDataFn]="getParameter"
+                            [selectedValues]="MetalClassificationForm.get('parameterIds')?.value"
+                            (itemsSelected)="onParameterSelected($event)">
+                        </app-multi-select-dropdown>
                     </div>
 
                 </div>
@@ -177,7 +185,8 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white" [disabled]="MetalClassificationForm.invalid">
+                    <button type="submit" class="btn navbar-background text-white"
+                        [disabled]="MetalClassificationForm.invalid">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

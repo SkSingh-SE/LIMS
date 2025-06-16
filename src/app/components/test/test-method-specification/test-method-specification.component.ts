@@ -1,17 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastService } from '../../../services/toast.service';
-import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { Observable } from 'rxjs';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-test-method-specification',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent],
   templateUrl: './test-method-specification.component.html',
   styleUrl: './test-method-specification.component.css'
 })
@@ -22,7 +21,7 @@ export class TestMethodSpecificationComponent implements OnInit {
   selectedStandardOrganization: any = {};
   testMethodSpecificationID: number = 0;
 
-  constructor(private fb: FormBuilder, private toastService: ToastService, private standardOrganizationService: StandardOrgnizationService, private testMethodService: TestMethodSpecificationService,  private route: ActivatedRoute, private router: Router) { }
+  constructor(private fb: FormBuilder, private toastService: ToastService, private standardOrganizationService: StandardOrgnizationService, private testMethodService: TestMethodSpecificationService, private route: ActivatedRoute, private router: Router) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -42,9 +41,9 @@ export class TestMethodSpecificationComponent implements OnInit {
     if (this.testMethodSpecificationID > 0) {
       this.loadTestMethodSpecification(this.testMethodSpecificationID);
     } else {
-      this.addVersion();
+      this.addVersion(true);
+      this.onDefaultChange(0);
     }
-    this.onChanges();
   }
 
   initForm() {
@@ -54,31 +53,34 @@ export class TestMethodSpecificationComponent implements OnInit {
       standardOrganizationID: ['', Validators.required],
       testMethodStandard: ['', Validators.required],
       name: ['', Validators.required],
-      versions: this.fb.array([
-        this.createVersionGroup()
-      ])
+      part:[''],
+      versions: this.fb.array([])
     });
   }
   get versions(): FormArray {
     return this.testSpecificationForm.get('versions') as FormArray;
   }
 
-  createVersionGroup(): FormGroup {
+  createVersionGroup(flag: boolean = false): FormGroup {
     return this.fb.group({
       id: [0],
       testMethodSpecificationID: [0],
       default: [false],
       version: ['', Validators.required],
-      year: ['', Validators.required],
       standardFile: ['', Validators.required],
       standardFilePath: [''],
       uploadReferenceID: [null],
-      file: [File]
+      file: [null],
+      isVersionAdded: [flag]
     });
   }
 
-  addVersion(): void {
-    this.versions.push(this.createVersionGroup());
+  addVersion(flag: boolean = false): void {
+    if (flag) {
+      this.versions.insert(0, this.createVersionGroup(flag));
+    } else {
+      this.versions.push(this.createVersionGroup(flag));
+    }
   }
 
   removeVersion(index: number): void {
@@ -87,36 +89,53 @@ export class TestMethodSpecificationComponent implements OnInit {
     }
   }
 
+  showaddVersionButton(): boolean {
+    let isVersionAdded = false;
+    this.versions.controls.forEach((group: any) => {
+      if (group.get('isVersionAdded')?.value) {
+        isVersionAdded = true;
+      }
+    });
+    return !isVersionAdded;
+  }
+
   loadTestMethodSpecification(id: number) {
     this.testMethodService.getTestMethodSpecificationById(id).subscribe({
       next: (response) => {
         if (response) {
           this.testSpecificationForm.patchValue({
             id: response.id,
-            isDisabled: response.isDisabled,
             standardOrganizationID: response.standardOrganizationID,
             testMethodStandard: response.testMethodStandard,
-            name: response.name
+            name: response.name,
+            isDisabled: response.isDisabled
           });
           this.versions.clear();
+
+          // Ensure only one default is true and put default version at the top
+          let defaultFound = false;
           response.versions.forEach((version: any) => {
-            const versionGroup = this.createVersionGroup();
-            versionGroup.patchValue({
-              id: version.id,
-              testMethodSpecificationID: version.testMethodSpecificationID,
-              default: version.default,
-              version: version.version,
-              year: version.year,
-              standardFile: version.standardFile,
-              standardFilePath: version.standardFilePath,
-              uploadReferenceID: version.uploadReferenceID || null
-            });
-            this.versions.push(versionGroup);
+            if (version.default && !defaultFound) {
+              defaultFound = true;
+              const versionGroup = this.createVersionGroup();
+              versionGroup.patchValue(version);
+              this.versions.insert(0, versionGroup); // insert default version at top
+            } else {
+              version.default = false;
+              const versionGroup = this.createVersionGroup();
+              versionGroup.patchValue(version);
+              this.versions.push(versionGroup);
+            }
           });
+
           if (this.isViewMode) {
             this.testSpecificationForm.disable();
+          }
+          if (this.testSpecificationForm.get('isDisabled')?.value) {
+            this.testSpecificationForm.disable();
           } else {
-            this.testSpecificationForm.get('isDisabled')?.disable();
+            this.testSpecificationForm.enable();
+            this.testSpecificationForm.get('isDisabled')?.enable(); // Keep checkbox enabled
           }
         }
       },
@@ -187,15 +206,24 @@ export class TestMethodSpecificationComponent implements OnInit {
     return org && std && year ? `${org} ${std} - ${year}` : '';
   }
 
-  onChanges() {
-    this.testSpecificationForm.get('isDisabled')?.valueChanges.subscribe(isDisabled => {
-      if (isDisabled) {
-        this.testSpecificationForm.disable();
-      } else {
-        this.testSpecificationForm.enable();
-        this.testSpecificationForm.get('isDisabled')?.enable(); // Keep checkbox enabled
-      }
-    });
+  onDisable() {
+    if (confirm('Are you sure you want to disable this test method specification?')) {
+      this.testMethodService.enable_disableTestMethodSpecification(this.testMethodSpecificationID).subscribe({
+        next: (response) => {
+          this.testMethodSpecificationID = response.id;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/test-specification']);
+        },
+        error: (error) => {
+          console.error(error);
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      this.testSpecificationForm.get('isDisabled')?.setValue(false);
+    }
+
+
   }
 
   submit() {
@@ -233,6 +261,9 @@ export class TestMethodSpecificationComponent implements OnInit {
         this.testMethodService.updateTestMethodSpecification(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
+            this.testSpecificationForm.reset();
+            this.versions.clear();
+            this.router.navigate(['/test-specification']);
           },
           error: (error) => {
             this.toastService.show(error.message, 'error');
@@ -245,6 +276,7 @@ export class TestMethodSpecificationComponent implements OnInit {
             this.testSpecificationForm.reset();
             this.versions.clear();
             this.versions.push(this.createVersionGroup());
+            this.router.navigate(['/test-specification']);
           },
           error: (error) => {
             this.toastService.show(error.message, 'error');
@@ -261,6 +293,8 @@ export class TestMethodSpecificationComponent implements OnInit {
     versions.controls.forEach((group, idx) => {
       if (idx !== selectedIndex) {
         group.get('default')?.setValue(false, { emitEvent: false });
+      }else{
+        group.get('default')?.setValue(true, { emitEvent: false });
       }
     });
   }
@@ -270,6 +304,7 @@ export class TestMethodSpecificationComponent implements OnInit {
     const current = versions.at(index);
     versions.removeAt(index);
     versions.insert(index - 1, current);
+    this.onDefaultChange(index - 1);
   }
 
   moveVersionDown(index: number): void {
@@ -278,6 +313,7 @@ export class TestMethodSpecificationComponent implements OnInit {
     const current = versions.at(index);
     versions.removeAt(index);
     versions.insert(index + 1, current);
+    this.onDefaultChange(index + 1);
   }
 
 

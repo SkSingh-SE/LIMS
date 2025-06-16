@@ -1,14 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { ToastService } from '../../services/toast.service';
+import { ParameterService } from '../../services/parameter.service';
+import { Observable } from 'rxjs';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-metal-classification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent],
   templateUrl: './metal-classification.component.html',
   styleUrl: './metal-classification.component.css'
 })
@@ -66,16 +69,20 @@ export class MetalClassificationComponent implements OnInit {
   customerTypeObject: any = null;
   formTitle = 'Metal Classification Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private metalclassificationService: MetalClassificationService, private toastService: ToastService) {
+  preSelectedItems = [2, 3];
+
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private metalclassificationService: MetalClassificationService, private toastService: ToastService, private parameterService: ParameterService) {
   }
   ngOnInit() {
     this.fetchData();
     this.initForm();
   }
-initForm() {
+  initForm() {
     this.MetalClassificationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', Validators.required],
+      parameterIds: [[]],
+      parameters: this.fb.array([]),
     });
   }
   fetchData() {
@@ -101,6 +108,9 @@ initForm() {
       next: (response) => {
         this.customerTypeObject = response;
         this.MetalClassificationForm.patchValue(response);
+        this.MetalClassificationForm.patchValue({
+          parameterIds: response?.parameters?.map((x:any) => x.parameterID) ?? []
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -249,7 +259,7 @@ initForm() {
       this.isViewMode = false;
       this.formTitle = 'Metal Classification Form';
       this.MetalClassificationForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -268,13 +278,36 @@ initForm() {
     }
   }
 
+  getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getParameterDropdown(term, page, pageSize);
+  };
+
+  onParameterSelected(item: any[]) {
+    console.log("selected item", item);
+    const selectIds: number[] = [];
+    const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+    parameterArray.clear();
+    item.forEach((x) => {
+      selectIds.push(x.id);
+      parameterArray.push(
+        this.fb.group({
+          MetalClassificationID: [this.MetalClassificationForm.get('id')?.value || 0],
+          ParameterID: [x.id],
+        })
+      );
+    })
+    this.MetalClassificationForm.patchValue({ parameterIDs: selectIds });
+  }
+
   onSubmit(): void {
     if (this.MetalClassificationForm.valid) {
       let formData = this.MetalClassificationForm.value;
+      console.log("submit values", formData);
       if (this.isEditMode) {
         this.metalclassificationService.updateMetalClassification(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
+            this.MetalClassificationForm.reset();
             this.closeModal();
             this.fetchData();
           },
@@ -287,6 +320,7 @@ initForm() {
         this.metalclassificationService.createMetalClassification(formData).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
+            this.MetalClassificationForm.reset();
             this.closeModal();
             this.fetchData();
           },

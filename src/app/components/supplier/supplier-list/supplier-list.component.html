@@ -57,7 +57,7 @@
                             <td>{{ supplier.contactPerson1 }}</td>
                             <td>{{ supplier.contactNo1 }}</td>
                             <td>{{supplier.emailId1}}</td>
-                            <td>{{supplier.note}}</td>
+                            <td>{{supplier.address}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/supplier/details', supplier.id]"
@@ -75,7 +75,7 @@
     
 
                                     <a  class="icon-link"
-                                        title="Delete">
+                                        title="Delete" (click)="deleteFn(supplier.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>

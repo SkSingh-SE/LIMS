@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 })
 export class MaterialSpecificationService {
 
-  private apiUrl = environment.apiUrl +"/SpecificationHeader"; 
+  private apiUrl = environment.apiUrl +"/MaterialSpecification"; 
   
     constructor(private http: HttpClient) {}
   
@@ -38,6 +38,10 @@ export class MaterialSpecificationService {
 
     getMaterialSpecificationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+  
+    getMaterialSpecificationGradeDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/grade-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
   
 }

@@ -36,3 +36,15 @@
     transform: rotate(90deg);
   }
 }
+.nav-tabs .nav-link {
+    color: #1A1A80;
+    /* Custom color */
+}
+.nav-tabs .nav-link.active {
+    color: #fff !important;
+    /* Active tab color */
+    border-color: #FF2C1F;
+    background: #FF2C1F;
+    border-bottom: 0;
+
+}

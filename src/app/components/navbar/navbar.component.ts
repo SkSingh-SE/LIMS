@@ -95,6 +95,8 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       isExpanded: false,
       submenu: [
         { title: 'Laboratory Test', route: '/test', color: this.getRandomColor() },
+        { title: 'Test Method Specification', route: '/test-specification', color: this.getRandomColor() },
+        { title: 'Invoice Case', route: '/invoice-case', color: this.getRandomColor() },
       ]
     },
     {
@@ -137,10 +139,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-shield-check',
       isExpanded: false,
       submenu: [
-        { title: 'Lab Employee Master', route: '/nabl/lab-employee', color: this.getRandomColor() },
-        { title: 'Lab Score Master', route: '/nabl/lab-score', color: this.getRandomColor() },
-        { title: 'Quality Control Plan', route: '/nabl/quality-control', color: this.getRandomColor() },
-        { title: 'Customer Feedback', route: '/nabl/customer-feedback', color: this.getRandomColor() },
+        { title: 'Lab Scope Master', route: '/scope', color: this.getRandomColor() },
       ]
     },
     {

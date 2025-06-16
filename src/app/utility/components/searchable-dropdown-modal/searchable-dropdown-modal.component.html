@@ -1,14 +1,34 @@
 <div class="position-relative w-100">
     <label *ngIf="!hideLabel" [for]="randomId" class="form-label">{{labelName}} <span *ngIf="required"
             class="text-danger">*</span></label>
-    <input type="text" [id]="randomId" class="form-control" [placeholder]="placeholder" name="searchInput"
-        [(ngModel)]="selectedLabel" [required]="required" #inputRef="ngModel"
-        [ngClass]="{ 'is-invalid': required && inputRef.invalid && inputRef.touched }" [disabled]="isDisabled"
-        (input)="handleInput($event)" (focus)="onFocus()" (blur)="onBlur()" autocomplete="off"
-        [value]="isMultiSelect ? getSelectedLabels() : selectedLabel" />
-    <div *ngIf="required && inputRef.invalid && inputRef.touched" class="invalid-feedback">
-        This field is required.
-    </div>
+    <input type="text"
+         [id]="randomId"
+         class="form-control"
+         name="searchInput"
+         [placeholder]=" placeholder"
+         [(ngModel)]="selectedLabel"
+         [required]="required"
+         #inputRef="ngModel"
+         [ngClass]="{ 'is-invalid': required && inputRef.invalid && inputRef.touched }"
+         [disabled]="isDisabled"
+         (input)="handleInput($event)"
+         (focus)="onFocus()"
+         (blur)="onBlur()"
+         autocomplete="off" />
+
+  <!-- Fake input for displaying selected labels in multi-select -->
+  <input *ngIf="isMultiSelect"
+         type="text"
+         class="form-control position-absolute bg-white"
+         [value]="getSelectedLabels()"
+         [placeholder]="placeholder"
+         [disabled]="true"
+         style="top: 0; left: 0; pointer-events: none;" />
+
+  <!-- Validation feedback -->
+  <div *ngIf="required && inputRef.invalid && inputRef.touched" class="invalid-feedback">
+    This field is required.
+  </div>
 
     <ul *ngIf="showDropdown && dropdownData.length > 0" class="list-group position-absolute w-100 z-3 mt-1"
         style="max-height: 200px; overflow-y: auto; top: 100%; left: 0; background-color: white; box-shadow: 0 0 5px rgba(0,0,0,0.2); z-index: 1050;"
@@ -16,13 +36,7 @@
 
         <li class="list-group-item cursor-pointer " *ngFor="let item of dropdownData"
             (mousedown)="isMultiSelect ? toggleItem(item) : selectItem(item)">
-
-            <div class="form-check d-flex">
-                <ng-container *ngIf="isMultiSelect">
-                    <input type="checkbox" [checked]="isSelected(item)" class="form-check-input me-2" />
-                </ng-container>
-                {{ item.name }}
-            </div>
+            {{ item.name }}
         </li>
 
         <li *ngIf="loading" class="list-group-item">Loading...</li>

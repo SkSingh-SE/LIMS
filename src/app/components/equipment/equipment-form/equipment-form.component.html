@@ -1,0 +1,487 @@
+<div class="card shadow-lg m-2">
+  <div class="card-header card-form-header text-white text-center">
+    <h6 class="text-center">Equipment Form</h6>
+  </div>
+
+  <div class="card-body">
+    <form [formGroup]="equipmentForm" (ngSubmit)="submit()">
+      <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2 mb-2">
+        <div>
+          <label class="form-label">
+            Equipment Name
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" formControlName="name" placeholder="Enter equipment name"
+            maxlength="50"
+            [class.is-invalid]="equipmentForm.get('name')?.invalid && equipmentForm.get('name')?.touched" />
+          <div *ngIf="equipmentForm.get('name')?.invalid && equipmentForm.get('name')?.touched"
+            class="invalid-feedback">
+            Name is a required field.
+          </div>
+        </div>
+        <div>
+          <label class="form-label">
+            Equipment Number
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" formControlName="equipmentNo" placeholder="Enter equipment Number"
+            maxlength="30"
+            [class.is-invalid]="equipmentForm.get('equipmentNo')?.invalid && equipmentForm.get('equipmentNo')?.touched" />
+          <div *ngIf="equipmentForm.get('equipmentNo')?.invalid && equipmentForm.get('equipmentNo')?.touched"
+            class="invalid-feedback">
+            Equipment Number is a required field.
+          </div>
+        </div>
+        <div>
+          <app-searchable-dropdown class="w-100" [placeholder]="'Search Department'" [labelName]="'Department'"
+            [fetchDataFn]="getDepartment" (itemSelected)="onDepartmentSelected($event)" [hideLabel]="false"
+            [required]="true" [isDisabled]="isViewMode"
+            [selectedItem]="equipmentForm.get('departmentID')?.value"></app-searchable-dropdown>
+        </div>
+        <div>
+          <app-searchable-dropdown class="w-100" [placeholder]="'Search Equipment Type'" [labelName]="'Equipment Type'"
+            [fetchDataFn]="getEquipmentType" (itemSelected)="onEquipmentTypeSelected($event)" [hideLabel]="false"
+            [required]="true" [isDisabled]="isViewMode"
+            [selectedItem]="equipmentForm.get('equipmentTypeID')?.value"></app-searchable-dropdown>
+        </div>
+        <div>
+          <app-searchable-dropdown class="w-100" [placeholder]="'Search OEM'" [labelName]="'OEM'" [fetchDataFn]="getOEM"
+            (itemSelected)="onOEMSelected($event)" [hideLabel]="false" [required]="true" [isDisabled]="isViewMode"
+            [selectedItem]="equipmentForm.get('oemID')?.value"></app-searchable-dropdown>
+        </div>
+        <div>
+          <label class="form-label">Model Number</label>
+          <input type="text" class="form-control" formControlName="modelNo" placeholder="Enter Model No"
+            maxlength="30" />
+        </div>
+        <div>
+          <label class="form-label">
+            Purchase Date
+            <span class="text-danger">*</span>
+          </label>
+          <input type="month" class="form-control" formControlName="purchaseDate" placeholder="MMM, YYYY"
+            [class.is-invalid]="equipmentForm.get('purchaseDate')?.invalid && equipmentForm.get('purchaseDate')?.touched" />
+          <div *ngIf="equipmentForm.get('purchaseDate')?.invalid && equipmentForm.get('purchaseDate')?.touched"
+            class="invalid-feedback">
+            Purchase Date is a required field.
+          </div>
+        </div>
+        <div>
+          <label class="form-label">
+            Calibration Required
+            <span class="text-danger">*</span>
+          </label>
+          <select class="form-select" formControlName="calibrationRequired"
+            [class.is-invalid]="equipmentForm.get('calibrationRequired')?.invalid && equipmentForm.get('calibrationRequired')?.touched">
+            <option [ngValue]="true">Yes</option>
+            <option [ngValue]="false">No</option>
+          </select>
+          <div
+            *ngIf="equipmentForm.get('calibrationRequired')?.invalid && equipmentForm.get('calibrationRequired')?.touched"
+            class="invalid-feedback">
+            Calibration Required is a required field.
+          </div>
+        </div>
+        <div>
+          <label class="form-label">
+            Maintenance Required
+            <span class="text-danger">*</span>
+          </label>
+          <select class="form-select" formControlName="maintenanceRequired"
+            [class.is-invalid]="equipmentForm.get('maintenanceRequired')?.invalid && equipmentForm.get('maintenanceRequired')?.touched">
+             <option [ngValue]="true">Yes</option>
+            <option [ngValue]="false">No</option>
+          </select>
+          <div
+            *ngIf="equipmentForm.get('maintenanceRequired')?.invalid && equipmentForm.get('maintenanceRequired')?.touched"
+            class="invalid-feedback">
+            Maintenance Required is a required field.
+          </div>
+        </div>
+        <div>
+          <label class="form-label">
+            Maintenance (Internal / External)
+            <span class="text-danger">*</span>
+          </label>
+          <select class="form-select" formControlName="internalExternal"
+            [class.is-invalid]="equipmentForm.get('internalExternal')?.invalid && equipmentForm.get('internalExternal')?.touched">
+            <option value="" disabled selected>Select option</option>
+            <option>Internal</option>
+            <option>External</option>
+          </select>
+          <div *ngIf="equipmentForm.get('internalExternal')?.invalid && equipmentForm.get('internalExternal')?.touched"
+            class="invalid-feedback">
+            Internal / External is a required field.
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Maintenance Interval</label>
+          <select class="form-select" formControlName="maintenanceInterval">
+            <option value="">Select Interval</option>
+            <option *ngFor="let option of intervalOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">
+            Intermediate Check Required
+            <span class="text-danger">*</span>
+          </label>
+          <select class="form-select" formControlName="intermediateCheckRequired" [class.is-invalid]="
+              equipmentForm.get('intermediateCheckRequired')?.invalid && equipmentForm.get('intermediateCheckRequired')?.touched
+            ">
+            <option [ngValue]="true">Yes</option>
+            <option [ngValue]="false">No</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Intermediate Check Interval</label>
+          <select class="form-select" formControlName="intermediateCheckInterval">
+            <option value="">Select Interval</option>
+            <option *ngFor="let option of intermediateCheckintervalOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CALIBRATION AND MAINTENANCE SECTION -->
+      <ng-container
+        *ngIf="(equipmentForm.get('calibrationRequired')?.value || equipmentForm.get('maintenanceRequired')?.value) && (isViewMode || isEditMode)">
+        
+        <ul class="nav nav-tabs" id="equipmentTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calibration-tab" data-bs-toggle="tab" data-bs-target="#calibration"
+              type="button" role="tab">
+              Calibration
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance"
+              type="button" role="tab">
+              Maintenance
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sop-tab" data-bs-toggle="tab" data-bs-target="#sop" type="button" role="tab">
+              SOP
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="equipmentTabContent">
+          <!-- CALIBRATION TAB -->
+          <div class="tab-pane fade show active" id="calibration" role="tabpanel" aria-labelledby="calibration-tab">
+            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
+              <label class="fw-bold fs-6 p-2">Calibration History</label>
+              <button *ngIf=" isEditMode && calibrationDue" type="button"
+                class="btn btn-outline-danger-600 btn-sm" (click)="openCalibrationModal()">
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Calibration
+              </button>
+            </div>
+            <table class="table  align-middle">
+              <thead class="table-light">
+                <tr class="text-nowrap text-muted small ">
+                  <th class="fw-medium px-2">Date</th>
+                  <th class="fw-medium px-2">Certificate</th>
+                  <th class="fw-medium px-2">Agency</th>
+                  <th class="fw-medium px-2">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of calibrationRecords.controls; let i = index">
+                  <td>{{ record.get("calibrationDate")?.value }}</td>
+                  <td>
+                    <button  type="button" class="btn btn-sm btn-outline-danger-600"
+                      (click)="openFileInNewTab(record.get('certificatePath')?.value)">
+                      <i class="bi bi-file-earmark-fill"></i>
+                      {{ record.get("certificate")?.value }}
+                    </button>
+                  </td>
+                  <td>{{ record.get("agency")?.value || '-' }}</td>
+                  <td>
+                    <button *ngIf="!record.get('isReviewed')?.value" type="button"
+                      class="btn btn-sm btn-outline-danger-600" (click)="review(i)">
+                      Review
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- MAINTENANCE TAB -->
+          <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
+              <label class="fw-bold fs-6 p-2">Maintenance History</label>
+              <button *ngIf="isEditMode && calibrationDue" type="button"
+                class="btn btn-outline-danger-600 btn-sm" (click)="openMaintenanceModal()">
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Maintenance
+              </button>
+            </div>
+            <table class="table  align-middle">
+              <thead class="table-light">
+                <tr class="text-nowrap text-muted small ">
+                  <th class="fw-medium px-2">Date</th>
+                  <th class="fw-medium px-2">Certificate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of maintenanceRecords.controls">
+                  <td>{{ record.get("maintenanceDate")?.value | date: 'MMM dd, yyyy' }}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger-600"
+                      (click)="openFileInNewTab(record.get('certificatePath')?.value)">
+                      <i class="bi bi-file-earmark-fill"></i>
+                      {{ record.get("certificate")?.value }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SOP TAB -->
+          <div class="tab-pane fade" id="sop" role="tabpanel" aria-labelledby="sop-tab">
+            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
+              <label class="fw-bold fs-6 p-2">SOP Attachments</label>
+              <div class="d-flex justify-content-end gap-2 mb-2">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 btn-sm" (click)="openAttachmentModal()">
+                  <i class="bi bi-plus-circle-dotted"></i> Add Attachment</button>
+                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 btn-sm" (click)="openVideoModal()">
+                  <i class="bi bi-plus-circle-dotted"></i> Add Video</button>
+              </div>
+            </div>
+
+            <ul class="nav nav-tabs" id="sopTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="attachment-tab" data-bs-toggle="tab" data-bs-target="#attachment"
+                  type="button" role="tab">
+                  Attachment
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video" type="button"
+                  role="tab">
+                  Video
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="sopTabContent">
+              <div class="tab-pane fade show active" id="attachment" role="tabpanel" aria-labelledby="attachment-tab">
+                <div *ngIf="sopAttachments.length > 0">
+                  <div class="d-flex flex-wrap gap-2 m-2">
+                    <div *ngFor="let attachment of sopAttachments" class="border p-2 rounded">
+                      
+                      <button type="button" class="btn btn-sm btn-outline-danger-600"
+                      (click)="openFileInNewTab(attachment.url)">
+                      <i class="bi bi-file-earmark-fill"></i>
+                      {{ attachment.name }}
+                    </button>
+                      <button *ngIf="!isViewMode" type="button" class="btn text-danger btn-sm ms-2"
+                        (click)="deleteAttachment(attachment)">
+                        <i class="bi bi-trash-fill fs-5"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tab-pane fade" id="video" role="tabpanel" aria-labelledby="video-tab">
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                  <div class="p-2" *ngFor="let video of sopVideos">
+                    <div class="border p-2 rounded text-center">
+                      <video controls width="100%" height="250" style="object-fit: cover;">
+                        <source [src]="video.url" type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                      <button *ngIf="!isViewMode" type="button" class="btn btn-danger btn-sm mt-2"
+                        (click)="deleteVideo(video)">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+        <a [routerLink]="['/equipment']" class="btn btn-warning">Cancel</a>
+        <button type="submit" [disabled]="equipmentForm.invalid" class="btn btn-success px-3">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Calibration Modal -->
+<div class="modal fade modal-lg" id="calibrationModal" tabindex="-1" aria-labelledby="calibrationModalLabel"
+  data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="calibrationModalLabel">Add Calibration</label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="calibrationFormGroup">
+          <div class="row row-cols-2 g-2">
+            <div>
+              <label class="form-label">Calibration Date</label>
+              <input type="date" class="form-control" formControlName="calibrationDate" />
+            </div>
+            <div>
+              <label class="form-label">Calibration Due Date</label>
+              <input type="date" class="form-control" formControlName="calibrationDueDate" />
+            </div>
+            <div>
+              <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Agency'"
+                [labelName]="'Calibration Agency'" [fetchDataFn]="getCalibrationAgency"
+                (itemSelected)="onCalibrationAgencySelected($event)" [hideLabel]="false" [required]="false"
+                [isDisabled]="isViewMode"
+                [selectedItem]="calibrationForm.get('calibrationAgencyID')?.value"></app-searchable-dropdown-modal>
+            </div>
+            <!--Calibration Certificate-->
+            <div>
+              <label class="form-label">Calibration Certificate</label>
+              <ng-container *ngIf="calibrationForm.get('certificatePath')?.value; else uploadField">
+                <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                  <span class="text-truncate me-2" type="button"
+                    (click)="openFileInNewTab(calibrationForm.get('certificatePath')?.value)"
+                    title="{{ calibrationForm.get('certificatePath')?.value }}">
+                    <i class="bi bi-file-earmark-fill"></i>
+                    {{ calibrationForm.get("certificate")?.value }}
+                  </span>
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
+                    (click)="removeFile()">
+                    <i class="bi bi-trash-fill fs-6 me-1"></i>
+                  </button>
+                </div>
+              </ng-container>
+
+              <ng-template #uploadField>
+                <input class="form-control form-control-sm input-file" type="file" accept=".pdf,.doc,.docx"
+                  [disabled]="isViewMode" (change)="onFileChange($event, 'calibration')" />
+              </ng-template>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" (click)="submitCalibrationForm()"
+          data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1" aria-labelledby="maintenanceModalLabel"
+  data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="maintenanceModalLabel">Add Maintenance</label>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="maintenanceFormGroup">
+          <div class="row row-gap-2">
+            <div>
+              <label class="form-label">Date of Maintenance</label>
+              <input type="date" class="form-control" formControlName="maintenanceDate" />
+            </div>
+            <!--Maintenance Certificate-->
+            <div>
+              <label class="form-label">Attach Maintenance Record / Certificate</label>
+              <ng-container *ngIf="maintenanceForm.get('certificatePath')?.value; else uploadMaintenanceField">
+                <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                  <span class="text-truncate me-2" type="button"
+                    (click)="openFileInNewTab(maintenanceForm.get('certificatePath')?.value)"
+                    title="{{ maintenanceForm.get('certificatePath')?.value }}">
+                    <i class="bi bi-file-earmark-fill"></i>
+                    {{ maintenanceForm.get("certificate")?.value }}
+                  </span>
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
+                    (click)="removeFile()">
+                    <i class="bi bi-trash-fill fs-6 me-1"></i>
+                  </button>
+                </div>
+              </ng-container>
+
+              <ng-template #uploadMaintenanceField>
+                <input class="form-control form-control-sm input-file" type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" [disabled]="isViewMode"
+                  (change)="onFileChange($event, 'maintenance')" />
+              </ng-template>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" (click)="submitMaintenanceForm()"
+          data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Attachment Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel"
+  data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="attachmentModalLabel">Add Attachment</label>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="sopAttachmentForm">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-control" formControlName="title" placeholder="Enter title" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Attachments</label>
+            <input type="file" class="form-control" (change)="onFileChange($event,'sop')" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" (click)="submitSOPAttachmentForm()"
+          data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" data-bs-backdrop="static"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="videoModalLabel">Add Video</label>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="sopVideoForm">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-control" formControlName="title" placeholder="Enter title" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Videos</label>
+            <input type="file" class="form-control" (change)="onSOPVideoChange($event)" accept="video/*" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" (click)="submitSOPVideoForm()"
+          data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

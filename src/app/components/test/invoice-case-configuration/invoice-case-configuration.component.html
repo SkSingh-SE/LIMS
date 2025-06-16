@@ -1,0 +1,60 @@
+<div class="card shadow-lg m-2">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="text-center">Material Specification Form</h6>
+    </div>
+    <div class="card-body">
+        <form [formGroup]="invoiceForm" (ngSubmit)="submit()">
+            <div formArrayName="configurations">
+                <div *ngFor="let config of configurations.controls; let i = index" [formGroupName]="i"
+                    class="mb-3 border p-2 rounded">
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Selection Type</label>
+                            <select class="form-control" formControlName="selectionType" (change)="onTypeChange(i)">
+                                <option value="">Select</option>
+                                <option *ngFor="let type of selectionTypes" [value]="type">{{ type }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Name</label>
+                            <input class="form-control" formControlName="name" readonly />
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Alias Name</label>
+                            <input class="form-control" formControlName="aliasName" />
+                        </div>
+
+                        <div class="col-md-2"
+                            *ngIf="!config.get('selectionType')?.value.toLowerCase().includes('range')">
+                            <label>Value</label>
+                            <input class="form-control" formControlName="value" (change)="updateName(i)" />
+                        </div>
+
+                        <div class="col-md-1"
+                            *ngIf="config.get('selectionType')?.value.toLowerCase().includes('range')">
+                            <label>Start</label>
+                            <input class="form-control" formControlName="start" />
+                        </div>
+
+                        <div class="col-md-1"
+                            *ngIf="config.get('selectionType')?.value.toLowerCase().includes('range')">
+                            <label>End</label>
+                            <input class="form-control" formControlName="end" (change)="updateRangeName(i)" />
+                        </div>
+
+                        <div class="col-md-1">
+                            <label>Unit</label>
+                            <input class="form-control" formControlName="unit" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary mt-3" (click)="addConfiguration()">Add More</button>
+            <button type="submit" class="btn btn-success mt-3 ms-2">Submit</button>
+        </form>
+    </div>
+</div>

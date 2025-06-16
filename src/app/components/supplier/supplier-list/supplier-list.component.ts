@@ -3,6 +3,7 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { SupplierService } from '../../../services/supplier.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-supplier-list',
@@ -20,7 +21,7 @@ export class SupplierListComponent implements OnInit {
     { key: 'contactPerson1', type: 'string', label: 'Contact Person', filter: true },
     { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
     { key: 'emailId1', type: 'string', label: 'Email', filter: true },
-    { key: 'note', type: 'string', label: 'Note', filter: true },
+    { key: 'address', type: 'string', label: 'Address', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -29,7 +30,7 @@ export class SupplierListComponent implements OnInit {
     contactPerson1: 'string',
     contactNo1: 'number',
     emailId1: 'string',
-    note: 'string'
+    address: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -62,8 +63,7 @@ export class SupplierListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private supplierService: SupplierService) {
-   
+  constructor(private fb: FormBuilder, private supplierService: SupplierService,private toastService: ToastService) {
   }
 
   ngOnInit() {
@@ -199,6 +199,20 @@ export class SupplierListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+  deleteFn(id: number): void {
+    if (confirm('Are you sure you want to delete this supplier?')) {
+      this.supplierService.deleteSupplier(id).subscribe({
+        next: () => {
+          this.toastService.show('Supplier deleted successfully', 'success');
+          this.fetchData();
+        },
+        error: (error) => {
+          console.error('Error deleting supplier:', error);
+          this.toastService.show('Failed to delete supplier', 'error');
+        }
+      });
+    }
   }
 
 }

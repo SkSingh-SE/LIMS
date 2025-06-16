@@ -31,6 +31,10 @@ export class TestMethodSpecificationService {
     deleteTestMethodSpecification(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
+    enable_disableTestMethodSpecification(id: number): Observable<any> {
+      return this.http.delete<any>(`${this.apiUrl}/enable-disable/${id}`);
+    }
+    
 
     getTestMethodSpecificationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);

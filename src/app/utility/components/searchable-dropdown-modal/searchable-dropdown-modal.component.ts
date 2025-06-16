@@ -78,7 +78,6 @@ export class SearchableDropdownModalComponent {
   }
 
   selectItem(item: any) {
-    debugger;
     this.selectedLabel = item.name;
     this.itemSelected.emit(item);
   }
@@ -103,6 +102,7 @@ export class SearchableDropdownModalComponent {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedItem'] && changes['selectedItem'].currentValue) {
+      debugger;
       if (this.isMultiSelect && Array.isArray(this.selectedItem)) {
         // Handle multiple IDs
         this.selectedItems = [];
@@ -142,6 +142,7 @@ export class SearchableDropdownModalComponent {
   }
 
   toggleItem(item: any): void {
+    debugger;
     const index = this.selectedItems.findIndex(i => i.id === item.id);
     if (index > -1) {
       this.selectedItems.splice(index, 1);

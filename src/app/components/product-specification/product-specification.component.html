@@ -166,8 +166,7 @@
 
                     <!--Specification Name Field -->
                     <div class="">
-                        <label for="name" class="form-label">Specification Name <span
-                                class="text-danger">*</span></label>
+                        <label for="name" class="form-label">Specification <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="specificationName"
                             placeholder="Enter Specification" required
                             [ngClass]="{'is-invalid': ProductSpecificationForm.get('specificationName')?.touched && ProductSpecificationForm.get('specificationName')?.invalid}"
@@ -205,48 +204,64 @@
                             class="text-danger text-sm">
                             Alias Name is required.
                         </span>
-
                     </div>
 
-                    <div>
-                        <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Grade'"
-                            [labelName]="'Material Specification Grade'" [fetchDataFn]="getMaterialSpecification"
-                            (itemSelected)="onMaterialSelected($event)" [hideLabel]="false" [required]="true"
-                            [isDisabled]="isViewMode"
-                            [selectedItem]="ProductSpecificationForm.get('materiaSpecificationID')?.value">
-                        </app-searchable-dropdown-modal>
-
-                    </div>
                     <!--Size-->
                     <div>
                         <label class="form-label">Size</label>
-                        <div class="input-group mb-3">
+                        <div class="input-group">
                             <input type="text" class="form-control" aria-label="Sizing example input"
                                 aria-describedby="inputGroup-sizing-default" formControlName="size"
                                 placeholder="Enter size" [maxLength]="10" appDecimalOnly>
                             <span class="input-group-text" id="inputGroup-sizing-default">mm</span>
                         </div>
                     </div>
+                    <div>
+                        <app-searchable-dropdown-modal  [placeholder]="'Search Grade'"
+                            [labelName]="'Material Specification Grade'" [fetchDataFn]="getMaterialSpecificationGrade"
+                            (itemSelected)="onGradeSelected($event)" [hideLabel]="false" [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="ProductSpecificationForm.get('gradeID')?.value">
+                        </app-searchable-dropdown-modal>
 
-                   <div>
-                            <label class="form-label">Test Method Standard</label>
-                            <ng-select2 [data]="testMethods" [multiple]="true" [placeholder]="'Select Test Methods'"
-                                formControlName="testMethods" [customSearchEnabled]="true"
-                                (update)="onLaboratoryTestChange($event)" >
-                            </ng-select2>
-                        </div>
+                    </div>
+
+                    <div>
+                       <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Test'"
+                            [labelName]="'Laboratory Test'" [fetchDataFn]="getLaboratoryTest"
+                            (itemSelected)="onLaboratorySelected($event)" [hideLabel]="false" [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="ProductSpecificationForm.get('laboratoryTestID')?.value">
+                        </app-searchable-dropdown-modal>
+                    </div>
+                    <div>
+                       <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Metal Classification'"
+                            [labelName]="'Metal Classification'" [fetchDataFn]="getMetalClassification"
+                            (itemSelected)="onMetalSelected($event)" [hideLabel]="false" [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="ProductSpecificationForm.get('metalClassificationID')?.value">
+                        </app-searchable-dropdown-modal>
+                    </div>
+                    <div>
+                       <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Test Specification'"
+                            [labelName]="'Test Method Specification'" [fetchDataFn]="getTestMethodSpecification"
+                            (itemSelected)="onTestSpecificationSelected($event)" [hideLabel]="false" [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="ProductSpecificationForm.get('testMethodSpecificationID')?.value">
+                        </app-searchable-dropdown-modal>
+                    </div>
 
                 </div>
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white"
+                    <button type="button" class="btn btn-outline-warning me-2" (click)="closeModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                    <button type="submit" class="btn btn btn-outline-danger-600"
                         [disabled]="ProductSpecificationForm.invalid">
-                        {{ isEditMode ? 'Update' : 'Save' }}
+                       <i class="bi bi-save"></i> {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>
-
+              
             </form>
 
         </div>

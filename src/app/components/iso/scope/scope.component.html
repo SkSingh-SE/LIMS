@@ -1,0 +1,201 @@
+<div class="card shadow-lg m-2">
+  <div class="card-header card-form-header text-white text-center">
+    <h6 class="text-center">ISO Scope Form</h6>
+  </div>
+  <div class="card-body">
+    <form [formGroup]="scopeForm" (ngSubmit)="onSubmit()" novalidate>
+      <div class="d-flex flex-row justify-content-between gap-2 mb-2">
+        <div class="col-6">
+          <label for="laboratoryTest" class="form-label fw-semibold">Laboratory Test Method</label>
+          <app-searchable-dropdown
+            id="laboratoryTest"
+            [placeholder]="'Search Laboratory Test Method'"
+            [labelName]="'Laboratory Test Method'"
+            [fetchDataFn]="getLaboratoryTest"
+            (itemSelected)="onLaboratorySelected($event)"
+            [hideLabel]="true"
+            [required]="true"
+            [isDisabled]="isViewMode"
+            [selectedItem]="scopeForm.get('laboratoryTestID')?.value">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-6 d-flex align-items-center justify-content-end">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600 me-2" (click)="addSpecification()" aria-label="Add Specification">
+            <i class="bi bi-plus-circle-dotted"></i> Add Specification
+          </button>
+        </div>
+      </div>
+
+      <div formArrayName="specifications" class="accordion" id="specAccordion">
+        <div *ngFor="let spec of specifications.controls; let i = index" [formGroupName]="i" class="accordion-item mb-3">
+          <h2 class="accordion-header" id="heading{{i}}">
+            <button
+              class="accordion-button py-2 px-3 small"
+              [ngClass]="{ 'collapsed': i !== 0 }"
+              type="button"
+              data-bs-toggle="collapse"
+              [attr.data-bs-target]="'#collapse' + i"
+              [attr.aria-expanded]="i === 0 ? 'true' : 'false'"
+              [attr.aria-controls]="'collapse' + i">
+              <span class="fw-bold">
+                {{ spec.get('testMethodSpecification')?.value || 'New Specification' }}
+              </span>
+              <span class="ms-2 text-muted small">
+                (Parameters: {{ spec.get('parameters')?.value?.length || 0 }})
+              </span>
+            </button>
+          </h2>
+          <div
+            [id]="'collapse' + i"
+            class="accordion-collapse collapse"
+            [ngClass]="{ 'show': i === 0 }"
+            [attr.aria-labelledby]="'heading' + i"
+            data-bs-parent="#specAccordion">
+            <div class="accordion-body">
+              <div class="d-flex flex-row justify-content-between gap-2 mb-2">
+                <div class="col-6">
+                  <label for="testMethodSpec{{i}}" class="form-label fw-semibold">Test Method Specification</label>
+                  <app-searchable-dropdown
+                    id="testMethodSpec{{i}}"
+                    class="w-100"
+                    [placeholder]="'Search Test Specification'"
+                    [labelName]="'Test Method Specification'"
+                    [fetchDataFn]="getTestMethodSpecification"
+                    (itemSelected)="onTestSpecificationSelected($event, i)"
+                    [hideLabel]="true"
+                    [required]="true"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="spec.get('testMethodSpecificationID')?.value">
+                  </app-searchable-dropdown>
+                </div>
+                <div class="col-6 d-flex align-items-center justify-content-end ">
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-outline-warning btn-sm me-2" (click)="removeSpecification(i)" aria-label="Remove Specification">
+                    <i class="bi bi-x-circle"></i> Remove Spec
+                  </button>
+                </div>
+              </div>
+
+              <div formArrayName="parameters" class="table-responsive mb-3 custom-scroll">
+                <table class="table table-borderless align-middle mb-1" style="min-width:900px;">
+                  <thead class="table-light">
+                    <tr class="text-nowrap text-muted small">
+                      <th class="fw-medium px-2 wide-input">Parameter</th>
+                      <th class="fw-medium px-2 wide-input">Unit</th>
+                      <th class="fw-medium px-2 wide-input">Qualitative / Quantitative</th>
+                      <th class="fw-medium px-2 text-center">ISO?</th>
+                      <th class="fw-medium px-2 wide-input">Lower</th>
+                      <th class="fw-medium px-2 wide-input">Upper</th>
+                      <th class="fw-medium px-2 wide-input">Discipline</th>
+                      <th class="fw-medium px-2 wide-input">Group</th>
+                      <th class="fw-medium px-2 wide-input">Sub-Group</th>
+                      <th class="fw-medium px-2 wide-input">Equipment(s)</th>
+                      <th class="fw-medium text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let param of parameters(i).controls; let j = index" [formGroupName]="j">
+                      <td class="wide-input">
+                        <app-searchable-dropdown
+                          class="w-100"
+                          [placeholder]="'Search Parameter'"
+                          [labelName]="'Parameter'"
+                          [fetchDataFn]="getParameter"
+                          (itemSelected)="onParameterSelected($event, i, j)"
+                          [isDisabled]="isViewMode"
+                          [hideLabel]="true"
+                          [selectedItem]="param.get('parameterID')?.value">
+                        </app-searchable-dropdown>
+                      </td>
+                      <td>
+                        <label for="unitSelect{{i}}-{{j}}" class="visually-hidden">Unit</label>
+                        <select id="unitSelect{{i}}-{{j}}" class="form-select wide-input" formControlName="parameterUnitID" [disabled]="isViewMode">
+                          <option value="" disabled>Select Unit</option>
+                          <option *ngFor="let unit of parameterUnits" [value]="unit.id">{{ unit.name }}</option>
+                        </select>
+                      </td>
+                      <td>
+                        <label for="qualQuantSelect{{i}}-{{j}}" class="visually-hidden">Qualitative or Quantitative</label>
+                        <select id="qualQuantSelect{{i}}-{{j}}" formControlName="qualitativeQuantitative" class="form-select form-select-sm" [disabled]="isViewMode">
+                          <option value="" disabled>Select Option</option>
+                          <option value="Qualitative">Qualitative</option>
+                          <option value="Quantitative">Quantitative</option>
+                        </select>
+                      </td>
+                      <td class="text-center">
+                        <div class="form-check text-center">
+                          <input class="form-check-input mt-1" type="checkbox" formControlName="isUnderISO" [disabled]="isViewMode" />
+                        </div>
+                      </td>
+                      <td>
+                        <label for="lowerLimitSelect{{i}}-{{j}}" class="visually-hidden">Lower Limit</label>
+                        <select id="lowerLimitSelect{{i}}-{{j}}" class="form-control form-select wide-input" formControlName="lowerLimit" [disabled]="isViewMode">
+                          <option value="">Select Option</option>
+                          <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
+                        </select>
+                      </td>
+                      <td>
+                        <label for="upperLimitSelect{{i}}-{{j}}" class="visually-hidden">Upper Limit</label>
+                        <select id="upperLimitSelect{{i}}-{{j}}" class="form-control form-select wide-input" formControlName="upperLimit" [disabled]="isViewMode">
+                          <option value="">Select Option</option>
+                          <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
+                        </select>
+                      </td>
+                      <td class="wide-input">
+                        <app-searchable-dropdown
+                          [placeholder]="'Search Discipline'"
+                          [labelName]="'Discipline'"
+                          [fetchDataFn]="getDiscipline"
+                          (itemSelected)="onDisciplineSelected($event, i, j)"
+                          [isDisabled]="isViewMode"
+                          [hideLabel]="true"
+                          [selectedItem]="param.get('disciplineID')?.value">
+                        </app-searchable-dropdown>
+                      </td>
+                      <td class="wide-input">
+                        <label for="groupSelect{{i}}-{{j}}" class="visually-hidden">Group</label>
+                        <select id="groupSelect{{i}}-{{j}}" class="form-select wide-input" formControlName="groupID" (change)="onGroupSelected($event, i, j)" [disabled]="isViewMode">
+                          <option value="" disabled>Select Group</option>
+                          <option *ngFor="let group of groupOptionsPerParam[i + '-' + j] || []" [value]="group.id">{{ group.name }}</option>
+                        </select>
+                      </td>
+                      <td class="wide-input">
+                        <label for="subGroupSelect{{i}}-{{j}}" class="visually-hidden">Sub Group</label>
+                        <select id="subGroupSelect{{i}}-{{j}}" class="form-select wide-input" formControlName="subGroupID" [disabled]="isViewMode">
+                          <option value="" disabled>Select Sub Group</option>
+                          <option *ngFor="let subGroup of subGroupOptionsPerParam[i + '-' + j] || []" [value]="subGroup.id">{{ subGroup.name }}</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input formControlName="equipmentIDs" class="form-control form-control-sm mb-1" placeholder="Equip" [disabled]="isViewMode" />
+                      </td>
+                      <td *ngIf="!isViewMode" class="text-center">
+                        <button type="button" class="btn btn-link p-0" aria-label="Remove Parameter" (click)="removeParameter(i, j)">
+                          <img src="/icons/delete.svg" alt="Delete" class="w-100" />
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 btn-sm ms-2" (click)="addParameter(i)" aria-label="Add Parameter">
+                <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
+        <a class="btn btn-sm btn-outline-warning me-2" routerLink="/scope" role="button" aria-label="Cancel"> <i class="bi bi-x-circle"></i> Cancel</a>
+        <button [disabled]="!scopeForm.valid || !hasAnyParameter" type="submit" class="btn btn-sm btn-outline-danger-600" aria-label="Save Scope">
+          <i class="bi bi-save"></i> Save
+        </button>
+      </div> -->
+       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+
+                <a [routerLink]="['/scope']" class="btn btn-warning">Cancel</a>
+                <button type="submit" class="btn btn-success px-3">Save</button>
+            </div>
+    </form>
+  </div>
+</div>

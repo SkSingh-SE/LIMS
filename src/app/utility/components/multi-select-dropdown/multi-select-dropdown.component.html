@@ -1,0 +1,21 @@
+<form [formGroup]="multiForm">
+  <label *ngIf="!hideLabel" class="form-label">
+    {{ labelName }} <span *ngIf="required" class="text-danger">*</span>
+  </label>
+
+  <ng-select
+    [items]="items"
+    bindLabel="name"
+    bindValue="id"
+    [multiple]="true"
+    [placeholder]="placeholder"
+    formControlName="search"
+    [loading]="loading"
+    [virtualScroll]="true"
+    [clearable]="true"
+    (scrollToEnd)="onScrollToEnd()"
+    [typeahead]="typeahead"
+    (change)="onChange($event)"
+  >
+  </ng-select>
+</form>

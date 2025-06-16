@@ -12922,10 +12922,6 @@ select option {
   padding-inline-end: 68px;
 }
 
-.accordion .accordion-button::after {
-  background-image: none;
-}
-
 .accordion .accordion-button:focus {
   box-shadow: none;
 }
@@ -12934,32 +12930,9 @@ select option {
   box-shadow: none;
 }
 
-.accordion .accordion-button:not(.collapsed)::after {
-  background-image: none;
-  color: var(--primary-600);
-}
 
-.accordion .accordion-button[aria-expanded=true]::after, .accordion .accordion-button[aria-expanded=false]::after {
-  content: "\f1af";
-  font-family: remixicon;
-  display: inline-block;
-  position: absolute;
-  inset-inline-end: 32px;
-  height: 24px;
-  width: 24px;
-  border: 2px solid var(--primary-600);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1rem;
-  border-radius: 50%;
-  line-height: 1;
-  color: var(--primary-600);
-}
 
-.accordion .accordion-button[aria-expanded=false]::after {
-  content: "\ea13";
-}
+
 
 /* ================================= Accordion Css End =========================== */
 /* === accordion css end === */

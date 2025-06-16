@@ -64,10 +64,13 @@ body {
     border-radius: 0.375rem;
 }
 
-.input-group .form-control {
+.input-group .form-control.is-invalid {
     border-right: none !important;
 }
 
+.input-group.left-input-group .form-control.is-invalid {
+  border-right: 1px solid #dc3545 !important;
+}
 .card .card-header {
     padding: 0.5rem 0.5rem !important;
     height: 47px !important;
@@ -88,6 +91,51 @@ select:invalid {
     font-size: 14px !important;
     color: #6B7280 !important;
     font-weight: 400 !important;
+}
+
+
+.input-group .form-check-input {
+  border: 1px solid var(--text-secondary-light);
+  background: transparent;
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+  margin-left: 0;
+  margin-top: 0;
+  cursor: pointer;
+}
+
+
+
+.input-group .form-check-input:checked::before {
+  transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
+  opacity: 1;
+}
+
+.input-group .form-check-input:checked ~ label {
+  color: var(--text-primary-light) !important;
+  border-color: none !important;
+}
+
+.input-group .form-check-input::before {
+  position: absolute;
+  content: "";
+  width:80%;
+  height: 80%;
+  background-color: var(--red);
+  border-radius: inherit;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.2s linear;
+}
+
+.input-group .form-check-input:focus {
+  box-shadow: none;
 }
 
 .form-check-input:checked {

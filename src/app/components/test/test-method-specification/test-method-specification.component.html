@@ -9,7 +9,7 @@
                     <app-searchable-dropdown class="w-100" [placeholder]="'Search Organisation'"
                         [labelName]="'Standard Organization'" [fetchDataFn]="getStandardOrganization"
                         (itemSelected)="onOrganizationSelected($event)" [hideLabel]="false" [required]="true"
-                        [isDisabled]="isViewMode"
+                        [isDisabled]="isViewMode || this.testSpecificationForm.get('isDisabled')?.value"
                         [selectedItem]="testSpecificationForm.get('standardOrganizationID')?.value">
                     </app-searchable-dropdown>
 
@@ -19,7 +19,7 @@
                 <div>
                     <label class="form-label">Test Method Standard <span class="text-danger"> *</span></label>
                     <input type="text" class="form-control" formControlName="testMethodStandard"
-                        placeholder="e.g., A 370" maxlength="100"
+                        placeholder="Enter Standard Method" maxlength="100"
                         [ngClass]="{'is-invalid': testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched}">
                     <span
                         *ngIf="testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched"
@@ -27,31 +27,36 @@
                 </div>
                 <div>
                     <label class="form-label">Title <span class="text-danger"> *</span></label>
-                    <input type="text" class="form-control" formControlName="name"
-                        placeholder="e.g., Test Method for A 370" maxlength="100"
+                    <input type="text" class="form-control" formControlName="name" placeholder="Enter Title"
+                        maxlength="100"
                         [ngClass]="{'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched}">
                     <span
                         *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched"
                         class="text-danger text-sm">Title is required.</span>
                 </div>
-                <div class="d-flex flex-column gap-0">
-                    <div class="form-switch switch-danger ">
-                        <input class="form-check-input mt-1" type="checkbox" role="switch" id="switch3" checked=""
-                            formControlName="isDisabled">
-                        <label class="form-check-label form-label line-height-1 ms-2" for="switch3">Disable</label>
-                    </div>
-                    <div *ngIf="versions.controls.length < 4" class="form-text text-muted">
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm"
-                            (click)="addVersion()">
-                            <i class="bi bi-plus-circle-dotted"></i> Version
-                        </button>
-                    </div>
-
+                <div>
+                    <label class="form-label">Part</label>
+                    <input type="text" class="form-control" formControlName="part" placeholder="Enter Part"
+                        maxlength="100">
                 </div>
 
 
-            </div>
 
+            </div>
+            <div class="d-flex flex-column gap-0 mb-2 align-items-end">
+                <div class="form-switch switch-danger ">
+                    <input class="form-check-input mt-1" type="checkbox" role="switch" id="switch3"
+                        formControlName="isDisabled" (click)="onDisable()">
+                    <label class="form-check-label form-label line-height-1 ms-2" for="switch3">Disable</label>
+                </div>
+                <div *ngIf="showaddVersionButton()" class="form-text text-muted">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm"
+                        (click)="addVersion(true)" [disabled]="testSpecificationForm.get('isDisabled')?.value">
+                        <i class="bi bi-plus-circle-dotted"></i> Version
+                    </button>
+                </div>
+
+            </div>
 
             <div formArrayName="versions">
                 <div *ngFor="let group of versions.controls; let i = index" [formGroupName]="i"
@@ -59,8 +64,9 @@
 
                     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1">
 
-                        <div class="d-flex flex-row gap-2">
-                            <div *ngIf="versions.controls.length > 1" class="d-flex align-content-center align-items-center gap-2 ">
+                        <div class="d-flex flex-row gap-2  justify-content-between">
+                            <div *ngIf="versions.controls.length > 1"
+                                class="d-flex flex-column align-items-center gap-2 ">
                                 <button type="button" class="btn btn-sm btn-danger" [disabled]="i === 0"
                                     (click)="moveVersionUp(i)">
                                     <i class="bi bi-arrow-up-circle-fill"></i>
@@ -71,29 +77,28 @@
                                 </button>
                             </div>
 
-                            <div>
-
+                            <div class="w-100">
                                 <label class="form-label">Version <span class="text-danger"> *</span></label>
-                                <input type="text" class="form-control" placeholder="e.g., 24a"
+                                <!-- <div class="input-group left-input-group">
+                                    <div class="input-group-text ">
+                                        <input class="form-check-input mt-0" type="checkbox" formControlName="default"
+                                            (change)="onDefaultChange(i)"
+                                            aria-label="Checkbox for following text input"
+                                             title="Set this version as default">
+                                    </div>
+                                    <input type="text" class="form-control" aria-label="Text input with checkbox"
+                                        placeholder="e.g., 24a" formControlName="version"
+                                        [ngClass]="{'is-invalid': group.get('version')?.invalid && group.get('version')?.touched}">
+                                </div> -->
+                                <input type="text" class="form-control" placeholder="Enter Version"
                                     formControlName="version"
                                     [ngClass]="{'is-invalid': group.get('version')?.invalid && group.get('version')?.touched}">
                                 <span *ngIf="group.get('version')?.invalid && group.get('version')?.touched"
                                     class="text-danger text-sm">Version is required.</span>
-                                <div class="form-check">
-                                    <label for="" class="form-label">Default</label>
-                                    <input type="checkbox" class="form-check-input mt-1" formControlName="default"
-                                        id="default" (change)="onDefaultChange(i)">
-                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label class="form-label">Year <span class="text-danger"> *</span></label>
-                            <input type="text" class="form-control" formControlName="year" placeholder="e.g., 2022"
-                                [maxLength]="4" appNumberOnly
-                                [ngClass]="{'is-invalid': group.get('year')?.invalid && group.get('year')?.touched}">
-                            <span *ngIf="group.get('year')?.invalid && group.get('year')?.touched"
-                                class="text-danger text-sm">Year is required.</span>
-                        </div>
+
+
                         <div>
                             <label class="form-label">Standard File Attachment</label>
                             <ng-container *ngIf="group.get('standardFilePath')?.value; else uploadField">
@@ -104,8 +109,9 @@
                                         title="{{ group.get('standardFile')?.value }}">
                                         <i class="bi bi-file-earmark-fill"></i> {{group.get('standardFile')?.value }}
                                     </span>
-                                    <button *ngIf="!isViewMode" type="button"
-                                        class="btn btn-sm btn-link text-danger p-0" (click)="removeFile(i)">
+                                    <button *ngIf="!isViewMode && !this.testSpecificationForm.get('isDisabled')?.value"
+                                        type="button" class="btn btn-sm btn-link text-danger p-0"
+                                        (click)="removeFile(i)">
                                         <i class="bi bi-trash-fill fs-6 me-1"></i>
                                     </button>
                                 </div>
@@ -121,10 +127,6 @@
                         <div *ngIf="group.get('year')?.value">
                             <label class="form-label">Test Method Caption</label>
                             <div>{{ getCaption(group.get('year')?.value) }}</div>
-                        </div>
-                        <div class="">
-                            <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeVersion(i)"
-                                *ngIf="versions.length > 1">Remove</button>
                         </div>
                     </div>
                 </div>

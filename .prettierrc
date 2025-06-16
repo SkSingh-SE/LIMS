@@ -1,0 +1,9 @@
+{
+  "printWidth": 140,
+  "singleAttributePerLine": false,
+  "trailingComma": "es5",
+  "htmlWhitespaceSensitivity": "ignore",
+  "arrowParens": "avoid",
+  "semi": true,
+  "bracketSpacing": true
+}

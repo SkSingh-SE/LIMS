@@ -1,0 +1,8 @@
+input::file-selector-button {
+    color: #fff;
+    background-color: #FF2C1F !important;
+}
+.input-file {
+    cursor: pointer !important;
+    line-height: 25px;
+  }

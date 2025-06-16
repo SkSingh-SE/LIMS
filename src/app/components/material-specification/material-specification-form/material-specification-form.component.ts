@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
@@ -16,13 +24,22 @@ import { MaterialSpecificationService } from '../../../services/material-specifi
 import { ToastService } from '../../../services/toast.service';
 import { Observable } from 'rxjs';
 import { Modal } from 'bootstrap';
-import { Select2, Select2Option, Select2SearchEvent, Select2UpdateEvent, Select2UpdateValue, Select2Value } from 'ng-select2-component';
+import { LaboratoryTestService } from '../../../services/laboratory-test.service';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-material-specification-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, Select2],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    NumberOnlyDirective,
+    SearchableDropdownComponent,
+    MultiSelectDropdownComponent
+  ],
   templateUrl: './material-specification-form.component.html',
-  styleUrl: './material-specification-form.component.css'
+  styleUrl: './material-specification-form.component.css',
 })
 export class MaterialSpecificationFormComponent implements OnInit {
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
@@ -30,6 +47,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
 
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
+  private scrollTimeout: any;
 
   materialSpecificationId: number = 0;
   materialSpecifications: any = null;
@@ -40,29 +58,48 @@ export class MaterialSpecificationFormComponent implements OnInit {
   standardOrganizations: any[] = [];
   parameterUnits: any[] = [];
   specimenOriantations: any[] = [];
-  testMethods: any[] = [
-    { value: 1, label: 'Test Method 1' },
-    { value: 2, label: 'Test Method 2' },
-    { value: 3, label: 'Test Method 3' },
-    { value: 4, label: 'Test Method 4' },
-    { value: 5, label: 'Test Method 5' },
-  ];
 
   selectedStandardOrganization: any = null;
-  private scrollTimeout: any;
-  currentRowIndex: number = 0;
   productConditionsData: any[] = [];
   filteredProductOptions: any[] = [];
 
-  constructor(private fb: FormBuilder, private standardOrganizationService: StandardOrgnizationService,
-    private parameterService: ParameterService, private prameterUnitService: ParameterUnitService,
-    private heatTreatmentService: HeatTreatmentService, private productConditionService: ProductConditionService,
-    private specimenService: SpecimenOrientationService, private dimensionalService: DimensionalFactorService,
-    private metalService: MetalClassificationService, private route: ActivatedRoute, private router: Router,
-    private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService) { }
+  selectedGradeIndex = 0;
+  selectedSpecTab: { [gradeIndex: number]: string } = { 0: 'chemical' };
+  currentTab: 'chemical' | 'mechanical' | 'other' = 'chemical';
+  currentGradeIndex: number = 0;
+  currentLineIndex: number = 0;
+  modalVisible = false;
+
+  lowerLimitOptions = [
+    { label: '>', value: '>' },
+    { label: '≥', value: '≥' },
+    { label: '=', value: '=' }
+  ];
+  upperLimitOptions = [
+    { label: '<', value: '<' },
+    { label: '≤', value: '≤' },
+    { label: '=', value: '=' }
+  ];
+
+  constructor(
+    private fb: FormBuilder,
+    private standardOrganizationService: StandardOrgnizationService,
+    private parameterService: ParameterService,
+    private prameterUnitService: ParameterUnitService,
+    private heatTreatmentService: HeatTreatmentService,
+    private productConditionService: ProductConditionService,
+    private specimenService: SpecimenOrientationService,
+    private dimensionalService: DimensionalFactorService,
+    private metalService: MetalClassificationService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private materialSpecificationService: MaterialSpecificationService,
+    private toastService: ToastService,
+    private labTestService: LaboratoryTestService
+  ) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       this.materialSpecificationId = Number(params.get('id'));
     });
     const state = history.state as { mode?: string };
@@ -82,80 +119,66 @@ export class MaterialSpecificationFormComponent implements OnInit {
     this.initForm();
     this.getParameterUnit();
     this.getSpecimenOrientation();
-    this.getProductConditionDropdown();
 
     if (this.isViewMode) {
       this.MaterialSpecificationForm.disable();
-      this.specificationLines.controls.forEach(control => control.disable());
+
     }
     if (this.materialSpecificationId) {
       this.loadMaterialSpecification();
-    }else{
-      this.addSpecificationLine();
+    } else {
+      this.addGrade();
+      this.addSpecificationLine(0, 'chemical');
     }
   }
-
-  ngAfterViewInit() {
-    this.updateButtonPosition();
-  }
-  scrollToRight(): void {
-    const el = this.scrollContainer.nativeElement;
-    el.scrollTo({
-      left: el.scrollWidth,   // scroll to the far right
-      behavior: 'smooth'      // smooth animation
-    });
-  }
-  updateButtonPosition(): void {
-    requestAnimationFrame(() => {
-      const scrollEl = this.scrollContainer.nativeElement;
-      const btnEl = this.scrollButton.nativeElement;
-
-      const visibleRight = scrollEl.scrollLeft + scrollEl.clientWidth;
-
-      // Hide button if at end
-      if (visibleRight >= scrollEl.scrollWidth - 1) {
-        btnEl.style.display = 'none';
-      } else {
-        btnEl.style.display = 'block';
-        btnEl.style.left = `${visibleRight - btnEl.offsetWidth - 20}px`;
-      }
-    });
-  }
-  onScroll(): void {
-    if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
-    this.scrollTimeout = setTimeout(() => {
-      this.updateButtonPosition();
-    }, 10); // Adjust delay as needed
-  }
-
 
   initForm() {
     this.MaterialSpecificationForm = this.fb.group({
       id: [0],
-      specificationCode: [''],
       standardOrganizationID: ['', Validators.required],
       standard: ['', Validators.required],
       part: [''],
       standardYear: ['', Validators.required],
+      aliasName: [{ value: '', disabled: true }, Validators.required],
+      isCustom: [false],
+      grades: this.fb.array([]),
+    });
+  }
+  get grades() {
+    return this.MaterialSpecificationForm.get('grades') as FormArray;
+  }
+  addGrade() {
+    const gradeGroup = this.fb.group({
+      id: [0],
+      specificationHeaderID: [this.MaterialSpecificationForm.get('id')?.value || 0],
       grade: [''],
       isUNS: [false],
       unsSteelNumber: [''],
-      aliasName: [{ value: '', disabled: true }, Validators.required],
-      metalCalssificationID: [''],
-      isCustom: [false],
-      type: [0, Validators.required],
-      specificationLines: this.fb.array([])
+      metalClassificationID: [''],
+      specificationLines: this.fb.group({
+        chemical: this.fb.array([]),
+        mechanical: this.fb.array([]),
+        other: this.fb.array([]),
+      }),
     });
-  }
-  get specificationLines() {
-    return this.MaterialSpecificationForm.get('specificationLines') as FormArray;
+    this.grades.push(gradeGroup);
   }
 
-  addSpecificationLine() {
+  removeGrade(index: number) {
+    this.grades.removeAt(index);
+  }
+
+  getSpecificationLinesByTab(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other'): FormArray {
+    const linesGroup = this.grades.at(gradeIndex).get('specificationLines') as FormGroup;
+    return linesGroup.get(tab) as FormArray;
+  }
+
+
+  addSpecificationLine(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
     const specificationLine = this.fb.group({
       id: [0],
-      specificationHeaderID: [this.MaterialSpecificationForm.get('id')?.value || 0],
-      propertyType: [''],
+      gradeID: [0],
       manualSelection: [false],
       parameterID: [''],
       minValue: [null],
@@ -166,163 +189,149 @@ export class MaterialSpecificationFormComponent implements OnInit {
       maxValueEquation: [0],
       minTolerance: [0],
       maxTolerance: [0],
-      specimenOrientationID: [''],
-      dimensionalFactorID: [0],
-      lowerLimitValue: [null],
-      upperLimitValue: [null],
-      heatTreatmentID: [''],
-      productConditions: this.fb.array([]),
+      specimenOrientationID: [null],
+      dimensionalFactorID: [null],
+      lowerLimitValue: [''],
+      upperLimitValue: [''],
+      heatTreatmentID: [null],
+      productConditionID1: [null],
+      productConditionID2: [null],
       laboratoryTests: this.fb.array([]),
-      productConditionIDs: this.fb.control([]),
-      laboratoryTestIDs: this.fb.control([])
+      laboratoryTestIDs: this.fb.control([]),
+      type: [tab],
     });
-    this.specificationLines.push(specificationLine);
+    lines.push(specificationLine);
   }
-  removeSpecificationLine(index: number) {
-    this.specificationLines.removeAt(index);
+  removeSpecificationLine(gradeIndex: number, lineIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
+    this.getSpecificationLinesByTab(gradeIndex, tab).removeAt(lineIndex);
   }
-  copySpecificationLine(index: number) {
-    const originalLine = this.specificationLines.at(index) as FormGroup;
-    const originalValue = originalLine.getRawValue();
-
-    // Deep clone productConditions
-    const clonedProductConditions = (originalValue.productConditions || []).map((condition: any) =>
-      this.fb.group({
-        specificationLineID: [0], // reset ID
-        productConditionID: [condition.productConditionID],
-        productConditionName: [condition.productConditionName]
-      })
-    );
-
-    // Deep clone laboratoryTests
-    const clonedLaboratoryTests = (originalValue.laboratoryTests || []).map((test: any) =>
-      this.fb.group({
-        specificationLineID: [0], // reset ID
-        laboratoryTestID: [test.laboratoryTestID],
-        laboratoryTestName: [test.laboratoryTestName]
-      })
-    );
-
-    // Create new line
-    const newLine = this.fb.group({
-      id: [0], // always reset to 0 when copying
-      specificationHeaderID: [originalValue.specificationHeaderID],
-      propertyType: [originalValue.propertyType],
-      manualSelection: [originalValue.manualSelection],
-      parameterID: [originalValue.parameterID],
-      minValue: [originalValue.minValue],
-      maxValue: [originalValue.maxValue],
-      notes: [originalValue.notes],
-      parameterUnitID: [originalValue.parameterUnitID],
-      minValueEquation: [originalValue.minValueEquation],
-      maxValueEquation: [originalValue.maxValueEquation],
-      minTolerance: [originalValue.minTolerance],
-      maxTolerance: [originalValue.maxTolerance],
-      specimenOrientationID: [originalValue.specimenOrientationID],
-      dimensionalFactorID: [originalValue.dimensionalFactorID],
-      lowerLimitValue: [originalValue.lowerLimitValue],
-      upperLimitValue: [originalValue.upperLimitValue],
-      heatTreatmentID: [originalValue.heatTreatmentID],
-      productConditionIDs: this.fb.control([...originalValue.productConditionIDs || []]),
-      laboratoryTestIDs: this.fb.control([...originalValue.laboratoryTestIDs || []]),
-      productConditions: this.fb.array(clonedProductConditions),
-      laboratoryTests: this.fb.array(clonedLaboratoryTests)
-    });
-
-    this.specificationLines.insert(index + 1, newLine);
+  getCurrentSpecificationLineFormGroup(tab: 'chemical' | 'mechanical' | 'other'): FormGroup {
+    return this.getSpecificationLinesByTab(this.currentGradeIndex, tab)?.at(this.currentLineIndex) as FormGroup;
   }
 
+  // copySpecificationLine(gradeIndex: number, lineIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
+  //   const originalLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(lineIndex) as FormGroup;
+  //   const originalValue = originalLine.getRawValue();
+
+
+  //   // Deep clone laboratoryTests
+  //   const clonedLaboratoryTests = (originalValue.laboratoryTests || []).map(
+  //     (test: any) =>
+  //       this.fb.group({
+  //         specificationLineID: [0], // reset ID
+  //         laboratoryTestID: [test.laboratoryTestID],
+  //         laboratoryTestName: [test.laboratoryTestName],
+  //       })
+  //   );
+
+  //   // Create new line
+  //   const newLine = this.fb.group({
+  //     id: [0], // always reset to 0 when copying
+  //     specificationHeaderID: [originalValue.specificationHeaderID],
+  //     propertyType: [originalValue.propertyType],
+  //     manualSelection: [originalValue.manualSelection],
+  //     parameterID: [originalValue.parameterID],
+  //     minValue: [originalValue.minValue],
+  //     maxValue: [originalValue.maxValue],
+  //     notes: [originalValue.notes],
+  //     parameterUnitID: [originalValue.parameterUnitID],
+  //     minValueEquation: [originalValue.minValueEquation],
+  //     maxValueEquation: [originalValue.maxValueEquation],
+  //     minTolerance: [originalValue.minTolerance],
+  //     maxTolerance: [originalValue.maxTolerance],
+  //     specimenOrientationID: [originalValue.specimenOrientationID],
+  //     dimensionalFactorID: [originalValue.dimensionalFactorID],
+  //     lowerLimitValue: [originalValue.lowerLimitValue],
+  //     upperLimitValue: [originalValue.upperLimitValue],
+  //     heatTreatmentID: [originalValue.heatTreatmentID],
+  //     laboratoryTestIDs: this.fb.control([
+  //       ...(originalValue.laboratoryTestIDs || []),
+  //     ]),
+  //     laboratoryTests: this.fb.array(clonedLaboratoryTests),
+  //   });
+
+  //   this.getSpecificationLinesByTab(gradeIndex, tab).insert(lineIndex + 1, newLine);
+  // }
 
   loadMaterialSpecification() {
-    this.materialSpecificationService.getMaterialSpecificationById(this.materialSpecificationId).subscribe({
-      next: (data) => {
-        this.materialSpecifications = data;
-        this.MaterialSpecificationForm.patchValue({
-          id: this.materialSpecifications.id,
-          specificationCode: this.materialSpecifications.specificationCode,
-          standardOrganizationID: this.materialSpecifications.standardOrganizationID,
-          standard: this.materialSpecifications.standard,
-          part: this.materialSpecifications.part,
-          standardYear: this.materialSpecifications.standardYear,
-          grade: this.materialSpecifications.grade,
-          isUNS: this.materialSpecifications.isUNS,
-          unsSteelNumber: this.materialSpecifications.unsSteelNumber,
-          aliasName: this.materialSpecifications.aliasName,
-          metalCalssificationID: this.materialSpecifications.metalCalssificationID,
-          isCustom: this.materialSpecifications.isCustom,
-        });
-        if (this.materialSpecifications.specificationLines) {
-          for (const line of this.materialSpecifications.specificationLines) {
+    this.materialSpecificationService
+      .getMaterialSpecificationById(this.materialSpecificationId)
+      .subscribe({
+        next: (data) => {
+          this.MaterialSpecificationForm.patchValue({
+            id: data.id,
+            standardOrganizationID: data.standardOrganizationID,
+            standard: data.standard,
+            part: data.part,
+            standardYear: data.standardYear,
+            aliasName: data.aliasName,
+            isCustom: data.isCustom
+          });
+          this.grades.clear(); // Clear existing grades if any
 
-            let selectedIds: any[] = [];
-            let selectedTestIds: any[] = [];
-            if (line.productConditions) {
-              line.productConditions.forEach((conditions: any) => {
-                selectedIds.push(conditions.productConditionID);
-              });
-            }
-            if (line.laboratoryTests) {
-              line.laboratoryTests.forEach((test: any) => {
-                selectedTestIds.push(test.laboratoryTestID);
-              });
-            }
+          data.grades?.forEach((grade: any) => {
+            this.addGrade(); // Push a blank grade form
 
-            const specificationLine = this.fb.group({
-              id: [line.id],
-              specificationHeaderID: [line.specificationHeaderID],
-              propertyType: [line.propertyType],
-              manualSelection: [line.manualSelection],
-              parameterID: [line.parameterID],
-              minValue: [line.minValue],
-              maxValue: [line.maxValue],
-              notes: [line.notes],
-              parameterUnitID: [line.parameterUnitID],
-              minValueEquation: [line.minValueEquation],
-              maxValueEquation: [line.maxValueEquation],
-              minTolerance: [line.minTolerance],
-              maxTolerance: [line.maxTolerance],
-              specimenOrientationID: [line.specimenOrientationID],
-              dimensionalFactorID: [line.dimensionalFactorID],
-              lowerLimitValue: [line.lowerLimitValue],
-              upperLimitValue: [line.upperLimitValue],
-              heatTreatmentID: [line.heatTreatmentID],
-              laboratoryTestIDs: [selectedTestIds],
-              productConditionIDs: [selectedIds],
-              productConditions: this.fb.array(
-                line?.productConditions?.map((condition: any) => {
-                  return this.fb.group({
-                    specificationLineID: [condition.specificationLineID],
-                    productConditionID: [condition.productConditionID],
-                    productConditionName: [condition.productConditionName]
-                  });
-                }) || []
-              ),
-              laboratoryTests: this.fb.array(
-                line?.laboratoryTests?.map((test: any) => {
-                  return this.fb.group({
-                    specificationLineID: [test.specificationLineID],
-                    laboratoryTestID: [test.laboratoryTestID],
-                    laboratoryTestName: [test.laboratoryTestName]
-                  });
-                }) || []
-              )
+            const gradeIndex = this.grades.length - 1;
+            const gradeGroup = this.grades.at(gradeIndex);
+
+            gradeGroup.patchValue({
+              id: grade.id,
+              specificationHeaderID: grade.specificationHeaderID,
+              grade: grade.grade,
+              isUNS: grade.isUNS,
+              unsSteelNumber: grade.unsSteelNumber,
+              metalClassificationID: grade.metalClassificationID // typo from backend
             });
 
-            this.specificationLines.push(specificationLine);
+            const linesGroup = gradeGroup.get('specificationLines') as FormGroup;
+
+            // Group lines by type and push them into their respective arrays
+            grade.specificationLines?.forEach((line: any) => {
+              const tab = line.type as 'chemical' | 'mechanical' | 'other';
+              const formArray = linesGroup.get(tab) as FormArray;
+
+              formArray.push(this.fb.group({
+                id: [line.id],
+                gradeID: [line.gradeID],
+                manualSelection: [line.manualSelection],
+                parameterID: [line.parameterID],
+                minValue: [line.minValue],
+                maxValue: [line.maxValue],
+                notes: [line.notes],
+                parameterUnitID: [line.parameterUnitID],
+                minValueEquation: [line.minValueEquation],
+                maxValueEquation: [line.maxValueEquation],
+                minTolerance: [line.minTolerance],
+                maxTolerance: [line.maxTolerance],
+                specimenOrientationID: [line.specimenOrientationID],
+                dimensionalFactorID: [line.dimensionalFactorID],
+                lowerLimitValue: [line.lowerLimitValue],
+                upperLimitValue: [line.upperLimitValue],
+                heatTreatmentID: [line.heatTreatmentID],
+                productConditionID1: [line.productConditionID1],
+                productConditionID2: [line.productConditionID2],
+                laboratoryTests: this.fb.array([line.laboratoryTests]),
+                laboratoryTestIDs: this.fb.control(
+                  line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || []
+                ),
+                type: [tab]
+              }));
+            });
+          });
+
+
+          if (this.isViewMode) {
+            this.MaterialSpecificationForm.disable();
+
+          } else {
+            this.MaterialSpecificationForm.enable();
           }
-        }
-        if (this.isViewMode) {
-          this.MaterialSpecificationForm.disable();
-          this.specificationLines.controls.forEach(control => control.disable());
-        } else {
-          this.MaterialSpecificationForm.enable();
-          this.specificationLines.controls.forEach(control => control.enable());
-        }
-      },
-      error: (error) => {
-        console.error('Error fetching material specification:', error);
-      }
-    });
+        },
+        error: (error) => {
+          console.error('Error fetching material specification:', error);
+        },
+      });
   }
 
   generateSpecificationName() {
@@ -339,20 +348,10 @@ export class MaterialSpecificationFormComponent implements OnInit {
     if (part) {
       code += `-${part}`;
     }
-    const standardYear = this.MaterialSpecificationForm.get('standardYear')?.value;
+    const standardYear =
+      this.MaterialSpecificationForm.get('standardYear')?.value;
     if (standardYear) {
       code += `-${standardYear}`;
-    }
-    const grade = this.MaterialSpecificationForm.get('grade')?.value;
-    if (grade) {
-      code += `-${grade}`;
-    }
-    const isUNS = this.MaterialSpecificationForm.get('isUNS')?.value;
-    if (isUNS) {
-      const unsSteelNumber = this.MaterialSpecificationForm.get('unsSteelNumber')?.value;
-      if (unsSteelNumber) {
-        code += `-${unsSteelNumber}`;
-      }
     }
 
     if (code.length > 0) {
@@ -362,47 +361,68 @@ export class MaterialSpecificationFormComponent implements OnInit {
 
   onSubmit() {
     const formValue = this.MaterialSpecificationForm.getRawValue();
-    if (this.MaterialSpecificationForm.valid)
-      this.saveData(formValue);
+    const formattedData = this.formatedPayload(formValue);
+    console.log("formated Data", formattedData);
+    if (this.MaterialSpecificationForm.valid) this.saveData(formattedData);
     else {
       this.toastService.show('Please fill all required fields.', 'warning');
       this.MaterialSpecificationForm.markAllAsTouched();
     }
+  }
+  formatedPayload(formValue: any): any {
+    const formattedData = { ...formValue }; // shallow copy
 
+    formattedData.grades = formValue?.grades?.map((grade: any) => {
+      const { chemical = [], mechanical = [], other = [] } = grade.specificationLines || {};
+
+      // Combine all specificationLines into one flat array
+      const combinedSpecificationLines = [...chemical, ...mechanical, ...other];
+
+      return {
+        ...grade,
+        specificationLines: combinedSpecificationLines
+      };
+    });
+    return formattedData;
   }
 
   saveData(formValue: any) {
     if (this.isEditMode) {
-      this.materialSpecificationService.updateMaterialSpecification(formValue).subscribe({
-        next: (response) => {
-          this.toastService.show(response.message, 'success');
-          this.router.navigate(['/material-specification']);
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-          console.error('Error updating Material Specification:', error);
-        }
-      });
+      this.materialSpecificationService
+        .updateMaterialSpecification(formValue)
+        .subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.router.navigate(['/material-specification']);
+          },
+          error: (error) => {
+            this.toastService.show(error.error.message, 'error');
+            console.error('Error updating Material Specification:', error);
+          },
+        });
     } else {
-      this.materialSpecificationService.createMaterialSpecification(formValue).subscribe({
-        next: (response) => {
-          this.toastService.show(response.message, 'success');
-          this.router.navigate(['/material-specification']);
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-          console.error('Error creating Material Specification:', error);
-        }
-      });
+      this.materialSpecificationService
+        .createMaterialSpecification(formValue)
+        .subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.router.navigate(['/material-specification']);
+          },
+          error: (error) => {
+            this.toastService.show(error.error.message, 'error');
+            console.error('Error creating Material Specification:', error);
+          },
+        });
     }
-
   }
 
   getStandardOrganization = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.standardOrganizationService.getStandardOrganizationDropdown(term, page, pageSize);
   };
   onOrganizationSelected(item: any) {
-    this.MaterialSpecificationForm.patchValue({ standardOrganizationID: item.id });
+    this.MaterialSpecificationForm.patchValue({
+      standardOrganizationID: item.id,
+    });
     this.selectedStandardOrganization = item;
   }
   asFormGroup(control: AbstractControl): FormGroup {
@@ -411,73 +431,89 @@ export class MaterialSpecificationFormComponent implements OnInit {
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
-  onParameterSelected(item: any, index: number) {
-    const specificationLine = this.specificationLines.at(index) as FormGroup;
+  getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+  };
+  getMechanicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+  };
+  onParameterSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
     specificationLine.patchValue({ parameterID: item.id });
   }
   getHeatTreatment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
   };
-  onHeatTreatmentSelected(item: any, index: number) {
-    const specificationLine = this.specificationLines.at(index) as FormGroup;
+  onHeatTreatmentSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
     specificationLine.patchValue({ heatTreatmentID: item.id });
   }
-  getProductConditionDropdown() {
-    this.productConditionService.getProductConditionDropdown("", 0, 100).subscribe({
-      next: (data) => {
-        this.filteredProductOptions = data.map((item: any) => ({
-          label: item.name,
-          value: item.id
-        } as any)
-        );
-        this.productConditionsData = this.filteredProductOptions;
-      },
-      error: (error) => {
-        console.error('Error fetching product conditions:', error);
-      }
-    });
+  getProductCondition = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+  onProductCondition1Selected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    specificationLine.patchValue({ productConditionID1: item.id });
+  }
+  onProductCondition2Selected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    specificationLine.patchValue({ productConditionID2: item.id });
   }
 
   getDimensionalFactor = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.dimensionalService.getDimensionalFactorDropdown(term, page, pageSize);
-  }
-  onDimensionalFactorSelected(item: any, index: number) {
-    const specificationLine = this.specificationLines.at(index) as FormGroup;
+  };
+  onDimensionalFactorSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
     specificationLine.patchValue({ dimensionalFactorID: item.id });
   }
 
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
+  };
+
+  getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.labTestService.getLaboratoryTestDropdown(term, page, pageSize);
   }
-  onMetalClassificationSelected(item: any) {
-    this.MaterialSpecificationForm.patchValue({ metalCalssificationID: item.id });
+  onMetalClassificationSelected(item: any, gradeIndex: number) {
+    const grade = this.grades.at(gradeIndex);
+    grade.patchValue({
+      metalClassificationID: item.id,
+    });
   }
 
   getParameterUnit() {
-    this.prameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
+    this.prameterUnitService.getParameterUnitDropdown('', 0, 100).subscribe({
       next: (data) => {
         this.parameterUnits = data;
       },
       error: (error) => {
         console.error('Error fetching parameter units:', error);
-      }
+      },
     });
-  };
+  }
   getSpecimenOrientation() {
-    this.specimenService.getSpecimenOrientationDropdown("", 0, 100).subscribe({
+    this.specimenService.getSpecimenOrientationDropdown('', 0, 100).subscribe({
       next: (data) => {
         this.specimenOriantations = data;
       },
       error: (error) => {
         console.error('Error fetching specimen orientation:', error);
-      }
+      },
     });
   }
 
-  openModal(index: number): void {
-    this.currentRowIndex = index;
-    this.bsModal = new Modal(this.modalElement.nativeElement);
-    this.bsModal.show();
+  openModal(gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other'): void {
+    this.currentGradeIndex = gradeIndex;
+    this.currentLineIndex = index;
+    this.modalVisible = true;
+    this.currentTab = tab;
+    // Wait for modal DOM to be rendered
+    setTimeout(() => {
+      this.bsModal = new Modal(this.modalElement.nativeElement);
+      this.bsModal.show();
+    });
+
   }
 
   closeModal(): void {
@@ -486,73 +522,34 @@ export class MaterialSpecificationFormComponent implements OnInit {
     }
   }
 
-  onProductConditionChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
-    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
-    const productConditionsArray = line.get('productConditions') as FormArray;
-
-    // Reset and rebuild array
-    productConditionsArray.clear();
-    selectedIds?.options?.forEach(item => {
-      const selectedOption = this.productConditionsData.find((x: any) => x.value === item.value) as Select2Option;
-      if (selectedOption) {
-        productConditionsArray.push(this.fb.group({
-          id: [0],
-          specificationLineID: [line.get('id')?.value || 0],
-          productConditionID: [item.value],
-          productConditionName: [selectedOption?.label || '']
-        }));
-      }
-    });
-  }
-
-  onProductConditionSearch(term: Select2SearchEvent<Select2UpdateValue>) {
-    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
-    const selectedIDs = line.get('productConditionIDs')?.value || [];
-    const searchTerm = term.search.toLowerCase();
-
-    this.filteredProductOptions = this.productConditionsData.filter((option) => {
-      const isSelected = selectedIDs.includes(option.value);
-      const matchesSearch = option.label.toLowerCase().includes(searchTerm);
-
-      return isSelected || matchesSearch;
-    });
-
-  }
-  onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
-    const line = this.specificationLines.at(this.currentRowIndex) as FormGroup;
+  onLaboratoryTestChange(selectedItems: any[], tab: 'chemical' | 'mechanical' | 'other') {
+    const line = this.getSpecificationLinesByTab(this.currentGradeIndex, tab).at(this.currentLineIndex) as FormGroup;
     const labTestsArray = line.get('laboratoryTests') as FormArray;
+    const selectIds: number[] = [];
     // Reset and rebuild array
     labTestsArray.clear();
-    selectedIds?.options?.forEach(item => {
-      const selectedOption = this.testMethods.find((x: any) => x.value === item.value) as Select2Option;
-      if (selectedOption) {
-        labTestsArray.push(this.fb.group({
-          id: [0],
-          specificationLineID: [line.get('id')?.value || 0],
-          laboratoryTestID: [item.value],
-          laboratoryTestName: [selectedOption?.label || '']
-        }));
-      }
+    selectedItems?.forEach((item) => {
+      selectIds.push(item.id);
+        labTestsArray.push(
+          this.fb.group({
+            specificationLineID: [line.get('id')?.value || 0],
+            laboratoryTestID: [item.id]
+          })
+        );
     });
+    line.patchValue({laboratoryTestIDs : selectIds})
   }
 
   copyMaterialSpecification() {
     const raw = this.MaterialSpecificationForm.getRawValue();
-    raw.id = 0;
-    raw.specificationLines.forEach((line: any) => {
-      line.id = 0;
-      line.specificationHeaderID = 0;
-      line.productConditions?.forEach((pc: any) => pc.specificationLineID = 0);
-      line.laboratoryTests?.forEach((lt: any) => lt.specificationLineID = 0);
-    });
+    const formatedData = this.formatedPayload(raw);
     this.isEditMode = false;
-    this.saveData(raw);
-
+    this.saveData(formatedData);
   }
 
   // spinning icon
   spinningIndex: number | null = null;
-  rotateOnce(index: number) {
+  rotateOnce(gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     this.spinningIndex = index;
     setTimeout(() => {
       if (this.spinningIndex === index) {
@@ -560,8 +557,9 @@ export class MaterialSpecificationFormComponent implements OnInit {
       }
     }, 1000);
 
-    this.openModal(index); // optional
+    this.openModal(gradeIndex, index, tab); // optional
   }
-
-
+  selectSpecTab(gradeIndex: number, tab: string) {
+    this.selectedSpecTab[gradeIndex] = tab;
+  }
 }

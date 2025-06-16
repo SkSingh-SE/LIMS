@@ -7,7 +7,7 @@ import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-test-method-specification-list',
-  imports: [CommonModule,RouterModule,FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './test-method-specification-list.component.html',
   styleUrl: './test-method-specification-list.component.css'
 })
@@ -63,7 +63,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private testMethodService: TestMethodSpecificationService, private toastService: ToastService) {
     this.isLoading.set(true);
-   
+
   }
 
   ngOnInit() {
@@ -199,7 +199,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
   }
- deleteFn(id: number): void {
+  deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {

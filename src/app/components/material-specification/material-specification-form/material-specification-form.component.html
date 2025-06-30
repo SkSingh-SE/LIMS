@@ -91,771 +91,819 @@
       </div>
 
       <!--Grade Wise-->
-      <div formArrayName="grades">
-        <div class="d-flex justify-content-between align-items-center mb-1">
+      <div formArrayName="grades" class="accordion" id="gradeAccordion">
+        <!-- <div class="d-flex justify-content-between align-items-center mb-1">
           <label class="fw-bold fs-6 border-bottom border-danger mb-0">Grades</label>
           <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger mt-1" (click)="addGrade()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Grade
           </button>
-        </div>
-        <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi" class="border p-2 mb-2 rounded">
-          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1 mb-2">
-            <div>
-              <label class="form-label">
-                Grade
-                <span class="text-danger">*</span>
-              </label>
-              <input
-                class="form-control"
-                formControlName="grade"
-                placeholder="Enter grade"
-                maxlength="100"
-                (blur)="generateSpecificationName()"
-                [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
-              />
-              <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid">Grade is required</span>
-            </div>
+        </div> -->
+        <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi" class="accordion-item mb-3">
+          <h2 class="accordion-header mb-2" id="heading{{ gi }}">
+            <button
+              class="accordion-button py-1 px-3 small flex-grow-1"
+              [ngClass]="{ collapsed: gi !== 0 }"
+              type="button"
+              data-bs-toggle="collapse"
+              [attr.data-bs-target]="'#collapse' + gi"
+              [attr.aria-expanded]="gi === 0 ? 'true' : 'false'"
+              [attr.aria-controls]="'collapse' + gi"
+            >
+              <span class="btn btn-sm btn-outline-danger" (click)="addGrade()">
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Grade
+              </span>
+              <span class="fw-bold ms-3">
+                {{ grade.get("grade")?.value || "New Grade" }}
+              </span>
+            </button>
+          </h2>
+          <div
+            id="collapse{{ gi }}"
+            class="accordion-collapse collapse"
+            [ngClass]="{ show: gi === 0 }"
+            [attr.aria-labelledby]="'heading' + gi"
+            data-bs-parent="#gradeAccordion"
+          >
+            <div class="accordion-body">
+              <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1 mb-2">
+                <div>
+                  <label class="form-label">
+                    Grade
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    class="form-control"
+                    formControlName="grade"
+                    placeholder="Enter grade"
+                    maxlength="100"
+                    (blur)="generateSpecificationName()"
+                    [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
+                  />
+                  <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid">Grade is required</span>
+                </div>
 
-            <div class="">
-              <app-searchable-dropdown
-                class="w-100"
-                [placeholder]="'Search Metal Type'"
-                [labelName]="'Metal Type'"
-                [fetchDataFn]="getMetalClassification"
-                (itemSelected)="onMetalClassificationSelected($event, gi)"
-                [hideLabel]="false"
-                [required]="true"
-                [isDisabled]="isViewMode"
-                [selectedItem]="grade.get('metalClassificationID')?.value"
-              ></app-searchable-dropdown>
-              <div
-                *ngIf="grade.get('metalClassificationID')?.touched && grade.get('standardOrganizationID')?.invalid"
-                class="text-danger text-sm"
-              >
-                Metal Classification is required.
+                <div class="">
+                  <app-searchable-dropdown
+                    class="w-100"
+                    [placeholder]="'Search Metal Type'"
+                    [labelName]="'Metal Type'"
+                    [fetchDataFn]="getMetalClassification"
+                    (itemSelected)="onMetalClassificationSelected($event, gi)"
+                    [hideLabel]="false"
+                    [required]="true"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="grade.get('metalClassificationID')?.value"
+                  ></app-searchable-dropdown>
+                  <div
+                    *ngIf="grade.get('metalClassificationID')?.touched && grade.get('standardOrganizationID')?.invalid"
+                    class="text-danger text-sm"
+                  >
+                    Metal Classification is required.
+                  </div>
+                </div>
+                <div class="form-check ps-3">
+                  <input type="checkbox" class="form-check-input mt-1 ms-0 me-auto" formControlName="isUNS" id="isUNS" />
+                  <label class="form-label ms-1" for="isUNS">UNS</label>
+                  <label  class="form-label float-end" for="UNSSteel">{{grade.get('isUNS')?.value ? 'UNS ' :''}}Steel Number</label>
+                  <input
+                    class="form-control"
+                    id="UNSSteel"
+                    formControlName="unsSteelNumber"
+                    placeholder="Enter steel number"
+                    maxlength="100"
+                    (blur)="generateSpecificationName()"
+                    style="margin-top: -2px"
+                  />
+                </div>
               </div>
-            </div>
-            <div class="form-check ps-3">
-              <input type="checkbox" class="form-check-input mt-1 ms-0 me-auto" formControlName="isUNS" id="isUNS" />
-              <label class="form-label ms-1" for="isUNS">UNS?</label>
-              <label *ngIf="grade.get('isUNS')?.value" class="form-label float-end" for="UNSSteel">UNS Steel</label>
-              <input
-                *ngIf="grade.get('isUNS')?.value"
-                class="form-control"
-                id="UNSSteel"
-                formControlName="unsSteelNumber"
-                placeholder="Enter steel number"
-                maxlength="100"
-                (blur)="generateSpecificationName()"
-                style="margin-top: -2px"
-              />
-            </div>
-          </div>
-          <ul class="nav nav-tabs mb-2">
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemical'" (click)="selectSpecTab(gi, 'chemical')">Chemical</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanical'" (click)="selectSpecTab(gi, 'mechanical')">
-                Mechanical
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'other'" (click)="selectSpecTab(gi, 'other')">Other</a>
-            </li>
-          </ul>
-          <div [formGroupName]="'specificationLines'">
-            <!-- Chemical Tab -->
-            <div class="p-2" *ngIf="selectedSpecTab[gi] === 'chemical'">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="fw-bold fs-6 mb-0">Specification Lines</label>
-                <button
-                  *ngIf="!isViewMode"
-                  type="button"
-                  class="btn btn-sm btn-outline-danger mt-1"
-                  (click)="addSpecificationLine(gi, 'chemical')"
-                >
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Line
-                </button>
-              </div>
-
-              <div
-                #scrollContainer
-                formArrayName="chemical"
-                class="table-responsive position-relative custom-scroll"
-                style="max-height: calc(100vh - 200px)"
-              >
-                <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
-                  <thead>
-                    <tr class="text-nowrap text-muted small">
-                      <th class="fw-medium text-center">Actions</th>
-                      <th class="fw-medium px-2">Manual</th>
-                      <th class="fw-medium px-2 wide-input">Parameter</th>
-                      <th class="fw-medium px-2 wide-input">Min</th>
-                      <th class="fw-medium px-2 wide-input">Max</th>
-                      <th class="fw-medium px-2 wide-input">Note</th>
-                      <th class="fw-medium px-2 wide-input">Parameter Unit</th>
-                      <th class="fw-medium px-2 wide-input">Min Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Max Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Min Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Max Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
-                      <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
-                      <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Heat Treatment</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 1</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 2</th>
-                      <!-- <th class="fw-medium px-2 wide-input">Test Methods</th> -->
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <ng-container
-                      *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index"
-                      [formGroupName]="i"
+              <ul class="nav nav-tabs mb-2">
+                <li class="nav-item">
+                  <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemical'" (click)="selectSpecTab(gi, 'chemical')">
+                    Chemical
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanical'" (click)="selectSpecTab(gi, 'mechanical')">
+                    Mechanical
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'other'" (click)="selectSpecTab(gi, 'other')">Other</a>
+                </li>
+              </ul>
+              <div [formGroupName]="'specificationLines'">
+                <!-- Chemical Tab -->
+                <div class="p-2" *ngIf="selectedSpecTab[gi] === 'chemical'">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold fs-6 mb-0">Specification Lines</label>
+                    <button
+                      *ngIf="!isViewMode"
+                      type="button"
+                      class="btn btn-sm btn-outline-danger mt-1"
+                      (click)="addSpecificationLine(gi, 'chemical')"
                     >
-                      <tr>
-                        <td class="text-center">
-                          <div class="d-flex flex-row gap-1">
-                            <button type="button" class="btn btn-sm btn-danger" (click)="removeSpecificationLine(gi, i, 'chemical')">
-                              <i class="bi bi-dash-circle-dotted"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-warning"
-                              (click)="rotateOnce(gi, i, 'chemical')"
-                              [disabled]="isViewMode"
-                            >
-                              <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
-                            </button>
-                            <!-- <button type="button" class="btn btn-sm btn-success"
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Line
+                    </button>
+                  </div>
+
+                  <div
+                    #scrollContainer
+                    formArrayName="chemical"
+                    class="table-responsive position-relative custom-scroll"
+                    style="max-height: calc(100vh - 200px)"
+                  >
+                    <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
+                      <thead>
+                        <tr class="text-nowrap text-muted small">
+                          <th class="fw-medium text-center">Actions</th>
+                          <th class="fw-medium px-2">Manual</th>
+                          <th class="fw-medium px-2 wide-input">Parameter</th>
+                          <th class="fw-medium px-2 wide-input">Min</th>
+                          <th class="fw-medium px-2 wide-input">Max</th>
+                          <th class="fw-medium px-2 wide-input">Note</th>
+                          <th class="fw-medium px-2 wide-input">Parameter Unit</th>
+                          <th class="fw-medium px-2 wide-input">Min Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Max Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Min Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Max Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
+                          <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
+                          <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Heat Treatment</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 1</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 2</th>
+                          <!-- <th class="fw-medium px-2 wide-input">Test Methods</th> -->
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ng-container
+                          *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index"
+                          [formGroupName]="i"
+                        >
+                          <tr>
+                            <td class="text-center">
+                              <div class="d-flex flex-row gap-1">
+                                <button
+                                  *ngIf="!isViewMode"
+                                  type="button"
+                                  class="btn btn-sm btn-danger"
+                                  (click)="removeSpecificationLine(gi, i, 'chemical')"
+                                >
+                                  <i class="bi bi-dash-circle-dotted"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-warning"
+                                  (click)="rotateOnce(gi, i, 'chemical')"
+                                  [disabled]="isViewMode"
+                                >
+                                  <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
+                                </button>
+                                <!-- <button type="button" class="btn btn-sm btn-success"
                               (click)="copySpecificationLine(gi,i,'chemical')" [disabled]="isViewMode">
                               <i class="bi-copy"></i>
                             </button> -->
-                          </div>
-                        </td>
-                        <td>
-                          <div class="form-check mt-1">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
-                          </div>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Parameter'"
-                            [labelName]="'Parameter'"
-                            [fetchDataFn]="getChemicalParameter"
-                            (itemSelected)="onParameterSelected($event, gi, i, 'chemical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('parameterID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValue"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValue"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
-                        </td>
-                        <td>
-                          <!-- Unit Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="parameterUnitID">
-                            <option value="" disabled selected>Select Unit</option>
-                            <option *ngFor="let unit of parameterUnits" [value]="unit.id">
-                              {{ unit.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValueEquation"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValueEquation"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minTolerance"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxTolerance"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <!-- Specimen Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="specimenOrientationID">
-                            <option value="null" disabled selected>Select Orientation</option>
-                            <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
-                              {{ specimen.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Dimentional Factor'"
-                            [labelName]="'Dimentional Factor'"
-                            [fetchDataFn]="getDimensionalFactor"
-                            (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'chemical')"
-                            [hideLabel]="true"
-                            [isDisabled]="isViewMode"
-                            [selectedItem]="group.get('dimensionalFactorID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="upperLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of upperLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check mt-1">
+                                <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
+                              </div>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Parameter'"
+                                [labelName]="'Parameter'"
+                                [fetchDataFn]="getChemicalParameter"
+                                (itemSelected)="onParameterSelected($event, gi, i, 'chemical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('parameterID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
+                            </td>
+                            <td>
+                              <!-- Unit Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="parameterUnitID">
+                                <option value="" disabled selected>Select Unit</option>
+                                <option *ngFor="let unit of parameterUnits" [value]="unit.id">
+                                  {{ unit.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValueEquation"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValueEquation"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <!-- Specimen Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="specimenOrientationID">
+                                <option value="null" disabled selected>Select Orientation</option>
+                                <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
+                                  {{ specimen.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Dimentional Factor'"
+                                [labelName]="'Dimentional Factor'"
+                                [fetchDataFn]="getDimensionalFactor"
+                                (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'chemical')"
+                                [hideLabel]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="group.get('dimensionalFactorID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="upperLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of upperLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
 
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Heat Treatment'"
-                            [labelName]="'Heat Treatment'"
-                            [fetchDataFn]="getHeatTreatment"
-                            (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'chemical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('heatTreatmentID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 1'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition1Selected($event, gi, i, 'chemical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID1')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 2'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition2Selected($event, gi, i, 'chemical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID2')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <!-- <td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Heat Treatment'"
+                                [labelName]="'Heat Treatment'"
+                                [fetchDataFn]="getHeatTreatment"
+                                (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'chemical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('heatTreatmentID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 1'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition1Selected($event, gi, i, 'chemical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID1')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 2'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition2Selected($event, gi, i, 'chemical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID2')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <!-- <td>
                           <ng-select [items]="testMethods" bindLabel="label" bindValue="value" labelForId="testMethod"
                             [multiple]="true" placeholder="Select Laboratory Tests" clearAllText="Clear"
                             formControlName="laboratoryTestIDs">
                           </ng-select>
                         </td> -->
-                      </tr>
-                    </ng-container>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- Mechanical Tab -->
-            <div class="p-2" *ngIf="selectedSpecTab[gi] === 'mechanical'">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="fw-bold fs-6 mb-0">Specification Lines</label>
-                <button
-                  *ngIf="!isViewMode"
-                  type="button"
-                  class="btn btn-sm btn-outline-danger mt-1"
-                  (click)="addSpecificationLine(gi, 'mechanical')"
-                >
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Line
-                </button>
-              </div>
-
-              <div
-                #scrollContainer
-                formArrayName="mechanical"
-                class="table-responsive position-relative custom-scroll"
-                style="max-height: calc(100vh - 200px)"
-              >
-                <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
-                  <thead>
-                    <tr class="text-nowrap text-muted small">
-                      <th class="fw-medium text-center">Actions</th>
-                      <th class="fw-medium px-2">Manual</th>
-                      <th class="fw-medium px-2 wide-input">Parameter</th>
-                      <th class="fw-medium px-2 wide-input">Min</th>
-                      <th class="fw-medium px-2 wide-input">Max</th>
-                      <th class="fw-medium px-2 wide-input">Note</th>
-                      <th class="fw-medium px-2 wide-input">Parameter Unit</th>
-                      <th class="fw-medium px-2 wide-input">Min Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Max Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Min Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Max Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
-                      <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
-                      <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Heat Treatment</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 1</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 2</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <ng-container
-                      *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index"
-                      [formGroupName]="i"
+                          </tr>
+                        </ng-container>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <!-- Mechanical Tab -->
+                <div class="p-2" *ngIf="selectedSpecTab[gi] === 'mechanical'">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold fs-6 mb-0">Specification Lines</label>
+                    <button
+                      *ngIf="!isViewMode"
+                      type="button"
+                      class="btn btn-sm btn-outline-danger mt-1"
+                      (click)="addSpecificationLine(gi, 'mechanical')"
                     >
-                      <tr>
-                        <td class="text-center">
-                          <div class="d-flex flex-row gap-1">
-                            <button type="button" class="btn btn-sm btn-danger" (click)="removeSpecificationLine(gi, i, 'mechanical')">
-                              <i class="bi bi-dash-circle-dotted"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-warning"
-                              (click)="rotateOnce(gi, i, 'mechanical')"
-                              [disabled]="isViewMode"
-                            >
-                              <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="form-check mt-1">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
-                          </div>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Parameter'"
-                            [labelName]="'Parameter'"
-                            [fetchDataFn]="getMechanicalParameter"
-                            (itemSelected)="onParameterSelected($event, gi, i, 'mechanical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('parameterID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValue"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValue"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
-                        </td>
-                        <td>
-                          <!-- Unit Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="parameterUnitID">
-                            <option value="" disabled selected>Select Unit</option>
-                            <option *ngFor="let unit of parameterUnits" [value]="unit.id">
-                              {{ unit.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValueEquation"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValueEquation"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minTolerance"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxTolerance"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <!-- Specimen Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="specimenOrientationID">
-                            <option value="null" disabled selected>Select Orientation</option>
-                            <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
-                              {{ specimen.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Dimentional Factor'"
-                            [labelName]="'Dimentional Factor'"
-                            [fetchDataFn]="getDimensionalFactor"
-                            (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'mechanical')"
-                            [hideLabel]="true"
-                            [isDisabled]="isViewMode"
-                            [selectedItem]="group.get('dimensionalFactorID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="upperLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of upperLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Line
+                    </button>
+                  </div>
 
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Heat Treatment'"
-                            [labelName]="'Heat Treatment'"
-                            [fetchDataFn]="getHeatTreatment"
-                            (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'mechanical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('heatTreatmentID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 1'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition1Selected($event, gi, i, 'mechanical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID1')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 2'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition2Selected($event, gi, i, 'mechanical')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID2')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                      </tr>
-                    </ng-container>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- Other Tab -->
-            <div class="p-2" *ngIf="selectedSpecTab[gi] === 'other'">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="fw-bold fs-6 mb-0">Specification Lines</label>
-                <button
-                  *ngIf="!isViewMode"
-                  type="button"
-                  class="btn btn-sm btn-outline-danger mt-1"
-                  (click)="addSpecificationLine(gi, 'other')"
-                >
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Line
-                </button>
-              </div>
+                  <div
+                    #scrollContainer
+                    formArrayName="mechanical"
+                    class="table-responsive position-relative custom-scroll"
+                    style="max-height: calc(100vh - 200px)"
+                  >
+                    <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
+                      <thead>
+                        <tr class="text-nowrap text-muted small">
+                          <th class="fw-medium text-center">Actions</th>
+                          <th class="fw-medium px-2">Manual</th>
+                          <th class="fw-medium px-2 wide-input">Parameter</th>
+                          <th class="fw-medium px-2 wide-input">Min</th>
+                          <th class="fw-medium px-2 wide-input">Max</th>
+                          <th class="fw-medium px-2 wide-input">Note</th>
+                          <th class="fw-medium px-2 wide-input">Parameter Unit</th>
+                          <th class="fw-medium px-2 wide-input">Min Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Max Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Min Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Max Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
+                          <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
+                          <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Heat Treatment</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 1</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 2</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ng-container
+                          *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index"
+                          [formGroupName]="i"
+                        >
+                          <tr>
+                            <td class="text-center">
+                              <div class="d-flex flex-row gap-1">
+                                <button
+                                  *ngIf="!isViewMode"
+                                  type="button"
+                                  class="btn btn-sm btn-danger"
+                                  (click)="removeSpecificationLine(gi, i, 'mechanical')"
+                                >
+                                  <i class="bi bi-dash-circle-dotted"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-warning"
+                                  (click)="rotateOnce(gi, i, 'mechanical')"
+                                  [disabled]="isViewMode"
+                                >
+                                  <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
+                                </button>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check mt-1">
+                                <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
+                              </div>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Parameter'"
+                                [labelName]="'Parameter'"
+                                [fetchDataFn]="getMechanicalParameter"
+                                (itemSelected)="onParameterSelected($event, gi, i, 'mechanical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('parameterID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
+                            </td>
+                            <td>
+                              <!-- Unit Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="parameterUnitID">
+                                <option value="" disabled selected>Select Unit</option>
+                                <option *ngFor="let unit of parameterUnits" [value]="unit.id">
+                                  {{ unit.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValueEquation"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValueEquation"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <!-- Specimen Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="specimenOrientationID">
+                                <option value="null" disabled selected>Select Orientation</option>
+                                <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
+                                  {{ specimen.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Dimentional Factor'"
+                                [labelName]="'Dimentional Factor'"
+                                [fetchDataFn]="getDimensionalFactor"
+                                (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'mechanical')"
+                                [hideLabel]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="group.get('dimensionalFactorID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="upperLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of upperLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
 
-              <div
-                #scrollContainer
-                formArrayName="other"
-                class="table-responsive position-relative custom-scroll"
-                style="max-height: calc(100vh - 200px)"
-              >
-                <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
-                  <thead>
-                    <tr class="text-nowrap text-muted small">
-                      <th class="fw-medium text-center">Actions</th>
-                      <th class="fw-medium px-2">Manual</th>
-                      <th class="fw-medium px-2 wide-input">Parameter</th>
-                      <th class="fw-medium px-2 wide-input">Min</th>
-                      <th class="fw-medium px-2 wide-input">Max</th>
-                      <th class="fw-medium px-2 wide-input">Note</th>
-                      <th class="fw-medium px-2 wide-input">Parameter Unit</th>
-                      <th class="fw-medium px-2 wide-input">Min Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Max Value Equation</th>
-                      <th class="fw-medium px-2 wide-input">Min Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Max Tolerance</th>
-                      <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
-                      <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
-                      <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
-                      <th class="fw-medium px-2 wide-input">Heat Treatment</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 1</th>
-                      <th class="fw-medium px-2 wide-input">Product Condition 2</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <ng-container *ngFor="let group of getSpecificationLinesByTab(gi, 'other').controls; let i = index" [formGroupName]="i">
-                      <tr>
-                        <td class="text-center">
-                          <div class="d-flex flex-row gap-1">
-                            <button type="button" class="btn btn-sm btn-danger" (click)="removeSpecificationLine(gi, i, 'other')">
-                              <i class="bi bi-dash-circle-dotted"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-warning"
-                              (click)="rotateOnce(gi, i, 'other')"
-                              [disabled]="isViewMode"
-                            >
-                              <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="form-check mt-1">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
-                          </div>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Parameter'"
-                            [labelName]="'Parameter'"
-                            [fetchDataFn]="getParameter"
-                            (itemSelected)="onParameterSelected($event, gi, i, 'other')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('parameterID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValue"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValue"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
-                        </td>
-                        <td>
-                          <!-- Unit Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="parameterUnitID">
-                            <option value="" disabled selected>Select Unit</option>
-                            <option *ngFor="let unit of parameterUnits" [value]="unit.id">
-                              {{ unit.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minValueEquation"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxValueEquation"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="minTolerance"
-                            placeholder="Enter min value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            class="form-control wide-input"
-                            formControlName="maxTolerance"
-                            placeholder="Enter max value"
-                            maxlength="10"
-                          />
-                        </td>
-                        <td>
-                          <!-- Specimen Dropdown normal select -->
-                          <select class="form-select wide-input" formControlName="specimenOrientationID">
-                            <option value="null" disabled selected>Select Orientation</option>
-                            <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
-                              {{ specimen.name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Dimentional Factor'"
-                            [labelName]="'Dimentional Factor'"
-                            [fetchDataFn]="getDimensionalFactor"
-                            (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'other')"
-                            [hideLabel]="true"
-                            [isDisabled]="isViewMode"
-                            [selectedItem]="group.get('dimensionalFactorID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
-                        <td>
-                          <select class="form-control form-select wide-input" formControlName="upperLimitValue">
-                            <option value="">Select Option</option>
-                            <option *ngFor="let op of upperLimitOptions" [value]="op.value">
-                              {{ op.label }}
-                            </option>
-                          </select>
-                        </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Heat Treatment'"
+                                [labelName]="'Heat Treatment'"
+                                [fetchDataFn]="getHeatTreatment"
+                                (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'mechanical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('heatTreatmentID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 1'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition1Selected($event, gi, i, 'mechanical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID1')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 2'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition2Selected($event, gi, i, 'mechanical')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID2')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                          </tr>
+                        </ng-container>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <!-- Other Tab -->
+                <div class="p-2" *ngIf="selectedSpecTab[gi] === 'other'">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold fs-6 mb-0">Specification Lines</label>
+                    <button
+                      *ngIf="!isViewMode"
+                      type="button"
+                      class="btn btn-sm btn-outline-danger mt-1"
+                      (click)="addSpecificationLine(gi, 'other')"
+                    >
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Line
+                    </button>
+                  </div>
 
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Heat Treatment'"
-                            [labelName]="'Heat Treatment'"
-                            [fetchDataFn]="getHeatTreatment"
-                            (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'other')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('heatTreatmentID')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 1'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition1Selected($event, gi, i, 'other')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID1')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                        <td class="wide-input">
-                          <app-searchable-dropdown
-                            class="w-100"
-                            [placeholder]="'Search Product Condition'"
-                            [labelName]="'Product Condition 2'"
-                            [fetchDataFn]="getProductCondition"
-                            (itemSelected)="onProductCondition2Selected($event, gi, i, 'other')"
-                            [isDisabled]="isViewMode"
-                            [hideLabel]="true"
-                            [selectedItem]="group.get('productConditionID2')?.value"
-                          ></app-searchable-dropdown>
-                        </td>
-                      </tr>
-                    </ng-container>
-                  </tbody>
-                </table>
+                  <div
+                    #scrollContainer
+                    formArrayName="other"
+                    class="table-responsive position-relative custom-scroll"
+                    style="max-height: calc(100vh - 200px)"
+                  >
+                    <table class="table table-borderless table-light align-middle" style="min-width: 1200px">
+                      <thead>
+                        <tr class="text-nowrap text-muted small">
+                          <th class="fw-medium text-center">Actions</th>
+                          <th class="fw-medium px-2">Manual</th>
+                          <th class="fw-medium px-2 wide-input">Parameter</th>
+                          <th class="fw-medium px-2 wide-input">Min</th>
+                          <th class="fw-medium px-2 wide-input">Max</th>
+                          <th class="fw-medium px-2 wide-input">Note</th>
+                          <th class="fw-medium px-2 wide-input">Parameter Unit</th>
+                          <th class="fw-medium px-2 wide-input">Min Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Max Value Equation</th>
+                          <th class="fw-medium px-2 wide-input">Min Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Max Tolerance</th>
+                          <th class="fw-medium px-2 wide-input">Specimen Oriantations</th>
+                          <th class="fw-medium px-2 wide-input">Dimentional Factor</th>
+                          <th class="fw-medium px-2 wide-input">Lower Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Upper Limit Value</th>
+                          <th class="fw-medium px-2 wide-input">Heat Treatment</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 1</th>
+                          <th class="fw-medium px-2 wide-input">Product Condition 2</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ng-container
+                          *ngFor="let group of getSpecificationLinesByTab(gi, 'other').controls; let i = index"
+                          [formGroupName]="i"
+                        >
+                          <tr>
+                            <td class="text-center">
+                              <div class="d-flex flex-row gap-1">
+                                <button
+                                  *ngIf="!isViewMode"
+                                  type="button"
+                                  class="btn btn-sm btn-danger"
+                                  (click)="removeSpecificationLine(gi, i, 'other')"
+                                >
+                                  <i class="bi bi-dash-circle-dotted"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-warning"
+                                  (click)="rotateOnce(gi, i, 'other')"
+                                  [disabled]="isViewMode"
+                                >
+                                  <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
+                                </button>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check mt-1">
+                                <input class="form-check-input mt-1" type="checkbox" formControlName="manualSelection" />
+                              </div>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Parameter'"
+                                [labelName]="'Parameter'"
+                                [fetchDataFn]="getParameter"
+                                (itemSelected)="onParameterSelected($event, gi, i, 'other')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('parameterID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
+                            </td>
+                            <td>
+                              <!-- Unit Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="parameterUnitID">
+                                <option value="" disabled selected>Select Unit</option>
+                                <option *ngFor="let unit of parameterUnits" [value]="unit.id">
+                                  {{ unit.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minValueEquation"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxValueEquation"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                            </td>
+                            <td>
+                              <!-- Specimen Dropdown normal select -->
+                              <select class="form-select wide-input" formControlName="specimenOrientationID">
+                                <option value="null" disabled selected>Select Orientation</option>
+                                <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
+                                  {{ specimen.name }}
+                                </option>
+                              </select>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Dimentional Factor'"
+                                [labelName]="'Dimentional Factor'"
+                                [fetchDataFn]="getDimensionalFactor"
+                                (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'other')"
+                                [hideLabel]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="group.get('dimensionalFactorID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <select class="form-control form-select wide-input" formControlName="upperLimitValue">
+                                <option value="">Select Option</option>
+                                <option *ngFor="let op of upperLimitOptions" [value]="op.value">
+                                  {{ op.label }}
+                                </option>
+                              </select>
+                            </td>
+
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Heat Treatment'"
+                                [labelName]="'Heat Treatment'"
+                                [fetchDataFn]="getHeatTreatment"
+                                (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'other')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('heatTreatmentID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 1'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition1Selected($event, gi, i, 'other')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID1')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Product Condition'"
+                                [labelName]="'Product Condition 2'"
+                                [fetchDataFn]="getProductCondition"
+                                (itemSelected)="onProductCondition2Selected($event, gi, i, 'other')"
+                                [isDisabled]="isViewMode"
+                                [hideLabel]="true"
+                                [selectedItem]="group.get('productConditionID2')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                          </tr>
+                        </ng-container>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

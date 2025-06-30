@@ -48,3 +48,6 @@
     border-bottom: 0;
 
 }
+.accordion .accordion-item{
+    padding: 10px !important;
+}

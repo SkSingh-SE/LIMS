@@ -45,6 +45,11 @@ import { OemListComponent } from './components/equipment/oem-list/oem-list.compo
 import { EquipmentFormComponent } from './components/equipment/equipment-form/equipment-form.component';
 import { EquipmentListComponent } from './components/equipment/equipment-list/equipment-list.component';
 import { InvoiceCaseConfigurationComponent } from './components/test/invoice-case-configuration/invoice-case-configuration.component';
+import { InvoiceCaseConfigurationsComponent } from './components/test/invoice-case-configurations/invoice-case-configurations.component';
+import { InvoiceCaseListComponent } from './components/test/invoice-case-list/invoice-case-list.component';
+import { CalibrationAgencyFormComponent } from './components/equipment/calibration-agency-form/calibration-agency-form.component';
+import { CalibrationAgencyComponent } from './components/equipment/calibration-agency/calibration-agency.component';
+import { CuttingPriceMasterComponent } from './components/sample-prepration/cutting-price-master/cutting-price-master.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -53,18 +58,18 @@ export const routes: Routes = [
         component: LayoutComponent,
         canActivate: [authGuard],
         children: [
-            { path: 'designation', component: ListDesignationComponent },  
-            { path: 'designation/create', component: DesignationFormComponent }, 
-            { path: 'designation/edit/:id', component: DesignationFormComponent }, 
-            { path: 'designation/details/:id', component: DesignationFormComponent }, 
+            { path: 'designation', component: ListDesignationComponent },
+            { path: 'designation/create', component: DesignationFormComponent },
+            { path: 'designation/edit/:id', component: DesignationFormComponent },
+            { path: 'designation/details/:id', component: DesignationFormComponent },
             { path: 'file-upload', component: FileUploadComponent },
             { path: 'employee', component: EmployeeListComponent },
             { path: 'employee/create', component: EmployeeFormComponent },
             { path: 'employee/edit/:id', component: EmployeeFormComponent },
             { path: 'employee/details/:id', component: EmployeeFormComponent },
-            { path: 'department', component: DepartmentListComponent }, 
-            { path: 'department/create', component: DepartmentFormComponent},
-            { path: 'department/edit/:id', component: DepartmentFormComponent }, 
+            { path: 'department', component: DepartmentListComponent },
+            { path: 'department/create', component: DepartmentFormComponent },
+            { path: 'department/edit/:id', component: DepartmentFormComponent },
             { path: 'department/details/:id', component: DepartmentFormComponent },
             { path: 'company-category', component: CompanyCategoryComponent },
             { path: 'customer', component: CustomerListComponent },
@@ -110,7 +115,6 @@ export const routes: Routes = [
             { path: 'scope/create', component: ScopeComponent },
             { path: 'scope/edit/:id', component: ScopeComponent },
             { path: 'scope/details/:id', component: ScopeComponent },
-            { path: 'invoice-case', component: InvoiceCaseComponent },
             { path: 'oem', component: OemListComponent },
             { path: 'oem/create', component: OEMFormComponent },
             { path: 'oem/edit/:id', component: OEMFormComponent },
@@ -119,7 +123,19 @@ export const routes: Routes = [
             { path: 'equipment/create', component: EquipmentFormComponent },
             { path: 'equipment/edit/:id', component: EquipmentFormComponent },
             { path: 'equipment/details/:id', component: EquipmentFormComponent },
-            { path: 'invoice-case-config', component: InvoiceCaseConfigurationComponent},
+            { path: 'invoice-case-config', component: InvoiceCaseConfigurationsComponent },
+            { path: 'invoice-case-config/create', component: InvoiceCaseConfigurationComponent },
+            { path: 'invoice-case-config/edit/:id', component: InvoiceCaseConfigurationComponent },
+            { path: 'invoice-case-config/details/:id', component: InvoiceCaseConfigurationComponent },
+            { path: 'invoice-case', component: InvoiceCaseListComponent },
+            { path: 'invoice-case/create', component: InvoiceCaseComponent },
+            { path: 'invoice-case/edit/:id', component: InvoiceCaseComponent },
+            { path: 'invoice-case/details/:id', component: InvoiceCaseComponent },
+            { path: 'calibration-agency', component: CalibrationAgencyComponent },
+            { path: 'calibration-agency/create', component: CalibrationAgencyFormComponent },
+            { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
+            { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
+            { path: 'cutting-price-master', component: CuttingPriceMasterComponent }
         ]
     },
     { path: '**', redirectTo: '/login' }

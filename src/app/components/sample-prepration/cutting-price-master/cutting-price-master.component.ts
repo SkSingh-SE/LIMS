@@ -1,32 +1,34 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
+import { Modal } from 'bootstrap';
 import { ToastService } from '../../../services/toast.service';
+import { CuttingPriceMasterService } from '../../../services/cutting-price-master.service';
 
 @Component({
-  selector: 'app-laboratory-test-list',
-  imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './laboratory-test-list.component.html',
-  styleUrl: './laboratory-test-list.component.css'
+  selector: 'app-cutting-price-master',
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective],
+  templateUrl: './cutting-price-master.component.html',
+  styleUrl: './cutting-price-master.component.css'
 })
-export class LaboratoryTestListComponent implements OnInit {
+export class CuttingPriceMasterComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
+  @ViewChild('modalRef') modalElement!: ElementRef;
+  private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'metalClassification', type: 'string', label: 'Metal Classification', filter: true }
+    { key: 'cuttingType', type: 'string', label: 'Specification Name', filter: true },
+    { key: 'unitType', type: 'string', label: 'Alias Name', filter: true },
+    { key: 'ratePerUnit', type: 'string', label: 'Material Specification', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
-    departmentName: 'string',
-    subGroup: 'string',
-    metalClassification: 'string'
+    cuttingType: 'string',
+    unitType: 'string',
+    ratePerUnit: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -37,7 +39,7 @@ export class LaboratoryTestListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  labTestList: any[] = [];
+  listData: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -58,31 +60,69 @@ export class LaboratoryTestListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
+  // form
+  cuttingPriceForm!: FormGroup;
+  isEditMode: boolean = false;
+  isViewMode: boolean = true;
+  customerTypeObject: any = null;
+  cuttingPriceId: number = 0;
+  formTitle = 'Cutting Price Master Form';
+
+unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
+
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private cuttingPriceService: CuttingPriceMasterService, private toastService: ToastService) {
+    this.route.params.subscribe(params => {
+      this.cuttingPriceId = params['id'] || 0;
+      if (this.cuttingPriceId > 0) {
+        this.getDetails();
+      }
+    });
+
   }
+
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
+  initForm() {
+    this.cuttingPriceForm = this.fb.group({
+      id: [0],
+      cuttingType: ['', Validators.required],
+      unitType: ['', Validators.required],
+      ratePerUnit: [0, [Validators.required, Validators.min(0)]],
+      remarks: ['']
+    });
   }
 
   fetchData() {
-
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
+    this.cuttingPriceService.getAllCuttingPriceMasters(this.payload).subscribe({
       next: (response) => {
-        this.labTestList = response?.items || [];
+        this.listData = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error fetching list:', error);
-        this.labTestList = [];
+        this.toastService.show(error.message, 'error');
+        this.listData = [];
         this.isLoading.set(false);
       }
+    }
 
+    );
+  }
+  getDetails(): void {
+    this.cuttingPriceService.getCuttingPriceMasterById(this.cuttingPriceId).subscribe({
+      next: (response) => {
+        this.customerTypeObject = response;
+        this.cuttingPriceForm.patchValue(response);
+      },
+      error: (error) => {
+        console.error('Error fetching tax data:', error);
+      }
     });
-
   }
 
   applySorting(column: string) {
@@ -107,7 +147,6 @@ export class LaboratoryTestListComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
-    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -195,11 +234,12 @@ export class LaboratoryTestListComponent implements OnInit {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
   }
+
   deleteFn(id: number): void {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
+      this.cuttingPriceService.deleteCuttingPriceMaster(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -210,6 +250,71 @@ export class LaboratoryTestListComponent implements OnInit {
       });
     }
   }
+  openModal(type: string, id: number): void {
+    if (id > 0) {
+      this.cuttingPriceId = id;
+      this.getDetails();
+    }
+    if (type === 'create') {
+      this.isEditMode = false;
+      this.isViewMode = false;
+      this.initForm();
+      this.formTitle = 'Product Specification Form';
+      this.cuttingPriceForm.enable();
+    } else if (type === 'edit') {
+      this.isEditMode = true;
+      this.isViewMode = false;
+      this.formTitle = 'Product Specification Form';
+      this.cuttingPriceForm.enable();
 
+    }
+    else if (type === 'view') {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.formTitle = 'View Product Specification';
+      this.cuttingPriceForm.disable();
+    }
+
+    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
+  }
+
+  onSubmit(): void {
+    if (this.cuttingPriceForm.valid) {
+      let formData = this.cuttingPriceForm.value;
+      if (this.isEditMode) {
+        this.cuttingPriceService.updateCuttingPriceMaster(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.closeModal();
+            this.fetchData();
+          },
+          error: (error) => {
+            this.toastService.show(error.message, 'error');
+          }
+        });
+      } else {
+        formData.id = 0;
+        this.cuttingPriceService.createCuttingPriceMaster(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.closeModal();
+            this.fetchData();
+          },
+          error: (error) => {
+            this.toastService.show(error.message, 'error');
+          }
+        });
+      }
+    }
+  }
+  
 }
+
 

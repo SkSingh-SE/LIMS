@@ -13,9 +13,11 @@ import { SubGroupService } from '../../../services/sub-group.service';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { EquipmentService } from '../../../services/equipment.service';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 @Component({
   selector: 'app-scope',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent,RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
   templateUrl: './scope.component.html',
   styleUrl: './scope.component.css'
 })
@@ -46,7 +48,7 @@ export class ScopeComponent implements OnInit {
   constructor(private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router, private laboratoryTestService: LaboratoryTestService, private testMethodSpecificationService: TestMethodSpecificationService, private parameterService: ParameterService,
-    private prameterUnitService: ParameterUnitService, private disciplineService: DisciplineService, private groupService: GroupService, private subGroupService: SubGroupService, private scopeService: LabScopeService, private toastService: ToastService) { }
+    private prameterUnitService: ParameterUnitService, private disciplineService: DisciplineService, private groupService: GroupService, private subGroupService: SubGroupService, private scopeService: LabScopeService, private toastService: ToastService, private equipmentService: EquipmentService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -119,6 +121,24 @@ export class ScopeComponent implements OnInit {
       equipmentIDs: [[]],
       equipments: this.fb.array([])
     });
+
+    // Subscribe to qualitativeQuantitative value changes to enable/disable lowerLimit and upperLimit
+    paramGroup.get('qualitativeQuantitative')?.valueChanges.subscribe(value => {
+      const lowerLimitControl = paramGroup.get('lowerLimit');
+      const upperLimitControl = paramGroup.get('upperLimit');
+      if (value === 'Quantitative') {
+        lowerLimitControl?.enable({ emitEvent: false });
+        upperLimitControl?.enable({ emitEvent: false });
+      } else {
+        paramGroup.patchValue({
+          lowerLimit: '',
+          upperLimit: '',
+        });
+        lowerLimitControl?.disable({ emitEvent: false });
+        upperLimitControl?.disable({ emitEvent: false });
+      }
+    });
+
     this.parameters(specIndex).push(paramGroup);
   }
 
@@ -216,6 +236,23 @@ export class ScopeComponent implements OnInit {
     });
   }
 
+  getEquipment = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
+  }
+  onEquipmentSelect(item: any, specIndex: number, paramIndex: number) {
+    const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
+    const equipmentsArray = this.equipments(specIndex, paramIndex);
+    equipmentsArray.clear(); // Clear existing equipments
+    item.forEach((equipment: any) => {
+      const equipmentGroup = this.fb.group({
+        ID: [0],
+        labScopeSpecificationParameterID: [spec.get('ID')?.value || 0],
+        equipmentID: [equipment.id],
+        equipmentName: [equipment.name]
+      });
+      equipmentsArray.push(equipmentGroup);
+    });
+  }
   onSubmit() {
     if (this.scopeForm.valid) {
       if (this.labScopeId > 0) {
@@ -268,6 +305,9 @@ export class ScopeComponent implements OnInit {
 
           const paramsArray = specGroup.get('parameters') as FormArray;
           spec.parameters.forEach((param: any) => {
+
+            const equipmentIDs = (param.equipments || []).map((e: any) => e.equipmentID);
+
             const paramGroup = this.fb.group({
               ID: [param.id],
               labScopeSpecificationID: [spec.id],
@@ -279,9 +319,23 @@ export class ScopeComponent implements OnInit {
               upperLimit: [param.upperLimit || ''],
               disciplineID: [param.disciplineID],
               groupID: [param.groupID],
-              subGroupID: [param.subGroupID],
-              equipmentIDs: [param.equipmentIDs || []],
+              subGroupID: [param.subGroupID || null],
+              equipmentIDs: [equipmentIDs || []],
               equipments: this.fb.array(param.equipments || [])
+            });
+
+
+            // Subscribe to qualitativeQuantitative value changes to enable/disable lowerLimit and upperLimit
+            paramGroup.get('qualitativeQuantitative')?.valueChanges.subscribe(value => {
+              const lowerLimitControl = paramGroup.get('lowerLimit');
+              const upperLimitControl = paramGroup.get('upperLimit');
+              if (value === 'Quantitative') {
+                lowerLimitControl?.enable({ emitEvent: false });
+                upperLimitControl?.enable({ emitEvent: false });
+              } else {
+                lowerLimitControl?.disable({ emitEvent: false });
+                upperLimitControl?.disable({ emitEvent: false });
+              }
             });
 
             paramsArray.push(paramGroup);
@@ -290,7 +344,7 @@ export class ScopeComponent implements OnInit {
           this.specifications.push(specGroup);
         });
 
-        if(this.isViewMode){
+        if (this.isViewMode) {
           this.scopeForm.disable();
         }
 

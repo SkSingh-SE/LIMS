@@ -5,6 +5,7 @@
 
   <ng-select
     [items]="items"
+    class="w-full"
     bindLabel="name"
     bindValue="id"
     [multiple]="true"
@@ -16,6 +17,7 @@
     (scrollToEnd)="onScrollToEnd()"
     [typeahead]="typeahead"
     (change)="onChange($event)"
+    [readonly]="isDisabled"
   >
   </ng-select>
 </form>

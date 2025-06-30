@@ -71,7 +71,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
         this.page = 0;
         this.items = [];
       }),
-      switchMap(term => this.fetchDataFn(term, this.page, this.pageSize))
+      switchMap(term => this.fetchDataFn(term || '', this.page, this.pageSize))
     ).subscribe(data => {
       this.items = data;
       this.loading = false;

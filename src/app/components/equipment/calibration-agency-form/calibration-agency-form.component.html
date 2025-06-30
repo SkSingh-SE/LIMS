@@ -1,0 +1,134 @@
+<div class="card shadow-lg m-2">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="text-center">Calibration Agency Form</h6>
+    </div>
+    <div class="card-body ">
+        <form [formGroup]="calibrationForm" (ngSubmit)="onSubmit()">
+            <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-2">
+
+                <!--Name-->
+                <div>
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="name" placeholder="Enter Name"
+                        maxlength="100" 
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('name')?.touched && calibrationForm.get('name')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('name')?.touched && calibrationForm.get('name')?.invalid"
+                        class="text-danger text-sm">Name is required.</div>
+                </div>
+               <!--Address-->
+                <div>
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" formControlName="address" placeholder="Enter Address"></textarea>
+                </div>
+                
+                <!--Agreement File Path-->
+                <div>
+                    <label class="form-label">Agreement File</label>
+                    <ng-container *ngIf="calibrationForm.get('agreementFilePath')?.value; else uploadField">
+                        <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                            <span class="text-truncate me-2" type="button"
+                                (click)="openFileInNewTab(calibrationForm.get('agreementFilePath')?.value)"
+                                title="{{ calibrationForm.get('agreementFilePath')?.value }}">
+                                <i class="bi bi-file-earmark-fill"></i> {{calibrationForm.get('fileName')?.value }}
+                            </span>
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
+                                (click)="removeFile()">
+                                <i class="bi bi-trash-fill fs-6 me-1"></i>
+                            </button>
+                        </div>
+                    </ng-container>
+
+                    <ng-template #uploadField>
+                        <input class="form-control form-control-sm input-file" type="file"
+                             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                            [disabled]="isViewMode" (change)="onFileChange($event)" />
+                    </ng-template>
+                </div>
+                <!--Contact Person 1-->
+                <div>
+                    <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="contactPerson1"
+                        placeholder="Enter Contact Person 1" maxlength="100"
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('contactPerson1')?.touched && calibrationForm.get('contactPerson1')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('contactPerson1')?.touched && calibrationForm.get('contactPerson1')?.invalid"
+                        class="text-danger text-sm">Contact Person 1 is required.</div>
+                </div>
+                <!--Contact No 1-->
+                <div>
+                    <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="contactNo1"
+                        placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
+                        (blur)="checkPhoneNumber($event)"
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('contactNo1')?.touched && calibrationForm.get('contactNo1')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('contactNo1')?.touched && calibrationForm.get('contactNo1')?.invalid"
+                        class="text-danger text-sm">Contact No 1 is required.</div>
+                </div>
+
+                <!--Email Id 1-->
+                <div>
+                    <label class="form-label">Email Id 1 <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId1')?.touched && calibrationForm.get('emailId1')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('emailId1')?.touched && calibrationForm.get('emailId1')?.invalid"
+                        class="text-danger text-sm">Email Id 1 is required and must be a valid email address.</div>
+                </div>
+
+                <!--Contact Person 2-->
+                <div>
+                    <label class="form-label">Contact Person 2</label>
+                    <input type="text" class="form-control" formControlName="contactPerson2"
+                        placeholder="Enter Contact Person 2" maxlength="100" />
+                </div>
+
+                <!--Contact No 2-->
+                <div>
+                    <label class="form-label">Contact No 2</label>
+                    <input type="text" class="form-control" formControlName="contactNo2"
+                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                </div>
+
+                <!--Email Id 2-->
+                <div>
+                    <label class="form-label">Email Id 2</label>
+                    <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId2')?.touched && calibrationForm.get('emailId2')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('emailId2')?.touched && calibrationForm.get('emailId2')?.invalid"
+                        class="text-danger text-sm">Email Id 2 must be a valid email address.</div>
+                </div>
+
+                <!--Contact Person 3-->
+                <div>
+                    <label class="form-label">Contact Person 3</label>
+                    <input type="text" class="form-control" formControlName="contactPerson3"
+                        placeholder="Enter Contact Person 3" maxlength="100" />
+                </div>
+
+                <!--Contact No 3-->
+                <div>
+                    <label class="form-label">Contact No 3</label>
+                    <input type="text" class="form-control" formControlName="contactNo3"
+                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                </div>
+
+                <!--Email Id 3-->
+                <div>
+                    <label class="form-label">Email Id 3</label>
+                    <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
+                        maxlength="100"
+                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId3')?.touched && calibrationForm.get('emailId3')?.invalid }" />
+                    <div *ngIf="calibrationForm.get('emailId3')?.touched && calibrationForm.get('emailId3')?.invalid"
+                        class="text-danger text-sm">Email Id 3 must be a valid email address.</div>
+                </div>
+
+            </div>
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+
+                <a [routerLink]="['/oem']" class="btn btn-warning">Cancel</a>
+                <button type="submit" class="btn btn-success px-3">Save</button>
+            </div>
+
+        </form>
+    </div>
+</div>

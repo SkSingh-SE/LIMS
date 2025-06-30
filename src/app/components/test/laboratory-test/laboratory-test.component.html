@@ -6,49 +6,84 @@
     <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-2 row-gap-lg-1 mb-2">
         <div>
-          <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
-            [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)" [isDisabled]="isViewMode"
-            [required]="true" [selectedItem]="labTestForm.get('labDepartmentID')?.value">
-          </app-searchable-dropdown>
+          <app-searchable-dropdown
+            [placeholder]="'Search department'"
+            [labelName]="'Department'"
+            [fetchDataFn]="getDepartments"
+            (itemSelected)="onDepartmentSelected($event)"
+            [isDisabled]="isViewMode"
+            [required]="true"
+            [selectedItem]="labTestForm.get('labDepartmentID')?.value"
+          ></app-searchable-dropdown>
         </div>
 
         <div>
-          <label for="name" class="form-label">Test Name <span class="text-danger"> *</span></label>
-          <input type="text" class="form-control" id="name" formControlName="name" placeholder="Enter Test Name"
+          <label for="name" class="form-label">
+            Test Name
+            <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            formControlName="name"
+            placeholder="Enter Test Name"
             maxlength="100"
-            [ngClass]="{ 'is-invalid': labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid }">
-          <span *ngIf="labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid"
-            class="text-danger text-sm">Name is required.</span>
+            [ngClass]="{ 'is-invalid': labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid }"
+          />
+          <span *ngIf="labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid" class="text-danger text-sm">
+            Name is required.
+          </span>
         </div>
         <div>
-          <label for="subGroup" class="form-label">Sub Group <span class="text-danger"> *</span></label>
-          <input type="text" class="form-control" id="subGroup" formControlName="subGroup"
-            placeholder="Enter Sub Group" maxlength="100"
-            [ngClass]="{ 'is-invalid': labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid }">
-          <span *ngIf="labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid"
-            class="text-danger text-sm">Sub Group is required.</span>
+          <label for="subGroup" class="form-label">
+            Sub Group
+            <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            id="subGroup"
+            formControlName="subGroup"
+            placeholder="Enter Sub Group"
+            maxlength="100"
+            [ngClass]="{ 'is-invalid': labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid }"
+          />
+          <span *ngIf="labTestForm.get('subGroup')?.touched && labTestForm.get('subGroup')?.invalid" class="text-danger text-sm">
+            Sub Group is required.
+          </span>
         </div>
         <div>
-          <app-searchable-dropdown [placeholder]="'Search metals'" [labelName]="'Metal Classification'"
-            [fetchDataFn]="getMetalClassifications" (itemSelected)="onMetalClassificationSelected($event)" [isDisabled]="isViewMode"
-            [required]="true" [selectedItem]="labTestForm.get('metalClassificationID')?.value">
-          </app-searchable-dropdown>
+          <app-searchable-dropdown
+            [placeholder]="'Search metals'"
+            [labelName]="'Metal Classification'"
+            [fetchDataFn]="getMetalClassifications"
+            (itemSelected)="onMetalClassificationSelected($event)"
+            [isDisabled]="isViewMode"
+            [required]="true"
+            [selectedItem]="labTestForm.get('metalClassificationID')?.value"
+          ></app-searchable-dropdown>
         </div>
 
         <div>
-          <label class="form-label">Invoice Case</label>
-          <ng-select2 class="custom" [data]="filteredInvoiceCaseOptions" [multiple]="true" [placeholder]="'Select Test Methods'"
-            formControlName="invoiceCases"
-            [readonly]="isViewMode" [customSearchEnabled]="true" (update)="onInvoiceCaseChange($event)"
-            (search)="onInvoiceCaseSearch($event)">
-          </ng-select2>
+          <app-multi-select-dropdown
+            [placeholder]="'Select multiple items...'"
+            [required]="true"
+            [isDisabled]="false"
+            [labelName]="'Invoice Case'"
+            [fetchDataFn]="getInvoiceCaseConfig"
+            [selectedValues]="labTestForm.get('invoiceCaseIDs')?.value"
+            (itemsSelected)="onInvoiceCaseChange($event)"
+          ></app-multi-select-dropdown>
         </div>
 
-
+        <div>
+          <label for="equation" class="form-label">Equation</label>
+          <input type="text" id="equation" class="form-control" formControlName="equation" placeholder="Enter Equation" />
+        </div>
       </div>
 
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-
         <a [routerLink]="['/test']" class="btn btn-warning">Cancel</a>
         <button [disabled]="labTestForm.invalid" type="submit" class="btn btn-success px-3">Save</button>
       </div>

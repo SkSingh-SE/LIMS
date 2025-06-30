@@ -1,60 +1,67 @@
 <div class="card shadow-lg m-2">
-    <div class="card-header card-form-header text-white text-center">
-        <h6 class="text-center">Material Specification Form</h6>
-    </div>
-    <div class="card-body">
-        <form [formGroup]="invoiceForm" (ngSubmit)="submit()">
-            <div formArrayName="configurations">
-                <div *ngFor="let config of configurations.controls; let i = index" [formGroupName]="i"
-                    class="mb-3 border p-2 rounded">
-
-                    <div class="row">
-                        <div class="col-md-3">
-                            <label>Selection Type</label>
-                            <select class="form-control" formControlName="selectionType" (change)="onTypeChange(i)">
-                                <option value="">Select</option>
-                                <option *ngFor="let type of selectionTypes" [value]="type">{{ type }}</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Name</label>
-                            <input class="form-control" formControlName="name" readonly />
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Alias Name</label>
-                            <input class="form-control" formControlName="aliasName" />
-                        </div>
-
-                        <div class="col-md-2"
-                            *ngIf="!config.get('selectionType')?.value.toLowerCase().includes('range')">
-                            <label>Value</label>
-                            <input class="form-control" formControlName="value" (change)="updateName(i)" />
-                        </div>
-
-                        <div class="col-md-1"
-                            *ngIf="config.get('selectionType')?.value.toLowerCase().includes('range')">
-                            <label>Start</label>
-                            <input class="form-control" formControlName="start" />
-                        </div>
-
-                        <div class="col-md-1"
-                            *ngIf="config.get('selectionType')?.value.toLowerCase().includes('range')">
-                            <label>End</label>
-                            <input class="form-control" formControlName="end" (change)="updateRangeName(i)" />
-                        </div>
-
-                        <div class="col-md-1">
-                            <label>Unit</label>
-                            <input class="form-control" formControlName="unit" readonly />
-                        </div>
-                    </div>
+  <div class="card-header card-form-header text-white text-center">
+    <h6 class="text-center">Invoice Case Config Form</h6>
+  </div>
+  <div class="card-body">
+    <form [formGroup]="invoiceForm" (ngSubmit)="submit()">
+      <div formArrayName="configurations" class="">
+        <table class="table table-borderless  align-middle">
+          <thead class="table-light text-center">
+            <tr class="text-nowrap text-muted small">
+              <th class="fw-medium px-2">Selection Type</th>
+              <th class="fw-medium px-2">Name</th>
+              <th class="fw-medium px-2">Alias Names</th>
+              <th class="fw-medium px-2">Value / Range</th>
+              <th class="fw-medium px-2">Unit</th>
+              <th class="fw-medium px-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let config of configurations.controls; let i = index" [formGroupName]="i" class="align-middle">
+              <td>
+                <select class="form-select" formControlName="selectionType" (change)="onTypeChange(i)">
+                  <option value="">Select</option>
+                  <option *ngFor="let type of selectionTypes" [value]="type.value">{{ type.label }}</option>
+                </select>
+              </td>
+              <td>
+                <input class="form-control" formControlName="name" placeholder="Auto fill" readonly />
+              </td>
+              <td>
+                <div formArrayName="aliasNames" class="d-flex flex-column">
+                <div *ngFor="let aliasCtrl of getAliasNames(i).controls; let j = index" [formGroupName]="j" class="d-flex align-items-center mb-1">
+                  <input class="form-control me-1" formControlName="name" placeholder="Enter alias name" />
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeAlias(i, j)" *ngIf="getAliasNames(i).length > 1">
+                    ×
+                  </button>
                 </div>
-            </div>
+                  <button type="button" class="btn btn-link p-0" (click)="addAlias(i)">+ Add Alias</button>
+                </div>
+              </td>
+              <td>
+                <ng-container *ngIf="!config.get('selectionType')?.value.toLowerCase().includes('range'); else rangeInputs">
+                  <input class="form-control" formControlName="value" placeholder="Enter Value" (change)="updateName(i)" />
+                </ng-container>
+                <ng-template #rangeInputs>
+                  <div class="d-flex">
+                    <input class="form-control me-1" formControlName="start" placeholder="Start" />
+                    <input class="form-control" formControlName="end" placeholder="End" (change)="updateRangeName(i)" />
+                  </div>
+                </ng-template>
+              </td>
+              <td>
+                <input class="form-control" formControlName="unit" placeholder="select type" readonly />
+              </td>
+              <td>
+                <button type="button" class="btn btn-danger btn-sm" (click)="removeConfiguration(i)">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-            <button type="button" class="btn btn-primary mt-3" (click)="addConfiguration()">Add More</button>
-            <button type="submit" class="btn btn-success mt-3 ms-2">Submit</button>
-        </form>
-    </div>
+      <button type="button" class="btn btn-primary mt-3" (click)="addConfiguration()">Add More</button>
+      <button type="submit" class="btn btn-success mt-3 ms-2">Submit</button>
+    </form>
+  </div>
 </div>

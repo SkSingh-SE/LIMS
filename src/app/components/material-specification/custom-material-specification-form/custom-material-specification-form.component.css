@@ -1,23 +1,53 @@
 .wide-input {
-    min-width: 170px;
+  min-width: 170px;
+}
+
+.custom-scroll {
+  scroll-behavior: smooth;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #999;
+  border-radius: 10px;
+}
+
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #999 #f1f1f1;
+}
+
+/* rotate the setting icon */
+.rotate-once {
+  display: inline-block;
+  animation: rotateOnce 1s linear;
+}
+
+@keyframes rotateOnce {
+  from {
+    transform: rotate(0deg);
   }
-  .custom-scroll {
-    scroll-behavior: smooth;
-    overflow-x: auto;
-    white-space: nowrap;
+  to {
+    transform: rotate(90deg);
   }
-  
-  .custom-scroll::-webkit-scrollbar {
-    height: 6px;
-  }
-  
-  .custom-scroll::-webkit-scrollbar-thumb {
-    background-color: #999;
-    border-radius: 10px;
-  }
-  
-  .custom-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: #999 #f1f1f1;
-  }
-  
+}
+.nav-tabs .nav-link {
+    color: #1A1A80;
+    /* Custom color */
+}
+.nav-tabs .nav-link.active {
+    color: #fff !important;
+    /* Active tab color */
+    border-color: #FF2C1F;
+    background: #FF2C1F;
+    border-bottom: 0;
+
+}
+.accordion .accordion-item{
+    padding: 10px !important;
+}

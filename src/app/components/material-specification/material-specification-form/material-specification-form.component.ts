@@ -199,6 +199,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
       laboratoryTests: this.fb.array([]),
       laboratoryTestIDs: this.fb.control([]),
       type: [tab],
+      IsCustom:[false]
     });
     lines.push(specificationLine);
   }

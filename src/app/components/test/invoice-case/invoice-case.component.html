@@ -3,144 +3,113 @@
     <h6 class="text-center">Invoice Case Form</h6>
   </div>
   <div class="card-body">
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <form [formGroup]="invoiceCaseForm" (ngSubmit)="submit()" novalidate>
       <!-- Financial Year Input -->
       <div class="d-flex flex-row justify-content-between gap-2 mb-2">
-        <div class="col-6">
-          <label for="financialYear" class="form-label fw-semibold">Financial Year</label>
+        <div class="col">
+          <label for="financialYear" class="form-label fw-semibold">Financial Year <span
+              class="text-danger">*</span></label>
           <select id="financialYear" class="form-select" formControlName="financialYear"
-            [class.is-invalid]="form.get('financialYear')?.invalid && form.get('financialYear')?.touched">
+            [class.is-invalid]="invoiceCaseForm.get('financialYear')?.invalid && invoiceCaseForm.get('financialYear')?.touched">
             <option value="" disabled selected>Select financial year</option>
             <option *ngFor="let fy of financialYears" [value]="fy">{{ fy }}</option>
           </select>
           <div class="invalid-feedback">Financial Year is required.</div>
         </div>
-        <div class="col-6 d-flex align-items-center justify-content-end">
+        <div class="col">
+          <app-searchable-dropdown id="laboratoryTest" [placeholder]="'Search Sub-Group'" [labelName]="'Sub Group Test'"
+            [fetchDataFn]="getLaboratoryTest" (itemSelected)="onLaboratorySelected($event)" [hideLabel]="false"
+            [required]="true" [isDisabled]="isViewMode"
+            [selectedItem]="invoiceCaseForm.get('laboratoryTestID')?.value"></app-searchable-dropdown>
+        </div>
+        <!-- <div class="col d-flex align-items-center justify-content-end">
           <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addCase()">
-            <i class="bi bi-plus-circle-dotted"></i> Add Invoice Case
+            <i class="bi bi-plus-circle-dotted"></i>
+            Add Invoice Case
           </button>
-        </div>
-
+        </div> -->
       </div>
-      <!-- Add Case Section -->
-      <!-- <fieldset class="mb-4">
-        <legend class="h5">Add Invoice Case</legend>
-        <div class="row g-2 align-items-center">
-          <div class="col-md-6">
-            <label for="caseNameInput" class="form-label visually-hidden">Case Name</label>
-            <input #caseNameInput type="text" id="caseNameInput" class="form-control"
-              placeholder="Case Name (e.g. '5 element')" [(ngModel)]="caseName" (input)="onCaseNameInput()"
-              [attr.autocomplete]="'off'" maxlength="20" [ngModelOptions]="{ standalone: true }"
-              attr.aria-expanded="{{filteredSuggestions.length > 0}}" aria-haspopup="listbox" />
-            <ul id="caseNameSuggestions" class="list-group position-absolute w-100"
-              *ngIf="filteredSuggestions.length > 0" style="max-height: 200px; overflow-y: auto; z-index: 1000;"
-              role="listbox">
-              <li class="list-group-item list-group-item-action" *ngFor="let suggestion of filteredSuggestions"
-                (click)="selectSuggestion(suggestion)" style="cursor: pointer" role="option" tabindex="0">
-                {{ suggestion }}
-              </li>
-            </ul>
-          </div>
-          <div class="col-md-3">
-            <label for="casePriceInput" class="form-label visually-hidden">Price</label>
-            <input type="number" id="casePriceInput" #casePriceInput class="form-control" placeholder="Price" min="0"
-              aria-label="Price" />
-          </div>
-          <div class="col-md-3 d-grid">
-            <button type="button" class="btn btn-primary" (click)="
-                addCaseFromUserInput(caseNameInput.value, +casePriceInput.value);
-                caseNameInput.value = '';
-                casePriceInput.value = '';
-              " aria-label="Add Case">
-              Add Case
-            </button>
-          </div>
-        </div>
-      </fieldset> -->
 
-      <!-- Display Cases in Table Format -->
-      <!-- <div *ngIf="cases.length > 0" class="mb-4">
-        <h5>Invoice Cases</h5>
-        <div class="table-responsive">
-          <table class="table table-bordered">
-            <thead class="table-light">
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Price</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let caseGroup of cases.controls; let i = index" [formGroupName]="i">
-                <td>{{ caseGroup.get('name')?.value }}</td>
-                <td>{{ caseGroup.get('type')?.value }}</td>
-                <td>₹{{ caseGroup.get('price')?.value }}</td>
-                <td>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="cases.removeAt(i)"
-                    aria-label="Remove Case">
-                    Remove
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div> -->
-
-      <div formArrayName="cases" class="table-responsive mb-3 custom-scroll">
-        <table class="table table-borderless align-middle mb-1" style="min-width:900px;">
+      <div formArrayName="invoiceCasePrices" class="table-responsive mb-3 custom-scroll">
+        <table class="table table-borderless align-middle mb-1" style="min-width: 900px">
           <thead class="table-light">
             <tr class="text-nowrap text-muted small">
               <th class="fw-medium px-2 wide-input">Invoice Case</th>
+              <th class="fw-medium px-2 wide-input">Alias Name</th>
               <th class="fw-medium px-2 wide-input">Price</th>
-              <th class="text-center">Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let case of cases.controls; let i = index" [formGroupName]="i">
-              <td>
+            <tr *ngFor="let case of invoiceCases.controls; let i = index" [formGroupName]="i">
+              <!-- <td>
                 <label for="caseNameInput{{ i }}" class="form-label visually-hidden">Case Name</label>
-                <input type="text" id="caseNameInput{{ i }}" class="form-control"
-                  placeholder="Case Name (e.g. '5 element')" (input)="onCaseNameInput(i)" [attr.autocomplete]="'off'"
-                  maxlength="20" formControlName="name" attr.aria-expanded="{{ filteredSuggestionsList[i].length > 0 }}"
-                  aria-haspopup="listbox" />
+                <input
+                  type="text"
+                  id="caseNameInput{{ i }}"
+                  class="form-control"
+                  placeholder="Case Name (e.g. '5 element')"
+                  
+                  [attr.autocomplete]="'off'"
+                  maxlength="20"
+                  formControlName="name"
+                  attr.aria-expanded="{{ filteredSuggestionsList[i].length > 0 }}"
+                  aria-haspopup="listbox"
+                />
 
-                <ul class="list-group position-absolute w-100" *ngIf="(filteredSuggestionsList[i] || []).length > 0"
-                  style="max-height: 200px; overflow-y: auto; z-index: 1000;" role="listbox">
-                  <li class="list-group-item list-group-item-action"
-                    *ngFor="let suggestion of filteredSuggestionsList[i]" (click)="selectSuggestion(i, suggestion)"
-                    style="cursor: pointer" role="option" tabindex="0">
+                <ul
+                  class="list-group position-absolute w-100"
+                  *ngIf="(filteredSuggestionsList[i] || []).length > 0"
+                  style="max-height: 200px; overflow-y: auto; z-index: 1000"
+                  role="listbox"
+                >
+                  <li
+                    class="list-group-item list-group-item-action"
+                    *ngFor="let suggestion of filteredSuggestionsList[i]"
+                    
+                    style="cursor: pointer"
+                    role="option"
+                    tabindex="0"
+                  >
                     {{ suggestion }}
                   </li>
                 </ul>
+              </td> -->
+
+              <td>
+                <input type="text" formControlName="name" class="form-control" readonly>
+              </td>
+              <td>
+                <input type="text" formControlName="aliasName" class="form-control"
+                  [ngClass]="{ 'is-invalid': case.get('aliasName')?.invalid && (case.get('aliasName')?.touched || case.get('aliasName')?.dirty) }"
+                  placeholder="Alias Name">
+
+                <div
+                  *ngIf="case.get('aliasName')?.invalid && (case.get('aliasName')?.touched || case.get('aliasName')?.dirty)"
+                  class="invalid-feedback">
+                  Alias Name is required
+                </div>
               </td>
 
               <td>
-                <input type="number" formControlName="price" class="form-control" placeholder="Price" min="0"
-                  aria-label="Price" />
-              </td>
-              <td *ngIf="!isViewMode" class="text-center">
-                <button type="button" class="btn btn-link p-0" aria-label="Remove Parameter" (click)="removeCase(i)">
-                  <img src="/icons/delete.svg" alt="Delete" class="w-100" />
-                </button>
+                <input type="text" formControlName="price" class="form-control" placeholder="Price" appDecimalOnly
+                  maxlength="10"
+                  [ngClass]="{ 'is-invalid': case.get('price')?.invalid && (case.get('price')?.touched || case.get('price')?.dirty) }" />
+                
+                <div *ngIf="case.get('price')?.errors?.['min'] && 
+              (case.get('price')?.touched || case.get('price')?.dirty)" class="invalid-feedback">
+                  Price must be greater than 0
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
       <!-- Submit Button -->
-      <!-- <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
-        <a class="btn btn-sm btn-outline-warning me-2" routerLink="/invoice-case" role="button" aria-label="Cancel"> <i class="bi bi-x-circle"></i> Cancel</a>
-        <button [disabled]="!form.valid || cases.length == 0" type="submit" class="btn btn-sm btn-outline-danger-600" aria-label="Save Scope">
-          <i class="bi bi-save"></i> Save
-        </button>
-      </div> -->
-       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
 
-                <a [routerLink]="['/invoice-case']" class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
-            </div>
+      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+        <a [routerLink]="['/invoice-case']" class="btn btn-warning">Cancel</a>
+        <button type="submit" class="btn btn-success px-3">Save</button>
+      </div>
     </form>
   </div>
 </div>

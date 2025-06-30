@@ -1,32 +1,35 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
+import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 
 @Component({
-  selector: 'app-laboratory-test-list',
-  imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './laboratory-test-list.component.html',
-  styleUrl: './laboratory-test-list.component.css'
+  selector: 'app-calibration-agency',
+  imports: [CommonModule,RouterModule,FormsModule],
+  templateUrl: './calibration-agency.component.html',
+  styleUrl: './calibration-agency.component.css'
 })
-export class LaboratoryTestListComponent implements OnInit {
+export class CalibrationAgencyComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'metalClassification', type: 'string', label: 'Metal Classification', filter: true }
+    { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'contactPerson1', type: 'string', label: 'Contact Person', filter: true },
+    { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
+    { key: 'emailId1', type: 'string', label: 'Email', filter: true },
+    { key: 'address', type: 'string', label: 'Address', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    departmentName: 'string',
-    subGroup: 'string',
-    metalClassification: 'string'
+    productType: 'string',
+    contactPerson1: 'string',
+    contactNo1: 'number',
+    emailId1: 'string',
+    address: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -37,7 +40,8 @@ export class LaboratoryTestListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  labTestList: any[] = [];
+
+  dataList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -58,7 +62,8 @@ export class LaboratoryTestListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private calibrationService: CalibrationAgencyService, private toastService: ToastService) {
+   
   }
 
   ngOnInit() {
@@ -67,17 +72,17 @@ export class LaboratoryTestListComponent implements OnInit {
 
   fetchData() {
 
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
+    this.calibrationService.getAllCalibrationAgencies(this.payload).subscribe({
       next: (response) => {
-        this.labTestList = response?.items || [];
+        this.dataList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error fetching list:', error);
-        this.labTestList = [];
+        console.error('Error fetching designations:', error);
+        this.dataList = [];
         this.isLoading.set(false);
       }
 
@@ -195,21 +200,17 @@ export class LaboratoryTestListComponent implements OnInit {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
   }
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
-  }
 
+  deleteFn(id: number): void {
+    this.calibrationService.deleteCalibrationAgency(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message,'success');
+        this.fetchData();
+      },
+      error: (error) => {
+        this.toastService.show(error.error.message, 'error');
+      }
+    });
+  }
 }
 

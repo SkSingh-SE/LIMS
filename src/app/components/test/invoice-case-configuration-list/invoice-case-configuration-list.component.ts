@@ -1,32 +1,30 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
-  selector: 'app-laboratory-test-list',
+  selector: 'app-invoice-case-configuration-list',
   imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './laboratory-test-list.component.html',
-  styleUrl: './laboratory-test-list.component.css'
+  templateUrl: './invoice-case-configuration-list.component.html',
+  styleUrl: './invoice-case-configuration-list.component.css'
 })
-export class LaboratoryTestListComponent implements OnInit {
+export class InvoiceCaseConfigurationListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'metalClassification', type: 'string', label: 'Metal Classification', filter: true }
+    { key: 'name', type: 'string', label: 'Invoice Case Name', filter: true },
+    { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
+    { key: 'value', type: 'string', label: 'Value', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    departmentName: 'string',
-    subGroup: 'string',
-    metalClassification: 'string'
+    aliasName: 'string',
+    value: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -58,7 +56,7 @@ export class LaboratoryTestListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private invoiceCaseConfig: InvoiceCaseConfigurationService, private toastService: ToastService) {
   }
 
   ngOnInit() {
@@ -67,7 +65,7 @@ export class LaboratoryTestListComponent implements OnInit {
 
   fetchData() {
 
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
+    this.invoiceCaseConfig.getAllInvoiceCaseConfigs(this.payload).subscribe({
       next: (response) => {
         this.labTestList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
@@ -199,7 +197,7 @@ export class LaboratoryTestListComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
+      this.invoiceCaseConfig.deleteInvoiceCaseConfig(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');

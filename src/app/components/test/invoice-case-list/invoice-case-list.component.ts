@@ -1,32 +1,32 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { InvoiceCaseService } from '../../../services/invoice-case.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
-  selector: 'app-laboratory-test-list',
+  selector: 'app-invoice-case-list',
   imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './laboratory-test-list.component.html',
-  styleUrl: './laboratory-test-list.component.css'
+  templateUrl: './invoice-case-list.component.html',
+  styleUrl: './invoice-case-list.component.css'
 })
-export class LaboratoryTestListComponent implements OnInit {
+export class InvoiceCaseListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'metalClassification', type: 'string', label: 'Metal Classification', filter: true }
+    { key: 'financialYear', type: 'string', label: 'FinancialYear', filter: true },
+    { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
+    { key: 'name', type: 'string', label: 'Invoice Case', filter: true },
+    { key: 'price', type: 'number', label: 'Price', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    departmentName: 'string',
-    subGroup: 'string',
-    metalClassification: 'string'
+    financialYear: 'string',
+    laboratoryTest: 'string',
+    price: 'number',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -37,7 +37,8 @@ export class LaboratoryTestListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  labTestList: any[] = [];
+  
+  dataList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -58,7 +59,7 @@ export class LaboratoryTestListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private invoiceCaseService: InvoiceCaseService, private toastService: ToastService) {
   }
 
   ngOnInit() {
@@ -67,9 +68,9 @@ export class LaboratoryTestListComponent implements OnInit {
 
   fetchData() {
 
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
+    this.invoiceCaseService.getAllInvoiceCases(this.payload).subscribe({
       next: (response) => {
-        this.labTestList = response?.items || [];
+        this.dataList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -77,7 +78,7 @@ export class LaboratoryTestListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching list:', error);
-        this.labTestList = [];
+        this.dataList = [];
         this.isLoading.set(false);
       }
 
@@ -199,7 +200,7 @@ export class LaboratoryTestListComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
+      this.invoiceCaseService.deleteInvoiceCase(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');

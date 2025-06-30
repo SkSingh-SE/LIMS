@@ -65,6 +65,9 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
         { title: 'Courier Master', route: '/courier', color: this.getRandomColor() },
         { title: 'TPI Master', route: '/tpi', color: this.getRandomColor() },
         { title: 'Supplier Master', route: '/supplier', color: this.getRandomColor() },
+        { title: 'Equipment', route: '/equipment', color: this.getRandomColor() },
+        { title: 'OEM Master', route: '/oem', color: this.getRandomColor() },
+        { title: 'Calibration Agency', route: '/calibration-agency', color: this.getRandomColor() },
       ]
     },
     {
@@ -127,10 +130,8 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
       icon: 'bi-receipt-cutoff',
       isExpanded: false,
       submenu: [
-        { title: 'Pending Proforma Invoice', route: '/invoice/pending-proforma', color: this.getRandomColor() },
-        { title: 'Proforma Invoice', route: '/invoice/proforma', color: this.getRandomColor() },
-        { title: 'Tax Invoice', route: '/invoice/tax', color: this.getRandomColor() },
-        { title: 'Payment', route: '/invoice/payment', color: this.getRandomColor() },
+        { title: 'Invoice Case Config', route: '/invoice-case-config', color: this.getRandomColor() },
+        { title: 'Invoice Case', route: '/invoice-case', color: this.getRandomColor() },
       ]
     },
     {

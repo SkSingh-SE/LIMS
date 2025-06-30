@@ -2,9 +2,9 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Equipment List</label>
-            <a routerLink="/equipment/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Equipment
+            <label class="text-center text-md fw-medium ms-3">Invoice Case Config List</label>
+            <a routerLink="/invoice-case-config/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add Invoice Case Config
             </a>
         </div>
 
@@ -22,7 +22,7 @@
             </div>
 
 
-            <div *ngIf="dataList.length > 0 || filters.length > 0" class="table-responsive ">
+            <div *ngIf="labTestList.length > 0 || filters.length > 0" class="table-responsive ">
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
@@ -50,33 +50,28 @@
 
                     </thead>
                     <tbody>
-                        <tr *ngFor="let data of dataList; let i = index" class="text-sm">
+                        <tr *ngFor="let lab of labTestList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ data.name }}</td>
-                            <td>{{ data.equipmentNo }}</td>
-                            <td>{{ data.departmentName }}</td>
-                            <td>{{data.equipmentType}}</td>
-                            <td>{{data.oemName}}</td>
-                            <td>{{(data.nextCalibrationDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{(data.nextMaintenanceDueDate | date: 'MMM dd yyyy') || '-'}}</td>
+                            <td>{{ lab.name }}</td>
+                            <td>{{ lab.aliasName }}</td>
+                            <td>{{ lab.value || (lab.start + ' - ' + lab.end) }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/equipment/details', data.id]"
+                                    <a [routerLink]="['/invoice-case-config/details', lab.id]"
                                     [state]="{ mode: 'view' }" 
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/equipment/edit', data.id]" 
+                                    <a [routerLink]="['/invoice-case-config/edit', lab.id]" 
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-    
 
                                     <a  class="icon-link"
-                                        title="Delete" (click)="deleteFn(data.id)">
+                                        title="Delete" (click)="deleteFn(lab.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -87,7 +82,7 @@
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="dataList.length == 0 && !isLoading()"
+            <div *ngIf="labTestList.length == 0 && !isLoading()"
                 class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>

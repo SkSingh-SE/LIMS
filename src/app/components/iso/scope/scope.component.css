@@ -4,6 +4,9 @@
 .wide-input {
   min-width: 150px;
 }
+.wide-input-xl {
+  min-width: 240px;
+}
 
 .custom-scroll {
   scroll-behavior: smooth;

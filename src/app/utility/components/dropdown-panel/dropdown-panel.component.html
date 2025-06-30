@@ -1,6 +1,6 @@
-<ul class="list-group " style="max-height: 200px; overflow-y: auto;" (scroll)="onScrollEvent($event)">
+<ul class="list-group " style="max-height: 200px; overflow-y: auto;" (scroll)="onScrollEvent($event)" (keydown)="onKeyDown($event)">
     <li class="list-group-item cursor-pointer"
-        *ngFor="let item of items"
+        *ngFor="let item of items; let i = index"  
         (click)="onSelect(item)">
       {{ item.name }}
     </li>

@@ -255,10 +255,10 @@
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-outline-warning me-2" (click)="closeModal()"><i class="bi bi-x-circle"></i> Cancel</button>
-                    <button type="submit" class="btn btn btn-outline-danger-600"
+                    <button type="button" class="btn btn-dark me-2" (click)="closeModal()"> Cancel</button>
+                    <button type="submit" class="btn navbar-background text-white"
                         [disabled]="ProductSpecificationForm.invalid">
-                       <i class="bi bi-save"></i> {{ isEditMode ? 'Update' : 'Save' }}
+                        {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>
               

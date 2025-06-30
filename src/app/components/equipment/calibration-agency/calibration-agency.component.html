@@ -2,9 +2,9 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Equipment List</label>
-            <a routerLink="/equipment/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Equipment
+            <label class="text-center text-md fw-medium ms-3">Calibration Agency List</label>
+            <a routerLink="/calibration-agency/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add Calibration Agency
             </a>
         </div>
 
@@ -53,21 +53,19 @@
                         <tr *ngFor="let data of dataList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ data.name }}</td>
-                            <td>{{ data.equipmentNo }}</td>
-                            <td>{{ data.departmentName }}</td>
-                            <td>{{data.equipmentType}}</td>
-                            <td>{{data.oemName}}</td>
-                            <td>{{(data.nextCalibrationDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{(data.nextMaintenanceDueDate | date: 'MMM dd yyyy') || '-'}}</td>
+                            <td>{{ data.contactPerson1 }}</td>
+                            <td>{{ data.contactNo1 }}</td>
+                            <td>{{data.emailId1}}</td>
+                            <td>{{data.address}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/equipment/details', data.id]"
+                                    <a [routerLink]="['/calibration-agency/details', data.id]"
                                     [state]="{ mode: 'view' }" 
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/equipment/edit', data.id]" 
+                                    <a [routerLink]="['/calibration-agency/edit', data.id]" 
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">

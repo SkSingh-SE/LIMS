@@ -7,15 +7,16 @@ import { Observable } from 'rxjs';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Select2, Select2Option, Select2SearchEvent, Select2UpdateEvent, Select2UpdateValue } from 'ng-select2-component';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
+import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 
 @Component({
   selector: 'app-laboratory-test',
   templateUrl: './laboratory-test.component.html',
   styleUrl: './laboratory-test.component.css',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, Select2],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
 
 })
 export class LaboratoryTestComponent implements OnInit {
@@ -53,7 +54,7 @@ export class LaboratoryTestComponent implements OnInit {
   filteredInvoiceCaseOptions = this.invoiceCaseOptions;
 
   constructor(private fb: FormBuilder, private departmentService: DepartmentService,
-    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService) {
+    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService, private invoiceConfig: InvoiceCaseConfigurationService) {
 
   }
   ngOnInit(): void {
@@ -84,8 +85,9 @@ export class LaboratoryTestComponent implements OnInit {
       name: ['', Validators.required],
       labDepartmentID: [0, Validators.required],
       subGroup: ['', Validators.required],
-      invoiceCase: [''],
-      invoiceCases: [[]],
+      invoiceCaseIDs: [''],
+      invoiceCases: this.fb.array([]),
+      equation: [''],
       metalClassificationID: [0, Validators.required],
     });
   }
@@ -94,9 +96,23 @@ export class LaboratoryTestComponent implements OnInit {
     this.labService.getLaboratoryTestById(id).subscribe({
       next: (response) => {
         this.labTestForm.patchValue(response);
-        const invoiceCases = response?.invoiceCase?.split(',');
-        if (invoiceCases)
-          this.labTestForm.patchValue({ invoiceCases: invoiceCases })
+        if (response?.invoiceCases) {
+          const invoiceCaseArray = this.labTestForm.get('invoiceCases') as FormArray;
+          const selectIds: number[] = [];
+          invoiceCaseArray.clear();
+          response?.invoiceCases?.forEach((item :any) => {
+            selectIds.push(item.invoiceCaseConfigID);
+            invoiceCaseArray.push(
+              this.fb.group({
+                id: [item.id],
+                labTestID: [item.labTestID],
+                invoiceCaseConfigID: [item.invoiceCaseConfigID]
+              })
+            );
+          });
+          this.labTestForm.patchValue({ invoiceCaseIDs: selectIds });
+
+        }
       },
       error: (error) => {
         console.error(error);
@@ -147,31 +163,23 @@ export class LaboratoryTestComponent implements OnInit {
   onMetalClassificationSelected(item: any) {
     this.labTestForm.patchValue({ metalClassificationID: item.id });
   }
-  onInvoiceCaseChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
-    const invoiceCases: string[] = [];
-
-    selectedIds?.options?.forEach((item: any) => {
-      const selectedOption = this.invoiceCaseOptions.find(
-        (x: Select2Option) => x.value === item.value
-      );
-      if (selectedOption) {
-        invoiceCases.push(selectedOption.value);
-      }
-    });
-
-    this.labTestForm.patchValue({ invoiceCase: invoiceCases.join(',') });
+  getInvoiceCaseConfig = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.invoiceConfig.getInvoiceCaseConfigDropdown(term, page, pageSize);
   }
-  onInvoiceCaseSearch(term: Select2SearchEvent<Select2UpdateValue>) {
-
-    const selectedIDs = this.labTestForm.get('invoiceCase')?.value || [];
-    const searchTerm = term.search.toLowerCase();
-
-    this.filteredInvoiceCaseOptions = this.invoiceCaseOptions.filter((option) => {
-      const isSelected = selectedIDs.includes(option.value);
-      const matchesSearch = option.label.toLowerCase().includes(searchTerm);
-
-      return isSelected || matchesSearch;
+  onInvoiceCaseChange(selectedItems: any[]) {
+    const invoiceCaseArray = this.labTestForm.get('invoiceCases') as FormArray;
+    const selectIds: number[] = [];
+    invoiceCaseArray.clear();
+    selectedItems?.forEach((item) => {
+      selectIds.push(item.id);
+      invoiceCaseArray.push(
+        this.fb.group({
+          id: [0],
+          labTestID: [this.labTestForm.get('id')?.value || 0],
+          invoiceCaseConfigID: [item.id]
+        })
+      );
     });
-
+    this.labTestForm.patchValue({ invoiceCaseIDs: selectIds })
   }
 }

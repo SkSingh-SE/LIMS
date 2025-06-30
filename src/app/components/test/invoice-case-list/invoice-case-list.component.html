@@ -2,9 +2,9 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Equipment List</label>
-            <a routerLink="/equipment/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Equipment
+            <label class="text-center text-md fw-medium ms-3">Invoice Case List</label>
+            <a routerLink="/invoice-case/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add Invoice Case
             </a>
         </div>
 
@@ -50,33 +50,29 @@
 
                     </thead>
                     <tbody>
-                        <tr *ngFor="let data of dataList; let i = index" class="text-sm">
+                        <tr *ngFor="let lab of dataList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ data.name }}</td>
-                            <td>{{ data.equipmentNo }}</td>
-                            <td>{{ data.departmentName }}</td>
-                            <td>{{data.equipmentType}}</td>
-                            <td>{{data.oemName}}</td>
-                            <td>{{(data.nextCalibrationDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{(data.nextMaintenanceDueDate | date: 'MMM dd yyyy') || '-'}}</td>
+                            <td>{{ lab.financialYear }}</td>
+                            <td>{{ lab.laboratoryTest }}</td>
+                            <td>{{ lab.name }}</td>
+                            <td>{{ lab.price }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/equipment/details', data.id]"
+                                    <a [routerLink]="['/invoice-case/details', lab.id]"
                                     [state]="{ mode: 'view' }" 
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/equipment/edit', data.id]" 
+                                    <a [routerLink]="['/invoice-case/edit', lab.id]" 
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-    
 
                                     <a  class="icon-link"
-                                        title="Delete" (click)="deleteFn(data.id)">
+                                        title="Delete" (click)="deleteFn(lab.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>

@@ -1,0 +1,262 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">Invoice Case Config List</label>
+      <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
+        <i class="bi bi-plus-lg"></i>
+        Create Invoice Case Config
+      </a>
+    </div>
+
+    <div *ngIf="!isLoading()" class="card-body">
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="invoiceList.length > 0 || filters.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th *ngFor="let column of columns; let i = index">
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
+                    <i class="bi bi-funnel"></i>
+                  </span>
+                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                    <i class="bi bi-x-lg text-danger"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="align-middle text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of invoiceList; let i = index" class="text-sm">
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.aliasName }}</td>
+              <td>{{ item.value || item.start + " - " + item.end }}</td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-2">
+                  <!-- Flex for spacing -->
+                  <a (click)="openModal('view', item.id)" class="icon-link" title="View">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
+                  </a>
+                  <a (click)="openModal('edit', item.id)" class="icon-link" title="Edit">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  </a>
+                  <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
+                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="invoiceList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+          <div class="fw-semibold">No records found</div>
+        </div>
+      </div>
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Page Size Selector -->
+        <div class="d-flex align-items-center">
+          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+          </select>
+        </div>
+
+        <!-- Pagination Controls -->
+        <ul class="pagination mb-0 d-flex align-items-center">
+          <li class="page-item" [class.disabled]="pageNumber === 1">
+            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
+          </li>
+          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
+            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative">
+    <!-- Close Button in the Top-Right Corner -->
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input
+      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
+      type="text"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter value"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'number'"
+      type="number"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter number"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
+      type="date"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+    />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>
+
+<!-- Modal for Add/Edit/Update Customer -->
+<div
+  id="customerTypeModal"
+  class="modal fade modal-fade modal-lg"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  aria-labelledby="customerTypeModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+          {{ formTitle }}
+        </label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="invoiceForm">
+        <div class="modal-body row row-cols-2">
+          <!-- Selection Type -->
+          <div class="mb-1 col">
+            <label class="form-label">
+              Selection Type
+              <span class="text-danger">*</span>
+            </label>
+            <select class="form-select" formControlName="selectionType" (change)="onTypeChange()">
+              <option value="">Select</option>
+              <option *ngFor="let type of selectionTypes" [value]="type.value">{{ type.label }}</option>
+            </select>
+            <span
+              *ngIf="invoiceForm.get('selectionType')?.invalid && invoiceForm.get('selectionType')?.touched"
+              class="text-danger text-sm"
+            >
+              Selection Type is required.
+            </span>
+          </div>
+
+          <!-- Unit (auto-filled) -->
+          <div class="mb-1 col">
+            <label class="form-label">Unit</label>
+            <input class="form-control" formControlName="unit" placeholder="Auto filled" readonly />
+          </div>
+
+          <!-- Value (for single) -->
+          <div class="mb-1 col" *ngIf="!invoiceForm.get('selectionType')?.value?.toLowerCase().includes('range')">
+            <label class="form-label">Value</label>
+            <input class="form-control" formControlName="value" placeholder="Enter value" (input)="updateName()" />
+          </div>
+
+          <!-- Range: Start + End -->
+          <div class="mb-1 col" *ngIf="invoiceForm.get('selectionType')?.value?.toLowerCase().includes('range')">
+            <label class="form-label">Range</label>
+            <div class="d-flex">
+              <input class="form-control me-1" formControlName="start" placeholder="Start" />
+              <input class="form-control" formControlName="end" placeholder="End" (input)="updateRangeName()" />
+            </div>
+          </div>
+
+          <!-- Name (auto-generated) -->
+          <div class="mb-1 col">
+            <label class="form-label">Name</label>
+            <ng-select
+              [items]="filteredSuggestions$ | async"
+              bindLabel="name"
+              [addTag]="true"
+              [multiple]="false"
+              [hideSelected]="true"
+              [typeahead]="nameInput$"
+              [(ngModel)]="selectedSuggestion"
+              [ngModelOptions]="{standalone: true}"
+              (change)="onSuggestionSelected($event)"
+              [loading]="nameLoading"
+              placeholder="Enter or select name"
+            ></ng-select>
+          </div>
+
+          <!-- Alias Names -->
+          <div class="mb-1 col-12">
+            <div class="d-flex justify-content-between m-2">
+              <label class="form-label">Alias Names</label>
+              <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAlias()">
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Alias
+              </button>
+            </div>
+            <div formArrayName="aliasNames" class="d-flex flex-column">
+              <div *ngFor="let aliasCtrl of aliasNames.controls; let i = index" [formGroupName]="i" class="d-flex align-items-center mb-1">
+                <input class="form-control me-2" formControlName="name" placeholder="Enter alias name" (keydown.enter)="addAlias()" />
+                <button type="button" class="btn btn-danger btn-sm" (click)="removeAlias(i)" *ngIf="aliasNames.length > 1">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div *ngIf="!isViewMode" class="modal-footer">
+          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn navbar-background text-white" [disabled]="invoiceForm.invalid" (click)="onSubmit()">
+            {{ isEditMode ? "Update" : "Save" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

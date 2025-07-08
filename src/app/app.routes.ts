@@ -50,6 +50,10 @@ import { InvoiceCaseListComponent } from './components/test/invoice-case-list/in
 import { CalibrationAgencyFormComponent } from './components/equipment/calibration-agency-form/calibration-agency-form.component';
 import { CalibrationAgencyComponent } from './components/equipment/calibration-agency/calibration-agency.component';
 import { CuttingPriceMasterComponent } from './components/sample-prepration/cutting-price-master/cutting-price-master.component';
+import { CuttingSampleFormComponent } from './components/sample-prepration/cutting-sample-form/cutting-sample-form.component';
+import { MachiningChallanComponent } from './components/sample-prepration/machining-challan/machining-challan.component';
+import { SamplePlanFormComponent } from './components/inward/sample-plan-form/sample-plan-form.component';
+import { SampleInwardFormComponent } from './components/inward/sample-inward-form/sample-inward-form.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -135,7 +139,11 @@ export const routes: Routes = [
             { path: 'calibration-agency/create', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
-            { path: 'cutting-price-master', component: CuttingPriceMasterComponent }
+            { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'sample/cutting', component:CuttingSampleFormComponent},
+            { path: 'sample/machining', component:MachiningChallanComponent},
+            { path: 'sample/plan', component:SamplePlanFormComponent},
+            { path: 'sample/inward', component:SampleInwardFormComponent},
         ]
     },
     { path: '**', redirectTo: '/login' }

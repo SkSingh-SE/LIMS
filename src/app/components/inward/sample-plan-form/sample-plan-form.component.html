@@ -1,0 +1,64 @@
+<div class="card shadow m-2">
+  <div class="card-header card-form-header text-white text-center">
+    <label class="fw-medium fs-5">Sample Planning</label>
+  </div>
+  <div class="card-body">
+    <form [formGroup]="planningForm" (ngSubmit)="savePlanning()">
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">Select Case</label>
+        <select class="form-select" formControlName="caseId" (change)="onCaseSelect()">
+          <option [ngValue]="null" disabled>Select Case</option>
+          <option *ngFor="let c of cases" [value]="c.id">{{c.caseNo}}</option>
+        </select>
+      </div>
+
+      <div *ngIf="samplesFA.length">
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Sample No</th>
+              <th>Product Type</th>
+              <th>Material Class</th>
+              <th>Test</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="samples">
+            <tr *ngFor="let s of samplesFA.controls; let i = index" [formGroupName]="i">
+              <td>{{ s.get('sampleNo')!.value }}</td>
+              <td>
+                <select class="form-select form-select-sm" formControlName="productType">
+                  <option value="">--</option>
+                  <option *ngFor="let p of productTypes" [value]="p">{{p}}</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" formControlName="materialClass">
+                  <option value="">--</option>
+                  <option *ngFor="let m of materialClasses" [value]="m">{{m}}</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" formControlName="test">
+                  <option value="">--</option>
+                  <option *ngFor="let t of testOptions" [value]="t">{{t}}</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" formControlName="method">
+                  <option value="">--</option>
+                  <option *ngFor="let m of methodOptions" [value]="m">{{m}}</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button class="btn btn-success" type="submit" [disabled]="!samplesFA.length">
+        Save Planning
+      </button>
+    </form>
+  </div>
+</div>

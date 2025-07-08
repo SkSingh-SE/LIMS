@@ -1,0 +1,95 @@
+<div class="card shadow-lg m-2">
+    <div class="card-header card-form-header text-white text-center">
+        <h6 class="mb-0">Machining Challan</h6>
+    </div>
+    <div class="card-body">
+        <form [formGroup]="challanForm" (ngSubmit)="printSelected()">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Select Case No</label>
+                    <select class="form-select" formControlName="caseId" (change)="onCaseChange()">
+                        <option [ngValue]="null" disabled>Select Case</option>
+                        <option *ngFor="let c of cases" [value]="c.id">{{c.caseNo}}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div *ngIf="samplesFA.length" class="mb-4">
+                <h6 class="fw-bold mb-2">Plan Machining</h6>
+                <table class="table table-bordered table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th >
+                                <span class="form-check">
+                                    <input type="checkbox" class="form-check-input mt-1" (change)="toggleAll($event)">
+                                    </span>
+                                </th>
+                            <th>Sample No</th>
+                            <th>Test</th>
+                            <th>Test Method</th>
+                            <th>Sample Preparation</th>
+                            <th>Material</th>
+                        </tr>
+                    </thead>
+                    <tbody formArrayName="samples">
+                        <tr *ngFor="let sCtrl of samplesFA.controls; let i = index" [formGroupName]="i">
+                            <td>
+                                <span class="form-check">
+                                    <input type="checkbox" class="form-check-input" formControlName="selected">        
+                                </span>
+                            </td>
+                            <td>{{ sCtrl.get('sampleNo')!.value }}</td>
+                            <td>
+                                <select class="form-select form-select-sm" formControlName="test">
+                                    <option *ngFor="let t of testOptions" [value]="t">{{t}}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" formControlName="method">
+                                    <option *ngFor="let m of methodOptions" [value]="m">{{m}}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" formControlName="preparation">
+                                    <option [ngValue]="''">-- Select --</option>
+                                    <option *ngFor="let p of preparationOptions" [value]="p">{{p}}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" formControlName="material">
+                                    <option *ngFor="let m of materialOptions" [value]="m">{{m}}</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary" type="submit" [disabled]="!hasSelectedSamples()">Print Selected
+                    Challan</button>
+            </div>
+        </form>
+
+        <div *ngIf="printedList.length">
+            <h6 class="fw-bold mb-2">Printed Challan</h6>
+            <table class="table table-bordered table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sample No</th>
+                        <th>Test</th>
+                        <th>Method</th>
+                        <th>Material</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let s of printedList">
+                        <td>{{s.sampleNo}}</td>
+                        <td>{{s.test}}</td>
+                        <td>{{s.method}}</td>
+                        <td>{{s.material}}</td>
+                        <td><button class="btn btn-sm btn-outline-secondary" (click)="reprint(s)">Re‑print</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

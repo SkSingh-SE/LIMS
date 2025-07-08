@@ -1,0 +1,557 @@
+<div class="m-2">
+  <!-- Nav Tabs -->
+  <ul class="nav nav-pills nav-fill text-center mb-3 gap-2" id="formTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button"
+        role="tab">
+        Customer & Company Info
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
+        Sample Details
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">
+        Plan
+      </button>
+    </li>
+  </ul>
+
+  <form [formGroup]="masterForm">
+    <div class="tab-content" id="formTabsContent">
+      <!-- TAB 1: CUSTOMER & COMPANY INFO -->
+      <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+        <fieldset formGroupName="customerDetails" class="border rounded p-3 mb-4 position-relative">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Customer Details
+          </legend>
+          <div class="row row-cols-1 row-cols-md-4 g-3">
+            <div>
+              <label class="form-label">Customer Name *</label>
+              <input class="form-control" formControlName="customerName" placeholder="Enter customer name" />
+            </div>
+            <div>
+              <label class="form-label">Address *</label>
+              <input class="form-control" formControlName="address" placeholder="Enter address" />
+            </div>
+            <div>
+              <label class="form-label">State *</label>
+              <input class="form-control" formControlName="state" placeholder="Enter state" />
+            </div>
+            <div>
+              <label class="form-label">City *</label>
+              <input class="form-control" formControlName="city" placeholder="Enter city" />
+            </div>
+            <div>
+              <label class="form-label">PIN Code *</label>
+              <input class="form-control" formControlName="pinCode" placeholder="Enter PIN code" />
+            </div>
+            <div>
+              <label class="form-label">Country</label>
+              <input class="form-control" formControlName="country" value="India" readonly />
+            </div>
+            <div>
+              <label class="form-label">GST No.</label>
+              <input class="form-control" formControlName="gstNo" placeholder="Enter GST number" />
+              <div class="form-check small mt-1">
+                <input type="checkbox" class="form-check-input" formControlName="gstNotApplicable" id="gstNA" />
+                <label for="gstNA" class="form-check-label">GST not applicable</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Customer Type</label>
+              <select class="form-select" formControlName="customerType">
+                <option value="Walk In">Walk In</option>
+                <option value="Credit Customer">Credit Customer</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label d-block">Report/Invoice Dispatch Mode</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="checkbox" id="dispatchEmail" formControlName="dispatchMode"
+                  value="Email" />
+                <label class="form-check-label" for="dispatchEmail">Email</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="checkbox" id="dispatchWhatsApp"
+                  formControlName="dispatchMode" value="WhatsApp" />
+                <label class="form-check-label" for="dispatchWhatsApp">WhatsApp</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="checkbox" id="dispatchCourier" formControlName="dispatchMode"
+                  value="Courier" />
+                <label class="form-check-label" for="dispatchCourier">Courier</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="checkbox" id="dispatchSelfPickup"
+                  formControlName="dispatchMode" value="Self Pickup" />
+                <label class="form-check-label" for="dispatchSelfPickup">Self Pickup</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Sample Return</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="sampleReturnYes" formControlName="sampleReturn"
+                  value="Yes" />
+                <label class="form-check-label" for="sampleReturnYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="sampleReturnNo" formControlName="sampleReturn"
+                  value="No" />
+                <label class="form-check-label" for="sampleReturnNo">No</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Courier Address</label>
+              <input class="form-control" formControlName="courierAddress" placeholder="Enter Courier Address" />
+              <div class="form-check small mt-1">
+                <input type="checkbox" class="form-check-input mt-1" id="sameAsBillingAddress"
+                  formControlName="sameAsBillingAddress" checked />
+                <label class="form-check-label" for="sameAsBillingAddress">Same as billing address</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="">
+            <div class="d-flex align-items-center text-muted my-3">
+              <div class="flex-grow-1 border-top"></div>
+              <div class="px-3 text-danger-500">Contact Info</div>
+              <div class="flex-grow-1 border-top"></div>
+            </div>
+            <div class="table-responsive" formArrayName="contacts">
+              <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>Contact Person</th>
+                    <th>Department</th>
+                    <th>Mobile No</th>
+                    <th>Email Id</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
+                    <td><input class="form-control" formControlName="name" placeholder="Enter contact person name" />
+                    </td>
+                    <td><input class="form-control" formControlName="department" placeholder="Enter department" /></td>
+                    <td><input class="form-control" formControlName="mobile" placeholder="Enter mobile number" /></td>
+                    <td><input class="form-control" formControlName="email" placeholder="Enter email address" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="row row-cols-1 row-cols-md-4 mb-3">
+            <div>
+              <label class="form-label">Stamped By</label>
+              <input class="form-control" formControlName="stampedBy" placeholder="Enter name who stamped" />
+            </div>
+            <div>
+              <label class="form-label">Sealed By</label>
+              <input class="form-control" formControlName="sealedBy" placeholder="Enter name who sealed" />
+            </div>
+            <div>
+              <label class="form-label">Advance Payment</label>
+              <div class="input-group">
+                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
+                <span class="input-group-text">Rs</span>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Bill Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired"
+                  value="Yes" />
+                <label class="form-check-label" for="billRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired"
+                  value="No" />
+                <label class="form-check-label" for="billRequiredNo">No</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Advance PI Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredYes"
+                  formControlName="advancePIRequired" value="Yes" />
+                <label class="form-check-label" for="advancePIRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredNo"
+                  formControlName="advancePIRequired" value="No" />
+                <label class="form-check-label" for="advancePIRequiredNo">No</label>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="form-check">
+                <input class="form-check-input mt-1" type="checkbox" id="holdTestingUntilPiApproved"
+                  formControlName="holdTestingUntilPiApproved" />
+                <label class="form-check-label" for="holdTestingUntilPiApproved">Hold Testing Until PI approved</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <div class="d-flex align-items-center text-muted my-3">
+              <div class="flex-grow-1 border-top"></div>
+              <div class="px-3 text-danger-500">TPI Witness Info</div>
+              <div class="flex-grow-1 border-top"></div>
+            </div>
+
+            <div formArrayName="tpiWitnesses" class="table-responsive">
+              <table class="table table-bordered table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 5%">#</th>
+                    <th style="width: 30%">TPI Witness</th>
+                    <th>Email ID</th>
+                    <th style="width: 10%">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let witness of tpiWitnesses.controls; let i = index" [formGroupName]="i">
+                    <td>{{ i + 1 }}</td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="witnessName">
+                        <option value="">Choose an item</option>
+                        <option *ngFor="let person of witnessList" [value]="person">{{ person }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="email"
+                        placeholder="Autofill or enter manually" />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeTpiWitness(i)"
+                        *ngIf="tpiWitnesses.length > 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="">
+              <button type="button" class="btn btn-sm btn-primary" (click)="addTpiWitness()">Add Witness</button>
+            </div>
+
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="conformityRequired"
+                id="conformityCheck" />
+              <label class="form-check-label" for="conformityCheck">Statement of Conformity Required</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset formGroupName="companyDetails" class="border rounded p-3 mb-4 position-relative">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Company Details
+          </legend>
+          <div class="row row-cols-1 row-cols-md-4 g-3">
+            <div>
+              <label class="form-label">Tally Ledger Name</label>
+              <input class="form-control" formControlName="tallyLedgerName" placeholder="Enter Tally Ledger Name" />
+              <div class="form-check small mt-1">
+                <input type="checkbox" class="form-check-input" formControlName="sameAsCustomerName"
+                  id="sameAsCustomerName" checked />
+                <label for="sameAsCustomerName" class="form-check-label">Same as Customer Name</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Type of Company</label>
+              <input class="form-control" formControlName="typeOfCompany" placeholder="Enter type of company" />
+            </div>
+            <div>
+              <label class="form-label">Vendor Code</label>
+              <input class="form-control" formControlName="vendorCode" placeholder="Enter vendor code" />
+            </div>
+            <div>
+              <label class="form-label">Special Accounting Case</label>
+              <input class="form-control" formControlName="specialAccountingCase"
+                placeholder="Enter special accounting case" />
+            </div>
+            <div>
+              <label class="form-label">Credit Limit Amount</label>
+              <input type="number" class="form-control" formControlName="creditLimitAmount"
+                placeholder="Enter credit limit amount" />
+            </div>
+            <div>
+              <label class="form-label">Credit Limit Time (Days)</label>
+              <input type="number" class="form-control" formControlName="creditLimitTime"
+                placeholder="Enter credit limit time in days" />
+            </div>
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="specialDiscount" id="specDisc" />
+              <label class="form-check-label" for="specDisc">Special Discount (MD/TD Approval)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="companyVerified" id="compVer" />
+              <label class="form-check-label" for="compVer">Company Verified</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="monthlyBilling" id="monthBill" />
+              <label class="form-check-label" for="monthBill">Monthly Billing Customer</label>
+            </div>
+            <div class="form-check mt-1">
+              <input class="form-check-input mt-1" type="checkbox"
+                formControlName="mandatoryPerformaInvoiceWithMonthlyBilling" id="mandatoryPerformaInvoice" />
+              <label class="form-check-label" for="mandatoryPerformaInvoice">Mandatory Performa Invoice + Monthly
+                Billing</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset formGroupName="additionalCustomerDetails" class="border rounded p-3 mb-4 position-relative">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Customer Details (Additional Info)
+          </legend>
+
+          <div class="row row-cols-1 row-cols-md-4 g-2">
+            <div>
+              <label class="form-label">Collection Time</label>
+              <input class="form-control form-control-sm" formControlName="collectionTime" placeholder="Collection Time"
+                readonly />
+            </div>
+            <div>
+              <label class="form-label">Collection Date</label>
+              <input type="date" class="form-control form-control-sm" formControlName="collectionDate"
+                placeholder="Collection Date" />
+            </div>
+            <div>
+              <label class="form-label">Report Issued To</label>
+              <input class="form-control form-control-sm" formControlName="reportIssuedTo"
+                placeholder="Report Issued To" />
+            </div>
+            <div>
+              <label class="form-label">Address</label>
+              <input class="form-control form-control-sm" formControlName="reportAddress" placeholder="Address" />
+            </div>
+            <div>
+              <label class="form-label">Country</label>
+              <input class="form-control form-control-sm" formControlName="country" value="India" readonly />
+            </div>
+            <div>
+              <label class="form-label">State</label>
+              <input class="form-control form-control-sm" formControlName="state" placeholder="State" />
+            </div>
+            <div>
+              <label class="form-label">City</label>
+              <input class="form-control form-control-sm" formControlName="city" placeholder="City" />
+            </div>
+            <div>
+              <label class="form-label">PIN Code</label>
+              <input class="form-control form-control-sm" formControlName="pinCode" placeholder="PIN Code" />
+            </div>
+            <div>
+              <label class="form-label">Report/Invoice Dispatch Mode</label>
+              <select class="form-select form-select-sm" formControlName="dispatchMode">
+                <option>Email</option>
+                <option>WhatsApp</option>
+                <option>Courier</option>
+                <option>Self Pickup</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="">
+            <div class="d-flex align-items-center text-muted my-2">
+              <div class="flex-grow-1 border-top"></div>
+              <div class="px-3 text-danger-500">Contact Info</div>
+              <div class="flex-grow-1 border-top"></div>
+            </div>
+            <div class="table-responsive" formArrayName="contacts">
+              <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th></th>
+                    <th>Contact Person</th>
+                    <th>Department</th>
+                    <th>Mobile No</th>
+                    <th>Email ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let contact of additionalContactControls.controls; let i = index" [formGroupName]="i">
+                    <td><input type="checkbox" formControlName="enabled" class="form-check-input" /></td>
+                    <td><input class="form-control form-control-sm" formControlName="name"
+                        placeholder="Contact Person" /></td>
+                    <td><input class="form-control form-control-sm" formControlName="department"
+                        placeholder="Department" /></td>
+                    <td><input class="form-control form-control-sm" formControlName="mobile" placeholder="Mobile No" />
+                    </td>
+                    <td><input class="form-control form-control-sm" formControlName="email" placeholder="Email ID" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="">
+            <label class="form-label">Upload Company Letter or Request Letter</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
+              <button type="button" class="btn btn-danger btn-sm" (click)="removeAttachment()">Delete</button>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- TAB 2: SAMPLE DETAILS -->
+      <div class="tab-pane fade" id="sample" role="tabpanel" aria-labelledby="sample-tab">
+        <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Sample Details
+          </legend>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold">Sample Entries</span>
+            <button type="button" class="btn btn-sm btn-primary" (click)="addSample()">Add Sample</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Sr No.</th>
+                  <th>Lab No.</th>
+                  <th>Sample Details *</th>
+                  <th>Identification</th>
+                  <th>Nature of Sample*</th>
+                  <th>Remarks</th>
+                  <th>Quantity</th>
+                  <th>Attach Photo</th>
+                  <th>Image</th>
+                  <th>Disable</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let sample of sampleDetails.controls; let i = index" [formGroupName]="i">
+                  <td>{{ i + 1 }}</td>
+                  <td><input class="form-control form-control-sm" formControlName="labNo" readonly /></td>
+                  <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details"
+                      required /></td>
+                  <td><input class="form-control form-control-sm" formControlName="identification"
+                      placeholder="Identification" /></td>
+                  <td><input class="form-control form-control-sm" formControlName="nature" placeholder="Enter nature"
+                      required /></td>
+                  <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" />
+                  </td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" />
+                  </td>
+                  <td class="text-center">
+                    <input type="checkbox" class="form-check-input" formControlName="attachPhoto" />
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-primary"
+                      (click)="onUploadSampleImage(i)">+Image</button>
+                  </td>
+                  <td class="text-center">
+                    <input type="checkbox" class="form-check-input" formControlName="disabled" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
+        <!-- SECTION 2: CASE DETAILS + IDENTIFICATION INFO -->
+        <fieldset formArrayName="sampleAdditionalDetails" class="border rounded p-3 mb-2 position-relative">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Case & Sample Identification
+          </legend>
+          <div class="mb-3">
+            <strong>Case No:</strong> DMSPL-000001
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Sample No.</th>
+                  <th>Sample Details</th>
+                  <th>Nature of Sample</th>
+                  <th class="text-center">Sample Identification</th>
+                  <th class="text-center">Heat No</th>
+                  <th class="text-center">Batch No</th>
+                  <th class="text-center">Size</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let sample of sampleAdditionalDetails.controls; let i = index" [formGroupName]="i">
+                  <td>{{ sample.get('labNo')?.value }}</td>
+                  <td><input class="form-control form-control-sm" formControlName="details" readonly /></td>
+                  <td><input class="form-control form-control-sm" formControlName="nature" readonly /></td>
+                  <td class="text-center">
+                    <input type="checkbox" class="form-check-input" formControlName="includeIdentification" />
+                  </td>
+                  <td>
+                    <input class="form-control form-control-sm" formControlName="heatNo"
+                      [disabled]="!sample.get('includeIdentification')?.value" />
+                  </td>
+                  <td>
+                    <input class="form-control form-control-sm" formControlName="batchNo"
+                      [disabled]="!sample.get('includeIdentification')?.value" />
+                  </td>
+                  <td>
+                    <input class="form-control form-control-sm" formControlName="size"
+                      [disabled]="!sample.get('includeIdentification')?.value" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
+
+      </div>
+      <!-- TAB 3: Plan DETAILS -->
+      <div class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
+        <fieldset class="border rounded p-3 mb-2 position-relative" formArrayName="planDetails">
+          <legend class="w-auto px-2 fw-semibold"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+            Sample Plan
+          </legend>
+          <div *ngFor="let plan of planDetails.controls; let i = index" [formGroupName]="i" class="mb-2">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-2"><label>Sample No.</label><input class="form-control" formControlName="sampleNo"
+                  readonly /></div>
+              <div class="col-md-3"><label>Sample Details</label><input class="form-control"
+                  formControlName="sampleDetails" readonly /></div>
+              <div class="col-md-3"><label>Heat No</label><input class="form-control" formControlName="heatNo" /></div>
+              <div class="col-md-2"><label>Batch No</label><input class="form-control" formControlName="batchNo" />
+              </div>
+              <div class="col-md-2"><label>Size</label><input class="form-control" formControlName="size" /></div>
+            </div>
+
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox" formControlName="sampleIdentification"
+                id="sampleIdentification{{i}}" />
+              <label class="form-check-label" for="sampleIdentification{{i}}">
+                Include Sample Identification
+              </label>
+            </div>
+
+            <!-- Multi-Parameter Entry -->
+            <label class="mt-2">Identification Parameters:</label>
+            <div formArrayName="parameters">
+              <div class="input-group mb-2" *ngFor="let param of getParametersArray(i).controls; let j = index">
+                <input class="form-control" [formControlName]="j" placeholder="Enter parameter" />
+                <button class="btn btn-outline-danger" type="button" (click)="removeParameter(i, j)"
+                  *ngIf="getParametersArray(i).length > 1">✕</button>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addParameter(i)">+ Add
+                Parameter</button>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+    </div>
+  </form>
+</div>

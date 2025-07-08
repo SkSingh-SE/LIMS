@@ -20,9 +20,9 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'cuttingType', type: 'string', label: 'Specification Name', filter: true },
-    { key: 'unitType', type: 'string', label: 'Alias Name', filter: true },
-    { key: 'ratePerUnit', type: 'string', label: 'Material Specification', filter: true },
+    { key: 'cuttingType', type: 'string', label: 'Cutting Type', filter: true },
+    { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
+    { key: 'ratePerUnit', type: 'string', label: 'Rate Per Unit', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -68,7 +68,7 @@ export class CuttingPriceMasterComponent implements OnInit {
   cuttingPriceId: number = 0;
   formTitle = 'Cutting Price Master Form';
 
-unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
+  unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private cuttingPriceService: CuttingPriceMasterService, private toastService: ToastService) {
     this.route.params.subscribe(params => {
@@ -91,7 +91,7 @@ unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
       cuttingType: ['', Validators.required],
       unitType: ['', Validators.required],
       ratePerUnit: [0, [Validators.required, Validators.min(0)]],
-      remarks: ['']
+      remark: ['']
     });
   }
 
@@ -259,19 +259,19 @@ unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.formTitle = 'Product Specification Form';
+      this.formTitle = 'Cutting Price Master Form';
       this.cuttingPriceForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Product Specification Form';
+      this.formTitle = 'Cutting Price Master Form';
       this.cuttingPriceForm.enable();
 
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Product Specification';
+      this.formTitle = 'View Cutting Price Master';
       this.cuttingPriceForm.disable();
     }
 
@@ -314,7 +314,7 @@ unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
       }
     }
   }
-  
+
 }
 
 

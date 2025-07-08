@@ -122,6 +122,9 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
         { title: 'Plan', route: '/sample/plan', color: this.getRandomColor() },
         { title: 'Review', route: '/sample/review', color: this.getRandomColor() },
         { title: 'Preparation', route: '/sample/preparation', color: this.getRandomColor() },
+        { title: 'Cutting Price Master', route: '/cutting-price-master', color: this.getRandomColor() },
+        { title: 'Sample Cutting', route: '/sample/cutting', color: this.getRandomColor() },
+        { title: 'Machining Challan', route: '/sample/machining', color: this.getRandomColor() },
       ]
     },
     {

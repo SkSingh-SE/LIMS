@@ -8,6 +8,16 @@ import { LoaderService } from '../services/loader.service';
 let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
 
+const errorMessages: { [key: number]: string } = {
+  0: 'Service Unavailable',
+  400: 'Bad Request',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'Not Found',
+  500: 'Internal Server Error',
+  503: 'Service Unavailable',
+};
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const authService = inject(AuthService);
@@ -20,6 +30,26 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
+  const getErrorMessage = (error: HttpErrorResponse) => {
+    if (error.status === 0) {
+      return errorMessages[0];
+    }
+    if (error.error) {
+      if (typeof error.error === 'string') {
+        return error.error;
+      }
+      if (error.error.message) {
+        return error.error.message;
+      }
+      if (typeof error.error === 'object') {
+        return JSON.stringify(error.error);
+      }
+    }
+    if (errorMessages[error.status]) {
+      return errorMessages[error.status];
+    }
+    return 'An unexpected error occurred';
+  };
 
   const handleRequest = (accessToken: any) => {
     const modifiedReq = req.clone({
@@ -39,18 +69,19 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }),
       catchError((error: HttpErrorResponse) => {
+        loaderService.hide();
         if (error.status === 401) {
           unauthorizedCount++; // Increment on 401 Unauthorized
-          loaderService.hide();
           if (unauthorizedCount >= unauthorizedLimit) {
             unauthorizedCount = 0;
             authService.logout();
             router.navigate(['/login']);
           }
-        } else {
-          loaderService.hide();
         }
-        return throwError(() => error);
+        const message = getErrorMessage(error);
+        // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
+        const enhancedError = Object.assign(error, { errorMessage: message });
+        return throwError(() => enhancedError);
       })
     );
   }
@@ -70,9 +101,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }),
       switchMap(() => handleRequest(token!)),
       catchError((error: HttpErrorResponse) => {
-        console.error('Token refresh failed:', error);
         loaderService.hide();
-        return throwError(() => error);
+      const message = getErrorMessage(error);
+      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
+      const enhancedError = Object.assign(error, { errorMessage: message });
+      return throwError(() => enhancedError);
       })
     );
   }
@@ -87,10 +120,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return handleRequest(token);
   }
 
-
-
-
-
   return next(req).pipe(
     tap(event => {
       // Log only final response
@@ -101,18 +130,19 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
     }),
     catchError((error: HttpErrorResponse) => {
+      loaderService.hide();
       if (error.status === 401) {
         unauthorizedCount++; // Increment on 401 Unauthorized
-        loaderService.hide();
         if (unauthorizedCount >= unauthorizedLimit) {
           unauthorizedCount = 0;
           authService.logout();
           router.navigate(['/login']);
         }
-      } else {
-        loaderService.hide();
       }
-      return throwError(() => error);
+      const message = getErrorMessage(error);
+      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
+      const enhancedError = Object.assign(error, { errorMessage: message });
+      return throwError(() => enhancedError);
     })
   );
 };

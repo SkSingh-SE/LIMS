@@ -52,10 +52,9 @@
           <tbody>
             <tr *ngFor="let customerType of listData; let i = index" class="text-sm">
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="wide-input">{{ customerType.specificationName }}</td>
-              <td class="wide-input">{{ customerType.aliasName }}</td>
-              <td class="wide-input">{{ customerType.materialSpecification }}</td>
-              <td class="wide-input">{{ customerType.specificationCode }}</td>
+              <td class="wide-input">{{ customerType.cuttingType }}</td>
+              <td class="wide-input">{{ customerType.unitType }}</td>
+              <td class="wide-input">{{ customerType.ratePerUnit }}</td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-2">
                   <!-- Flex for spacing -->
@@ -242,7 +241,7 @@
 
           <div class="">
             <label for="remark" class="form-label">Remarks</label>
-            <textarea id="remarks" formControlName="remarks" rows="2" class="form-control" placeholder="add remark"></textarea>
+            <textarea id="remarks" formControlName="remark" rows="2" class="form-control" placeholder="add remark"></textarea>
           </div>
         </div>
 

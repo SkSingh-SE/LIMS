@@ -40,7 +40,7 @@ errorMessage = signal('');
           this.errorMessage.set('');
         },
         error: (err) => {
-          this.errorMessage.set(err.error);
+          this.errorMessage.set(err?.errorMessage);
           console.error('Login failed', err.message);
           this.isLoading.set(false);
         }

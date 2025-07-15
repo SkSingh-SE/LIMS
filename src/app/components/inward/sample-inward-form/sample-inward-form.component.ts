@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { basePlacements } from '@popperjs/core';
 
@@ -14,6 +14,8 @@ export class SampleInwardFormComponent implements OnInit {
   masterForm!: FormGroup;
 
   witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
+  sampleNumbers = ['25-052787', '25-052788', '25-052789', '25-052790', '25-052791'];
+  testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
   constructor(private fb: FormBuilder) { }
 
@@ -81,7 +83,8 @@ export class SampleInwardFormComponent implements OnInit {
       /* ── SAMPLES ─────────────────────────────── */
       sampleDetails: this.fb.array([]),
       sampleAdditionalDetails: this.fb.array([]),
-      planDetails: this.fb.array([]),
+      samplePlans: this.fb.array([]),
+      sampleTestPlans: this.fb.array([]),
     });
 
     /* initialise table with one contact + one sample row */
@@ -89,10 +92,33 @@ export class SampleInwardFormComponent implements OnInit {
     this.addTpiWitness();
     this.addAdditionalContact();
     this.addSample();
-    this.addAdditionalSample();
 
-    this.addPlan();
-    this.addPlan();
+    // Initialize Additional Sample Details
+    this.addAdditionalSampleRow('Sample Details');
+    // Initialize Plan Table
+    this.addPlanRow('Heat No');
+    this.addPlanRow('Batch No');
+
+    this.testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
+
+    this.sampleNumbers.forEach((sample, index) => {
+      const generalTestGroup = this.createGeneralTestGroup();
+      const productTestGroup = this.createProductTestGroup();
+      const chemicalTestGroup = this.createChemicalTestGroup();
+
+      // Add 1 method row for General & Product by default
+      (generalTestGroup.get('methods') as FormArray).push(this.createTestMethodRow(`${sample}-${index + 1}`));
+      (productTestGroup.get('methods') as FormArray).push(this.createTestMethodRow(`${sample}-${index + 1}`));
+
+      this.sampleTestPlans.push(this.fb.group({
+        sampleNo: [sample],
+        generalTests: this.fb.array([generalTestGroup]),
+        chemicalTests: this.fb.array([chemicalTestGroup]),
+        productTests: this.fb.array([productTestGroup])
+      }));
+    });
+
+
   }
   /* ---------- Time Helpers ------------------- */
   getCurrentTime(): string {
@@ -187,53 +213,158 @@ export class SampleInwardFormComponent implements OnInit {
   removeSample(i: number): void {
     this.sampleDetails.removeAt(i);
   }
-  addAdditionalSample(): void {
+
+  getAdditionSampleRowValues(rowIndex: number): FormControl[] {
+    const row = this.sampleAdditionalDetails.at(rowIndex);
+    const valuesArray = row.get('values') as FormArray;
+    return valuesArray.controls as FormControl[];
+  }
+  addAdditionalSampleRow(label: string = ''): void {
+    const valuesArray = this.fb.array(this.sampleNumbers.map(() => this.fb.control('')));
     this.sampleAdditionalDetails.push(
       this.fb.group({
-        labNo: [`Auto-${this.sampleAdditionalDetails.length + 1}`],
-        details: ['', Validators.required],
-        nature: ['', Validators.required],
-        includeIdentification: [''],
-        heatNo: [''],
-        batchNo: [''],
-        size: [''],
-      }),
-    );
-  }
-
-  get planDetails(): FormArray {
-    return this.masterForm.get('planDetails') as FormArray;
-  }
-
-  addPlan(): void {
-    this.planDetails.push(
-      this.fb.group({
-        sampleNo: ['24-003758'],
-        sampleDetails: ['abc'],
-        heatNo: ['H0239859'],
-        batchNo: [''],
-        size: [''],
-        sampleIdentification: [true],
-        includeHeatNo: [true],
-        includeBatchNo: [false],
-        includeSize: [false],
-        parameters: this.fb.array([this.fb.control('')]), // multiple parameters
+        label: [label],
+        enabled: [false], // ← checkbox control
+        values: valuesArray
       })
     );
   }
 
-  getParametersArray(index: number): FormArray {
-    return this.planDetails.at(index).get('parameters') as FormArray;
+
+  // --- 🔷 Dynamic Plan Section Logic ---
+  get samplePlans(): FormArray {
+    return this.masterForm.get('samplePlans') as FormArray;
   }
 
-  addParameter(index: number): void {
-    this.getParametersArray(index).push(this.fb.control(''));
+
+  addPlanRow(label: string = ''): void {
+    const valuesArray = this.fb.array(this.sampleNumbers.map(() => this.fb.control('')));
+    this.samplePlans.push(this.fb.group({ enabled:[false], label: [label], values: valuesArray }));
   }
 
-  removeParameter(index: number, paramIndex: number): void {
-    this.getParametersArray(index).removeAt(paramIndex);
+  insertPlanRow(afterIndex: number): void {
+    const newRow = this.fb.group({
+      label: ['New Property'],
+      values: this.fb.array(this.sampleNumbers.map(() => this.fb.control('')))
+    });
+    this.samplePlans.insert(afterIndex + 1, newRow);
   }
 
+  getPlanRowValues(rowIndex: number): FormControl[] {
+    const row = this.samplePlans.at(rowIndex);
+    const valuesArray = row.get('values') as FormArray;
+    return valuesArray.controls as FormControl[];
+  }
+
+
+  get sampleTestPlans(): FormArray {
+    return this.masterForm.get('sampleTestPlans') as FormArray;
+  }
+
+  getTestArray(i: number, type: 'generalTests' | 'chemicalTests' | 'productTests'): FormArray {
+    return this.sampleTestPlans.at(i).get(type) as FormArray;
+  }
+
+  getGeneralOrProductTestSection(i: number, type: 'generalTests' | 'productTests'): FormGroup {
+    return (this.sampleTestPlans.at(i).get(type) as FormArray).at(0) as FormGroup;
+  }
+
+  getMethodRows(i: number, type: 'generalTests' | 'productTests'): FormArray {
+    const sectionArray = this.sampleTestPlans.at(i).get(type) as FormArray;
+    if (!sectionArray || sectionArray.length === 0) return this.fb.array([]);
+    const section = sectionArray.at(0) as FormGroup;
+    return section.get('methods') as FormArray;
+  }
+
+  addMethodRow(i: number, type: 'generalTests' | 'productTests'): void {
+    const sampleNo = this.sampleTestPlans.at(i).get('sampleNo')?.value;
+    this.getMethodRows(i, type).push(this.createTestMethodRow(`${sampleNo}-${i + 1}`));
+  }
+
+  createTestMethodRow(incrementSample: String | null): FormGroup {
+    return this.fb.group({
+      testMethod: [''],
+      alternateMethod: [''],
+      quantity: ['1'],
+      reportNo: [''],
+      ulrNo: [incrementSample ? incrementSample : ''],
+      cancel: [false]
+    });
+  }
+
+  asFormGroup(ctrl: AbstractControl | null): FormGroup {
+    return ctrl as FormGroup;
+  }
+
+  // 🔧 Add Test Blocks
+  addTestBlock(i: number, type: 'generalTests' | 'chemicalTests' | 'productTests'): void {
+    const array = this.getTestArray(i, type);
+
+    switch (type) {
+      case 'generalTests':
+        array.push(this.createGeneralTestGroup());
+        break;
+
+      case 'chemicalTests':
+        array.push(this.createChemicalTestGroup());
+        break;
+
+      case 'productTests':
+        array.push(this.createProductTestGroup());
+        break;
+    }
+  }
+
+  createGeneralTestGroup(): FormGroup {
+    return this.fb.group({
+      specification1: [''],
+      specification2: [''],
+      parameter: [''],
+      methods: this.fb.array([])
+    });
+  }
+
+  createChemicalTestGroup(): FormGroup {
+    const testTypesGroup: { [key: string]: FormControl } = {};
+    this.testTypeList.forEach(type => {
+      testTypesGroup[type] = this.fb.control(false);
+    });
+
+    return this.fb.group({
+      testTypes: this.fb.group(testTypesGroup),
+      base: [''],
+      specification1: [''],
+      specification2: [''],
+      testMethod: [''],
+      elements: this.fb.array([])
+    });
+  }
+
+  createProductTestGroup(): FormGroup {
+    return this.fb.group({
+      specification1: [''],
+      specification2: [''],
+      parameter: [''],
+      methods: this.fb.array([])
+    });
+  }
+  getElementRows(i: number): FormArray {
+    return this.getTestArray(i, 'chemicalTests').at(0).get('elements') as FormArray;
+  }
+
+  addElementRow(i: number): void {
+    this.getElementRows(i).push(this.fb.group({
+      element: [''],
+      selected: [false]
+    }));
+  }
+
+  removeElementRow(i: number, j: number): void {
+    this.getElementRows(i).removeAt(j);
+  }
+
+
+  // ---------- File Handling (Unchanged) ----------
 
   uploadedFile: File | null = null;
 

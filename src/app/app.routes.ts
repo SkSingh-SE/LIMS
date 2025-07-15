@@ -44,7 +44,6 @@ import { OEMFormComponent } from './components/equipment/oem-form/oem-form.compo
 import { OemListComponent } from './components/equipment/oem-list/oem-list.component';
 import { EquipmentFormComponent } from './components/equipment/equipment-form/equipment-form.component';
 import { EquipmentListComponent } from './components/equipment/equipment-list/equipment-list.component';
-import { InvoiceCaseConfigurationComponent } from './components/test/invoice-case-configuration/invoice-case-configuration.component';
 import { InvoiceCaseConfigurationsComponent } from './components/test/invoice-case-configurations/invoice-case-configurations.component';
 import { InvoiceCaseListComponent } from './components/test/invoice-case-list/invoice-case-list.component';
 import { CalibrationAgencyFormComponent } from './components/equipment/calibration-agency-form/calibration-agency-form.component';
@@ -54,6 +53,10 @@ import { CuttingSampleFormComponent } from './components/sample-prepration/cutti
 import { MachiningChallanComponent } from './components/sample-prepration/machining-challan/machining-challan.component';
 import { SamplePlanFormComponent } from './components/inward/sample-plan-form/sample-plan-form.component';
 import { SampleInwardFormComponent } from './components/inward/sample-inward-form/sample-inward-form.component';
+import { ConfigManagerComponent } from './components/configuration/configuration.component';
+import { MenuManagementComponent } from './components/menu/menu-management/menu-management.component';
+import { MenuManagementListComponent } from './components/menu/menu-management-list/menu-management-list.component';
+import { RoleFormComponent } from './components/role/role-form/role-form.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -128,9 +131,6 @@ export const routes: Routes = [
             { path: 'equipment/edit/:id', component: EquipmentFormComponent },
             { path: 'equipment/details/:id', component: EquipmentFormComponent },
             { path: 'invoice-case-config', component: InvoiceCaseConfigurationsComponent },
-            { path: 'invoice-case-config/create', component: InvoiceCaseConfigurationComponent },
-            { path: 'invoice-case-config/edit/:id', component: InvoiceCaseConfigurationComponent },
-            { path: 'invoice-case-config/details/:id', component: InvoiceCaseConfigurationComponent },
             { path: 'invoice-case', component: InvoiceCaseListComponent },
             { path: 'invoice-case/create', component: InvoiceCaseComponent },
             { path: 'invoice-case/edit/:id', component: InvoiceCaseComponent },
@@ -144,6 +144,12 @@ export const routes: Routes = [
             { path: 'sample/machining', component:MachiningChallanComponent},
             { path: 'sample/plan', component:SamplePlanFormComponent},
             { path: 'sample/inward', component:SampleInwardFormComponent},
+            { path: 'config', component:ConfigManagerComponent },
+            { path: 'menu', component: MenuManagementListComponent},
+            { path: 'role', component: RoleFormComponent},
+            { path: 'menu/create', component: MenuManagementComponent },
+            { path: 'menu/edit/:id', component: MenuManagementComponent },
+            { path: 'menu/details/:id', component: MenuManagementComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

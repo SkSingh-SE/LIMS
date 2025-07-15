@@ -9,7 +9,7 @@
         <div class="d-flex w-100 navbar-background">
             <!-- Menu Section -->
             <div class="menu-container d-flex mx-2">
-                <div *ngFor="let menu of menuItems" class="menu-item header-font" (click)="openSubMenu(menu)" 
+                <div *ngFor="let menu of menuItems" class="menu-item header-font" (click)="openSubMenu(menu)"
                     [ngClass]="{'active': activeMenu() === menu.title}">
                     <div class="d-flex gap-2 align-items-center">
                         <i class=" bi " [class]="menu.icon"></i>

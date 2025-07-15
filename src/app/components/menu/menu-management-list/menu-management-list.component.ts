@@ -2,29 +2,28 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
-import { ToastService } from '../../../services/toast.service';
+import { MenuService } from '../../../services/menu.service';
 
 @Component({
-  selector: 'app-invoice-case-configuration-list',
+  selector: 'app-menu-management-list',
   imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './invoice-case-configuration-list.component.html',
-  styleUrl: './invoice-case-configuration-list.component.css'
+  templateUrl: './menu-management-list.component.html',
+  styleUrl: './menu-management-list.component.css'
 })
-export class InvoiceCaseConfigurationListComponent implements OnInit {
+export class MenuManagementListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Invoice Case Name', filter: true },
-    { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
-    { key: 'value', type: 'string', label: 'Value', filter: true },
+    { key: 'title', type: 'string', label: 'Title', filter: true },
+    { key: 'isExpanded', type: 'string', label: 'Children', filter: true },
+    { key: 'route', type: 'string', label: 'Route', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
-    aliasName: 'string',
-    value: 'string'
+    title: 'string',
+    isExpanded: 'string',
+    route: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -35,7 +34,8 @@ export class InvoiceCaseConfigurationListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  labTestList: any[] = [];
+  // materialSpecificationListForm: FormGroup;
+  listData: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -56,8 +56,9 @@ export class InvoiceCaseConfigurationListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private invoiceCaseConfig: InvoiceCaseConfigurationService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private menuService: MenuService) {
   }
+
 
   ngOnInit() {
     this.fetchData();
@@ -65,17 +66,17 @@ export class InvoiceCaseConfigurationListComponent implements OnInit {
 
   fetchData() {
 
-    this.invoiceCaseConfig.getAllInvoiceCaseConfigs(this.payload).subscribe({
+    this.menuService.getAllMenus(this.payload).subscribe({
       next: (response) => {
-        this.labTestList = response?.items || [];
+        this.listData = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error fetching list:', error);
-        this.labTestList = [];
+        console.error('Error fetching designations:', error);
+        this.listData = [];
         this.isLoading.set(false);
       }
 
@@ -192,21 +193,6 @@ export class InvoiceCaseConfigurationListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
-  }
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.invoiceCaseConfig.deleteInvoiceCaseConfig(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
   }
 
 }

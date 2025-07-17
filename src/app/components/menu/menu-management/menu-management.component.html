@@ -33,7 +33,7 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between">
           <strong>Submenus</strong>
-          <button class="btn btn-sm btn-outline-danger-600" type="button" (click)="addSubmenu(submenuArray)">
+          <button *ngIf="!isViewMode" class="btn btn-sm btn-outline-danger-600" type="button" (click)="addSubmenu(submenuArray)">
             <i class="bi bi-plus-circle-dotted"></i> Add Submenu</button>
         </div>
         <div class="card-body">
@@ -47,8 +47,8 @@
       </div>
 
       <!-- Submit Button -->
-      <div class="mt-4 d-flex justify-content-end gap-2">
-        <button class="btn btn-warning" type="button" (click)="menuForm.reset()">Reset</button>
+      <div *ngIf="!isViewMode" class="mt-4 d-flex justify-content-end gap-2">
+        <button [routerLink]="['/menu']" class="btn btn-warning" type="button" >Cancel</button>
         <button class="btn btn-success px-3" type="submit">Save</button>
       </div>
     </form>
@@ -69,7 +69,7 @@
         <div class="col-md-3">
           <input type="color" class="form-control form-control-color" formControlName="color" />
         </div>
-        <div class="col-md-3 d-flex align-items-center">
+        <div *ngIf="!isViewMode" class="col-md-3 d-flex align-items-center">
           <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeSubmenu(submenuArray, i)">Remove</button>
         </div>
       </div>
@@ -77,7 +77,7 @@
       <!-- Recursive Nested Submenus -->
       <div class="ms-3 mt-2" formArrayName="submenu">
         <ng-container *ngTemplateOutlet="submenuTemplate; context: { submenuArray: getSubmenuArray(sub) }"></ng-container>
-        <button class="btn btn-sm btn-outline-secondary mt-2" type="button" (click)="addSubmenu(getSubmenuArray(sub))">
+        <button *ngIf="!isViewMode" class="btn btn-sm btn-outline-secondary mt-2" type="button" (click)="addSubmenu(getSubmenuArray(sub))">
           Add Nested Submenu
         </button>
       </div>

@@ -1,13 +1,16 @@
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { RoleService } from '../../../services/role.service';
 import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
+import { MenuService } from '../../../services/menu.service';
+import { Observable } from 'rxjs';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-role-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
   templateUrl: './role-form.component.html',
   styleUrl: './role-form.component.css'
 })
@@ -18,15 +21,15 @@ export class RoleFormComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'keyName', type: 'string', label: 'Key', filter: true },
-    { key: 'groupName', type: 'string', label: 'Group Name', filter: true },
-    { key: 'value', type: 'string', label: 'Value', filter: true },
+    { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'description', type: 'string', label: 'Description', filter: true },
+    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    keyName: 'string',
-    groupName: 'string',
-    value: 'string'
+    name: 'string',
+    description: 'string',
+    createdOn: 'date'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -63,22 +66,39 @@ export class RoleFormComponent implements OnInit {
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   roleId: number = 0;
-  formTitle = 'Configuration Form';
+  formTitle = 'Role Form';
+  
+  menuItems = [
+    { id: 1, name: 'Administration', parentId: null },
+    { id: 2, name: 'Employee Master', parentId: 1 },
+    { id: 3, name: 'Department Master', parentId: 1 },
+    { id: 4, name: 'Specification', parentId: null },
+    { id: 5, name: 'Heat Treatment', parentId: 4 },
+    { id: 6, name: 'Material Specification', parentId: 4 },
+    { id: 7, name: 'Customer', parentId: null },
+    { id: 8, name: 'Customer Master', parentId: 7 }
+  ];
+  groupedMenuItems: any[] = [];
 
-  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService) {
 
   }
 
   ngOnInit() {
     this.initForm();
     this.fetchData();
+
+    this.fetchMenuDropdown()
+
   }
 
   initForm() {
     this.roleForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      description: ['']
+      description: [''],
+      menuIDs: [[]],
+      menuItems: this.fb.array([]),
     });
   }
   fetchData() {
@@ -109,6 +129,13 @@ export class RoleFormComponent implements OnInit {
             name: res.name,
             description: res.description,
           });
+          if(res.menuItems && res.menuItems.length > 0){
+            const menuIds = res.menuItems.map((item: any) => item.menuID);
+            this.roleForm.patchValue({
+              menuIDs: menuIds,
+              menuItems: res.menuItems
+            });
+          }
         }
       },
       error: err => {
@@ -280,7 +307,15 @@ export class RoleFormComponent implements OnInit {
   onSubmit(): void {
     if (this.roleForm.valid) {
       const payload = this.roleForm.getRawValue();
-      payload.value = payload.values.map((a: any) => a).join('|');
+      const roleId = payload.id;
+
+      // Transform menuIDs into menuItems[]
+      const menuItems = payload.menuIDs.map((menuId: number) => ({
+        id: 0,                // or undefined/null if new
+        roleId: roleId,
+        menuId: menuId
+      }));
+      payload.menuItems = menuItems;
 
 
       const saveFn = this.roleId > 0
@@ -306,6 +341,31 @@ export class RoleFormComponent implements OnInit {
     return item.label;
   }
 
+  fetchMenuDropdown() {
+    this.menuService.getMenuDropdown("", 0, 100).subscribe((res: any) => {
+      this.menuItems = res;
+          this.groupMenuItems();
+    });
+  }
+
+
+
+
+
+  groupMenuItems() {
+    const grouped: any[] = [];
+    const parents = this.menuItems.filter(m => m.parentId === null);
+    for (const parent of parents) {
+      const children = this.menuItems.filter(m => m.parentId === parent.id);
+      for (const child of children) {
+        grouped.push({
+          ...child,
+          group: parent.name
+        });
+      }
+    }
+    this.groupedMenuItems = grouped;
+  }
 
 
 }

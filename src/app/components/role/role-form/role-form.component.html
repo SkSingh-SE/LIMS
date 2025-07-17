@@ -52,9 +52,9 @@
           <tbody>
             <tr *ngFor="let item of roleList; let i = index" class="text-sm">
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ item.keyName }}</td>
-              <td>{{ item.groupName }}</td>
-              <td>{{ item.value }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.createdOn | date: 'MMM dd, yyyy' }}</td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-2">
                   <!-- Flex for spacing -->
@@ -184,7 +184,7 @@
               type="text"
               class="form-control"
               formControlName="name"
-              placeholder="Enter key name"
+              placeholder="Enter name"
               maxlength="50"
               [ngClass]="{ 'is-invalid': roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty) }"
             />
@@ -197,10 +197,36 @@
             </div>
           </div>
           <!-- Description -->
-            <div class="col">
-              <label class="form-label">Description</label>
-              <textarea class="form-control" rows="2" formControlName="description" placeholder="Enter description"></textarea>
-            </div>
+          <div class="col">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" rows="2" formControlName="description" placeholder="Enter description"></textarea>
+          </div>
+          <div>
+            <label class="form-label">Select Menus</label>
+            <ng-select
+              [items]="groupedMenuItems"
+              [multiple]="true"
+              bindLabel="name"
+              bindValue="id"
+              groupBy="group"
+              [closeOnSelect]="false"
+              formControlName="menuIDs"
+              placeholder="Select menus"
+            >
+              <!-- Group Label Template -->
+              <ng-template ng-optgroup-tmp let-item="item">
+                <strong>{{ item.group }}</strong>
+              </ng-template>
+
+              <!-- Option with Checkbox -->
+              <ng-template ng-option-tmp let-item="item">
+                <span class="form-check">
+                    <input type="checkbox" class="form-check-input mt-1" [checked]="roleForm.get('menuIDs')?.value?.includes(item.id)" />
+                    {{ item.name }}
+                </span>
+              </ng-template>
+            </ng-select>
+          </div>
         </div>
 
         <!-- Modal Footer -->

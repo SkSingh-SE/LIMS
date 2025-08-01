@@ -57,6 +57,8 @@ import { ConfigManagerComponent } from './components/configuration/configuration
 import { MenuManagementComponent } from './components/menu/menu-management/menu-management.component';
 import { MenuManagementListComponent } from './components/menu/menu-management-list/menu-management-list.component';
 import { RoleFormComponent } from './components/role/role-form/role-form.component';
+import { UserPermissionComponent } from './components/employee/user-permission/user-permission.component';
+import { MenuPermissionComponent } from './components/menu/menu-permission/menu-permission.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -146,10 +148,12 @@ export const routes: Routes = [
             { path: 'sample/inward', component:SampleInwardFormComponent},
             { path: 'config', component:ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent},
+            { path: 'menu-permission', component: MenuPermissionComponent},
             { path: 'role', component: RoleFormComponent},
             { path: 'menu/create', component: MenuManagementComponent },
             { path: 'menu/edit/:id', component: MenuManagementComponent },
             { path: 'menu/details/:id', component: MenuManagementComponent },
+            { path: 'user-permission', component: UserPermissionComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

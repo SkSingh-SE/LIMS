@@ -71,8 +71,11 @@ export class SearchableDropdownComponent {
     if (changes['selectedItem'] && changes['selectedItem'].currentValue) {
       const matched = this.dropdownData.find(x => x.id === this.selectedItem);
       if (matched) {
-        this.selectedLabel = matched.name;
-        this.selectItem(matched);
+        if(this.selectedLabel.length === 0) {
+          this.selectedLabel = matched.name;
+          this.selectItem(matched);
+        }
+        
       } else {
         this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
           const found = data.find(x => x.id === this.selectedItem);

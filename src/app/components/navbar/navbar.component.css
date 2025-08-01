@@ -19,7 +19,7 @@
     padding: 10px 0;
     display: flex;
     flex-wrap: nowrap; /* Prevents wrapping */
-    justify-content: flex-start; /* Align items to start */
+    justify-content: space-evenly; /* Align items to start */
     gap: 10px; /* Adds spacing between menu items */
     overflow-x: auto; /* Enables horizontal scrolling */
     white-space: nowrap; /* Prevents text from wrapping */
@@ -72,9 +72,10 @@
     font-size: 5px !important;
     font-family: 'Poppins', sans-serif;
     font-weight: 500;
-    padding: 5px 5px;
+    padding: 2px 2px;
     transition: background 0.3s ease-in-out, color 0.3s;
     cursor: pointer;
+    margin: 0 1px;
 }
 
 /* Hover and Active State */
@@ -89,6 +90,13 @@
 /* Hover and Active State */
 .menu-container .menu-item:hover,
 .menu-container .menu-item.active {
+    background-color: rgba(255, 255, 255, 0.92);
+    border-radius: 5px;
+    color: black;
+}
+
+.menu2-container .menu2-item:hover,
+.menu2-container .menu2-item.active {
     background-color: rgba(255, 255, 255, 0.92);
     border-radius: 5px;
     color: black;

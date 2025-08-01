@@ -1,35 +1,30 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
-import { RoleService } from '../../../services/role.service';
 import { ToastService } from '../../../services/toast.service';
-import { CommonModule } from '@angular/common';
 import { MenuService } from '../../../services/menu.service';
 import { Observable } from 'rxjs';
-import { NgSelectModule } from '@ng-select/ng-select';
+import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 
 @Component({
-  selector: 'app-role-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
-  templateUrl: './role-form.component.html',
-  styleUrl: './role-form.component.css'
+  selector: 'app-menu-permission',
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownModalComponent],
+  templateUrl: './menu-permission.component.html',
+  styleUrl: './menu-permission.component.css'
 })
-export class RoleFormComponent implements OnInit {
+export class MenuPermissionComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'title', type: 'string', label: 'Title', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
-    description: 'string',
-    createdOn: 'date'
+    title: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -40,7 +35,7 @@ export class RoleFormComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  roleList: any[] = [];
+  permissionList: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -62,12 +57,12 @@ export class RoleFormComponent implements OnInit {
   };
 
   // form
-  roleForm!: FormGroup;
+  permissionForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
-  roleId: number = 0;
-  formTitle = 'Role Form';
-  
+  menuId: number = 0;
+  formTitle = 'Permission Form';
+
   menuItems = [
     { id: 1, name: 'Administration', parentId: null },
     { id: 2, name: 'Employee Master', parentId: 1 },
@@ -80,7 +75,7 @@ export class RoleFormComponent implements OnInit {
   ];
   groupedMenuItems: any[] = [];
 
-  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService) {
+  constructor(private fb: FormBuilder, private toastService: ToastService, private menuService: MenuService) {
 
   }
 
@@ -88,23 +83,37 @@ export class RoleFormComponent implements OnInit {
     this.initForm();
     this.fetchData();
 
-    this.fetchMenuDropdown()
-
   }
-
+// Form Initiated
   initForm() {
-    this.roleForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required],
-      description: [''],
-      menuIDs: [[]],
-      menuItems: this.fb.array([]),
+    this.permissionForm = this.fb.group({
+      menuId: ['', Validators.required],
+      permissions: this.fb.array([]),
     });
   }
+  get permissionsArray() {
+    return this.permissionForm.get('permissions') as FormArray;
+  }
+  addPermission() {
+    const permissionGroup = this.fb.group({
+      id: [0],
+      name: ['', Validators.required],
+      displayName: ['', Validators.required],
+      menuID: [0],
+      description: [''],
+      type: [''],
+    });
+    this.permissionsArray.push(permissionGroup);
+  }
+  removePermission(index: number) {
+    this.permissionsArray.removeAt(index);
+  }
+
+  // calling list api
   fetchData() {
-    this.roleService.getAllRoles(this.payload).subscribe({
+    this.menuService.getAllSubMenus(this.payload).subscribe({
       next: (response) => {
-        this.roleList = response?.items || [];
+        this.permissionList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
@@ -112,7 +121,7 @@ export class RoleFormComponent implements OnInit {
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-        this.roleList = [];
+        this.permissionList = [];
         this.isLoading.set(false);
       }
     }
@@ -121,20 +130,24 @@ export class RoleFormComponent implements OnInit {
 
 
   getDetails(): void {
-    this.roleService.getRoleById(this.roleId).subscribe({
+    this.menuService.getPermissions(this.menuId).subscribe({
       next: (res: any) => {
         if (res) {
-          this.roleForm.patchValue({
-            id: res.id,
-            name: res.name,
-            description: res.description,
+          this.permissionForm.patchValue({
+            menuId: this.menuId
           });
-          if(res.menuItems && res.menuItems.length > 0){
-            const menuIds = res.menuItems.map((item: any) => item.menuID);
-            this.roleForm.patchValue({
-              menuIDs: menuIds,
-              menuItems: res.menuItems
-            });
+
+          if(res.length > 0){
+            res.map((permission: any) => {
+              this.permissionsArray.push(this.fb.group({
+                id: permission.id,
+                name: permission.name,
+                displayName: permission.displayName,
+                menuID: permission.menuID,
+                description: permission.description,
+                type: permission.type
+              }))
+            })
           }
         }
       },
@@ -258,7 +271,7 @@ export class RoleFormComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.roleService.deleteRole(id).subscribe({
+      this.menuService.deleteMenu(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
@@ -271,27 +284,27 @@ export class RoleFormComponent implements OnInit {
   }
   openModal(type: string, id: number): void {
     if (id > 0) {
-      this.roleId = id;
+      this.menuId = id;
       this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.formTitle = 'Role Form';
-      this.roleForm.enable();
+      this.formTitle = 'Permission Form';
+      this.permissionForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Role Form';
-      this.roleForm.enable();
+      this.formTitle = 'Permission Form';
+      this.permissionForm.enable();
 
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Role';
-      this.roleForm.disable();
+      this.formTitle = 'View Permission';
+      this.permissionForm.disable();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -299,32 +312,17 @@ export class RoleFormComponent implements OnInit {
   }
 
   closeModal(): void {
-    this.roleForm.reset();
+    this.initForm();
     if (this.bsModal) {
       this.bsModal.hide();
     }
   }
 
   onSubmit(): void {
-    if (this.roleForm.valid) {
-      const payload = this.roleForm.getRawValue();
-      const roleId = payload.id;
-
-      // Transform menuIDs into menuItems[]
-      const menuItems = payload.menuIDs.map((menuId: number) => ({
-        id: 0,                // or undefined/null if new
-        roleId: roleId,
-        menuId: menuId
-      }));
-      payload.menuItems = menuItems;
-
-
-      const saveFn = this.roleId > 0
-        ? this.roleService.updateRole
-        : this.roleService.createRole;
-
-
-      saveFn.call(this.roleService, payload).subscribe({
+    if (this.permissionForm.valid) {
+      const payload = this.permissionForm.getRawValue();
+      const updatedPermissions = payload.permissions;
+      this.menuService.updatePermission(this.menuId, updatedPermissions).subscribe({
         next: (res: any) => {
           this.toastService.show(res.message, 'success');
           this.closeModal();
@@ -334,7 +332,7 @@ export class RoleFormComponent implements OnInit {
         error: (err: any) => this.toastService.show(err.error.message, 'error')
       });
     } else {
-      this.roleForm.markAllAsTouched();
+      this.permissionForm.markAllAsTouched();
     }
   }
 
@@ -342,32 +340,12 @@ export class RoleFormComponent implements OnInit {
     return item.label;
   }
 
-  fetchMenuDropdown() {
-    this.menuService.getMenuDropdown("", 0, 100).subscribe((res: any) => {
-      this.menuItems = res;
-          this.groupMenuItems();
-    });
+  getMenus = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.menuService.getSubMenuDropdown(term, page, pageSize);
+  };
+  onMenuSelected(item: any) {
+    this.permissionForm.patchValue({ menuId: item.id });
   }
-
-
-
-
-
-  groupMenuItems() {
-    const grouped: any[] = [];
-    const parents = this.menuItems.filter(m => m.parentId === null);
-    for (const parent of parents) {
-      const children = this.menuItems.filter(m => m.parentId === parent.id);
-      for (const child of children) {
-        grouped.push({
-          ...child,
-          group: parent.name
-        });
-      }
-    }
-    this.groupedMenuItems = grouped;
-  }
-
 
 }
 

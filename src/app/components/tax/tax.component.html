@@ -93,7 +93,6 @@
                     <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
                   </select>
                 </div>
-              
                 <!-- Pagination Controls -->
                 <ul class="pagination mb-0 d-flex align-items-center">
                   <li class="page-item" [class.disabled]="pageNumber === 1">
@@ -102,8 +101,8 @@
                   <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
                     <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
                   </li>
-                  <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                    <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+                  <li class="page-item" [class.disabled]="totalPages.length == 0 || pageNumber === totalPages.length">
+                    <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a> 
                   </li>
                 </ul>
               </div>

@@ -1,112 +1,128 @@
-<nav #navbar class=" navbar-expand-lg  fixed-top border-bottom shadow-sm">
-    <div class="d-flex w-100  nav-content bg-white">
-        <!-- Logo -->
-        <div class="w-auto border-end  px-2">
-            <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
-                <img src="LIMS.png" alt="Logo" width="50" height="40">
-            </a>
-        </div>
-        <div class="d-flex w-100 navbar-background">
-            <!-- Menu Section -->
-            <div class="menu-container d-flex mx-2">
-                <div *ngFor="let menu of menuItems" class="menu-item header-font" (click)="openSubMenu(menu)"
-                    [ngClass]="{'active': activeMenu() === menu.title}">
-                    <div class="d-flex gap-2 align-items-center">
-                        <i class=" bi " [class]="menu.icon"></i>
-                        <span class=""> {{ menu.title }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Section -->
-            <div class="d-flex gap-2 float-end align-items-center me-0">
-                <!-- Down Arrow Icon -->
-                <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" 
-                    (click)="menuOpenClose()">
-                    <i class="bi "
-                        [ngClass]="{'rotate-up bi-chevron-up' : !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open()}"></i>
-                </button>
-
-                <!-- Notification Dropdown -->
-                <div class="dropdown">
-                    <button class="btn btn-light position-relative rounded-circle h-auto" type="button"
-                        id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-bell"></i>
-                        <span
-                            class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end mt-2 p-2 shadow" aria-labelledby="notificationDropdown"
-                        style="width: 300px;">
-                        <li class="dropdown-header fw-bold">Notifications</li>
-                        <li *ngFor="let notification of notifications">
-                            <a class="dropdown-item d-flex align-items-start gap-2 p-2" href="#">
-                                <img src="{{notification.userImg}}" alt="User" class="rounded-circle" width="40"
-                                    height="40">
-                                <div>
-                                    <div class="fw-bold">{{ notification.userName }}</div>
-                                    <div class="text-muted small">{{ notification.message }}</div>
-                                    <div class="text-muted small">{{ notification.time }}</div>
-                                </div>
-                            </a>
-                        </li>
-                        <li *ngIf="notifications.length === 0">
-                            <p class="text-center text-muted p-2">No new notifications</p>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- User Profile Dropdown -->
-                <div class=" me-2">
-                    <button class="btn position-relative rounded-circle h-auto border-0 p-0" type="button"
-                        id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="user-avatar.png" alt="Logo" width="40" height="40">
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end mt-2 p-2 shadow" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item btn" (click)="logout()">Logout</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+<nav #navbar class="navbar-expand-lg fixed-top border-bottom shadow-sm">
+  <div class="d-flex w-100 nav-content navbar-background">
+    <!-- Logo -->
+    <div class="w-auto border-end bg-white px-2">
+      <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
+        <img src="LIMS.png" alt="Logo" width="50" height="40" />
+      </a>
     </div>
-    @if(menu2Items !== null){
-    <div class="collapse w-100" [ngClass]="{'show': isMenu2Open()}" id="menu2">
+    <div class="flex-grow-1 d-flex align-items-center">
+      <!-- Menu Section -->
+      <div class="menu-container d-flex mx-2">
         <div
-            class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start  bg-dark-subtle">
-            <div *ngFor="let menu of menu2Items" class="menu2-item header-font" (click)="openSubMenu(menu)"
-                [ngClass]="{'active': activeMenu() === menu.title}">
-                <div class="d-flex gap-2 align-items-center text-black">
-                    <i class=" bi " [class]="menu.icon"></i>
-                    <span class="">{{ menu.title }}</span>
-                </div>
-
-            </div>
+          *ngFor="let menu of menuItems"
+          class="menu-item header-font"
+          (click)="openSubMenu(menu)"
+          [ngClass]="{ active: activeMenu() === menu.title }"
+        >
+          <div class="d-flex gap-2 align-items-center">
+            <i class="bi" [class]="menu.icon"></i>
+            <span class="">{{ menu.title }}</span>
+          </div>
         </div>
+      </div>
     </div>
-    }
-    @if(subMenus().length > 0 && isSubMenuOpen()){
-    <div class="card card-body flex-row submenu-container" (mouseleave)="closeSubMenu()">
-        <div *ngFor="let subMenuItem of subMenus()" class="submenu-item px-2 " (click)="setActiveSubMenu(subMenuItem)"
-            [ngClass]="{'active': activeSubmenu() === subMenuItem.title}">
-            
-            @if(subMenuItem.submenu){
-                <div class="dropdown p-0">
-                    <div class="btn dropdown-toggle p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="header-font m-0 p-0">{{ subMenuItem.title }}</span>
-                    </div>
-                    <ul class="dropdown-menu ">
-                      <li *ngFor="let nestedSubMenu of subMenuItem.submenu" class="px-2 py-2"><span class="header-font m-0 p-0">{{ nestedSubMenu.title }}</span></li>
-                    </ul>
-                  </div>
-            }@else{
-                <a [routerLink]="subMenuItem.route" class="page-link"><span class="header-font m-0 p-0"> {{ subMenuItem.title }}</span></a>
-            }
-        </div>
-    </div>
+    <!-- Right Section -->
+    <div class="d-flex align-items-center gap-2 me-2">
+      <!-- Down Arrow Icon -->
+      <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
+        <i class="bi" [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
+      </button>
 
-    }
+      <!-- Notification Dropdown -->
+      <div class="dropdown">
+        <button
+          class="btn btn-light position-relative rounded-circle h-auto"
+          type="button"
+          id="notificationDropdown"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="bi bi-bell"></i>
+          <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end mt-2 p-2 shadow" aria-labelledby="notificationDropdown" style="width: 300px">
+          <li class="dropdown-header fw-bold">Notifications</li>
+          <li *ngFor="let notification of notifications">
+            <a class="dropdown-item d-flex align-items-start gap-2 p-2" href="#">
+              <img src="{{ notification.userImg }}" alt="User" class="rounded-circle" width="40" height="40" />
+              <div>
+                <div class="fw-bold">{{ notification.userName }}</div>
+                <div class="text-muted small">{{ notification.message }}</div>
+                <div class="text-muted small">{{ notification.time }}</div>
+              </div>
+            </a>
+          </li>
+          <li *ngIf="notifications.length === 0">
+            <p class="text-center text-muted p-2">No new notifications</p>
+          </li>
+        </ul>
+      </div>
+
+      <!-- User Profile Dropdown -->
+      <div class="me-2">
+        <button
+          class="btn position-relative rounded-circle h-auto border-0 p-0"
+          type="button"
+          id="userDropdown"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <img src="user-avatar.png" alt="Logo" width="40" height="40" />
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end mt-2 p-2 shadow" aria-labelledby="userDropdown">
+          <li><a class="dropdown-item" href="#">Profile</a></li>
+          <li><a class="dropdown-item" href="#">Settings</a></li>
+          <li>
+            <hr class="dropdown-divider" />
+          </li>
+          <li><a class="dropdown-item btn" (click)="logout()">Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  @if(menu2Items !== null){
+  <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2">
+    <div class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-around bg-theme">
+      <div
+        *ngFor="let menu of menu2Items"
+        class="menu2-item header-font"
+        (click)="openSubMenu(menu)"
+        [ngClass]="{ active: activeMenu() === menu.title }"
+      >
+        <div class="d-flex gap-2 align-items-center">
+          <i class="bi" [class]="menu.icon"></i>
+          <span class="">{{ menu.title }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  } @if(subMenus().length > 0 && isSubMenuOpen()){
+  <div class="card card-body flex-row submenu-container" (mouseleave)="closeSubMenu()">
+    <div
+      *ngFor="let subMenuItem of subMenus()"
+      class="submenu-item"
+      (click)="setActiveSubMenu(subMenuItem)"
+      [ngClass]="{ active: activeSubmenu() === subMenuItem.title }"
+    >
+      @if(subMenuItem.submenu){
+      <div class="dropdown p-0">
+        <div class="btn dropdown-toggle p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="header-font m-0 p-0">{{ subMenuItem.title }}</span>
+        </div>
+        <ul class="dropdown-menu">
+          <li *ngFor="let nestedSubMenu of subMenuItem.submenu" class="px-2 py-2">
+            <span class="label-font m-0 p-0">{{ nestedSubMenu.title }}</span>
+          </li>
+        </ul>
+      </div>
+      }@else{
+      <a [routerLink]="subMenuItem.route" class="page-link">
+        <span class="label-font m-0 p-0">{{ subMenuItem.title }}</span>
+      </a>
+      }
+    </div>
+  </div>
+
+  }
 </nav>

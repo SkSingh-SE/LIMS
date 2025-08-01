@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
-import { basePlacements } from '@popperjs/core';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -31,7 +29,6 @@ export class SampleInwardFormComponent implements OnInit {
         country: ['India'],
         gstNo: [''],
         gstNotApplicable: [false],
-        customerType: ['Walk In'],
         email: [false],
         whatsapp: [false],
         courier: [false],

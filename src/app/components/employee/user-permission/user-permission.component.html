@@ -1,0 +1,90 @@
+<div class="">
+  <!-- User Selection -->
+  <div class="mb-2">
+    <app-searchable-dropdown
+      [placeholder]="'Search User'"
+      [labelName]="'Select User'"
+      [fetchDataFn]="getUsers"
+      (itemSelected)="onUserSelected($event)"
+      [selectedItem]="selectedUser"
+    ></app-searchable-dropdown>
+  </div>
+
+  <!-- Permissions Row -->
+  <div class="row g-2">
+    <!-- Available Permissions -->
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header bg-theme text-white text-center">
+          <label>Available Permissions</label>
+        </div>
+        <div class="card-body overflow-auto" style="max-height: 450px">
+          <form [formGroup]="allPermissionForm">
+            <div *ngFor="let group of getGroupedPermissionList(); let groupIndex = index" class="mb-1">
+              <div class="fw-semibold text-secondary">
+                <input
+                  type="checkbox"
+                  class="form-check-input d-none"
+                  [checked]="isGroupChecked(groupIndex)"
+                  (change)="onGroupCheckboxChange(groupIndex, $event)"
+                  [id]="'group-' + groupIndex"
+                />
+                <label class="form-check-label pointer" [for]="'group-' + groupIndex">{{ group[0] }}</label>
+              </div>
+              <div class="d-flex flex-column gap-1 ms-2">
+                <div *ngFor="let p of group[1]; let i = index" class="form-check">
+                  <input class="form-check-input mt-1" type="checkbox" [formControl]="getPermissionControl(groupIndex, i)" />
+                  <label class="form-check-label">{{ p.displayName }}</label>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="col-md-2 d-flex flex-column align-items-center justify-content-center gap-3">
+      <button class="btn btn-outline-danger-600 rounded-circle" (click)="moveToAssigned()" title="Assign">
+        <i class="bi bi-arrow-right-short fs-4"></i>
+      </button>
+      <button class="btn btn-outline-dark rounded-circle" (click)="moveToAvailable()" title="Remove">
+        <i class="bi bi-arrow-left-short fs-4"></i>
+      </button>
+    </div>
+
+    <!-- Assigned Permissions -->
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header bg-theme text-white text-center">
+          <label>Assigned Permissions</label>
+        </div>
+        <div class="card-body overflow-auto" style="max-height: 450px">
+          <div *ngFor="let group of getGroupedPermissionList()" class="">
+            <ng-container *ngIf="assignedPermissions[group[0]]?.length">
+              <div class="fw-semibold text-secondary">{{ group[0] }}</div>
+              <div class="d-flex flex-column gap-1 ms-2">
+                <div *ngFor="let p of assignedPermissions[group[0]]" class="form-check">
+                  <input
+                    class="form-check-input mt-1"
+                    type="checkbox"
+                    [id]="group[0] + '-' + p.displayName"
+                    [checked]="assignedPermissionSelection.has(group[0] + '-' + p.displayName)"
+                    (change)="onAssignedPermissionToggle(group[0], p.displayName, $event)"
+                  />
+                  <label class="form-check-label">{{ p.displayName }}</label>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="d-flex justify-content-end gap-2 mt-2">
+    <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+    <button type="submit" class="btn btn-success px-3">Save</button>
+  </div>
+</div>

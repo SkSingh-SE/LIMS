@@ -334,7 +334,7 @@
 
 /* === reset css start === */
 /* === reset css start === */
-*:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *)) {
+/* *:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *)) {
   all: unset;
   display: revert;
 }
@@ -656,7 +656,7 @@ th {
 th {
   text-align: left;
   font-weight: bold;
-}
+} */
 
 /* === reset css end === */
 /* === reset css end === */
@@ -12330,76 +12330,59 @@ div.dt-container .dt-paging .dt-paging-button:hover:hover, div.dt-container .dt-
 /* Table Common Css End */
 /* === table css end === */
 /* === form css start === */
-.form-select, .form-control, textarea {
-  border: 1px solid var(--input-form-light);
-  color: var(--text-primary-light) !important;
-  background-color: var(--white);
-  padding: 0.5625rem 1.25rem;
+/* Optimized Form Control and Select Styling */
+.form-control,
+.form-select,
+select {
+  font-size: 14px !important;
+  color: var(--neutral-500) !important; /* Matches #6B7280 */
+  font-weight: 400 !important;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-stroke);
+  border-radius: var(--rounded-8);
+  padding: var(--size-8) var(--size-16);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.form-select::placeholder, .form-control::placeholder, textarea::placeholder {
-  color: var(--text-secondary-light);
-  font-size: 1rem !important;
+.form-control::placeholder,
+.form-select::placeholder,
+textarea::placeholder,
+input[type="date"]::placeholder,
+select:invalid {
+  color: var(--neutral-500) !important; /* Matches #6B7280 */
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  opacity: 0.7;
 }
 
-.form-select:focus, .form-select:active, .form-control:focus, .form-control:active, textarea:focus, textarea:active {
-  box-shadow: none;
-  border-color: var(--primary-600) !important;
-  background-color: transparent;
+.form-select,
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--size-8) center;
+  background-size: var(--size-16);
+  padding-right: var(--size-32); /* Space for dropdown arrow */
+  cursor: pointer;
 }
 
-.form-select {
-  padding: 0.5625rem 1.875rem 0.5625rem 0.9375rem;
-  background-position-x: right;
+.form-control:focus,
+.form-select:focus,
+select:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  outline: none;
 }
 
-.form-select.form-select-lg {
-  height: 56px;
-  font-size: 1.125rem;
+.form-control:hover,
+.form-select:hover,
+select:hover {
+  border-color: var(--danger-500); /* #EC625C for hover */
+  background-color: var(--primary-50); /* #FDEDED for subtle hover effect */
 }
 
-/* .form-select.form-select-sm {
-  height: 40px;
-  font-size: 0.875rem;
-} */
-
-[dir=rtl] .form-select {
-  background-position-x: left;
-}
-
-/* .form-select, .form-control:not(textarea) {
-  height: 2.75rem;
-} */
-
-.form-control[type=file] {
-  line-height: 2;
-}
-
-.form-control[readonly] {
-  background-color: var(--neutral-50);
-}
-
-.form-control.form-control-lg {
-  height: 56px;
-  font-size: 1.125rem;
-}
-
-.form-control.form-control-lg[type=file] {
-  line-height: 2.1;
-}
-
-/* .form-control.form-control-sm {
-  height: 40px;
-  font-size: 0.875rem;
-} */
-
-/* .form-control.form-control-sm[type=file] {
-  line-height: 2.2;
-} */
-
-.invoive-form-control {
-  width: 130px;
-  border-bottom: 1px solid var(--input-form-light);
+select:invalid {
+  color: var(--neutral-500) !important; /* Ensures placeholder color consistency */
 }
 
 .form-label {

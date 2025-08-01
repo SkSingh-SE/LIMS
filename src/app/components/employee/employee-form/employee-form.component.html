@@ -1,869 +1,1217 @@
 <!-- Form Wizard Start -->
-<div class="form-wizard m-1 ">
-    <div class=" mx-3">
-        <ul class="nav nav-tabs form-wizard-list list2 border-bottom-0">
-            <li *ngFor="let header of formHeaders" class="nav-item cursor-pointer"
-                [class.activated]="currentStep() > header.key" (click)="setActiveForm(header.key)">
-                <span class="nav-link" [class.active]="activeFormKey === header.key">{{header.label}}
+<div class="form-wizard m-1">
+  <div class="mx-3">
+    <ul class="nav nav-tabs form-wizard-list list2 border-bottom-0">
+      <li
+        *ngFor="let header of formHeaders"
+        class="nav-item cursor-pointer"
+        [class.activated]="currentStep() > header.key"
+        (click)="setActiveForm(header.key)"
+      >
+        <span class="nav-link" [class.active]="activeFormKey === header.key">{{ header.label }}</span>
+      </li>
+    </ul>
+  </div>
+  <div class="tab-content">
+    <div class="card shadow-lg">
+      <fieldset *ngIf="activeFormKey === 1" class="wizard-fieldset show tab-pane border-0">
+        <form [formGroup]="personalInfoForm" (ngSubmit)="submitForm()">
+          <!-- Basic Information -->
+          <div class="card-header card-form-header text-white text-center">
+            <h6 class="text-center">Basic Information</h6>
+          </div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="text-danger fw-bold border-bottom border-danger">General info</label>
+            </div>
+            <div class="row gy-1">
+              <!-- Name -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label for="name" class="form-label">
+                  Full Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  class="form-control"
+                  formControlName="name"
+                  placeholder="Enter Name"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('name')?.touched && personalInfoForm.get('name')?.invalid }"
+                />
+                <span *ngIf="personalInfoForm.get('name')?.invalid && personalInfoForm.get('name')?.touched" class="text-danger text-sm">
+                  Name is required.
                 </span>
-            </li>
-        </ul>
-    </div>
-    <div class="tab-content">
-        <div class="card shadow-lg ">
-            <fieldset *ngIf="activeFormKey === 1" class="wizard-fieldset show tab-pane border-0 ">
-                <form [formGroup]="personalInfoForm" (ngSubmit)="submitForm()">
-                    <!-- Basic Information -->
-                    <div class="card-header card-form-header text-white text-center">
-                        <h6 class="text-center ">Basic
-                            Information</h6>
-                    </div>
-                    <div class="card-body">
+              </div>
 
-                        <div class=" mb-2">
-                            <label class="text-danger fw-bold border-bottom border-danger">General info</label>
-                        </div>
-                        <div class=" row gy-1">
-                            <!-- Name -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label for="name" class="form-label">Full Name <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" id="name" class="form-control " formControlName="name"
-                                    placeholder="Enter Name"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('name')?.touched && personalInfoForm.get('name')?.invalid}" />
-                                <span
-                                    *ngIf="personalInfoForm.get('name')?.invalid && personalInfoForm.get('name')?.touched"
-                                    class="text-danger text-sm">
-                                    Name is required.
-                                </span>
-                            </div>
+              <!-- Date of Birth -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Date of Birth
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  formControlName="dateOfBirth"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('dateOfBirth')?.touched && personalInfoForm.get('dateOfBirth')?.invalid }"
+                />
+                <span
+                  *ngIf="personalInfoForm.get('dateOfBirth')?.invalid && personalInfoForm.get('dateOfBirth')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Date of Birth is required.
+                </span>
+              </div>
 
-                            <!-- Date of Birth -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" formControlName="dateOfBirth"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('dateOfBirth')?.touched && personalInfoForm.get('dateOfBirth')?.invalid}" />
-                                <span
-                                    *ngIf="personalInfoForm.get('dateOfBirth')?.invalid && personalInfoForm.get('dateOfBirth')?.touched"
-                                    class="text-danger text-sm">
-                                    Date of Birth is required.
-                                </span>
-                            </div>
+              <!-- Blood Group -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">Blood Group</label>
+                <select
+                  class="form-select"
+                  formControlName="bloodGroup"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('bloodGroup')?.touched && personalInfoForm.get('bloodGroup')?.invalid }"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option *ngFor="let bloodGroup of bloodGroups" [value]="bloodGroup">{{ bloodGroup }}</option>
+                </select>
+              </div>
 
-                            <!-- Blood Group -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Blood Group</label>
-                                <select class="form-control form-select" formControlName="bloodGroup"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('bloodGroup')?.touched && personalInfoForm.get('bloodGroup')?.invalid}">
-                                    <option value="">Select Blood Group</option>
-                                    <option *ngFor="let bloodGroup of bloodGroups" [value]="bloodGroup">{{ bloodGroup }}
-                                    </option>
-                                </select>
-                            </div>
+              <!-- Mobile Number -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Mobile Number
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  formControlName="mobileNo"
+                  placeholder="Enter Mobile Number"
+                  maxlength="12"
+                  appNumberOnly
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid }"
+                />
 
-                            <!-- Mobile Number -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
-                                <input type="tel" class="form-control" formControlName="mobileNo"
-                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid}" />
+                <span
+                  *ngIf="personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Mobile Number is required.
+                </span>
+              </div>
 
-                                <span
-                                    *ngIf="personalInfoForm.get('mobileNo')?.invalid && personalInfoForm.get('mobileNo')?.touched"
-                                    class="text-danger text-sm">
-                                    Mobile Number is required.
-                                </span>
-                            </div>
+              <!-- Emergency Mobile Number -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Emergency Mobile Number
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="emergencyMobileNo"
+                  placeholder="Enter Mobile Number"
+                  maxlength="12"
+                  appNumberOnly
+                  [ngClass]="{
+                    'is-invalid': personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid
+                  }"
+                />
+                <span
+                  *ngIf="personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid"
+                  class="text-danger text-sm"
+                >
+                  Emergency Mobile Number is required.
+                </span>
+              </div>
 
-                            <!-- Emergency Mobile Number -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Emergency Mobile Number <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" formControlName="emergencyMobileNo"
-                                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid}" />
-                                <span
-                                    *ngIf="personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid"
-                                    class="text-danger text-sm">
-                                    Emergency Mobile Number is required.
-                                </span>
-                            </div>
+              <!-- Email -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Email
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="email"
+                  class="form-control"
+                  formControlName="emailId"
+                  placeholder="Enter Email"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('emailId')?.touched && personalInfoForm.get('emailId')?.invalid }"
+                />
+                <span
+                  *ngIf="personalInfoForm.get('emailId')?.invalid && personalInfoForm.get('emailId')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Enter a valid email.
+                </span>
+              </div>
 
-                            <!-- Email -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" formControlName="emailId"
-                                    placeholder="Enter Email"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('emailId')?.touched && personalInfoForm.get('emailId')?.invalid}" />
-                                <span
-                                    *ngIf="personalInfoForm.get('emailId')?.invalid && personalInfoForm.get('emailId')?.touched"
-                                    class="text-danger text-sm">
-                                    Enter a valid email.
-                                </span>
-                            </div>
+              <!-- Gender -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Gender
+                  <span class="text-danger">*</span>
+                </label>
+                <select
+                  class="form-select"
+                  formControlName="gender"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('gender')?.touched && personalInfoForm.get('gender')?.invalid }"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                <span
+                  *ngIf="personalInfoForm.get('gender')?.invalid && personalInfoForm.get('gender')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Gender is required.
+                </span>
+              </div>
 
-                            <!-- Gender -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Gender <span class="text-danger">*</span></label>
-                                <select class="form-control form-select" formControlName="gender"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('gender')?.touched && personalInfoForm.get('gender')?.invalid}">
-                                    <option value="">Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <span
-                                    *ngIf="personalInfoForm.get('gender')?.invalid && personalInfoForm.get('gender')?.touched"
-                                    class="text-danger text-sm">
-                                    Gender is required.
-                                </span>
-                            </div>
+              <!-- Marital Status -->
+              <div class="col-auto col-md-4 col-lg-3">
+                <label class="form-label">
+                  Marital Status
+                  <span class="text-danger">*</span>
+                </label>
+                <select
+                  class="form-select"
+                  formControlName="maritalStatus"
+                  [ngClass]="{
+                    'is-invalid': personalInfoForm.get('maritalStatus')?.touched && personalInfoForm.get('maritalStatus')?.invalid
+                  }"
+                >
+                  <option value="">Select Marital Status</option>
+                  <option *ngFor="let maritalStatus of maritalStatuses" [value]="maritalStatus">
+                    {{ maritalStatus }}
+                  </option>
+                </select>
+                <span
+                  *ngIf="personalInfoForm.get('maritalStatus')?.invalid && personalInfoForm.get('maritalStatus')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Marital Status is required.
+                </span>
+              </div>
 
-                            <!-- Marital Status -->
-                            <div class="col-auto col-md-4 col-lg-3">
-                                <label class="form-label">Marital Status <span class="text-danger">*</span></label>
-                                <select class="form-control form-select" formControlName="maritalStatus"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('maritalStatus')?.touched && personalInfoForm.get('maritalStatus')?.invalid}">
-                                    <option value="">Select Marital Status</option>
-                                    <option *ngFor="let maritalStatus of maritalStatuses" [value]="maritalStatus">
-                                        {{ maritalStatus }}
-                                    </option>
-                                </select>
-                                <span
-                                    *ngIf="personalInfoForm.get('maritalStatus')?.invalid && personalInfoForm.get('maritalStatus')?.touched"
-                                    class="text-danger text-sm">
-                                    Marital Status is required.
-                                </span>
-                            </div>
+              <!-- Spouse Name (Conditional) -->
+              <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('maritalStatus')?.value === 'Married'">
+                <label class="form-label">Spouse Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="spouseName"
+                  placeholder="Enter Spouse Name"
+                  [ngClass]="{ 'is-invalid': personalInfoForm.get('spouseName')?.touched && personalInfoForm.get('spouseName')?.invalid }"
+                />
+                <span
+                  *ngIf="personalInfoForm.get('spouseName')?.invalid && personalInfoForm.get('spouseName')?.touched"
+                  class="text-danger text-sm"
+                >
+                  Spouse Name is required.
+                </span>
+              </div>
+            </div>
 
-                            <!-- Spouse Name (Conditional) -->
-                            <div class="col-auto col-md-4 col-lg-3"
-                                *ngIf="personalInfoForm.get('maritalStatus')?.value === 'Married'">
-                                <label class="form-label">Spouse Name</label>
-                                <input type="text" class="form-control" formControlName="spouseName"
-                                    placeholder="Enter Spouse Name"
-                                    [ngClass]="{'is-invalid': personalInfoForm.get('spouseName')?.touched && personalInfoForm.get('spouseName')?.invalid}" />
-                                <span
-                                    *ngIf="personalInfoForm.get('spouseName')?.invalid && personalInfoForm.get('spouseName')?.touched"
-                                    class="text-danger text-sm">
-                                    Spouse Name is required.
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Residential Address -->
-                        <div class="mt-2">
-                            <div class=" mb-2">
-                                <label class="text-danger fw-bold border-bottom border-danger">Residential
-                                    Address</label>
-                            </div>
-                            <div class="row gy-1">
-                                <!-- Address Line 1 -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="residentialAddressLine1" class="form-label">Address Line 1 <span
-                                            class="text-danger">*</span></label>
-                                    <textarea type="text" id="residentialAddressLine1" class="form-control"
-                                        formControlName="residentialAddressLine1" placeholder="Enter Address"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('residentialAddressLine1')?.touched && personalInfoForm.get('residentialAddressLine1')?.invalid}"
-                                        rows="4"></textarea>
-                                    <span
-                                        *ngIf="personalInfoForm.get('residentialAddressLine1')?.invalid && personalInfoForm.get('residentialAddressLine1')?.touched"
-                                        class="text-danger text-sm">
-                                        Address is required.
-                                    </span>
-                                </div>
-
-                                <!-- Address Line 2 -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="residentialAddressLine2" class="form-label">Address Line 2
-                                    </label>
-                                    <textarea type="text" id="residentialAddressLine2" class="form-control"
-                                        formControlName="residentialAddressLine2" placeholder="Enter Address"
-                                        rows="4"></textarea>
-
-                                </div>
-                                <div class="col-6 d-flex flex-column">
-                                    <div class="row">
-                                        <!-- Pin Code -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="residentialPinCode" class="form-label">PIN Code <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="residentialPinCode" class="form-control"
-                                                formControlName="residentialPinCode" placeholder="Enter PIN Code"
-                                                maxlength="6" appNumberOnly
-                                                (input)="fetchAreaData('residentialPinCode',true)"
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('residentialPinCode')?.touched && personalInfoForm.get('residentialPinCode')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('residentialPinCode')?.invalid && personalInfoForm.get('residentialPinCode')?.touched"
-                                                class="text-danger text-sm">
-                                                PIN Code is required.
-                                            </span>
-                                        </div>
-
-                                        <!-- Area -->
-                                        <div class="col-6 col-md-6 col-lg-6"
-                                            *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
-                                            <label for="residentialArea" class="form-label">Area <span
-                                                    class="text-danger">*</span></label>
-                                            <select id="residentialArea" class="form-control form-select"
-                                                (change)="fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry',true)"
-                                                formControlName="residentialAreaID">
-                                                <option value="">Select Area</option>
-                                                <option *ngFor="let area of residentialAreas" [value]="area.areaId">{{
-                                                    area.areaName }}</option>
-                                            </select>
-                                            <span
-                                                *ngIf="personalInfoForm.get('residentialAreaID')?.invalid && personalInfoForm.get('residentialAreaID')?.touched"
-                                                class="text-danger text-sm">
-                                                Area is required.
-                                            </span>
-                                        </div>
-                                        <!-- City -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="residentialCity" class="form-label">City <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="residentialCity" class="form-control"
-                                                formControlName="residentialCity" placeholder="City" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('residentialCity')?.touched && personalInfoForm.get('residentialCity')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('residentialCity')?.invalid && personalInfoForm.get('residentialCity')?.touched"
-                                                class="text-danger text-sm">
-                                                City is required.
-                                            </span>
-                                        </div>
-
-                                        <!-- State -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="residentialState" class="form-label">State <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="residentialState" class="form-control"
-                                                formControlName="residentialState" placeholder="State" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('residentialState')?.touched && personalInfoForm.get('residentialState')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('residentialState')?.invalid && personalInfoForm.get('residentialState')?.touched"
-                                                class="text-danger text-sm">
-                                                State is required.
-                                            </span>
-                                        </div>
-
-                                        <!-- Country -->
-                                        <div class=" "
-                                            [ngClass]="{'col-6 col-md-6 col-lg-6': personalInfoForm.get('residentialPinCode')?.value?.toString().length <= 5, 'col-12 col-md-12 col-lg-12': personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5}">
-                                            <label for="residentialCountry" class="form-label">Country <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="residentialCountry" class="form-control"
-                                                formControlName="residentialCountry" placeholder="Country" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('residentialCountry')?.touched && personalInfoForm.get('residentialCountry')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('residentialCountry')?.invalid && personalInfoForm.get('residentialCountry')?.touched"
-                                                class="text-danger text-sm">
-                                                Country is required.
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                        <!-- Permanent Address Checkbox -->
-                        <div class="mt-2">
-                            <div class="form-check col-12 ms-2">
-                                <input type="checkbox" class="form-check-input mt-1 me-2" id="sameAsResidential"
-                                    formControlName="sameAsResidential" (change)="copyResidentialAddress()">
-                                <label class="form-label" for="sameAsResidential">Same as Residential
-                                    Address</label>
-
-                            </div>
-                        </div>
-
-                        <!-- Permanent Address -->
-                        <div>
-
-                            <div class=" mb-2">
-                                <label class="text-danger fw-bold border-bottom border-danger">Permanent Address</label>
-                            </div>
-                            <div class="row gy-1">
-                                <!-- Address Line 1 -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="permanentAddressLine1" class="form-label">Address Line 1 <span
-                                            class="text-danger">*</span></label>
-                                    <textarea type="text" id="permanentAddressLine1" class="form-control"
-                                        placeholder="Enter Address" formControlName="permanentAddressLine1" rows="4"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('permanentAddressLine1')?.touched && personalInfoForm.get('permanentAddressLine1')?.invalid}"></textarea>
-                                    <span
-                                        *ngIf="personalInfoForm.get('permanentAddressLine1')?.invalid && personalInfoForm.get('permanentAddressLine1')?.touched"
-                                        class="text-danger text-sm">Address Line 1 is required.</span>
-                                </div>
-
-                                <!-- Address Line 2 -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="permanentAddressLine2" class="form-label">Address Line 2 </label>
-                                    <textarea type="text" id="permanentAddressLine2" class="form-control"
-                                        placeholder="Enter Address" formControlName="permanentAddressLine2" rows="4"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('permanentAddressLine2')?.touched && personalInfoForm.get('permanentAddressLine2')?.invalid}"> </textarea>
-                                    <span
-                                        *ngIf="personalInfoForm.get('permanentAddressLine2')?.invalid && personalInfoForm.get('permanentAddressLine2')?.touched"
-                                        class="text-danger text-sm">Address Line 2 is required.</span>
-                                </div>
-
-                                <div class="col-6 d-flex flex-column">
-                                    <div class="row">
-                                        <!-- Pin Code -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="permanentPinCode" class="form-label">PIN Code <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="permanentPinCode" class="form-control"
-                                                formControlName="permanentPinCode"
-                                                (input)="fetchAreaData('permanentPinCode',false)"
-                                                placeholder="Enter PIN Code" appNumberOnly required
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('permanentPinCode')?.touched && personalInfoForm.get('permanentPinCode')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('permanentPinCode')?.invalid && personalInfoForm.get('permanentPinCode')?.touched"
-                                                class="text-danger text-sm">PIN Code is required.</span>
-
-                                        </div>
-
-                                        <!-- Area -->
-                                        <div class="col-6 col-md-6 col-lg-6"
-                                            *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
-                                            <label for="permanentArea" class="form-label">Area <span
-                                                    class="text-danger">*</span></label>
-                                            <select id="permanentArea" class="form-control form-select"
-                                                formControlName="permanentAreaID"
-                                                (change)="fetchLocationData('permanentAreaID', 'permanentCity', 'permanentState', 'permanentCountry',false)"
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('permanentAreaID')?.touched && personalInfoForm.get('permanentAreaID')?.invalid}">
-                                                <option value="">Select Area</option>
-                                                <option *ngFor="let area of permanentAreas" [value]="area.areaId">{{
-                                                    area.areaName }}</option>
-                                            </select>
-                                            <span
-                                                *ngIf="personalInfoForm.get('permanentAreaID')?.invalid && personalInfoForm.get('permanentAreaID')?.touched"
-                                                class="text-danger text-sm">Area is required.</span>
-                                        </div>
-
-                                        <!-- City -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="permanentCity" class="form-label">City <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="permanentCity" class="form-control"
-                                                placeholder="City" formControlName="permanentCity" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('permanentCity')?.touched && personalInfoForm.get('permanentCity')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('permanentCity')?.invalid && personalInfoForm.get('permanentCity')?.touched"
-                                                class="text-danger text-sm">City is required.</span>
-                                        </div>
-
-                                        <!-- State -->
-                                        <div class="col-6 col-md-6 col-lg-6">
-                                            <label for="permanentState" class="form-label">State <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="permanentState" class="form-control"
-                                                placeholder="State" formControlName="permanentState" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('permanentState')?.touched && personalInfoForm.get('permanentState')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('permanentState')?.invalid && personalInfoForm.get('permanentState')?.touched"
-                                                class="text-danger text-sm">State is required.</span>
-                                        </div>
-
-                                        <!-- Country -->
-                                        <div class=" "
-                                            [ngClass]="{'col-6 col-md-6 col-lg-6': personalInfoForm.get('permanentPinCode')?.value?.toString().length <= 5, 'col-12 col-md-12 col-lg-12': personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5}">
-                                            <label for="permanentCountry" class="form-label">Country <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" id="permanentCountry" class="form-control"
-                                                placeholder="Country" formControlName="permanentCountry" readonly
-                                                [ngClass]="{'is-invalid': personalInfoForm.get('permanentCountry')?.touched && personalInfoForm.get('permanentCountry')?.invalid}" />
-                                            <span
-                                                *ngIf="personalInfoForm.get('permanentCountry')?.invalid && personalInfoForm.get('permanentCountry')?.touched"
-                                                class="text-danger text-sm">Country is required.</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                            </div>
-
-                        </div>
-
-                        <!-- Family Details -->
-                        <div class="mt-2">
-                            <div class="mb-2">
-                                <label class="text-danger fw-bold border-bottom border-danger">Family Details</label>
-                            </div>
-                            <div class="row gy-1">
-                                <!-- Father Name -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="fatherName" class="form-label">Father Name </label>
-                                    <input type="text" id="fatherName" class="form-control" formControlName="fatherName"
-                                        placeholder="Enter Father Name"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('fatherName')?.touched && personalInfoForm.get('fatherName')?.invalid}" />
-                                    <span
-                                        *ngIf="personalInfoForm.get('fatherName')?.invalid && personalInfoForm.get('fatherName')?.touched"
-                                        class="text-danger text-sm">Father Name is required.</span>
-                                </div>
-
-                                <!-- Mother Name -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="motherName" class="form-label">Mother Name </label>
-                                    <input type="text" id="motherName" class="form-control" formControlName="motherName"
-                                        placeholder="Enter Mother Name"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('motherName')?.touched && personalInfoForm.get('motherName')?.invalid}" />
-                                    <span
-                                        *ngIf="personalInfoForm.get('motherName')?.invalid && personalInfoForm.get('motherName')?.touched"
-                                        class="text-danger text-sm">Mother Name is required.</span>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <!-- Employment Details -->
-                        <div class="mt-2">
-                            <div class="mb-2">
-                                <label class="text-danger fw-bold border-bottom border-danger">Employee Details</label>
-                            </div>
-                            <div class="row gy-1">
-                                <!-- Designation -->
-                                <!-- searchable-dropdown.component.html -->
-                                <div class="col-auto col-md-4 col-lg-3">
-
-                                    <app-searchable-dropdown [placeholder]="'Search Designation'"
-                                        [labelName]="'Designation'" [fetchDataFn]="getDesignations"
-                                        (itemSelected)="onDesignationSelected($event)" [isDisabled]="isViewMode"
-                                        [selectedItem]="personalInfoForm.get('designationID')?.value">
-                                    </app-searchable-dropdown>
-                                </div>
-                                <!-- Date of Joining -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="dateOfJoin" class="form-label">Date of Joining <span
-                                            class="text-danger">*</span></label>
-                                    <input type="date" id="dateOfJoin" class="form-control" formControlName="dateOfJoin"
-                                        required
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('dateOfJoin')?.touched && personalInfoForm.get('dateOfJoin')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Date of Joining is required.
-                                    </div>
-                                </div>
-
-                                <!-- Department -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <app-searchable-dropdown [placeholder]="'Search department'"
-                                        [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                                        (itemSelected)="onDepartmentSelected($event)" [isDisabled]="isViewMode"
-                                        [selectedItem]="personalInfoForm.get('departmentID')?.value">
-                                    </app-searchable-dropdown>
-                                </div>
-
-                                <!-- Reporting Manager -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <app-searchable-dropdown [placeholder]="'Search employee'"
-                                        [labelName]="'Reporting Manager'" [fetchDataFn]="getEmployees"
-                                        (itemSelected)="onEmployeeSelected($event)" [isDisabled]="isViewMode"
-                                        [selectedItem]="personalInfoForm.get('reportingManagerID')?.value">
-                                    </app-searchable-dropdown>
-                                </div>
-
-                                <!-- Relevant Experience -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="relevantExperienceYears" class="form-label">Relevant Experience <span
-                                            class="text-danger">*</span></label>
-                                    <input type="number" id="relevantExperienceYears" class="form-control"
-                                        placeholder="Enter Relevant Experience"
-                                        formControlName="relevantExperienceYears" required
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('relevantExperienceYears')?.touched && personalInfoForm.get('relevantExperienceYears')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Relevant Experience is required.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bank Details -->
-                        <div class="mt-2">
-                            <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">Bank & Other
-                                Details</h6>
-                            <div class="row gy-1">
-                                <!-- PAN Number -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="panNumber" class="form-label">PAN Number <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" id="panNumber" class="form-control" formControlName="panNumber"
-                                        placeholder="Enter PAN Number" maxlength="16"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('panNumber')?.touched && personalInfoForm.get('panNumber')?.invalid}"
-                                        [value]="personalInfoForm.get('panNumber')?.value | uppercase">
-                                    <span
-                                        *ngIf="personalInfoForm.get('panNumber')?.invalid && personalInfoForm.get('panNumber')?.touched"
-                                        class="text-danger text-sm">Enter Valid Pan.</span>
-                                </div>
-
-                                <!-- Bank Name -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="bankName" class="form-label">Bank Name</label>
-                                    <input type="text" id="bankName" class="form-control" placeholder="Enter Bank Name"
-                                        formControlName="bankName"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('bankName')?.touched && personalInfoForm.get('bankName')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Bank Name is required.
-                                    </div>
-                                </div>
-
-                                <!-- Account Number -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="accountNumber" class="form-label">Account Number</label>
-                                    <input type="text" id="accountNumber" class="form-control"
-                                        placeholder="Enter Account Number" formControlName="accountNumber" appNumberOnly
-                                        maxlength="20"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('accountNumber')?.touched && personalInfoForm.get('accountNumber')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Account Number is required.
-                                    </div>
-                                </div>
-
-                                <!-- Account Holder Name -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="accountHolderName" class="form-label">Account Holder Name</label>
-                                    <input type="text" id="accountHolderName" class="form-control"
-                                        placeholder="Enter Account Holder Name" formControlName="accountHolderName"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('accountHolderName')?.touched && personalInfoForm.get('accountHolderName')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Account Holder Name is required.
-                                    </div>
-                                </div>
-
-                                <!-- IFSC Code -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="ifscCode" class="form-label">IFSC Code</label>
-                                    <input type="text" id="ifscCode" class="form-control" placeholder="Enter IFSC Code"
-                                        formControlName="ifscCode" maxlength="11"
-                                        [value]="personalInfoForm.get('ifscCode')?.value | uppercase"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('ifscCode')?.touched && personalInfoForm.get('ifscCode')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        IFSC Code is required.
-                                    </div>
-                                </div>
-
-                                <!-- Branch Name -->
-                                <div class="col-auto col-md-4 col-lg-3">
-                                    <label for="branch" class="form-label">Branch Name</label>
-                                    <input type="text" id="branch" class="form-control" placeholder="Enter Branch Name"
-                                        formControlName="branch"
-                                        [ngClass]="{'is-invalid': personalInfoForm.get('branch')?.touched && personalInfoForm.get('branch')?.invalid}" />
-                                    <div class="invalid-feedback">
-                                        Branch Name is required.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <!-- Submit Button -->
-                        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
-                            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-                            <button type="submit" class="btn btn-success px-3">Save</button>
-                        </div>
-
-                    </div>
-                </form>
-            </fieldset>
-
-            <!-- Qualification tab -->
-            <fieldset *ngIf="activeFormKey === 2" class="wizard-fieldset show tab-pane border-0">
-                <div class="card-header card-form-header text-white text-center">
-                    <h6 class="text-center ">Qualification</h6>
+            <!-- Residential Address -->
+            <div class="mt-2">
+              <div class="mb-2">
+                <label class="text-danger fw-bold border-bottom border-danger">Residential Address</label>
+              </div>
+              <div class="row gy-1">
+                <!-- Address Line 1 -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="residentialAddressLine1" class="form-label">
+                    Address Line 1
+                    <span class="text-danger">*</span>
+                  </label>
+                  <textarea
+                    type="text"
+                    id="residentialAddressLine1"
+                    class="form-control"
+                    formControlName="residentialAddressLine1"
+                    placeholder="Enter Address"
+                    [ngClass]="{
+                      'is-invalid':
+                        personalInfoForm.get('residentialAddressLine1')?.touched && personalInfoForm.get('residentialAddressLine1')?.invalid
+                    }"
+                    rows="4"
+                  ></textarea>
+                  <span
+                    *ngIf="
+                      personalInfoForm.get('residentialAddressLine1')?.invalid && personalInfoForm.get('residentialAddressLine1')?.touched
+                    "
+                    class="text-danger text-sm"
+                  >
+                    Address is required.
+                  </span>
                 </div>
 
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div class=" mb-2">
-                            <label class="text-danger-600 fw-bold border-bottom border-danger">Qualification
-                                Details</label>
-                        </div>
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2 "
-                            (click)="addQualification()">
-                            <i class="bi bi-plus-circle-dotted"></i> Add Row
+                <!-- Address Line 2 -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="residentialAddressLine2" class="form-label">Address Line 2</label>
+                  <textarea
+                    type="text"
+                    id="residentialAddressLine2"
+                    class="form-control"
+                    formControlName="residentialAddressLine2"
+                    placeholder="Enter Address"
+                    rows="4"
+                  ></textarea>
+                </div>
+                <div class="col-6 d-flex flex-column">
+                  <div class="row">
+                    <!-- Pin Code -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="residentialPinCode" class="form-label">
+                        PIN Code
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="residentialPinCode"
+                        class="form-control"
+                        formControlName="residentialPinCode"
+                        placeholder="Enter PIN Code"
+                        maxlength="6"
+                        appNumberOnly
+                        (input)="fetchAreaData('residentialPinCode', true)"
+                        [ngClass]="{
+                          'is-invalid':
+                            personalInfoForm.get('residentialPinCode')?.touched && personalInfoForm.get('residentialPinCode')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('residentialPinCode')?.invalid && personalInfoForm.get('residentialPinCode')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        PIN Code is required.
+                      </span>
+                    </div>
+
+                    <!-- Area -->
+                    <div class="col-6 col-md-6 col-lg-6" *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
+                      <label for="residentialArea" class="form-label">
+                        Area
+                        <span class="text-danger">*</span>
+                      </label>
+                      <select
+                        id="residentialArea"
+                        class="form-select"
+                        (change)="fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry', true)"
+                        formControlName="residentialAreaID"
+                      >
+                        <option value="">Select Area</option>
+                        <option *ngFor="let area of residentialAreas" [value]="area.areaId">{{ area.areaName }}</option>
+                      </select>
+                      <span
+                        *ngIf="personalInfoForm.get('residentialAreaID')?.invalid && personalInfoForm.get('residentialAreaID')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        Area is required.
+                      </span>
+                    </div>
+                    <!-- City -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="residentialCity" class="form-label">
+                        City
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="residentialCity"
+                        class="form-control"
+                        formControlName="residentialCity"
+                        placeholder="City"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid': personalInfoForm.get('residentialCity')?.touched && personalInfoForm.get('residentialCity')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('residentialCity')?.invalid && personalInfoForm.get('residentialCity')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        City is required.
+                      </span>
+                    </div>
+
+                    <!-- State -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="residentialState" class="form-label">
+                        State
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="residentialState"
+                        class="form-control"
+                        formControlName="residentialState"
+                        placeholder="State"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid':
+                            personalInfoForm.get('residentialState')?.touched && personalInfoForm.get('residentialState')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('residentialState')?.invalid && personalInfoForm.get('residentialState')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        State is required.
+                      </span>
+                    </div>
+
+                    <!-- Country -->
+                    <div
+                      class=" "
+                      [ngClass]="{
+                        'col-6 col-md-6 col-lg-6': personalInfoForm.get('residentialPinCode')?.value?.toString().length <= 5,
+                        'col-12 col-md-12 col-lg-12': personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5
+                      }"
+                    >
+                      <label for="residentialCountry" class="form-label">
+                        Country
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="residentialCountry"
+                        class="form-control"
+                        formControlName="residentialCountry"
+                        placeholder="Country"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid':
+                            personalInfoForm.get('residentialCountry')?.touched && personalInfoForm.get('residentialCountry')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('residentialCountry')?.invalid && personalInfoForm.get('residentialCountry')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        Country is required.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Permanent Address Checkbox -->
+            <div class="mt-2">
+              <div class="form-check col-12 ms-2">
+                <input
+                  type="checkbox"
+                  class="form-check-input mt-1 me-2"
+                  id="sameAsResidential"
+                  formControlName="sameAsResidential"
+                  (change)="copyResidentialAddress()"
+                />
+                <label class="form-label" for="sameAsResidential">Same as Residential Address</label>
+              </div>
+            </div>
+
+            <!-- Permanent Address -->
+            <div>
+              <div class="mb-2">
+                <label class="text-danger fw-bold border-bottom border-danger">Permanent Address</label>
+              </div>
+              <div class="row gy-1">
+                <!-- Address Line 1 -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="permanentAddressLine1" class="form-label">
+                    Address Line 1
+                    <span class="text-danger">*</span>
+                  </label>
+                  <textarea
+                    type="text"
+                    id="permanentAddressLine1"
+                    class="form-control"
+                    placeholder="Enter Address"
+                    formControlName="permanentAddressLine1"
+                    rows="4"
+                    [ngClass]="{
+                      'is-invalid':
+                        personalInfoForm.get('permanentAddressLine1')?.touched && personalInfoForm.get('permanentAddressLine1')?.invalid
+                    }"
+                  ></textarea>
+                  <span
+                    *ngIf="personalInfoForm.get('permanentAddressLine1')?.invalid && personalInfoForm.get('permanentAddressLine1')?.touched"
+                    class="text-danger text-sm"
+                  >
+                    Address Line 1 is required.
+                  </span>
+                </div>
+
+                <!-- Address Line 2 -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="permanentAddressLine2" class="form-label">Address Line 2</label>
+                  <textarea
+                    type="text"
+                    id="permanentAddressLine2"
+                    class="form-control"
+                    placeholder="Enter Address"
+                    formControlName="permanentAddressLine2"
+                    rows="4"
+                    [ngClass]="{
+                      'is-invalid':
+                        personalInfoForm.get('permanentAddressLine2')?.touched && personalInfoForm.get('permanentAddressLine2')?.invalid
+                    }"
+                  ></textarea>
+                  <span
+                    *ngIf="personalInfoForm.get('permanentAddressLine2')?.invalid && personalInfoForm.get('permanentAddressLine2')?.touched"
+                    class="text-danger text-sm"
+                  >
+                    Address Line 2 is required.
+                  </span>
+                </div>
+
+                <div class="col-6 d-flex flex-column">
+                  <div class="row">
+                    <!-- Pin Code -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="permanentPinCode" class="form-label">
+                        PIN Code
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="permanentPinCode"
+                        class="form-control"
+                        formControlName="permanentPinCode"
+                        (input)="fetchAreaData('permanentPinCode', false)"
+                        placeholder="Enter PIN Code"
+                        appNumberOnly
+                        required
+                        [ngClass]="{
+                          'is-invalid':
+                            personalInfoForm.get('permanentPinCode')?.touched && personalInfoForm.get('permanentPinCode')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('permanentPinCode')?.invalid && personalInfoForm.get('permanentPinCode')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        PIN Code is required.
+                      </span>
+                    </div>
+
+                    <!-- Area -->
+                    <div class="col-6 col-md-6 col-lg-6" *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
+                      <label for="permanentArea" class="form-label">
+                        Area
+                        <span class="text-danger">*</span>
+                      </label>
+                      <select
+                        id="permanentArea"
+                        class="form-select"
+                        formControlName="permanentAreaID"
+                        (change)="fetchLocationData('permanentAreaID', 'permanentCity', 'permanentState', 'permanentCountry', false)"
+                        [ngClass]="{
+                          'is-invalid': personalInfoForm.get('permanentAreaID')?.touched && personalInfoForm.get('permanentAreaID')?.invalid
+                        }"
+                      >
+                        <option value="">Select Area</option>
+                        <option *ngFor="let area of permanentAreas" [value]="area.areaId">{{ area.areaName }}</option>
+                      </select>
+                      <span
+                        *ngIf="personalInfoForm.get('permanentAreaID')?.invalid && personalInfoForm.get('permanentAreaID')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        Area is required.
+                      </span>
+                    </div>
+
+                    <!-- City -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="permanentCity" class="form-label">
+                        City
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="permanentCity"
+                        class="form-control"
+                        placeholder="City"
+                        formControlName="permanentCity"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid': personalInfoForm.get('permanentCity')?.touched && personalInfoForm.get('permanentCity')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('permanentCity')?.invalid && personalInfoForm.get('permanentCity')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        City is required.
+                      </span>
+                    </div>
+
+                    <!-- State -->
+                    <div class="col-6 col-md-6 col-lg-6">
+                      <label for="permanentState" class="form-label">
+                        State
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="permanentState"
+                        class="form-control"
+                        placeholder="State"
+                        formControlName="permanentState"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid': personalInfoForm.get('permanentState')?.touched && personalInfoForm.get('permanentState')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('permanentState')?.invalid && personalInfoForm.get('permanentState')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        State is required.
+                      </span>
+                    </div>
+
+                    <!-- Country -->
+                    <div
+                      class=" "
+                      [ngClass]="{
+                        'col-6 col-md-6 col-lg-6': personalInfoForm.get('permanentPinCode')?.value?.toString().length <= 5,
+                        'col-12 col-md-12 col-lg-12': personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5
+                      }"
+                    >
+                      <label for="permanentCountry" class="form-label">
+                        Country
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="permanentCountry"
+                        class="form-control"
+                        placeholder="Country"
+                        formControlName="permanentCountry"
+                        readonly
+                        [ngClass]="{
+                          'is-invalid':
+                            personalInfoForm.get('permanentCountry')?.touched && personalInfoForm.get('permanentCountry')?.invalid
+                        }"
+                      />
+                      <span
+                        *ngIf="personalInfoForm.get('permanentCountry')?.invalid && personalInfoForm.get('permanentCountry')?.touched"
+                        class="text-danger text-sm"
+                      >
+                        Country is required.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Family Details -->
+            <div class="mt-2">
+              <div class="mb-2">
+                <label class="text-danger fw-bold border-bottom border-danger">Family Details</label>
+              </div>
+              <div class="row gy-1">
+                <!-- Father Name -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="fatherName" class="form-label">Father Name</label>
+                  <input
+                    type="text"
+                    id="fatherName"
+                    class="form-control"
+                    formControlName="fatherName"
+                    placeholder="Enter Father Name"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('fatherName')?.touched && personalInfoForm.get('fatherName')?.invalid }"
+                  />
+                  <span
+                    *ngIf="personalInfoForm.get('fatherName')?.invalid && personalInfoForm.get('fatherName')?.touched"
+                    class="text-danger text-sm"
+                  >
+                    Father Name is required.
+                  </span>
+                </div>
+
+                <!-- Mother Name -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="motherName" class="form-label">Mother Name</label>
+                  <input
+                    type="text"
+                    id="motherName"
+                    class="form-control"
+                    formControlName="motherName"
+                    placeholder="Enter Mother Name"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('motherName')?.touched && personalInfoForm.get('motherName')?.invalid }"
+                  />
+                  <span
+                    *ngIf="personalInfoForm.get('motherName')?.invalid && personalInfoForm.get('motherName')?.touched"
+                    class="text-danger text-sm"
+                  >
+                    Mother Name is required.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Employment Details -->
+            <div class="mt-2">
+              <div class="mb-2">
+                <label class="text-danger fw-bold border-bottom border-danger">Employee Details</label>
+              </div>
+              <div class="row row-cols-2 row-cols-md-4 gy-1">
+                <!-- Designation -->
+                <!-- searchable-dropdown.component.html -->
+                <div class="col">
+                  <app-searchable-dropdown
+                    [placeholder]="'Search Designation'"
+                    [labelName]="'Designation'"
+                    [fetchDataFn]="getDesignations"
+                    (itemSelected)="onDesignationSelected($event)"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="personalInfoForm.get('designationID')?.value"
+                  ></app-searchable-dropdown>
+                </div>
+                <!-- Date of Joining -->
+                <div class="col">
+                  <label for="dateOfJoin" class="form-label">
+                    Date of Joining
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="dateOfJoin"
+                    class="form-control"
+                    formControlName="dateOfJoin"
+                    required
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('dateOfJoin')?.touched && personalInfoForm.get('dateOfJoin')?.invalid }"
+                  />
+                  <div class="invalid-feedback">Date of Joining is required.</div>
+                </div>
+
+                <!-- Department -->
+                <div class="col">
+                  <app-searchable-dropdown
+                    [placeholder]="'Search department'"
+                    [labelName]="'Department'"
+                    [fetchDataFn]="getDepartments"
+                    (itemSelected)="onDepartmentSelected($event)"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="personalInfoForm.get('departmentID')?.value"
+                  ></app-searchable-dropdown>
+                </div>
+
+                <!-- Reporting Manager -->
+                <div class="col">
+                  <app-searchable-dropdown
+                    [placeholder]="'Search employee'"
+                    [labelName]="'Reporting Manager'"
+                    [fetchDataFn]="getEmployees"
+                    (itemSelected)="onEmployeeSelected($event)"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"
+                  ></app-searchable-dropdown>
+                </div>
+
+                <!-- Relevant Experience -->
+                <div class="col">
+                  <label for="relevantExperienceYears" class="form-label">
+                    Relevant Experience
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="relevantExperienceYears"
+                    class="form-control"
+                    placeholder="Enter Relevant Experience"
+                    formControlName="relevantExperienceYears"
+                    required
+                    [ngClass]="{
+                      'is-invalid':
+                        personalInfoForm.get('relevantExperienceYears')?.touched && personalInfoForm.get('relevantExperienceYears')?.invalid
+                    }"
+                  />
+                  <div class="invalid-feedback">Relevant Experience is required.</div>
+                </div>
+
+                <div class="col">
+                  <app-searchable-dropdown
+                    [placeholder]="'Search Role'"
+                    [labelName]="'Role'"
+                    [fetchDataFn]="getRoles"
+                    (itemSelected)="onRoleSelected($event)"
+                    [isDisabled]="isViewMode"
+                    [required]="true"
+                    [selectedItem]="personalInfoForm.get('roleID')?.value"
+                  ></app-searchable-dropdown>
+                </div>
+                <!--Password-->
+                <div class="col">
+                  <label for="password" class="form-label">
+                    Password
+                    <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                   
+                    <input
+                      [type]="showPassword() ? 'text' : 'password'"
+                      id="password"
+                      class="form-control"
+                      formControlName="password"
+                      placeholder="Enter Password"
+                      required
+                      [ngClass]="{
+                        'is-invalid': personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid
+                      }"
+                    />
+                    <button type="button" class="btn btn-outline-danger-600" (click)="showPassword.set(!showPassword())" tabindex="-1">
+                      <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    </button>
+                    <div class="invalid-feedback">Password is required.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="mt-2">
+              <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">Bank & Other Details</h6>
+              <div class="row gy-1">
+                <!-- PAN Number -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="panNumber" class="form-label">
+                    PAN Number
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="panNumber"
+                    class="form-control"
+                    formControlName="panNumber"
+                    placeholder="Enter PAN Number"
+                    maxlength="16"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('panNumber')?.touched && personalInfoForm.get('panNumber')?.invalid }"
+                    [value]="personalInfoForm.get('panNumber')?.value | uppercase"
+                  />
+                  <span
+                    *ngIf="personalInfoForm.get('panNumber')?.invalid && personalInfoForm.get('panNumber')?.touched"
+                    class="text-danger text-sm"
+                  >
+                    Enter Valid Pan.
+                  </span>
+                </div>
+
+                <!-- Bank Name -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="bankName" class="form-label">Bank Name</label>
+                  <input
+                    type="text"
+                    id="bankName"
+                    class="form-control"
+                    placeholder="Enter Bank Name"
+                    formControlName="bankName"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('bankName')?.touched && personalInfoForm.get('bankName')?.invalid }"
+                  />
+                  <div class="invalid-feedback">Bank Name is required.</div>
+                </div>
+
+                <!-- Account Number -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="accountNumber" class="form-label">Account Number</label>
+                  <input
+                    type="text"
+                    id="accountNumber"
+                    class="form-control"
+                    placeholder="Enter Account Number"
+                    formControlName="accountNumber"
+                    appNumberOnly
+                    maxlength="20"
+                    [ngClass]="{
+                      'is-invalid': personalInfoForm.get('accountNumber')?.touched && personalInfoForm.get('accountNumber')?.invalid
+                    }"
+                  />
+                  <div class="invalid-feedback">Account Number is required.</div>
+                </div>
+
+                <!-- Account Holder Name -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="accountHolderName" class="form-label">Account Holder Name</label>
+                  <input
+                    type="text"
+                    id="accountHolderName"
+                    class="form-control"
+                    placeholder="Enter Account Holder Name"
+                    formControlName="accountHolderName"
+                    [ngClass]="{
+                      'is-invalid': personalInfoForm.get('accountHolderName')?.touched && personalInfoForm.get('accountHolderName')?.invalid
+                    }"
+                  />
+                  <div class="invalid-feedback">Account Holder Name is required.</div>
+                </div>
+
+                <!-- IFSC Code -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="ifscCode" class="form-label">IFSC Code</label>
+                  <input
+                    type="text"
+                    id="ifscCode"
+                    class="form-control"
+                    placeholder="Enter IFSC Code"
+                    formControlName="ifscCode"
+                    maxlength="11"
+                    [value]="personalInfoForm.get('ifscCode')?.value | uppercase"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('ifscCode')?.touched && personalInfoForm.get('ifscCode')?.invalid }"
+                  />
+                  <div class="invalid-feedback">IFSC Code is required.</div>
+                </div>
+
+                <!-- Branch Name -->
+                <div class="col-auto col-md-4 col-lg-3">
+                  <label for="branch" class="form-label">Branch Name</label>
+                  <input
+                    type="text"
+                    id="branch"
+                    class="form-control"
+                    placeholder="Enter Branch Name"
+                    formControlName="branch"
+                    [ngClass]="{ 'is-invalid': personalInfoForm.get('branch')?.touched && personalInfoForm.get('branch')?.invalid }"
+                  />
+                  <div class="invalid-feedback">Branch Name is required.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
+              <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+              <button type="submit" class="btn btn-success px-3">Save</button>
+            </div>
+          </div>
+        </form>
+      </fieldset>
+
+      <!-- Qualification tab -->
+      <fieldset *ngIf="activeFormKey === 2" class="wizard-fieldset show tab-pane border-0">
+        <div class="card-header card-form-header text-white text-center">
+          <h6 class="text-center">Qualification</h6>
+        </div>
+
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div class="mb-2">
+              <label class="text-danger-600 fw-bold border-bottom border-danger">Qualification Details</label>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2" (click)="addQualification()">
+              <i class="bi bi-plus-circle-dotted"></i>
+              Add Row
+            </button>
+          </div>
+          <div [formGroup]="qualificationForm" class="bg-light shadow-lg border-0 rounded">
+            <div class="table-responsive p-2">
+              <table class="table table-sm table-light table-borderless">
+                <thead class="align-middle">
+                  <tr class="text-muted small">
+                    <th class="fw-medium px-2">S.L</th>
+                    <th class="fw-medium px-2">Education Qualification</th>
+                    <th class="fw-medium px-2">Name of school/University</th>
+                    <th class="fw-medium px-2">Passing Year</th>
+                    <th *ngIf="!isViewMode" class="fw-medium text-center">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="qualifications">
+                  <tr *ngIf="qualificationArray.length === 0">
+                    <td colspan="5">
+                      <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                        <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                        <div class="fw-semibold">No qualification records found</div>
+                        <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to add a qualification.</small>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr *ngFor="let group of qualificationArray.controls; let i = index" [formGroupName]="i" class="align-content-center">
+                    <td class="align-middle px-2">{{ i + 1 | number : "2.0" }}</td>
+
+                    <!-- Qualification -->
+                    <td class="px-2">
+                      <input
+                        class="form-control"
+                        formControlName="qualification"
+                        placeholder="Enter Qualification"
+                        [ngClass]="{ 'is-invalid': group.get('qualification')?.touched && group.get('qualification')?.invalid }"
+                      />
+                      <span *ngIf="group.get('qualification')?.touched && group.get('qualification')?.invalid" class="text-danger text-sm">
+                        Qualification is required.
+                      </span>
+                    </td>
+
+                    <!-- School or University -->
+                    <td class="px-2">
+                      <input
+                        class="form-control"
+                        formControlName="schoolOrUniversity"
+                        placeholder="Enter School/University"
+                        [ngClass]="{ 'is-invalid': group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid }"
+                      />
+                      <span
+                        *ngIf="group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid"
+                        class="text-danger text-sm"
+                      >
+                        School/University is required.
+                      </span>
+                    </td>
+
+                    <!-- Passing Year -->
+                    <td class="px-2">
+                      <input
+                        type="text"
+                        class="form-control"
+                        formControlName="passingYear"
+                        placeholder="Year"
+                        maxlength="4"
+                        appNumberOnly
+                        minlength="4"
+                        [ngClass]="{ 'is-invalid': group.get('passingYear')?.touched && group.get('passingYear')?.invalid }"
+                      />
+                      <span *ngIf="group.get('passingYear')?.touched && group.get('passingYear')?.invalid" class="text-danger text-sm">
+                        Valid passing year is required.
+                      </span>
+                    </td>
+
+                    <!-- Delete Button -->
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button class="btn btn-link text-danger" (click)="removeQualification(i)">
+                        <i class="bi bi-trash-fill fs-5"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+            <button
+              *ngIf="qualificationArray.length > 0"
+              type="button"
+              class="btn btn-success"
+              (click)="saveQualification()"
+              [disabled]="isViewMode"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </fieldset>
+      <!-- Document tab -->
+      <fieldset *ngIf="activeFormKey === 3" class="wizard-fieldset show tab-pane fade">
+        <div class="card-header card-form-header text-white text-center">
+          <h6 class="text-center">Document</h6>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="documentsForm" (ngSubmit)="saveDocuments()">
+            <div class="row">
+              <!-- Qualification Documents -->
+              <div class="">
+                <label class="text-danger-600 fw-bold border-bottom border-danger">Document Details</label>
+              </div>
+
+              <ng-container formGroupName="predefined">
+                <ng-container *ngFor="let key of predefinedKeys">
+                  <div class="col-auto col-md-4 col-lg-3 mb-1">
+                    <label class="form-label">{{ keyLabels[key] }}</label>
+                    <ng-container *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath; else uploadField">
+                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                        <span
+                          class="text-truncate me-2"
+                          type="button"
+                          (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
+                          title="{{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}"
+                        >
+                          <i class="bi bi-file-earmark-fill"></i>
+                          {{ documentsForm.get("predefined")?.get(key)?.value?.FileName }}
+                        </span>
+                        <button
+                          *ngIf="!isViewMode"
+                          type="button"
+                          class="btn btn-sm btn-link text-danger p-0"
+                          (click)="removePredefinedFile(key)"
+                        >
+                          <i class="bi bi-trash-fill fs-6 me-1"></i>
                         </button>
-                    </div>
-                    <div [formGroup]="qualificationForm" class="bg-light shadow-lg border-0 rounded">
+                      </div>
+                    </ng-container>
 
-                        <div class="table-responsive p-2">
-                            <table class="table table-sm table-light table-borderless">
-                                <thead class="  align-middle ">
-                                    <tr class="text-muted small">
-                                        <th class="fw-medium px-2">S.L</th>
-                                        <th class="fw-medium px-2">Education Qualification</th>
-                                        <th class="fw-medium px-2">Name of school/University</th>
-                                        <th class="fw-medium px-2">Passing Year</th>
-                                        <th *ngIf="!isViewMode" class="fw-medium text-center">Action</th>
-                                    </tr>
-                                </thead>
+                    <ng-template #uploadField>
+                      <input
+                        class="form-control form-control-sm input-file"
+                        type="file"
+                        [accept]="getAcceptType(key)"
+                        [disabled]="isViewMode"
+                        id="formFile_{{ key }}"
+                        readonly
+                        (change)="onFileChange($event, key)"
+                      />
+                    </ng-template>
+                  </div>
+                </ng-container>
+              </ng-container>
+            </div>
 
+            <!-- Additional Documents -->
+            <div class="mx-4 my-2">
+              <div class="d-flex justify-content-between">
+                <div class="mb-2">
+                  <label class="text-danger-600 fw-bold border-bottom border-danger">Additional Documents</label>
+                </div>
+                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2" (click)="addAdditionalDocument()">
+                  <i class="bi bi-plus-circle-dotted"></i>
+                  Add Row
+                </button>
+              </div>
 
-                                <tbody formArrayName="qualifications">
-                                    <tr *ngIf="qualificationArray.length === 0">
-                                        <td colspan="5">
-                                            <div
-                                                class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                                                <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                                                <div class="fw-semibold">No qualification records found</div>
-                                                <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to add
-                                                    a qualification.</small>
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                    <tr *ngFor="let group of qualificationArray.controls; let i = index"
-                                        [formGroupName]="i" class="align-content-center">
-                                        <td class="align-middle px-2">{{ i + 1 | number: '2.0' }}</td>
-
-                                        <!-- Qualification -->
-                                        <td class="px-2">
-                                            <input class="form-control " formControlName="qualification"
-                                                placeholder="Enter Qualification"
-                                                [ngClass]="{ 'is-invalid': group.get('qualification')?.touched && group.get('qualification')?.invalid }" />
-                                            <span
-                                                *ngIf="group.get('qualification')?.touched && group.get('qualification')?.invalid"
-                                                class="text-danger text-sm">
-                                                Qualification is required.
-                                            </span>
-                                        </td>
-
-                                        <!-- School or University -->
-                                        <td class="px-2">
-                                            <input class="form-control " formControlName="schoolOrUniversity"
-                                                placeholder="Enter School/University"
-                                                [ngClass]="{ 'is-invalid': group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid }" />
-                                            <span
-                                                *ngIf="group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid"
-                                                class="text-danger text-sm">
-                                                School/University is required.
-                                            </span>
-                                        </td>
-
-                                        <!-- Passing Year -->
-                                        <td class="px-2">
-                                            <input type="text" class="form-control " formControlName="passingYear"
-                                                placeholder="Year" maxlength="4" appNumberOnly minlength="4"
-                                                [ngClass]="{ 'is-invalid': group.get('passingYear')?.touched && group.get('passingYear')?.invalid }" />
-                                            <span
-                                                *ngIf="group.get('passingYear')?.touched && group.get('passingYear')?.invalid"
-                                                class="text-danger text-sm">
-                                                Valid passing year is required.
-                                            </span>
-                                        </td>
-
-                                        <!-- Delete Button -->
-                                        <td *ngIf="!isViewMode" class="text-center">
-                                            <button class="btn btn-link text-danger" (click)="removeQualification(i)">
-                                                <i class="bi bi-trash-fill fs-5"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-
-                            </table>
+              <div class="table-responsive">
+                <table class="table table-sm table-light table-borderless">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col" class="text-center fw-medium px-3">S.L</th>
+                      <th scope="col" class="text-center fw-medium px-3">Document Name</th>
+                      <th scope="col" class="text-center fw-medium px-3">Document Image</th>
+                      <th *ngIf="!isViewMode" scope="col" class="text-center fw-medium px-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="additionalDocuments">
+                    <tr *ngIf="additionalDocuments.length === 0">
+                      <td colspan="4">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                          <div class="fw-semibold">No additional document found</div>
+                          <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to add a document.</small>
                         </div>
-                    </div>
-                    <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-                        <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-                        <button *ngIf="qualificationArray.length > 0" type="button" class="btn btn-success"
-                            (click)="saveQualification()" [disabled]="isViewMode">Save</button>
-                    </div>
-                </div>
-            </fieldset>
-            <!-- Document tab -->
-            <fieldset *ngIf="activeFormKey === 3" class="wizard-fieldset show tab-pane fade">
-                <div class="card-header card-form-header text-white text-center">
-                    <h6 class="text-center">Document</h6>
-                </div>
-                <div class="card-body">
-                    <form [formGroup]="documentsForm" (ngSubmit)="saveDocuments()">
-                        <div class="row">
-                            <!-- Qualification Documents -->
-                            <div class="">
-                                <label class="text-danger-600 fw-bold border-bottom border-danger">Document
-                                    Details</label>
+                      </td>
+                    </tr>
+
+                    <tr *ngFor="let doc of additionalDocuments.controls; let i = index" [formGroupName]="i">
+                      <!-- Serial Number -->
+                      <td class="text-center align-middle px-3">{{ i + 1 | number : "2.0" }}</td>
+
+                      <!-- Document Name -->
+                      <td class="text-center align-middle px-3">
+                        <div class="d-flex justify-content-center">
+                          <input
+                            class="form-control w-100"
+                            style="max-width: 220px"
+                            formControlName="DocumentType"
+                            placeholder="Enter Document Name"
+                          />
+                        </div>
+                      </td>
+
+                      <!-- Document Image -->
+                      <td class="text-center align-middle px-3">
+                        <div class="d-flex justify-content-center">
+                          <ng-container *ngIf="doc.value?.FilePath; else fileInputField">
+                            <div class="d-flex align-items-center gap-2 flex-wrap border shadow-sm px-1" style="max-width: 250px">
+                              <span
+                                class="text-truncate text-muted flex-grow-1 ms-1"
+                                type="button"
+                                title="{{ doc.value.FileName }}"
+                                (click)="openFileInNewTab(doc.value?.FilePath)"
+                              >
+                                <i class="bi bi-file-earmark-fill"></i>
+                                {{ doc.value.FileName }}
+                              </span>
+                              <button
+                                *ngIf="!isViewMode"
+                                type="button"
+                                class="btn btn-sm btn-link text-danger"
+                                (click)="removeAdditionalFile(i)"
+                              >
+                                <i class="bi bi-x-circle fs-5"></i>
+                              </button>
                             </div>
+                          </ng-container>
 
-                            <ng-container formGroupName="predefined">
-                                <ng-container *ngFor="let key of predefinedKeys">
-                                    <div class="col-auto col-md-4 col-lg-3 mb-1">
-                                        <label class="form-label">{{ keyLabels[key] }}</label>
-                                        <ng-container
-                                            *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath else uploadField">
-                                            <div
-                                                class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
-                                                <span class="text-truncate me-2" type="button"
-                                                    (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
-                                                    title="{{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}">
-                                                    <i class="bi bi-file-earmark-fill"></i> {{
-                                                    documentsForm.get('predefined')?.get(key)?.value?.FileName }}
-                                                </span>
-                                                <button *ngIf="!isViewMode" type="button"
-                                                    class="btn btn-sm btn-link text-danger p-0"
-                                                    (click)="removePredefinedFile(key)">
-                                                    <i class="bi bi-trash-fill fs-6 me-1"></i>
-                                                </button>
-
-                                            </div>
-                                        </ng-container>
-
-                                        <ng-template #uploadField>
-                                            <input class="form-control form-control-sm input-file" type="file"
-                                                [accept]="getAcceptType(key)" [disabled]="isViewMode"
-                                                id="formFile_{{key}}" readonly (change)="onFileChange($event, key)" />
-                                        </ng-template>
-                                    </div>
-                                </ng-container>
-                            </ng-container>
-
+                          <ng-template #fileInputField>
+                            <input
+                              type="file"
+                              class="form-control form-control-sm input-file"
+                              style="max-width: 250px"
+                              (change)="onAdditionalFileChange($event, i)"
+                              readonly
+                            />
+                          </ng-template>
                         </div>
+                      </td>
 
-                        <!-- Additional Documents -->
-                        <div class="mx-4 my-2">
-                            <div class="d-flex justify-content-between">
-                                <div class="mb-2">
-                                    <label class="text-danger-600 fw-bold border-bottom border-danger">Additional
-                                        Documents</label>
-                                </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2"
-                                    (click)="addAdditionalDocument()">
-                                    <i class="bi bi-plus-circle-dotted"></i> Add Row
-                                </button>
-                            </div>
+                      <!-- Delete Row -->
+                      <td class="text-center align-middle px-3">
+                        <button *ngIf="!isViewMode" type="button" class="btn btn-link text-danger" (click)="removeAdditionalDocument(i)">
+                          <i class="bi bi-trash-fill fs-5"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-sm table-light table-borderless">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th scope="col" class="text-center fw-medium px-3">S.L</th>
-                                            <th scope="col" class="text-center fw-medium px-3">Document Name</th>
-                                            <th scope="col" class="text-center fw-medium px-3">Document Image</th>
-                                            <th *ngIf="!isViewMode" scope="col" class="text-center fw-medium px-3">
-                                                Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody formArrayName="additionalDocuments">
-                                        <tr *ngIf="additionalDocuments.length === 0">
-                                            <td colspan="4">
-                                                <div
-                                                    class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                                                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                                                    <div class="fw-semibold">No additional document found</div>
-                                                    <small *ngIf="!isViewMode" class="text-muted">Click on "Add Row" to
-                                                        add a document.</small>
-                                                </div>
-                                            </td>
-                                        </tr>
+            <!-- Buttons -->
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
+              <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+              <button type="submit" class="btn btn-success">Save</button>
+            </div>
+          </form>
+        </div>
+      </fieldset>
 
-                                        <tr *ngFor="let doc of additionalDocuments.controls; let i = index"
-                                            [formGroupName]="i">
-                                            <!-- Serial Number -->
-                                            <td class="text-center align-middle px-3">{{ i + 1 | number: '2.0' }}</td>
-
-                                            <!-- Document Name -->
-                                            <td class="text-center align-middle px-3">
-                                                <div class="d-flex justify-content-center">
-                                                    <input class="form-control w-100" style="max-width: 220px;"
-                                                        formControlName="DocumentType"
-                                                        placeholder="Enter Document Name" />
-                                                </div>
-                                            </td>
-
-                                            <!-- Document Image -->
-                                            <td class="text-center align-middle px-3">
-                                                <div class="d-flex justify-content-center">
-                                                    <ng-container *ngIf="doc.value?.FilePath; else fileInputField">
-                                                        <div class="d-flex align-items-center gap-2 flex-wrap border shadow-sm px-1"
-                                                            style="max-width: 250px;">
-                                                            <span class="text-truncate text-muted flex-grow-1 ms-1"
-                                                                type="button" title="{{ doc.value.FileName }}"
-                                                                (click)="openFileInNewTab(doc.value?.FilePath)">
-                                                                <i class="bi bi-file-earmark-fill"></i> {{
-                                                                doc.value.FileName }}
-                                                            </span>
-                                                            <button *ngIf="!isViewMode" type="button"
-                                                                class="btn btn-sm btn-link text-danger "
-                                                                (click)="removeAdditionalFile(i)">
-                                                                <i class="bi bi-x-circle fs-5"></i>
-                                                            </button>
-                                                        </div>
-                                                    </ng-container>
-
-                                                    <ng-template #fileInputField>
-                                                        <input type="file"
-                                                            class="form-control form-control-sm input-file"
-                                                            style="max-width: 250px;"
-                                                            (change)="onAdditionalFileChange($event, i)" readonly />
-                                                    </ng-template>
-                                                </div>
-                                            </td>
-
-                                            <!-- Delete Row -->
-                                            <td class="text-center align-middle px-3">
-                                                <button *ngIf="!isViewMode" type="button"
-                                                    class="btn btn-link text-danger"
-                                                    (click)="removeAdditionalDocument(i)">
-                                                    <i class="bi bi-trash-fill fs-5"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                        </div>
-
-                        <!-- Buttons -->
-                        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
-                            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-                            <button type="submit" class="btn btn-success">Save</button>
-                        </div>
-                    </form>
-                </div>
-            </fieldset>
-
-
-            <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane fade m-2">
-                <div class="text-center mb-40">
-                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
-                </div>
-                <!-- <div class="form-group d-flex align-items-center justify-content-end gap-8">
+      <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane border-0">
+        <div class="text-center mb-40">
+          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
+          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
+          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        </div>
+        <!-- <div class="form-group d-flex align-items-center justify-content-end gap-8">
                     <button type="button"
                         class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
                     <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
                 </div> -->
-            </fieldset>
-            <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane fade m-2">
-                <div class="text-center mb-40">
-                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
-                </div>
-
-            </fieldset>
-            <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane fade m-2">
-                <div class="text-center mb-40">
-                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
-                </div>
-            </fieldset>
-            <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane fade m-2">
-                <div class="text-center mb-40">
-                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
-                </div>
-            </fieldset>
-            <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane fade m-2">
-                <div class="text-center mb-40">
-                    <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24">
-                    <h6 class="text-md text-neutral-600">Coming Soon! </h6>
-                    <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
-                </div>
-            </fieldset>
+      </fieldset>
+      <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane border-0">
+        <div class="text-center mb-40">
+          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
+          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
+          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
         </div>
+      </fieldset>
+      <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane border-0">
+        <div class="text-center mb-40">
+          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
+          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
+          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        </div>
+      </fieldset>
+      <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane border-0">
+        <div class="text-center mb-40">
+          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
+          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
+          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        </div>
+      </fieldset>
+      <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane border-0">
+        <div class="card-header card-form-header text-white text-center">
+          <h6 class="text-center">User Permissions</h6>
+        </div>
+
+        <div class="card-body">
+          <app-user-permission></app-user-permission>
+        </div>
+      </fieldset>
     </div>
+  </div>
 </div>
 <!-- Form Wizard End -->

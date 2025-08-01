@@ -9,9 +9,11 @@ import { DesignationService } from '../../../services/designation.service';
 import { DepartmentService } from '../../../services/department.service';
 import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { UserPermissionComponent } from '../user-permission/user-permission.component';
+import { RoleService } from '../../../services/role.service';
 @Component({
   selector: 'app-employee-form',
-  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
@@ -19,6 +21,7 @@ export class EmployeeFormComponent {
   uploadedFiles: File[] = [];
   currentStep = signal(1);
   isLoading = signal(false);
+  showPassword = signal(false);
   employeeId!: number;
   isViewMode: boolean = false;
   formHeaders: { key: number, label: string }[] = [
@@ -75,7 +78,7 @@ export class EmployeeFormComponent {
   documentList: any[] = [];
 
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService) { }
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService) { }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -139,6 +142,8 @@ export class EmployeeFormComponent {
       reportingManagerID: [null],
       designationID: [null],
       dateOfJoin: [''],
+      roleID: [null],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
     });
 
@@ -211,6 +216,9 @@ export class EmployeeFormComponent {
   getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.employeeService.getEmployeeDropdown(term, page, pageSize);
   };
+  getRoles = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.roleService.getRoleDropdown(term, page, pageSize);
+  }
   onDesignationSelected(item: any) {
     this.personalInfoForm.patchValue({ designationID: item.id });
   }
@@ -220,8 +228,9 @@ export class EmployeeFormComponent {
   onEmployeeSelected(item: any) {
     this.personalInfoForm.patchValue({ reportingManagerID: item.id });
   }
-
-
+  onRoleSelected(item: any) {
+    this.personalInfoForm.patchValue({ roleID: item.id });
+  }
 
   submitForm() {
     if (this.personalInfoForm.valid) {
@@ -243,7 +252,6 @@ export class EmployeeFormComponent {
         // Create new employee
         this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
           next: (response) => {
-            this.loadEmployee();
             this.employeeId = response.id;
             this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
           },
@@ -281,7 +289,8 @@ export class EmployeeFormComponent {
               this.fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry', true);
               if (this.personalInfoForm.get('residentialPinCode')?.value === this.personalInfoForm.get('permanentPinCode')?.value) {
                 this.permanentAreas = response;
-                this.personalInfoForm.patchValue({sameAsResidential: true});
+                this.personalInfoForm.patchValue({ sameAsResidential: true });
+                this.copyResidentialAddress();
               }
             }
           } else {

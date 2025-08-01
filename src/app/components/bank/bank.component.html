@@ -101,7 +101,7 @@
                     <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
                         <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
                     </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+                    <li class="page-item" [class.disabled]="totalPages.length == 0 || pageNumber === totalPages.length">
                         <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
                     </li>
                 </ul>

@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule,CommonModule,ReactiveFormsModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -14,7 +14,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   showPassword = signal(false);
   isLoading = signal(false);
-errorMessage = signal('');
+  errorMessage = signal('');
   constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this.loginForm = this.fb.group({
       email: ['', Validators.required],
@@ -31,7 +31,7 @@ errorMessage = signal('');
       this.isLoading.set(true);
       console.log('Login successful', this.loginForm.value);
       // Implement authentication logic
-      
+
       this.authService.login(this.loginForm.value).subscribe({
         next: (data) => {
           this.authService.saveUserData(data);

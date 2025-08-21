@@ -121,13 +121,16 @@ export class SearchableDropdownModalComponent {
         });
       } else if (!this.isMultiSelect) {
         // single select logic
-        const matchedItem = this.dropdownData.find(item => item.id == this.selectedItem);
-        if (matchedItem) {
-          this.selectedLabel = matchedItem.name;
-          this.selectItem(matchedItem);
-        } else if (this.dropdownData.length == 0) {
-          this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data) => {
-            const found = data.find(item => item.id == this.selectedItem);
+        const matched = this.dropdownData.find(x => x.id === this.selectedItem);
+        if (matched) {
+          if (this.selectedLabel.length === 0) {
+            this.selectedLabel = matched.name;
+            this.selectItem(matched);
+          }
+
+        } else {
+          this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
+            const found = data.find(x => x.id === this.selectedItem);
             if (found) {
               this.dropdownData = [found, ...this.dropdownData];
               this.selectedLabel = found.name;

@@ -51,7 +51,6 @@ import { CalibrationAgencyComponent } from './components/equipment/calibration-a
 import { CuttingPriceMasterComponent } from './components/sample-prepration/cutting-price-master/cutting-price-master.component';
 import { CuttingSampleFormComponent } from './components/sample-prepration/cutting-sample-form/cutting-sample-form.component';
 import { MachiningChallanComponent } from './components/sample-prepration/machining-challan/machining-challan.component';
-import { SamplePlanFormComponent } from './components/inward/sample-plan-form/sample-plan-form.component';
 import { SampleInwardFormComponent } from './components/inward/sample-inward-form/sample-inward-form.component';
 import { ConfigManagerComponent } from './components/configuration/configuration.component';
 import { MenuManagementComponent } from './components/menu/menu-management/menu-management.component';
@@ -144,7 +143,7 @@ export const routes: Routes = [
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
             { path: 'sample/cutting', component:CuttingSampleFormComponent},
             { path: 'sample/machining', component:MachiningChallanComponent},
-            { path: 'sample/plan', component:SamplePlanFormComponent},
+            { path: 'sample/plan', component:SampleInwardFormComponent},
             { path: 'sample/inward', component:SampleInwardFormComponent},
             { path: 'config', component:ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent},

@@ -19,6 +19,7 @@ import { CompanyCategoryService } from '../../../services/company-category.servi
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DispatchModeService } from '../../../services/dispatch-mode.service';
+import { AreaService } from '../../../services/area.service';
 
 @Component({
   selector: 'app-customer-form',
@@ -31,15 +32,11 @@ import { DispatchModeService } from '../../../services/dispatch-mode.service';
 export class CustomerFormComponent implements OnInit {
   customerForm!: FormGroup;
   areas: any[] = [];
+  areaList: any[] = [];
   departments: any[] = [];
-  customerTypes: any[] = ['Walk in', 'Credit Customer'];
+  customerTypes: any[] = ['Walk in', 'Credit Customer', 'Relationship Credit Customer'];
   companyCategory: any[] = [];
-  dispatchModes = [
-    { id: 1, name: 'Email' },
-    { id: 2, name: 'WhatsApp' },
-    { id: 3, name: 'Courier' },
-    { id: 4, name: 'Self pickup' }
-  ];
+  dispatchModes:any[] =[];
   discountOptions = [
     { name: '5%', value: 5 },
     { name: '10%', value: 10 },
@@ -63,6 +60,7 @@ export class CustomerFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private employeeService: EmployeeService,
+    private areaService: AreaService,
     private customerService: CustomerService,
     private departmentService: DepartmentService,
     private companyCategoryService: CompanyCategoryService,
@@ -91,8 +89,11 @@ export class CustomerFormComponent implements OnInit {
       sameAsCustomerName: [false],
       address: [''],
       areaID: [0],
+      cityID: [0],
       city: ['', [Validators.required]],
+      stateID: [0],
       state: ['', [Validators.required]],
+      countryID: [0],
       country: ['', [Validators.required]],
       pinCode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
       customerType: ['', [Validators.required]],
@@ -189,8 +190,8 @@ export class CustomerFormComponent implements OnInit {
       id: [0],
       key: [type],
       type: [type],
-      salutation: [''],
-      name: ['', isRequired ? Validators.required : []],
+      salutation: ['', isRequired ? Validators.required : []],
+      name: ['', isRequired ? Validators.required : [Validators.required]],
       departmentID: [0],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
       mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)] : [Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)]],
@@ -198,8 +199,15 @@ export class CustomerFormComponent implements OnInit {
       telephoneNo: [''],
       sendBill: [false],
       sendReport: [false],
-      billReportDeliveryAddress: [''],
-      customerID: [0]
+      customerID: [0],
+
+      address: ['', isRequired ? Validators.required : [Validators.required]],
+      pinCode: ['', isRequired ? [Validators.required, Validators.pattern('^[0-9]{6}$')] : [Validators.pattern('^[0-9]{6}$')]],
+      areaID: [0, isRequired ? Validators.required : []],
+      city: ['', isRequired ? Validators.required : []],
+      state: ['', isRequired ? Validators.required : []],
+      country: ['', isRequired ? Validators.required : []],
+      areaOptions: [[]], // to store area options temporarily
     });
     if (this.isViewMode) {
       contact.disable();
@@ -260,7 +268,7 @@ export class CustomerFormComponent implements OnInit {
   fetchAreaData(pinControl: string, updateOtherFields: boolean = false): void {
     const pin = this.customerForm.get(pinControl)?.value?.toString() ?? '';
     if (pin.length === 6) {
-      this.employeeService.getAreasWithPinCode(pin).subscribe({
+      this.areaService.getAreasWithPinCode(pin).subscribe({
         next: (resp) => {
           this.areas = resp || [];
           if (this.areas.length === 0) {
@@ -278,6 +286,22 @@ export class CustomerFormComponent implements OnInit {
     }
   }
 
+  fetchContactAreaData(contact: FormGroup): void {
+    const pin = contact.get('pinCode')?.value?.toString() ?? '';
+    if (pin.length === 6) {
+      this.areaService.getAreasWithPinCode(pin).subscribe({
+        next: (resp) => {
+          this.areaList = resp || [];
+          contact.patchValue({ areaOptions: resp }); // store it temporarily if needed
+          contact.get('areaID')?.value ? this.fetchLocationDataForContact(contact) : null;
+        },
+        error: (err) => {
+          this.toastService.show('Failed to fetch areas for contact pincode.', 'error');
+        }
+      });
+    }
+  }
+
   fetchLocationData(areaControl: string, cityControl: string, stateControl: string, countryControl: string): void {
     const areaId = this.customerForm.get(areaControl)?.value;
     const loc = this.areas.find(a => a.areaId == areaId);
@@ -285,7 +309,22 @@ export class CustomerFormComponent implements OnInit {
       this.customerForm.patchValue({
         [cityControl]: loc.cityName,
         [stateControl]: loc.stateName,
-        [countryControl]: loc.countryName
+        [countryControl]: loc.countryName,
+        cityID: loc.cityId,
+        stateID: loc.stateId,
+        countryID: loc.countryId
+      });
+    }
+  }
+  fetchLocationDataForContact(contact: FormGroup): void {
+    const areaId = contact.get('areaID')?.value;
+    const areaList:any[] = contact.get('areaOptions')?.value;
+    const selectedArea = areaList.find(a => a.areaId == areaId);
+    if (selectedArea) {
+      contact.patchValue({
+        city: selectedArea.cityName,
+        state: selectedArea.stateName,
+        country: selectedArea.countryName
       });
     }
   }
@@ -473,6 +512,17 @@ export class CustomerFormComponent implements OnInit {
         this.customerForm.patchValue(response);
         this.fetchAreaData('pinCode', true);
         this.selectedCompanyCategoryIds = response.customerCompanyCategories.map((cat: any) => cat.companyCategoryID);
+
+        if (response.contactPersons && response.contactPersons.length > 0) {
+          response.contactPersons.forEach(async (contact: any) => {
+            const formGroup = this.contactPersonsArray.controls.find(c => c.get('type')?.value === contact.type) as FormGroup;
+            if (formGroup) {
+              formGroup.patchValue(contact);
+              this.fetchContactAreaData(formGroup);
+            }
+          });
+        }
+
       },
       error: (error) => {
         console.error('Error fetching customer data:', error);

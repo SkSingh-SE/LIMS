@@ -28,9 +28,7 @@ export class EmployeeService {
   getEmployeeDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
-  getAreasWithPinCode(pincode: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/AreaMaster/getAreaWithPincode?pincode=${pincode}`);
-  }
+  
   updateQualifications(qualifications: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/qualification/update`, qualifications);
   }

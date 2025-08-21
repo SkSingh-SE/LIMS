@@ -16,142 +16,287 @@
     </li>
   </ul>
 
-  <form [formGroup]="masterForm" (ngSubmit)="onSubmit()" class="needs-validation" novalidate>
+  <form [formGroup]="sampleInwardForm" (ngSubmit)="onSubmit()" class="needs-validation" novalidate>
     <div class="tab-content" id="formTabsContent">
       <!-- TAB 1: CUSTOMER & COMPANY INFO -->
       <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
-        <fieldset formGroupName="customerDetails" class="border rounded p-3 mb-4 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+        <fieldset class="border rounded p-3 mb-3 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
             Customer Details
           </legend>
-          <div class="row row-cols-1 row-cols-md-4 g-3">
-            <div>
-              <label class="form-label">Customer Name *</label>
-              <input class="form-control" formControlName="customerName" placeholder="Enter customer name" />
+
+          <!-- Customer Dropdown -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <app-searchable-dropdown
+                [placeholder]="'Search Customer'"
+                [labelName]="'Select Customer'"
+                [fetchDataFn]="getCustomers"
+                (itemSelected)="onCustomerSelect($event)"
+                [required]="true"
+                [selectedItem]="sampleInwardForm.get('customerID')?.value"
+              ></app-searchable-dropdown>
             </div>
-            <div>
-              <label class="form-label">Address *</label>
-              <input class="form-control" formControlName="address" placeholder="Enter address" />
-            </div>
-            <div>
-              <label class="form-label">State *</label>
-              <input class="form-control" formControlName="state" placeholder="Enter state" />
-            </div>
-            <div>
-              <label class="form-label">City *</label>
-              <input class="form-control" formControlName="city" placeholder="Enter city" />
-            </div>
-            <div>
-              <label class="form-label">PIN Code *</label>
-              <input class="form-control" formControlName="pinCode" placeholder="Enter PIN code" />
-            </div>
-            <div>
-              <label class="form-label">Country</label>
-              <input class="form-control" formControlName="country" value="India" readonly />
-            </div>
-            <div>
-              <label class="form-label">GST No.</label>
-              <input class="form-control" formControlName="gstNo" placeholder="Enter GST number" />
-              <div class="form-check small mt-1">
-                <input type="checkbox" class="form-check-input" formControlName="gstNotApplicable" id="gstNA" />
-                <label for="gstNA" class="form-label">GST not applicable</label>
+          </div>
+
+          <!-- Combined Card -->
+          <div class="card border shadow-sm">
+            <div class="card-body small">
+              <!-- Customer Details Section -->
+              <div class="mb-3">
+                <div class="fw-semibold text-danger mb-2">Customer Details</div>
+                <div class="row row-cols-1 row-cols-md-4 g-3">
+                  <div>
+                    <strong>Address:</strong>
+                    {{ sampleInwardForm.get("address")?.value || "-" }}
+                  </div>
+                  <div>
+                    <strong>PIN Code:</strong>
+                    {{ sampleInwardForm.get("pinCode")?.value || "-" }}
+                  </div>
+                  <div>
+                    <strong>Area:</strong>
+                    {{ sampleInwardForm.get("area")?.value || "-" }}
+                  </div>
+                  <div>
+                    <strong>City:</strong>
+                    {{ sampleInwardForm.get("city")?.value || "-" }}
+                  </div>
+                  <div>
+                    <strong>State:</strong>
+                    {{ sampleInwardForm.get("state")?.value || "-" }}
+                  </div>
+                  <div>
+                    <strong>Country:</strong>
+                    {{ sampleInwardForm.get("country")?.value || "India" }}
+                  </div>
+                  <div>
+                    <strong>GST No.:</strong>
+                    {{ sampleInwardForm.get("gstNo")?.value || "-" }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dispatch Mode Section
+              <div>
+                <div class="fw-semibold text-danger mb-2">Dispatch Mode</div>
+                <div formGroupName="dispatchMode" class="d-flex flex-wrap gap-4">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="email" id="dispatchEmail" />
+                    <label class="form-check-label" for="dispatchEmail">Email</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="whatsapp" id="dispatchWhatsApp" />
+                    <label class="form-check-label" for="dispatchWhatsApp">WhatsApp</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="courier" id="dispatchCourier" />
+                    <label class="form-check-label" for="dispatchCourier">Courier</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="selfPick" id="dispatchSelfPick" />
+                    <label class="form-check-label" for="dispatchSelfPick">Self Pickup</label>
+                  </div>
+                </div>
+              </div> -->
+
+              <!-- Dispatch Modes -->
+              <div class="">
+                <label class="form-label">
+                  Dispatch Modes
+                  <span class="text-danger">*</span>
+                </label>
+                <div class="d-flex flex-wrap gap-4">
+                  <div class="form-check" *ngFor="let mode of dispatchModes; index as modeIndex">
+                    <input
+                      id="dispatchMode-{{ modeIndex }}"
+                      type="checkbox"
+                      class="form-check-input"
+                      [value]="mode.id"
+                      [checked]="isDispatchModeSelected(mode.id)"
+                      (change)="onDispatchModeToggle($event)"
+                      [disabled]="isViewMode"
+                    />
+                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label">{{ mode.name }}</label>
+                  </div>
+                </div>
+                <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger">
+                  At least one Dispatch Mode is required.
+                </div>
               </div>
             </div>
-            <div>
-              <label class="form-label d-block">Report/Invoice Dispatch Mode</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="checkbox" id="dispatchEmail" formControlName="dispatchMode" value="Email" />
-                <label class="form-label" for="dispatchEmail">Email</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="checkbox"
-                  id="dispatchWhatsApp"
-                  formControlName="dispatchMode"
-                  value="WhatsApp"
-                />
-                <label class="form-label" for="dispatchWhatsApp">WhatsApp</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="checkbox" id="dispatchCourier" formControlName="dispatchMode" value="Courier" />
-                <label class="form-label" for="dispatchCourier">Courier</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="checkbox"
-                  id="dispatchSelfPickup"
-                  formControlName="dispatchMode"
-                  value="Self Pickup"
-                />
-                <label class="form-label" for="dispatchSelfPickup">Self Pickup</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label d-block">Sample Return</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="sampleReturnYes" formControlName="sampleReturn" value="Yes" />
-                <label class="form-label" for="sampleReturnYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="sampleReturnNo" formControlName="sampleReturn" value="No" />
-                <label class="form-label" for="sampleReturnNo">No</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label">Courier Address</label>
-              <input class="form-control" formControlName="courierAddress" placeholder="Enter Courier Address" />
-              <div class="form-check small mt-1">
-                <input
-                  type="checkbox"
-                  class="form-check-input mt-1"
-                  id="sameAsBillingAddress"
-                  formControlName="sameAsBillingAddress"
-                  checked
-                />
-                <label class="form-label" for="sameAsBillingAddress">Same as billing address</label>
+          </div>
+        </fieldset>
+
+        <div class="billing-note">
+          <strong>Billing Note:</strong>
+          All invoices will be generated as of 06:07 PM IST on Friday, July 25, 2025. Please ensure payment is cleared within 15 days from
+          the invoice date to avoid late fees.
+        </div>
+
+        <fieldset class="border rounded p-3 mb-2 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
+            Contacts
+          </legend>
+          <!-- Contact Info Table -->
+          <div class="table-responsive" formArrayName="contacts">
+            <table class="table table-compact">
+              <thead class="table-light">
+                <tr class="text-nowrap text-muted small text-center">
+                  <th class="fw-medium">Select</th>
+                  <th class="fw-medium">Contact Person</th>
+                  <th class="fw-medium">Mobile Number</th>
+                  <th class="fw-medium">Email ID</th>
+                  <th class="fw-medium">Bill</th>
+                  <th class="fw-medium">Report</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
+                  <td class="text-center">
+                    <span class="form-check d-flex align-items-center justify-content-center">
+                      <input type="checkbox" class="form-check-input mt-1" formControlName="selected" />
+                    </span>
+                  </td>
+                  <td>
+                    {{ contact.get("name")?.value || "-" }}
+                  </td>
+                  <td>
+                    {{ contact.get("mobileNo")?.value || "-" }}
+                  </td>
+                  <td>
+                    {{ contact.get("emailId")?.value || "-" }}
+                  </td>
+                  <td class="text-center">
+                    <span class="form-check d-flex align-items-center justify-content-center">
+                      <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" (change)="onSendBillChange(i)" />
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <span class="form-check d-flex align-items-center justify-content-center">
+                      <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" (change)="onSendReportChange(i)" />
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
+
+        <div class="row g-3 mb-3">
+          <!-- Reporting To Card -->
+          <div class="col-md-6">
+            <div class="card border shadow-sm h-100">
+              <div class="card-header fw-semibold bg-light">Reporting To</div>
+              <div class="card-body small">
+                <div formGroupName="reportingTo" class="mb-3">
+                  <label class="form-label">
+                    Customer Name
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" formControlName="contactPersonId" (change)="onAddressCustomerChange('reportingTo', $event)">
+                    <option value="">Select Customer</option>
+                    <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                  </select>
+                </div>
+
+                <!-- Show Details if Customer is selected -->
+                <ng-container *ngIf="reportingTo">
+                  <div class="row row-cols-1 row-cols-md-2 g-2">
+                    <div>
+                      <strong>Address:</strong>
+                      {{ reportingTo.get("address")?.value }}
+                    </div>
+                    <div>
+                      <strong>PIN Code:</strong>
+                      {{ reportingTo.get("pinCode")?.value }}
+                    </div>
+                    <div>
+                      <strong>Area:</strong>
+                      {{ reportingTo.get("area")?.value }}
+                    </div>
+                    <div>
+                      <strong>City:</strong>
+                      {{ reportingTo.get("city")?.value }}
+                    </div>
+                    <div>
+                      <strong>State:</strong>
+                      {{ reportingTo.get("state")?.value }}
+                    </div>
+                    <div>
+                      <strong>Country:</strong>
+                      {{ reportingTo.get("country")?.value }}
+                    </div>
+                  </div>
+                </ng-container>
               </div>
             </div>
           </div>
 
-          <div class="">
-            <div class="d-flex align-items-center text-muted my-3">
-              <div class="flex-grow-1 border-top"></div>
-              <div class="px-3 text-danger-500">Contact Info</div>
-              <div class="flex-grow-1 border-top"></div>
-            </div>
-            <div class="table-responsive" formArrayName="contacts">
-              <table class="table table-bordered align-middle table-sm shadow-sm">
-                <thead class="table-light">
-                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center">Contact Person</th>
-                    <th class="fw-medium text-center">Department</th>
-                    <th class="fw-medium text-center">Mobile No</th>
-                    <th class="fw-medium text-center">Email Id</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
-                    <td><input class="form-control" formControlName="name" placeholder="Enter contact person name" /></td>
-                    <td><input class="form-control" formControlName="department" placeholder="Enter department" /></td>
-                    <td><input class="form-control" formControlName="mobile" placeholder="Enter mobile number" /></td>
-                    <td><input class="form-control" formControlName="email" placeholder="Enter email address" /></td>
-                  </tr>
-                </tbody>
-              </table>
+          <!-- Billing To Card -->
+          <div class="col-md-6">
+            <div class="card border shadow-sm h-100">
+              <div class="card-header fw-semibold bg-light d-flex justify-content-between align-items-center">Billing To</div>
+              <div class="card-body small">
+                <div formGroupName="billingTo" class="mb-3">
+                  <label class="form-label">
+                    Customer Name
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" formControlName="contactPersonId" (change)="onAddressCustomerChange('billingTo', $event)">
+                    <option value="">Select Customer</option>
+                    <option *ngFor="let customer of billingToContactPerson" [value]="customer.contactID">{{ customer.name }}</option>
+                  </select>
+                </div>
+
+                <!-- Show Details if Customer is selected -->
+                <ng-container *ngIf="billingTo">
+                  <div class="row row-cols-1 row-cols-md-2 g-2">
+                    <div>
+                      <strong>Address:</strong>
+                      {{ billingTo.get("address")?.value }}
+                    </div>
+                    <div>
+                      <strong>PIN Code:</strong>
+                      {{ billingTo.get("pinCode")?.value }}
+                    </div>
+                    <div>
+                      <strong>Area:</strong>
+                      {{ billingTo.get("area")?.value }}
+                    </div>
+                    <div>
+                      <strong>City:</strong>
+                      {{ billingTo.get("city")?.value }}
+                    </div>
+                    <div>
+                      <strong>State:</strong>
+                      {{ billingTo.get("state")?.value }}
+                    </div>
+                    <div>
+                      <strong>Country:</strong>
+                      {{ billingTo.get("country")?.value }}
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
             </div>
           </div>
+        </div>
 
+        <fieldset class="border rounded p-3 mb-4 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
+            Payment Info
+          </legend>
           <div class="row row-cols-1 row-cols-md-4 mb-3">
-            <div>
-              <label class="form-label">Stamped By</label>
-              <input class="form-control" formControlName="stampedBy" placeholder="Enter name who stamped" />
-            </div>
-            <div>
-              <label class="form-label">Sealed By</label>
-              <input class="form-control" formControlName="sealedBy" placeholder="Enter name who sealed" />
-            </div>
             <div>
               <label class="form-label">Advance Payment</label>
               <div class="input-group">
@@ -162,11 +307,11 @@
             <div>
               <label class="form-label d-block">Bill Required</label>
               <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" value="Yes" />
+                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
                 <label class="form-label" for="billRequiredYes">Yes</label>
               </div>
               <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" value="No" />
+                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
                 <label class="form-label" for="billRequiredNo">No</label>
               </div>
             </div>
@@ -178,12 +323,18 @@
                   type="radio"
                   id="advancePIRequiredYes"
                   formControlName="advancePIRequired"
-                  value="Yes"
+                  [value]="true"
                 />
                 <label class="form-label" for="advancePIRequiredYes">Yes</label>
               </div>
               <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredNo" formControlName="advancePIRequired" value="No" />
+                <input
+                  class="form-check-input mt-1"
+                  type="radio"
+                  id="advancePIRequiredNo"
+                  formControlName="advancePIRequired"
+                  [value]="false"
+                />
                 <label class="form-label" for="advancePIRequiredNo">No</label>
               </div>
             </div>
@@ -199,208 +350,45 @@
               </div>
             </div>
           </div>
-
-          <div class="mb-2">
-            <div class="d-flex align-items-center text-muted my-3">
-              <div class="flex-grow-1 border-top"></div>
-              <div class="px-3 text-danger-500">TPI Witness Info</div>
-              <div class="flex-grow-1 border-top"></div>
-            </div>
-
-            <div formArrayName="tpiWitnesses" class="table-responsive">
-              <table class="table table-bordered table-sm align-middle">
-                <thead class="table-light">
-                   <tr class="text-nowrap text-muted small">
-                    <th style="width: 5%">#</th>
-                    <th style="width: 30%">TPI Witness</th>
-                    <th class="fw-medium text-center">Email ID</th>
-                    <th style="width: 10%">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let witness of tpiWitnesses.controls; let i = index" [formGroupName]="i">
-                    <td>{{ i + 1 }}</td>
-                    <td>
-                      <select class="form-select form-select-sm" formControlName="witnessName">
-                        <option value="">Choose an item</option>
-                        <option *ngFor="let person of witnessList" [value]="person">{{ person }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" formControlName="email" placeholder="Autofill or enter manually" />
-                    </td>
-                    <td class="text-center">
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm"
-                        (click)="removeTpiWitness(i)"
-                        *ngIf="tpiWitnesses.length > 1"
-                      >
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="mb-2">
-              <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTpiWitness()">
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Witness
-              </button>
-            </div>
-
-            <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="conformityRequired" id="conformityCheck" />
-              <label class="form-label" for="conformityCheck">Statement of Conformity Required</label>
-            </div>
-          </div>
         </fieldset>
-
-        <fieldset formGroupName="companyDetails" class="border rounded p-3 mb-4 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
-            Company Details
+        <fieldset class="border rounded p-3 mb-4 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
+            Document
           </legend>
-          <div class="row row-cols-1 row-cols-md-4 g-3">
-            <div>
-              <label class="form-label">Tally Ledger Name</label>
-              <input class="form-control" formControlName="tallyLedgerName" placeholder="Enter Tally Ledger Name" />
-              <div class="form-check small mt-2">
-                <input type="checkbox" class="form-check-input" formControlName="sameAsCustomerName" id="sameAsCustomerName" checked />
-                <label for="sameAsCustomerName" class="form-label">Same as Customer Name</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label">Type of Company</label>
-              <input class="form-control" formControlName="typeOfCompany" placeholder="Enter type of company" />
-            </div>
-            <div>
-              <label class="form-label">Vendor Code</label>
-              <input class="form-control" formControlName="vendorCode" placeholder="Enter vendor code" />
-            </div>
-            <div>
-              <label class="form-label">Special Accounting Case</label>
-              <input class="form-control" formControlName="specialAccountingCase" placeholder="Enter special accounting case" />
-            </div>
-            <div>
-              <label class="form-label">Credit Limit Amount</label>
-              <input type="number" class="form-control" formControlName="creditLimitAmount" placeholder="Enter credit limit amount" />
-            </div>
-            <div>
-              <label class="form-label">Credit Limit Time (Days)</label>
-              <input type="number" class="form-control" formControlName="creditLimitTime" placeholder="Enter credit limit time in days" />
-            </div>
-            <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="specialDiscount" id="specDisc" />
-              <label class="form-label" for="specDisc">Special Discount (MD/TD Approval)</label>
-            </div>
-            <div class="form-check ms-2">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="companyVerified" id="compVer" />
-              <label class="form-label" for="compVer">Company Verified</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="monthlyBilling" id="monthBill" />
-              <label class="form-label" for="monthBill">Monthly Billing Customer</label>
-            </div>
-            <div class="form-check mt-1">
-              <input
-                class="form-check-input mt-1"
-                type="checkbox"
-                formControlName="mandatoryPerformaInvoiceWithMonthlyBilling"
-                id="mandatoryPerformaInvoice"
-              />
-              <label class="form-label" for="mandatoryPerformaInvoice">Mandatory Performa Invoice + Monthly Billing</label>
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset formGroupName="additionalCustomerDetails" class="border rounded p-3 mb-4 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
-            Customer Details (Additional Info)
-          </legend>
-
-          <div class="row row-cols-1 row-cols-md-4 g-2">
-            <div>
-              <label class="form-label">Collection Time</label>
-              <input class="form-control form-control-sm" formControlName="collectionTime" placeholder="Collection Time" readonly />
-            </div>
-            <div>
-              <label class="form-label">Collection Date</label>
-              <input type="date" class="form-control form-control-sm" formControlName="collectionDate" placeholder="Collection Date" />
-            </div>
-            <div>
-              <label class="form-label">Report Issued To</label>
-              <input class="form-control form-control-sm" formControlName="reportIssuedTo" placeholder="Report Issued To" />
-            </div>
-            <div>
-              <label class="form-label">Address</label>
-              <input class="form-control form-control-sm" formControlName="reportAddress" placeholder="Address" />
-            </div>
-            <div>
-              <label class="form-label">Country</label>
-              <input class="form-control form-control-sm" formControlName="country" value="India" readonly />
-            </div>
-            <div>
-              <label class="form-label">State</label>
-              <input class="form-control form-control-sm" formControlName="state" placeholder="State" />
-            </div>
-            <div>
-              <label class="form-label">City</label>
-              <input class="form-control form-control-sm" formControlName="city" placeholder="City" />
-            </div>
-            <div>
-              <label class="form-label">PIN Code</label>
-              <input class="form-control form-control-sm" formControlName="pinCode" placeholder="PIN Code" />
-            </div>
-            <div>
-              <label class="form-label">Report/Invoice Dispatch Mode</label>
-              <select class="form-select form-select-sm" formControlName="dispatchMode">
-                <option>Email</option>
-                <option>WhatsApp</option>
-                <option>Courier</option>
-                <option>Self Pickup</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="">
-            <div class="d-flex align-items-center text-muted my-2">
-              <div class="flex-grow-1 border-top"></div>
-              <div class="px-3 text-danger-500">Contact Info</div>
-              <div class="flex-grow-1 border-top"></div>
-            </div>
-            <div class="table-responsive" formArrayName="contacts">
-              <table class="table table-bordered align-middle table-sm">
-                <thead class="table-light">
-                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center"></th>
-                    <th class="fw-medium text-center">Contact Person</th>
-                    <th class="fw-medium text-center">Department</th>
-                    <th class="fw-medium text-center">Mobile No</th>
-                    <th class="fw-medium text-center">Email ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let contact of additionalContactControls.controls; let i = index" [formGroupName]="i">
-                    <td>
-                      <span class="form-check"><input type="checkbox" formControlName="enabled" class="form-check-input mt-1" /></span>
-                    </td>
-                    <td><input class="form-control form-control-sm" formControlName="name" placeholder="Contact Person" /></td>
-                    <td><input class="form-control form-control-sm" formControlName="department" placeholder="Department" /></td>
-                    <td><input class="form-control form-control-sm" formControlName="mobile" placeholder="Mobile No" /></td>
-                    <td><input class="form-control form-control-sm" formControlName="email" placeholder="Email ID" /></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="">
+          <div class="col-6, col-md-3">
             <label class="form-label">Upload Company Letter or Request Letter</label>
-            <div class="d-flex gap-2 align-items-center">
-              <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
-              <button type="button" class="btn btn-danger btn-sm" (click)="removeAttachment()">Delete</button>
+            <div class="">
+              <ng-container *ngIf="sampleInwardForm.get('requestFilePath')?.value; else uploadField">
+                <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                  <span
+                    class="text-truncate me-2"
+                    type="button"
+                    (click)="openFileInNewTab(sampleInwardForm.get('requestFilePath')?.value)"
+                    title="{{ sampleInwardForm.get('requestFileName')?.value }}"
+                  >
+                    <i class="bi bi-file-earmark-fill"></i>
+                    {{ sampleInwardForm.get("requestFileName")?.value }}
+                  </span>
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeAttachment()">
+                    <i class="bi bi-trash-fill fs-6 me-1"></i>
+                  </button>
+                </div>
+              </ng-container>
+
+              <ng-template #uploadField>
+                <input
+                  class="form-control form-control-sm input-file"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  [disabled]="isViewMode"
+                  (change)="onFileUpload($event)"
+                />
+              </ng-template>
+              <!-- <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
             </div>
           </div>
         </fieldset>
@@ -409,89 +397,106 @@
       <!-- TAB 2: SAMPLE DETAILS -->
       <div class="tab-pane fade" id="sample" role="tabpanel" aria-labelledby="sample-tab">
         <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
             Sample Details
           </legend>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold">Sample Entries</span>
-            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addSample()">
-              <i class="bi bi-plus-circle-dotted"></i>
-              Add Sample
-            </button>
-          </div>
 
           <div class="table-responsive">
-            <table class="table table-bordered table-sm align-middle">
+            <table class="table table-compact">
               <thead class="table-light">
-                 <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Sr No.</th>
+                <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center">Lab No.</th>
-                  <th class="fw-medium text-center">Sample Details</th>
-                  <th class="fw-medium text-center">Identification</th>
+                  <th class="fw-medium text-center">Sample Description</th>
+                  <th class="fw-medium text-center">Sample Category</th>
                   <th class="fw-medium text-center">Nature of Sample</th>
                   <th class="fw-medium text-center">Remarks</th>
                   <th class="fw-medium text-center">Quantity</th>
-                  <th class="fw-medium text-center">Attach Photo</th>
                   <th class="fw-medium text-center">Image</th>
-                  <th class="fw-medium text-center">Disable</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let sample of sampleDetails.controls; let i = index" [formGroupName]="i">
-                  <td>{{ i + 1 }}</td>
                   <td><input class="form-control form-control-sm" formControlName="labNo" readonly /></td>
                   <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
-                  <td><input class="form-control form-control-sm" formControlName="identification" placeholder="Identification" /></td>
+                  <td>
+                    <select class="form-select form-select-sm" formControlName="category" required>
+                      <option value="" disabled>Select Category</option>
+                      <option *ngFor="let category of sampleCategories" [value]="category">{{ category }}</option>
+                    </select>
+                  </td>
                   <td><input class="form-control form-control-sm" formControlName="nature" placeholder="Enter nature" required /></td>
                   <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" /></td>
                   <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" /></td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" formControlName="attachPhoto" />
-                  </td>
                   <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="onUploadSampleImage(i)">+ Image</button>
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" formControlName="disabled" />
+                    <ng-container *ngIf="sample.get('sampleFilePath')?.value; else uploadField">
+                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                        <span
+                          class="text-truncate me-2"
+                          type="button"
+                          (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
+                          title="{{ sample.get('standardFile')?.value }}"
+                        >
+                          <i class="bi bi-file-earmark-fill"></i>
+                          {{ sample.get("standardFile")?.value }}
+                        </span>
+                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
+                          <i class="bi bi-trash-fill fs-6 me-1"></i>
+                        </button>
+                      </div>
+                    </ng-container>
+
+                    <ng-template #uploadField>
+                      <input
+                        class="form-control form-control-sm input-file"
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        [disabled]="isViewMode"
+                        (change)="onUploadSampleImage(i, $event)"
+                      />
+                    </ng-template>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addSample()">
+            <i class="bi bi-plus-circle-dotted"></i>
+            Add Sample
+          </button>
         </fieldset>
         <!-- SECTION 2: CASE DETAILS + IDENTIFICATION INFO -->
-        <fieldset class="border rounded p-3 mb-2 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+        <fieldset class="border rounded p-3 mb-3 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
             Case & Sample Identification
           </legend>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold">Case No: DMSPL-000001</span>
-            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAdditionalSampleRow()">
-              <i class="bi bi-plus-circle-dotted"></i>
-              Add Additional Info
-            </button>
-          </div>
+
           <!-- Table -->
-          <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle table-sm mb-0">
+          <div class="table-responsive mb-2">
+            <table class="table table-sm table-compact">
               <thead class="table-light">
-                 <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center"></th>
+                <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center">Description</th>
-                  <th *ngFor="let sample of sampleNumbers"><span class="fw-medium text-center">{{ sample }}</span></th>
+                  <th *ngFor="let sample of sampleNumbers">
+                    <span class="fw-medium text-center">{{ sample }}</span>
+                  </th>
                   <th class="fw-medium text-center">Actions</th>
                 </tr>
               </thead>
               <tbody formArrayName="sampleAdditionalDetails">
                 <tr *ngFor="let row of sampleAdditionalDetails.controls; let rowIndex = index" [formGroupName]="rowIndex">
                   <td>
-                    <span class="form-check">
-                      <input type="checkbox" class="form-check-input mt-1" formControlName="enabled" />
-                    </span>
-                  </td>
-
-                  <td>
-                    <input type="text" class="form-control form-control-sm" formControlName="label" placeholder="Enter Label" />
+                    <select class="form-select form-select-sm" formControlName="label" (change)="onLabelChange()">
+                      <option value="" disabled>Select Option</option>
+                      <option *ngFor="let option of descriptionOptions" [value]="option" [disabled]="isOptionSelected(option, rowIndex)">
+                        {{ option }}
+                      </option>
+                    </select>
                   </td>
                   <ng-container [formArrayName]="'values'">
                     <td *ngFor="let valueCtrl of getAdditionSampleRowValues(rowIndex)">
@@ -499,7 +504,7 @@
                     </td>
                   </ng-container>
                   <td>
-                    <button class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
@@ -507,67 +512,64 @@
               </tbody>
             </table>
           </div>
+          <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAdditionalSampleRow()">
+            <i class="bi bi-plus-circle-dotted"></i>
+            Add Additional Info
+          </button>
+        </fieldset>
+
+        <fieldset class="border rounded p-3 mb-2 position-relative">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
+            Additional Information
+          </legend>
+
+          <div class="row">
+            <div class="col-4">
+              <div class="">
+                <label class="form-label">Sample Receipt Note</label>
+                <textarea
+                  class="form-control"
+                  type="text"
+                  placeholder="Enter Sample Receipt Note"
+                  formControlName="sampleReceiptNote"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="d-flex flex-column gap-2">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input mt-1" formControlName="urgent" id="urgent" />
+                  <label class="form-check-label form-label" for="urgent">Urgent</label>
+                </div>
+
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input mt-1" formControlName="returnSample" id="returnSample" />
+                  <label class="form-check-label form-label" for="returnSample">Return Sample</label>
+                </div>
+
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input mt-1" formControlName="notDestroyed" id="notDestroyed" />
+                  <label class="form-check-label form-label" for="notDestroyed">Not to be Destroyed</label>
+                </div>
+              </div>
+            </div>
+          </div>
         </fieldset>
       </div>
+
       <!-- PLAN TAB TABLE FORMAT -->
       <div class="tab-pane fade show" id="plan" role="tabpanel">
         <div class="border rounded p-3 mb-2 position-relative">
-          <legend class="w-auto px-2 fw-semibold" style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white">
+          <legend
+            class="w-auto px-2 fw-semibold theme-color"
+            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+          >
             Plan Details
           </legend>
-          <!-- sample collection -->
-          <div>
-            <!-- Compact Header with Aligned Buttons -->
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <label class="mb-0 fw-semibold" style="font-size: 1rem">Test Plan (Case No: DMSPL-000001)</label>
-              <div>
-                <button type="button" class="btn btn-sm btn-outline-danger-600 me-2" (click)="addPlanRow()">
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Row
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="insertPlanRow(samplePlans.length - 1)">
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Insert Row
-                </button>
-              </div>
-            </div>
-
-            <!-- Table -->
-            <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle table-sm mb-0">
-                <thead class="table-light">
-                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center"></th>
-                    <th class="fw-medium text-center">Description</th>
-                    <th *ngFor="let sample of sampleNumbers"><span class="fw-medium text-center">{{ sample }}</span></th>
-                    <th class="fw-medium text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody formArrayName="samplePlans">
-                  <tr *ngFor="let row of samplePlans.controls; let rowIndex = index" [formGroupName]="rowIndex">
-                    <td>
-                      <span class="form-check">
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="enabled" />
-                      </span>
-                    </td>
-                    <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="label" placeholder="Enter Label" />
-                    </td>
-                    <ng-container [formArrayName]="'values'">
-                      <td *ngFor="let valueCtrl of getPlanRowValues(rowIndex)">
-                        <input type="text" class="form-control form-control-sm" [formControl]="valueCtrl" placeholder="Enter Value" />
-                      </td>
-                    </ng-container>
-                    <td>
-                      <button class="btn btn-sm btn-outline-danger" (click)="samplePlans.removeAt(rowIndex)">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
           <!-- THIRD SECTION: SAMPLE-WISE MULTI-TAB TEST PLAN -->
           <div formArrayName="sampleTestPlans" class="mt-3">
@@ -577,11 +579,51 @@
               class="mb-3 border rounded p-3 position-relative"
             >
               <legend
-                class="w-auto px-2 fw-semibold"
+                class="w-auto px-2 fw-semibold theme-color"
                 style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
               >
                 Sample No: {{ sampleGroup.get("sampleNo")?.value }}
               </legend>
+
+              <!-- Sample Details Card -->
+              <div *ngIf="sampleDetails.length > 0" class="card border shadow-sm mb-3">
+                <div class="card-body small">
+                  <div class="row row-cols-1 row-cols-md-auto g-3">
+                    <div>
+                      <p class="mb-1">
+                        <strong>Details:</strong>
+                        {{ sampleDetails.controls.at(i)?.get("details")?.value || "-" }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="mb-1">
+                        <strong>Nature:</strong>
+                        {{ sampleDetails.controls.at(i)?.get("nature")?.value || "-" }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="mb-1">
+                        <strong>Remarks:</strong>
+                        {{ sampleDetails.controls.at(i)?.get("remarks")?.value || "-" }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="mb-1">
+                        <strong>Quantity:</strong>
+                        {{ sampleDetails.controls.at(i)?.get("quantity")?.value || "0" }}
+                      </p>
+                    </div>
+                    <ng-container *ngFor="let row of sampleAdditionalDetails.controls; let j = index">
+                      <div>
+                        <p class="mb-1">
+                          <strong>{{ row.get("label")?.value }}:</strong>
+                          {{ getAdditionalSampleValue(row, i) }}
+                        </p>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
 
               <ul class="nav nav-tabs mb-3" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -608,7 +650,7 @@
                     Chemical Test
                   </button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <!-- <li class="nav-item" role="presentation">
                   <button
                     class="nav-link"
                     id="product-tab-{{ i }}"
@@ -619,49 +661,82 @@
                   >
                     Product Test
                   </button>
-                </li>
+                </li> -->
               </ul>
 
               <div class="tab-content">
                 <!-- General Test -->
                 <div class="tab-pane fade show active" id="general-{{ i }}" role="tabpanel">
-                  <ng-container *ngIf="getMethodRows(i, 'generalTests').length > 0">
-                    <div [formGroup]="getGeneralOrProductTestSection(i, 'generalTests')">
+                  <ng-container *ngIf="getMethodRows(i).length > 0">
+                    <div [formGroup]="getGeneralTestSection(i)">
                       <div class="row row-cols-auto row-cols-md-2 mb-2">
                         <div class="">
-                          <label class="form-label">Specification 1</label>
-                          <input type="text" formControlName="specification1" class="form-control" placeholder="Add Specification" />
+                          <app-searchable-dropdown
+                            [placeholder]="'Search Specification'"
+                            [labelName]="'Specification'"
+                            [fetchDataFn]="getMaterialSpecificationGrade"
+                            (itemSelected)="onSpecificationGradeSelected(i, $event, 'specification1', 'chemicalTests')"
+                            [hideLabel]="false"
+                            [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="getGeneralTestSection(i).get('specification1')?.value"
+                          ></app-searchable-dropdown>
                         </div>
                         <div class="">
-                          <label class="form-label">Specification 2</label>
-                          <input type="text" formControlName="specification2" class="form-control" placeholder="Add Specification" />
+                          <app-searchable-dropdown
+                            [placeholder]="'Search Specification'"
+                            [labelName]="'Specification 2'"
+                            [fetchDataFn]="getMaterialSpecificationGrade"
+                            (itemSelected)="onSpecificationGradeSelected(i, $event, 'specification2', 'chemicalTests')"
+                            [hideLabel]="false"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="getGeneralTestSection(i).get('specification2')?.value"
+                          ></app-searchable-dropdown>
                         </div>
                       </div>
 
-                      <table class="table table-bordered table-sm">
+                      <table class="table table-sm table-compact">
                         <thead class="table-light">
-                           <tr class="text-nowrap text-muted small">
+                          <tr class="text-nowrap text-muted small">
                             <th class="fw-medium text-center">Sr No.</th>
-                            <th class="fw-medium text-center">Test Method</th>
-                            <th class="fw-medium text-center">Alt Method</th>
+                            <th class="fw-medium text-center">Laboratory Test</th>
+                            <th class="fw-medium text-center">Test Method Standard</th>
                             <th class="fw-medium text-center">Quantity</th>
-                            <th class="fw-medium text-center">Report No</th>
-                            <th class="fw-medium text-center">ULR No / Cancel</th>
+                            <th class="fw-medium text-center">
+                              <div>Report No</div>
+                              <div>ULR No/Cancel</div>
+                            </th>
                             <th class="fw-medium text-center">Action</th>
                           </tr>
                         </thead>
                         <tbody formArrayName="methods" *ngIf="getTestArray(i, 'generalTests').length > 0">
-                          <tr *ngFor="let method of getMethodRows(i, 'generalTests').controls; let j = index" [formGroupName]="j">
+                          <tr *ngFor="let method of getMethodRows(i).controls; let j = index" [formGroupName]="j">
                             <td>{{ j + 1 }}</td>
                             <td>
-                              <input class="form-control form-control-sm" formControlName="testMethod" placeholder="Enter Test Method" />
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Test'"
+                                [labelName]="'Laboratory Test'"
+                                [fetchDataFn]="getLaboratoryTest"
+                                (itemSelected)="onLaboratorySelected($event, i, j)"
+                                [hideLabel]="true"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="method.get('testMethodID')?.value"
+                              ></app-searchable-dropdown>
                             </td>
                             <td>
-                              <input
-                                class="form-control form-control-sm"
-                                formControlName="alternateMethod"
-                                placeholder="Enter Alternate Method"
-                              />
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Standard'"
+                                [labelName]="'Standard'"
+                                [fetchDataFn]="getTestMethodSpecification"
+                                (itemSelected)="onGeneralTestStandardSelected($event, i, j)"
+                                [hideLabel]="true"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="method.get('standardID')?.value"
+                              ></app-searchable-dropdown>
                             </td>
                             <td>
                               <input
@@ -672,18 +747,23 @@
                               />
                             </td>
                             <td>
-                              <input class="form-control form-control-sm" formControlName="reportNo" placeholder="Enter Report Number" />
-                            </td>
-                            <td>
-                              <input class="form-control form-control-sm" formControlName="ulrNo" placeholder="Enter ULR Number" readonly />
-                              <div class="form-check mt-1">
-                                <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
-                                <label class="form-label">Cancel</label>
+                              <!-- Row 1: Report No -->
+                              <div class="">
+                                {{ method.get("reportNo")?.value }}
+                              </div>
+
+                              <!-- Row 2: ULR No + Cancel Checkbox -->
+                              <div class="d-flex justify-content-center gap-2">
+                                {{ method.get("ulrNo")?.value }}
+                                <div class="form-check mt-0">
+                                  <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
+                                </div>
                               </div>
                             </td>
+
                             <td>
                               <div *ngIf="getTestArray(i, 'generalTests').length > 0">
-                                <button class="btn btn-sm btn-outline-danger" (click)="getMethodRows(i, 'generalTests').removeAt(j)">
+                                <button class="btn btn-sm btn-outline-danger" (click)="getMethodRows(i).removeAt(j)">
                                   <i class="bi bi-trash"></i>
                                 </button>
                               </div>
@@ -692,7 +772,7 @@
                         </tbody>
                       </table>
 
-                      <button class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(i, 'generalTests')">
+                      <button class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(i)">
                         <i class="bi bi-plus-circle-dotted"></i>
                         Add Row
                       </button>
@@ -706,7 +786,11 @@
                     <ng-container *ngIf="getTestArray(i, 'chemicalTests').length > 0">
                       <div *ngFor="let chemTest of getTestArray(i, 'chemicalTests').controls; let j = index" [formGroupName]="j">
                         <div class="p-3 border rounded mb-3">
-                          <label class="form-label fw-semibold">Chemical Test - Sample No: {{ sampleNumbers[i] }}</label>
+                          <div class="d-flex justify-content-between">
+                            <label class="form-label fw-semibold">Chemical Test - Sample No: {{ sampleNumbers[i] }}</label>
+                            <label class="form-label fw-semibold">Report No: {{ chemTest.get("reportNo")?.value }}</label>
+                            <label class="form-label fw-semibold">URL: {{ chemTest.get("urlNo")?.value }}</label>
+                          </div>
 
                           <!-- ✅ Test Type Checkboxes -->
                           <div formGroupName="testTypes" class="row my-2">
@@ -726,39 +810,62 @@
                           <!-- ✅ Other Fields -->
                           <div class="row mt-3">
                             <div class="col-md-3">
-                              <label class="form-label">Base</label>
-                              <input type="text" formControlName="base" class="form-control" placeholder="Enter Base" />
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Metal'"
+                                [labelName]="'Metal Classification'"
+                                [fetchDataFn]="getMetalClassification"
+                                (itemSelected)="onMetalSelected(i, $event)"
+                                [hideLabel]="false"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('metalClassificationID')?.value"
+                              ></app-searchable-dropdown>
                             </div>
                             <div class="col-md-3">
-                              <label class="form-label">Specification 1</label>
-                              <input
-                                type="text"
-                                formControlName="specification1"
-                                class="form-control"
-                                placeholder="Enter Specification 1"
-                              />
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Specification'"
+                                [labelName]="'Specification'"
+                                [fetchDataFn]="getMaterialSpecificationGrade"
+                                (itemSelected)="onSpecificationGradeSelected(i, $event, 'specification1', 'chemicalTests')"
+                                [hideLabel]="false"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('specification1')?.value"
+                              ></app-searchable-dropdown>
                             </div>
                             <div class="col-md-3">
-                              <label class="form-label">Specification 2</label>
-                              <input
-                                type="text"
-                                formControlName="specification2"
-                                class="form-control"
-                                placeholder="Enter Specification 2"
-                              />
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Specification'"
+                                [labelName]="'Specification 2'"
+                                [fetchDataFn]="getMaterialSpecificationGrade"
+                                (itemSelected)="onSpecificationGradeSelected(i, $event, 'specification2', 'chemicalTests')"
+                                [hideLabel]="false"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('specification2')?.value"
+                              ></app-searchable-dropdown>
                             </div>
                             <div class="col-md-3">
-                              <label class="form-label">Test Method</label>
-                              <input type="text" formControlName="testMethod" class="form-control" placeholder="Enter Test Method" />
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Standard'"
+                                [labelName]="'Standard'"
+                                [fetchDataFn]="getTestMethodSpecification"
+                                (itemSelected)="onChemicalStandardSelected($event, i)"
+                                [hideLabel]="false"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('standardID')?.value"
+                              ></app-searchable-dropdown>
                             </div>
                           </div>
 
                           <!-- 🔷 Elements Table -->
                           <div class="mt-3">
                             <label class="fw-semibold">Elements</label>
-                            <table class="table table-bordered table-sm mt-2">
+                            <table class="table table-sm table-compact mt-2">
                               <thead class="table-light">
-                                 <tr class="text-nowrap text-muted small">
+                                <tr class="text-nowrap text-muted small">
                                   <th class="fw-medium text-center">Sr No.</th>
                                   <th class="fw-medium text-center">Element</th>
                                   <th class="fw-medium text-center">Select</th>
@@ -766,9 +873,20 @@
                                 </tr>
                               </thead>
                               <tbody formArrayName="elements">
-                                <tr *ngFor="let el of getElementRows(i).controls; let j = index" [formGroupName]="j">
-                                  <td>{{ j + 1 }}</td>
-                                  <td><input class="form-control form-control-sm" formControlName="element" /></td>
+                                <tr *ngFor="let el of getElementRows(i).controls; let k = index" [formGroupName]="k">
+                                  <td>{{ k + 1 }}</td>
+                                  <td>
+                                    <app-searchable-dropdown
+                                      class="w-100"
+                                      [placeholder]="'Search Parameter'"
+                                      [labelName]="'Parameter'"
+                                      [fetchDataFn]="getChemicalParameter"
+                                      (itemSelected)="onParameterSelected($event, i, j, k)"
+                                      [isDisabled]="isViewMode"
+                                      [hideLabel]="true"
+                                      [selectedItem]="el.get('parameterID')?.value"
+                                    ></app-searchable-dropdown>
+                                  </td>
                                   <td>
                                     <input type="checkbox" class="form-check-input" formControlName="selected" />
                                   </td>
@@ -781,99 +899,20 @@
                               </tbody>
                             </table>
 
-                            <button class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(i)"><i class="bi bi-plus-circle-dotted"></i> Add Element</button>
+                            <button class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(i)">
+                              <i class="bi bi-plus-circle-dotted"></i>
+                              Add Element
+                            </button>
                           </div>
                         </div>
                       </div>
                     </ng-container>
 
                     <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTestBlock(i, 'chemicalTests')">
-                      <i class="bi bi-plus-circle-dotted"></i> Add Chemical Test
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Chemical Test
                     </button>
                   </div>
-                </div>
-
-                <!-- Product Test -->
-                <div class="tab-pane fade" id="product-{{ i }}" role="tabpanel">
-                  <ng-container *ngIf="getMethodRows(i, 'productTests').length > 0">
-                    <div [formGroup]="getGeneralOrProductTestSection(i, 'productTests')">
-                      <div class="row mb-2">
-                        <div class="col-md-6">
-                          <label class="form-label">Specification 1</label>
-                          <input type="text" formControlName="specification1" class="form-control" placeholder="Enter Specification 1" />
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label">Specification 2</label>
-                          <input type="text" formControlName="specification2" class="form-control" placeholder="Enter Specification 2" />
-                        </div>
-                      </div>
-
-                      <table class="table table-bordered table-sm">
-                        <thead class="table-light">
-                           <tr class="text-nowrap text-muted small">
-                            <th class="fw-medium text-center">Sr No.</th>
-                            <th class="fw-medium text-center">Test Method</th>
-                            <th class="fw-medium text-center">Alt Method</th>
-                            <th class="fw-medium text-center">Quantity</th>
-                            <th class="fw-medium text-center">Report No</th>
-                            <th class="fw-medium text-center">ULR No / Cancel</th>
-                            <th class="fw-medium text-center">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody formArrayName="methods" *ngIf="getMethodRows(i, 'productTests').length > 0">
-                          <tr *ngFor="let method of getMethodRows(i, 'productTests').controls; let j = index" [formGroupName]="j">
-                            <td>{{ j + 1 }}</td>
-                            <td>
-                              <input class="form-control form-control-sm" formControlName="testMethod" placeholder="Enter Test Method" />
-                            </td>
-                            <td>
-                              <input
-                                class="form-control form-control-sm"
-                                formControlName="alternateMethod"
-                                placeholder="Enter Alternate Method"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                class="form-control form-control-sm"
-                                formControlName="quantity"
-                                placeholder="Enter Quantity"
-                              />
-                            </td>
-                            <td>
-                              <input class="form-control form-control-sm" formControlName="reportNo" placeholder="Enter Report Number" />
-                            </td>
-                            <td>
-                              <input
-                                class="form-control form-control-sm"
-                                formControlName="ulrNo"
-                                placeholder="Enter ULR Number"
-                                [value]="sampleNumbers[i]"
-                                readonly
-                              />
-                              <div class="form-check mt-1">
-                                <input type="checkbox" class="form-check-input" formControlName="cancel" />
-                                <label class="form-label">Cancel</label>
-                              </div>
-                            </td>
-                            <td>
-                              <div *ngIf="getMethodRows(i, 'productTests').length > 0">
-                                <button class="btn btn-sm btn-outline-danger" (click)="getMethodRows(i, 'productTests').removeAt(j)">
-                                  <i class="bi bi-trash"></i>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      <button class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(i, 'generalTests')">
-                        <i class="bi bi-plus-circle-dotted"></i>
-                        Add Row
-                      </button>
-                    </div>
-                  </ng-container>
                 </div>
               </div>
             </div>
@@ -884,7 +923,7 @@
       <div>
         <div class="d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-secondary btn-sm">Reset</button>
-          <button type="submit" class="btn btn-primary btn-sm" [disabled]="!masterForm.valid">Submit</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="!sampleInwardForm.valid">Submit</button>
         </div>
       </div>
     </div>

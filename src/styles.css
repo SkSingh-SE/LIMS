@@ -5,7 +5,7 @@
 :root {
     --nav-height: 60px;
     --transition-speed: 0.3s;
-    --primary-color: #d50a0ace;
+    --primary-color: #DA261C;
     /* Bootstrap 5 primary color by default */
     --primary-hover: #d50a0ace;
     --select2-multiple-height: 35px !important;
@@ -34,7 +34,12 @@ body {
 .bg-theme {
     background-color: #DA261C !important;
 }
-
+.theme-color{
+ color: #DA261C;
+}
+.theme-border{
+  border: 1px solid #DA261C !important;
+}
 .card-form-header {
     font-family: 'Poppins', none;
     font-size: 12px;
@@ -230,3 +235,55 @@ body {
 }
 
 /* Pagination css end here */
+
+/* Table css start here */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Apply to All Tables for Compact Layout */
+.table-compact {
+  width: 100%;
+  min-width: 550px; /* Slightly reduced for compact view */
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 5px;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.85em; /* Compact Font */
+}
+
+.table-compact th,
+.table-compact td {
+  border: 1px solid var(--bs-border-color, #dee2e6); /* Bootstrap default border */
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  padding: 0.2rem 0.3rem !important; /* Compact padding */
+}
+
+.table-compact th {
+  background-color: var(--bs-light, #f8f9fa);
+  color: var(--bs-body-color, #212529);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+   padding: 0.4rem 0.5rem !important;
+}
+
+.table-compact tbody tr:nth-child(odd) {
+  background-color: #fdfdfd;
+}
+
+.table-compact tbody tr:hover {
+  background-color: #f2f4f6;
+}
+
+/* Action buttons inside table */
+.table-compact .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Table css end here */

@@ -11,6 +11,7 @@ import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { UserPermissionComponent } from '../user-permission/user-permission.component';
 import { RoleService } from '../../../services/role.service';
+import { AreaService } from '../../../services/area.service';
 @Component({
   selector: 'app-employee-form',
   imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent],
@@ -78,7 +79,7 @@ export class EmployeeFormComponent {
   documentList: any[] = [];
 
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService) { }
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService) { }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -281,7 +282,7 @@ export class EmployeeFormComponent {
     let pinCode: string = this.personalInfoForm.get(pinControl)?.value.toString();
     if (pinCode.length === 6) {
       // Simulate API response
-      this.employeeService.getAreasWithPinCode(pinCode).subscribe({
+      this.areaService.getAreasWithPinCode(pinCode).subscribe({
         next: (response) => {
           if (isReseidential) {
             this.residentialAreas = response;

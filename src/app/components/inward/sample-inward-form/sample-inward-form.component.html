@@ -305,6 +305,10 @@
               </div>
             </div>
             <div>
+              <label class="form-label">PO Number</label>
+                <input type="number" class="form-control" formControlName="poNumber" placeholder="Enter PO Number" />
+            </div>
+            <div>
               <label class="form-label d-block">Bill Required</label>
               <div class="form-check form-check-inline">
                 <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
@@ -343,10 +347,10 @@
                 <input
                   class="form-check-input mt-1"
                   type="checkbox"
-                  id="holdTestingUntilPiApproved"
-                  formControlName="holdTestingUntilPiApproved"
+                  id="holdTestingUntilPIApproved"
+                  formControlName="holdTestingUntilPIApproved"
                 />
-                <label class="form-label" for="holdTestingUntilPiApproved">Hold Testing Until PI approved</label>
+                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI approved</label>
               </div>
             </div>
           </div>
@@ -408,7 +412,7 @@
             <table class="table table-compact">
               <thead class="table-light">
                 <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Lab No.</th>
+                  <th class="fw-medium text-center">Auto-Generated</th>
                   <th class="fw-medium text-center">Sample Description</th>
                   <th class="fw-medium text-center">Sample Category</th>
                   <th class="fw-medium text-center">Nature of Sample</th>
@@ -419,7 +423,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let sample of sampleDetails.controls; let i = index" [formGroupName]="i">
-                  <td><input class="form-control form-control-sm" formControlName="labNo" readonly /></td>
+                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly /></td>
                   <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
                   <td>
                     <select class="form-select form-select-sm" formControlName="category" required>

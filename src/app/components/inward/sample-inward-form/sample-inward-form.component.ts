@@ -14,6 +14,7 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
+import { SampleInwardService } from '../../../services/sample-inward.service';
 
 
 @Component({
@@ -24,9 +25,10 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class SampleInwardFormComponent implements OnInit {
   // ────────────── Constants & Data ──────────────
-  readonly yearCode: string = new Date().getFullYear().toString().slice(-2);
-  readonly sampleNumber: string = '25-000111';
-  readonly lastSampleNumber: number = +this.sampleNumber.split('-')[1]; // fetched from DB
+  caseNumber: string = 'DMSPL-000001';
+  yearCode: string = new Date().getFullYear().toString().slice(-2);
+  sampleNumber: string = '25-000011';
+  lastSampleNumber: number = +this.sampleNumber.split('-')[1]; // fetched from DB
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
   readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
   customers = [
@@ -58,21 +60,25 @@ export class SampleInwardFormComponent implements OnInit {
     private testMethodSpecificationService: TestMethodSpecificationService,
     private parameterService: ParameterService,
     private toastService: ToastService,
+    private inwardService: SampleInwardService
   ) { }
 
   // ────────────── Lifecycle ──────────────
   ngOnInit(): void {
+    this.getCaseNumber();
     this.initForm();
-    this.addSample();
-    this.addAdditionalSampleRow('Heat No');
+    // this.addSample();
+    // this.addAdditionalSampleRow('Heat No');
 
     this.fetchDispatchModeDropdown();
-    
+
   }
 
   // ────────────── Form Initialization ──────────────
   private initForm(): void {
     this.sampleInwardForm = this.fb.group({
+      id: [0],
+      caseNo: [''],
       customerID: ['', Validators.required],
       address: [''],
       area: [''],
@@ -82,19 +88,24 @@ export class SampleInwardFormComponent implements OnInit {
       country: ['India'],
       gstNo: [''],
       dispatchModes: this.fb.array([], Validators.required),
+      poNumber: [''],
       advancePayment: [''],
       billRequired: [true],
       advancePIRequired: [false],
       holdTesting: [false],
-      holdTestingUntilPiApproved: [false],
-      contacts: this.fb.array([]),
+      holdTestingUntilPIApproved: [false],
       collectionTime: [{ value: this.getCurrentTime(), disabled: true }],
       collectionDate: [{ value: new Date(), disabled: true }],
       urgent: [false],
       returnSample: [false],
       notDestroyed: [false],
       sampleReceiptNote: [''],
+      requestFilePath: [''],
+      requestFileName: [''],
+      file: [File],
+      contacts: this.fb.array([]),
       reportingTo: this.fb.group({
+        id: [0],
         contactPersonId: [''],
         contactPersonName: ['1'],
         address: [''],
@@ -102,9 +113,11 @@ export class SampleInwardFormComponent implements OnInit {
         area: [''],
         city: [''],
         state: [''],
-        country: ['']
+        country: [''],
+        type: ['reporting']
       }),
       billingTo: this.fb.group({
+        id: [0],
         contactPersonId: [''],
         contactPersonName: [''],
         address: [''],
@@ -112,15 +125,13 @@ export class SampleInwardFormComponent implements OnInit {
         area: [''],
         city: [''],
         state: [''],
-        country: ['']
+        country: [''],
+        type: ['billing']
       }),
-      sameAsAbove: [true],
       sampleDetails: this.fb.array([]),
       sampleAdditionalDetails: this.fb.array([]),
       sampleTestPlans: this.fb.array([]),
-      requestFilePath: [''],
-      requestFileName: [''],
-      file: [File],
+
     });
   }
 
@@ -141,6 +152,19 @@ export class SampleInwardFormComponent implements OnInit {
 
 
   // ────────────── API Calls ──────────────
+
+  getCaseNumber(): void {
+    this.inwardService.getCaseNumber().subscribe({
+      next: (data) => {
+        this.caseNumber = data.caseNo || 'DMSPL-000001';
+        this.sampleNumber = data.sampleNo;
+        this.lastSampleNumber = +this.sampleNumber.split('-')[1];
+      },
+      error: (error) => {
+        console.error('Error fetching case number:', error);
+      }
+    });
+  }
   getCustomers = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
@@ -150,6 +174,7 @@ export class SampleInwardFormComponent implements OnInit {
         if (data) {
           this.customerData = data;
           this.sampleInwardForm.patchValue({
+            caseNo: this.caseNumber,
             contactPersonName: this.customerData.name,
             address: this.customerData.address,
             pinCode: this.customerData.pinCode,
@@ -178,7 +203,7 @@ export class SampleInwardFormComponent implements OnInit {
               if (contact.sendReport) {
                 this.reportingToContactPerson.push(contact);
               }
-               this.contactPersons.push(contact);
+              this.contactPersons.push(contact);
             });
             this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
             this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
@@ -322,7 +347,7 @@ export class SampleInwardFormComponent implements OnInit {
   private createDispatch(dispatchMode?: any): FormGroup {
     return this.fb.group({
       id: [dispatchMode?.id || 0],
-      sampleID: [dispatchMode?.sampleID || 0],
+      inwardID: [dispatchMode?.inwardID || 0],
       dispatchModeID: [dispatchMode?.dispatchModeID || 0]
     });
   }
@@ -332,6 +357,7 @@ export class SampleInwardFormComponent implements OnInit {
   }
   addContact(contact: any): void {
     this.contactControls.push(this.fb.group({
+      id: [contact.id || 0],
       selected: [false],
       contactID: [contact.id || 0],
       name: [contact?.name || ''],
@@ -354,14 +380,13 @@ export class SampleInwardFormComponent implements OnInit {
     const sampleNo = `${this.yearCode}-${(this.lastSampleNumber + this.sampleDetails.length).toString().padStart(6, '0')}`;
     this.sampleNumbers.push(sampleNo);
     this.sampleDetails.push(this.fb.group({
-      labNo: [sampleNo],
+      id: [0],
+      sampleNo: [sampleNo],
       details: ['', Validators.required],
       nature: ['', Validators.required],
       category: ['', Validators.required],
       remarks: [''],
       quantity: [1],
-      attachPhoto: [false],
-      disabled: [false],
       fileName: [''],
       sampleFilePath: [''],
       file: [File]
@@ -651,6 +676,113 @@ export class SampleInwardFormComponent implements OnInit {
   onSubmit(): void {
     if (this.sampleInwardForm.valid) {
       console.table(this.sampleInwardForm.value);
+      const value = this.sampleInwardForm.value;
+      const formData = new FormData();
+
+      // 🔹 Top-level fields
+      formData.append("caseNo", value.caseNo);
+      formData.append("customerID", value.customerID);
+      formData.append("address", value.address);
+      formData.append("area", value.area);
+      formData.append("state", value.state);
+      formData.append("city", value.city);
+      formData.append("pinCode", value.pinCode);
+      formData.append("country", value.country);
+      formData.append("gstNo", value.gstNo);
+
+      // 🔹 Dispatch Modes (array of objects)
+      value.dispatchModes.forEach((d: any, i: number) => {
+        formData.append(`dispatchModes[${i}].dispatchModeID`, d.dispatchModeID);
+        formData.append(`dispatchModes[${i}].inwardID`, d.inwardID || '0');
+        formData.append(`dispatchModes[${i}].id`, d.id || '0');
+      });
+
+      // 🔹 Contacts (array of objects)
+      value.contacts.forEach((c: any, i: number) => {
+        formData.append(`contacts[${i}].id`, '0');
+        formData.append(`contacts[${i}].selected`, c.selected);
+        formData.append(`contacts[${i}].contactID`, c.contactID);
+        formData.append(`contacts[${i}].name`, c.name);
+        formData.append(`contacts[${i}].mobileNo`, c.mobileNo);
+        formData.append(`contacts[${i}].emailId`, c.emailId);
+        formData.append(`contacts[${i}].sendBill`, c.sendBill);
+        formData.append(`contacts[${i}].sendReport`, c.sendReport);
+      });
+
+       // 🔹 Reporting To
+      formData.append("reportingTo.id", value.reportingTo.id);
+      formData.append("reportingTo.contactPersonId", value.reportingTo.contactPersonId);
+      formData.append("reportingTo.contactPersonName", value.reportingTo.contactPersonName);
+      formData.append("reportingTo.address", value.reportingTo.address);
+      formData.append("reportingTo.pinCode", value.reportingTo.pinCode);
+      formData.append("reportingTo.area", value.reportingTo.area);
+      formData.append("reportingTo.city", value.reportingTo.city);
+      formData.append("reportingTo.state", value.reportingTo.state);
+      formData.append("reportingTo.country", value.reportingTo.country);
+      formData.append("reportingTo.type", value.reportingTo.type);
+
+      // 🔹 Billing To
+      formData.append("billingTo.id", value.billingTo.id);
+      formData.append("billingTo.contactPersonId", value.billingTo.contactPersonId);
+      formData.append("billingTo.contactPersonName", value.billingTo.contactPersonName);
+      formData.append("billingTo.address", value.billingTo.address);
+      formData.append("billingTo.pinCode", value.billingTo.pinCode);
+      formData.append("billingTo.area", value.billingTo.area);
+      formData.append("billingTo.city", value.billingTo.city);
+      formData.append("billingTo.state", value.billingTo.state);
+      formData.append("billingTo.country", value.billingTo.country);
+      formData.append("billingTo.type", value.billingTo.type);
+
+      // 🔹 Sample Details (with file support)
+      value.sampleDetails.forEach((s: any, i: number) => {
+        formData.append(`sampleDetails[${i}].id`, '0');
+        formData.append(`sampleDetails[${i}].sampleNo`, s.sampleNo || '');
+        formData.append(`sampleDetails[${i}].details`, s.details || '');
+        formData.append(`sampleDetails[${i}].nature`, s.nature || '');
+        formData.append(`sampleDetails[${i}].category`, s.category || '');
+        formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
+        formData.append(`sampleDetails[${i}].quantity`, s.quantity || '0');
+        formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
+        formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
+        if (s.file instanceof File) {
+          formData.append(`sampleDetails[${i}].file`, s.file);
+        }
+      });
+
+      var index = 0;
+      value.sampleAdditionalDetails.forEach((a: any, i: number) => {
+        a.values.forEach((v: any, j: number) => {
+          formData.append(`sampleAdditionalDetails[${index}].id`, a.id || '0');
+          formData.append(`sampleAdditionalDetails[${index}].sampleId`, '0');
+          formData.append(`sampleAdditionalDetails[${index}].sampleNo`, this.sampleNumbers[j]);
+          formData.append(`sampleAdditionalDetails[${index}].label`, a.label);
+          formData.append(`sampleAdditionalDetails[${index}].enabled`, a.enabled);
+          formData.append(`sampleAdditionalDetails[${index}].value`, v);
+          index++;
+        });
+      });
+
+
+      // 🔹 Plans
+      // value.plans.forEach((p: any, i: number) => {
+      //   formData.append(`plans[${i}].planName`, p.planName);
+      //   formData.append(`plans[${i}].planDetails`, p.planDetails);
+      // });
+
+      // 🔹 Root-level file
+      if (value.file instanceof File) {
+        formData.append("file", value.file);
+      }
+      this.inwardService.createSampleInward(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          // this.router.navigate(['/inward/sample-list']);
+        },
+        error: (error) => {
+          console.error('Error submitting sample inward:', error);
+          this.toastService.show('Error submitting sample inward', 'error');
+        }
+      });
     } else {
       this.sampleInwardForm.markAllAsTouched();
     }

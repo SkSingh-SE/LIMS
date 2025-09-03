@@ -19,6 +19,9 @@ export class MetalClassificationService {
     getMetalClassificationById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
+    getParameterByMetalId(id: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/metal-parameters/${id}`);
+    }
   
     createMetalClassification(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);

@@ -5,6 +5,7 @@ import { SupplierService } from '../../../services/supplier.service';
 import { CommonModule } from '@angular/common';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-supplier-form',
@@ -185,7 +186,7 @@ export class SupplierFormComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-      const baseUrl = 'https://localhost:7049/';
+      const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {

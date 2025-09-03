@@ -58,6 +58,8 @@ import { MenuManagementListComponent } from './components/menu/menu-management-l
 import { RoleFormComponent } from './components/role/role-form/role-form.component';
 import { UserPermissionComponent } from './components/employee/user-permission/user-permission.component';
 import { MenuPermissionComponent } from './components/menu/menu-permission/menu-permission.component';
+import { SampleInwardListComponent } from './components/inward/sample-inward-list/sample-inward-list.component';
+import { PlanFormComponent } from './components/plan/plan-form/plan-form.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -143,8 +145,11 @@ export const routes: Routes = [
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
             { path: 'sample/cutting', component:CuttingSampleFormComponent},
             { path: 'sample/machining', component:MachiningChallanComponent},
-            { path: 'sample/plan', component:SampleInwardFormComponent},
-            { path: 'sample/inward', component:SampleInwardFormComponent},
+            { path: 'sample/plan', component:PlanFormComponent},
+            { path: 'sample/inward', component:SampleInwardListComponent},
+            { path: 'sample/inward/create', component:SampleInwardFormComponent},
+            { path: 'sample/inward/edit/:id', component:SampleInwardFormComponent},
+            { path: 'sample/inward/details/:id', component:SampleInwardFormComponent},
             { path: 'config', component:ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent},
             { path: 'menu-permission', component: MenuPermissionComponent},

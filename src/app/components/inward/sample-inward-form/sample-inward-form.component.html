@@ -11,7 +11,7 @@
         Sample Details
       </button>
     </li>
-    <li class="nav-item" role="presentation">
+    <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
       <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">Plan</button>
     </li>
   </ul>
@@ -200,7 +200,7 @@
                     Customer Name
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonId" (change)="onAddressCustomerChange('reportingTo', $event)">
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('reportingTo', $event)">
                     <option value="">Select Customer</option>
                     <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
                   </select>
@@ -249,7 +249,7 @@
                     Customer Name
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonId" (change)="onAddressCustomerChange('billingTo', $event)">
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('billingTo', $event)">
                     <option value="">Select Customer</option>
                     <option *ngFor="let customer of billingToContactPerson" [value]="customer.contactID">{{ customer.name }}</option>
                   </select>
@@ -625,10 +625,17 @@
                         </p>
                       </div>
                     </ng-container>
+                    <!-- Sample Prepration Required -->
+                    <div>
+                      <p class="mb-1">
+                        <strong>Preparation Required:</strong>
+                        {{ sampleDetails.controls.at(i)?.get("preparationRequired")?.value || "-" }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-
+              
               <ul class="nav nav-tabs mb-3" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button
@@ -767,7 +774,7 @@
 
                             <td>
                               <div *ngIf="getTestArray(i, 'generalTests').length > 0">
-                                <button class="btn btn-sm btn-outline-danger" (click)="getMethodRows(i).removeAt(j)">
+                                <button type="button" class="btn btn-sm btn-outline-danger" (click)="getMethodRows(i).removeAt(j)">
                                   <i class="bi bi-trash"></i>
                                 </button>
                               </div>
@@ -776,7 +783,7 @@
                         </tbody>
                       </table>
 
-                      <button class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(i)">
+                      <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(i)">
                         <i class="bi bi-plus-circle-dotted"></i>
                         Add Row
                       </button>
@@ -895,7 +902,7 @@
                                     <input type="checkbox" class="form-check-input" formControlName="selected" />
                                   </td>
                                   <td>
-                                    <button class="btn btn-sm btn-outline-danger" (click)="removeElementRow(i, j)">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeElementRow(i, j)">
                                       <i class="bi bi-trash"></i>
                                     </button>
                                   </td>
@@ -903,7 +910,7 @@
                               </tbody>
                             </table>
 
-                            <button class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(i)">
+                            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(i)">
                               <i class="bi bi-plus-circle-dotted"></i>
                               Add Element
                             </button>
@@ -925,10 +932,10 @@
       </div>
 
       <div>
-        <div class="d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-secondary btn-sm">Reset</button>
-          <button type="submit" class="btn btn-primary btn-sm" [disabled]="!sampleInwardForm.valid">Submit</button>
-        </div>
+        <div *ngIf="!isViewMode && sampleDetails.length > 0" class="d-flex justify-content-end gap-2 mt-4">
+        <a [routerLink]="['/sample/inward']" class="btn btn-warning">Cancel</a>
+        <button type="submit" class="btn btn-success px-3" [disabled]="!sampleInwardForm.valid">Save</button>
+      </div>
       </div>
     </div>
   </form>

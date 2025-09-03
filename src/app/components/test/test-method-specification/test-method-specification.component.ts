@@ -7,6 +7,7 @@ import { StandardOrgnizationService } from '../../../services/standard-orgnizati
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-test-method-specification',
@@ -189,7 +190,7 @@ export class TestMethodSpecificationComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-      const baseUrl = 'https://localhost:7049/';
+       const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {

@@ -12,6 +12,7 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Modal } from 'bootstrap';
 import { EquipmentTypeService } from '../../../services/equipment-type.service';
 import { EquipmentService } from '../../../services/equipment.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-equipment-form',
@@ -465,7 +466,7 @@ export class EquipmentFormComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-      const baseUrl = 'https://localhost:7049/';
+       const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {
@@ -656,9 +657,10 @@ export class EquipmentFormComponent implements OnInit {
     }
   }
   optimizeVideoPlayback(): void {
+    const baseUrl = environment.baseUrl;
     this.sopVideos.forEach(video => {
       if (!video.url.startsWith('http')) {
-        video.url = `https://localhost:7049/${video.url}`;
+        video.url = `${baseUrl}/${video.url}`;
       }
     });
   }

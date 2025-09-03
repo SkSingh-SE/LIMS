@@ -12,6 +12,7 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { UserPermissionComponent } from '../user-permission/user-permission.component';
 import { RoleService } from '../../../services/role.service';
 import { AreaService } from '../../../services/area.service';
+import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-employee-form',
   imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent],
@@ -536,7 +537,7 @@ export class EmployeeFormComponent {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-      const baseUrl = 'https://localhost:7049/';
+      const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {

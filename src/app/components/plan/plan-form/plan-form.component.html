@@ -1,0 +1,547 @@
+<div class="container-fluid pt-1">
+  <form [formGroup]="planForm" (ngSubmit)="onSave()">
+    <div class="card border shadow-sm mt-2 mb-2">
+      <legend
+        class="w-auto px-2 fw-semibold theme-color"
+        style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+      >
+        Inward Details
+      </legend>
+      <div class="card-body small">
+        <div class="row align-items-center d-flex justify-content-between">
+          <div class="col-auto">
+            <p class="mb-1">
+              <strong>Case No:</strong>
+              {{ planForm.get("caseNo")?.value || "-" }}
+            </p>
+          </div>
+          <div class="col-auto">
+            <p class="mb-1">
+              <strong>Sample Receipt Note:</strong>
+              {{ planForm.get("sampleReceiptNote")?.value || "-" }}
+            </p>
+          </div>
+          <div class="col-auto">
+            <p class="mb-1">
+              <strong>Urgent:</strong>
+              {{ planForm.get("urgent")?.value ? "Yes" : "No" }}
+            </p>
+          </div>
+          <div class="col-auto">
+            <p class="mb-1">
+              <strong>Return Sample:</strong>
+              {{ planForm.get("returnSample")?.value ? "Yes" : "No" }}
+            </p>
+          </div>
+          <div class="col-auto">
+            <p class="mb-1">
+              <strong>Not Destroyed:</strong>
+              {{ planForm.get("notDestroyed")?.value ? "Yes" : "No" }}
+            </p>
+          </div>
+        </div>
+        <div class="row align-items-center gap-5 mt-1">
+          <div class="col-auto">
+            <label class="form-label fw-semibold mb-0">Statement of Conformity</label>
+            <select class="form-control form-control-sm" formControlName="statementOfConformity">
+              <option>Applicable</option>
+              <option>Not Applicable</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <label class="form-label fw-semibold mb-0">Decision Rule</label>
+            <select class="form-control form-control-sm" formControlName="decisionRule">
+              <option>Without taking MOU into account</option>
+              <option>With MOU consideration</option>
+              <option>Not Applicable</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Samples Section -->
+    <div formArrayName="samples">
+      <div
+        *ngFor="let sample of samples.controls; let sampleIdx = index"
+        [formGroupName]="sampleIdx"
+        class="border rounded p-3 mb-2 mt-3 position-relative"
+      >
+        <legend
+          class="w-auto px-2 fw-semibold theme-color"
+          style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+        >
+          Sample No: {{ sample.get("sampleNo")?.value }}
+        </legend>
+
+        <!-- Sample Details + Additional Details in one row -->
+        <div class="card border shadow-sm mb-3">
+          <div class="card-body small">
+            <div class="row g-3 align-items-center">
+              <!-- Sample Details -->
+              <div class="col-auto">
+                <p class="mb-1">
+                  <strong>Details:</strong>
+                  {{ sample.get("details")?.value || "-" }}
+                </p>
+              </div>
+              <div class="col-auto">
+                <p class="mb-1">
+                  <strong>Nature:</strong>
+                  {{ sample.get("nature")?.value || "-" }}
+                </p>
+              </div>
+              <div class="col-auto">
+                <p class="mb-1">
+                  <strong>Remarks:</strong>
+                  {{ sample.get("remarks")?.value || "-" }}
+                </p>
+              </div>
+              <div class="col-auto">
+                <p class="mb-1">
+                  <strong>Quantity:</strong>
+                  {{ sample.get("quantity")?.value || "0" }}
+                </p>
+              </div>
+              <!-- Additional Details -->
+              <ng-container *ngFor="let row of getAdditionalDetailsArray(sample); let addIdx = index">
+                <div class="col-auto">
+                  <p class="mb-1">
+                    <strong>{{ row.get("label")?.value }}:</strong>
+                    {{ row.get("value")?.value }}
+                  </p>
+                </div>
+              </ng-container>
+              <!-- Sample Preview (right section) -->
+              <div class="col-md-auto ms-auto text-end" *ngIf="sample.get('sampleFilePath')?.value">
+                <div>
+                  <strong>Sample File:</strong>
+                  <span>{{ sample.get('fileName')?.value }}</span>
+                </div>
+                <img
+                  [src]="baseUrl + sample.get('sampleFilePath')?.value"
+                  [alt]="sample.get('fileName')?.value"
+                  style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 1px solid #ddd;"
+                />
+              </div>
+            </div>
+            <div class="row g-3 align-items-center mt-1">
+              <div class="col">
+                <label class="form-label d-block">Cutting Required</label>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="true"
+                    formControlName="cuttingRequired"
+                    id="cuttingYes-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="cuttingYes-{{ sampleIdx }}">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="false"
+                    formControlName="cuttingRequired"
+                    id="cuttingNo-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="cuttingNo-{{ sampleIdx }}">No</label>
+                </div>
+              </div>
+              <div class="col">
+                <label class="form-label d-block mb-1">Machining Required</label>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="true"
+                    formControlName="machiningRequired"
+                    id="machiningYes-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="machiningYes-{{ sampleIdx }}">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="false"
+                    formControlName="machiningRequired"
+                    id="machiningNo-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="machiningNo-{{ sampleIdx }}">No</label>
+                </div>
+              </div>
+              <div class="col" *ngIf="sample.get('machiningRequired')?.value === true">
+                <label class="form-label" for="machiningAmount-{{ sampleIdx }}">Machining Amount</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  formControlName="machiningAmount"
+                  id="machiningAmount-{{ sampleIdx }}"
+                  placeholder="Machining Amount"
+                />
+              </div>
+              <div class="col">
+                <label class="form-label d-block mb-1">Other Preparation</label>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="true"
+                    formControlName="otherPreparation"
+                    id="otherYes-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="otherYes-{{ sampleIdx }}">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [value]="false"
+                    formControlName="otherPreparation"
+                    id="otherNo-{{ sampleIdx }}"
+                  />
+                  <label class="form-check-label" for="otherNo-{{ sampleIdx }}">No</label>
+                </div>
+              </div>
+              <div class="col">
+                <label class="form-label d-block mb-1">TPI</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" [value]="true" formControlName="tpiRequired" id="tpiYes-{{ sampleIdx }}" />
+                  <label class="form-check-label" for="tpiYes-{{ sampleIdx }}">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" [value]="false" formControlName="tpiRequired" id="tpiNo-{{ sampleIdx }}" />
+                  <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Plans -->
+        <div formArrayName="testPlans">
+          <ng-container *ngIf="getTestPlansArray(sample).length > 0; else addPlanBlock">
+            <div
+              *ngFor="let testPlan of getTestPlansArray(sample); let planIdx = index"
+              [formGroupName]="planIdx"
+              class="mb-3 border rounded p-3 position-relative"
+            >
+              <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="general-tab-{{ sampleIdx }}-{{ planIdx }}"
+                    [attr.data-bs-toggle]="'tab'"
+                    [attr.data-bs-target]="'#general-' + sampleIdx + '-' + planIdx"
+                    type="button"
+                    role="tab"
+                  >
+                    General Test
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="chemical-tab-{{ sampleIdx }}-{{ planIdx }}"
+                    [attr.data-bs-toggle]="'tab'"
+                    [attr.data-bs-target]="'#chemical-' + sampleIdx + '-' + planIdx"
+                    type="button"
+                    role="tab"
+                  >
+                    Chemical Test
+                  </button>
+                </li>
+              </ul>
+              <div class="tab-content">
+                <!-- General Test Tab -->
+                <div class="tab-pane fade show active" id="general-{{ sampleIdx }}-{{ planIdx }}" role="tabpanel">
+                  <ng-container *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                    <div [formGroup]="getGeneralTestSection(sampleIdx, planIdx)">
+                      <div class="row row-cols-auto row-cols-md-2 mb-2">
+                        <div class="">
+                          <app-searchable-dropdown
+                            [placeholder]="'Search Specification'"
+                            [labelName]="'Specification'"
+                            [fetchDataFn]="getMaterialSpecificationGrade"
+                            (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
+                            [hideLabel]="false"
+                            [required]="true"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
+                          ></app-searchable-dropdown>
+                        </div>
+                        <div class="">
+                          <app-searchable-dropdown
+                            [placeholder]="'Search Specification'"
+                            [labelName]="'Specification 2'"
+                            [fetchDataFn]="getMaterialSpecificationGrade"
+                            (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'generalTests')"
+                            [hideLabel]="false"
+                            [isDisabled]="isViewMode"
+                            [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification2')?.value"
+                          ></app-searchable-dropdown>
+                        </div>
+                      </div>
+                      <table class="table table-sm table-compact">
+                        <thead class="table-light">
+                          <tr class="text-nowrap text-muted small">
+                            <th class="fw-medium text-center">Sr No.</th>
+                            <th class="fw-medium text-center">Laboratory Test</th>
+                            <th class="fw-medium text-center">Test Method Standard</th>
+                            <th class="fw-medium text-center">Quantity</th>
+                            <th class="fw-medium text-center">
+                              <div>Report No</div>
+                              <div>ULR No/Cancel</div>
+                            </th>
+                            <th class="fw-medium text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody formArrayName="methods" *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                          <tr
+                            *ngFor="let method of getMethodRows(sampleIdx, planIdx).controls; let methodIdx = index"
+                            [formGroupName]="methodIdx"
+                          >
+                            <td>{{ methodIdx + 1 }}</td>
+                            <td>
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Test'"
+                                [labelName]="'Laboratory Test'"
+                                [fetchDataFn]="getLaboratoryTest"
+                                (itemSelected)="onLaboratorySelected($event, sampleIdx, planIdx, methodIdx)"
+                                [hideLabel]="true"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="method.get('testMethodID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Standard'"
+                                [labelName]="'Standard'"
+                                [fetchDataFn]="getTestMethodSpecification"
+                                (itemSelected)="onGeneralTestStandardSelected($event, sampleIdx, planIdx, methodIdx)"
+                                [hideLabel]="true"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="method.get('standardID')?.value"
+                              ></app-searchable-dropdown>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                class="form-control form-control-sm"
+                                formControlName="quantity"
+                                placeholder="Enter Quantity"
+                              />
+                            </td>
+                            <td>
+                              <div class="">
+                                {{ method.get("reportNo")?.value }}
+                              </div>
+                              <div class="d-flex justify-content-center gap-2">
+                                {{ method.get("ulrNo")?.value }}
+                                <div class="form-check mt-0">
+                                  <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-danger"
+                                  (click)="getMethodRows(sampleIdx, planIdx).removeAt(methodIdx)"
+                                >
+                                  <i class="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(sampleIdx, planIdx)">
+                        <i class="bi bi-plus-circle-dotted"></i>
+                        Add Row
+                      </button>
+                    </div>
+                  </ng-container>
+                  <button
+                    *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length < 1"
+                    type="button"
+                    class="btn btn-sm btn-outline-danger-600 mt-2"
+                    (click)="addTestBlock(sampleIdx, planIdx, 'generalTests')"
+                  >
+                    <i class="bi bi-plus-circle-dotted"></i>
+                    Add General Test
+                  </button>
+                </div>
+                <!-- Chemical Test Tab -->
+                <div class="tab-pane fade" id="chemical-{{ sampleIdx }}-{{ planIdx }}" role="tabpanel">
+                  <div formArrayName="chemicalTests">
+                    <ng-container *ngIf="getChemicalTestsArray(sampleIdx, planIdx).length > 0">
+                      <div
+                        *ngFor="let chemTest of getChemicalTestsArray(sampleIdx, planIdx); let chemIdx = index"
+                        [formGroupName]="chemIdx"
+                      >
+                        <div class="p-3 border rounded mb-3">
+                          <div class="d-flex justify-content-between">
+                            <label class="form-label fw-semibold">Chemical Test - Sample No: {{ testPlan.get("sampleNo")?.value }}</label>
+                            <label class="form-label fw-semibold">Report No: {{ chemTest.get("reportNo")?.value }}</label>
+                            <label class="form-label fw-semibold">URL: {{ chemTest.get("ulrNo")?.value }}</label>
+                          </div>
+                          <div formGroupName="testTypes" class="row my-2">
+                            <div class="col-md-2" *ngFor="let test of testTypeList">
+                              <div class="form-check">
+                                <input
+                                  type="checkbox"
+                                  [formControlName]="test"
+                                  class="form-check-input mt-1"
+                                  id="{{ test }}-{{ sampleIdx }}-{{ planIdx }}-{{ chemIdx }}"
+                                />
+                                <label class="form-label" [for]="test + '-' + sampleIdx + '-' + planIdx + '-' + chemIdx">{{ test }}</label>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row mt-3">
+                            <div class="col-md-3">
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Metal'"
+                                [labelName]="'Metal Classification'"
+                                [fetchDataFn]="getMetalClassification"
+                                (itemSelected)="onMetalSelected(sampleIdx, planIdx, $event)"
+                                [hideLabel]="false"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('metalClassificationID')?.value"
+                              ></app-searchable-dropdown>
+                            </div>
+                            <div class="col-md-3">
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Specification'"
+                                [labelName]="'Specification'"
+                                [fetchDataFn]="getMaterialSpecificationGrade"
+                                (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
+                                [hideLabel]="false"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('specification1')?.value"
+                              ></app-searchable-dropdown>
+                            </div>
+                            <div class="col-md-3">
+                              <app-searchable-dropdown
+                                [placeholder]="'Search Specification'"
+                                [labelName]="'Specification 2'"
+                                [fetchDataFn]="getMaterialSpecificationGrade"
+                                (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
+                                [hideLabel]="false"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('specification2')?.value"
+                              ></app-searchable-dropdown>
+                            </div>
+                            <div class="col-md-3">
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [placeholder]="'Search Standard'"
+                                [labelName]="'Standard'"
+                                [fetchDataFn]="getTestMethodSpecification"
+                                (itemSelected)="onChemicalStandardSelected($event, sampleIdx, planIdx)"
+                                [hideLabel]="false"
+                                [required]="false"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="chemTest.get('standardID')?.value"
+                              ></app-searchable-dropdown>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <label class="fw-semibold">Elements</label>
+                            <table class="table table-sm table-compact mt-2">
+                              <thead class="table-light">
+                                <tr class="text-nowrap text-muted small">
+                                  <th class="fw-medium text-center">Sr No.</th>
+                                  <th class="fw-medium text-center">Element</th>
+                                  <th class="fw-medium text-center">Select</th>
+                                  <th class="fw-medium text-center">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody formArrayName="elements">
+                                <tr
+                                  *ngFor="let el of getElementsArray(sampleIdx, planIdx, chemIdx); let elIdx = index"
+                                  [formGroupName]="elIdx"
+                                >
+                                  <td>{{ elIdx + 1 }}</td>
+                                  <td>
+                                    <app-searchable-dropdown
+                                      class="w-100"
+                                      [placeholder]="'Search Parameter'"
+                                      [labelName]="'Parameter'"
+                                      [fetchDataFn]="getChemicalParameter"
+                                      (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)"
+                                      [isDisabled]="isViewMode"
+                                      [hideLabel]="true"
+                                      [selectedItem]="el.get('parameterID')?.value"
+                                    ></app-searchable-dropdown>
+                                  </td>
+                                  <td>
+                                    <input type="checkbox" class="form-check-input" formControlName="selected" />
+                                  </td>
+                                  <td>
+                                    <button
+                                      type="button"
+                                      class="btn btn-sm btn-outline-danger"
+                                      (click)="removeElementRow(sampleIdx, planIdx, elIdx)"
+                                    >
+                                      <i class="bi bi-trash"></i>
+                                    </button>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(sampleIdx, planIdx)">
+                              <i class="bi bi-plus-circle-dotted"></i>
+                              Add Element
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </ng-container>
+                    <button
+                      *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1"
+                      type="button"
+                      class="btn btn-sm btn-outline-danger-600"
+                      (click)="addTestBlock(sampleIdx, planIdx, 'chemicalTests')"
+                    >
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Chemical Test
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #addPlanBlock>
+            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addPlanToSample(sampleIdx)">
+              <i class="bi bi-plus-circle-dotted"></i>
+              Add Plan
+            </button>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="d-flex justify-content-end gap-2 mt-4">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancel</button>
+    </div> -->
+    <div>
+      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
+        <button type="submit" class="btn btn-success px-3" [disabled]="!planForm.valid">Save</button>
+      </div>
+    </div>
+  </form>
+</div>

@@ -24,6 +24,7 @@ body {
 
 .content-container {
     margin-top: var(--nav-height);
+    margin-bottom: auto;
     min-height: fit-content;
     transition: margin-top var(--transition-speed) ease-in-out;
 }

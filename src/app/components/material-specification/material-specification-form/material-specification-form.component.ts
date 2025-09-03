@@ -128,7 +128,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
       this.loadMaterialSpecification();
     } else {
       this.addGrade();
-      this.addSpecificationLine(0, 'chemical');
+      //this.addSpecificationLine(0, 'chemical');
     }
   }
 
@@ -481,7 +481,55 @@ export class MaterialSpecificationFormComponent implements OnInit {
     grade.patchValue({
       metalClassificationID: item.id,
     });
+
+    // Fetch parameters for the selected metal classification
+    this.metalService.getParameterByMetalId(item.id).subscribe({
+      next: (data) => {
+        // For each parameter, add to the correct tab based on parameterType
+        data.forEach((param: any) => {
+          const tab = (param.parameterType.toLowerCase() as 'chemical' | 'mechanical' | 'other');
+          const linesArray = this.getSpecificationLinesByTab(gradeIndex, tab);
+
+          // Get existing parameterIDs to avoid duplicates in this tab
+          const existingParamIds = linesArray.controls.map(ctrl => ctrl.get('parameterID')?.value);
+
+          if (!existingParamIds.includes(param.id)) {
+            // Add new line and set parameterID
+            const newLine = this.fb.group({
+              id: [0],
+              gradeID: [0],
+              manualSelection: [false],
+              parameterID: [param.id],
+              minValue: [null],
+              maxValue: [null],
+              notes: [''],
+              parameterUnitID: [''],
+              minValueEquation: [0],
+              maxValueEquation: [0],
+              minTolerance: [0],
+              maxTolerance: [0],
+              specimenOrientationID: [null],
+              dimensionalFactorID: [null],
+              lowerLimitValue: [''],
+              upperLimitValue: [''],
+              heatTreatmentID: [null],
+              productConditionID1: [null],
+              productConditionID2: [null],
+              laboratoryTests: this.fb.array([]),
+              laboratoryTestIDs: this.fb.control([]),
+              type: [tab],
+              IsCustom: [false]
+            });
+            linesArray.push(newLine);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching parameters by metal ID:', error);
+      },
+    });
   }
+
 
   getParameterUnit() {
     this.prameterUnitService.getParameterUnitDropdown('', 0, 100).subscribe({
@@ -562,5 +610,10 @@ export class MaterialSpecificationFormComponent implements OnInit {
   }
   selectSpecTab(gradeIndex: number, tab: string) {
     this.selectedSpecTab[gradeIndex] = tab;
+  }
+
+  // Add this method to handle accordion expand
+  onGradeAccordionExpand(gradeIndex: number) {
+    this.selectedSpecTab[gradeIndex] = 'chemical';
   }
 }

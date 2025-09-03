@@ -109,6 +109,7 @@
               [attr.data-bs-target]="'#collapse' + gi"
               [attr.aria-expanded]="gi === 0 ? 'true' : 'false'"
               [attr.aria-controls]="'collapse' + gi"
+              (click)="onGradeAccordionExpand(gi)"
             >
               <span class="btn btn-sm btn-outline-danger" (click)="addGrade()">
                 <i class="bi bi-plus-circle-dotted"></i>
@@ -148,7 +149,7 @@
                   <app-searchable-dropdown
                     class="w-100"
                     [placeholder]="'Search Metal Type'"
-                    [labelName]="'Metal Type'"
+                    [labelName]="'Metal Classification'"
                     [fetchDataFn]="getMetalClassification"
                     (itemSelected)="onMetalClassificationSelected($event, gi)"
                     [hideLabel]="false"

@@ -5,6 +5,7 @@ import { NumberOnlyDirective } from '../../../utility/directives/number-only.dir
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { OEMService } from '../../../services/oem.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-oem-form',
@@ -184,7 +185,7 @@ export class OEMFormComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-      const baseUrl = 'https://localhost:7049/';
+       const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {

@@ -642,4 +642,9 @@ export class PlanFormComponent implements OnInit {
       chemicalTests: this.fb.array([])
     }));
   }
+  openFileInNewTab(filePath: string): void {
+      if (filePath) {
+        window.open(this.baseUrl + filePath, '_blank');
+      }
+    }
 }

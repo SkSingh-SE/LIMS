@@ -77,143 +77,163 @@
         <!-- Sample Details + Additional Details in one row -->
         <div class="card border shadow-sm mb-3">
           <div class="card-body small">
-            <div class="row g-3 align-items-center">
-              <!-- Sample Details -->
-              <div class="col-auto">
-                <p class="mb-1">
-                  <strong>Details:</strong>
-                  {{ sample.get("details")?.value || "-" }}
-                </p>
-              </div>
-              <div class="col-auto">
-                <p class="mb-1">
-                  <strong>Nature:</strong>
-                  {{ sample.get("nature")?.value || "-" }}
-                </p>
-              </div>
-              <div class="col-auto">
-                <p class="mb-1">
-                  <strong>Remarks:</strong>
-                  {{ sample.get("remarks")?.value || "-" }}
-                </p>
-              </div>
-              <div class="col-auto">
-                <p class="mb-1">
-                  <strong>Quantity:</strong>
-                  {{ sample.get("quantity")?.value || "0" }}
-                </p>
-              </div>
-              <!-- Additional Details -->
-              <ng-container *ngFor="let row of getAdditionalDetailsArray(sample); let addIdx = index">
-                <div class="col-auto">
-                  <p class="mb-1">
-                    <strong>{{ row.get("label")?.value }}:</strong>
-                    {{ row.get("value")?.value }}
-                  </p>
+            <div class="row">
+              <div class="col-10">
+                <div class="row g-3 align-items-center">
+                  <!-- Sample Details -->
+                  <div class="col-auto">
+                    <p class="mb-1">
+                      <strong>Details:</strong>
+                      {{ sample.get("details")?.value || "-" }}
+                    </p>
+                  </div>
+                  <div class="col-auto">
+                    <p class="mb-1">
+                      <strong>Nature:</strong>
+                      {{ sample.get("nature")?.value || "-" }}
+                    </p>
+                  </div>
+                  <div class="col-auto">
+                    <p class="mb-1">
+                      <strong>Remarks:</strong>
+                      {{ sample.get("remarks")?.value || "-" }}
+                    </p>
+                  </div>
+                  <div class="col-auto">
+                    <p class="mb-1">
+                      <strong>Quantity:</strong>
+                      {{ sample.get("quantity")?.value || "0" }}
+                    </p>
+                  </div>
+                  <!-- Additional Details -->
+                  <ng-container *ngFor="let row of getAdditionalDetailsArray(sample); let addIdx = index">
+                    <div class="col-auto">
+                      <p class="mb-1">
+                        <strong>{{ row.get("label")?.value }}:</strong>
+                        {{ row.get("value")?.value }}
+                      </p>
+                    </div>
+                  </ng-container>
                 </div>
-              </ng-container>
-              <!-- Sample Preview (right section) -->
-              <div class="col-md-auto ms-auto text-end" *ngIf="sample.get('sampleFilePath')?.value">
-                <div>
-                  <strong>Sample File:</strong>
-                  <span>{{ sample.get('fileName')?.value }}</span>
+                <div class="row g-3 align-items-center mt-1">
+                  <div class="col">
+                    <label class="form-label d-block">Cutting Required</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="true"
+                        formControlName="cuttingRequired"
+                        id="cuttingYes-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="cuttingYes-{{ sampleIdx }}">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="false"
+                        formControlName="cuttingRequired"
+                        id="cuttingNo-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="cuttingNo-{{ sampleIdx }}">No</label>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <label class="form-label d-block mb-1">Machining Required</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="true"
+                        formControlName="machiningRequired"
+                        id="machiningYes-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="machiningYes-{{ sampleIdx }}">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="false"
+                        formControlName="machiningRequired"
+                        id="machiningNo-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="machiningNo-{{ sampleIdx }}">No</label>
+                    </div>
+                  </div>
+                  <div class="col" *ngIf="sample.get('machiningRequired')?.value === true">
+                    <label class="form-label" for="machiningAmount-{{ sampleIdx }}">Machining Amount</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      formControlName="machiningAmount"
+                      id="machiningAmount-{{ sampleIdx }}"
+                      placeholder="Machining Amount"
+                    />
+                  </div>
+                  <div class="col">
+                    <label class="form-label d-block mb-1">Other Preparation</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="true"
+                        formControlName="otherPreparation"
+                        id="otherYes-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="otherYes-{{ sampleIdx }}">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="false"
+                        formControlName="otherPreparation"
+                        id="otherNo-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="otherNo-{{ sampleIdx }}">No</label>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <label class="form-label d-block mb-1">TPI</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="true"
+                        formControlName="tpiRequired"
+                        id="tpiYes-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="tpiYes-{{ sampleIdx }}">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [value]="false"
+                        formControlName="tpiRequired"
+                        id="tpiNo-{{ sampleIdx }}"
+                      />
+                      <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
+                    </div>
+                  </div>
                 </div>
-                <img
-                  [src]="baseUrl + sample.get('sampleFilePath')?.value"
-                  [alt]="sample.get('fileName')?.value"
-                  style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 1px solid #ddd;"
-                />
               </div>
-            </div>
-            <div class="row g-3 align-items-center mt-1">
-              <div class="col">
-                <label class="form-label d-block">Cutting Required</label>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="true"
-                    formControlName="cuttingRequired"
-                    id="cuttingYes-{{ sampleIdx }}"
+              <div class="col-2">
+                <!-- Sample Preview (right section) -->
+                <div
+                  class="col-md-auto d-flex justify-content-center align-items-center"
+                  *ngIf="sample.get('sampleFilePath')?.value"
+                  (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
+                  style="cursor: pointer"
+                >
+                  <img
+                    [src]="baseUrl + sample.get('sampleFilePath')?.value"
+                    [alt]="sample.get('fileName')?.value"
+                    class="img-fluid rounded border"
+                    style="min-height: 85px; max-height: 100%; object-fit: contain"
                   />
-                  <label class="form-check-label" for="cuttingYes-{{ sampleIdx }}">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="false"
-                    formControlName="cuttingRequired"
-                    id="cuttingNo-{{ sampleIdx }}"
-                  />
-                  <label class="form-check-label" for="cuttingNo-{{ sampleIdx }}">No</label>
-                </div>
-              </div>
-              <div class="col">
-                <label class="form-label d-block mb-1">Machining Required</label>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="true"
-                    formControlName="machiningRequired"
-                    id="machiningYes-{{ sampleIdx }}"
-                  />
-                  <label class="form-check-label" for="machiningYes-{{ sampleIdx }}">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="false"
-                    formControlName="machiningRequired"
-                    id="machiningNo-{{ sampleIdx }}"
-                  />
-                  <label class="form-check-label" for="machiningNo-{{ sampleIdx }}">No</label>
-                </div>
-              </div>
-              <div class="col" *ngIf="sample.get('machiningRequired')?.value === true">
-                <label class="form-label" for="machiningAmount-{{ sampleIdx }}">Machining Amount</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  formControlName="machiningAmount"
-                  id="machiningAmount-{{ sampleIdx }}"
-                  placeholder="Machining Amount"
-                />
-              </div>
-              <div class="col">
-                <label class="form-label d-block mb-1">Other Preparation</label>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="true"
-                    formControlName="otherPreparation"
-                    id="otherYes-{{ sampleIdx }}"
-                  />
-                  <label class="form-check-label" for="otherYes-{{ sampleIdx }}">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    [value]="false"
-                    formControlName="otherPreparation"
-                    id="otherNo-{{ sampleIdx }}"
-                  />
-                  <label class="form-check-label" for="otherNo-{{ sampleIdx }}">No</label>
-                </div>
-              </div>
-              <div class="col">
-                <label class="form-label d-block mb-1">TPI</label>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" [value]="true" formControlName="tpiRequired" id="tpiYes-{{ sampleIdx }}" />
-                  <label class="form-check-label" for="tpiYes-{{ sampleIdx }}">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" [value]="false" formControlName="tpiRequired" id="tpiNo-{{ sampleIdx }}" />
-                  <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
                 </div>
               </div>
             </div>

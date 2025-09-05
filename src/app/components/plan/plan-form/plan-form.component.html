@@ -194,7 +194,20 @@
                       />
                       <label class="form-check-label" for="otherNo-{{ sampleIdx }}">No</label>
                     </div>
+                    
                   </div>
+                  <!-- Add charge input if yes -->
+                    <div *ngIf="sample.get('otherPreparation')?.value === true" class="col">
+                      <label class="form-label" for="otherPreparationCharge-{{ sampleIdx }}">Other Preparation Charge</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        formControlName="otherPreparationCharge"
+                        id="otherPreparationCharge-{{ sampleIdx }}"
+                        placeholder="Enter charge"
+                        min="0"
+                      />
+                    </div>
                   <div class="col">
                     <label class="form-label d-block mb-1">TPI</label>
                     <div class="form-check form-check-inline">
@@ -308,8 +321,8 @@
                         <thead class="table-light">
                           <tr class="text-nowrap text-muted small">
                             <th class="fw-medium text-center">Sr No.</th>
-                            <th class="fw-medium text-center">Laboratory Test</th>
                             <th class="fw-medium text-center">Test Method Standard</th>
+                            <th class="fw-medium text-center">Laboratory Test</th>
                             <th class="fw-medium text-center">Quantity</th>
                             <th class="fw-medium text-center">
                               <div>Report No</div>
@@ -325,20 +338,7 @@
                           >
                             <td>{{ methodIdx + 1 }}</td>
                             <td>
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Test'"
-                                [labelName]="'Laboratory Test'"
-                                [fetchDataFn]="getLaboratoryTest"
-                                (itemSelected)="onLaboratorySelected($event, sampleIdx, planIdx, methodIdx)"
-                                [hideLabel]="true"
-                                [required]="true"
-                                [isDisabled]="isViewMode"
-                                [selectedItem]="method.get('testMethodID')?.value"
-                              ></app-searchable-dropdown>
-                            </td>
-                            <td>
-                              <app-searchable-dropdown
+                              <!-- <app-searchable-dropdown
                                 class="w-100"
                                 [placeholder]="'Search Standard'"
                                 [labelName]="'Standard'"
@@ -348,6 +348,30 @@
                                 [required]="false"
                                 [isDisabled]="isViewMode"
                                 [selectedItem]="method.get('standardID')?.value"
+                              ></app-searchable-dropdown> -->
+                              <select
+                                class="form-select"
+                                formControlName="standardID"
+                                [disabled]="isViewMode"
+                              >
+                                <option value="">-- Select Standard --</option>
+                                <option *ngFor="let standard of filteredStandards" [value]="standard.id">
+                                  {{ standard.name }}
+                                </option>
+                              </select>
+                            </td>
+                             <td>
+                              <app-searchable-dropdown
+                                class="w-100"
+                                [smallInput]="true"
+                                [placeholder]="'Search Test'"
+                                [labelName]="'Laboratory Test'"
+                                [fetchDataFn]="getLaboratoryTest"
+                                (itemSelected)="onLaboratorySelected($event, sampleIdx, planIdx, methodIdx)"
+                                [hideLabel]="true"
+                                [required]="true"
+                                [isDisabled]="isViewMode"
+                                [selectedItem]="method.get('testMethodID')?.value"
                               ></app-searchable-dropdown>
                             </td>
                             <td>

@@ -43,5 +43,13 @@ export class MaterialSpecificationService {
     getMaterialSpecificationGradeDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/grade-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+    
+     getDefaultStandardBySpecificationId(id: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/default-standard/${id}`);
+    }
+
+    getTestMethodsBySpecifications(spec1:number,spec2:number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/test-methods?spec1=${spec1}&spec2=${spec2}`);
+    }
   
 }

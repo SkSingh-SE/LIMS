@@ -26,6 +26,10 @@ export class PlanFormComponent implements OnInit {
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
+  // Store filtered test methods per sample/plan
+  filteredTestMethods: { [key: string]: any[] } = {};
+  filteredStandards: any[] = [];
+
   constructor(
     private fb: FormBuilder,
     private materialSpecificationService: MaterialSpecificationService,
@@ -79,6 +83,7 @@ export class PlanFormComponent implements OnInit {
       machiningRequired: [false],
       machiningAmount: [0],
       otherPreparation: [false],
+      otherPreparationCharge: [0],
       tpiRequired: [false],
       fileName: [''],
       sampleFilePath: [''],
@@ -239,6 +244,7 @@ export class PlanFormComponent implements OnInit {
               machiningRequired: s.machiningRequired ?? false,
               machiningAmount: s.machiningAmount ?? 0,
               otherPreparation: s.otherPreparation ?? false,
+              otherPreparationCharge: [s.otherPreparationCharge ?? 0],
               tpiRequired: s.tpiRequired ?? false,
               fileName: s.fileName ?? '',
               sampleFilePath: s.sampleFilePath ?? ''
@@ -300,8 +306,27 @@ export class PlanFormComponent implements OnInit {
   getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
 
-  getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> =>
-    this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+  getLaboratoryTest = (term: string, page: number, pageSize: number, sampleIndex?: number, planIndex?: number): Observable<any[]> => {
+    if (
+      typeof sampleIndex === 'number' &&
+      typeof planIndex === 'number'
+    ) {
+      const key = `${sampleIndex}_${planIndex}`;
+      const filtered = this.filteredTestMethods[key];
+      if (filtered && filtered.length > 0) {
+        // Optionally filter by term here if needed
+        const filteredByTerm = filtered.filter((item: any) =>
+          item.name?.toLowerCase().includes(term?.toLowerCase() || '')
+        );
+        return new Observable((observer) => {
+          observer.next(filteredByTerm);
+          observer.complete();
+        });
+      }
+    }
+    // fallback to API
+    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+  };
 
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.metalService.getMetalClassificationDropdown(term, page, pageSize);
@@ -311,6 +336,18 @@ export class PlanFormComponent implements OnInit {
 
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+
+  // Fetch default standard for a specification
+  getDefaultStandardForSpecification(gradeId: string): Observable<any> {
+    return this.materialSpecificationService.getDefaultStandardBySpecificationId(+gradeId);
+  }
+
+  // Fetch test methods for selected specifications
+  getTestMethodsForSpecifications(spec1: string, spec2: string): Observable<any[]> {
+    const spec1Num = spec1 ? +spec1 : 0;
+    const spec2Num = spec2 ? +spec2 : 0;
+    return this.materialSpecificationService.getTestMethodsBySpecifications(spec1Num, spec2Num);
+  }
 
   // Dropdown Event Handlers
   onSpecificationGradeSelected(
@@ -325,6 +362,43 @@ export class PlanFormComponent implements OnInit {
       : this.getChemicalTestSection(sampleIndex, planIndex);
 
     section.patchValue({ [field]: item.id });
+
+    // Only apply auto-standard and test method filtering for generalTests
+    if (testType === 'generalTests') {
+      const spec1 = section.get('specification1')?.value;
+      const spec2 = section.get('specification2')?.value;
+
+      // Auto-select standard for the changed specification
+      if (item.id) {
+        this.getDefaultStandardForSpecification(item.id).subscribe((standard) => {
+          if (standard && standard.length === 0) {
+            this.toastService.show('No default standard found for the selected specification.', 'warning');
+          }
+          this.filteredStandards.push(...(standard ?? []));
+
+          // keep only unique by id
+          this.filteredStandards = this.filteredStandards.filter(
+            (item, index, self) =>
+              index === self.findIndex(t => t.id === item.id)
+          );
+
+          // Set standardID in the first method row if exists
+          const methods = section.get('methods') as FormArray;
+          if (methods && methods.length > 0 && standard[0]?.id) {
+            methods.at(0).patchValue({ standardID: standard[0].id });
+          }
+        });
+      }
+
+      // Fetch and filter test methods based on both specifications
+      if (spec1 || spec2) {
+        this.getTestMethodsForSpecifications(spec1, spec2).subscribe((methods) => {
+          // Store filtered methods for this sample/plan
+          const key = `${sampleIndex}_${planIndex}`;
+          this.filteredTestMethods[key] = methods || [];
+        });
+      }
+    }
   }
 
   onLaboratorySelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
@@ -382,6 +456,7 @@ export class PlanFormComponent implements OnInit {
       machiningRequired: [false],
       machiningAmount: [0],
       otherPreparation: [false],
+      otherPreparationCharge: [0],
       tpiRequired: [true],
       additionalDetails: this.fb.array([
         this.fb.group({ label: ['Heat No'], value: ['HN123'], enabled: [true] }),
@@ -451,6 +526,7 @@ export class PlanFormComponent implements OnInit {
       machiningRequired: [true],
       machiningAmount: [200],
       otherPreparation: [true],
+      otherPreparationCharge: [0],
       tpiRequired: [false],
       additionalDetails: this.fb.array([
         this.fb.group({ label: ['Heat No'], value: ['HN456'], enabled: [true] }),
@@ -643,8 +719,8 @@ export class PlanFormComponent implements OnInit {
     }));
   }
   openFileInNewTab(filePath: string): void {
-      if (filePath) {
-        window.open(this.baseUrl + filePath, '_blank');
-      }
+    if (filePath) {
+      window.open(this.baseUrl + filePath, '_blank');
     }
+  }
 }

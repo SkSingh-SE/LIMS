@@ -24,6 +24,7 @@ export class SearchableDropdownComponent {
   @Input() fetchDataFn!: (searchTerm: string, page: number, pageSize: number) => any;
   @Input() selectedItem: any;
   @Input() hideLabel = false;
+  @Input() smallInput = false;
 
   @Output() itemSelected = new EventEmitter<any>();
 

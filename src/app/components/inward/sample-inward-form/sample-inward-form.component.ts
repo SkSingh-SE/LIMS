@@ -16,11 +16,12 @@ import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, PlanFormComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })

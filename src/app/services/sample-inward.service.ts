@@ -19,6 +19,9 @@ export class SampleInwardService {
   getSampleInwardById(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
+  getSampleInwardWithPlans(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/details-with-plan/${id}`);
+  }
   getCaseNumber(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/case-number`);
   }
@@ -29,6 +32,10 @@ export class SampleInwardService {
 
   updateSampleInward(payload: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/update`, payload);
+  }
+
+  testPlanSave(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/plan`, payload);
   }
 
   deleteSampleInward(id: number): Observable<any> {

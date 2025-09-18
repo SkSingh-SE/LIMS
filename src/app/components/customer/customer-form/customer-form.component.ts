@@ -20,6 +20,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DispatchModeService } from '../../../services/dispatch-mode.service';
 import { AreaService } from '../../../services/area.service';
+import { ConfigService } from '../../../services/config.service';
 
 @Component({
   selector: 'app-customer-form',
@@ -66,7 +67,8 @@ export class CustomerFormComponent implements OnInit {
     private companyCategoryService: CompanyCategoryService,
     private toastService: ToastService,
     private route: ActivatedRoute, private router: Router,
-    private dispatchModeService: DispatchModeService
+    private dispatchModeService: DispatchModeService,
+    private configService: ConfigService
   ) { }
 
   ngOnInit(): void {
@@ -134,6 +136,7 @@ export class CustomerFormComponent implements OnInit {
     this.initFixedContacts();
     this.fetchCompanyCategoryDropdown();
     this.fetchDispatchModeDropdown();
+    this.getCustomerTypes();
 
     if (this.isViewMode) {
       this.customerForm.disable();
@@ -526,6 +529,18 @@ export class CustomerFormComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching customer data:', error);
+      }
+    });
+  }
+  getCustomerTypes = ():any => {
+     this.configService.getConfigurationValueBykey('Customer Type').subscribe({
+      next: (res) => {
+        if (res ) {
+          this.customerTypes = res;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching customer types:', err);
       }
     });
   }

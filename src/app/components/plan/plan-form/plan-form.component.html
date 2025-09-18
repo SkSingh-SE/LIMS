@@ -40,17 +40,20 @@
             </p>
           </div>
         </div>
-        <div class="row align-items-center gap-5 mt-1">
-          <div class="col-auto">
-            <label class="form-label fw-semibold mb-0">Statement of Conformity</label>
-            <select class="form-control form-control-sm" formControlName="statementOfConformity">
+        <div class="d-flex align-items-center gap-4 mt-2">
+          <!-- Statement of Conformity -->
+          <div class="d-flex align-items-center">
+            <label class="form-label fw-semibold mb-0 me-2">Statement of Conformity:</label>
+            <select class="form-select form-select-sm w-auto" formControlName="statementOfConformity">
               <option>Applicable</option>
               <option>Not Applicable</option>
             </select>
           </div>
-          <div class="col-auto">
-            <label class="form-label fw-semibold mb-0">Decision Rule</label>
-            <select class="form-control form-control-sm" formControlName="decisionRule">
+
+          <!-- Decision Rule -->
+          <div class="d-flex align-items-center">
+            <label class="form-label fw-semibold mb-0 me-2">Decision Rule:</label>
+            <select class="form-select form-select-sm w-auto" formControlName="decisionRule">
               <option>Without taking MOU into account</option>
               <option>With MOU consideration</option>
               <option>Not Applicable</option>
@@ -78,9 +81,10 @@
         <div class="card border shadow-sm mb-3">
           <div class="card-body small">
             <div class="row">
-              <div class="col-10">
-                <div class="row g-3 align-items-center">
-                  <!-- Sample Details -->
+              <!-- LEFT SIDE: Sample Details + Preparation -->
+              <div class="col-md-10">
+                <!-- Sample Details -->
+                <div class="row g-3 mb-2">
                   <div class="col-auto">
                     <p class="mb-1">
                       <strong>Details:</strong>
@@ -106,7 +110,7 @@
                     </p>
                   </div>
                   <!-- Additional Details -->
-                  <ng-container *ngFor="let row of getAdditionalDetailsArray(sample); let addIdx = index">
+                  <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
                     <div class="col-auto">
                       <p class="mb-1">
                         <strong>{{ row.get("label")?.value }}:</strong>
@@ -115,13 +119,16 @@
                     </div>
                   </ng-container>
                 </div>
-                <div class="row g-3 align-items-center mt-1">
-                  <div class="col">
+
+                <!-- Preparation Options -->
+                <div class="row g-2 align-items-center">
+                  <!-- Cutting -->
+                  <div class="col-md-3">
                     <label class="form-label d-block">Cutting Required</label>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="true"
                         formControlName="cuttingRequired"
                         id="cuttingYes-{{ sampleIdx }}"
@@ -130,8 +137,8 @@
                     </div>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="false"
                         formControlName="cuttingRequired"
                         id="cuttingNo-{{ sampleIdx }}"
@@ -139,12 +146,14 @@
                       <label class="form-check-label" for="cuttingNo-{{ sampleIdx }}">No</label>
                     </div>
                   </div>
-                  <div class="col">
-                    <label class="form-label d-block mb-1">Machining Required</label>
+
+                  <!-- Machining -->
+                  <div class="col-md-3">
+                    <label class="form-label d-block">Machining Required</label>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="true"
                         formControlName="machiningRequired"
                         id="machiningYes-{{ sampleIdx }}"
@@ -153,8 +162,8 @@
                     </div>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="false"
                         formControlName="machiningRequired"
                         id="machiningNo-{{ sampleIdx }}"
@@ -162,22 +171,38 @@
                       <label class="form-check-label" for="machiningNo-{{ sampleIdx }}">No</label>
                     </div>
                   </div>
-                  <div class="col" *ngIf="sample.get('machiningRequired')?.value === true">
-                    <label class="form-label" for="machiningAmount-{{ sampleIdx }}">Machining Amount</label>
+
+                  <!-- Machining Amount -->
+                  <div class="col-md-3" *ngIf="sample.get('machiningRequired')?.value === true">
+                    <label class="form-label">Machining Amount</label>
                     <input
                       type="number"
                       class="form-control"
                       formControlName="machiningAmount"
                       id="machiningAmount-{{ sampleIdx }}"
-                      placeholder="Machining Amount"
+                      placeholder="Enter amount"
                     />
                   </div>
-                  <div class="col">
-                    <label class="form-label d-block mb-1">Other Preparation</label>
+
+                  <!-- Specimen -->
+                  <div class="col-md-3" *ngIf="sample.get('machiningRequired')?.value === true">
+                    <label class="form-label">Specimen</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      formControlName="specimen"
+                      id="specimen-{{ sampleIdx }}"
+                      placeholder="Enter specimen"
+                    />
+                  </div>
+
+                  <!-- Other Preparation -->
+                  <div class="col-md-3">
+                    <label class="form-label d-block">Other Preparation</label>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="true"
                         formControlName="otherPreparation"
                         id="otherYes-{{ sampleIdx }}"
@@ -186,34 +211,36 @@
                     </div>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="false"
                         formControlName="otherPreparation"
                         id="otherNo-{{ sampleIdx }}"
                       />
                       <label class="form-check-label" for="otherNo-{{ sampleIdx }}">No</label>
                     </div>
-                    
                   </div>
-                  <!-- Add charge input if yes -->
-                    <div *ngIf="sample.get('otherPreparation')?.value === true" class="col">
-                      <label class="form-label" for="otherPreparationCharge-{{ sampleIdx }}">Other Preparation Charge</label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        formControlName="otherPreparationCharge"
-                        id="otherPreparationCharge-{{ sampleIdx }}"
-                        placeholder="Enter charge"
-                        min="0"
-                      />
-                    </div>
-                  <div class="col">
-                    <label class="form-label d-block mb-1">TPI</label>
+
+                  <!-- Other Charge -->
+                  <div class="col-md-3" *ngIf="sample.get('otherPreparation')?.value === true">
+                    <label class="form-label">Other Preparation Charge</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      formControlName="otherPreparationCharge"
+                      id="otherPreparationCharge-{{ sampleIdx }}"
+                      placeholder="Enter charge"
+                      min="0"
+                    />
+                  </div>
+
+                  <!-- TPI -->
+                  <div class="col-md-3">
+                    <label class="form-label d-block">TPI Required</label>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="true"
                         formControlName="tpiRequired"
                         id="tpiYes-{{ sampleIdx }}"
@@ -222,8 +249,8 @@
                     </div>
                     <div class="form-check form-check-inline">
                       <input
-                        class="form-check-input"
                         type="radio"
+                        class="form-check-input"
                         [value]="false"
                         formControlName="tpiRequired"
                         id="tpiNo-{{ sampleIdx }}"
@@ -231,21 +258,32 @@
                       <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
                     </div>
                   </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold">Test Instructions</label>
+                    <textarea
+                      class="form-control"
+                      formControlName="testInstructions"
+                      rows="2"
+                      placeholder="Enter any special test instructions for this sample"
+                    ></textarea>
+                  </div>
                 </div>
               </div>
-              <div class="col-2">
-                <!-- Sample Preview (right section) -->
+
+              <!-- RIGHT SIDE: Image Preview -->
+              <div class="col-md-2 d-flex align-items-center justify-content-center">
                 <div
-                  class="col-md-auto d-flex justify-content-center align-items-center"
                   *ngIf="sample.get('sampleFilePath')?.value"
+                  class="preview-box w-100 h-100"
                   (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
                   style="cursor: pointer"
                 >
                   <img
                     [src]="baseUrl + sample.get('sampleFilePath')?.value"
                     [alt]="sample.get('fileName')?.value"
-                    class="img-fluid rounded border"
-                    style="min-height: 85px; max-height: 100%; object-fit: contain"
+                    class="img-fluid rounded border w-100 h-100"
+                    style="object-fit: contain; min-height: 150px; min-width: 100px"
                   />
                 </div>
               </div>
@@ -264,7 +302,9 @@
               <ul class="nav nav-tabs mb-3" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button
-                    class="nav-link active"
+                    class="nav-link"
+                    [ngClass]="{ active: isActiveTab(sampleIdx, planIdx, 'general') }"
+                    (click)="setActiveTab(sampleIdx, planIdx, 'general')"
                     id="general-tab-{{ sampleIdx }}-{{ planIdx }}"
                     [attr.data-bs-toggle]="'tab'"
                     [attr.data-bs-target]="'#general-' + sampleIdx + '-' + planIdx"
@@ -277,6 +317,8 @@
                 <li class="nav-item" role="presentation">
                   <button
                     class="nav-link"
+                    [ngClass]="{ active: isActiveTab(sampleIdx, planIdx, 'chemical') }"
+                    (click)="setActiveTab(sampleIdx, planIdx, 'chemical')"
                     id="chemical-tab-{{ sampleIdx }}-{{ planIdx }}"
                     [attr.data-bs-toggle]="'tab'"
                     [attr.data-bs-target]="'#chemical-' + sampleIdx + '-' + planIdx"
@@ -289,7 +331,12 @@
               </ul>
               <div class="tab-content">
                 <!-- General Test Tab -->
-                <div class="tab-pane fade show active" id="general-{{ sampleIdx }}-{{ planIdx }}" role="tabpanel">
+                <div
+                  class="tab-pane fade"
+                  id="general-{{ sampleIdx }}-{{ planIdx }}"
+                  role="tabpanel"
+                  [ngClass]="{ 'show active': isActiveTab(sampleIdx, planIdx, 'general') }"
+                >
                   <ng-container *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
                     <div [formGroup]="getGeneralTestSection(sampleIdx, planIdx)">
                       <div class="row row-cols-auto row-cols-md-2 mb-2">
@@ -316,6 +363,12 @@
                             [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification2')?.value"
                           ></app-searchable-dropdown>
                         </div>
+                      </div>
+                      <div
+                        *ngIf="getGeneralTestSection(sampleIdx, planIdx).errors?.['sameSpecification'] && (getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.touched || getGeneralTestSection(sampleIdx, planIdx).get('specification2')?.touched)"
+                        class="text-danger small mb-2"
+                      >
+                        Specification 1 and Specification 2 must be different.
                       </div>
                       <table class="table table-sm table-compact">
                         <thead class="table-light">
@@ -349,18 +402,14 @@
                                 [isDisabled]="isViewMode"
                                 [selectedItem]="method.get('standardID')?.value"
                               ></app-searchable-dropdown> -->
-                              <select
-                                class="form-select"
-                                formControlName="standardID"
-                                [disabled]="isViewMode"
-                              >
+                              <select class="form-select" formControlName="standardID" [disabled]="isViewMode">
                                 <option value="">-- Select Standard --</option>
                                 <option *ngFor="let standard of filteredStandards" [value]="standard.id">
                                   {{ standard.name }}
                                 </option>
                               </select>
                             </td>
-                             <td>
+                            <td>
                               <app-searchable-dropdown
                                 class="w-100"
                                 [smallInput]="true"
@@ -394,7 +443,7 @@
                               </div>
                             </td>
                             <td>
-                              <div *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                              <div *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0 && !isViewMode">
                                 <button
                                   type="button"
                                   class="btn btn-sm btn-outline-danger"
@@ -407,14 +456,19 @@
                           </tr>
                         </tbody>
                       </table>
-                      <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addMethodRow(sampleIdx, planIdx)">
+                      <button
+                        *ngIf="!isViewMode"
+                        type="button"
+                        class="btn btn-sm btn-outline-danger-600"
+                        (click)="addMethodRow(sampleIdx, planIdx)"
+                      >
                         <i class="bi bi-plus-circle-dotted"></i>
                         Add Row
                       </button>
                     </div>
                   </ng-container>
                   <button
-                    *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length < 1"
+                    *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length < 1 && !isViewMode"
                     type="button"
                     class="btn btn-sm btn-outline-danger-600 mt-2"
                     (click)="addTestBlock(sampleIdx, planIdx, 'generalTests')"
@@ -424,7 +478,12 @@
                   </button>
                 </div>
                 <!-- Chemical Test Tab -->
-                <div class="tab-pane fade" id="chemical-{{ sampleIdx }}-{{ planIdx }}" role="tabpanel">
+                <div
+                  class="tab-pane fade"
+                  id="chemical-{{ sampleIdx }}-{{ planIdx }}"
+                  role="tabpanel"
+                  [ngClass]="{ 'show active': isActiveTab(sampleIdx, planIdx, 'chemical') }"
+                >
                   <div formArrayName="chemicalTests">
                     <ng-container *ngIf="getChemicalTestsArray(sampleIdx, planIdx).length > 0">
                       <div
@@ -535,6 +594,7 @@
                                   </td>
                                   <td>
                                     <button
+                                      *ngIf="!isViewMode"
                                       type="button"
                                       class="btn btn-sm btn-outline-danger"
                                       (click)="removeElementRow(sampleIdx, planIdx, elIdx)"
@@ -545,7 +605,12 @@
                                 </tr>
                               </tbody>
                             </table>
-                            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addElementRow(sampleIdx, planIdx)">
+                            <button
+                              *ngIf="!isViewMode"
+                              type="button"
+                              class="btn btn-sm btn-outline-danger-600"
+                              (click)="addElementRow(sampleIdx, planIdx)"
+                            >
                               <i class="bi bi-plus-circle-dotted"></i>
                               Add Element
                             </button>
@@ -554,7 +619,7 @@
                       </div>
                     </ng-container>
                     <button
-                      *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1"
+                      *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
                       type="button"
                       class="btn btn-sm btn-outline-danger-600"
                       (click)="addTestBlock(sampleIdx, planIdx, 'chemicalTests')"
@@ -568,7 +633,7 @@
             </div>
           </ng-container>
           <ng-template #addPlanBlock>
-            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addPlanToSample(sampleIdx)">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addPlanToSample(sampleIdx)">
               <i class="bi bi-plus-circle-dotted"></i>
               Add Plan
             </button>

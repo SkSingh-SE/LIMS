@@ -1,0 +1,265 @@
+<div class="container-fluid">
+  <div class="card shadow-lg">
+    <div class="card-header card-form-header text-white text-center">
+      <h6 class="text-center">Workflow</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <!-- Left: Form -->
+        <div class="col-auto col-md-8">
+          <form [formGroup]="workflowForm" (ngSubmit)="submit()">
+            <!-- Workflow Info -->
+            <div class="card mb-3 shadow-sm p-3">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Workflow Name
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" formControlName="name" class="form-control" placeholder="Enter workflow name" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Entity Type
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select formControlName="entityType" class="form-select" placeholder="Select entity type">
+                    <option value="">-- Select --</option>
+                    <option *ngFor="let type of entityTypes" [value]="type">
+                      {{ type }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Steps -->
+            <div formArrayName="steps">
+              <div *ngFor="let step of steps.controls; let i = index" [formGroupName]="i" class="card mb-3 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between">
+                    <h6 class="mb-1 small">Step {{ i + 1 }}</h6>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removeStep(i)">Remove</button>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-3">
+                      <label class="form-label">
+                        Name
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input type="text" formControlName="name" class="form-control" placeholder="Enter step name" />
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">
+                        Assign To
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        formControlName="assignedToType"
+                        class="form-control"
+                        placeholder="Enter assign to type"
+                        readonly
+                      />
+                      <!-- <select
+                        formControlName="assignedToType"
+                        class="form-select"
+                        placeholder="Assign to"
+                        (change)="step.get('selectedIDs')?.setValue('')"
+                      >
+                        <option value="">-- Select --</option>
+                        <option value="User">User</option>
+                        <option value="Role">Role</option>
+                      </select> -->
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">
+                        Value
+                        <span class="text-danger">*</span>
+                      </label>
+
+                      <ng-container [ngSwitch]="step.get('assignedToType')?.value">
+                        <!-- User Dropdown -->
+                        <!-- <app-searchable-dropdown
+                          *ngSwitchCase="'User'"
+                          [hideLabel]="true"
+                          [placeholder]="'Select User'"
+                          [fetchDataFn]="getUserDropdown"
+                          (selectionChange)="onUserSelect($event, i)"
+                          [selectedItem]="step.get('selectedIDs')?.value"
+                        ></app-searchable-dropdown> -->
+                        <app-multi-select-dropdown
+                          *ngSwitchCase="'User'"
+                          [placeholder]="'Select Users'"
+                          [required]="true"
+                          [hideLabel]="true"
+                          [fetchDataFn]="getUserDropdown"
+                          [selectedValues]="step.get('selectedIDs')?.value"
+                          (itemsSelected)="onUserSelect($event, i)"
+                        ></app-multi-select-dropdown>
+
+                        <!-- Role Dropdown -->
+                        <app-multi-select-dropdown
+                          *ngSwitchCase="'Role'"
+                          [placeholder]="'Select Roles'"
+                          [required]="true"
+                          [hideLabel]="true"
+                          [fetchDataFn]="getRoleDropdown"
+                          [selectedValues]="step.get('selectedIDs')?.value"
+                          (itemsSelected)="onRoleSelect($event, i)"
+                        ></app-multi-select-dropdown>
+                      </ng-container>
+                      <div
+                        *ngIf="step.get('selectedIDs')?.errors?.['required'] && step.get('selectedIDs')?.touched"
+                        class="text-danger"
+                      >
+                        Value is required.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Transitions -->
+                  <div formArrayName="transitions" class="mt-3">
+                    <h6>Transitions</h6>
+                    <div
+                      *ngFor="let trans of getTransitions(i).controls; let j = index"
+                      [formGroupName]="j"
+                      class="border rounded p-2 mb-2"
+                    >
+                      <div class="row">
+                        <div class="col-md-4">
+                          <label class="form-label">
+                            Action Name
+                            <span class="text-danger">*</span>
+                          </label>
+                          <input type="text" formControlName="alias" class="form-control" placeholder="Enter alias" />
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">
+                            Action Type
+                            <span class="text-danger">*</span>
+                          </label>
+                          <select formControlName="action" class="form-select" placeholder="Select action type">
+                            <option *ngFor="let act of actionTypes" [value]="act">{{ act }}</option>
+                          </select>
+                        </div>
+
+                        <div class="col-md-3">
+                          <label class="form-label">Next Step</label>
+                          <select formControlName="toStepID" class="form-select" placeholder="Select next step">
+                            <option value="">-- Select Step --</option>
+                            <option *ngFor="let s of steps.controls; let k = index" [value]="s.get('orderNo')?.value">
+                              {{ s.get("name")?.value || "Step " + (k + 1) }}
+                            </option>
+                            <option [value]="null">End</option>
+                          </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                          <button type="button" class="btn btn-outline-danger" (click)="removeTransition(i, j)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTransition(i)">
+                      <i class="bi bi-plus-circle-dotted"></i>
+                      Add Transition
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline-danger-600 mb-3" (click)="addStep()">
+              <i class="bi bi-plus-circle-dotted"></i>
+              Add Step
+            </button>
+
+            <div *ngIf="workflowForm.get('steps')?.errors?.['missingTransition']" class="alert alert-danger">
+              All steps except the last must have at least one transition.
+            </div>
+
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
+              <button type="submit" class="btn btn-success px-3" [disabled]="!workflowForm.valid">Save</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Vertical Workflow Preview -->
+        <div class="col-auto col-md-4">
+          <div class="billing-note">
+            <strong>Note:</strong>
+            <ul class="mb-0">
+              <li>First create all the steps.</li>
+              <li>
+                Action type
+                <strong>Next</strong>
+                works as approval and moves to the selected step.
+              </li>
+              <li>Make sure the steps are aligned one after another.</li>
+              <li>
+                The
+                <strong>Next</strong>
+                transition of the last step must either be set to
+                <strong>End</strong>
+                or left blank.
+              </li>
+            </ul>
+          </div>
+          <div class="workflow-vertical">
+            <ng-container *ngFor="let step of steps.controls; let i = index">
+              <div class="workflow-step">
+                <!-- Step circle + line -->
+                <div class="step-marker">
+                  <div class="circle">{{ i + 1 }}</div>
+                  <div *ngIf="i < steps.length - 1" class="line"></div>
+                </div>
+
+                <!-- Step card -->
+                <div class="step-card">
+                  <h6 class="step-title">{{ step.get("name")?.value || "Step " + (i + 1) }}</h6>
+                  <p class="step-meta">
+                    Assigned to:
+                    <b>{{ step.get("assignedToType")?.value }}</b>
+                    →
+                    <span *ngIf="selectedUsers[i]?.length; else noUser">
+                      <ng-container *ngFor="let user of selectedUsers[i]; let last = last">
+                        {{ user.name || user }}
+                        <span *ngIf="!last">,</span>
+                      </ng-container>
+                    </span>
+                    <ng-template #noUser>
+                      <em>No user selected</em>
+                    </ng-template>
+                  </p>
+
+                  <!-- Transitions -->
+                  <div *ngIf="getTransitions(i).length > 0" class="step-transitions">
+                    <strong>Transitions:</strong>
+                    <ul class="list-unstyled mt-1">
+                      <li *ngFor="let t of getTransitions(i).controls">
+                        <span class="badge bg-danger-600">
+                          {{ t.get("action")?.value }}
+                        </span>
+                        <span class="badge bg-secondary">
+                          {{ t.get("alias")?.value }}
+                        </span>
+                        <span class="badge bg-info text-dark">
+                          →
+                          <ng-container *ngIf="t.get('toStepID')?.value; else endStep">Step {{ t.get("toStepID")?.value }}</ng-container>
+                          <ng-template #endStep>End</ng-template>
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

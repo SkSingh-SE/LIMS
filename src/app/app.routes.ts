@@ -60,6 +60,8 @@ import { UserPermissionComponent } from './components/employee/user-permission/u
 import { MenuPermissionComponent } from './components/menu/menu-permission/menu-permission.component';
 import { SampleInwardListComponent } from './components/inward/sample-inward-list/sample-inward-list.component';
 import { PlanFormComponent } from './components/plan/plan-form/plan-form.component';
+import { ReviewOfRequestComponent } from './components/inward/review-of-request/review-of-request.component';
+import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -146,6 +148,7 @@ export const routes: Routes = [
             { path: 'sample/cutting', component:CuttingSampleFormComponent},
             { path: 'sample/machining', component:MachiningChallanComponent},
             { path: 'sample/plan', component:PlanFormComponent},
+            { path: 'sample/review', component:ReviewOfRequestComponent},
             { path: 'sample/inward', component:SampleInwardListComponent},
             { path: 'sample/inward/create', component:SampleInwardFormComponent},
             { path: 'sample/inward/edit/:id', component:SampleInwardFormComponent},
@@ -158,6 +161,7 @@ export const routes: Routes = [
             { path: 'menu/edit/:id', component: MenuManagementComponent },
             { path: 'menu/details/:id', component: MenuManagementComponent },
             { path: 'user-permission', component: UserPermissionComponent },
+            { path: 'workflow', component: WorkflowFormComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

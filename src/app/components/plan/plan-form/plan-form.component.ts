@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, Input, OnInit } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { Observable } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -20,12 +20,14 @@ import { environment } from '../../../../environments/environment';
   styleUrl: './plan-form.component.css'
 })
 export class PlanFormComponent implements OnInit {
+  @Input() inwardID?: number;
+  @Input() mode: 'review' | 'plan' = 'review';
   baseUrl = environment.baseUrl;
   planForm!: FormGroup;
   isViewMode = false;
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
-
+  activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   // Store filtered test methods per sample/plan
   filteredTestMethods: { [key: string]: any[] } = {};
   filteredStandards: any[] = [];
@@ -44,9 +46,25 @@ export class PlanFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (!this.inwardID) {
+      this.activeroute.paramMap.subscribe(params => {
+        this.inwardID = Number(params.get('id'));
+      });
+      this.activeroute.queryParamMap.subscribe(params => {
+        this.mode = (params.get('mode') as any) || 'view';
+      });
+    }
+    if (this.mode === 'review') {
+      this.isViewMode = true;
+    } else if (this.mode === 'plan') {
+      this.isViewMode = false;
+    }
     this.initForm();
     // this.addDummySamples();
     this.fetchSampleInwardDetails(17);
+    if (this.isViewMode) {
+      this.planForm.disable();
+    }
   }
 
   private initForm(): void {
@@ -82,9 +100,11 @@ export class PlanFormComponent implements OnInit {
       cuttingRequired: [false],
       machiningRequired: [false],
       machiningAmount: [0],
+      specimen: [''],
       otherPreparation: [false],
       otherPreparationCharge: [0],
       tpiRequired: [false],
+      testInstructions: [''],
       fileName: [''],
       sampleFilePath: [''],
       additionalDetails: this.fb.array([
@@ -160,11 +180,11 @@ export class PlanFormComponent implements OnInit {
   createGeneralTestGroup(): FormGroup {
     return this.fb.group({
       sampleNo: [''],
-      specification1: [''],
+      specification1: ['', Validators.required],
       specification2: [''],
       parameter: [''],
       methods: this.fb.array([])
-    });
+    }, { validators: this.uniqueSpecificationValidator });
   }
   createChemicalTestGroup(reportNo: string, ulrNo: string): FormGroup {
     const testTypesGroup: { [key: string]: any } = {};
@@ -219,7 +239,7 @@ export class PlanFormComponent implements OnInit {
 
   // ────────────── API Calls ──────────────
   fetchSampleInwardDetails(sampleId: number): void {
-    this.inwardService.getSampleInwardById(sampleId).subscribe({
+    this.inwardService.getSampleInwardWithPlans(sampleId).subscribe({
       next: (data) => {
         if (data) {
           // Format the response to match the expected structure for the helper
@@ -243,9 +263,11 @@ export class PlanFormComponent implements OnInit {
               cuttingRequired: s.cuttingRequired ?? false,
               machiningRequired: s.machiningRequired ?? false,
               machiningAmount: s.machiningAmount ?? 0,
+              specimen: s.specimen ?? '',
               otherPreparation: s.otherPreparation ?? false,
-              otherPreparationCharge: [s.otherPreparationCharge ?? 0],
+              otherPreparationCharge: s.otherPreparationCharge ?? 0,
               tpiRequired: s.tpiRequired ?? false,
+              testInstructions: s.testInstructions ?? '',
               fileName: s.fileName ?? '',
               sampleFilePath: s.sampleFilePath ?? ''
             })),
@@ -292,6 +314,7 @@ export class PlanFormComponent implements OnInit {
                   selected: el.selected
                 }))
               }))
+              
             }))
           };
 
@@ -368,6 +391,11 @@ export class PlanFormComponent implements OnInit {
       const spec1 = section.get('specification1')?.value;
       const spec2 = section.get('specification2')?.value;
 
+      if (spec1 && spec2 && spec1 === spec2) {
+        this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
+        section.patchValue({ [field]: 0 });
+        return;
+      }
       // Auto-select standard for the changed specification
       if (item.id) {
         this.getDefaultStandardForSpecification(item.id).subscribe((standard) => {
@@ -442,148 +470,157 @@ export class PlanFormComponent implements OnInit {
     const arr = sample.get('additionalDetails') as FormArray;
     return arr ? arr.controls : [];
   }
+  // ────────────── Helper Methods ──────────────
+  //   // Sample 1
+  //   this.samples.push(this.fb.group({
+  //     sampleNo: ['24-000001'],
+  //     details: ['Steel Rod'],
+  //     category: ['Raw Material'],
+  //     nature: ['Solid'],
+  //     remarks: ['First sample received in good condition'],
+  //     quantity: [10],
+  //     cuttingRequired: [true],
+  //     machiningRequired: [false],
+  //     machiningAmount: [0],
+  //     otherPreparation: [false],
+  //     otherPreparationCharge: [0],
+  //     tpiRequired: [true],
+  //     additionalDetails: this.fb.array([
+  //       this.fb.group({ label: ['Heat No'], value: ['HN123'], enabled: [true] }),
+  //       this.fb.group({ label: ['Batch Size'], value: ['500kg'], enabled: [true] })
+  //     ]),
+  //     testPlans: this.fb.array([
+  //       this.fb.group({
+  //         sampleNo: ['24-000001'],
+  //         generalTests: this.fb.array([
+  //           this.fb.group({
+  //             sampleNo: ['24-000001'],
+  //             specification1: ['1'],
+  //             specification2: ['2'],
+  //             parameter: [''],
+  //             methods: this.fb.array([
+  //               this.fb.group({
+  //                 testMethodID: ['1'],
+  //                 standardID: ['4'],
+  //                 quantity: [2],
+  //                 reportNo: ['RPT001'],
+  //                 ulrNo: ['ULR001'],
+  //                 cancel: [false]
+  //               })
+  //             ])
+  //           })
+  //         ]),
+  //         chemicalTests: this.fb.array([])
+  //       }),
+  //       this.fb.group({
+  //         sampleNo: ['24-000001'],
+  //         generalTests: this.fb.array([]),
+  //         chemicalTests: this.fb.array([
+  //           this.fb.group({
+  //             sampleNo: ['24-000001'],
+  //             reportNo: ['RPT002'],
+  //             ulrNo: ['ULR002'],
+  //             testTypes: this.fb.group({
+  //               Spectro: [true],
+  //               Chemical: [true],
+  //               XRF: [false],
+  //               'Full Analysis': [false],
+  //               ROHS: [false]
+  //             }),
+  //             metalClassificationID: ['3'],
+  //             specification1: ['1'],
+  //             specification2: ['2'],
+  //             testMethod: ['3'],
+  //             elements: this.fb.array([
+  //               this.fb.group({ parameterID: ['1'], selected: [true] }),
+  //               this.fb.group({ parameterID: ['2'], selected: [false] })
+  //             ])
+  //           })
+  //         ])
+  //       })
+  //     ])
+  //   }));
 
-  addDummySamples(): void {
-    // Sample 1
-    this.samples.push(this.fb.group({
-      sampleNo: ['24-000001'],
-      details: ['Steel Rod'],
-      category: ['Raw Material'],
-      nature: ['Solid'],
-      remarks: ['First sample received in good condition'],
-      quantity: [10],
-      cuttingRequired: [true],
-      machiningRequired: [false],
-      machiningAmount: [0],
-      otherPreparation: [false],
-      otherPreparationCharge: [0],
-      tpiRequired: [true],
-      additionalDetails: this.fb.array([
-        this.fb.group({ label: ['Heat No'], value: ['HN123'], enabled: [true] }),
-        this.fb.group({ label: ['Batch Size'], value: ['500kg'], enabled: [true] })
-      ]),
-      testPlans: this.fb.array([
-        this.fb.group({
-          sampleNo: ['24-000001'],
-          generalTests: this.fb.array([
-            this.fb.group({
-              sampleNo: ['24-000001'],
-              specification1: ['1'],
-              specification2: ['2'],
-              parameter: [''],
-              methods: this.fb.array([
-                this.fb.group({
-                  testMethodID: ['1'],
-                  standardID: ['4'],
-                  quantity: [2],
-                  reportNo: ['RPT001'],
-                  ulrNo: ['ULR001'],
-                  cancel: [false]
-                })
-              ])
-            })
-          ]),
-          chemicalTests: this.fb.array([])
-        }),
-        this.fb.group({
-          sampleNo: ['24-000001'],
-          generalTests: this.fb.array([]),
-          chemicalTests: this.fb.array([
-            this.fb.group({
-              sampleNo: ['24-000001'],
-              reportNo: ['RPT002'],
-              ulrNo: ['ULR002'],
-              testTypes: this.fb.group({
-                Spectro: [true],
-                Chemical: [true],
-                XRF: [false],
-                'Full Analysis': [false],
-                ROHS: [false]
-              }),
-              metalClassificationID: ['3'],
-              specification1: ['1'],
-              specification2: ['2'],
-              testMethod: ['3'],
-              elements: this.fb.array([
-                this.fb.group({ parameterID: ['1'], selected: [true] }),
-                this.fb.group({ parameterID: ['2'], selected: [false] })
-              ])
-            })
-          ])
-        })
-      ])
-    }));
+  //   // Sample 2
+  //   this.samples.push(this.fb.group({
+  //     sampleNo: ['24-000002'],
+  //     details: ['Copper Sheet'],
+  //     category: ['Raw Material'],
+  //     nature: ['Solid'],
+  //     remarks: ['Second sample received in good condition'],
+  //     quantity: [5],
+  //     cuttingRequired: [false],
+  //     machiningRequired: [true],
+  //     machiningAmount: [200],
+  //     otherPreparation: [true],
+  //     otherPreparationCharge: [0],
+  //     tpiRequired: [false],
+  //     additionalDetails: this.fb.array([
+  //       this.fb.group({ label: ['Heat No'], value: ['HN456'], enabled: [true] }),
+  //       this.fb.group({ label: ['Batch Size'], value: ['200kg'], enabled: [true] }),
+  //       this.fb.group({ label: ['Supplier'], value: ['ABC Metals'], enabled: [true] })
+  //     ]),
+  //     testPlans: this.fb.array([
+  //       this.fb.group({
+  //         sampleNo: ['24-000002'],
+  //         generalTests: this.fb.array([
+  //           this.fb.group({
+  //             sampleNo: ['24-000002'],
+  //             specification1: ['1'],
+  //             specification2: ['2'],
+  //             parameter: [''],
+  //             methods: this.fb.array([
+  //               this.fb.group({
+  //                 testMethodID: ['1'],
+  //                 standardID: ['3'],
+  //                 quantity: [1],
+  //                 reportNo: ['RPT003'],
+  //                 ulrNo: ['ULR003'],
+  //                 cancel: [false]
+  //               })
+  //             ])
+  //           })
+  //         ]),
+  //         chemicalTests: this.fb.array([])
+  //       }),
+  //       this.fb.group({
+  //         sampleNo: ['24-000002'],
+  //         generalTests: this.fb.array([]),
+  //         chemicalTests: this.fb.array([
+  //           this.fb.group({
+  //             sampleNo: ['24-000002'],
+  //             reportNo: ['RPT004'],
+  //             ulrNo: ['ULR004'],
+  //             testTypes: this.fb.group({
+  //               Spectro: [false],
+  //               Chemical: [true],
+  //               XRF: [true],
+  //               'Full Analysis': [false],
+  //               ROHS: [true]
+  //             }),
+  //             metalClassificationID: ['1'],
+  //             specification1: ['1'],
+  //             specification2: ['2'],
+  //             testMethod: ['3'],
+  //             elements: this.fb.array([
+  //               this.fb.group({ parameterID: ['3'], selected: [true] }),
+  //               this.fb.group({ parameterID: ['4'], selected: [true] })
+  //             ])
+  //           })
+  //         ])
+  //       })
+  //     ])
+  //   }));
+  // }
 
-    // Sample 2
-    this.samples.push(this.fb.group({
-      sampleNo: ['24-000002'],
-      details: ['Copper Sheet'],
-      category: ['Raw Material'],
-      nature: ['Solid'],
-      remarks: ['Second sample received in good condition'],
-      quantity: [5],
-      cuttingRequired: [false],
-      machiningRequired: [true],
-      machiningAmount: [200],
-      otherPreparation: [true],
-      otherPreparationCharge: [0],
-      tpiRequired: [false],
-      additionalDetails: this.fb.array([
-        this.fb.group({ label: ['Heat No'], value: ['HN456'], enabled: [true] }),
-        this.fb.group({ label: ['Batch Size'], value: ['200kg'], enabled: [true] }),
-        this.fb.group({ label: ['Supplier'], value: ['ABC Metals'], enabled: [true] })
-      ]),
-      testPlans: this.fb.array([
-        this.fb.group({
-          sampleNo: ['24-000002'],
-          generalTests: this.fb.array([
-            this.fb.group({
-              sampleNo: ['24-000002'],
-              specification1: ['1'],
-              specification2: ['2'],
-              parameter: [''],
-              methods: this.fb.array([
-                this.fb.group({
-                  testMethodID: ['1'],
-                  standardID: ['3'],
-                  quantity: [1],
-                  reportNo: ['RPT003'],
-                  ulrNo: ['ULR003'],
-                  cancel: [false]
-                })
-              ])
-            })
-          ]),
-          chemicalTests: this.fb.array([])
-        }),
-        this.fb.group({
-          sampleNo: ['24-000002'],
-          generalTests: this.fb.array([]),
-          chemicalTests: this.fb.array([
-            this.fb.group({
-              sampleNo: ['24-000002'],
-              reportNo: ['RPT004'],
-              ulrNo: ['ULR004'],
-              testTypes: this.fb.group({
-                Spectro: [false],
-                Chemical: [true],
-                XRF: [true],
-                'Full Analysis': [false],
-                ROHS: [true]
-              }),
-              metalClassificationID: ['1'],
-              specification1: ['1'],
-              specification2: ['2'],
-              testMethod: ['3'],
-              elements: this.fb.array([
-                this.fb.group({ parameterID: ['3'], selected: [true] }),
-                this.fb.group({ parameterID: ['4'], selected: [true] })
-              ])
-            })
-          ])
-        })
-      ])
-    }));
+  // Add this validator function at the top or inside the class
+  uniqueSpecificationValidator(group: FormGroup) {
+    const spec1 = group.get('specification1')?.value;
+    const spec2 = group.get('specification2')?.value;
+    if (spec1 && spec2 && spec1 === spec2) {
+      return { sameSpecification: true };
+    }
+    return null;
   }
 
   updateFormFromPayload(payload: any): void {
@@ -604,12 +641,15 @@ export class PlanFormComponent implements OnInit {
     this.samples.clear();
 
     // Map sampleDetails to form structure
-    (payload.sampleDetails || []).forEach((sample: any) => {
+    (payload.sampleDetails || []).forEach((sample: any, sampleIdx:number) => {
       // Find additional details for this sample
       const additionalDetailsArr = (payload.sampleAdditionalDetails || [])
         .filter((ad: any) => ad.sampleID === sample.id)
         .map((ad: any) =>
           this.fb.group({
+            id: [ad.id],
+            sampleID: [ad.sampleID],
+            sampleNo: [sample.sampleNo],
             label: [ad.label],
             value: [ad.value],
             enabled: [true]
@@ -619,10 +659,11 @@ export class PlanFormComponent implements OnInit {
       // Find test plans for this sample (if any)
       const testPlansArr = (payload.sampleTestPlans || [])
         .filter((tp: any) => tp.sampleID === sample.id)
-        .map((tp: any) => {
+        .map((tp: any, planIdx:number) => {
           // Map generalTests
           const generalTestsArr = (tp.generalTests || []).map((gt: any) =>
             this.fb.group({
+              id: [gt.id],
               sampleNo: [gt.sampleNo],
               specification1: [gt.specification1],
               specification2: [gt.specification2],
@@ -639,7 +680,7 @@ export class PlanFormComponent implements OnInit {
                   })
                 )
               )
-            })
+            }, { validators: this.uniqueSpecificationValidator }) // <-- add validator here
           );
 
           // Map chemicalTests
@@ -669,7 +710,7 @@ export class PlanFormComponent implements OnInit {
               )
             })
           );
-
+          this.setDefaultTab(sampleIdx, planIdx, tp);
           return this.fb.group({
             sampleNo: [tp.sampleNo],
             generalTests: this.fb.array(generalTestsArr),
@@ -678,6 +719,8 @@ export class PlanFormComponent implements OnInit {
         });
 
       this.samples.push(this.fb.group({
+        id: [sample.id ?? 0],
+        inwardID: [sample.inwardID ?? 0],
         sampleNo: [sample.sampleNo],
         details: [sample.details],
         category: [sample.category],
@@ -687,19 +730,117 @@ export class PlanFormComponent implements OnInit {
         cuttingRequired: [sample.cuttingRequired ?? false],
         machiningRequired: [sample.machiningRequired ?? false],
         machiningAmount: [sample.machiningAmount ?? 0],
+        specimen: [sample.specimen ?? ''],
         otherPreparation: [sample.otherPreparation ?? false],
+        otherPreparationCharge: [sample.otherPreparationCharge ?? 0],
         tpiRequired: [sample.tpiRequired ?? false],
+        testInstructions: [sample.testInstructions ?? ''],
         fileName: [sample.fileName ?? ''],
         sampleFilePath: [sample.sampleFilePath ?? ''],
         additionalDetails: this.fb.array(additionalDetailsArr),
         testPlans: this.fb.array(testPlansArr)
       }));
     });
+    if (this.isViewMode) {
+      this.planForm.disable();
+    }
   }
 
   onSave(): void {
-    console.log('Form Value:', this.planForm.value);
+    const raw = this.planForm.value;
+    console.log('Initial Payload:', this.planForm.value);
+
+    const payload = {
+      id: raw.id || 0,
+      caseNo: raw.caseNo || '',
+      customerID: raw.customerID || 0,
+
+      statementOfConformity: raw.statementOfConformity || 'Not Applicable',
+      decisionRule: raw.decisionRule || 'Not Applicable',
+
+      //  SampleDetails
+      sampleDetails: (raw.samples || []).map((s: any) => ({
+        id: s.id || 0,
+        sampleNo: s.sampleNo || '',
+        details: s.details || '',
+        nature: s.nature || '',
+        category: s.category || '',
+        remarks: s.remarks || '',
+        quantity: s.quantity || 0,
+        disabled: s.disabled || false,
+        cuttingRequired: s.cuttingRequired || false,
+        machiningRequired: s.machiningRequired || false,
+        machiningAmount: s.machiningAmount || 0,
+        specimen: s.specimen ?? '',
+        otherPreparation: s.otherPreparation || false,
+        otherPreparationCharge: s.otherPreparationCharge || 0,
+        tpiRequired: s.tpiRequired || false,
+        testInstructions: s.testInstructions || '',
+        uploadReferenceID: s.uploadReferenceID || null,
+        sampleFilePath: s.sampleFilePath || null,
+        fileName: s.fileName || null,
+        inwardID: s.inwardID || 0,
+
+        //  AdditionalDetails (strip "enabled")
+        additionalDetails: (s.additionalDetails || []).map((a: any) => ({
+          id: a.id || 0,
+          sampleNo: s.sampleNo,
+          label: a.label || '',
+          value: a.value || '',
+          sampleID: a.sampleID || 0
+        })),
+
+        //  TestPlans
+        testPlans: (s.testPlans || []).map((tp: any) => ({
+          sampleNo: s.sampleNo,
+          generalTests: (tp.generalTests || []).map((g: any) => ({
+            sampleNo: g.sampleNo || '',
+            specification1: g.specification1 || 0,
+            specification2: g.specification2 || null,
+            parameter: g.parameter || '',
+            methods: (g.methods || []).map((m: any) => ({
+              testMethodID: m.testMethodID || 0,
+              standardID: m.standardID || 0,
+              quantity: m.quantity || 0,
+              reportNo: m.reportNo == 'Auto Generate' ? '' : m.reportNo || '',
+              ulrNo: m.ulrNo == 'Auto Generate' ? '' : m.ulrNo || '',
+              cancel: m.cancel || false
+            }))
+          })),
+          chemicalTests: (tp.chemicalTests || []).map((c: any) => ({
+            sampleNo: c.sampleNo || '',
+            reportNo: c.reportNo == 'Auto Generate' ? '' : c.reportNo || '',
+            ulrNo: c.ulrNo == 'Auto Generate' ? '' : c.ulrNo || '',
+            testTypes: c.testTypes || {},
+            metalClassificationID: c.metalClassificationID || 0,
+            specification1: c.specification1 || 0,
+            specification2: c.specification2 || null,
+            testMethod: c.testMethod || 0,
+            elements: (c.elements || []).map((e: any) => ({
+              parameterID: e.parameterID || 0,
+              elementName: e.elementName || '',
+              quantity: e.quantity || 0
+            }))
+          }))
+        }))
+      })),
+
+    };
+
+    console.log('Final Payload:', payload);
+
+    this.inwardService.testPlanSave(payload).subscribe({
+      next: (res) => {
+        this.toastService.show('Test Plan saved successfully!', 'success');
+        this.router.navigate(['/sample/plan']);
+      },
+      error: (err) => {
+        console.error('Error saving test plan:', err);
+        this.toastService.show('Error saving test plan. Please try again.', 'error');
+      }
+    });
   }
+
 
   onCancel(): void {
     // You can reset the form or navigate away as needed
@@ -722,5 +863,25 @@ export class PlanFormComponent implements OnInit {
     if (filePath) {
       window.open(this.baseUrl + filePath, '_blank');
     }
+  }
+  // Tab Management
+  setDefaultTab(sampleIdx: number, planIdx: number, plan: any) {
+    const key = `${sampleIdx}-${planIdx}`;
+
+    if (plan?.generalTests?.length > 0) {
+      this.activeTabs[key] = 'general';
+    } else if (plan?.chemicalTests?.length > 0) {
+      this.activeTabs[key] = 'chemical';
+    } else {
+      this.activeTabs[key] = 'general'; // fallback
+    }
+  }
+
+  isActiveTab(sampleIdx: number, planIdx: number, tab: string): boolean {
+    return this.activeTabs[`${sampleIdx}-${planIdx}`] === tab;
+  }
+
+  setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical') {
+    this.activeTabs[`${sampleIdx}-${planIdx}`] = tab;
   }
 }

@@ -49,5 +49,8 @@ export class UserService {
   updateUserPermissions(userId: string, permissions: any): Observable<any> {
     return this.http.post<any>(`${this.pApiUrl}/update?userId=${userId}`, permissions);
   }
+  getPermissionDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.http.get<any>(`${this.pApiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  }
 
 }

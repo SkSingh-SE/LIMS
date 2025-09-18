@@ -262,15 +262,7 @@ export class ConfigManagerComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-      this.configService.deleteConfigurations(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
+     
     }
   }
   openModal(type: string, id: number): void {
@@ -309,6 +301,7 @@ export class ConfigManagerComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.configForm.reset();
   }
 
   onSubmit(): void {

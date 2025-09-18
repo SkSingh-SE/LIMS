@@ -1,97 +1,330 @@
-<div class="border rounded p-3 mb-2 position-relative">
-  <legend
-    class="w-auto px-2 fw-semibold theme-color"
-    style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-  >
-    Plan Details
-  </legend>
-
-  <!-- THIRD SECTION: SAMPLE-WISE MULTI-TAB TEST PLAN -->
-  <div formArrayName="sampleTestPlans" class="mt-3">
-    <div
-      *ngFor="let sampleGroup of sampleTestPlans.controls; let i = index"
-      [formGroupName]="i"
-      class="mb-3 border rounded p-3 position-relative"
+<div class="container-fluid py-2">
+  <!-- 1. Customer & Inward Header -->
+  <div class="card border shadow-sm mt-2 mb-2 position-relative">
+    <legend
+      class="w-auto px-2 fw-semibold theme-color"
+      style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
     >
-      <legend
-        class="w-auto px-2 fw-semibold theme-color"
-        style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-      >
-        Sample No: {{ sampleGroup.get('sampleNo')?.value }}
-      </legend>
+      Customer & Inward Details
+    </legend>
+    <div class="card-body small d-flex flex-wrap gap-4 mt-3">
+      <div>
+        <strong class="text-danger">Customer:</strong>
+        {{ plan?.customerName || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Case No:</strong>
+        {{ plan?.caseNo || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Contact:</strong>
+        {{ plan?.customerContact || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Address:</strong>
+        {{ plan?.customerAddress || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Sample Receipt Note:</strong>
+        {{ plan?.sampleReceiptNote || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Urgent:</strong>
+        {{ plan?.urgent ? "Yes" : "No" }}
+      </div>
+      <div>
+        <strong class="text-danger">Return Sample:</strong>
+        {{ plan?.returnSample ? "Yes" : "No" }}
+      </div>
+      <div>
+        <strong class="text-danger">Not Destroyed:</strong>
+        {{ plan?.notDestroyed ? "Yes" : "No" }}
+      </div>
+      <div>
+        <strong class="text-danger">Statement of Conformity:</strong>
+        {{ plan?.statementOfConformity || "-" }}
+      </div>
+      <div>
+        <strong class="text-danger">Decision Rule:</strong>
+        {{ plan?.decisionRule || "-" }}
+      </div>
+    </div>
+  </div>
 
-      <!-- Sample Details Card -->
-      <div *ngIf="sampleDetails.length > 0" class="card border shadow-sm mb-3">
+  <!-- 2. Samples with All Details -->
+  <div class="row g-2">
+    <div class="col-12" *ngFor="let sample of samples; let sampleIdx = index">
+      <div class="card border-0 shadow-sm mb-2">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background: #d32f2f">
+          <span class="fw-semibold text-white">
+            <i class="bi bi-box"></i>
+            Sample {{ sample.sampleNo }}
+          </span>
+        </div>
         <div class="card-body small">
-          <div class="row row-cols-1 row-cols-md-auto g-3">
-            <div>
-              <!-- Add sample details fields if needed -->
+          <div class="row">
+            <!-- LEFT: Sample Details -->
+            <div class="col-md-10">
+              <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                  <strong>Details:</strong>
+                  {{ sample.details || "-" }}
+                </div>
+                <div class="col-md-4">
+                  <strong>Category:</strong>
+                  {{ sample.category || "-" }}
+                </div>
+                <div class="col-md-4">
+                  <strong>Nature:</strong>
+                  {{ sample.nature || "-" }}
+                </div>
+              </div>
+              <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                  <strong>Quantity:</strong>
+                  {{ sample.quantity || "0" }}
+                </div>
+                <div class="col-md-4">
+                  <strong>Remarks:</strong>
+                  {{ sample.remarks || "-" }}
+                </div>
+                <div class="col-md-4">
+                  <strong>TPI Required:</strong>
+                  <span [class.text-danger]="sample.tpiRequired">{{ sample.tpiRequired ? "Yes" : "No" }}</span>
+                </div>
+                <div class="col-md-4">
+                  <strong>Cutting Required:</strong>
+                  <span [class.text-danger]="sample.cuttingRequired">{{ sample.cuttingRequired ? "Yes" : "No" }}</span>
+                </div>
+                <div class="col-md-4">
+                  <strong>Machining Required:</strong>
+                  <span [class.text-danger]="sample.machiningRequired">{{ sample.machiningRequired ? "Yes" : "No" }}</span>
+                </div>
+                <div class="col-md-4" *ngIf="sample.machiningRequired">
+                  <strong>Machining Amount:</strong>
+                  {{ sample.machiningAmount }}
+                </div>
+                <div class="col-md-4" *ngIf="sample.machiningRequired">
+                  <strong>Specimen:</strong>
+                  {{ sample.specimen }}
+                </div>
+                <div class="col-md-4">
+                  <strong>Other Preparation:</strong>
+                  <span [class.text-danger]="sample.otherPreparation">{{ sample.otherPreparation ? "Yes" : "No" }}</span>
+                </div>
+                <div class="col-md-4" *ngIf="sample.otherPreparation">
+                  <strong>Other Preparation Charge:</strong>
+                  {{ sample.otherPreparationCharge }}
+                </div>
+                <div class="col-md-4">
+                  <strong>Test Instructions:</strong>
+                  {{ sample.testInstructions || "-" }}
+                </div>
+                <!-- Additional Details -->
+                <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
+                  <div class="col-md-4">
+                    <strong>{{ row.label }}:</strong>
+                    {{ row.value }}
+                  </div>
+                </ng-container>
+              </div>
             </div>
-            <div>
+            <!-- RIGHT: Image Preview -->
+            <div class="col-md-2 d-flex align-items-center justify-content-center">
+              <div
+                *ngIf="sample.sampleFilePath"
+                class="preview-box w-100 h-100"
+                style="cursor: pointer"
+                (click)="openFileInNewTab(sample.sampleFilePath)"
+              >
+                <img
+                  [src]="baseUrl + sample.sampleFilePath"
+                  [alt]="sample.fileName"
+                  class="img-fluid rounded border w-100 h-100"
+                  style="object-fit: contain; min-height: 150px; min-width: 100px"
+                />
+              </div>
+              <div *ngIf="!sample.sampleFilePath" class="text-muted small">No Image</div>
             </div>
-            <div>
+          </div>
+
+          <!-- General Test Table -->
+          <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="card border shadow-sm mt-2 mb-2 position-relative">
+            <legend
+              class="w-auto px-2 fw-semibold theme-color"
+              style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            >
+              General Tests
+            </legend>
+            <div class="table-responsive mt-2 p-2">
+              <table class="table table-compact align-middle">
+                <thead class="table-light text-center">
+                  <tr class="text-nowrap text-muted small">
+                    <th class="fw-medium text-center">Sr No.</th>
+                    <th class="fw-medium text-center">Specification 1</th>
+                    <th class="fw-medium text-center">Specification 2</th>
+                    <th class="fw-medium text-center">Standard</th>
+                    <th class="fw-medium text-center">Lab Test</th>
+                    <th class="fw-medium text-center">Qty</th>
+                    <th class="fw-medium text-center">Report No</th>
+                    <th class="fw-medium text-center">ULR No</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let test of getFlatTests(sample, 'generalTests'); let i = index">
+                    <td class="text-center">{{ i + 1 }}</td>
+                    <td>{{ getSpecificationName(test.specification1) }}</td>
+                    <td>{{ getSpecificationName(test.specification2) }}</td>
+                    <td>{{ getStandardName(test.standardID) }}</td>
+                    <td>
+                      <ng-container *ngIf="getTestMethodName(test.testMethodID) as testMethodName">
+                        {{ testMethodName }}
+                      </ng-container>
+                    </td>
+                    <td class="text-center">{{ test.quantity }}</td>
+                    <td>{{ test.reportNo }}</td>
+                    <td>{{ test.ulrNo }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div>
-            </div>
-            <ng-container *ngFor="let row of sampleAdditionalDetails.controls; let j = index">
-              <!-- Add additional details if needed -->
-            </ng-container>
-            <!-- Sample Prepration Required -->
-            <div>
+          </div>
+
+          <!-- Chemical Test Table -->
+          <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="card border shadow-sm mt-2 mb-2 position-relative">
+            <legend
+              class="w-auto px-2 fw-semibold theme-color"
+              style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            >
+              General Tests
+            </legend>
+            <div class="table-responsive p-2">
+              <table class="table table-compact align-middle">
+                <thead class="table-light text-center">
+                  <tr class="text-nowrap text-muted small">
+                    <th class="fw-medium text-center">Report No</th>
+                    <th class="fw-medium text-center">ULR</th>
+                    <th class="fw-medium text-center">Test Types</th>
+                    <th class="fw-medium text-center">Metal Classification</th>
+                    <th class="fw-medium text-center">Spec 1</th>
+                    <th class="fw-medium text-center">Spec 2</th>
+                    <th class="fw-medium text-center">Standard</th>
+                    <th class="fw-medium text-center">Elements</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let test of getFlatTests(sample, 'chemicalTests')">
+                    <td>{{ test.reportNo }}</td>
+                    <td>{{ test.ulrNo }}</td>
+                    <td>
+                      <ng-container *ngIf="test.testTypes">
+                        <span *ngFor="let type of testTypeList">
+                          <span *ngIf="test.testTypes[type]" class="badge bg-primary-subtle text-danger me-1">
+                            {{ type }}
+                          </span>
+                        </span>
+                      </ng-container>
+                    </td>
+                    <td>{{ getMetalClassificationName(test.metalClassificationID) }}</td>
+                    <td>{{ getSpecificationName(test.specification1) }}</td>
+                    <td>{{ getSpecificationName(test.specification2) }}</td>
+                    <td>{{ getStandardName(test.standardID) }}</td>
+                    <td>
+                      <div *ngIf="(getElementsArray(test) ?? []).length > 0">
+                        <ul class="mb-0 ps-3" style="list-style-type: disc">
+                          <li *ngFor="let element of getElementsArray(test) ?? []">
+                            {{ getParameterName(element.parameterID) }}
+                          </li>
+                        </ul>
+                      </div>
+                      <span *ngIf="!(getElementsArray(test) ?? []).length" class="text-muted">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
-      
-      <ul class="nav nav-tabs mb-3" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button
-            class="nav-link active"
-            id="general-tab-{{ i }}"
-            [attr.data-bs-toggle]="'tab'"
-            [attr.data-bs-target]="'#general-' + i"
-            type="button"
-            role="tab"
-          >
-            General Test
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button
-            class="nav-link"
-            id="chemical-tab-{{ i }}"
-            [attr.data-bs-toggle]="'tab'"
-            [attr.data-bs-target]="'#chemical-' + i"
-            type="button"
-            role="tab"
-          >
-            Chemical Test
-          </button>
-        </li>
-      </ul>
+    </div>
+  </div>
 
-      <div class="tab-content">
-        <!-- General Test -->
-        <div class="tab-pane fade show active" id="general-{{ i }}" role="tabpanel">
-          <ng-container *ngIf="getMethodRows(i).length > 0">
-            <div [formGroup]="getGeneralTestSection(i)">
-              <!-- Add general test fields here -->
-            </div>
-          </ng-container>
+  <!-- 3. Reviewer Action Floating Button & Panel -->
+  <!-- Floating Action Button (FAB) -->
+  <button
+    #reviewBtn
+    class="btn btn-danger shadow-lg position-fixed d-flex align-items-center justify-content-center"
+    [ngStyle]="{
+      'left.px': dragPosition.x,
+      'top.px': dragPosition.y,
+      right: 'auto',
+      bottom: 'auto',
+      width: '100px',
+      height: '56px',
+      'z-index': 1050,
+      'border-radius': '12px',
+      padding: 0
+    }"
+    (mousedown)="startDrag($event)"
+    (touchstart)="startDrag($event)"
+    (click)="showActionPanel = true"
+    *ngIf="!showActionPanel"
+    aria-label="Open Review Action"
+    style="user-select: none; cursor: grab"
+  >
+    <span class="fw-bold" style="font-size: 0.8rem; white-space: normal">Review Action</span>
+  </button>
+
+  <!-- Slide-up Action Panel -->
+  <div
+    class="position-fixed start-0 end-0"
+    [ngClass]="{ 'd-block': showActionPanel, 'd-none': !showActionPanel }"
+    style="bottom: 0; z-index: 1060"
+  >
+    <!-- Overlay (now before the card and with lower z-index) -->
+    <div class="position-fixed top-0 start-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.15); z-index: 1059"></div>
+    <div class="card shadow-lg mx-auto mb-0 position-relative" style="max-width: 700px; border-top: 4px solid #b71c1c; z-index: 1060">
+      <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="btn-group" role="group">
+          <input type="radio" class="btn-check" name="reviewAction" id="approveRadio" value="approve" [(ngModel)]="reviewAction" />
+          <label class="btn btn-outline-success fw-semibold" for="approveRadio">
+            <i class="bi bi-check2-circle"></i>
+            Approve
+          </label>
+
+          <input type="radio" class="btn-check" name="reviewAction" id="sendbackRadio" value="sendback" [(ngModel)]="reviewAction" />
+          <label class="btn btn-outline-warning fw-semibold" for="sendbackRadio">
+            <i class="bi bi-arrow-return-left"></i>
+            Send Back
+          </label>
+
+          <input type="radio" class="btn-check" name="reviewAction" id="rejectRadio" value="reject" [(ngModel)]="reviewAction" />
+          <label class="btn btn-outline-danger fw-semibold" for="rejectRadio">
+            <i class="bi bi-x-circle"></i>
+            Reject
+          </label>
         </div>
 
-        <!-- Chemical Test Tab -->
-        <div class="tab-pane fade" id="chemical-{{ i }}" role="tabpanel">
-          <div formArrayName="chemicalTests">
-            <ng-container *ngIf="getTestArray(i, 'chemicalTests').length > 0">
-              <!-- Add chemical test fields here -->
-            </ng-container>
+        <textarea
+          *ngIf="reviewAction !== 'approve'"
+          class="form-control border-danger flex-grow-1"
+          [(ngModel)]="reviewRemark"
+          rows="2"
+          placeholder="Enter reason..."
+          required
+        ></textarea>
 
-            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTestBlock(i, 'chemicalTests')">
-              Add Chemical Test
-            </button>
-          </div>
-        </div>
+        <button
+          class="btn btn-danger px-4"
+          [disabled]="!reviewAction || (reviewAction !== 'approve' && !reviewRemark)"
+          (click)="submitReview()"
+        >
+          <i class="bi bi-send-check"></i>
+          Submit Review
+        </button>
+        <button class="btn btn-link text-danger ms-2" (click)="showActionPanel = false" aria-label="Close">
+          <i class="bi bi-x-lg fs-5"></i>
+        </button>
       </div>
     </div>
   </div>

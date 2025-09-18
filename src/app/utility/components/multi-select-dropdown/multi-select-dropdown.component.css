@@ -1,0 +1,5 @@
+:host ::ng-deep .ng-select .ng-placeholder {
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: #000000;
+}

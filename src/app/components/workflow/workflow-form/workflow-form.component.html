@@ -39,7 +39,6 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between">
                     <h6 class="mb-1 small">Step {{ i + 1 }}</h6>
-                    <button type="button" class="btn btn-sm btn-danger" (click)="removeStep(i)">Remove</button>
                   </div>
 
                   <div class="row">
@@ -49,6 +48,12 @@
                         <span class="text-danger">*</span>
                       </label>
                       <input type="text" formControlName="name" class="form-control" placeholder="Enter step name" />
+                      <div *ngIf="step.get('name')?.errors?.['required'] && step.get('name')?.touched" class="text-danger small">
+                        Step name is required.
+                      </div>
+                      <div *ngIf="workflowForm.get('steps')?.errors?.['duplicateStepName']" class="text-danger small">
+                        Step name must be unique.
+                      </div>
                     </div>
                     <div class="col-md-3">
                       <label class="form-label">
@@ -93,7 +98,9 @@
                           *ngSwitchCase="'User'"
                           [placeholder]="'Select Users'"
                           [required]="true"
+                          [labelName]="'Users'"
                           [hideLabel]="true"
+                          [isDisabled]="isViewMode"
                           [fetchDataFn]="getUserDropdown"
                           [selectedValues]="step.get('selectedIDs')?.value"
                           (itemsSelected)="onUserSelect($event, i)"
@@ -110,10 +117,7 @@
                           (itemsSelected)="onRoleSelect($event, i)"
                         ></app-multi-select-dropdown>
                       </ng-container>
-                      <div
-                        *ngIf="step.get('selectedIDs')?.errors?.['required'] && step.get('selectedIDs')?.touched"
-                        class="text-danger"
-                      >
+                      <div *ngIf="step.get('selectedIDs')?.errors?.['required'] && step.get('selectedIDs')?.touched" class="text-danger">
                         Value is required.
                       </div>
                     </div>
@@ -147,22 +151,22 @@
 
                         <div class="col-md-3">
                           <label class="form-label">Next Step</label>
-                          <select formControlName="toStepID" class="form-select" placeholder="Select next step">
+                          <select formControlName="toStepName" class="form-select" placeholder="Select next step">
                             <option value="">-- Select Step --</option>
-                            <option *ngFor="let s of steps.controls; let k = index" [value]="s.get('orderNo')?.value">
+                            <option *ngFor="let s of steps.controls; let k = index" [value]="s.get('name')?.value">
                               {{ s.get("name")?.value || "Step " + (k + 1) }}
                             </option>
-                            <option [value]="null">End</option>
+                            <option [value]="">End</option>
                           </select>
                         </div>
-                        <div class="col-md-1 d-flex align-items-end">
+                        <div *ngIf="!isViewMode" class="col-md-1 d-flex align-items-end">
                           <button type="button" class="btn btn-outline-danger" (click)="removeTransition(i, j)">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
                       </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTransition(i)">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addTransition(i)">
                       <i class="bi bi-plus-circle-dotted"></i>
                       Add Transition
                     </button>
@@ -170,19 +174,26 @@
                 </div>
               </div>
             </div>
-
-            <button type="button" class="btn btn-outline-danger-600 mb-3" (click)="addStep()">
-              <i class="bi bi-plus-circle-dotted"></i>
-              Add Step
-            </button>
-
-            <div *ngIf="workflowForm.get('steps')?.errors?.['missingTransition']" class="alert alert-danger">
-              All steps except the last must have at least one transition.
+            <div *ngIf="!isViewMode" class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-danger-600" (click)="addStep()">
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Step
+              </button>
+              <button type="button" class="btn btn-danger" (click)="removeStep()">Remove Step</button>
             </div>
 
-            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+            <div *ngIf="workflowForm.get('steps')?.errors?.['missingTransition']" class="alert alert-danger mt-1">
+              All steps except the last must have at least one transition.
+            </div>
+            <div *ngIf="workflowForm.get('steps')?.errors?.['duplicateStepName']" class="alert alert-danger mt-1">
+              Step names must be unique.
+            </div>
+
+            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-0">
               <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
-              <button type="submit" class="btn btn-success px-3" [disabled]="!workflowForm.valid">Save</button>
+              <button type="submit" class="btn btn-success px-3" [disabled]="!workflowForm.valid">
+                {{ isEditMode ? "Update" : "Save" }}
+              </button>
             </div>
           </form>
         </div>
@@ -248,7 +259,9 @@
                         </span>
                         <span class="badge bg-info text-dark">
                           →
-                          <ng-container *ngIf="t.get('toStepID')?.value; else endStep">Step {{ t.get("toStepID")?.value }}</ng-container>
+                          <ng-container *ngIf="t.get('toStepName')?.value; else endStep">
+                            Step {{ t.get("toStepName")?.value }}
+                          </ng-container>
                           <ng-template #endStep>End</ng-template>
                         </span>
                       </li>

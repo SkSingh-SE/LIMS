@@ -1,0 +1,48 @@
+<div class="notification-bell-wrapper" #bellWrapper>
+  <button class="notif-btn notif-btn-small" (click)="toggleDropdown($event)">
+    <i class="bi bi-bell"></i>
+    <span *ngIf="store.getUnreadCount() > 0" class="notif-badge">
+      {{ store.getUnreadCount() }}
+    </span>
+  </button>
+
+  <div *ngIf="dropdownOpen" class="notif-dropdown">
+    <!-- Decorative SVG graphic for header -->
+    <div class="notif-graphic-header">
+        
+      <svg width="100%" height="48" viewBox="0 0 350 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 0H350V32C233 60 117 20 0 48V0Z" fill="#dc3545" fill-opacity="0.15"/>
+        <path d="M0 0H350V24C233 52 117 12 0 40V0Z" fill="#dc3545" fill-opacity="0.10"/>
+      </svg>
+    </div>
+    <div class="notif-dropdown-body">
+      <div *ngIf="notifications.length === 0" class="notif-empty">
+        <i class="bi bi-inbox"></i>
+        No new notifications
+      </div>
+      <div *ngFor="let n of notifications"
+        (click)="markAsRead(n)"
+        class="notif-item"
+        [ngClass]="{'notif-unread': !n.isRead}">
+        <div class="notif-title-row">
+          <div class="notif-title">
+            <span *ngIf="!n.isRead" class="notif-dot"></span>
+            {{ n.title }}
+          </div>
+          <small class="notif-date">{{ n.createdOn | date:'short' }}</small>
+        </div>
+        <div class="notif-message">{{ n.message }}{{ n.message }}</div>
+      </div>
+    </div>
+    <div class="notif-divider"></div>
+    <div class="notif-actions notif-actions-row">
+      <button class="notif-action-btn notif-action-btn-sm" (click)="enablePush()">
+        <i class="bi bi-broadcast"></i> Enable Push
+      </button>
+      <button class="notif-action-btn notif-action-btn-sm notif-action-viewall" (click)="markAllRead()">
+        <i class="bi bi-check2-all"></i> Mark Read All
+      </button>
+    </div>
+  </div>
+</div>
+

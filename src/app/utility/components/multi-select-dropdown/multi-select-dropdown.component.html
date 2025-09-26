@@ -20,4 +20,7 @@
     [readonly]="isDisabled"
   >
   </ng-select>
+  <div *ngIf="multiForm.get('search')?.errors?.['required'] && multiForm.get('search')?.touched" class="text-danger small">
+   {{labelName}} Selection is required.
+  </div>
 </form>

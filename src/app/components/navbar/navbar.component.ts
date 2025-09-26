@@ -3,6 +3,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, 
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { ListDesignationComponent } from '../designation/list-designation/list-designation.component';
 import { AuthService } from '../../services/auth.service';
+import { NotificationBellComponent } from './notification-bell/notification-bell.component';
 
 interface SubMenuItem {
   title: string,
@@ -20,7 +21,7 @@ interface MenuItem {
 
 @Component({
   selector: 'app-navbar',
-  imports: [CommonModule,RouterModule],
+  imports: [CommonModule,RouterModule,NotificationBellComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })

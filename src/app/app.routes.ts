@@ -62,6 +62,7 @@ import { SampleInwardListComponent } from './components/inward/sample-inward-lis
 import { PlanFormComponent } from './components/plan/plan-form/plan-form.component';
 import { ReviewOfRequestComponent } from './components/inward/review-of-request/review-of-request.component';
 import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
+import { WorkflowListComponent } from './components/workflow/workflow-list/workflow-list.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -161,7 +162,10 @@ export const routes: Routes = [
             { path: 'menu/edit/:id', component: MenuManagementComponent },
             { path: 'menu/details/:id', component: MenuManagementComponent },
             { path: 'user-permission', component: UserPermissionComponent },
-            { path: 'workflow', component: WorkflowFormComponent },
+            { path: 'workflow', component: WorkflowListComponent },
+            { path: 'workflow/create', component: WorkflowFormComponent },
+            { path: 'workflow/edit/:id', component: WorkflowFormComponent },
+            { path: 'workflow/details/:id', component: WorkflowFormComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

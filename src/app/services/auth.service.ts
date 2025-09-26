@@ -76,4 +76,8 @@ export class AuthService {
     const currentTime = Date.now();
     return expirationTime - currentTime < thresholdInSeconds * 1000;
   }
+  getToken(): string | null {
+    const userData = this.getUserData();
+    return userData ? userData.token : null;
+  }
 }

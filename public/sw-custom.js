@@ -5,7 +5,7 @@ self.addEventListener('push', event => {
   const options = {
     body,
     icon: payload.icon || '/assets/icons/images/favicon.png',
-    data: payload.data || { url: '/' }
+    data: { url: data.url },
   };
  console.log('Push received', event.data ? event.data.json() : {});
   event.waitUntil(

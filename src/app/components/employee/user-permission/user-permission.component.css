@@ -1,0 +1,30 @@
+.permission-list {
+  max-height: 55vh; /* keeps it responsive to viewport */
+  overflow-y: auto;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+}
+
+.assigned-list {
+  max-height: 55vh;
+  overflow-y: auto;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafafa;
+  border: 1px solid #e9ecef;
+}
+
+.group-header {
+  cursor: pointer;
+}
+
+.permission-card,
+.user-permission-card {
+  align-items: center;
+}
+
+/* small aesthetics */
+.pointer { cursor: pointer; }
+

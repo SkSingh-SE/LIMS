@@ -74,7 +74,7 @@ export class MenuPermissionComponent implements OnInit {
     { id: 8, name: 'Customer Master', parentId: 7 }
   ];
   groupedMenuItems: any[] = [];
-
+  selectedMenu: any = null;
   constructor(private fb: FormBuilder, private toastService: ToastService, private menuService: MenuService) {
 
   }
@@ -84,7 +84,7 @@ export class MenuPermissionComponent implements OnInit {
     this.fetchData();
 
   }
-// Form Initiated
+  // Form Initiated
   initForm() {
     this.permissionForm = this.fb.group({
       menuId: ['', Validators.required],
@@ -101,8 +101,15 @@ export class MenuPermissionComponent implements OnInit {
       displayName: ['', Validators.required],
       menuID: [0],
       description: [''],
-      type: [''],
+      type: ['']
     });
+
+    // If a menu is already selected and type is set, auto-generate the name
+    const typeVal = permissionGroup.get('type')?.value;
+    if (this.selectedMenu && typeVal) {
+      permissionGroup.patchValue({ name: `${typeVal}${this.selectedMenu.name}` });
+    }
+
     this.permissionsArray.push(permissionGroup);
   }
   removePermission(index: number) {
@@ -137,7 +144,12 @@ export class MenuPermissionComponent implements OnInit {
             menuId: this.menuId
           });
 
-          if(res.length > 0){
+          // reset permissions array
+          while (this.permissionsArray.length) {
+            this.permissionsArray.removeAt(0);
+          }
+
+          if (res.length > 0) {
             res.map((permission: any) => {
               this.permissionsArray.push(this.fb.group({
                 id: permission.id,
@@ -145,7 +157,8 @@ export class MenuPermissionComponent implements OnInit {
                 displayName: permission.displayName,
                 menuID: permission.menuID,
                 description: permission.description,
-                type: permission.type
+                type: permission.type,
+                isAutoName: [false] // existing permissions: treat name as user-set to avoid overwriting
               }))
             })
           }
@@ -156,6 +169,17 @@ export class MenuPermissionComponent implements OnInit {
       }
     });
   }
+
+  // Called when type select changes for a given permission row
+  onTypeChange(index: number) {
+    const group = this.permissionsArray.at(index);
+    const type = group.get('type')?.value;
+    const menuName = this.selectedMenu?.name.replace(/\s+/g, '') || '';
+    if (this.selectedMenu && type) {
+      group.patchValue({ name: `Can${type}${menuName}` });
+    }
+  }
+
 
   applySorting(column: string) {
     if (this.sortByColumn === column) {
@@ -345,6 +369,17 @@ export class MenuPermissionComponent implements OnInit {
   };
   onMenuSelected(item: any) {
     this.permissionForm.patchValue({ menuId: item.id });
+    this.selectedMenu = item;
+
+    // Update auto-generated names for rows where isAutoName is true
+    for (let i = 0; i < this.permissionsArray.length; i++) {
+      const group = this.permissionsArray.at(i);
+      const type = group.get('type')?.value;
+      const menuName = this.selectedMenu?.name.replace(/\s+/g, '') || '';
+      if (this.selectedMenu && type) {
+        group.patchValue({ name: `Can${type}${menuName}` });
+      }
+    }
   }
 
 }

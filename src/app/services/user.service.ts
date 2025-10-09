@@ -53,4 +53,7 @@ export class UserService {
     return this.http.get<any>(`${this.pApiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
+  getUserMenuWithPermissions(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.pApiUrl}/user-menu/${userId}`);
+  }
 }

@@ -755,7 +755,6 @@
                     <span class="text-danger">*</span>
                   </label>
                   <div class="input-group">
-                   
                     <input
                       [type]="showPassword() ? 'text' : 'password'"
                       id="password"
@@ -1208,7 +1207,16 @@
         </div>
 
         <div class="card-body">
-          <app-user-permission></app-user-permission>
+          <div *ngIf="isAdminUser; else noPermission">
+            <app-user-permission></app-user-permission>
+          </div>
+
+          <ng-template #noPermission>
+            <div class="alert alert-warning text-center mt-5" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              You do not have permission to access this page Contact Admin.
+            </div>
+          </ng-template>
         </div>
       </fieldset>
     </div>

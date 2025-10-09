@@ -13,6 +13,7 @@ import { UserPermissionComponent } from '../user-permission/user-permission.comp
 import { RoleService } from '../../../services/role.service';
 import { AreaService } from '../../../services/area.service';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../services/auth.service';
 @Component({
   selector: 'app-employee-form',
   imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent],
@@ -20,6 +21,8 @@ import { environment } from '../../../../environments/environment';
   styleUrl: './employee-form.component.css',
 })
 export class EmployeeFormComponent {
+
+  isAdminUser: boolean = false;
   uploadedFiles: File[] = [];
   currentStep = signal(1);
   isLoading = signal(false);
@@ -80,7 +83,9 @@ export class EmployeeFormComponent {
   documentList: any[] = [];
 
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService) { }
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService) {
+    this.isAdminUser = this.authService.getUserData()?.isAdmin || false;
+   }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {

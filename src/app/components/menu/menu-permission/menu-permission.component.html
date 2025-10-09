@@ -190,10 +190,24 @@
               <div class="row row-cols-4 g-3">
                 <div class="col">
                   <label class="form-label">
+                    Type
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" formControlName="type" (change)="onTypeChange(i)">
+                    <option value="">Select Type</option>
+                    <option value="Create">Create</option>
+                    <option value="Update">Update</option>
+                    <option value="Read">Read</option>
+                    <option value="Delete">Delete</option>
+                    <option value="Manage">Manage</option>
+                  </select>
+                </div>
+                <div class="col">
+                  <label class="form-label">
                     Name
                     <span class="text-danger">*</span>
                   </label>
-                  <input type="text" class="form-control" formControlName="name" placeholder="Permission Name" />
+                  <input type="text" class="form-control" formControlName="name" placeholder="Permission Name" readonly/>
                   <div
                     *ngIf="permission.get('name')?.invalid && (permission.get('name')?.touched || permission.get('name')?.dirty)"
                     class="text-danger"
@@ -222,20 +236,6 @@
                 <div class="col">
                   <label class="form-label">Description</label>
                   <input type="text" class="form-control" formControlName="description" placeholder="Description" />
-                </div>
-
-                <div class="col">
-                  <label class="form-label">
-                    Type
-                    <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" formControlName="type">
-                    <option value="">Select Type</option>
-                    <option value="Create">Create</option>
-                    <option value="Update">Update</option>
-                    <option value="Read">Read</option>
-                    <option value="Delete">Delete</option>
-                  </select>
                 </div>
 
                 <div class="col-md-1 d-flex align-items-end">

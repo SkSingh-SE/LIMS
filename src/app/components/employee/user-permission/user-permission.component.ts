@@ -29,9 +29,15 @@ interface Permission {
 export class UserPermissionComponent implements OnInit {
   selectedUser: string = '';
   permissionsByGroup: { [menuTitle: string]: Permission[] } = {};
+  allPermissions:any[] = [];
   allPermissionForm: FormGroup;
   assignedPermissions: { [menuTitle: string]: Permission[] } = {};
   assignedPermissionSelection: Set<string> = new Set();
+  permissionSearch: string = '';
+  expandedGroups: { [key: number]: boolean } = {};
+
+  filteredGroups: [string, Permission[]][] = [];
+  filteredAssignedGroups: [string, Permission[]][] = [];
 
   
   constructor(private fb: FormBuilder, private userService: UserService, private toastService: ToastService) {
@@ -67,30 +73,27 @@ export class UserPermissionComponent implements OnInit {
       return;
     }
 
-    const selectedIndexes = this.allPermissionsArray.controls
-      .map((ctrl, i) => (ctrl.value ? i : -1))
-      .filter((i) => i !== -1);
-
-    if (!selectedIndexes.length) return;
-
+    // Only assign permissions that are checked in the filteredGroups
     let idx = 0;
-    for (const [group, perms] of this.getGroupedPermissionList()) {
-      for (const p of perms) {
-        if (selectedIndexes.includes(idx)) {
+    for (let groupIndex = 0; groupIndex < this.filteredGroups.length; groupIndex++) {
+      const [group, perms] = this.filteredGroups[groupIndex];
+      for (let i = 0; i < perms.length; i++) {
+        const ctrl = this.getPermissionControl(groupIndex, i);
+        if (ctrl.value) {
           if (!this.assignedPermissions[group]) {
             this.assignedPermissions[group] = [];
           }
-          const alreadyAssigned = this.assignedPermissions[group].some((perm) => perm.id === p.id);
+          const alreadyAssigned = this.assignedPermissions[group].some((perm) => perm.id === perms[i].id);
           if (!alreadyAssigned) {
-            this.assignedPermissions[group].push(p);
+            this.assignedPermissions[group].push(perms[i]);
           }
-
           // Clear checkbox after assigning
-          // this.allPermissionsArray.at(idx).setValue(false, { emitEvent: false });
+          ctrl.setValue(false, { emitEvent: false });
         }
         idx++;
       }
     }
+    this.filterPermissions(); // Refresh filtered views
   }
 
 
@@ -163,7 +166,9 @@ export class UserPermissionComponent implements OnInit {
           grouped[group.menuTitle] = group.permissions;
         });
         this.permissionsByGroup = grouped;
+        this.allPermissions = Object.entries(this.permissionsByGroup);
         this.initAllPermissions();
+        this.filterPermissions();
       },
       error: (error) => {
         console.error('Error fetching permissions:', error);
@@ -194,6 +199,7 @@ export class UserPermissionComponent implements OnInit {
             idx++;
           }
         }
+        this.filterPermissions(); // <-- Ensure right side updates
       },
       error: (error) => {
         console.error('Error fetching user permissions:', error);
@@ -203,6 +209,7 @@ export class UserPermissionComponent implements OnInit {
   }
 
   onAssignedPermissionToggle(group: string, permissionName: string, event: Event) {
+    event.preventDefault();
     const checked = (event.target as HTMLInputElement).checked;
     const key = `${group}-${permissionName}`;
     if (checked) {
@@ -257,11 +264,89 @@ export class UserPermissionComponent implements OnInit {
 
   // Handler for group checkbox change
   onGroupCheckboxChange(groupIndex: number, event: Event): void {
+    event.preventDefault();
     const checked = (event.target as HTMLInputElement).checked;
     const groups = this.getGroupedPermissionList();
     const groupLength = groups[groupIndex][1].length;
     for (let i = 0; i < groupLength; i++) {
       this.getPermissionControl(groupIndex, i).setValue(checked, { emitEvent: false });
+    }
+  }
+
+  // Add to your component class (UserPermissionComponent)
+  onPermissionSearch(term: string) {
+    this.permissionSearch = term;
+    this.filterPermissions();
+  }
+
+  filterPermissions() {
+    const search = this.permissionSearch.toLowerCase();
+    // Filter only available permissions (left side)
+    this.filteredGroups = this.getGroupedPermissionList()
+      .filter(([group, perms]) =>
+        perms.some(p =>
+          p.displayName.toLowerCase().includes(search) ||
+          group.toLowerCase().includes(search)
+        )
+      )
+      .map(([group, perms]) => [
+        group,
+        perms.filter(p =>
+          p.displayName.toLowerCase().includes(search) ||
+          group.toLowerCase().includes(search)
+        )
+      ] as [string, Permission[]]);
+
+    // Assigned permissions (right side) should always show all
+    this.filteredAssignedGroups = Object.entries(this.assignedPermissions)
+      .map(([group, perms]) => [group, perms] as [string, Permission[]]);
+  }
+
+  selectGroup(groupIndex: number) {
+    const group = this.filteredGroups[groupIndex];
+    if (!group) return;
+    // Check if all are selected
+    const allChecked = group[1].every((_, i) => this.getPermissionControl(groupIndex, i).value);
+    group[1].forEach((_, i) => {
+      this.getPermissionControl(groupIndex, i).setValue(!allChecked, { emitEvent: false });
+    });
+  }
+
+  toggleGroup(groupIndex: number) {
+    this.expandedGroups[groupIndex] = !this.expandedGroups[groupIndex];
+  }
+
+  removeAssignedPermission(group: string, permId: number) {
+    if (this.assignedPermissions[group]) {
+      this.assignedPermissions[group] = this.assignedPermissions[group].filter(p => p.id !== permId);
+      // Optionally uncheck in allPermissionForm
+      let idx = 0;
+      for (const [g, perms] of this.getGroupedPermissionList()) {
+        for (const perm of perms) {
+          if (perm.id === permId) {
+            this.allPermissionsArray.at(idx).setValue(false, { emitEvent: false });
+          }
+          idx++;
+        }
+      }
+    }
+  }
+
+  // New method: select/unselect all assigned permissions in a right-side group
+  selectAssignedGroup(groupIndex: number) {
+    const group = this.filteredAssignedGroups[groupIndex];
+    if (!group) return;
+    const groupName = group[0];
+    const perms = this.assignedPermissions[groupName] || [];
+
+    const allSelected = perms.length > 0 && perms.every(p => this.assignedPermissionSelection.has(`${groupName}-${p.displayName}`));
+
+    if (allSelected) {
+      // Unselect all
+      perms.forEach(p => this.assignedPermissionSelection.delete(`${groupName}-${p.displayName}`));
+    } else {
+      // Select all
+      perms.forEach(p => this.assignedPermissionSelection.add(`${groupName}-${p.displayName}`));
     }
   }
 

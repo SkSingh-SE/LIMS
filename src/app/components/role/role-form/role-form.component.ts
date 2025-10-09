@@ -97,6 +97,7 @@ export class RoleFormComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       description: [''],
+      isAdmin: [false],
       menuIDs: [[]],
       menuItems: this.fb.array([]),
     });
@@ -127,6 +128,7 @@ export class RoleFormComponent implements OnInit {
           this.roleForm.patchValue({
             id: res.id,
             name: res.name,
+            isAdmin: res.isAdmin,
             description: res.description,
           });
           if(res.menuItems && res.menuItems.length > 0){
@@ -348,10 +350,6 @@ export class RoleFormComponent implements OnInit {
           this.groupMenuItems();
     });
   }
-
-
-
-
 
   groupMenuItems() {
     const grouped: any[] = [];

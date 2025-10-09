@@ -19,20 +19,22 @@
     padding: 10px 0;
     display: flex;
     flex-wrap: nowrap; /* Prevents wrapping */
-    justify-content: space-evenly; /* Align items to start */
+    justify-content: flex-start; /* Align left to right */
     gap: 10px; /* Adds spacing between menu items */
-    overflow-x: auto; /* Enables horizontal scrolling */
+    overflow: hidden; /* Disable scroll, we move overflow to menu2 */
     white-space: nowrap; /* Prevents text from wrapping */
     scrollbar-width: thin;
 
 }
+/* Keep menu2-container left aligned for zoom compatibility */
 .menu2-container {
     flex-grow: 1;
-    padding: 6px 0;
+    padding: 6px 8px;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow: hidden;
 }
 
 /* Updated Menu Item Styling */
@@ -137,4 +139,14 @@
 .rotate-down {
     transform: rotate(180deg);
     transition: transform 0.3s ease-in-out;
+}
+
+/* ensure items shrink gracefully on zoom */
+.menu-container .menu-item,
+.menu2-container .menu2-item {
+    min-width: 60px;
+    max-width: 260px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }

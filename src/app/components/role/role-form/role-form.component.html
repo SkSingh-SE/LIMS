@@ -188,6 +188,10 @@
               maxlength="50"
               [ngClass]="{ 'is-invalid': roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty) }"
             />
+            <div class="form-check">
+              <label for="isAdmin" class="form-check-label form-label">Admin</label>
+              <input type="checkbox" id="isAdmin" class="form-check-input mt-1" formControlName="isAdmin" />
+            </div>
             <div
               *ngIf="roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)"
               class="invalid-feedback"

@@ -63,6 +63,7 @@ import { PlanFormComponent } from './components/plan/plan-form/plan-form.compone
 import { ReviewOfRequestComponent } from './components/inward/review-of-request/review-of-request.component';
 import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
 import { WorkflowListComponent } from './components/workflow/workflow-list/workflow-list.component';
+import { MaterialTestMappingComponent } from './components/material-test-mapping/material-test-mapping.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -166,6 +167,7 @@ export const routes: Routes = [
             { path: 'workflow/create', component: WorkflowFormComponent },
             { path: 'workflow/edit/:id', component: WorkflowFormComponent },
             { path: 'workflow/details/:id', component: WorkflowFormComponent },
+            { path: 'test-mapping', component: MaterialTestMappingComponent },
         ]
     },
     { path: '**', redirectTo: '/login' }

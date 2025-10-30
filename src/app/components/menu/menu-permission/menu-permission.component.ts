@@ -173,10 +173,38 @@ export class MenuPermissionComponent implements OnInit {
   // Called when type select changes for a given permission row
   onTypeChange(index: number) {
     const group = this.permissionsArray.at(index);
-    const type = group.get('type')?.value;
-    const menuName = this.selectedMenu?.name.replace(/\s+/g, '') || '';
-    if (this.selectedMenu && type) {
-      group.patchValue({ name: `Can${type}${menuName}` });
+    const typeControl = group.get('type');
+    const selectedTypeRaw = typeControl?.value;
+    const selectedType = (selectedTypeRaw || '').toString().trim().toLowerCase();
+
+    if (!selectedType) {
+      // No type selected, clear name and exit
+      group.patchValue({ name: '' });
+      return;
+    }
+
+    // Check for duplicates in other rows (case-insensitive)
+    for (let i = 0; i < this.permissionsArray.length; i++) {
+      if (i === index) continue;
+      const otherGroup = this.permissionsArray.at(i);
+      const otherTypeRaw = otherGroup.get('type')?.value;
+      const otherType = (otherTypeRaw || '').toString().trim().toLowerCase();
+      if (otherType && otherType === selectedType) {
+        // Duplicate found - notify and revert current selection
+        this.toastService.show('This permission type has already been selected in another row.', 'error');
+        // Revert the current type to empty and clear generated name
+        typeControl?.setValue('');
+        group.patchValue({ name: '' });
+        return;
+      }
+    }
+
+    // No duplicate - proceed to auto-generate name if menu selected
+    const menuName = this.selectedMenu?.name ? this.selectedMenu.name.replace(/\s+/g, '') : '';
+    if (this.selectedMenu && selectedType) {
+      // Use original casing of selectedTypeRaw for name generation (preserve what user selected)
+      const typeForName = selectedTypeRaw.toString().trim();
+      group.patchValue({ name: `Can${typeForName}${menuName}` });
     }
   }
 

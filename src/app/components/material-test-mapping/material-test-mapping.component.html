@@ -1,10 +1,10 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Permission List</label>
+      <label class="text-center text-md fw-medium ms-3">Test Mapping List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
         <i class="bi bi-plus-lg"></i>
-        Create Permission
+        Create Test Mapping
       </a>
     </div>
 
@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <div *ngIf="permissionList.length > 0 || filters.length > 0" class="table-responsive">
+      <div *ngIf="mappingList.length > 0 || filters.length > 0" class="table-responsive">
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
@@ -50,20 +50,21 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of permissionList; let i = index" class="text-sm">
+            <tr *ngFor="let customerType of mappingList; let i = index" class="text-sm">
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ item.title }}</td>
+              <td>{{ customerType.metalClassification }}</td>
+              <td>{{ customerType.productCondition }}</td>
+              <td>{{ customerType.grade }}</td>
+              <td>{{ customerType.laboratoryTest }}</td>
+              <td>{{ customerType.createdOn | date : "dd MMM, yyyy hh:mm a" }}</td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-2">
                   <!-- Flex for spacing -->
-                  <a (click)="openModal('view', item.id)" class="icon-link" title="View">
+                  <a (click)="openModal('view', customerType.id)" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
-                  <a (click)="openModal('edit', item.id)" class="icon-link" title="Edit">
+                  <a (click)="openModal('edit', customerType.id)" class="icon-link" title="Edit">
                     <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
-                  </a>
-                  <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
-                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
                 </div>
               </td>
@@ -71,7 +72,7 @@
           </tbody>
         </table>
       </div>
-      <div *ngIf="permissionList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+      <div *ngIf="mappingList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
         <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
           <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
           <div class="fw-semibold">No records found</div>
@@ -94,7 +95,7 @@
           <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
             <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
           </li>
-          <li class="page-item" [class.disabled]="totalPages.length == 0 || pageNumber === totalPages.length">
+          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
             <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
           </li>
         </ul>
@@ -170,98 +171,95 @@
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
-      <form [formGroup]="permissionForm">
-        <div class="modal-body row">
-          <!-- Menu Dropdown -->
-          <div class="col-12 mb-3">
-            <app-searchable-dropdown-modal
-              [placeholder]="'Search Menu'"
-              [required]="true"
-              [labelName]="'Menu'"
-              [fetchDataFn]="getMenus"
-              (itemSelected)="onMenuSelected($event)"
-              [isDisabled]="isViewMode"
-              [selectedItem]="permissionForm.get('menuId')?.value"
-            ></app-searchable-dropdown-modal>
-          </div>
-
-          <div formArrayName="permissions" class="col-12">
-            <div *ngFor="let permission of permissionsArray.controls; let i = index" [formGroupName]="i" class="border rounded p-3 mb-3">
-              <div class="row g-3 align-items-end">
-                <div class="col-md-2">
-                  <label class="form-label">
-                    Type
-                    <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" formControlName="type" (change)="onTypeChange(i)">
-                    <option value="">Select Type</option>
-                    <option value="Create">Create</option>
-                    <option value="Update">Update</option>
-                    <option value="Read">Read</option>
-                    <option value="Delete">Delete</option>
-                    <option value="Manage">Manage</option>
-                  </select>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">
-                    Name
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="name" placeholder="Permission Name" readonly />
-                  <div
-                    *ngIf="permission.get('name')?.invalid && (permission.get('name')?.touched || permission.get('name')?.dirty)"
-                    class="text-danger small"
-                  >
-                    Name is required.
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">
-                    Display Name
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="displayName" placeholder="Display Name" />
-                  <div
-                    *ngIf="
-                      permission.get('displayName')?.invalid &&
-                      (permission.get('displayName')?.touched || permission.get('displayName')?.dirty)
-                    "
-                    class="text-danger small"
-                  >
-                    Display Name is required.
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Description</label>
-                  <input type="text" class="form-control" formControlName="description" placeholder="Description" />
-                </div>
-
-                <div class="col-md-1 d-flex align-items-end justify-content-end">
-                  <button type="button" class="btn btn-danger" (click)="removePermission(i)">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
+      <form [formGroup]="MappingForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="row row-cols-2">
+            <!-- Metal Classification Searchable Dropdown -->
+            <div class="mb-2">
+              <app-searchable-dropdown-modal
+                [placeholder]="'Search Metal Classification'"
+                [labelName]="'Metal Classification'"
+                [fetchDataFn]="getMetalClassificationDropdown"
+                (itemSelected)="onMetalSelected($event)"
+                [hideLabel]="false"
+                [required]="false"
+                [isDisabled]="isViewMode"
+                [selectedItem]="MappingForm.get('metalClassificationID')?.value"
+              ></app-searchable-dropdown-modal>
             </div>
-          </div>
 
-          <!-- Add Permission Button -->
-          <div class="col-12 mb-3">
-            <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addPermission()">
-              <i class="bi bi-plus-circle-dotted"></i>
-              Add Permission
-            </button>
+            <!-- Product Condition Searchable Dropdown -->
+            <div class="mb-2">
+              <app-searchable-dropdown-modal
+                [placeholder]="'Search Product Condition'"
+                [labelName]="'Product Condition'"
+                [fetchDataFn]="getProductConditionDropdown"
+                (itemSelected)="onProductConditionSelected($event)"
+                [hideLabel]="false"
+                [required]="false"
+                [isDisabled]="isViewMode"
+                [selectedItem]="MappingForm.get('productConditionID')?.value"
+              ></app-searchable-dropdown-modal>
+            </div>
+
+            <!-- Grade Searchable Dropdown -->
+            <div class="mb-2">
+              <app-searchable-dropdown-modal
+                [placeholder]="'Search Grade'"
+                [labelName]="'Grade'"
+                [fetchDataFn]="getMaterialSpecificationGradeDropdown"
+                (itemSelected)="onGradeSelected($event)"
+                [hideLabel]="false"
+                [required]="true"
+                [isDisabled]="isViewMode"
+                [selectedItem]="MappingForm.get('gradeID')?.value"
+              ></app-searchable-dropdown-modal>
+              <span *ngIf="MappingForm.get('gradeID')?.invalid && MappingForm.get('gradeID')?.touched" class="text-danger small">
+                Grade is required.
+              </span>
+            </div>
+
+            <!-- Laboratory Test Searchable Dropdown -->
+            <div class="mb-2">
+              <app-searchable-dropdown-modal
+                [placeholder]="'Search Laboratory Test'"
+                [labelName]="'Laboratory Test'"
+                [fetchDataFn]="getTestMethodSpecificationDropdown"
+                (itemSelected)="onLabTestSelected($event)"
+                [hideLabel]="false"
+                [required]="true"
+                [isDisabled]="isViewMode"
+                [selectedItem]="MappingForm.get('laboratoryTestID')?.value"
+              ></app-searchable-dropdown-modal>
+              <span
+                *ngIf="MappingForm.get('laboratoryTestID')?.invalid && MappingForm.get('laboratoryTestID')?.touched"
+                class="text-danger small"
+              >
+                Test is required.
+              </span>
+            </div>
+
+            <!-- Default Checkbox -->
+             <div class="mb-2">
+               <div class="form-check ">
+                 <input
+                 class="form-check-input mt-1"
+                 type="checkbox"
+                 id="isDefault"
+                 formControlName="isDefault"
+                 [attr.disabled]="isViewMode ? true : null"
+                 />
+                 <label class="form-check-label form-label" for="isDefault">Is Default</label>
+                </div>
+            </div>
           </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="modal-footer">
+        <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-          <button type="button" class="btn navbar-background text-white" [disabled]="permissionForm.invalid" (click)="onSubmit()">
-            Save
+          <button type="submit" class="btn navbar-background text-white" [disabled]="MappingForm.invalid">
+            {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>
       </form>

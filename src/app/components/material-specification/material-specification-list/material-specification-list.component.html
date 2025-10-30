@@ -54,18 +54,18 @@
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ material.aliasName }}</td>
                             <td>{{ material.standardOrganizationName }}</td>
-                            <td>{{ material.standard }}</td>
+                            <td>{{ material.testMethodSpecificationName }}</td>
                             <td>{{ material.standardYear }}</td>
                             <td>{{material.grade}}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/material-specification/details', material.id]"
-                                    [state]="{ mode: 'view' }" 
+                                    [state]="{ mode: 'view' }"
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/material-specification/edit', material.id]" 
+                                    <a [routerLink]="['/material-specification/edit', material.id]"
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">

@@ -14,9 +14,10 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { ProductConditionService } from '../../../services/product-condition.service';
 
 
 @Component({
@@ -33,18 +34,13 @@ export class SampleInwardFormComponent implements OnInit {
   lastSampleNumber: number = +this.sampleNumber.split('-')[1]; // fetched from DB
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
   readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
-  customers = [
-    { name: 'Customer 1', address: 'Address 1', contact: 'Contact 1', pinCode: '380060', area: 'Science City', city: 'Ahmedabad', state: 'Gujarat', country: 'India', gstNo: 'JLNMSLR988687PA' },
-    { name: 'Customer 2', address: 'Address 2', contact: 'Contact 2', pinCode: '400001', area: 'Marine Drive', city: 'Mumbai', state: 'Maharashtra', country: 'India', gstNo: 'BBNMSLR888888PA' },
-    { name: 'Customer 3', address: 'Address 3', contact: 'Contact 3', pinCode: '500084', area: 'Hitech City', city: 'Hyderabad', state: 'Telangana', country: 'India', gstNo: 'HYDSLR777777PA' }
-  ];
+
   contactPersons: any[] = [];
   billingToContactPerson: any[] = [];
   reportingToContactPerson: any[] = [];
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
   dispatchModes: any[] = [];
   selectedDispatchModes: number[] = [];
-  sampleCategories: string[] = ['Raw Material', 'Finished Product', 'Semi-finished Product'];
 
   // ────────────── State ──────────────
   sampleInwardForm!: FormGroup;
@@ -64,7 +60,9 @@ export class SampleInwardFormComponent implements OnInit {
     private parameterService: ParameterService,
     private toastService: ToastService,
     private inwardService: SampleInwardService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router,
+    private prodCondService: ProductConditionService
   ) { }
 
   // ────────────── Lifecycle ──────────────
@@ -263,7 +261,7 @@ export class SampleInwardFormComponent implements OnInit {
                 pinCode: customer.pinCode
               });
 
-              
+
               this.contactPersons = [];
 
               if (Array.isArray(customer.contactPersons)) {
@@ -534,8 +532,8 @@ export class SampleInwardFormComponent implements OnInit {
       id: [existingSample?.id || 0],
       sampleNo: [sampleNo],
       details: [existingSample?.details || '', Validators.required],
-      nature: [existingSample?.nature || '', Validators.required],
-      category: [existingSample?.category || '', Validators.required],
+      metalClassificationID: [existingSample?.metalClassificationID || ''],
+      productConditionID: [existingSample?.productConditionID || ''],
       remarks: [existingSample?.remarks || ''],
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
@@ -669,6 +667,8 @@ export class SampleInwardFormComponent implements OnInit {
     // Remove its test plan only (don’t rebuild all!)
     this.sampleTestPlans.removeAt(index);
   }
+
+
 
 
   generateUrlNo(counter: number): string {
@@ -813,6 +813,10 @@ export class SampleInwardFormComponent implements OnInit {
     return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
   };
 
+  getProductConditions = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.prodCondService.getProductConditionDropdown(term, page, pageSize);
+  };
+
   // Event handler for Material Specification selection
   onSpecificationGradeSelected(
     index: number,
@@ -853,6 +857,20 @@ export class SampleInwardFormComponent implements OnInit {
   onParameterSelected(item: any, sampleIndex: number, testIndex: number, index: number) {
     this.getElementRows(sampleIndex).at(index).patchValue({
       parameterID: item.id,
+    });
+  }
+
+  // ───────── Dropdown sample details Handlers ──────────────
+  onMetalClassificationSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({
+      metalClassificationID: item.id,
+    });
+  }
+  onProductConditionSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({
+      productConditionID: item.id,
     });
   }
 
@@ -902,7 +920,7 @@ export class SampleInwardFormComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-       const baseUrl = environment.baseUrl;
+      const baseUrl = environment.baseUrl;
       window.open(baseUrl + filePath, '_blank');
     }
   }
@@ -912,152 +930,195 @@ export class SampleInwardFormComponent implements OnInit {
 
 
   // ────────────── Submission ──────────────
-  onSubmit(): void {
-    if (this.sampleInwardForm.valid) {
-      const value = this.sampleInwardForm.value;
-      const formData = new FormData();
-      const appendFields = (fields: any, prefix = '') => {
-        Object.keys(fields).forEach(key => {
-          const val = fields[key];
+  onSubmit(includePlans: boolean = false): void {
+    if (!this.sampleInwardForm.valid) {
+      this.sampleInwardForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.sampleInwardForm.value;
+    const formData = new FormData();
+
+    const appendFields = (fields: any) => {
+      Object.keys(fields).forEach(key => {
+        const val = fields[key];
+        if (val !== undefined && val !== null) {
           if (val instanceof File) {
-            formData.append(prefix + key, val);
-          } else if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
-            appendFields(val, prefix + key + '.');
-          } else if (Array.isArray(val)) {
-            val.forEach((item, i) => appendFields(item, `${prefix}${key}[${i}].`));
+            formData.append(key, val);
           } else {
-            formData.append(prefix + key, val ?? '');
+            formData.append(key, String(val));
           }
-        });
-      };
-      appendFields({
-        caseNo: value.caseNo,
-        customerID: value.customerID,
-        address: value.address,
-        area: value.area,
-        state: value.state,
-        city: value.city,
-        pinCode: value.pinCode,
-        country: value.country,
-        gstNo: value.gstNo,
-        poNumber: value.poNumber,
-        advancePayment: value.advancePayment || '0',
-        billRequired: value.billRequired || 'false',
-        advancePIRequired: value.advancePIRequired || 'false',
-        holdTesting: value.holdTesting || 'false',
-        holdTestingUntilPIApproved: value.holdTestingUntilPIApproved || 'false',
-        collectionTime: value.collectionTime || this.getCurrentTime(),
-        collectionDate: value.collectionDate || '',
-        urgent: value.urgent || 'false',
-        returnSample: value.returnSample || 'false',
-        notDestroyed: value.notDestroyed || 'false',
-        sampleReceiptNote: value.sampleReceiptNote || '',
-        requestFilePath: value.requestFilePath || '',
-        requestFileName: value.requestFileName || '',
-        file: value.file
-      });
-      value.dispatchModes.forEach((d: any, i: number) => {
-        formData.append(`dispatchModes[${i}].dispatchModeID`, d.dispatchModeID);
-        formData.append(`dispatchModes[${i}].inwardID`, d.inwardID || '0');
-        formData.append(`dispatchModes[${i}].id`, d.id || '0');
-      });
-      value.contacts.forEach((c: any, i: number) => {
-        formData.append(`contacts[${i}].id`, '0');
-        formData.append(`contacts[${i}].selected`, c.selected);
-        formData.append(`contacts[${i}].contactID`, c.contactID);
-        formData.append(`contacts[${i}].name`, c.name);
-        formData.append(`contacts[${i}].mobileNo`, c.mobileNo);
-        formData.append(`contacts[${i}].emailId`, c.emailId);
-        formData.append(`contacts[${i}].sendBill`, c.sendBill);
-        formData.append(`contacts[${i}].sendReport`, c.sendReport);
-      });
-      ['reportingTo', 'billingTo'].forEach(section => {
-        Object.keys(value[section]).forEach(key => {
-          formData.append(`${section}.${key}`, value[section][key]);
-        });
-      });
-      value.sampleDetails.forEach((s: any, i: number) => {
-        formData.append(`sampleDetails[${i}].id`, '0');
-        formData.append(`sampleDetails[${i}].sampleNo`, s.sampleNo || '');
-        formData.append(`sampleDetails[${i}].details`, s.details || '');
-        formData.append(`sampleDetails[${i}].nature`, s.nature || '');
-        formData.append(`sampleDetails[${i}].category`, s.category || '');
-        formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
-        formData.append(`sampleDetails[${i}].quantity`, s.quantity || '0');
-        formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
-        formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
-        if (s.file instanceof File) {
-          formData.append(`sampleDetails[${i}].file`, s.file);
         }
       });
-      let index = 0;
-      value.sampleAdditionalDetails.forEach((a: any, i: number) => {
-        a.values.forEach((v: any, j: number) => {
-          formData.append(`sampleAdditionalDetails[${index}].id`, a.id || '0');
-          formData.append(`sampleAdditionalDetails[${index}].sampleId`, '0');
-          formData.append(`sampleAdditionalDetails[${index}].sampleNo`, this.sampleNumbers[j]);
-          formData.append(`sampleAdditionalDetails[${index}].label`, a.label);
-          formData.append(`sampleAdditionalDetails[${index}].enabled`, a.enabled);
-          formData.append(`sampleAdditionalDetails[${index}].value`, v);
-          index++;
-        });
+    };
 
+    appendFields({
+      id: value.id || '0',
+      caseNo: value.caseNo,
+      customerID: value.customerID,
+      address: value.address,
+      area: value.area,
+      state: value.state,
+      city: value.city,
+      pinCode: value.pinCode,
+      country: value.country,
+      gstNo: value.gstNo,
+      poNumber: value.poNumber,
+      advancePayment: value.advancePayment || '0',
+      billRequired: value.billRequired || 'false',
+      advancePIRequired: value.advancePIRequired || 'false',
+      holdTesting: value.holdTesting || 'false',
+      holdTestingUntilPIApproved: value.holdTestingUntilPIApproved || 'false',
+      collectionTime: value.collectionTime || this.getCurrentTime(),
+      collectionDate: value.collectionDate || '',
+      urgent: value.urgent || 'false',
+      returnSample: value.returnSample || 'false',
+      notDestroyed: value.notDestroyed || 'false',
+      sampleReceiptNote: value.sampleReceiptNote || '',
+      requestFilePath: value.requestFilePath || '',
+      requestFileName: value.requestFileName || '',
+      file: value.file
+    });
+
+    // Dispatch modes
+    value.dispatchModes?.forEach((d: any, i: number) => {
+      formData.append(`dispatchModes[${i}].dispatchModeID`, d.dispatchModeID);
+      formData.append(`dispatchModes[${i}].inwardID`, d.inwardID || '0');
+      formData.append(`dispatchModes[${i}].id`, d.id || '0');
+    });
+
+    // Contacts
+    value.contacts?.forEach((c: any, i: number) => {
+      formData.append(`contacts[${i}].id`, '0');
+      formData.append(`contacts[${i}].selected`, String(c.selected));
+      formData.append(`contacts[${i}].contactID`, String(c.contactID));
+      formData.append(`contacts[${i}].name`, c.name || '');
+      formData.append(`contacts[${i}].mobileNo`, c.mobileNo || '');
+      formData.append(`contacts[${i}].emailId`, c.emailId || '');
+      formData.append(`contacts[${i}].sendBill`, String(c.sendBill));
+      formData.append(`contacts[${i}].sendReport`, String(c.sendReport));
+    });
+
+    // Reporting & Billing
+    ['reportingTo', 'billingTo'].forEach(section => {
+      const sec = value[section] || {};
+      Object.keys(sec).forEach(k => {
+        formData.append(`${section}.${k}`, sec[k] ?? '');
       });
+    });
 
-      if (this.sampleId > 0) {
-        if (value.sampleTestPlans) {
-          value.sampleTestPlans.forEach((s: any, i: number) => {
-            formData.append(`sampleTestPlans[${i}].sampleNo`, s.sampleNo || '');
-            s.generalTests.forEach((g: any, j: number) => {
-              formData.append(`sampleTestPlans[${i}].generalTests[${j}].sampleNo`, g.sampleNo || '');
-              formData.append(`sampleTestPlans[${i}].generalTests[${j}].specification1`, g.specification1 || '');
-              formData.append(`sampleTestPlans[${i}].generalTests[${j}].specification2`, g.specification2 || '');
-              formData.append(`sampleTestPlans[${i}].generalTests[${j}].parameter`, g.parameter || '');
-              g.methods.forEach((m: any, k: number) => {
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].testMethodID`, m.testMethodID || '');
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].standardID`, m.standardID || '');
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].quantity`, m.quantity || '0');
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].reportNo`, m.reportNo || '');
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].ulrNo`, m.ulrNo || '');
-                formData.append(`sampleTestPlans[${i}].generalTests[${j}].methods[${k}].cancel`, m.cancel || 'false');
-              });
-            });
-            s.chemicalTests.forEach((c: any, j: number) => {
-              formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].sampleNo`, c.sampleNo || '');
-              formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].reportNo`, c.reportNo || '');
-              formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].urlNo`, c.urlNo || '');
-              c.elements.forEach((e: any, k: number) => {
-                formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].elements[${k}].elementID`, e.elementID || '');
-                formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].elements[${k}].elementName`, e.elementName || '');
-                formData.append(`sampleTestPlans[${i}].chemicalTests[${j}].elements[${k}].quantity`, e.quantity || '0');
-              });
-            });
-          });
+    // Sample details
+    value.sampleDetails?.forEach((s: any, i: number) => {
+      formData.append(`sampleDetails[${i}].id`, '0');
+      formData.append(`sampleDetails[${i}].sampleNo`, s.sampleNo || '');
+      formData.append(`sampleDetails[${i}].details`, s.details || '');
+      formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
+      formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
+      formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
+      formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
+      formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
+      formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
+      if (s.file instanceof File) {
+        formData.append(`sampleDetails[${i}].file`, s.file);
+      }
+    });
+
+    // Sample additional details (flatten values) - FIXED: backend expects flattened list with SampleNo & Value
+    // Build entries like SampleAdditionalDetails[0].SampleNo, SampleAdditionalDetails[0].Label, SampleAdditionalDetails[0].Value
+    let addIndex = 0;
+    if (Array.isArray(value.sampleAdditionalDetails) && this.sampleNumbers.length > 0) {
+      value.sampleAdditionalDetails.forEach((row: any, rowIndex: number) => {
+        const label = row.label || '';
+        const valuesArray = Array.isArray(row.values) ? row.values : [];
+        // For each sample column in this row, create a flattened entry
+        for (let sampleIdx = 0; sampleIdx < Math.max(valuesArray.length, this.sampleNumbers.length); sampleIdx++) {
+          const val = valuesArray[sampleIdx] ?? '';
+          // Prefer sampleNumbers (kept in component) otherwise fall back to sampleDetails in form
+          const sampleNo = this.sampleNumbers[sampleIdx]
+            || (value.sampleDetails && value.sampleDetails[sampleIdx] && value.sampleDetails[sampleIdx].sampleNo)
+            || '';
+          formData.append(`SampleAdditionalDetails[${addIndex}].SampleNo`, sampleNo);
+          formData.append(`SampleAdditionalDetails[${addIndex}].Label`, label);
+          formData.append(`SampleAdditionalDetails[${addIndex}].Value`, val ?? '');
+          addIndex++;
         }
-
-        this.inwardService.updateSampleInward(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-          },
-          error: (error) => {
-            console.error('Error submitting sample inward:', error);
-            this.toastService.show('Error submitting sample inward', 'error');
-          }
-        });
-      } else {
-        this.inwardService.createSampleInward(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-          },
-          error: (error) => {
-            console.error('Error submitting sample inward:', error);
-            this.toastService.show('Error submitting sample inward', 'error');
+      });
+    } else {
+      // If no sampleNumbers yet (edge case when creating first sample), try to generate from sampleDetails
+      if (Array.isArray(value.sampleAdditionalDetails) && Array.isArray(value.sampleDetails)) {
+        value.sampleAdditionalDetails.forEach((row: any, rowIndex: number) => {
+          const label = row.label || '';
+          const valuesArray = Array.isArray(row.values) ? row.values : [];
+          for (let sampleIdx = 0; sampleIdx < valuesArray.length; sampleIdx++) {
+            const val = valuesArray[sampleIdx] ?? '';
+            const sampleNo = (value.sampleDetails && value.sampleDetails[sampleIdx] && value.sampleDetails[sampleIdx].sampleNo) || '';
+            formData.append(`SampleAdditionalDetails[${addIndex}].SampleNo`, sampleNo);
+            formData.append(`SampleAdditionalDetails[${addIndex}].Label`, label);
+            formData.append(`SampleAdditionalDetails[${addIndex}].Value`, val ?? '');
+            addIndex++;
           }
         });
       }
-    } else {
-      this.sampleInwardForm.markAllAsTouched();
     }
+
+    // IMPORTANT: Only include sampleTestPlans if includePlans === true.
+    if (includePlans && value.sampleTestPlans) {
+      // Append plan data (existing logic) - keep it minimal here
+      value.sampleTestPlans.forEach((sp: any, i: number) => {
+        formData.append(`sampleTestPlans[${i}].sampleNo`, sp.sampleNo || '');
+        // Append generalTests and chemicalTests as required
+        // (assuming backend expects structure similar to previous implementation)
+      });
+    }
+
+    // Call appropriate service to save Sample Inward (customer + sample)
+    const request$ = (value.id && value.id > 0)
+      ? this.inwardService.updateSampleInward(formData)
+      : this.inwardService.createSampleInward(formData);
+
+    request$.subscribe({
+      next: (res) => {
+        this.toastService.show('Sample Inward saved successfully!', 'success');
+        this.router.navigate(['/sample/inward']);
+      },
+      error: (err) => {
+        console.error('Error saving sample inward:', err);
+        this.toastService.show('Error saving sample inward. Please try again.', 'error');
+      }
+    });
   }
 
+  // Programmatically navigate to the Sample Details tab
+  goToSampleTab(): void {
+    // Primary: click the tab button (Bootstrap/tab markup)
+    const tabBtn = document.getElementById('sample-tab') as HTMLElement | null;
+    if (tabBtn) {
+      tabBtn.click();
+      return;
+    }
+
+    // Fallback: toggle classes manually if DOM structure differs
+    try {
+      // deactivate info tab button/pane
+      const infoBtn = document.getElementById('info-tab');
+      const infoPane = document.getElementById('info');
+      const samplePane = document.getElementById('sample');
+      const sampleBtnFallback = document.querySelector('[data-bs-target="#sample"]') as HTMLElement | null;
+
+      infoBtn?.classList.remove('active');
+      infoPane?.classList.remove('show', 'active');
+
+      sampleBtnFallback?.classList.add('active');
+      samplePane?.classList.add('show', 'active');
+    } catch (err) {
+      // no-op
+      console.error('Error switching to sample tab', err);
+    }
+  };
+  onCancel(): void {
+    // You can reset the form or navigate away as needed
+    this.sampleInwardForm.reset();
+    this.router.navigate(['/sample/plan/inward']);
+    // Optionally, navigate away
+  };
 }

@@ -3,10 +3,11 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { RouterModule } from '@angular/router';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 
 @Component({
   selector: 'app-scope-list',
-  imports: [CommonModule,RouterModule,FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, HasPermissionDirective],
   templateUrl: './scope-list.component.html',
   styleUrl: './scope-list.component.css'
 })

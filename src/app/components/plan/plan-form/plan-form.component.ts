@@ -12,6 +12,7 @@ import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { ProductConditionService } from '../../../services/product-condition.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -42,7 +43,8 @@ export class PlanFormComponent implements OnInit {
     private toastService: ToastService,
     private inwardService: SampleInwardService,
     private activeroute: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private productService: ProductConditionService
   ) { }
 
   ngOnInit(): void {
@@ -93,8 +95,8 @@ export class PlanFormComponent implements OnInit {
     this.samples.push(this.fb.group({
       sampleNo: [sampleNo],
       details: ['Sample 1'],
-      category: ['Raw Material'],
-      nature: ['Solid'],
+      metalClassificationID: [null],
+      productConditionID: [null],
       remarks: ['Sample received in good condition'],
       quantity: [1],
       cuttingRequired: [false],
@@ -256,8 +258,8 @@ export class PlanFormComponent implements OnInit {
               id: s.id,
               sampleNo: s.sampleNo,
               details: s.details,
-              category: s.category,
-              nature: s.nature,
+              metalClassificationID: s.metalClassificationID,
+              productConditionID: s.productConditionID,
               remarks: s.remarks,
               quantity: s.quantity,
               cuttingRequired: s.cuttingRequired ?? false,
@@ -314,7 +316,7 @@ export class PlanFormComponent implements OnInit {
                   selected: el.selected
                 }))
               }))
-              
+
             }))
           };
 
@@ -370,6 +372,21 @@ export class PlanFormComponent implements OnInit {
     const spec1Num = spec1 ? +spec1 : 0;
     const spec2Num = spec2 ? +spec2 : 0;
     return this.materialSpecificationService.getTestMethodsBySpecifications(spec1Num, spec2Num);
+  }
+  getProductConditions = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.productService.getProductConditionDropdown(term, page, pageSize);
+  };
+   onMetalClassificationSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.samples.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({
+      metalClassificationID: item.id,
+    });
+  }
+  onProductConditionSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.samples.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({
+      productConditionID: item.id,
+    });
   }
 
   // Dropdown Event Handlers
@@ -470,148 +487,6 @@ export class PlanFormComponent implements OnInit {
     const arr = sample.get('additionalDetails') as FormArray;
     return arr ? arr.controls : [];
   }
-  // ────────────── Helper Methods ──────────────
-  //   // Sample 1
-  //   this.samples.push(this.fb.group({
-  //     sampleNo: ['24-000001'],
-  //     details: ['Steel Rod'],
-  //     category: ['Raw Material'],
-  //     nature: ['Solid'],
-  //     remarks: ['First sample received in good condition'],
-  //     quantity: [10],
-  //     cuttingRequired: [true],
-  //     machiningRequired: [false],
-  //     machiningAmount: [0],
-  //     otherPreparation: [false],
-  //     otherPreparationCharge: [0],
-  //     tpiRequired: [true],
-  //     additionalDetails: this.fb.array([
-  //       this.fb.group({ label: ['Heat No'], value: ['HN123'], enabled: [true] }),
-  //       this.fb.group({ label: ['Batch Size'], value: ['500kg'], enabled: [true] })
-  //     ]),
-  //     testPlans: this.fb.array([
-  //       this.fb.group({
-  //         sampleNo: ['24-000001'],
-  //         generalTests: this.fb.array([
-  //           this.fb.group({
-  //             sampleNo: ['24-000001'],
-  //             specification1: ['1'],
-  //             specification2: ['2'],
-  //             parameter: [''],
-  //             methods: this.fb.array([
-  //               this.fb.group({
-  //                 testMethodID: ['1'],
-  //                 standardID: ['4'],
-  //                 quantity: [2],
-  //                 reportNo: ['RPT001'],
-  //                 ulrNo: ['ULR001'],
-  //                 cancel: [false]
-  //               })
-  //             ])
-  //           })
-  //         ]),
-  //         chemicalTests: this.fb.array([])
-  //       }),
-  //       this.fb.group({
-  //         sampleNo: ['24-000001'],
-  //         generalTests: this.fb.array([]),
-  //         chemicalTests: this.fb.array([
-  //           this.fb.group({
-  //             sampleNo: ['24-000001'],
-  //             reportNo: ['RPT002'],
-  //             ulrNo: ['ULR002'],
-  //             testTypes: this.fb.group({
-  //               Spectro: [true],
-  //               Chemical: [true],
-  //               XRF: [false],
-  //               'Full Analysis': [false],
-  //               ROHS: [false]
-  //             }),
-  //             metalClassificationID: ['3'],
-  //             specification1: ['1'],
-  //             specification2: ['2'],
-  //             testMethod: ['3'],
-  //             elements: this.fb.array([
-  //               this.fb.group({ parameterID: ['1'], selected: [true] }),
-  //               this.fb.group({ parameterID: ['2'], selected: [false] })
-  //             ])
-  //           })
-  //         ])
-  //       })
-  //     ])
-  //   }));
-
-  //   // Sample 2
-  //   this.samples.push(this.fb.group({
-  //     sampleNo: ['24-000002'],
-  //     details: ['Copper Sheet'],
-  //     category: ['Raw Material'],
-  //     nature: ['Solid'],
-  //     remarks: ['Second sample received in good condition'],
-  //     quantity: [5],
-  //     cuttingRequired: [false],
-  //     machiningRequired: [true],
-  //     machiningAmount: [200],
-  //     otherPreparation: [true],
-  //     otherPreparationCharge: [0],
-  //     tpiRequired: [false],
-  //     additionalDetails: this.fb.array([
-  //       this.fb.group({ label: ['Heat No'], value: ['HN456'], enabled: [true] }),
-  //       this.fb.group({ label: ['Batch Size'], value: ['200kg'], enabled: [true] }),
-  //       this.fb.group({ label: ['Supplier'], value: ['ABC Metals'], enabled: [true] })
-  //     ]),
-  //     testPlans: this.fb.array([
-  //       this.fb.group({
-  //         sampleNo: ['24-000002'],
-  //         generalTests: this.fb.array([
-  //           this.fb.group({
-  //             sampleNo: ['24-000002'],
-  //             specification1: ['1'],
-  //             specification2: ['2'],
-  //             parameter: [''],
-  //             methods: this.fb.array([
-  //               this.fb.group({
-  //                 testMethodID: ['1'],
-  //                 standardID: ['3'],
-  //                 quantity: [1],
-  //                 reportNo: ['RPT003'],
-  //                 ulrNo: ['ULR003'],
-  //                 cancel: [false]
-  //               })
-  //             ])
-  //           })
-  //         ]),
-  //         chemicalTests: this.fb.array([])
-  //       }),
-  //       this.fb.group({
-  //         sampleNo: ['24-000002'],
-  //         generalTests: this.fb.array([]),
-  //         chemicalTests: this.fb.array([
-  //           this.fb.group({
-  //             sampleNo: ['24-000002'],
-  //             reportNo: ['RPT004'],
-  //             ulrNo: ['ULR004'],
-  //             testTypes: this.fb.group({
-  //               Spectro: [false],
-  //               Chemical: [true],
-  //               XRF: [true],
-  //               'Full Analysis': [false],
-  //               ROHS: [true]
-  //             }),
-  //             metalClassificationID: ['1'],
-  //             specification1: ['1'],
-  //             specification2: ['2'],
-  //             testMethod: ['3'],
-  //             elements: this.fb.array([
-  //               this.fb.group({ parameterID: ['3'], selected: [true] }),
-  //               this.fb.group({ parameterID: ['4'], selected: [true] })
-  //             ])
-  //           })
-  //         ])
-  //       })
-  //     ])
-  //   }));
-  // }
 
   // Add this validator function at the top or inside the class
   uniqueSpecificationValidator(group: FormGroup) {
@@ -723,8 +598,8 @@ export class PlanFormComponent implements OnInit {
         inwardID: [sample.inwardID ?? 0],
         sampleNo: [sample.sampleNo],
         details: [sample.details],
-        category: [sample.category],
-        nature: [sample.nature],
+        metalClassificationID: [sample.metalClassificationID],
+        productConditionID: [sample.productConditionID],
         remarks: [sample.remarks],
         quantity: [sample.quantity],
         cuttingRequired: [sample.cuttingRequired ?? false],
@@ -763,8 +638,8 @@ export class PlanFormComponent implements OnInit {
         id: s.id || 0,
         sampleNo: s.sampleNo || '',
         details: s.details || '',
-        nature: s.nature || '',
-        category: s.category || '',
+        productConditionID: s.productConditionID || '',
+        metalClassificationID: s.metalClassificationID || '',
         remarks: s.remarks || '',
         quantity: s.quantity || 0,
         disabled: s.disabled || false,

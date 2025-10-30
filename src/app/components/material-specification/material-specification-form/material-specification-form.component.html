@@ -36,28 +36,6 @@
           </div>
         </div>
 
-        <div>
-          <label class="form-label">
-            Standard
-            <span class="text-danger">*</span>
-          </label>
-          <input
-            type="text"
-            class="form-control"
-            formControlName="standard"
-            placeholder="Enter Standard"
-            maxlength="100"
-            [ngClass]="{
-              'is-invalid': MaterialSpecificationForm.get('standard')?.touched && MaterialSpecificationForm.get('standard')?.invalid
-            }"
-          />
-          <div
-            *ngIf="MaterialSpecificationForm.get('standard')?.touched && MaterialSpecificationForm.get('standard')?.invalid"
-            class="text-danger text-sm"
-          >
-            Standard is required.
-          </div>
-        </div>
         <!--Part-->
         <div>
           <label class="form-label">Part</label>
@@ -92,13 +70,6 @@
 
       <!--Grade Wise-->
       <div formArrayName="grades" class="accordion" id="gradeAccordion">
-        <!-- <div class="d-flex justify-content-between align-items-center mb-1">
-          <label class="fw-bold fs-6 border-bottom border-danger mb-0">Grades</label>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger mt-1" (click)="addGrade()">
-            <i class="bi bi-plus-circle-dotted"></i>
-            Add Grade
-          </button>
-        </div> -->
         <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi" class="accordion-item mb-3">
           <h2 class="accordion-header mb-2" id="heading{{ gi }}">
             <button
@@ -145,6 +116,27 @@
                   <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid">Grade is required</span>
                 </div>
 
+                <!-- Test Method Specification per-grade -->
+                <div class="">
+                  <label class="form-label">
+                    Test Method Specification
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    formControlName="testMethodSpecificationID"
+                    class="form-select"
+                    (change)="onTestMethodSelected($event, gi)"
+                  >
+                    <option value=''>Select Test Method Specification</option>
+                    <option *ngFor="let method of standardOrgnizationList" [value]="method.id">
+                      {{ method.name }}
+                    </option>
+                  </select>
+                  <div *ngIf="grade.get('testMethodSpecificationID')?.touched && grade.get('testMethodSpecificationID')?.invalid" class="text-danger text-sm">
+                    Test Method Specification is required for this grade.
+                  </div>
+                </div>
+
                 <div class="">
                   <app-searchable-dropdown
                     class="w-100"
@@ -165,12 +157,12 @@
                   </div>
                 </div>
                 <div class="form-check ps-3">
-                  <input type="checkbox" class="form-check-input mt-1 ms-0 me-auto" formControlName="isUNS" id="isUNS" />
-                  <label class="form-label ms-1" for="isUNS">UNS</label>
-                  <label  class="form-label float-end" for="UNSSteel">{{grade.get('isUNS')?.value ? 'UNS ' :''}}Steel Number</label>
+                  <input type="checkbox" class="form-check-input mt-1 ms-0 me-auto" formControlName="isUNS" id="isUNS-{{gi}}" />
+                  <label class="form-label ms-1" for="isUNS-{{gi}}">UNS</label>
+                  <label class="form-label float-end" for="UNSSteel-{{gi}}">{{ grade.get("isUNS")?.value ? "UNS " : "" }}Steel Number</label>
                   <input
                     class="form-control"
-                    id="UNSSteel"
+                    id="UNSSteel-{{gi}}"
                     formControlName="unsSteelNumber"
                     placeholder="Enter steel number"
                     maxlength="100"

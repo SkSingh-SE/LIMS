@@ -16,7 +16,8 @@
     </li>
   </ul>
 
-  <form [formGroup]="sampleInwardForm" (ngSubmit)="onSubmit()" class="needs-validation" novalidate>
+  <!-- removed global ngSubmit to avoid accidental nested submissions -->
+  <form [formGroup]="sampleInwardForm" class="needs-validation" novalidate>
     <div class="tab-content" id="formTabsContent">
       <!-- TAB 1: CUSTOMER & COMPANY INFO -->
       <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
@@ -306,7 +307,7 @@
             </div>
             <div>
               <label class="form-label">PO Number</label>
-                <input type="number" class="form-control" formControlName="poNumber" placeholder="Enter PO Number" />
+              <input type="number" class="form-control" formControlName="poNumber" placeholder="Enter PO Number" />
             </div>
             <div>
               <label class="form-label d-block">Bill Required</label>
@@ -396,6 +397,11 @@
             </div>
           </div>
         </fieldset>
+
+        <!-- Add Go To Sample Details button -->
+        <div class="d-flex justify-content-end mt-3">
+          <button type="button" class="btn btn-outline-danger-600" (click)="goToSampleTab()">Sample Details</button>
+        </div>
       </div>
 
       <!-- TAB 2: SAMPLE DETAILS -->
@@ -414,8 +420,8 @@
                 <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center">Auto-Generated</th>
                   <th class="fw-medium text-center">Sample Description</th>
-                  <th class="fw-medium text-center">Sample Category</th>
-                  <th class="fw-medium text-center">Nature of Sample</th>
+                  <th class="fw-medium text-center">Metal Classification</th>
+                  <th class="fw-medium text-center">Product Condition</th>
                   <th class="fw-medium text-center">Remarks</th>
                   <th class="fw-medium text-center">Quantity</th>
                   <th class="fw-medium text-center">Image</th>
@@ -426,12 +432,23 @@
                   <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly /></td>
                   <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
                   <td>
-                    <select class="form-select form-select-sm" formControlName="category" required>
-                      <option value="" disabled>Select Category</option>
-                      <option *ngFor="let category of sampleCategories" [value]="category">{{ category }}</option>
-                    </select>
+                    <app-searchable-dropdown
+                      [placeholder]="'Search Metal Classification'"
+                      [hideLabel]="true"
+                      [fetchDataFn]="getMetalClassification"
+                      (itemSelected)="onMetalClassificationSelected($event,i)"
+                      [selectedItem]="sample.get('metalClassificationID')?.value"
+                    ></app-searchable-dropdown>
                   </td>
-                  <td><input class="form-control form-control-sm" formControlName="nature" placeholder="Enter nature" required /></td>
+                  <td>
+                    <app-searchable-dropdown
+                      [placeholder]="'Search Product Condition'"
+                      [hideLabel]="true"
+                      [fetchDataFn]="getProductConditions"
+                      (itemSelected)="onProductConditionSelected($event,i)"
+                      [selectedItem]="sample.get('productConditionID')?.value"
+                    ></app-searchable-dropdown>
+                  </td>
                   <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" /></td>
                   <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" /></td>
                   <td>
@@ -563,6 +580,10 @@
             </div>
           </div>
         </fieldset>
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
+          <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-success px-3" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">Save</button>
+        </div>
       </div>
 
       <!-- PLAN TAB TABLE FORMAT -->
@@ -570,12 +591,7 @@
         <app-plan-form [inwardID]="sampleId" [mode]="'review'"></app-plan-form>
       </div>
 
-      <div>
-        <div *ngIf="!isViewMode && sampleDetails.length > 0" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/sample/inward']" class="btn btn-warning">Cancel</a>
-        <button type="submit" class="btn btn-success px-3" [disabled]="!sampleInwardForm.valid">Save</button>
-      </div>
-      </div>
+      <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>
   </form>
 </div>

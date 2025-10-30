@@ -7,7 +7,6 @@ import { Observable } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { RouterLink } from '@angular/router';
 
-
 interface Permission {
   id: number;
   displayName: string;
@@ -16,9 +15,10 @@ interface Permission {
   menuTitle: string;
   isGranted: boolean;
   isOverride: boolean;
-  color?: string; 
+  color?: string;
+  // UI helper
+  isVisibleForCurrentUser?: boolean;
 }
-
 
 @Component({
   selector: 'app-user-permission',
@@ -28,8 +28,14 @@ interface Permission {
 })
 export class UserPermissionComponent implements OnInit {
   selectedUser: string = '';
+
+  // master list (never mutated except on full refresh)
+  masterPermissionsByGroup: { [menuTitle: string]: Permission[] } = {};
+
+  // current available list used for left-side UI (we will toggle isVisibleForCurrentUser on it)
   permissionsByGroup: { [menuTitle: string]: Permission[] } = {};
-  allPermissions:any[] = [];
+
+  allPermissions: any[] = [];
   allPermissionForm: FormGroup;
   assignedPermissions: { [menuTitle: string]: Permission[] } = {};
   assignedPermissionSelection: Set<string> = new Set();
@@ -39,7 +45,6 @@ export class UserPermissionComponent implements OnInit {
   filteredGroups: [string, Permission[]][] = [];
   filteredAssignedGroups: [string, Permission[]][] = [];
 
-  
   constructor(private fb: FormBuilder, private userService: UserService, private toastService: ToastService) {
     this.allPermissionForm = this.fb.group({
       allPermissions: this.fb.array([]),
@@ -50,12 +55,12 @@ export class UserPermissionComponent implements OnInit {
     this.getPermissions();
   }
 
+  // Build form controls based on master ordering
   initAllPermissions() {
     const arr = this.fb.array([]);
-    const allPermissions = Object.entries(this.permissionsByGroup).flatMap(([_, perms]) =>
-      perms.map(() => this.fb.control(false))
-    );
-    allPermissions.forEach((ctrl) => arr.push(ctrl));
+    const masterList = this.getMasterGroupedList();
+    const controls = masterList.flatMap(([_, perms]) => perms.map(() => this.fb.control(false)));
+    controls.forEach((ctrl) => arr.push(ctrl));
     this.allPermissionForm.setControl('allPermissions', arr);
   }
 
@@ -63,46 +68,73 @@ export class UserPermissionComponent implements OnInit {
     return this.allPermissionForm.get('allPermissions') as FormArray;
   }
 
-  getGroupedPermissionList(): [string, Permission[]][] {
+  // Helpers to get grouped lists
+  getMasterGroupedList(): [string, Permission[]][] {
+    return Object.entries(this.masterPermissionsByGroup);
+  }
+
+  getAvailableGroupedList(): [string, Permission[]][] {
     return Object.entries(this.permissionsByGroup);
   }
 
+  // Find flat index in master ordering for a given permission id
+  private getFlatIndexByPermissionId(id: number): number {
+    let index = 0;
+    const groups = this.getMasterGroupedList();
+    for (let gi = 0; gi < groups.length; gi++) {
+      const perms = groups[gi][1];
+      for (let pi = 0; pi < perms.length; pi++) {
+        if (perms[pi].id === id) return index;
+        index++;
+      }
+    }
+    return -1;
+  }
+
+  getPermissionControlById(id: number): FormControl | null {
+    const idx = this.getFlatIndexByPermissionId(id);
+    if (idx >= 0 && this.allPermissionsArray.at(idx)) {
+      return this.allPermissionsArray.at(idx) as FormControl;
+    }
+    return null;
+  }
+
+  // When assigning from left -> right, we iterate visible left items; get their master control by id
   moveToAssigned() {
     if (!this.selectedUser) {
       alert('Please select a user before assigning permissions.');
       return;
     }
 
-    // Only assign permissions that are checked in the filteredGroups
-    let idx = 0;
+    // Only assign permissions that are checked in the filteredGroups (visible left)
     for (let groupIndex = 0; groupIndex < this.filteredGroups.length; groupIndex++) {
       const [group, perms] = this.filteredGroups[groupIndex];
       for (let i = 0; i < perms.length; i++) {
-        const ctrl = this.getPermissionControl(groupIndex, i);
-        if (ctrl.value) {
+        const perm = perms[i];
+        const control = this.getPermissionControlById(perm.id);
+        if (control && control.value) {
           if (!this.assignedPermissions[group]) {
             this.assignedPermissions[group] = [];
           }
-          const alreadyAssigned = this.assignedPermissions[group].some((perm) => perm.id === perms[i].id);
+          const alreadyAssigned = this.assignedPermissions[group].some((p) => p.id === perm.id);
           if (!alreadyAssigned) {
-            this.assignedPermissions[group].push(perms[i]);
+            this.assignedPermissions[group].push(perm);
           }
           // Clear checkbox after assigning
-          ctrl.setValue(false, { emitEvent: false });
+          control.setValue(false, { emitEvent: false });
         }
-        idx++;
       }
     }
+
     this.filterPermissions(); // Refresh filtered views
   }
-
 
   moveToAvailable() {
     if (this.assignedPermissionSelection.size === 0) return;
 
     const idsToRemove = new Set<number>();
 
-    // Mark permissions for removal and collect their IDs
+    // Remove selected assigned permissions and collect their ids
     for (const group in this.assignedPermissions) {
       const remaining = this.assignedPermissions[group].filter((perm) => {
         const key = `${group}-${perm.displayName}`;
@@ -120,29 +152,39 @@ export class UserPermissionComponent implements OnInit {
       }
     }
 
-    // Uncheck from the form array (left side)
+    // Uncheck from the form array (master ordering)
     let idx = 0;
-    for (const [_, perms] of this.getGroupedPermissionList()) {
+    const master = this.getMasterGroupedList();
+    for (const [_, perms] of master) {
       for (const perm of perms) {
         if (idsToRemove.has(perm.id)) {
-          this.allPermissionsArray.at(idx).setValue(false, { emitEvent: false });
+          if (this.allPermissionsArray.at(idx)) {
+            this.allPermissionsArray.at(idx).setValue(false, { emitEvent: false });
+          }
         }
         idx++;
       }
     }
 
     this.assignedPermissionSelection.clear();
+    this.filterPermissions();
   }
 
-
   getPermissionControl(groupIndex: number, permissionIndex: number): FormControl {
-    const flatIndex = this.getFlatIndex(groupIndex, permissionIndex);
+    // This function retained for compatibility but uses master ordering mapping
+    const masterGroups = this.getMasterGroupedList();
+    let flatIndex = 0;
+    for (let i = 0; i < groupIndex; i++) {
+      flatIndex += masterGroups[i][1].length;
+    }
+    flatIndex += permissionIndex;
     return this.allPermissionsArray.at(flatIndex) as FormControl;
   }
 
   getFlatIndex(groupIndex: number, permissionIndex: number): number {
+    // compute using master ordering
     let index = 0;
-    const groups = this.getGroupedPermissionList();
+    const groups = this.getMasterGroupedList();
     for (let i = 0; i < groupIndex; i++) {
       index += groups[i][1].length;
     }
@@ -158,15 +200,37 @@ export class UserPermissionComponent implements OnInit {
     this.fetchUserPermissions(item.id);
   }
 
+  // ---------- CHANGED: keep ALL permissions in master list (do NOT filter by isOverride) ----------
   getPermissions() {
     this.userService.getPermissions().subscribe({
       next: (data) => {
-        const grouped: { [menuTitle: string]: Permission[] } = {};
+        const groupedMaster: { [menuTitle: string]: Permission[] } = {};
         data.forEach((group: any) => {
-          grouped[group.menuTitle] = group.permissions;
+          const perms: Permission[] = (group.permissions || []).map((p: any) => ({
+            id: p.id,
+            displayName: p.displayName,
+            type: p.type,
+            menuID: p.menuID,
+            menuTitle: p.menuTitle,
+            isGranted: !!p.isGranted,
+            isOverride: p.isOverride,
+            color: p.color,
+            isVisibleForCurrentUser: true // default visible until a user selection may filter some
+          }));
+          if (perms.length > 0) {
+            groupedMaster[group.menuTitle] = perms;
+          }
         });
-        this.permissionsByGroup = grouped;
-        this.allPermissions = Object.entries(this.permissionsByGroup);
+
+        // Save master and initialize available (left) as a deep copy
+        this.masterPermissionsByGroup = JSON.parse(JSON.stringify(groupedMaster));
+        // Convert back into typed objects and keep isVisible flag
+        this.permissionsByGroup = Object.fromEntries(
+          Object.entries(groupedMaster).map(([k, v]) => [k, v.map(x => ({ ...x }))])
+        );
+
+        this.allPermissions = Object.entries(this.masterPermissionsByGroup);
+        // initialize form controls based on master ordering
         this.initAllPermissions();
         this.filterPermissions();
       },
@@ -177,35 +241,102 @@ export class UserPermissionComponent implements OnInit {
     });
   }
 
+  // ---------- CHANGED: when fetching user's assigned permissions, intersect with master and filter out isOverride === false from left & right ----------
   fetchUserPermissions(userId: string) {
     this.userService.getUserPermissions(userId).subscribe({
       next: (data) => {
-        const grouped: { [menuTitle: string]: Permission[] } = {};
+        const groupedAssigned: { [menuTitle: string]: Permission[] } = {};
         const assignedIds = new Set<number>();
+        const nonOverrideIds = new Set<number>();
 
+        // build master id set for intersection
+        const masterIdSet = new Set<number>();
+        for (const [, perms] of Object.entries(this.masterPermissionsByGroup)) {
+          perms.forEach(p => masterIdSet.add(p.id));
+        }
+
+        // Process user data:
         data.forEach((group: any) => {
-          grouped[group.menuTitle] = group.permissions;
-          group.permissions.forEach((perm: Permission) => assignedIds.add(perm.id));
+          (group.permissions || []).forEach((p: any) => {
+            if (!p || !p.id) return;
+            if (!masterIdSet.has(p.id)) return; // ignore unknown perms
+            if (p.isOverride === false) {
+              // collect non-override ids to hide from left and right
+              nonOverrideIds.add(p.id);
+            } else {
+              // treat as assigned for user (override-able assigned perms)
+              assignedIds.add(p.id);
+            }
+          });
         });
 
-        this.assignedPermissions = grouped;
-
-        // Check permissions in form
-        let idx = 0;
-        for (const [_, perms] of this.getGroupedPermissionList()) {
-          for (const perm of perms) {
-            const isChecked = assignedIds.has(perm.id);
-            this.allPermissionsArray.at(idx).setValue(isChecked, { emitEvent: false });
-            idx++;
+        // Build assignedPermissions grouped by master menuTitle using assignedIds only
+        for (const [menuTitle, perms] of Object.entries(this.masterPermissionsByGroup)) {
+          const assignedInGroup = perms
+            .filter(pm => assignedIds.has(pm.id))
+            .map(pm => ({ ...pm } as Permission));
+          if (assignedInGroup.length > 0) {
+            groupedAssigned[menuTitle] = assignedInGroup;
           }
         }
-        this.filterPermissions(); // <-- Ensure right side updates
+
+        this.assignedPermissions = groupedAssigned;
+
+        // Mark visibility on available (left) permissions: hide any permission that is present in nonOverrideIds
+        for (const [menuTitle, perms] of Object.entries(this.permissionsByGroup)) {
+          perms.forEach(p => {
+            p.isVisibleForCurrentUser = !nonOverrideIds.has(p.id);
+          });
+        }
+
+        // Sync master form checkboxes: mark those present in assignedIds
+        // Ensure form array is initialized
+        if (!this.allPermissionsArray || this.allPermissionsArray.length === 0) {
+          this.initAllPermissions();
+        }
+
+        // Reset all to false then set assigned ones true (defensive)
+        for (let i = 0; i < this.allPermissionsArray.length; i++) {
+          this.allPermissionsArray.at(i).setValue(false, { emitEvent: false });
+        }
+
+        // Set assigned checkboxes true by id mapping
+        assignedIds.forEach(id => {
+          const ctrl = this.getPermissionControlById(id);
+          if (ctrl) ctrl.setValue(true, { emitEvent: false });
+        });
+
+        this.filterPermissions(); // refresh filtered views
       },
       error: (error) => {
         console.error('Error fetching user permissions:', error);
         alert('Failed to load user permissions.');
       },
     });
+  }
+
+  // Clear user selection and reset both sides to master state
+  clearUserSelection() {
+    this.selectedUser = '';
+    this.assignedPermissions = {};
+    this.assignedPermissionSelection.clear();
+
+    // restore available list from master and mark all visible
+    this.permissionsByGroup = Object.fromEntries(
+      Object.entries(this.masterPermissionsByGroup).map(([k, v]) =>
+        [k, v.map(p => ({ ...p, isVisibleForCurrentUser: true }))]
+      )
+    );
+
+    // reset all form controls to false
+    if (!this.allPermissionsArray || this.allPermissionsArray.length === 0) {
+      this.initAllPermissions();
+    }
+    for (let i = 0; i < this.allPermissionsArray.length; i++) {
+      this.allPermissionsArray.at(i).setValue(false, { emitEvent: false });
+    }
+
+    this.filterPermissions();
   }
 
   onAssignedPermissionToggle(group: string, permissionName: string, event: Event) {
@@ -236,23 +367,21 @@ export class UserPermissionComponent implements OnInit {
       }
     }
 
-
-
     this.userService.updateUserPermissions(this.selectedUser, payload).subscribe({
       next: (data) => {
         this.toastService.show(data.message, 'success');
+        this.assignedPermissionSelection.clear();
+        this.fetchUserPermissions(this.selectedUser); // Refresh from server
       },
       error: (err) => {
         console.error('Save failed:', err);
         this.toastService.show(err.message, 'error');
       },
     });
-    
   }
 
-  // Returns true if all children in the group are checked
   isGroupChecked(groupIndex: number): boolean {
-    const groups = this.getGroupedPermissionList();
+    const groups = this.getMasterGroupedList();
     const groupLength = groups[groupIndex][1].length;
     for (let i = 0; i < groupLength; i++) {
       if (!this.getPermissionControl(groupIndex, i).value) {
@@ -262,18 +391,16 @@ export class UserPermissionComponent implements OnInit {
     return groupLength > 0;
   }
 
-  // Handler for group checkbox change
   onGroupCheckboxChange(groupIndex: number, event: Event): void {
     event.preventDefault();
     const checked = (event.target as HTMLInputElement).checked;
-    const groups = this.getGroupedPermissionList();
+    const groups = this.getMasterGroupedList();
     const groupLength = groups[groupIndex][1].length;
     for (let i = 0; i < groupLength; i++) {
       this.getPermissionControl(groupIndex, i).setValue(checked, { emitEvent: false });
     }
   }
 
-  // Add to your component class (UserPermissionComponent)
   onPermissionSearch(term: string) {
     this.permissionSearch = term;
     this.filterPermissions();
@@ -281,23 +408,24 @@ export class UserPermissionComponent implements OnInit {
 
   filterPermissions() {
     const search = this.permissionSearch.toLowerCase();
-    // Filter only available permissions (left side)
-    this.filteredGroups = this.getGroupedPermissionList()
+
+    // Left side: available, skip permissions hidden for current user (isVisibleForCurrentUser === false)
+    this.filteredGroups = this.getAvailableGroupedList()
       .filter(([group, perms]) =>
         perms.some(p =>
-          p.displayName.toLowerCase().includes(search) ||
-          group.toLowerCase().includes(search)
+          (p.isVisibleForCurrentUser !== false) &&
+          (p.displayName.toLowerCase().includes(search) || group.toLowerCase().includes(search))
         )
       )
       .map(([group, perms]) => [
         group,
         perms.filter(p =>
-          p.displayName.toLowerCase().includes(search) ||
-          group.toLowerCase().includes(search)
+          (p.isVisibleForCurrentUser !== false) &&
+          (p.displayName.toLowerCase().includes(search) || group.toLowerCase().includes(search))
         )
       ] as [string, Permission[]]);
 
-    // Assigned permissions (right side) should always show all
+    // Right side: assignedPermissions already excludes non-override perms (we filtered earlier)
     this.filteredAssignedGroups = Object.entries(this.assignedPermissions)
       .map(([group, perms]) => [group, perms] as [string, Permission[]]);
   }
@@ -305,10 +433,15 @@ export class UserPermissionComponent implements OnInit {
   selectGroup(groupIndex: number) {
     const group = this.filteredGroups[groupIndex];
     if (!group) return;
-    // Check if all are selected
-    const allChecked = group[1].every((_, i) => this.getPermissionControl(groupIndex, i).value);
-    group[1].forEach((_, i) => {
-      this.getPermissionControl(groupIndex, i).setValue(!allChecked, { emitEvent: false });
+    const allChecked = group[1].every((_, i) => {
+      // map visible group's (groupIndex,i) to master id then control value
+      const perm = group[1][i];
+      const ctrl = this.getPermissionControlById(perm.id);
+      return ctrl ? ctrl.value : false;
+    });
+    group[1].forEach((perm, i) => {
+      const ctrl = this.getPermissionControlById(perm.id);
+      if (ctrl) ctrl.setValue(!allChecked, { emitEvent: false });
     });
   }
 
@@ -319,35 +452,36 @@ export class UserPermissionComponent implements OnInit {
   removeAssignedPermission(group: string, permId: number) {
     if (this.assignedPermissions[group]) {
       this.assignedPermissions[group] = this.assignedPermissions[group].filter(p => p.id !== permId);
-      // Optionally uncheck in allPermissionForm
-      let idx = 0;
-      for (const [g, perms] of this.getGroupedPermissionList()) {
-        for (const perm of perms) {
-          if (perm.id === permId) {
-            this.allPermissionsArray.at(idx).setValue(false, { emitEvent: false });
-          }
-          idx++;
-        }
-      }
+      // uncheck corresponding master control
+      const ctrl = this.getPermissionControlById(permId);
+      if (ctrl) ctrl.setValue(false, { emitEvent: false });
     }
   }
 
-  // New method: select/unselect all assigned permissions in a right-side group
   selectAssignedGroup(groupIndex: number) {
     const group = this.filteredAssignedGroups[groupIndex];
     if (!group) return;
+
     const groupName = group[0];
     const perms = this.assignedPermissions[groupName] || [];
+    const overridePerms = perms.filter(p => p.isOverride);
 
-    const allSelected = perms.length > 0 && perms.every(p => this.assignedPermissionSelection.has(`${groupName}-${p.displayName}`));
+    if (overridePerms.length === 0) return;
+
+    const allSelected =
+      overridePerms.length > 0 &&
+      overridePerms.every(p =>
+        this.assignedPermissionSelection.has(`${groupName}-${p.displayName}`)
+      );
 
     if (allSelected) {
-      // Unselect all
-      perms.forEach(p => this.assignedPermissionSelection.delete(`${groupName}-${p.displayName}`));
+      overridePerms.forEach(p =>
+        this.assignedPermissionSelection.delete(`${groupName}-${p.displayName}`)
+      );
     } else {
-      // Select all
-      perms.forEach(p => this.assignedPermissionSelection.add(`${groupName}-${p.displayName}`));
+      overridePerms.forEach(p =>
+        this.assignedPermissionSelection.add(`${groupName}-${p.displayName}`)
+      );
     }
   }
-
 }

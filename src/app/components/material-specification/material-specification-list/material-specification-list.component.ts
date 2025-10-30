@@ -17,14 +17,14 @@ export class MaterialSpecificationListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
-    { key: 'standard', type: 'string', label: 'Standard', filter: true },
+    { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Standard', filter: true },
     { key: 'standardYear', type: 'number', label: 'StandardYear', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     aliasName: 'string',
-    standard: 'string',
+    testMethodSpecificationName: 'string',
     standardOrganizationName: 'string',
     standardYear: 'number',
     grade: 'string'

@@ -1,5 +1,4 @@
 <div class="container-fluid pt-1" [formGroup]="planForm">
-  <!-- Removed inner <form> to avoid nested forms when Plan is included inside SampleInward form -->
   <div class="card border shadow-sm mt-2 mb-2">
     <legend
       class="w-auto px-2 fw-semibold theme-color"
@@ -114,20 +113,20 @@
                   </div>
                 </ng-container>
                 <div class="col-auto">
-                    <app-searchable-dropdown
+                  <app-searchable-dropdown
                     [placeholder]="'Search Metal Classification'"
                     [labelName]="'Metal Classification'"
-                    [fetchDataFn]="getMetalClassification"
-                    (itemSelected)="onMetalClassificationSelected(sampleIdx, $event)"
+                    [fetchDataFn]="getMetalDrop"
+                    (itemSelected)="onMetalClassificationSelected($event, sampleIdx)"
                     [selectedItem]="sample.get('metalClassificationID')?.value"
                   ></app-searchable-dropdown>
                 </div>
                 <div class="col-auto">
-                     <app-searchable-dropdown
+                  <app-searchable-dropdown
                     [placeholder]="'Search Product Condition'"
                     [labelName]="'Product Condition'"
-                    [fetchDataFn]="getProductConditions"
-                    (itemSelected)="onProductConditionSelected(sampleIdx, $event)"
+                    [fetchDataFn]="getProductConditionDrop"
+                    (itemSelected)="onProductConditionSelected($event, sampleIdx)"
                     [selectedItem]="sample.get('productConditionID')?.value"
                   ></app-searchable-dropdown>
                 </div>
@@ -251,23 +250,11 @@
                 <div class="col-md-3">
                   <label class="form-label d-block">TPI Required</label>
                   <div class="form-check form-check-inline">
-                    <input
-                      type="radio"
-                      class="form-check-input"
-                      [value]="true"
-                      formControlName="tpiRequired"
-                      id="tpiYes-{{ sampleIdx }}"
-                    />
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="tpiRequired" id="tpiYes-{{ sampleIdx }}" />
                     <label class="form-check-label" for="tpiYes-{{ sampleIdx }}">Yes</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input
-                      type="radio"
-                      class="form-check-input"
-                      [value]="false"
-                      formControlName="tpiRequired"
-                      id="tpiNo-{{ sampleIdx }}"
-                    />
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="tpiRequired" id="tpiNo-{{ sampleIdx }}" />
                     <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
                   </div>
                 </div>
@@ -355,25 +342,25 @@
                     <div class="row row-cols-auto row-cols-md-2 mb-2">
                       <div class="">
                         <app-searchable-dropdown
-                          [placeholder]="'Search Specification'"
-                          [labelName]="'Specification'"
-                          [fetchDataFn]="getMaterialSpecificationGrade"
-                          (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
-                          [hideLabel]="false"
-                          [required]="true"
-                          [isDisabled]="isViewMode"
-                          [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
-                        ></app-searchable-dropdown>
+                              [placeholder]="'Search Specification'"
+                              [labelName]="'Specification'"
+                              [fetchDataFn]="getMaterialSpecificationGrade"
+                              (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
+                              [hideLabel]="false"
+                              [required]="true"
+                              [isDisabled]="isViewMode"
+                              [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
+                            ></app-searchable-dropdown>
                       </div>
                       <div class="">
                         <app-searchable-dropdown
                           [placeholder]="'Search Specification'"
                           [labelName]="'Specification 2'"
-                          [fetchDataFn]="getMaterialSpecificationGrade"
+                          [fetchDataFn]="getMaterialSpecDrop"
                           (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'generalTests')"
                           [hideLabel]="false"
                           [isDisabled]="isViewMode"
-                          [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification2')?.value"
+                          [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification2')?.value || null"
                         ></app-searchable-dropdown>
                       </div>
                     </div>
@@ -397,7 +384,7 @@
                           <th class="fw-medium text-center">Action</th>
                         </tr>
                       </thead>
-                      <tbody formArrayName="methods" *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                      <tbody #dropdownContainer class="dropdown-wrapper position-relative" style="z-index: 1000;" formArrayName="methods" *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
                         <tr
                           *ngFor="let method of getMethodRows(sampleIdx, planIdx).controls; let methodIdx = index"
                           [formGroupName]="methodIdx"
@@ -423,7 +410,7 @@
                             </select>
                           </td>
                           <td>
-                            <app-searchable-dropdown
+                            <!-- <app-searchable-dropdown
                               class="w-100"
                               [smallInput]="true"
                               [placeholder]="'Search Test'"
@@ -434,7 +421,13 @@
                               [required]="true"
                               [isDisabled]="isViewMode"
                               [selectedItem]="method.get('testMethodID')?.value"
-                            ></app-searchable-dropdown>
+                            ></app-searchable-dropdown> -->
+                            <select class="form-select" formControlName="testMethodID" [disabled]="isViewMode">
+                              <option value="">-- Select Laboratory Test --</option>
+                              <option *ngFor="let test of filteredTestMethods[`${sampleIdx}_${planIdx}`]" [value]="test.id">
+                                {{ test.name }}
+                              </option>
+                            </select>
                           </td>
                           <td>
                             <input
@@ -499,10 +492,7 @@
               >
                 <div formArrayName="chemicalTests">
                   <ng-container *ngIf="getChemicalTestsArray(sampleIdx, planIdx).length > 0">
-                    <div
-                      *ngFor="let chemTest of getChemicalTestsArray(sampleIdx, planIdx); let chemIdx = index"
-                      [formGroupName]="chemIdx"
-                    >
+                    <div *ngFor="let chemTest of getChemicalTestsArray(sampleIdx, planIdx); let chemIdx = index" [formGroupName]="chemIdx">
                       <div class="p-3 border rounded mb-3">
                         <div class="d-flex justify-content-between">
                           <label class="form-label fw-semibold">Chemical Test - Sample No: {{ testPlan.get("sampleNo")?.value }}</label>
@@ -527,7 +517,7 @@
                             <app-searchable-dropdown
                               [placeholder]="'Search Metal'"
                               [labelName]="'Metal Classification'"
-                              [fetchDataFn]="getMetalClassification"
+                              [fetchDataFn]="getMetalDrop"
                               (itemSelected)="onMetalSelected(sampleIdx, planIdx, $event)"
                               [hideLabel]="false"
                               [required]="true"
@@ -539,7 +529,7 @@
                             <app-searchable-dropdown
                               [placeholder]="'Search Specification'"
                               [labelName]="'Specification'"
-                              [fetchDataFn]="getMaterialSpecificationGrade"
+                              [fetchDataFn]="getMaterialSpecDrop"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
                               [hideLabel]="false"
                               [required]="true"
@@ -551,7 +541,7 @@
                             <app-searchable-dropdown
                               [placeholder]="'Search Specification'"
                               [labelName]="'Specification 2'"
-                              [fetchDataFn]="getMaterialSpecificationGrade"
+                              [fetchDataFn]="getMaterialSpecDrop"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
                               [hideLabel]="false"
                               [required]="false"
@@ -564,7 +554,7 @@
                               class="w-100"
                               [placeholder]="'Search Standard'"
                               [labelName]="'Standard'"
-                              [fetchDataFn]="getTestMethodSpecification"
+                              [fetchDataFn]="getTestMethodSpecificationDrop"
                               (itemSelected)="onChemicalStandardSelected($event, sampleIdx, planIdx)"
                               [hideLabel]="false"
                               [required]="false"
@@ -595,7 +585,7 @@
                                     class="w-100"
                                     [placeholder]="'Search Parameter'"
                                     [labelName]="'Parameter'"
-                                    [fetchDataFn]="getChemicalParameter"
+                                    [fetchDataFn]="getParameterDrop"
                                     (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)"
                                     [isDisabled]="isViewMode"
                                     [hideLabel]="true"
@@ -631,6 +621,7 @@
                       </div>
                     </div>
                   </ng-container>
+
                   <button
                     *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
                     type="button"
@@ -645,6 +636,7 @@
             </div>
           </div>
         </ng-container>
+
         <ng-template #addPlanBlock>
           <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addPlanToSample(sampleIdx)">
             <i class="bi bi-plus-circle-dotted"></i>

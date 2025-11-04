@@ -27,6 +27,8 @@ export class MaterialTestMappingService {
     updateMaterialTestMapping( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
-
+    getAutoSuggestedTests(metalId:number|null,productConditionId:number|null, gradeId:string): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/AutoSuggest?metalClassificationID=${metalId}&productConditionID=${productConditionId}&gradeIDs=${gradeId}`);
+    }
 
 }

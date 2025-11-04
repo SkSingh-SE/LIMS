@@ -1,7 +1,5 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { Observable } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
@@ -10,15 +8,18 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { MaterialTestMappingService } from '../../../services/material-test-mapping.service';
+import { CommonModule } from '@angular/common';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-plan-form',
-  imports: [CommonModule, ReactiveFormsModule, SearchableDropdownComponent],
   templateUrl: './plan-form.component.html',
-  styleUrl: './plan-form.component.css'
+  styleUrls: ['./plan-form.component.css'],
+  imports: [CommonModule, ReactiveFormsModule, SearchableDropdownComponent]
 })
 export class PlanFormComponent implements OnInit {
   @Input() inwardID?: number;
@@ -29,7 +30,6 @@ export class PlanFormComponent implements OnInit {
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
-  // Store filtered test methods per sample/plan
   filteredTestMethods: { [key: string]: any[] } = {};
   filteredStandards: any[] = [];
 
@@ -44,29 +44,28 @@ export class PlanFormComponent implements OnInit {
     private inwardService: SampleInwardService,
     private activeroute: ActivatedRoute,
     private router: Router,
-    private productService: ProductConditionService
+    private productService: ProductConditionService,
+    private testMappingService: MaterialTestMappingService
   ) { }
 
   ngOnInit(): void {
+    console.log('[PlanForm] ngOnInit start', { inwardID: this.inwardID, mode: this.mode });
     if (!this.inwardID) {
       this.activeroute.paramMap.subscribe(params => {
         this.inwardID = Number(params.get('id'));
+        console.log('[PlanForm] route param id ->', this.inwardID);
       });
       this.activeroute.queryParamMap.subscribe(params => {
-        this.mode = (params.get('mode') as any) || 'view';
+        this.mode = (params.get('mode') as any) || this.mode;
+        console.log('[PlanForm] route query mode ->', this.mode);
       });
     }
-    if (this.mode === 'review') {
-      this.isViewMode = true;
-    } else if (this.mode === 'plan') {
-      this.isViewMode = false;
-    }
+    this.isViewMode = this.mode === 'review';
     this.initForm();
-    // this.addDummySamples();
+    console.log('[PlanForm] initForm completed. isViewMode=', this.isViewMode);
+    // Example fetch (replace 17 with this.inwardID when wiring up)
     this.fetchSampleInwardDetails(17);
-    if (this.isViewMode) {
-      this.planForm.disable();
-    }
+    if (this.isViewMode) this.planForm.disable();
   }
 
   private initForm(): void {
@@ -83,15 +82,13 @@ export class PlanFormComponent implements OnInit {
     });
   }
 
-  get sampleInward(): FormGroup {
-    return this.planForm.get('sampleInward') as FormGroup;
-  }
   get samples(): FormArray {
     return this.planForm.get('samples') as FormArray;
   }
 
   addSample(): void {
     const sampleNo = `${this.yearCode}-000001`;
+    console.log('[PlanForm] addSample', sampleNo);
     this.samples.push(this.fb.group({
       sampleNo: [sampleNo],
       details: ['Sample 1'],
@@ -109,22 +106,8 @@ export class PlanFormComponent implements OnInit {
       testInstructions: [''],
       fileName: [''],
       sampleFilePath: [''],
-      additionalDetails: this.fb.array([
-        this.fb.group({
-          label: ['Heat No'],
-          value: ['12345'],
-          enabled: [true]
-        }),
-        this.fb.group({
-          label: ['Batch Size'],
-          value: ['1000kg'],
-          enabled: [true]
-        })
-        // Add more details as needed
-      ]),
-      testPlans: this.fb.array([
-        this.createTestPlan(sampleNo)
-      ])
+      additionalDetails: this.fb.array([]),
+      testPlans: this.fb.array([ this.createTestPlan(sampleNo) ])
     }));
   }
 
@@ -141,9 +124,12 @@ export class PlanFormComponent implements OnInit {
   getSampleDetails(sampleIndex: number): FormGroup {
     return this.samples.at(sampleIndex) as FormGroup;
   }
-  getAdditionalDetails(sampleIndex: number): FormArray {
-    return this.samples.at(sampleIndex).get('additionalDetails') as FormArray;
+
+  getAdditionalDetailsArray(sample: AbstractControl): AbstractControl[] {
+    const arr = sample.get('additionalDetails') as FormArray;
+    return arr ? arr.controls : [];
   }
+
   getTestPlans(sampleIndex: number): FormArray {
     return this.samples.at(sampleIndex).get('testPlans') as FormArray;
   }
@@ -172,35 +158,30 @@ export class PlanFormComponent implements OnInit {
     const array = this.getTestArray(sampleIndex, planIndex, type);
     const reportNo = 'Auto Generate';
     const ulrNo = 'Auto Generate';
-
-    if (type === 'generalTests') {
-      array.push(this.createGeneralTestGroup());
-    } else if (type === 'chemicalTests') {
-      array.push(this.createChemicalTestGroup(reportNo, ulrNo));
-    }
+    if (type === 'generalTests') array.push(this.createGeneralTestGroup());
+    else array.push(this.createChemicalTestGroup(reportNo, ulrNo));
   }
+
   createGeneralTestGroup(): FormGroup {
     return this.fb.group({
       sampleNo: [''],
-      specification1: ['', Validators.required],
-      specification2: [''],
+      specification1: [null, Validators.required],
+      specification2: [null],
       parameter: [''],
       methods: this.fb.array([])
     }, { validators: this.uniqueSpecificationValidator });
   }
   createChemicalTestGroup(reportNo: string, ulrNo: string): FormGroup {
     const testTypesGroup: { [key: string]: any } = {};
-    this.testTypeList.forEach(type => {
-      testTypesGroup[type] = this.fb.control(false);
-    });
+    this.testTypeList.forEach(type => testTypesGroup[type] = this.fb.control(false));
     return this.fb.group({
       sampleNo: [''],
       reportNo: [reportNo || 'Auto Generate'],
       ulrNo: [ulrNo || 'Auto Generate'],
       testTypes: this.fb.group(testTypesGroup),
       metalClassificationID: [''],
-      specification1: [''],
-      specification2: [''],
+      specification1: [null],
+      specification2: [null],
       testMethod: [''],
       elements: this.fb.array([])
     });
@@ -218,139 +199,111 @@ export class PlanFormComponent implements OnInit {
   addMethodRow(sampleIndex: number, planIndex: number): void {
     this.getMethodRows(sampleIndex, planIndex).push(this.createTestMethodRow('Auto Generate', 'Auto Generate'));
   }
+
   getElementRows(sampleIndex: number, planIndex: number): FormArray {
     return this.getTestArray(sampleIndex, planIndex, 'chemicalTests').at(0).get('elements') as FormArray;
   }
   addElementRow(sampleIndex: number, planIndex: number): void {
-    this.getElementRows(sampleIndex, planIndex).push(this.fb.group({
-      parameterID: [''],
-      selected: [false]
-    }));
+    this.getElementRows(sampleIndex, planIndex).push(this.fb.group({ parameterID: [''], selected: [false] }));
   }
   removeElementRow(sampleIndex: number, planIndex: number, elementIndex: number): void {
     this.getElementRows(sampleIndex, planIndex).removeAt(elementIndex);
   }
-  asFormGroup(ctrl: AbstractControl | null): FormGroup {
-    return ctrl as FormGroup;
-  }
-
-  getAdditionalSampleValue(row: AbstractControl, sampleIndex: number): string {
-    const valuesArray = row.get('values') as FormArray;
-    return valuesArray?.at(sampleIndex)?.value || '-';
-  }
 
   // ────────────── API Calls ──────────────
   fetchSampleInwardDetails(sampleId: number): void {
+    console.log('[PlanForm] fetchSampleInwardDetails =>', sampleId);
     this.inwardService.getSampleInwardWithPlans(sampleId).subscribe({
       next: (data) => {
-        if (data) {
-          // Format the response to match the expected structure for the helper
-          const formatted = {
-            id: data.id,
-            caseNo: data.caseNo,
-            sampleReceiptNote: data.sampleReceiptNote,
-            urgent: data.urgent,
-            returnSample: data.returnSample,
-            notDestroyed: data.notDestroyed,
-            statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
-            decisionRule: data.decisionRule ?? 'Not Applicable',
-            sampleDetails: (data.sampleDetails || []).map((s: any) => ({
-              id: s.id,
-              sampleNo: s.sampleNo,
-              details: s.details,
-              metalClassificationID: s.metalClassificationID,
-              productConditionID: s.productConditionID,
-              remarks: s.remarks,
-              quantity: s.quantity,
-              cuttingRequired: s.cuttingRequired ?? false,
-              machiningRequired: s.machiningRequired ?? false,
-              machiningAmount: s.machiningAmount ?? 0,
-              specimen: s.specimen ?? '',
-              otherPreparation: s.otherPreparation ?? false,
-              otherPreparationCharge: s.otherPreparationCharge ?? 0,
-              tpiRequired: s.tpiRequired ?? false,
-              testInstructions: s.testInstructions ?? '',
-              fileName: s.fileName ?? '',
-              sampleFilePath: s.sampleFilePath ?? ''
-            })),
-            sampleAdditionalDetails: (data.sampleAdditionalDetails || []).map((ad: any) => ({
-              id: ad.id,
-              sampleID: ad.sampleID,
-              label: ad.label,
-              value: ad.value
-            })),
-            sampleTestPlans: (data.sampleTestPlans || []).map((tp: any) => ({
-              sampleID: tp.sampleID,
-              sampleNo: tp.sampleNo,
-              generalTests: (tp.generalTests || []).map((gt: any) => ({
-                sampleNo: gt.sampleNo,
-                specification1: gt.specification1,
-                specification2: gt.specification2,
-                parameter: gt.parameter,
-                methods: (gt.methods || []).map((m: any) => ({
-                  testMethodID: m.testMethodID,
-                  standardID: m.standardID,
-                  quantity: m.quantity,
-                  reportNo: m.reportNo,
-                  ulrNo: m.ulrNo,
-                  cancel: m.cancel
-                }))
-              })),
-              chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
-                sampleNo: ct.sampleNo,
-                reportNo: ct.reportNo,
-                ulrNo: ct.ulrNo,
-                testTypes: {
-                  Spectro: ct.testTypes?.Spectro ?? false,
-                  Chemical: ct.testTypes?.Chemical ?? false,
-                  XRF: ct.testTypes?.XRF ?? false,
-                  'Full Analysis': ct.testTypes?.['Full Analysis'] ?? false,
-                  ROHS: ct.testTypes?.ROHS ?? false
-                },
-                metalClassificationID: ct.metalClassificationID,
-                specification1: ct.specification1,
-                specification2: ct.specification2,
-                testMethod: ct.testMethod,
-                elements: (ct.elements || []).map((el: any) => ({
-                  parameterID: el.parameterID,
-                  selected: el.selected
-                }))
+        console.log('[PlanForm] fetchSampleInwardDetails: API returned', !!data, data);
+        if (!data) return;
+        const formatted = {
+          id: data.id,
+          caseNo: data.caseNo,
+          sampleReceiptNote: data.sampleReceiptNote,
+          urgent: data.urgent,
+          returnSample: data.returnSample,
+          notDestroyed: data.notDestroyed,
+          statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
+          decisionRule: data.decisionRule ?? 'Not Applicable',
+          sampleDetails: (data.sampleDetails || []).map((s: any) => ({
+            id: s.id,
+            sampleNo: s.sampleNo,
+            details: s.details,
+            metalClassificationID: s.metalClassificationID,
+            productConditionID: s.productConditionID,
+            remarks: s.remarks,
+            quantity: s.quantity,
+            cuttingRequired: s.cuttingRequired ?? false,
+            machiningRequired: s.machiningRequired ?? false,
+            machiningAmount: s.machiningAmount ?? 0,
+            specimen: s.specimen ?? '',
+            otherPreparation: s.otherPreparation ?? false,
+            otherPreparationCharge: s.otherPreparationCharge ?? 0,
+            tpiRequired: s.tpiRequired ?? false,
+            testInstructions: s.testInstructions ?? '',
+            fileName: s.fileName ?? '',
+            sampleFilePath: s.sampleFilePath ?? ''
+          })),
+          sampleAdditionalDetails: (data.sampleAdditionalDetails || []).map((ad: any) => ({
+            id: ad.id,
+            sampleID: ad.sampleID,
+            label: ad.label,
+            value: ad.value
+          })),
+          sampleTestPlans: (data.sampleTestPlans || []).map((tp: any) => ({
+            sampleID: tp.sampleID,
+            sampleNo: tp.sampleNo,
+            generalTests: (tp.generalTests || []).map((gt: any) => ({
+              id: gt.id,
+              sampleNo: gt.sampleNo,
+              specification1: gt.specification1,
+              specification2: gt.specification2,
+              parameter: gt.parameter,
+              methods: (gt.methods || []).map((m: any) => ({
+                testMethodID: m.testMethodID,
+                standardID: m.standardID,
+                quantity: m.quantity,
+                reportNo: m.reportNo,
+                ulrNo: m.ulrNo,
+                cancel: m.cancel
               }))
-
+            })),
+            chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
+              sampleNo: ct.sampleNo,
+              reportNo: ct.reportNo,
+              ulrNo: ct.ulrNo,
+              testTypes: {
+                Spectro: ct.testTypes?.Spectro ?? false,
+                Chemical: ct.testTypes?.Chemical ?? false,
+                XRF: ct.testTypes?.XRF ?? false,
+                'Full Analysis': ct.testTypes?.['Full Analysis'] ?? false,
+                ROHS: ct.testTypes?.ROHS ?? false
+              },
+              metalClassificationID: ct.metalClassificationID,
+              specification1: ct.specification1,
+              specification2: ct.specification2,
+              testMethod: ct.testMethod,
+              elements: (ct.elements || []).map((el: any) => ({
+                parameterID: el.parameterID,
+                selected: el.selected
+              }))
             }))
-          };
-
-          // Pass formatted response to helper
-          this.updateFormFromPayload(formatted);
-        }
+          }))
+        };
+        this.updateFormFromPayload(formatted);
       },
-      error: (err) => console.error('Error fetching sample inward details:', err)
+      error: (err) => console.error('[PlanForm] Error fetching sample inward details:', err)
     });
   }
 
-  getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> =>
-    this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
-
-  getLaboratoryTest = (term: string, page: number, pageSize: number, sampleIndex?: number, planIndex?: number): Observable<any[]> => {
-    if (
-      typeof sampleIndex === 'number' &&
-      typeof planIndex === 'number'
-    ) {
-      const key = `${sampleIndex}_${planIndex}`;
-      const filtered = this.filteredTestMethods[key];
-      if (filtered && filtered.length > 0) {
-        // Optionally filter by term here if needed
-        const filteredByTerm = filtered.filter((item: any) =>
-          item.name?.toLowerCase().includes(term?.toLowerCase() || '')
-        );
-        return new Observable((observer) => {
-          observer.next(filteredByTerm);
-          observer.complete();
-        });
-      }
-    }
-    // fallback to API
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+  getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    console.log('[PlanForm] getMaterialSpecificationGrade called', { term, page, pageSize });
+    return this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
+  };
+  getMaterialSpecificationGradeForGeneral = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    console.log('[PlanForm] getMaterialSpecificationGradeForGeneral called', { term, page, pageSize });
+    return this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
   };
 
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> =>
@@ -362,34 +315,33 @@ export class PlanFormComponent implements OnInit {
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
 
-  // Fetch default standard for a specification
-  getDefaultStandardForSpecification(gradeId: string): Observable<any> {
-    return this.materialSpecificationService.getDefaultStandardBySpecificationId(+gradeId);
-  }
+  getProductConditions = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.productService.getProductConditionDropdown(term, page, pageSize);
 
-  // Fetch test methods for selected specifications
-  getTestMethodsForSpecifications(spec1: string, spec2: string): Observable<any[]> {
-    const spec1Num = spec1 ? +spec1 : 0;
-    const spec2Num = spec2 ? +spec2 : 0;
-    return this.materialSpecificationService.getTestMethodsBySpecifications(spec1Num, spec2Num);
-  }
-  getProductConditions = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.productService.getProductConditionDropdown(term, page, pageSize);
-  };
-   onMetalClassificationSelected(item: any, sampleIndex: number) {
-    const sampleDetailGroup = this.samples.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({
-      metalClassificationID: item.id,
-    });
-  }
   onProductConditionSelected(item: any, sampleIndex: number) {
-    const sampleDetailGroup = this.samples.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({
-      productConditionID: item.id,
-    });
+    console.log('[PlanForm] onProductConditionSelected', { item, sampleIndex });
+    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleDetailGroup) return;
+    sampleDetailGroup.patchValue({ productConditionID: item?.id ?? null });
   }
 
-  // Dropdown Event Handlers
+  onMetalClassificationSelected(item: any, sampleIndex: number) {
+    console.log('[PlanForm] onMetalClassificationSelected', { item, sampleIndex });
+    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleDetailGroup) return;
+    sampleDetailGroup.patchValue({ metalClassificationID: item?.id ?? null });
+  }
+
+  private getSampleGroupSafely(sampleIndex: number): FormGroup | null {
+    if (!this.samples) return null;
+    if (typeof sampleIndex !== 'number' || sampleIndex < 0 || sampleIndex >= this.samples.length) {
+      console.warn(`[PlanForm] getSampleGroupSafely: sampleIndex ${sampleIndex} out of range (length=${this.samples.length}).`);
+      return null;
+    }
+    return this.samples.at(sampleIndex) as FormGroup;
+  }
+
+  // SPECIFICATION selection handling (fixed + logs)
   onSpecificationGradeSelected(
     sampleIndex: number,
     planIndex: number,
@@ -397,81 +349,159 @@ export class PlanFormComponent implements OnInit {
     field: 'specification1' | 'specification2',
     testType: 'generalTests' | 'chemicalTests'
   ) {
+    console.log('[PlanForm] onSpecificationGradeSelected start', { sampleIndex, planIndex, field, item, testType });
     const section = testType === 'generalTests'
       ? this.getGeneralTestSection(sampleIndex, planIndex)
       : this.getChemicalTestSection(sampleIndex, planIndex);
 
-    section.patchValue({ [field]: item.id });
+    const newId = item?.id !== undefined && item?.id !== null ? +item.id : null;
+    const otherField = field === 'specification1' ? 'specification2' : 'specification1';
+    const otherValRaw = section.get(otherField)?.value;
+    const otherVal = otherValRaw !== undefined && otherValRaw !== null ? +otherValRaw : null;
 
-    // Only apply auto-standard and test method filtering for generalTests
-    if (testType === 'generalTests') {
-      const spec1 = section.get('specification1')?.value;
-      const spec2 = section.get('specification2')?.value;
+    console.log('[PlanForm] onSpecificationGradeSelected computed', { newId, otherVal });
 
-      if (spec1 && spec2 && spec1 === spec2) {
-        this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
-        section.patchValue({ [field]: 0 });
-        return;
-      }
-      // Auto-select standard for the changed specification
-      if (item.id) {
-        this.getDefaultStandardForSpecification(item.id).subscribe((standard) => {
-          if (standard && standard.length === 0) {
-            this.toastService.show('No default standard found for the selected specification.', 'warning');
+    if (newId && otherVal && newId === otherVal) {
+      this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
+      console.warn('[PlanForm] onSpecificationGradeSelected aborted - same specification');
+      return; // don't change the value
+    }
+
+    // Patch the selected field
+    section.patchValue({ [field]: newId });
+    console.log('[PlanForm] patched section field', { field, newId });
+
+    // Only apply auto logic for general tests
+    if (testType !== 'generalTests') return;
+
+    // Auto-select default standard for this specification (if available)
+    if (newId) {
+      console.log('[PlanForm] fetching default standard for specification', newId);
+      this.materialSpecificationService.getDefaultStandardBySpecificationId(+newId).subscribe({
+        next: (standard: any[]) => {
+          console.log('[PlanForm] defaultStandard result', standard);
+          if (!standard || standard.length === 0) {
+            this.toastService.show('No default standard found for the selected specification.', 'info');
+            return;
           }
-          this.filteredStandards.push(...(standard ?? []));
+          // merge unique standards by id
+          const map = new Map<number, any>(this.filteredStandards.map(s => [s.id, s]));
+          (standard || []).forEach((s: any) => map.set(s.id, s));
+          this.filteredStandards = Array.from(map.values());
+          console.log('[PlanForm] filteredStandards updated', this.filteredStandards);
 
-          // keep only unique by id
-          this.filteredStandards = this.filteredStandards.filter(
-            (item, index, self) =>
-              index === self.findIndex(t => t.id === item.id)
-          );
-
-          // Set standardID in the first method row if exists
+          // set standardID in first method row if exists
           const methods = section.get('methods') as FormArray;
           if (methods && methods.length > 0 && standard[0]?.id) {
             methods.at(0).patchValue({ standardID: standard[0].id });
+            console.log('[PlanForm] patched first method standardID ->', standard[0].id);
           }
-        });
-      }
-
-      // Fetch and filter test methods based on both specifications
-      if (spec1 || spec2) {
-        this.getTestMethodsForSpecifications(spec1, spec2).subscribe((methods) => {
-          // Store filtered methods for this sample/plan
-          const key = `${sampleIndex}_${planIndex}`;
-          this.filteredTestMethods[key] = methods || [];
-        });
-      }
+        },
+        error: (err) => console.warn('[PlanForm] error fetching default standard', err)
+      });
     }
+
+    // Prepare specs for auto-suggest
+    const spec1 = section.get('specification1')?.value;
+    const spec2 = section.get('specification2')?.value;
+    const specsToUse = [spec1, spec2].filter(s => s !== null && s !== undefined && s !== 0).map(s => String(s));
+    const key = `${sampleIndex}_${planIndex}`;
+
+    console.log('[PlanForm] specsToUse for auto suggest', specsToUse);
+
+    if (specsToUse.length === 0) {
+      this.filteredTestMethods[key] = [];
+      console.log('[PlanForm] cleared filteredTestMethods for key', key);
+      return;
+    }
+
+    // Get sample metal/product condition
+    const sampleGroup = this.samples.at(sampleIndex) as FormGroup;
+    const metalId = sampleGroup.get('metalClassificationID')?.value || null;
+    const productConditionId = sampleGroup.get('productConditionID')?.value || null;
+
+    console.log('[PlanForm] calling getAutoSuggestedTests with', { metalId, productConditionId, specs: specsToUse.join(',') });
+    this.testMappingService.getAutoSuggestedTests(metalId, productConditionId, specsToUse.join(','))
+      .subscribe({
+        next: (tests: any[]) => {
+          console.log('[PlanForm] getAutoSuggestedTests result', tests);
+          if (tests && tests.length > 0) {
+            const unique = tests.filter((t: any, i: number, self: any[]) => i === self.findIndex((x: any) => x.id === t.id));
+            this.filteredTestMethods[key] = unique;
+            console.log('[PlanForm] filteredTestMethods updated for key', key, unique);
+            // set first suggested test on first method row if applicable
+            const methods = section.get('methods') as FormArray;
+            if (methods && methods.length > 0 && unique[0]?.id) {
+              methods.at(0).patchValue({ testMethodID: unique[0].id });
+              console.log('[PlanForm] patched first method testMethodID ->', unique[0].id);
+            }
+          } else {
+            this.filteredTestMethods[key] = [];
+            console.log('[PlanForm] no suggested test methods found for key', key);
+            this.toastService.show('No suggested test methods found for selected specifications.', 'info');
+          }
+        },
+        error: (err) => {
+          console.warn('[PlanForm] getAutoSuggestedTests error', err);
+          this.filteredTestMethods[key] = [];
+        }
+      });
   }
 
   onLaboratorySelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
-    this.getMethodRows(sampleIndex, planIndex).at(methodIndex).patchValue({
-      testMethodID: item.id,
-    });
+    console.log('[PlanForm] onLaboratorySelected', { item, sampleIndex, planIndex, methodIndex });
+    const methodsArray = this.getMethodRowsSafely(sampleIndex, planIndex);
+    if (!methodsArray) {
+      this.toastService.show('Test methods not available yet.', 'warning');
+      return;
+    }
+    const methodCtrl = methodsArray.at(methodIndex);
+    if (!methodCtrl) return;
+    methodCtrl.patchValue({ testMethodID: item?.id ?? null });
   }
+
+  private getMethodRowsSafely(sampleIndex: number, planIndex: number): FormArray | null {
+    try {
+      const testArray = this.getTestArray(sampleIndex, planIndex, 'generalTests');
+      if (!testArray || testArray.length === 0) {
+        console.warn('[PlanForm] getMethodRowsSafely: no generalTests array');
+        return null;
+      }
+      const section = testArray.at(0) as FormGroup;
+      return section?.get('methods') as FormArray ?? null;
+    } catch (err) {
+      console.warn('[PlanForm] getMethodRowsSafely error', err);
+      return null;
+    }
+  }
+
   onMetalSelected(sampleIndex: number, planIndex: number, item: any) {
+    console.log('[PlanForm] onMetalSelected', { item, sampleIndex, planIndex });
     const chemicalTestGroup = this.getChemicalTestSection(sampleIndex, planIndex);
-    chemicalTestGroup.patchValue({
-      metalClassificationID: item.id,
-    });
+    chemicalTestGroup.patchValue({ metalClassificationID: item.id });
   }
+
   onGeneralTestStandardSelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
-    this.getMethodRows(sampleIndex, planIndex).at(methodIndex).patchValue({
-      standardID: item.id,
-    });
+    console.log('[PlanForm] onGeneralTestStandardSelected', { item, sampleIndex, planIndex, methodIndex });
+    const methods = this.getMethodRowsSafely(sampleIndex, planIndex);
+    if (!methods) {
+      this.toastService.show('Methods are not initialized yet.', 'warning');
+      return;
+    }
+    const methodCtrl = methods.at(methodIndex);
+    if (!methodCtrl) return;
+    methodCtrl.patchValue({ standardID: item?.id ?? null });
   }
+
   onChemicalStandardSelected(item: any, sampleIndex: number, planIndex: number) {
+    console.log('[PlanForm] onChemicalStandardSelected', { item, sampleIndex, planIndex });
     const chemicalTestGroup = this.getChemicalTestSection(sampleIndex, planIndex);
-    chemicalTestGroup.patchValue({
-      standardID: item.id,
-    });
+    chemicalTestGroup.patchValue({ standardID: item.id });
   }
+
   onParameterSelected(item: any, sampleIndex: number, planIndex: number, testIndex: number, index: number) {
-    this.getElementRows(sampleIndex, planIndex).at(index).patchValue({
-      parameterID: item.id,
-    });
+    console.log('[PlanForm] onParameterSelected', { item, sampleIndex, planIndex, testIndex, index });
+    this.getElementRows(sampleIndex, planIndex).at(index).patchValue({ parameterID: item.id });
   }
 
   getChemicalTestsArray(sampleIdx: number, planIdx: number): AbstractControl[] {
@@ -483,23 +513,39 @@ export class PlanFormComponent implements OnInit {
     const arr = chemTests[chemIdx]?.get('elements') as FormArray;
     return arr ? arr.controls : [];
   }
-  getAdditionalDetailsArray(sample: AbstractControl): AbstractControl[] {
-    const arr = sample.get('additionalDetails') as FormArray;
-    return arr ? arr.controls : [];
-  }
 
-  // Add this validator function at the top or inside the class
   uniqueSpecificationValidator(group: FormGroup) {
     const spec1 = group.get('specification1')?.value;
     const spec2 = group.get('specification2')?.value;
-    if (spec1 && spec2 && spec1 === spec2) {
-      return { sameSpecification: true };
-    }
+    if (spec1 && spec2 && +spec1 === +spec2) return { sameSpecification: true };
     return null;
   }
 
+  private ensureSpecificationBindings(sampleIdx: number, planIdx: number, section: FormGroup) {
+    try {
+      const spec1 = section.get('specification1')?.value;
+      const spec2 = section.get('specification2')?.value;
+      console.log('[PlanForm] ensureSpecificationBindings', { sampleIdx, planIdx, spec1, spec2 });
+      // Schedule small delays so dropdown components initialize and see the selectedItem
+      if (spec1) {
+        setTimeout(() => {
+          console.log('[PlanForm] ensureSpecificationBindings trigger spec1', spec1);
+          this.onSpecificationGradeSelected(sampleIdx, planIdx, { id: spec1 }, 'specification1', 'generalTests');
+        }, 50);
+      }
+      if (spec2) {
+        setTimeout(() => {
+          console.log('[PlanForm] ensureSpecificationBindings trigger spec2', spec2);
+          this.onSpecificationGradeSelected(sampleIdx, planIdx, { id: spec2 }, 'specification2', 'generalTests');
+        }, 80);
+      }
+    } catch (err) {
+      console.warn('[PlanForm] ensureSpecificationBindings error', err);
+    }
+  }
+
   updateFormFromPayload(payload: any): void {
-    // Set top-level fields
+    console.log('[PlanForm] updateFormFromPayload start', { payloadSummary: { id: payload.id, sampleDetailsCount: (payload.sampleDetails || []).length } });
     this.planForm.patchValue({
       id: payload.id ?? 0,
       caseNo: payload.caseNo ?? '',
@@ -509,59 +555,48 @@ export class PlanFormComponent implements OnInit {
       notDestroyed: payload.notDestroyed ?? false,
       statementOfConformity: payload.statementOfConformity ?? 'Not Applicable',
       decisionRule: payload.decisionRule ?? 'Not Applicable'
-      // Add other top-level fields as needed
     });
 
-    // Clear existing samples
     this.samples.clear();
 
-    // Map sampleDetails to form structure
-    (payload.sampleDetails || []).forEach((sample: any, sampleIdx:number) => {
-      // Find additional details for this sample
+    (payload.sampleDetails || []).forEach((sample: any, sampleIdx: number) => {
+      console.log('[PlanForm] adding sample to form', { sampleIdx, sampleNo: sample.sampleNo });
       const additionalDetailsArr = (payload.sampleAdditionalDetails || [])
         .filter((ad: any) => ad.sampleID === sample.id)
-        .map((ad: any) =>
-          this.fb.group({
-            id: [ad.id],
-            sampleID: [ad.sampleID],
-            sampleNo: [sample.sampleNo],
-            label: [ad.label],
-            value: [ad.value],
-            enabled: [true]
-          })
-        );
+        .map((ad: any) => this.fb.group({
+          id: [ad.id],
+          sampleID: [ad.sampleID],
+          sampleNo: [sample.sampleNo],
+          label: [ad.label],
+          value: [ad.value],
+          enabled: [true]
+        }));
 
-      // Find test plans for this sample (if any)
       const testPlansArr = (payload.sampleTestPlans || [])
         .filter((tp: any) => tp.sampleID === sample.id)
-        .map((tp: any, planIdx:number) => {
-          // Map generalTests
-          const generalTestsArr = (tp.generalTests || []).map((gt: any) =>
+        .map((tp: any, planIdx: number) => {
+          console.log('[PlanForm] processing testPlan', { sampleIdx, planIdx, tpSummary: { sampleNo: tp.sampleNo, generalTests: (tp.generalTests || []).length, chemicalTests: (tp.chemicalTests || []).length } });
+          const generalTestsArr = (tp.generalTests || []).map((gt: any, gtIdx: number) =>
             this.fb.group({
               id: [gt.id],
-              sampleNo: [gt.sampleNo],
-              specification1: [gt.specification1],
-              specification2: [gt.specification2],
+              sampleNo: [sample.sampleNo],
+              specification1: [gt.specification1 !== undefined && gt.specification1 !== null ? +gt.specification1 : null],
+              specification2: [gt.specification2 !== undefined && gt.specification2 !== null ? +gt.specification2 : null],
               parameter: [gt.parameter],
-              methods: this.fb.array(
-                (gt.methods || []).map((m: any) =>
-                  this.fb.group({
-                    testMethodID: [m.testMethodID],
-                    standardID: [m.standardID],
-                    quantity: [m.quantity],
-                    reportNo: [m.reportNo],
-                    ulrNo: [m.ulrNo],
-                    cancel: [m.cancel]
-                  })
-                )
-              )
-            }, { validators: this.uniqueSpecificationValidator }) // <-- add validator here
+              methods: this.fb.array((gt.methods || []).map((m: any) => this.fb.group({
+                testMethodID: [m.testMethodID],
+                standardID: [m.standardID],
+                quantity: [m.quantity],
+                reportNo: [m.reportNo],
+                ulrNo: [m.ulrNo],
+                cancel: [m.cancel]
+              })))
+            })
           );
 
-          // Map chemicalTests
           const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) =>
             this.fb.group({
-              sampleNo: [ct.sampleNo],
+              sampleNo: [sample.sampleNo],
               reportNo: [ct.reportNo],
               ulrNo: [ct.ulrNo],
               testTypes: this.fb.group({
@@ -572,19 +607,16 @@ export class PlanFormComponent implements OnInit {
                 ROHS: [ct.testTypes?.ROHS ?? false]
               }),
               metalClassificationID: [ct.metalClassificationID],
-              specification1: [ct.specification1],
-              specification2: [ct.specification2],
+              specification1: [ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null],
+              specification2: [ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null],
               testMethod: [ct.testMethod],
-              elements: this.fb.array(
-                (ct.elements || []).map((el: any) =>
-                  this.fb.group({
-                    parameterID: [el.parameterID],
-                    selected: [el.selected]
-                  })
-                )
-              )
+              elements: this.fb.array((ct.elements || []).map((el: any) => this.fb.group({
+                parameterID: [el.parameterID],
+                selected: [el.selected]
+              })))
             })
           );
+
           this.setDefaultTab(sampleIdx, planIdx, tp);
           return this.fb.group({
             sampleNo: [tp.sampleNo],
@@ -615,25 +647,44 @@ export class PlanFormComponent implements OnInit {
         additionalDetails: this.fb.array(additionalDetailsArr),
         testPlans: this.fb.array(testPlansArr)
       }));
+
+      // // After pushing sample, ensure any pre-existing specification values are re-applied so dropdowns can bind
+      // const addedSampleGroup = this.samples.at(sampleIdx) as FormGroup;
+      // const testPlansFA = addedSampleGroup.get('testPlans') as FormArray;
+      // if (testPlansFA && testPlansFA.length > 0) {
+      //   for (let p = 0; p < testPlansFA.length; p++) {
+      //     try {
+      //       const generalFA = (testPlansFA.at(p).get('generalTests') as FormArray);
+      //       if (generalFA && generalFA.length > 0) {
+      //         // For each general test section, ensure bindings after slight delay
+      //         for (let g = 0; g < generalFA.length; g++) {
+      //           const section = generalFA.at(g) as FormGroup;
+      //           // schedule ensureSpecificationBindings so components have time to initialize
+      //           setTimeout(() => {
+      //             console.log('[PlanForm] scheduling ensureSpecificationBindings', { sampleIdx, planIdx: p, generalIndex: g });
+      //             this.ensureSpecificationBindings(sampleIdx, p, section);
+      //           }, 50 + (p * 20) + (g * 10));
+      //         }
+      //       }
+      //     } catch (err) {
+      //       console.warn('[PlanForm] error scheduling spec binding for sample', sampleIdx, 'plan', p, err);
+      //     }
+      //   }
+      // }
     });
-    if (this.isViewMode) {
-      this.planForm.disable();
-    }
+
+    console.log('[PlanForm] updateFormFromPayload finished building form. samples length=', this.samples.length);
+    // if (this.isViewMode) this.planForm.disable();
   }
 
   onSave(): void {
-    const raw = this.planForm.value;
-    console.log('Initial Payload:', this.planForm.value);
-
+    const raw = this.planForm.getRawValue();
     const payload = {
       id: raw.id || 0,
       caseNo: raw.caseNo || '',
       customerID: raw.customerID || 0,
-
       statementOfConformity: raw.statementOfConformity || 'Not Applicable',
       decisionRule: raw.decisionRule || 'Not Applicable',
-
-      //  SampleDetails
       sampleDetails: (raw.samples || []).map((s: any) => ({
         id: s.id || 0,
         sampleNo: s.sampleNo || '',
@@ -655,8 +706,6 @@ export class PlanFormComponent implements OnInit {
         sampleFilePath: s.sampleFilePath || null,
         fileName: s.fileName || null,
         inwardID: s.inwardID || 0,
-
-        //  AdditionalDetails (strip "enabled")
         additionalDetails: (s.additionalDetails || []).map((a: any) => ({
           id: a.id || 0,
           sampleNo: s.sampleNo,
@@ -664,8 +713,6 @@ export class PlanFormComponent implements OnInit {
           value: a.value || '',
           sampleID: a.sampleID || 0
         })),
-
-        //  TestPlans
         testPlans: (s.testPlans || []).map((tp: any) => ({
           sampleNo: s.sampleNo,
           generalTests: (tp.generalTests || []).map((g: any) => ({
@@ -698,58 +745,43 @@ export class PlanFormComponent implements OnInit {
             }))
           }))
         }))
-      })),
-
+      }))
     };
 
-    console.log('Final Payload:', payload);
-
+    console.log('[PlanForm] onSave payload prepared', payload);
     this.inwardService.testPlanSave(payload).subscribe({
-      next: (res) => {
+      next: () => {
         this.toastService.show('Test Plan saved successfully!', 'success');
         this.router.navigate(['/sample/plan']);
       },
       error: (err) => {
-        console.error('Error saving test plan:', err);
+        console.error('[PlanForm] Error saving test plan:', err);
         this.toastService.show('Error saving test plan. Please try again.', 'error');
       }
     });
   }
 
-
   onCancel(): void {
-    // You can reset the form or navigate away as needed
     this.planForm.reset();
     this.router.navigate(['/sample/plan/inward']);
-    // Optionally, navigate away
   }
 
   addPlanToSample(sampleIdx: number): void {
     const sampleGroup = this.samples.at(sampleIdx) as FormGroup;
     const testPlans = sampleGroup.get('testPlans') as FormArray;
     const sampleNo = sampleGroup.get('sampleNo')?.value || '';
-    testPlans.push(this.fb.group({
-      sampleNo: [sampleNo],
-      generalTests: this.fb.array([]),
-      chemicalTests: this.fb.array([])
-    }));
+    testPlans.push(this.fb.group({ sampleNo: [sampleNo], generalTests: this.fb.array([]), chemicalTests: this.fb.array([]) }));
   }
+
   openFileInNewTab(filePath: string): void {
-    if (filePath) {
-      window.open(this.baseUrl + filePath, '_blank');
-    }
+    if (filePath) window.open(this.baseUrl + filePath, '_blank');
   }
-  // Tab Management
+
   setDefaultTab(sampleIdx: number, planIdx: number, plan: any) {
     const key = `${sampleIdx}-${planIdx}`;
-
-    if (plan?.generalTests?.length > 0) {
-      this.activeTabs[key] = 'general';
-    } else if (plan?.chemicalTests?.length > 0) {
-      this.activeTabs[key] = 'chemical';
-    } else {
-      this.activeTabs[key] = 'general'; // fallback
-    }
+    if (plan?.generalTests?.length > 0) this.activeTabs[key] = 'general';
+    else if (plan?.chemicalTests?.length > 0) this.activeTabs[key] = 'chemical';
+    else this.activeTabs[key] = 'general';
   }
 
   isActiveTab(sampleIdx: number, planIdx: number, tab: string): boolean {
@@ -759,4 +791,12 @@ export class PlanFormComponent implements OnInit {
   setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical') {
     this.activeTabs[`${sampleIdx}-${planIdx}`] = tab;
   }
+
+  // used by template
+  getTestMethodSpecificationDrop = this.getTestMethodSpecification;
+  getMaterialSpecDrop = this.getMaterialSpecificationGrade;
+  getMaterialSpecDropForGeneral = this.getMaterialSpecificationGradeForGeneral;
+  getMetalDrop = this.getMetalClassification;
+  getProductConditionDrop = this.getProductConditions;
+  getParameterDrop = this.getChemicalParameter;
 }

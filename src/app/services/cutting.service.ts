@@ -1,42 +1,38 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class LaboratoryTestService {
-
-  private apiUrl = environment.apiUrl +"/LaboratoryTest"
+export class CuttingService {
+ private apiUrl = environment.apiUrl +"/Cutting";
 
     constructor(private http: HttpClient) {}
 
-    getAllLaboratoryTests(filter:any): Observable<any> {
+    getAllCuttings(filter:any): Observable<any> {
       return this.http.post<any>(this.apiUrl+"/list", filter);
     }
 
-    getLaboratoryTestById(id: number): Observable<any> {
+
+    getCuttingById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
 
-    createLaboratoryTest(payload: any): Observable<any> {
+    createCutting(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }
 
-    updateLaboratoryTest( payload: any): Observable<any> {
+    updateCutting( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
 
-    deleteLaboratoryTest(id: number): Observable<any> {
+    deleteCutting(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
-    getLaboratoryTestDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+    getCuttingDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
-    }
-
-    getTestCasesByTestMethodId(testMethodId:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/test-cases/${testMethodId}`);
     }
 }

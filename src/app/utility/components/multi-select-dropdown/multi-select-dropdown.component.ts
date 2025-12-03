@@ -188,7 +188,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   //  Sync selected values with available items
   private syncSelectedItems(emit: boolean = false): void {
     this.selectedItems = this.selectedValues
-      .map(id => this.items.find(item => item.id === id))
+      ?.map(id => this.items.find(item => item.id === id))
       .filter(Boolean);
 
     if (emit) {

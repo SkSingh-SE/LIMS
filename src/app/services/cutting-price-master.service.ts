@@ -9,25 +9,29 @@ import { Observable } from 'rxjs';
 export class CuttingPriceMasterService {
 
   private apiUrl = environment.apiUrl +"/CuttingPriceMaster"; // Replace with actual API
-  
+
     constructor(private http: HttpClient) {}
-  
+
     getAllCuttingPriceMasters(filter:any): Observable<any> {
       return this.http.post<any>(this.apiUrl+"/list", filter);
     }
-  
+
+    getAllCuttingPriceMastersWithoutFilter(): Observable<any> {
+      return this.http.get<any>(this.apiUrl+"/get-all");
+    }
+
     getCuttingPriceMasterById(id: number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
-  
+
     createCuttingPriceMaster(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }
-  
+
     updateCuttingPriceMaster( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
     }
-  
+
     deleteCuttingPriceMaster(id: number): Observable<any> {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }

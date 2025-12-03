@@ -8,12 +8,20 @@ import { Observable } from 'rxjs';
 })
 export class SampleInwardService {
 
-  private apiUrl = environment.apiUrl +"/SampleInward"; 
+  private apiUrl = environment.apiUrl + "/SampleInward";
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  getAllSampleInward(filter:any): Observable<any> {
-    return this.http.post<any>(this.apiUrl+"/list", filter);
+  getAllSampleInward(filter: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + "/list", filter);
+  }
+
+  getPlanList(filter: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + "/plan-list", filter);
+  }
+
+  getReviewList(filter: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + "/review-list", filter);
   }
 
   getSampleInwardById(id: number): Observable<any> {
@@ -38,12 +46,20 @@ export class SampleInwardService {
     return this.http.put<any>(`${this.apiUrl}/plan`, payload);
   }
 
-  deleteSampleInward(id: number): Observable<any> {
-      return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
-    }
+  sendTestPlanForReview(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/plan-for-review`, payload);
+  }
 
-  getSampleInwardDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+  deleteSampleInward(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
+  }
+
+  getSampleInwardDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
-    }
-  
+  }
+
+  getPreparationInwardDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/preparation-inward-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  }
+
 }

@@ -77,58 +77,79 @@
       </legend>
 
       <!-- Sample Details + Additional Details in one row -->
-      <div class="card border shadow-sm mb-3">
+      <div class="card shadow-sm mb-3">
         <div class="card-body small">
           <div class="row">
             <!-- LEFT SIDE: Sample Details + Preparation -->
             <div class="col-md-10">
               <!-- Sample Details -->
-              <div class="row g-3 mb-2">
-                <div class="col-auto">
-                  <p class="mb-1">
-                    <strong>Details:</strong>
-                    {{ sample.get("details")?.value || "-" }}
-                  </p>
+              <div class="row g-3 mb-3 align-items-start">
+                <!-- LEFT COLUMN (Auto-Adjusting Grid) -->
+                <div class="col-12 col-md-6">
+                  <div class="d-flex flex-wrap gap-3">
+                    <!-- Details -->
+                    <div class="flex-grow-1 flex-basis-45">
+                      <p class="mb-1">
+                        <strong>Details:</strong>
+                        <span class="text-muted">{{ sample.get("details")?.value || "-" }}</span>
+                      </p>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="flex-grow-1 flex-basis-45">
+                      <p class="mb-1">
+                        <strong>Remarks:</strong>
+                        <span class="text-muted">{{ sample.get("remarks")?.value || "-" }}</span>
+                      </p>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="flex-grow-1 flex-basis-45">
+                      <p class="mb-1">
+                        <strong>Quantity:</strong>
+                        <span class="text-muted">{{ sample.get("quantity")?.value || "0" }}</span>
+                      </p>
+                    </div>
+
+                    <!-- Dynamic Additional Details -->
+                    <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
+                      <div class="flex-grow-1 flex-basis-45">
+                        <p class="mb-1">
+                          <strong>{{ row.get("label")?.value }}:</strong>
+                          <span class="text-muted">{{ row.get("value")?.value || "-" }}</span>
+                        </p>
+                      </div>
+                    </ng-container>
+                  </div>
                 </div>
 
-                <div class="col-auto">
-                  <p class="mb-1">
-                    <strong>Remarks:</strong>
-                    {{ sample.get("remarks")?.value || "-" }}
-                  </p>
-                </div>
-                <div class="col-auto">
-                  <p class="mb-1">
-                    <strong>Quantity:</strong>
-                    {{ sample.get("quantity")?.value || "0" }}
-                  </p>
-                </div>
-                <!-- Additional Details -->
-                <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
-                  <div class="col-auto">
-                    <p class="mb-1">
-                      <strong>{{ row.get("label")?.value }}:</strong>
-                      {{ row.get("value")?.value }}
-                    </p>
+                <!-- RIGHT COLUMN (Fixed 2 Dropdowns) -->
+                <div class="col-12 col-md-6">
+                  <div class="row g-2">
+                    <!-- Metal Classification -->
+                    <div class="col-12 col-md-6">
+                      <app-searchable-dropdown
+                        [placeholder]="'Search Metal Classification'"
+                        [labelName]="'Metal Classification'"
+                        [fetchDataFn]="getMetalDrop"
+                        (itemSelected)="onMetalClassificationSelected($event, sampleIdx)"
+                        [selectedItem]="sample.get('metalClassificationID')?.value"
+                        [isDisabled]="isViewMode"
+                      ></app-searchable-dropdown>
+                    </div>
+
+                    <!-- Product Condition -->
+                    <div class="col-12 col-md-6">
+                      <app-searchable-dropdown
+                        [placeholder]="'Search Product Condition'"
+                        [labelName]="'Product Condition'"
+                        [fetchDataFn]="getProductConditionDrop"
+                        (itemSelected)="onProductConditionSelected($event, sampleIdx)"
+                        [selectedItem]="sample.get('productConditionID')?.value"
+                        [isDisabled]="isViewMode"
+                      ></app-searchable-dropdown>
+                    </div>
                   </div>
-                </ng-container>
-                <div class="col-auto">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search Metal Classification'"
-                    [labelName]="'Metal Classification'"
-                    [fetchDataFn]="getMetalDrop"
-                    (itemSelected)="onMetalClassificationSelected($event, sampleIdx)"
-                    [selectedItem]="sample.get('metalClassificationID')?.value"
-                  ></app-searchable-dropdown>
-                </div>
-                <div class="col-auto">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search Product Condition'"
-                    [labelName]="'Product Condition'"
-                    [fetchDataFn]="getProductConditionDrop"
-                    (itemSelected)="onProductConditionSelected($event, sampleIdx)"
-                    [selectedItem]="sample.get('productConditionID')?.value"
-                  ></app-searchable-dropdown>
                 </div>
               </div>
 
@@ -136,13 +157,13 @@
               <div class="row g-2 align-items-center">
                 <!-- Cutting -->
                 <div class="col-md-3">
-                  <label class="form-label d-block">Cutting Required</label>
+                  <label class="form-label d-block">Sample Prepration Required</label>
                   <div class="form-check form-check-inline">
                     <input
                       type="radio"
                       class="form-check-input"
                       [value]="true"
-                      formControlName="cuttingRequired"
+                      formControlName="preparationRequired"
                       id="cuttingYes-{{ sampleIdx }}"
                     />
                     <label class="form-check-label" for="cuttingYes-{{ sampleIdx }}">Yes</label>
@@ -152,7 +173,7 @@
                       type="radio"
                       class="form-check-input"
                       [value]="false"
-                      formControlName="cuttingRequired"
+                      formControlName="preparationRequired"
                       id="cuttingNo-{{ sampleIdx }}"
                     />
                     <label class="form-check-label" for="cuttingNo-{{ sampleIdx }}">No</label>
@@ -258,6 +279,18 @@
                     <label class="form-check-label" for="tpiNo-{{ sampleIdx }}">No</label>
                   </div>
                 </div>
+                <!-- TPI Agency -->
+                <div *ngIf="sample.get('tpiRequired')?.value === true" class="col-md-3">
+                  <app-searchable-dropdown
+                    class="col-md-3"
+                    [placeholder]="'Search TPI Agency'"
+                    [labelName]="'TPI Agency'"
+                    [fetchDataFn]="getTPIAgencies"
+                    (itemSelected)="onTPISelected($event, sampleIdx)"
+                    [selectedItem]="sample.get('tpiAgencyID')?.value"
+                    [isDisabled]="isViewMode || sample.get('tpiRequired')?.value === false"
+                  ></app-searchable-dropdown>
+                </div>
 
                 <div class="col-md-3">
                   <label class="form-label fw-semibold">Test Instructions</label>
@@ -297,7 +330,7 @@
           <div
             *ngFor="let testPlan of getTestPlansArray(sample); let planIdx = index"
             [formGroupName]="planIdx"
-            class="mb-3 border rounded p-3 position-relative"
+            class="mb-3 shadow-sm rounded p-3 position-relative"
           >
             <ul class="nav nav-tabs mb-3" role="tablist">
               <li class="nav-item" role="presentation">
@@ -342,21 +375,21 @@
                     <div class="row row-cols-auto row-cols-md-2 mb-2">
                       <div class="">
                         <app-searchable-dropdown
-                              [placeholder]="'Search Specification'"
-                              [labelName]="'Specification'"
-                              [fetchDataFn]="getMaterialSpecificationGrade"
-                              (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
-                              [hideLabel]="false"
-                              [required]="true"
-                              [isDisabled]="isViewMode"
-                              [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
-                            ></app-searchable-dropdown>
+                          [placeholder]="'Search Specification'"
+                          [labelName]="'Specification'"
+                          [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(sampleIdx)"
+                          (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
+                          [hideLabel]="false"
+                          [required]="true"
+                          [isDisabled]="isViewMode"
+                          [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
+                        ></app-searchable-dropdown>
                       </div>
                       <div class="">
                         <app-searchable-dropdown
                           [placeholder]="'Search Specification'"
                           [labelName]="'Specification 2'"
-                          [fetchDataFn]="getMaterialSpecDrop"
+                          [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(sampleIdx)"
                           (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'generalTests')"
                           [hideLabel]="false"
                           [isDisabled]="isViewMode"
@@ -376,6 +409,7 @@
                           <th class="fw-medium text-center">Sr No.</th>
                           <th class="fw-medium text-center">Test Method Standard</th>
                           <th class="fw-medium text-center">Laboratory Test</th>
+                          <th class="fw-medium text-center">Test Case </th>
                           <th class="fw-medium text-center">Quantity</th>
                           <th class="fw-medium text-center">
                             <div>Report No</div>
@@ -384,50 +418,65 @@
                           <th class="fw-medium text-center">Action</th>
                         </tr>
                       </thead>
-                      <tbody #dropdownContainer class="dropdown-wrapper position-relative" style="z-index: 1000;" formArrayName="methods" *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0">
+                      <tbody
+                        #dropdownContainer
+                        class="dropdown-wrapper position-relative"
+                        style="z-index: 1000"
+                        formArrayName="methods"
+                        *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0"
+                      >
                         <tr
                           *ngFor="let method of getMethodRows(sampleIdx, planIdx).controls; let methodIdx = index"
                           [formGroupName]="methodIdx"
                         >
                           <td>{{ methodIdx + 1 }}</td>
                           <td>
-                            <!-- <app-searchable-dropdown
-                              class="w-100"
-                              [placeholder]="'Search Standard'"
-                              [labelName]="'Standard'"
-                              [fetchDataFn]="getTestMethodSpecification"
-                              (itemSelected)="onGeneralTestStandardSelected($event, sampleIdx, planIdx, methodIdx)"
-                              [hideLabel]="true"
-                              [required]="false"
-                              [isDisabled]="isViewMode"
-                              [selectedItem]="method.get('standardID')?.value"
-                            ></app-searchable-dropdown> -->
                             <select class="form-select" formControlName="standardID" [disabled]="isViewMode">
                               <option value="">-- Select Standard --</option>
-                              <option *ngFor="let standard of filteredStandards" [value]="standard.id">
+                              <option *ngFor="let standard of filteredStandardsMap[sampleIdx + '_' + planIdx] || []" [value]="standard.id">
                                 {{ standard.name }}
                               </option>
                             </select>
                           </td>
                           <td>
-                            <!-- <app-searchable-dropdown
-                              class="w-100"
-                              [smallInput]="true"
-                              [placeholder]="'Search Test'"
-                              [labelName]="'Laboratory Test'"
-                              [fetchDataFn]="getLaboratoryTest"
-                              (itemSelected)="onLaboratorySelected($event, sampleIdx, planIdx, methodIdx)"
-                              [hideLabel]="true"
-                              [required]="true"
-                              [isDisabled]="isViewMode"
-                              [selectedItem]="method.get('testMethodID')?.value"
-                            ></app-searchable-dropdown> -->
-                            <select class="form-select" formControlName="testMethodID" [disabled]="isViewMode">
+                            <select
+                              class="form-select"
+                              formControlName="testMethodID"
+                              [disabled]="isViewMode"
+                              (change)="onLaboratorySelected({ id: $any($event.target).value }, sampleIdx, planIdx, methodIdx)"
+                            >
                               <option value="">-- Select Laboratory Test --</option>
                               <option *ngFor="let test of filteredTestMethods[`${sampleIdx}_${planIdx}`]" [value]="test.id">
                                 {{ test.name }}
                               </option>
                             </select>
+                            <div *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched" class="text-danger small mt-1">
+                              Required
+                            </div>
+                          </td>
+                          <!-- Test Case Dropdown (Mandatory) -->
+                          <td>
+                            <select
+                              class="form-select"
+                              formControlName="testCaseID"
+                              [disabled]="isViewMode || !method.get('testMethodID')?.value"
+                              (change)="
+                                onTestCaseSelected(
+                                  { id: $any($event.target).value },
+                                  sampleIdx,
+                                  planIdx,
+                                  methodIdx
+                                )
+                              "
+                            >
+                              <option value="">-- Select Test Case --</option>
+                              <option *ngFor="let testCase of filteredTestCases[`${sampleIdx}_${planIdx}_${methodIdx}`] || []" [value]="testCase.id">
+                                {{ testCase.name }}
+                              </option>
+                            </select>
+                            <div *ngIf="method.get('testCaseID')?.hasError('required') && method.get('testCaseID')?.touched" class="text-danger small mt-1">
+                              Test Case is required
+                            </div>
                           </td>
                           <td>
                             <input
@@ -515,21 +564,9 @@
                         <div class="row mt-3">
                           <div class="col-md-3">
                             <app-searchable-dropdown
-                              [placeholder]="'Search Metal'"
-                              [labelName]="'Metal Classification'"
-                              [fetchDataFn]="getMetalDrop"
-                              (itemSelected)="onMetalSelected(sampleIdx, planIdx, $event)"
-                              [hideLabel]="false"
-                              [required]="true"
-                              [isDisabled]="isViewMode"
-                              [selectedItem]="chemTest.get('metalClassificationID')?.value"
-                            ></app-searchable-dropdown>
-                          </div>
-                          <div class="col-md-3">
-                            <app-searchable-dropdown
                               [placeholder]="'Search Specification'"
                               [labelName]="'Specification'"
-                              [fetchDataFn]="getMaterialSpecDrop"
+                              [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(sampleIdx)"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
                               [hideLabel]="false"
                               [required]="true"
@@ -541,7 +578,7 @@
                             <app-searchable-dropdown
                               [placeholder]="'Search Specification'"
                               [labelName]="'Specification 2'"
-                              [fetchDataFn]="getMaterialSpecDrop"
+                              [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(sampleIdx)"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
                               [hideLabel]="false"
                               [required]="false"
@@ -550,7 +587,7 @@
                             ></app-searchable-dropdown>
                           </div>
                           <div class="col-md-3">
-                            <app-searchable-dropdown
+                            <!-- <app-searchable-dropdown
                               class="w-100"
                               [placeholder]="'Search Standard'"
                               [labelName]="'Standard'"
@@ -560,18 +597,38 @@
                               [required]="false"
                               [isDisabled]="isViewMode"
                               [selectedItem]="chemTest.get('standardID')?.value"
-                            ></app-searchable-dropdown>
+                            ></app-searchable-dropdown> -->
+                            <label for="standard" class="form-label">Laboratory Test</label>
+                            <select class="form-select" formControlName="testMethod" [disabled]="isViewMode">
+                              <option value="">-- Select Laboratory Test --</option>
+                              <option *ngFor="let test of filteredTestMethods[`${sampleIdx}_${planIdx}`]" [value]="test.id">
+                                {{ test.name }}
+                              </option>
+                            </select>
                           </div>
                         </div>
-                        <div class="mt-3">
-                          <label class="fw-semibold">Elements</label>
+                        <div
+                          class="mt-3"
+                          *ngIf="getElementsArray(sampleIdx, planIdx, chemIdx) && getElementsArray(sampleIdx, planIdx, chemIdx).length > 0"
+                        >
                           <table class="table table-sm table-compact mt-2">
                             <thead class="table-light">
                               <tr class="text-nowrap text-muted small">
                                 <th class="fw-medium text-center">Sr No.</th>
                                 <th class="fw-medium text-center">Element</th>
-                                <th class="fw-medium text-center">Select</th>
-                                <th class="fw-medium text-center">Action</th>
+                                <th class="fw-medium text-center">Min</th>
+                                <th class="fw-medium text-center">Max</th>
+                                <th class="fw-medium text-center">Unit</th>
+                                <th class="fw-medium text-center">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="isAllElementsSelected(sampleIdx, planIdx, chemIdx)"
+                                    (change)="toggleSelectAllElements($event, sampleIdx, planIdx, chemIdx)"
+                                    [disabled]="isViewMode"
+                                    aria-label="Select all elements"
+                                  />
+                                </th>
+                                <!-- <th class="fw-medium text-center">Action</th> -->
                               </tr>
                             </thead>
                             <tbody formArrayName="elements">
@@ -587,15 +644,36 @@
                                     [labelName]="'Parameter'"
                                     [fetchDataFn]="getParameterDrop"
                                     (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)"
-                                    [isDisabled]="isViewMode"
+                                    [isDisabled]="true"
                                     [hideLabel]="true"
                                     [selectedItem]="el.get('parameterID')?.value"
                                   ></app-searchable-dropdown>
                                 </td>
-                                <td>
-                                  <input type="checkbox" class="form-check-input" formControlName="selected" />
+                                <td class="text-center">
+                                  <input
+                                    type="number"
+                                    class="form-control form-control-sm text-center"
+                                    formControlName="minValue"
+                                    [readonly]="!el.get('minValue')?.value"
+                                  />
                                 </td>
-                                <td>
+                                <td class="text-center">
+                                  <input
+                                    type="number"
+                                    class="form-control form-control-sm text-center"
+                                    formControlName="maxValue"
+                                    [readonly]="true"
+                                  />
+                                </td>
+                                <td class="text-center">
+                                  <span>{{ el.get("parameterUnit")?.value || "-" }}</span>
+                                </td>
+                                <td class="text-center">
+                                  <div class="form-check d-flex align-items-center justify-content-center">
+                                    <input type="checkbox" class="form-check-input" formControlName="selected" />
+                                  </div>
+                                </td>
+                                <!-- <td>
                                   <button
                                     *ngIf="!isViewMode"
                                     type="button"
@@ -604,11 +682,11 @@
                                   >
                                     <i class="bi bi-trash"></i>
                                   </button>
-                                </td>
+                                </td> -->
                               </tr>
                             </tbody>
                           </table>
-                          <button
+                          <!-- <button
                             *ngIf="!isViewMode"
                             type="button"
                             class="btn btn-sm btn-outline-danger-600"
@@ -616,7 +694,7 @@
                           >
                             <i class="bi bi-plus-circle-dotted"></i>
                             Add Element
-                          </button>
+                          </button> -->
                         </div>
                       </div>
                     </div>
@@ -650,6 +728,7 @@
   <!-- Plan-specific Save/Cancel -->
   <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
     <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
-    <button type="button" class="btn btn-success px-3" (click)="onSave()" [disabled]="!planForm.valid">Save</button>
+    <button type="button" class="btn btn-success px-3" (click)="onSave()" [disabled]="!planForm.valid">Save Plan</button>
+    <button type="button" class="btn btn-info" (click)="onSendForReview()">Send for Review</button>
   </div>
 </div>

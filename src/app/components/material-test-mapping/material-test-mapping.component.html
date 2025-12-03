@@ -221,7 +221,7 @@
 
             <!-- Laboratory Test Searchable Dropdown -->
             <div class="mb-2">
-              <app-searchable-dropdown-modal
+              <!-- <app-searchable-dropdown-modal
                 [placeholder]="'Search Laboratory Test'"
                 [labelName]="'Laboratory Test'"
                 [fetchDataFn]="getTestMethodSpecificationDropdown"
@@ -230,7 +230,16 @@
                 [required]="true"
                 [isDisabled]="isViewMode"
                 [selectedItem]="MappingForm.get('laboratoryTestID')?.value"
-              ></app-searchable-dropdown-modal>
+              ></app-searchable-dropdown-modal> -->
+              <app-multi-select-dropdown
+            [placeholder]="'Select multiple items...'"
+            [required]="true"
+            [isDisabled]="false"
+            [labelName]="'Laboratory Tests'"
+            [fetchDataFn]="getTestMethodSpecificationDropdown"
+            [selectedValues]="MappingForm.get('laboratoryTestIDs')?.value"
+            (itemsSelected)="onLabTestMultiSelected($event)"
+          ></app-multi-select-dropdown>
               <span
                 *ngIf="MappingForm.get('laboratoryTestID')?.invalid && MappingForm.get('laboratoryTestID')?.touched"
                 class="text-danger small"

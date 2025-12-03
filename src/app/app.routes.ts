@@ -64,6 +64,9 @@ import { ReviewOfRequestComponent } from './components/inward/review-of-request/
 import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
 import { WorkflowListComponent } from './components/workflow/workflow-list/workflow-list.component';
 import { MaterialTestMappingComponent } from './components/material-test-mapping/material-test-mapping.component';
+import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
+import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
+import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -147,10 +150,15 @@ export const routes: Routes = [
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
-            { path: 'sample/cutting', component:CuttingSampleFormComponent},
+            { path: 'sample/cutting', component:CuttingSamplesComponent},
+            { path: 'sample/cutting/create/:id', component:CuttingSampleFormComponent},
+            { path: 'sample/cutting/edit/:id', component:CuttingSampleFormComponent},
+            { path: 'sample/cutting/details/:id', component:CuttingSampleFormComponent},
             { path: 'sample/machining', component:MachiningChallanComponent},
-            { path: 'sample/plan', component:PlanFormComponent},
+            { path: 'sample/plan', component:PlanListComponent},
+            { path: 'sample/plan/edit/:id', component:PlanFormComponent},
             { path: 'sample/review', component:ReviewOfRequestComponent},
+            { path: 'sample/review/:id', component:ReviewOfRequestFormComponent},
             { path: 'sample/inward', component:SampleInwardListComponent},
             { path: 'sample/inward/create', component:SampleInwardFormComponent},
             { path: 'sample/inward/edit/:id', component:SampleInwardFormComponent},

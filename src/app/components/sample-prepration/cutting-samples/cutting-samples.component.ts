@@ -2,30 +2,35 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { SampleInwardService } from '../../../services/sample-inward.service';
+import { CuttingService } from '../../../services/cutting.service';
 
 @Component({
-  selector: 'app-review-of-request',
-  templateUrl: './review-of-request.component.html',
-  styleUrl: './review-of-request.component.css',
-  imports: [CommonModule,RouterModule,FormsModule]
+  selector: 'app-cutting-samples',
+  templateUrl: './cutting-samples.component.html',
+  styleUrls: ['./cutting-samples.component.css'],
+   imports: [CommonModule,RouterModule,FormsModule],
 })
-export class ReviewOfRequestComponent  implements OnInit {
+export class CuttingSamplesComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
-    { key: 'customerName', type: 'string', label: 'Customer', filter: true },
-    { key: 'reviewStatus', type: 'string', label: 'Status', filter: true },
+    { key: 'grandTotal', type: 'number', label: 'Grand Total', filter: true },
+    { key: 'prepRequired', type: 'string', label: 'Prep Required', filter: true },
+    { key: 'completed', type: 'string', label: 'Completed', filter: true },
+    { key: 'preparationStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
   ];
+
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     caseNo: 'string',
-    customerName: 'string',
-    reviewStatus: 'string',
+    grandTotal: 'number',
+    prepRequired: 'string',
+    completed: 'string',
+    preparationStatus: 'string',
     modifiedBy: 'string',
-    modifiedOn: 'string',
+    modifiedOn: 'date'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -58,7 +63,7 @@ export class ReviewOfRequestComponent  implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private inwardService: SampleInwardService) {
+  constructor(private fb: FormBuilder, private cuttingService: CuttingService) {
   }
 
 
@@ -68,7 +73,7 @@ export class ReviewOfRequestComponent  implements OnInit {
 
   fetchData() {
 
-    this.inwardService.getReviewList(this.payload).subscribe({
+    this.cuttingService.getAllCuttings(this.payload).subscribe({
       next: (response) => {
         this.listData = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
@@ -195,10 +200,6 @@ export class ReviewOfRequestComponent  implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
-  }
-
-  onActionClick(action: any) {
-   console.log('Action clicked:', action);
   }
 
 }

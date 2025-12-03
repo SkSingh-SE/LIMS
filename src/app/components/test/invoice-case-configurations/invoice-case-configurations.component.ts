@@ -331,7 +331,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
               name: [alias.name]
             }));
           });
-
+debugger;
           this.invoiceForm.patchValue({
             id: res.id,
             selectionType: res.selectionType,
@@ -554,7 +554,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
     if (!suggestion) {
       const spectro = this.processSpectroCombination(label);
-      
+
       // Try to match "10mm to 30mm" or "10 mm to 30 mm"
       const complexRangeMatch = label.match(/^(\d+)\s*(mm|hr|kn|°c)?\s*(to|-)\s*(\d+)\s*(mm|hr|kn|°c)?$/i);
       const simpleRangeMatch = label.match(/^(\d+)\s*(to|-)\s*(\d+)\s*(mm|hr|kn|°c)?$/i);

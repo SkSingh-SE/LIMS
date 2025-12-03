@@ -371,7 +371,7 @@ export class MenuPermissionComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.permissionForm.valid) {
+    if (this.permissionForm.valid && this.menuId > 0) {
       const payload = this.permissionForm.getRawValue();
       const updatedPermissions = payload.permissions;
       this.menuService.updatePermission(this.menuId, updatedPermissions).subscribe({
@@ -398,7 +398,7 @@ export class MenuPermissionComponent implements OnInit {
   onMenuSelected(item: any) {
     this.permissionForm.patchValue({ menuId: item.id });
     this.selectedMenu = item;
-
+    this.menuId = item.id;
     // Update auto-generated names for rows where isAutoName is true
     for (let i = 0; i < this.permissionsArray.length; i++) {
       const group = this.permissionsArray.at(i);

@@ -2,10 +2,7 @@
     <div class="card basic-data-table w-100">
         <div
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Inward List</label>
-            <a routerLink="/sample/inward/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Inward
-            </a>
+            <label class="text-center text-md fw-medium ms-3">Plan List</label>
         </div>
 
         <div *ngIf="!isLoading()" class="card-body">
@@ -38,7 +35,7 @@
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
                                             (click)="applySorting(column.key)"></i>
                                     </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                    <span *ngIf="!hasFilter(column.key) && i != 0 && column.filter" class="cursor ms-2 mt-1"
                                         (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
                                     <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
@@ -54,7 +51,7 @@
                         <tr *ngFor="let item of listData; let i = index" class="text-sm">
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/sample/inward/details', item.id]"
+                                    <!-- <a [routerLink]="['/sample/inward/details', item.id]"
                                     [state]="{ mode: 'view' }"
                                      class="icon-link"
                                         title="View">
@@ -65,7 +62,7 @@
                                     class="icon-link"
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
+                                    </a> -->
                                     <a [routerLink]="['/sample/plan/edit', item.id]"
                                     [state]="{ mode: 'plan' }"
                                     class="btn btn-sm btn-outline-danger-600"
@@ -80,6 +77,7 @@
                             <td>{{ item.contactEmail }}</td>
                             <td>{{ item.contactPhone }}</td>
                             <td>{{ item.collectionTime | date: 'medium'}}</td>
+                            <td>{{ item.planStatus | lowercase}}</td>
                             <td>{{ item.modifiedBy }}</td>
                             <td>{{ item.modifiedOn | date: 'dd MMM, yyyy' }}</td>
 

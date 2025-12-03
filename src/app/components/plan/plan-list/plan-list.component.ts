@@ -5,25 +5,33 @@ import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 
 @Component({
-  selector: 'app-review-of-request',
-  templateUrl: './review-of-request.component.html',
-  styleUrl: './review-of-request.component.css',
-  imports: [CommonModule,RouterModule,FormsModule]
+  selector: 'app-plan-list',
+  imports: [CommonModule,RouterModule,FormsModule],
+  templateUrl: './plan-list.component.html',
+  styleUrls: ['./plan-list.component.css']
 })
-export class ReviewOfRequestComponent  implements OnInit {
+export class PlanListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
     { key: 'customerName', type: 'string', label: 'Customer', filter: true },
-    { key: 'reviewStatus', type: 'string', label: 'Status', filter: true },
+    { key: 'contactPersonName', type: 'string', label: 'Contact Person', filter: true },
+    { key: 'contactEmail', type: 'string', label: 'Contact Email', filter: true },
+    { key: 'contactPhone', type: 'string', label: 'Contact Phone', filter: true },
+    { key: 'collectionTime', type: 'string', label: 'Collection Time', filter: true },
+    { key: 'planStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     caseNo: 'string',
     customerName: 'string',
-    reviewStatus: 'string',
+    contactPersonName: 'string',
+    contactEmail: 'string',
+    contactPhone: 'string',
+    collectionTime: 'string',
+    planStatus: 'string',
     modifiedBy: 'string',
     modifiedOn: 'string',
   };
@@ -68,7 +76,7 @@ export class ReviewOfRequestComponent  implements OnInit {
 
   fetchData() {
 
-    this.inwardService.getReviewList(this.payload).subscribe({
+    this.inwardService.getPlanList(this.payload).subscribe({
       next: (response) => {
         this.listData = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
@@ -195,10 +203,6 @@ export class ReviewOfRequestComponent  implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
-  }
-
-  onActionClick(action: any) {
-   console.log('Action clicked:', action);
   }
 
 }

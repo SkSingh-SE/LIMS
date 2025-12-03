@@ -6,33 +6,39 @@
       </div>
 
       <div class="card-body">
-
         <!-- Collection dropdown -->
         <div class="row mb-4">
           <div class="col-md-6">
-            <label class="form-label fw-bold">Collection No.</label>
-            <select class="form-select shadow-sm" formControlName="collectionId" (change)="onCollectionSelect()">
-              <option [ngValue]="null" disabled>Select a collection</option>
-              <option *ngFor="let c of collections" [value]="c.id">
-                {{ c.collectionNo }} ({{ c.sampleCount }} samples)
-              </option>
-            </select>
+            <app-searchable-dropdown
+              [labelName]="'Collection No.'"
+              [fetchDataFn]="fetchSampleInwardDropdown"
+              placeholder="Search Collection No."
+              [required]="true"
+              [isDisabled]="isEditMode || isViewMode"
+              (itemSelected)="onInwardSelected($event)"
+              [selectedItem]="selectedInwardId"
+            ></app-searchable-dropdown>
           </div>
         </div>
 
         <!-- Sample selection -->
         <div *ngIf="availableSamples.length" class="mb-4">
           <label class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" [checked]="allChecked" (change)="toggleAllSamples($event)">
+            <input class="form-check-input" type="checkbox" [checked]="allChecked" (change)="toggleAllSamples($event)" />
             <span class="ms-1 fw-medium">Select all samples</span>
           </label>
 
-          <div class="row" style="max-height: 150px; overflow-y: auto;">
+          <div class="row" style="max-height: 150px; overflow-y: auto">
             <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-2" *ngFor="let s of availableSamples">
               <div class="form-check bg-light p-2 rounded shadow-sm h-100 d-flex align-items-center gap-2">
-                <input class="form-check-input ms-2" type="checkbox" [checked]="isSampleChecked(s.id)"
-                       (change)="toggleSample(s, $event)" id="sampleCheckbox{{s.sampleNo}}">
-                <label class="form-check-label ms-2" for="sampleCheckbox{{s.sampleNo}}">{{ s.sampleNo }}</label>
+                <input
+                  class="form-check-input ms-2"
+                  type="checkbox"
+                  [checked]="isSampleChecked(s.id)"
+                  (change)="toggleSample(s, $event)"
+                  id="sampleCheckbox{{ s.sampleNo }}"
+                />
+                <label class="form-check-label ms-2" for="sampleCheckbox{{ s.sampleNo }}">{{ s.sampleNo }}</label>
               </div>
             </div>
           </div>
@@ -43,86 +49,103 @@
           <div class="col-lg-6 mb-4" *ngFor="let sCtrl of samplesFA.controls; let i = index" [formGroupName]="i">
             <div class="card border shadow-sm h-100">
               <div class="card-body d-flex flex-column justify-content-between">
-
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <h6 class="mb-0">Sample #: {{ sCtrl.get('sampleNo')?.value }}</h6>
-                  <button class="btn btn-sm btn-outline-danger" (click)="samplesFA.removeAt(i)">
+                  <h6 class="mb-0">Sample #: {{ sCtrl.get("sampleNo")?.value }}</h6>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label">Type of Material</label>
-                  <input class="form-control" formControlName="material" placeholder="e.g., Mild Steel">
+                   <app-searchable-dropdown
+                      [placeholder]="'Type of Material'"
+                      [hideLabel]="true"
+                      [fetchDataFn]="getMetalClassification"
+                      (itemSelected)="onMetalClassificationSelected($event,i)"
+                      [selectedItem]="sCtrl.get('metalClassificationID')?.value"
+                      [isDisabled]="true"
+                    ></app-searchable-dropdown>
                 </div>
 
                 <div class="mb-2">
-                  <span class="badge rounded-pill bg-dark me-2 mb-1"
-                        *ngFor="let p of priceList" (click)="addCutting(i, p)" style="cursor:pointer">
+                  <span
+                    class="badge rounded-pill bg-dark me-2 mb-1"
+                    *ngFor="let p of priceList"
+                    (click)="addCutting(i, p)"
+                    style="cursor: pointer"
+                  >
                     + {{ p.cuttingType }}
                   </span>
                 </div>
 
-                <div formArrayName="cuttings" class="table-responsive mb-2">
+                <div formArrayName="cuttingChargeDetails" class="table-responsive mb-2">
                   <table class="table table-bordered table-sm">
                     <thead class="table-light">
                       <tr class="text-nowrap text-muted small">
                         <th class="fw-medium px-2 text-center">Type</th>
                         <th class="fw-medium px-2 text-center">Unit</th>
-                        <th class="fw-medium px-2 text-center">Rate</th>
+                        <th class="fw-medium px-2 text-center">Rate (₹)</th>
                         <th class="fw-medium px-2 text-center">Qty / Time</th>
-                        <th class="fw-medium px-2 text-center">Total</th>
+                        <th class="fw-medium px-2 text-center">Total (₹)</th>
                         <th></th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr *ngFor="let rowCtrl of cuttingsFA(i).controls; let j = index" [formGroupName]="j">
-                        <td>{{ rowCtrl.get('cuttingType')?.value }}</td>
-                        <td>{{ rowCtrl.get('unitType')?.value }}</td>
-                        <td>{{ rowCtrl.get('rate')?.value }}</td>
+                        <td class="text-center">{{ rowCtrl.get("cuttingType")?.value }}</td>
+                        <td class="text-center">{{ rowCtrl.get("unitType")?.value }}</td>
+                        <td class="text-center">
+                          <input type="text" class="form-control form-control-sm" formControlName="rate" appNumberOnly />
+                        </td>
                         <td>
                           <!-- Conditional input: time or quantity -->
                           <ng-container *ngIf="rowCtrl.get('unitType')?.value === 'Per Minute'; else quantityInput">
                             <div class="input-group input-group-sm">
-                              <input type="text" class="form-control" placeholder="Min" min="0"
-                                     [formControlName]="'quantity'" (input)="updateTotal(i, j)" appNumberOnly>
+                              <input
+                                type="text"
+                                class="form-control"
+                                placeholder="Min"
+                                min="1"
+                                formControlName="quantity"
+                                (input)="updateTotal(i, j)"
+                                appNumberOnly
+                              />
                               <span class="input-group-text">min</span>
                             </div>
                           </ng-container>
                           <ng-template #quantityInput>
-                            <input type="text" class="form-control form-control-sm" placeholder="Enter quantity"
-                                   formControlName="quantity" (input)="updateTotal(i, j)" appNumberOnly>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              placeholder="Enter quantity"
+                              formControlName="quantity"
+                              (input)="updateTotal(i, j)"
+                              appNumberOnly
+                            />
                           </ng-template>
                         </td>
-                        <td>{{ rowCtrl.get('total')?.value | number : '1.0-2' }}</td>
-                        <td>
-                          <button class="btn btn-sm btn-link text-danger" (click)="removeCutting(i, j)">✕</button>
+                        <td class="text-center fw-semibold">{{ rowCtrl.get("total")?.value | number : "1.0-2" }}</td>
+                        <td class="text-center">
+                          <button type="button" class="btn btn-sm btn-danger" (click)="removeCutting(i, j)"><i class="bi bi-trash"></i></button>
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
-                <div class="text-end fw-semibold">
-                  Subtotal: ₹ {{ sampleTotal(i) | number : '1.0-2' }}
-                </div>
-
+                <div class="text-end fw-semibold">Subtotal: ₹ {{ sampleTotal(i) | number : "1.0-2" }}</div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Grand total & save -->
-        <div class="text-end fs-5 fw-bold mb-2 " *ngIf="samplesFA.length">
-          GRAND TOTAL: ₹ {{ grandTotal() | number : '1.0-2' }}
-        </div>
+        <div class="text-end fs-5 fw-bold mb-3" *ngIf="samplesFA.length">GRAND TOTAL: ₹ {{ grandTotal() | number : "1.0-2" }}</div>
 
-        <div class="text-end">
-          <button class="btn btn-success" type="submit" [disabled]="!samplesFA.length">
-            Save Cutting Charges
-          </button>
+        <div class="text-end gap-2">
+          <button type="button" class="btn btn-warning me-2" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-success" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
         </div>
-
       </div>
     </div>
   </form>

@@ -10,12 +10,14 @@ import { MaterialSpecificationService } from '../../services/material-specificat
 import { CommonModule } from '@angular/common';
 import { MaterialTestMappingService } from '../../services/material-test-mapping.service';
 import { SearchableDropdownModalComponent } from '../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-material-test-mapping',
   templateUrl: './material-test-mapping.component.html',
   styleUrls: ['./material-test-mapping.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, MultiSelectDropdownComponent],
 })
 export class MaterialTestMappingComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -92,10 +94,15 @@ export class MaterialTestMappingComponent implements OnInit {
       metalClassificationID: [null],
       productConditionID: [null],
       gradeID: [null, [Validators.required]],
-      laboratoryTestID: [null, [Validators.required]],
+      laboratoryTestID: [null],
+      laboratoryTestIDs: [[], [Validators.required]],
+      laboratoryTests: this.fb.array([]),
       isDefault: [false]
     });
 
+  }
+  get laboratoryTests(): FormArray {
+    return this.MappingForm.get('laboratoryTests') as FormArray;
   }
   fetchData() {
     this.isLoading.set(true);
@@ -119,6 +126,24 @@ export class MaterialTestMappingComponent implements OnInit {
     this.materialTestMappingService.getMaterialTestMappingById(this.mappingId).subscribe({
       next: (response) => {
         this.customerTypeObject = response;
+        if(response?.laboratoryTests){
+          const labTestArray = this.MappingForm.get('laboratoryTests') as FormArray;
+          labTestArray.clear();
+          const selectedId : number[] = [];
+          response?.laboratoryTests?.forEach((item :any) => {
+            labTestArray.push(
+              this.fb.group({
+                id: [item.id],
+                testMappingID: [item.testMappingID],
+                laboratoryTestID: [item.laboratoryTestID]
+              })
+            );
+            selectedId.push(item.laboratoryTestID);
+          });
+          this.MappingForm.patchValue({
+            laboratoryTestIDs: selectedId
+          });
+        }
         // patch form
         this.MappingForm.patchValue({
           id: response?.id ?? 0,
@@ -283,6 +308,7 @@ export class MaterialTestMappingComponent implements OnInit {
   }
 
   closeModal(): void {
+    this.MappingForm.reset();
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -298,7 +324,7 @@ export class MaterialTestMappingComponent implements OnInit {
   };
 
   getMaterialSpecificationGradeDropdown = (searchTerm: string, pageNumber: number, pageSize: number) => {
-    return this.materialSpecService.getGradeDropdownByMetalId(searchTerm, pageNumber, pageSize, this.MappingForm.value.metalClassificationID);
+      return this.materialSpecService.getGradeDropdownByMetalId(searchTerm, pageNumber, pageSize, this.MappingForm.value.metalClassificationID);
   };
 
   getTestMethodSpecificationDropdown = (searchTerm: string, pageNumber: number, pageSize: number) => {
@@ -322,6 +348,23 @@ export class MaterialTestMappingComponent implements OnInit {
   onLabTestSelected(item: any) {
     const id = item?.id ?? item?.value ?? item;
     this.MappingForm.patchValue({ laboratoryTestID: id });
+  }
+  onLabTestMultiSelected(selectedItems: any[]) {
+
+    this.laboratoryTests.clear();
+    const selectIds: number[] = [];
+    selectedItems?.forEach((item) => {
+      selectIds.push(item.id);
+      this.laboratoryTests.push(
+        this.fb.group({
+          id: [0],
+          name: [item.name],
+          testMappingID: [this.mappingId],
+          laboratoryTestID: [item.id]
+        })
+      );
+    });
+    this.MappingForm.patchValue({ laboratoryTestIDs: selectIds })
   }
 
 

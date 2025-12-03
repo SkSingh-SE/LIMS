@@ -5,7 +5,6 @@ import { SearchableDropdownComponent } from "../../../utility/components/searcha
 import { Observable } from 'rxjs';
 import { CustomerService } from '../../../services/customer.service';
 import { DispatchModeService } from '../../../services/dispatch-mode.service';
-import { EmployeeService } from '../../../services/employee.service';
 import { AreaService } from '../../../services/area.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
@@ -14,37 +13,39 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { ProductConditionService } from '../../../services/product-condition.service';
-
+import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, PlanFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
 export class SampleInwardFormComponent implements OnInit {
-  // ────────────── Constants & Data ──────────────
+  // Constants
   caseNumber: string = 'DMSPL-000001';
   yearCode: string = new Date().getFullYear().toString().slice(-2);
   sampleNumber: string = '25-000001';
-  lastSampleNumber: number = +this.sampleNumber.split('-')[1]; // fetched from DB
+  lastSampleNumber: number = +this.sampleNumber.split('-')[1];
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
   readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
+  readonly testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
+  // Data
   contactPersons: any[] = [];
   billingToContactPerson: any[] = [];
   reportingToContactPerson: any[] = [];
-  testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
   dispatchModes: any[] = [];
   selectedDispatchModes: number[] = [];
-
-  // ────────────── State ──────────────
-  sampleInwardForm!: FormGroup;
   sampleNumbers: string[] = [];
+
+  // State
+  sampleInwardForm!: FormGroup;
   globalTestCounter = 1;
   uploadedFile: File | null = null;
   customerData: any = null;
@@ -52,8 +53,12 @@ export class SampleInwardFormComponent implements OnInit {
   isEditMode: boolean = false;
   sampleId: number = 0;
 
-
-  constructor(private fb: FormBuilder, private customerService: CustomerService, private dispatchModeService: DispatchModeService, private areaService: AreaService, private materialSpecificationService: MaterialSpecificationService,
+  constructor(
+    private fb: FormBuilder,
+    private customerService: CustomerService,
+    private dispatchModeService: DispatchModeService,
+    private areaService: AreaService,
+    private materialSpecificationService: MaterialSpecificationService,
     private laboratoryTestService: LaboratoryTestService,
     private metalService: MetalClassificationService,
     private testMethodSpecificationService: TestMethodSpecificationService,
@@ -63,29 +68,23 @@ export class SampleInwardFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private prodCondService: ProductConditionService
-  ) { }
+  ) {}
 
-  // ────────────── Lifecycle ──────────────
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
       this.sampleId = Number(params.get('id'));
     });
-    const state = history.state as { mode?: string };
 
-    if (state) {
-      if (state.mode === 'view') {
-        this.isViewMode = true;
-      }
-      if (state.mode === 'edit') {
-        this.isEditMode = true;
-      }
+    const state = history.state as { mode?: string };
+    if (state?.mode === 'view') {
+      this.isViewMode = true;
+    } else if (state?.mode === 'edit') {
+      this.isEditMode = true;
     }
 
     this.initForm();
-    // this.addSample();
-    // this.addAdditionalSampleRow('Heat No');
-
     this.fetchDispatchModeDropdown();
+
     if (this.sampleId > 0) {
       this.fetchSampleInwardDetails(this.sampleId);
     } else {
@@ -93,7 +92,7 @@ export class SampleInwardFormComponent implements OnInit {
     }
   }
 
-  // ────────────── Form Initialization ──────────────
+  // Form Initialization
   private initForm(): void {
     this.sampleInwardForm = this.fb.group({
       id: [0],
@@ -121,12 +120,12 @@ export class SampleInwardFormComponent implements OnInit {
       sampleReceiptNote: [''],
       requestFilePath: [''],
       requestFileName: [''],
-      file: [File],
+      file: [null],
       contacts: this.fb.array([]),
       reportingTo: this.fb.group({
         id: [0],
         contactPersonID: [''],
-        contactPersonName: ['1'],
+        contactPersonName: [''],
         address: [''],
         pinCode: [''],
         area: [''],
@@ -148,30 +147,60 @@ export class SampleInwardFormComponent implements OnInit {
         type: ['billing']
       }),
       sampleDetails: this.fb.array([]),
-      sampleAdditionalDetails: this.fb.array([]),
-      sampleTestPlans: this.fb.array([]),
-
+      sampleAdditionalDetails: this.fb.array([])
     });
   }
 
+  // Getters
   get dispatchModesArray(): FormArray {
     return this.sampleInwardForm.get('dispatchModes') as FormArray;
   }
+
   get reportingTo(): FormGroup {
     return this.sampleInwardForm.get('reportingTo') as FormGroup;
   }
+
   get billingTo(): FormGroup {
     return this.sampleInwardForm.get('billingTo') as FormGroup;
   }
-  // ────────────── Utility Helpers ──────────────
+
+  get contactControls(): FormArray {
+    return this.sampleInwardForm.get('contacts') as FormArray;
+  }
+
+  get sampleDetails(): FormArray {
+    return this.sampleInwardForm.get('sampleDetails') as FormArray;
+  }
+
+  get sampleAdditionalDetails(): FormArray {
+    return this.sampleInwardForm.get('sampleAdditionalDetails') as FormArray;
+  }
+
+  // Utility
   getCurrentTime(): string {
     const now = new Date();
     return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   }
 
+  // Recursively disable all form controls
+  private disableFormRecursively(control: AbstractControl): void {
+    if (control instanceof FormGroup || control instanceof FormArray) {
+      Object.keys(control.controls).forEach(key => {
+        const childControl = control.get(key);
+        if (childControl) {
+          if (childControl instanceof FormGroup || childControl instanceof FormArray) {
+            this.disableFormRecursively(childControl);
+          } else {
+            childControl.disable({ emitEvent: false });
+          }
+        }
+      });
+    } else {
+      control.disable({ emitEvent: false });
+    }
+  }
 
-  // ────────────── API Calls ──────────────
-
+  // API Calls
   getCaseNumber(): void {
     this.inwardService.getCaseNumber().subscribe({
       next: (data) => {
@@ -179,14 +208,14 @@ export class SampleInwardFormComponent implements OnInit {
         this.sampleNumber = data.sampleNo;
         this.lastSampleNumber = +this.sampleNumber.split('-')[1];
       },
-      error: (error) => {
-        console.error('Error fetching case number:', error);
-      }
+      error: (error) => console.error('Error fetching case number:', error)
     });
   }
+
   getCustomers = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
+
   getCustomerDetails(id: number): void {
     this.customerService.getCustomerById(id).subscribe({
       next: (data) => {
@@ -199,47 +228,52 @@ export class SampleInwardFormComponent implements OnInit {
           address: this.customerData.address,
           pinCode: this.customerData.pinCode,
         });
+
         this.dispatchModesArray.clear();
         this.selectedDispatchModes = [];
-        // If customer has dispatchModes, set them
+
         if (Array.isArray(this.customerData.customerDispatchModes)) {
           this.customerData.customerDispatchModes.forEach((mode: any) => {
             this.dispatchModesArray.push(this.createDispatch({ dispatchModeID: mode.dispatchModeID || mode.id }));
             this.selectedDispatchModes.push(mode.dispatchModeID || mode.id);
           });
         }
+
         this.fetchArea(this.customerData?.areaID, this.sampleInwardForm);
+
         this.contactControls.clear();
         this.contactPersons = [];
         this.billingToContactPerson = [];
         this.reportingToContactPerson = [];
+
         if (Array.isArray(this.customerData?.contactPersons)) {
           this.customerData.contactPersons.forEach((contact: any) => {
             contact.contactID = contact.id;
-
             this.addContact(contact);
+
             if (contact.sendBill) this.billingToContactPerson.push(contact);
             if (contact.sendReport) this.reportingToContactPerson.push(contact);
             this.contactPersons.push(contact);
           });
-          this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
-          this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
+
+          if (this.billingToContactPerson.length > 0) {
+            this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
+          }
+          if (this.reportingToContactPerson.length > 0) {
+            this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
+          }
         }
       },
-      error: (error) => {
-        console.error(error);
-      }
-    })
+      error: (error) => console.error('Error fetching customer details:', error)
+    });
   }
+
   fetchDispatchModeDropdown(): void {
     this.dispatchModeService.getDispatchModeDropdown('', 0, 100).subscribe({
       next: resp => {
         this.dispatchModes = resp;
-
       },
-      error: err => {
-        console.error('Error fetching dispatch modes', err);
-      }
+      error: err => console.error('Error fetching dispatch modes:', err)
     });
   }
 
@@ -248,11 +282,9 @@ export class SampleInwardFormComponent implements OnInit {
       next: (data) => {
         if (!data) return;
 
-        // Step 1: Call Customer Details API
         this.customerService.getCustomerById(data.customerID).subscribe({
           next: (customer) => {
             if (customer) {
-              // Load customer details first
               this.customerData = customer;
               this.sampleInwardForm.patchValue({
                 caseNo: data.caseNumber,
@@ -261,9 +293,7 @@ export class SampleInwardFormComponent implements OnInit {
                 pinCode: customer.pinCode
               });
 
-
               this.contactPersons = [];
-
               if (Array.isArray(customer.contactPersons)) {
                 customer.contactPersons.forEach((contact: any) => {
                   contact.contactID = contact.id;
@@ -271,11 +301,10 @@ export class SampleInwardFormComponent implements OnInit {
                 });
               }
 
-              // Fill Area/City/State info
               this.fetchArea(customer?.areaID, this.sampleInwardForm);
             }
 
-            // Step 2: Override with Inward Data
+            // Override with Inward Data
             this.sampleInwardForm.patchValue({
               id: data.id,
               caseNo: data.caseNo,
@@ -303,7 +332,7 @@ export class SampleInwardFormComponent implements OnInit {
               collectionTime: data.collectionTime || this.getCurrentTime()
             });
 
-            // Override DispatchModes
+            // Override Dispatch Modes
             if (Array.isArray(data.dispatchModes)) {
               this.dispatchModesArray.clear();
               this.selectedDispatchModes = [];
@@ -343,7 +372,7 @@ export class SampleInwardFormComponent implements OnInit {
               });
             }
 
-            // Override ReportingTo & BillingTo
+            // Override Reporting To & Billing To
             if (data.reportingTo) {
               this.sampleInwardForm.get('reportingTo')?.patchValue(data.reportingTo);
             }
@@ -351,7 +380,7 @@ export class SampleInwardFormComponent implements OnInit {
               this.sampleInwardForm.get('billingTo')?.patchValue(data.billingTo);
             }
 
-            // Samples + Additional Details
+            // Override Samples + Additional Details
             this.sampleDetails.clear();
             this.sampleNumbers = [];
             data.sampleDetails?.forEach((sd: any) => {
@@ -361,13 +390,16 @@ export class SampleInwardFormComponent implements OnInit {
 
               const normalizedSample = {
                 ...sd,
-                additionalDetails: additionalSampleDetail,
-                testPlans: sd.testPlans || []
+                additionalDetails: additionalSampleDetail
               };
 
               this.addSample(normalizedSample);
             });
-
+            // Disable form if not in SAMPLE_INWARD_REGISTERED status
+            if (data?.status != InwardStatus.NOT_STARTED) {
+              this.isViewMode = true;
+              this.disableFormRecursively(this.sampleInwardForm);
+            }
           },
           error: (err) => console.error('Error fetching customer details:', err)
         });
@@ -376,7 +408,6 @@ export class SampleInwardFormComponent implements OnInit {
     });
   }
 
-  /* ===== Area / Location ===== */
   fetchArea(areaId: number, targetGroup: FormGroup): void {
     this.areaService.getAreaById(areaId).subscribe({
       next: (resp) => {
@@ -387,19 +418,15 @@ export class SampleInwardFormComponent implements OnInit {
           country: resp.city?.state?.country?.name
         });
 
-        // Only if GST is relevant to this form group (e.g., for main customer)
         if (targetGroup === this.sampleInwardForm) {
           targetGroup.patchValue({ gstNo: this.customerData?.gstNo });
         }
       },
-      error: (error) => {
-        console.error('Error fetching area:', error);
-      }
+      error: (error) => console.error('Error fetching area:', error)
     });
   }
 
-  // ────────────── Event Handlers ──────────────
-
+  // Event Handlers
   onAddressCustomerChange(section: 'reportingTo' | 'billingTo', event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedValue = +target.value;
@@ -409,6 +436,7 @@ export class SampleInwardFormComponent implements OnInit {
 
   updateAddressHelper(selectedCustomer: any, section: 'reportingTo' | 'billingTo'): void {
     if (!selectedCustomer) return;
+
     const patch = {
       contactPersonID: selectedCustomer?.id || '',
       contactPersonName: selectedCustomer?.name || '',
@@ -419,6 +447,7 @@ export class SampleInwardFormComponent implements OnInit {
       state: selectedCustomer?.state || '',
       country: selectedCustomer?.country || 'India'
     };
+
     if (section === 'reportingTo') {
       this.reportingTo.patchValue(patch);
       this.fetchArea(selectedCustomer?.areaID, this.reportingTo);
@@ -427,22 +456,25 @@ export class SampleInwardFormComponent implements OnInit {
       this.fetchArea(selectedCustomer?.areaID, this.billingTo);
     }
   }
+
   onSendBillChange(index: number): void {
+    if (this.isViewMode) return;
+
     const contact = this.contactControls.at(index).value;
 
     if (contact.sendBill) {
-      // Add if not already present
       if (!this.billingToContactPerson.some(c => c.id === contact.contactID)) {
         this.billingToContactPerson.push(contact);
       }
     } else {
-      // Remove if unchecked
       this.billingToContactPerson = this.billingToContactPerson.filter(c => c.id !== contact.id);
-      this.billingTo.reset(); // Reset billingTo if no contacts left
+      this.billingTo.reset();
     }
   }
 
   onSendReportChange(index: number): void {
+    if (this.isViewMode) return;
+
     const contact = this.contactControls.at(index).value;
 
     if (contact.sendReport) {
@@ -458,18 +490,22 @@ export class SampleInwardFormComponent implements OnInit {
     this.sampleInwardForm.patchValue({
       customerID: item.id
     });
-    if (this.sampleId == 0) {
+    if (this.sampleId === 0) {
       this.getCustomerDetails(item.id);
     }
   }
 
   isDispatchModeSelected(id: number): boolean {
-    return this.selectedDispatchModes?.includes(id)
+    return this.selectedDispatchModes?.includes(id);
   }
-  onDispatchModeToggle(event: Event) {
+
+  onDispatchModeToggle(event: Event): void {
+    if (this.isViewMode) return;
+
     const checkbox = event.target as HTMLInputElement;
     const id = +checkbox.value;
     const formArray = this.dispatchModesArray;
+
     if (checkbox.checked) {
       if (!this.selectedDispatchModes.includes(id)) {
         this.selectedDispatchModes.push(id);
@@ -495,10 +531,8 @@ export class SampleInwardFormComponent implements OnInit {
       dispatchModeID: [dispatchMode?.dispatchModeID || 0]
     });
   }
-  // ────────────── Contact Helpers ──────────────
-  get contactControls(): FormArray {
-    return this.sampleInwardForm.get('contacts') as FormArray;
-  }
+
+  // Contact Helpers
   addContact(contact: any): void {
     this.contactControls.push(this.fb.group({
       id: [contact.id || 0],
@@ -512,14 +546,7 @@ export class SampleInwardFormComponent implements OnInit {
     }));
   }
 
-
-  // ────────────── Sample Helpers ──────────────
-  get sampleDetails(): FormArray {
-    return this.sampleInwardForm.get('sampleDetails') as FormArray;
-  }
-  get sampleAdditionalDetails(): FormArray {
-    return this.sampleInwardForm.get('sampleAdditionalDetails') as FormArray;
-  }
+  // Sample Helpers
   addSample(existingSample: any = null): void {
     const sampleNo = existingSample?.sampleNo ||
       `${this.yearCode}-${(this.lastSampleNumber + this.sampleDetails.length).toString().padStart(6, '0')}`;
@@ -527,7 +554,6 @@ export class SampleInwardFormComponent implements OnInit {
     this.sampleNumbers.push(sampleNo);
     this.sampleNumber = sampleNo;
 
-    // --- Sample details
     this.sampleDetails.push(this.fb.group({
       id: [existingSample?.id || 0],
       sampleNo: [sampleNo],
@@ -538,84 +564,16 @@ export class SampleInwardFormComponent implements OnInit {
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
-      file: [null] // placeholder for new upload
+      file: [null]
     }));
 
-    // --- Additional sample detail values
     this.addAdditionalDetailsForSample(sampleNo, existingSample?.additionalDetails || []);
-
-
-    // --- Test Plans
-    if (existingSample?.testPlans?.length) {
-      //  Rebind from DB
-      this.sampleTestPlans.push(this.fb.group({
-        sampleNo: [sampleNo],
-        generalTests: this.fb.array(
-          existingSample.testPlans
-            .filter((p: any) => p.type === 'general')
-            .map((gt: any) => this.fb.group({
-              sampleNo: [sampleNo],
-              specification1: [gt.specification1],
-              specification2: [gt.specification2],
-              parameter: [gt.parameter],
-              methods: this.fb.array(
-                gt.methods?.map((m: any) => this.fb.group({
-                  testMethodID: [m.testMethodID],
-                  standardID: [m.standardID],
-                  quantity: [m.quantity],
-                  reportNo: [m.reportNo],
-                  ulrNo: [m.ulrNo],
-                  cancel: [m.cancel || false]
-                })) || []
-              )
-            }))
-        ),
-        chemicalTests: this.fb.array(
-          existingSample.testPlans
-            .filter((p: any) => p.type === 'chemical')
-            .map((ct: any) => this.fb.group({
-              sampleNo: [sampleNo],
-              reportNo: [ct.reportNo],
-              urlNo: [ct.urlNo],
-              testTypes: this.fb.group(this.testTypeList.reduce((acc, t) => {
-                acc[t] = this.fb.control(ct.testTypes?.[t] || false);
-                return acc;
-              }, {} as any)),
-              metalClassificationID: [ct.metalClassificationID],
-              specification1: [ct.specification1],
-              specification2: [ct.specification2],
-              testMethod: [ct.testMethod],
-              elements: this.fb.array(
-                ct.elements?.map((el: any) => this.fb.group({
-                  parameterID: [el.parameterID],
-                  selected: [el.selected]
-                })) || []
-              )
-            }))
-        )
-      }));
-    } else {
-      //  Fresh dummy
-      const generalTestGroup = this.createGeneralTestGroup();
-      const generalReportNo = `${sampleNo}-${(generalTestGroup.get('methods') as FormArray).length + 1}`;
-      const generalUrlNo = this.generateUrlNo(this.globalTestCounter);
-      (generalTestGroup.get('methods') as FormArray).push(this.createTestMethodRow(generalReportNo, generalUrlNo));
-
-      this.sampleTestPlans.push(this.fb.group({
-        sampleNo: [sampleNo],
-        generalTests: this.fb.array([generalTestGroup]),
-        chemicalTests: this.fb.array([])
-      }));
-
-      this.globalTestCounter++;
-    }
   }
 
   private addAdditionalDetailsForSample(sampleNo: string, additionalDetails: any[] = []): void {
     const formArray = this.sampleAdditionalDetails as FormArray;
     const existingLabels = formArray.controls.map((r) => r.get('label')?.value);
 
-    // Handle all known labels (already in form)
     formArray.controls.forEach((row) => {
       const valuesArray = row.get('values') as FormArray;
       const label = row.get('label')?.value;
@@ -623,16 +581,13 @@ export class SampleInwardFormComponent implements OnInit {
       valuesArray.push(this.fb.control(match?.value ?? ''));
     });
 
-    // Handle any new labels coming from DB
     additionalDetails
       .filter((ad: any) => !existingLabels.includes(ad.label))
       .forEach((ad: any) => {
         const valuesArray = this.fb.array([]);
-        // Backfill blanks for previous samples
         for (let k = 0; k < this.sampleNumbers.length - 1; k++) {
           valuesArray.push(this.fb.control(''));
         }
-        // Add current sample's value
         valuesArray.push(this.fb.control(ad.value ?? ''));
 
         formArray.push(
@@ -645,7 +600,6 @@ export class SampleInwardFormComponent implements OnInit {
         );
       });
 
-    // Case: new sample with no additional details at all
     if (!additionalDetails.length && formArray.length > 0) {
       formArray.controls.forEach((row) => {
         const valuesArray = row.get('values') as FormArray;
@@ -655,30 +609,27 @@ export class SampleInwardFormComponent implements OnInit {
   }
 
   removeSample(index: number): void {
+    if (this.isViewMode) return;
+
     this.sampleDetails.removeAt(index);
     this.sampleNumbers.splice(index, 1);
 
-    // Remove corresponding values from additional details
     this.sampleAdditionalDetails.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
       valuesArray.removeAt(index);
     });
-
-    // Remove its test plan only (don’t rebuild all!)
-    this.sampleTestPlans.removeAt(index);
   }
-
-
-
 
   generateUrlNo(counter: number): string {
     return `TC5098${this.yearCode}${counter.toString().padStart(9, '0')}F`;
   }
+
   getAdditionSampleRowValues(rowIndex: number): FormControl[] {
     const row = this.sampleAdditionalDetails.at(rowIndex);
     const valuesArray = row.get('values') as FormArray;
     return valuesArray.controls as FormControl[];
   }
+
   addAdditionalSampleRow(label: string = ''): void {
     const valuesArray = this.fb.array(this.sampleNumbers.map(() => this.fb.control('')));
     this.sampleAdditionalDetails.push(this.fb.group({
@@ -687,9 +638,11 @@ export class SampleInwardFormComponent implements OnInit {
       values: valuesArray
     }));
   }
+
   onLabelChange(): void {
-    // Trigger change detection to refresh disabled options in dropdowns
+    // Trigger change detection for dropdown options
   }
+
   isOptionSelected(option: string, currentIndex: number): boolean {
     const selectedOptions = this.sampleAdditionalDetails.controls
       .map((group, index) => index !== currentIndex ? group.get('label')?.value : null)
@@ -697,184 +650,30 @@ export class SampleInwardFormComponent implements OnInit {
     return selectedOptions.includes(option);
   }
 
-  // ────────────── Test Plan Helpers ──────────────
-  get sampleTestPlans(): FormArray {
-    return this.sampleInwardForm.get('sampleTestPlans') as FormArray;
-  }
-  getTestArray(i: number, type: 'generalTests' | 'chemicalTests'): FormArray {
-    return this.sampleTestPlans.at(i).get(type) as FormArray;
-  }
-  getGeneralTestSection(i: number): FormGroup {
-    return (this.sampleTestPlans.at(i).get('generalTests') as FormArray).at(0) as FormGroup;
-  }
-  getChemicalTestSection(i: number): FormGroup {
-    return (this.sampleTestPlans.at(i).get('chemicalTests') as FormArray).at(0) as FormGroup;
-  }
-  getMethodRows(i: number): FormArray {
-    const sectionArray = this.sampleTestPlans.at(i).get('generalTests') as FormArray;
-    if (!sectionArray || sectionArray.length === 0) return this.fb.array([]);
-    const section = sectionArray.at(0) as FormGroup;
-    return section.get('methods') as FormArray;
-  }
-  addMethodRow(sampleIndex: number): void {
-    const sampleNo = this.sampleTestPlans.at(sampleIndex).get('sampleNo')?.value;
-    const reportNo = `${sampleNo}-${this.getMethodRows(sampleIndex).length + 1}`;
-    const urlNo = this.generateUrlNo(this.globalTestCounter);
-    this.getMethodRows(sampleIndex).push(this.createTestMethodRow(reportNo, urlNo));
-    this.globalTestCounter++;
-  }
-  createTestMethodRow(reportNo: string, urlNo: string): FormGroup {
-    return this.fb.group({
-      testMethodID: [''],
-      standardID: [''],
-      quantity: ['1'],
-      reportNo: [reportNo],
-      ulrNo: [urlNo],
-      cancel: [false]
-    });
-  }
-  asFormGroup(ctrl: AbstractControl | null): FormGroup {
-    return ctrl as FormGroup;
-  }
-  getAdditionalSampleValue(row: AbstractControl, sampleIndex: number): string {
-    const valuesArray = row.get('values') as FormArray;
-    return valuesArray?.at(sampleIndex)?.value || '-';
-  }
-  addTestBlock(i: number, type: 'generalTests' | 'chemicalTests'): void {
-    const array = this.getTestArray(i, type);
-    const sampleNo = +this.sampleNumbers[i].split('-')[1];
-    const reportN = this.getTestArray(i, 'chemicalTests').length + this.getMethodRows(i).length;
-    const chemicalReportNo = `${this.yearCode}-${sampleNo}-${reportN.toString().padStart(6, '0')}`;
-    const chemicalUrlNo = this.generateUrlNo(this.globalTestCounter);
-    switch (type) {
-      case 'generalTests':
-        array.push(this.createGeneralTestGroup());
-        break;
-      case 'chemicalTests':
-        array.push(this.createChemicalTestGroup(chemicalReportNo, chemicalUrlNo));
-        break;
-    }
-    this.globalTestCounter++;
-  }
-  createGeneralTestGroup(): FormGroup {
-    return this.fb.group({
-      sampleNo: [''],
-      specification1: [''],
-      specification2: [''],
-      parameter: [''],
-      methods: this.fb.array([])
-    });
-  }
-  createChemicalTestGroup(reportNo: string, urlNo: string): FormGroup {
-    const testTypesGroup: { [key: string]: FormControl } = {};
-    this.testTypeList.forEach(type => {
-      testTypesGroup[type] = this.fb.control(false);
-    });
-    return this.fb.group({
-      sampleNo: [''],
-      reportNo: [reportNo || ''],
-      urlNo: [urlNo || ''],
-      testTypes: this.fb.group(testTypesGroup),
-      metalClassificationID: [''],
-      specification1: [''],
-      specification2: [''],
-      testMethod: [''],
-      elements: this.fb.array([])
-    });
-  }
-  getElementRows(i: number): FormArray {
-    return this.getTestArray(i, 'chemicalTests').at(0).get('elements') as FormArray;
-  }
-  addElementRow(i: number): void {
-    this.getElementRows(i).push(this.fb.group({
-      parameterID: [''],
-      selected: [false]
-    }));
-  }
-  removeElementRow(i: number, j: number): void {
-    this.getElementRows(i).removeAt(j);
-  }
-
-  // ────────────── API Calls ──────────────
-
-  getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.materialSpecificationService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
-  };
-  getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
-  };
+  // Dropdown Handlers
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
-  };
-  getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
-  };
-  getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
   };
 
   getProductConditions = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.prodCondService.getProductConditionDropdown(term, page, pageSize);
   };
 
-  // Event handler for Material Specification selection
-  onSpecificationGradeSelected(
-    index: number,
-    item: any,
-    field: 'specification1' | 'specification2',
-    testType: 'generalTests' | 'chemicalTests'
-  ) {
-    const section = testType === 'generalTests'
-      ? this.getGeneralTestSection(index)
-      : this.getChemicalTestSection(index);
-
-    section.patchValue({ [field]: item.id });
-  }
-
-
-  onLaboratorySelected(item: any, sampleIndex: number, methodIndex: number) {
-    this.getMethodRows(sampleIndex).at(methodIndex).patchValue({
-      testMethodID: item.id,
-    });
-  }
-  onMetalSelected(sampleIndex: number, item: any) {
-    const chemicalTestGroup = this.getTestArray(sampleIndex, 'chemicalTests').at(0) as FormGroup;
-    chemicalTestGroup.patchValue({
-      metalClassificationID: item.id,
-    });
-  }
-  onGeneralTestStandardSelected(item: any, sampleIndex: number, methodIndex: number) {
-    this.getMethodRows(sampleIndex).at(methodIndex).patchValue({
-      standardID: item.id,
-    });
-  }
-  onChemicalStandardSelected(item: any, sampleIndex: number) {
-    const chemicalTestGroup = this.getTestArray(sampleIndex, 'chemicalTests').at(0) as FormGroup;
-    chemicalTestGroup.patchValue({
-      standardID: item.id,
-    });
-  }
-  onParameterSelected(item: any, sampleIndex: number, testIndex: number, index: number) {
-    this.getElementRows(sampleIndex).at(index).patchValue({
-      parameterID: item.id,
-    });
-  }
-
-  // ───────── Dropdown sample details Handlers ──────────────
-  onMetalClassificationSelected(item: any, sampleIndex: number) {
+  onMetalClassificationSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
       metalClassificationID: item.id,
     });
   }
-  onProductConditionSelected(item: any, sampleIndex: number) {
+
+  onProductConditionSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
       productConditionID: item.id,
     });
   }
 
-  // ────────────── File Handling ──────────────
+  // File Handling
   private validateFile(file: File, allowedTypes: string[], maxSizeMB = 5): boolean {
     const maxSize = maxSizeMB * 1024 * 1024;
     if (file.size > maxSize) {
@@ -905,9 +704,11 @@ export class SampleInwardFormComponent implements OnInit {
       event.target.value = '';
     }
   }
+
   removeAttachment(): void {
     this.uploadedFile = null;
   }
+
   onUploadSampleImage(index: number, event: any): void {
     const file = event.target.files[0];
     if (file && this.validateFile(file, ['image/jpeg', 'image/png'])) {
@@ -917,26 +718,26 @@ export class SampleInwardFormComponent implements OnInit {
     }
   }
 
-
   openFileInNewTab(filePath: string): void {
     if (filePath) {
       const baseUrl = environment.baseUrl;
       window.open(baseUrl + filePath, '_blank');
     }
   }
+
   removeSampleFile(index: number): void {
+    if (this.isViewMode) return;
     this.sampleDetails.at(index).patchValue({ fileName: '', file: null });
   }
 
-
-  // ────────────── Submission ──────────────
+  // Submission
   onSubmit(includePlans: boolean = false): void {
     if (!this.sampleInwardForm.valid) {
       this.sampleInwardForm.markAllAsTouched();
       return;
     }
 
-    const value = this.sampleInwardForm.value;
+    const value = this.sampleInwardForm.getRawValue();
     const formData = new FormData();
 
     const appendFields = (fields: any) => {
@@ -1023,61 +824,29 @@ export class SampleInwardFormComponent implements OnInit {
       }
     });
 
-    // Sample additional details (flatten values) - FIXED: backend expects flattened list with SampleNo & Value
-    // Build entries like SampleAdditionalDetails[0].SampleNo, SampleAdditionalDetails[0].Label, SampleAdditionalDetails[0].Value
+    // Sample additional details
     let addIndex = 0;
     if (Array.isArray(value.sampleAdditionalDetails) && this.sampleNumbers.length > 0) {
-      value.sampleAdditionalDetails.forEach((row: any, rowIndex: number) => {
+      value.sampleAdditionalDetails.forEach((row: any) => {
         const label = row.label || '';
         const valuesArray = Array.isArray(row.values) ? row.values : [];
-        // For each sample column in this row, create a flattened entry
         for (let sampleIdx = 0; sampleIdx < Math.max(valuesArray.length, this.sampleNumbers.length); sampleIdx++) {
           const val = valuesArray[sampleIdx] ?? '';
-          // Prefer sampleNumbers (kept in component) otherwise fall back to sampleDetails in form
-          const sampleNo = this.sampleNumbers[sampleIdx]
-            || (value.sampleDetails && value.sampleDetails[sampleIdx] && value.sampleDetails[sampleIdx].sampleNo)
-            || '';
+          const sampleNo = this.sampleNumbers[sampleIdx] || '';
           formData.append(`SampleAdditionalDetails[${addIndex}].SampleNo`, sampleNo);
           formData.append(`SampleAdditionalDetails[${addIndex}].Label`, label);
           formData.append(`SampleAdditionalDetails[${addIndex}].Value`, val ?? '');
           addIndex++;
         }
       });
-    } else {
-      // If no sampleNumbers yet (edge case when creating first sample), try to generate from sampleDetails
-      if (Array.isArray(value.sampleAdditionalDetails) && Array.isArray(value.sampleDetails)) {
-        value.sampleAdditionalDetails.forEach((row: any, rowIndex: number) => {
-          const label = row.label || '';
-          const valuesArray = Array.isArray(row.values) ? row.values : [];
-          for (let sampleIdx = 0; sampleIdx < valuesArray.length; sampleIdx++) {
-            const val = valuesArray[sampleIdx] ?? '';
-            const sampleNo = (value.sampleDetails && value.sampleDetails[sampleIdx] && value.sampleDetails[sampleIdx].sampleNo) || '';
-            formData.append(`SampleAdditionalDetails[${addIndex}].SampleNo`, sampleNo);
-            formData.append(`SampleAdditionalDetails[${addIndex}].Label`, label);
-            formData.append(`SampleAdditionalDetails[${addIndex}].Value`, val ?? '');
-            addIndex++;
-          }
-        });
-      }
     }
 
-    // IMPORTANT: Only include sampleTestPlans if includePlans === true.
-    if (includePlans && value.sampleTestPlans) {
-      // Append plan data (existing logic) - keep it minimal here
-      value.sampleTestPlans.forEach((sp: any, i: number) => {
-        formData.append(`sampleTestPlans[${i}].sampleNo`, sp.sampleNo || '');
-        // Append generalTests and chemicalTests as required
-        // (assuming backend expects structure similar to previous implementation)
-      });
-    }
-
-    // Call appropriate service to save Sample Inward (customer + sample)
     const request$ = (value.id && value.id > 0)
       ? this.inwardService.updateSampleInward(formData)
       : this.inwardService.createSampleInward(formData);
 
     request$.subscribe({
-      next: (res) => {
+      next: () => {
         this.toastService.show('Sample Inward saved successfully!', 'success');
         this.router.navigate(['/sample/inward']);
       },
@@ -1088,37 +857,15 @@ export class SampleInwardFormComponent implements OnInit {
     });
   }
 
-  // Programmatically navigate to the Sample Details tab
   goToSampleTab(): void {
-    // Primary: click the tab button (Bootstrap/tab markup)
     const tabBtn = document.getElementById('sample-tab') as HTMLElement | null;
     if (tabBtn) {
       tabBtn.click();
-      return;
     }
+  }
 
-    // Fallback: toggle classes manually if DOM structure differs
-    try {
-      // deactivate info tab button/pane
-      const infoBtn = document.getElementById('info-tab');
-      const infoPane = document.getElementById('info');
-      const samplePane = document.getElementById('sample');
-      const sampleBtnFallback = document.querySelector('[data-bs-target="#sample"]') as HTMLElement | null;
-
-      infoBtn?.classList.remove('active');
-      infoPane?.classList.remove('show', 'active');
-
-      sampleBtnFallback?.classList.add('active');
-      samplePane?.classList.add('show', 'active');
-    } catch (err) {
-      // no-op
-      console.error('Error switching to sample tab', err);
-    }
-  };
   onCancel(): void {
-    // You can reset the form or navigate away as needed
     this.sampleInwardForm.reset();
     this.router.navigate(['/sample/plan/inward']);
-    // Optionally, navigate away
-  };
+  }
 }

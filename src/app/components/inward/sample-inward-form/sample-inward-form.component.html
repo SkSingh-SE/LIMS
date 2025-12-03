@@ -11,9 +11,9 @@
         Sample Details
       </button>
     </li>
-    <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+    <!-- <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
       <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">Plan</button>
-    </li>
+    </li> -->
   </ul>
 
   <!-- removed global ngSubmit to avoid accidental nested submissions -->
@@ -38,6 +38,7 @@
                 [fetchDataFn]="getCustomers"
                 (itemSelected)="onCustomerSelect($event)"
                 [required]="true"
+                [isDisabled]="isViewMode"
                 [selectedItem]="sampleInwardForm.get('customerID')?.value"
               ></app-searchable-dropdown>
             </div>
@@ -425,6 +426,7 @@
                   <th class="fw-medium text-center">Remarks</th>
                   <th class="fw-medium text-center">Quantity</th>
                   <th class="fw-medium text-center">Image</th>
+                  <th class="fw-medium text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -438,6 +440,7 @@
                       [fetchDataFn]="getMetalClassification"
                       (itemSelected)="onMetalClassificationSelected($event,i)"
                       [selectedItem]="sample.get('metalClassificationID')?.value"
+                      [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </td>
                   <td>
@@ -447,6 +450,7 @@
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
                       [selectedItem]="sample.get('productConditionID')?.value"
+                      [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </td>
                   <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" /></td>
@@ -479,11 +483,15 @@
                       />
                     </ng-template>
                   </td>
+                  <td class="text-center">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
+                      <i class="bi bi-trash"></i>
+                    </button>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addSample()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addSample()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Sample
           </button>
@@ -521,11 +529,11 @@
                   </td>
                   <ng-container [formArrayName]="'values'">
                     <td *ngFor="let valueCtrl of getAdditionSampleRowValues(rowIndex)">
-                      <input type="text" class="form-control form-control-sm" [formControl]="valueCtrl" placeholder="Enter Value" />
+                      <input type="text" class="form-control form-control-sm" [formControl]="valueCtrl" placeholder="Enter Value" [disabled]="isViewMode" />
                     </td>
                   </ng-container>
                   <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
@@ -533,7 +541,7 @@
               </tbody>
             </table>
           </div>
-          <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAdditionalSampleRow()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAdditionalSampleRow()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Additional Info
           </button>
@@ -587,9 +595,9 @@
       </div>
 
       <!-- PLAN TAB TABLE FORMAT -->
-      <div class="tab-pane fade show" id="plan" role="tabpanel">
+      <!-- <div class="tab-pane fade show" id="plan" role="tabpanel">
         <app-plan-form [inwardID]="sampleId" [mode]="'review'"></app-plan-form>
-      </div>
+      </div> -->
 
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>

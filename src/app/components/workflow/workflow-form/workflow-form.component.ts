@@ -17,7 +17,7 @@ import { ToastService } from '../../../services/toast.service';
   styleUrl: './workflow-form.component.css'
 })
 export class WorkflowFormComponent implements OnInit {
-  workflowForm: FormGroup;
+  workflowForm!: FormGroup;
   isViewMode = false;
   isEditMode = false;
   workflowId: number = 0;
@@ -41,12 +41,7 @@ export class WorkflowFormComponent implements OnInit {
     private route: ActivatedRoute,
     private toast: ToastService
   ) {
-    this.workflowForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required],
-      entityType: ['', Validators.required],
-      steps: this.fb.array([], [Validators.required, this.duplicateStepNameValidator]),
-    });
+
   }
 
   // Custom validator for duplicate step names
@@ -63,6 +58,7 @@ export class WorkflowFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.initform();
     this.route.paramMap.subscribe((params) => {
       this.workflowId = Number(params.get('id'));
     });
@@ -81,76 +77,15 @@ export class WorkflowFormComponent implements OnInit {
       this.loadWorkflow(this.workflowId);
     }
     this.getEntityTypes();
-    // // Example payload
-    // const payload = {
-    //   name: "Sample Testing Workflow",
-    //   entityType: "Sample",
-    //   isActive: true,
-    //   steps: [
-    //     {
-    //       id: 1,
-    //       name: "Sample Inward",
-    //       assignedToType: "Role",
-    //       selectedIDs: "Receptionist",
-    //       transitions: [
-    //         { action: "Next", alias: "Forward to Lab", toStepID: 2 },
-    //         { action: "Cancel", alias: "Reject Sample", toStepID: null }
-    //       ]
-    //     },
-    //     {
-    //       id: 2,
-    //       name: "Lab Testing",
-    //       assignedToType: "User",
-    //       selectedIDs: "Lab Technician",
-    //       transitions: [
-    //         { action: "Next", alias: "Send for Review", toStepID: 3 },
-    //         { action: "Back", alias: "Send Back to Reception", toStepID: 1 }
-    //       ]
-    //     },
-    //     {
-    //       id: 3,
-    //       name: "Report Review",
-    //       assignedToType: "Role",
-    //       selectedIDs: "Quality Manager",
-    //       transitions: [
-    //         { action: "Next", alias: "Approve Report", toStepID: null },
-    //         { action: "Back", alias: "Request Re-test", toStepID: 2 }
-    //       ]
-    //     }
-    //   ]
-    // };
+  }
 
-    // // Patch form with new structure
-    // this.workflowForm.patchValue({
-    //   name: payload.name,
-    //   entityType: payload.entityType,
-    //   isActive: payload.isActive
-    // });
-
-    // // Clear steps FormArray
-    // this.steps.clear();
-
-    // // Add steps from payload
-    // payload.steps.forEach(step => {
-    //   const transitionsArray = this.fb.array(
-    //     step.transitions.map(tr =>
-    //       this.fb.group({
-    //         action: [tr.action, Validators.required],
-    //         alias: [tr.alias, Validators.required],
-    //         toStepID: [tr.toStepID]
-    //       })
-    //     ),
-    //     Validators.required
-    //   );
-
-    //   this.steps.push(this.fb.group({
-    //     id: [step.id],
-    //     name: [step.name, Validators.required],
-    //     assignedToType: [step.assignedToType, Validators.required],
-    //     selectedIDs: [step.selectedIDs, Validators.required],
-    //     transitions: transitionsArray
-    //   }));
-    // });
+  initform() {
+    this.workflowForm = this.fb.group({
+      id: [0],
+      name: ['', Validators.required],
+      entityType: ['', Validators.required],
+      steps: this.fb.array([], [Validators.required, this.duplicateStepNameValidator]),
+    });
   }
 
   get steps(): FormArray {
@@ -166,7 +101,7 @@ export class WorkflowFormComponent implements OnInit {
       assignedToType: ['User', Validators.required],
       assignedToValue: ['', Validators.required],
       selectedIDs: ['', Validators.required],
-      transitions: this.fb.array([], Validators.required)
+      transitions: this.fb.array([])
     }));
   }
 
@@ -174,24 +109,50 @@ export class WorkflowFormComponent implements OnInit {
     this.steps.removeAt(this.steps.length - 1);
   }
 
-  getTransitions(stepIndex: number): FormArray {
-    return (this.steps.at(stepIndex).get('transitions') as FormArray);
+  getTransitions(stepIndex: number): FormArray<FormGroup> {
+    return this.steps.at(stepIndex).get('transitions') as FormArray<FormGroup>;
   }
 
   addTransition(stepIndex: number) {
-    const hasTransitions = this.getTransitions(stepIndex).length > 0;
-    this.getTransitions(stepIndex).push(this.fb.group({
+    const transitions = this.getTransitions(stepIndex);
+    const hasTransitions = transitions.length > 0;
+
+    const actionValue = hasTransitions ? 'Cancel' : 'Next';
+
+    const group = this.fb.group({
       id: [0],
-      action: [hasTransitions ? 'Cancel' : 'Next', Validators.required],
+      action: [actionValue, Validators.required],
       alias: ['', Validators.required],
       toStepID: [null],
-      toStepName: [null]
-    }));
+      toStepName: [actionValue === 'Cancel' ? 'End' : null]
+    });
+
+    // Auto-disable if Cancel
+    if (actionValue === 'Cancel') {
+      group.get('toStepName')?.disable({ emitEvent: false });
+    }
+
+    transitions.push(group);
   }
+
 
   removeTransition(stepIndex: number, transitionIndex: number) {
     this.getTransitions(stepIndex).removeAt(transitionIndex);
   }
+
+  toStepValidation(trans: AbstractControl) {
+    debugger;
+    const action = trans.get('action')?.value;
+    const toStepCtrl = trans.get('toStepName');
+
+    if (!toStepCtrl) return;
+    if (action === 'Cancel') {
+      toStepCtrl.setValue('End');
+      toStepCtrl.disable({ emitEvent: false });
+    } else {
+      toStepCtrl.enable({ emitEvent: false });
+    }
+  };
 
   submit() {
     if (this.workflowForm.valid) {
@@ -200,22 +161,22 @@ export class WorkflowFormComponent implements OnInit {
       if (this.workflowId > 0 && this.isEditMode) {
         this.workflowService.updateWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
-            this.toast.show(res.message,'success');
+            this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
           error: (err) => {
-             this.toast.show(err.message,'error');
+            this.toast.show(err.message, 'error');
             console.error('Error updating workflow:', err);
           }
         });
       } else {
         this.workflowService.createWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
-            this.toast.show(res.message,'success');
+            this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
           error: (err) => {
-            this.toast.show(err.message,'error');
+            this.toast.show(err.message, 'error');
             console.error('Error saving workflow:', err);
           }
         });
@@ -269,31 +230,45 @@ export class WorkflowFormComponent implements OnInit {
           });
           // Clear steps FormArray
           this.steps.clear();
-          // Add steps from response
+
           res.steps.forEach((step: any) => {
-            const transitionsArray = this.fb.array(
-              step.transitions.map((tr: any) =>
-                this.fb.group({
-                  id: [tr.id],
-                  action: [tr.action, Validators.required],
-                  alias: [tr.alias, Validators.required],
-                  toStepID: [tr.toStepID],
-                  toStepName: [tr.toStepName]
-                })
-              ),
-              Validators.required
+
+            const transitionsArray: FormArray<FormGroup> = this.fb.array<FormGroup>([]);
+
+            step.transitions.forEach((tr: any) => {
+              const isCancel = (tr.action || '').toLowerCase() === 'cancel';
+
+              const group = this.fb.group({
+                id: [tr.id],
+                action: [tr.action, Validators.required],
+                alias: [tr.alias, Validators.required],
+                toStepID: [isCancel ? null : tr.toStepID],
+                toStepName: [isCancel ? 'End' : tr.toStepName]
+              }) as FormGroup;
+
+              transitionsArray.push(group);
+
+              if (isCancel) {
+                group.get('toStepName')?.disable({ emitEvent: false });
+              }
+            });
+
+            const selectedIds = step.assignedToValue
+              ? step.assignedToValue.split(',').map((i: any) => +i)
+              : [];
+
+            this.steps.push(
+              this.fb.group({
+                id: [step.id],
+                workflowID: [step.workflowID],
+                orderNo: [step.orderNo],
+                name: [step.name, Validators.required],
+                assignedToType: [step.assignedToType, Validators.required],
+                assignedToValue: [step.assignedToValue, Validators.required],
+                selectedIDs: [selectedIds, Validators.required],
+                transitions: transitionsArray
+              })
             );
-            const selectedIds = step.assignedToValue ? step.assignedToValue.split(',').map((i: any) => +i) : [];
-            this.steps.push(this.fb.group({
-              id: [step.id],
-              workflowID: [step.workflowID],
-              orderNo: [step.orderNo],
-              name: [step.name, Validators.required],
-              assignedToType: [step.assignedToType, Validators.required],
-              assignedToValue: [step.assignedToValue, Validators.required],
-              selectedIDs: [selectedIds, Validators.required],
-              transitions: transitionsArray
-            }));
 
           });
         }
@@ -309,4 +284,7 @@ export class WorkflowFormComponent implements OnInit {
       }
     });
   }
+
+
+
 }

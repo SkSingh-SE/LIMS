@@ -69,7 +69,8 @@ export function getAllMenuItems(): MenuItem[] {
       children: [
         { id: 35, title: 'Laboratory Test', route: '/test', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() },
         { id: 36, title: 'Test Method Specification', route: '/test-specification', parentMenuID: 3, permissions: ['CanReadTestMethodSpecification'], children: [], color: getRandomColor() },
-        { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() }
+        { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() },
+        { id: 55, title: 'Test Mapping', route: '/test-mapping', parentMenuID: 3, permissions: ['CanReadTestMapping'], children: [], color: getRandomColor() }
       ]
     },
     {

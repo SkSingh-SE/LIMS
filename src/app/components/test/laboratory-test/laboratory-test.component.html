@@ -76,6 +76,18 @@
             (itemsSelected)="onInvoiceCaseChange($event)"
           ></app-multi-select-dropdown>
         </div>
+        <div>
+          <app-multi-select-dropdown
+            [placeholder]="'Select parameters...'"
+            [reloadKey]="parameterReloadKey"
+            [required]="true"
+            [isDisabled]="isViewMode"
+            [labelName]="'Parameters'"
+            [fetchDataFn]="getParameters"
+            [selectedValues]="labTestForm.get('parameterIDs')?.value"
+            (itemsSelected)="onParameterChange($event)"
+          ></app-multi-select-dropdown>
+        </div>
 
         <!-- <div>
           <label for="equation" class="form-label">Equation</label>

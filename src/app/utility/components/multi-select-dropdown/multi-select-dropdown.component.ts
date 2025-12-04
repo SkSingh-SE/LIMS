@@ -33,6 +33,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   @Input() selectedValues: any[] = [];
   @Input() labelName: string = 'Select Item';
   @Input() hideLabel: boolean = false;
+  @Input() reloadKey: any;
 
   selectedItems: any[] = [];
   multiForm: FormGroup;
@@ -81,6 +82,9 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
           this.syncSelectedItems(true); // emit on init/change
         }
       }
+    }
+    if (changes['reloadKey'] && !changes['reloadKey'].firstChange) {
+      this.reloadDropdown();
     }
   }
 
@@ -187,9 +191,8 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
 
   //  Sync selected values with available items
   private syncSelectedItems(emit: boolean = false): void {
-    this.selectedItems = this.selectedValues
-      ?.map(id => this.items.find(item => item.id === id))
-      .filter(Boolean);
+    this.selectedValues = this.selectedValues || [];
+    this.selectedItems = this.selectedValues?.map(id => this.items.find(item => item.id === id)).filter(Boolean);
 
     if (emit) {
       this.itemsSelected.emit(this.selectedItems);
@@ -206,4 +209,13 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
+  private reloadDropdown(): void {
+    this.page = 0;
+    this.items = [];
+    this.hasMore = true;
+    this.loading = false;
+
+    this.loadItems();
+  }
+
 }

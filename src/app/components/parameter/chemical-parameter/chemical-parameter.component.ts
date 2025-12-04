@@ -16,8 +16,12 @@ import { ParameterUnitService } from '../../../services/parameter-unit.service';
 export class ChemicalParameterComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
+  @ViewChild('formulaModal') formulaModal!: ElementRef;
   private bsModal!: Modal;
+  private formulaBsModal!: Modal;
 
+  allParameters: any[] = [];
+  tempFormula: string = '';
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
@@ -88,6 +92,7 @@ export class ChemicalParameterComponent implements OnInit {
     this.initForm();
     this.fetchData();
     this.fetchParameterUnits();
+    this.fetchParameterDropdown();
   }
 
   initForm() {
@@ -99,6 +104,8 @@ export class ChemicalParameterComponent implements OnInit {
       note: [''],
       elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
+      isCalculated: [false],
+      formula: ['']
     });
   }
   fetchData() {
@@ -303,6 +310,12 @@ export class ChemicalParameterComponent implements OnInit {
 
   onSubmit(): void {
     if (this.ParameterForm.valid) {
+
+      if (this.ParameterForm.value.isCalculated && !this.ParameterForm.value.formula) {
+        this.toastService.show('Formula is required for calculated parameter', 'warning');
+        return;
+      }
+
       let formData = this.ParameterForm.value;
       if (this.isEditMode) {
         this.parameterService.updateParameter(formData).subscribe({
@@ -331,31 +344,79 @@ export class ChemicalParameterComponent implements OnInit {
     }
   }
 
- onChangeElement(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const controlName = target.name;
+  onChangeElement(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const controlName = target.name;
 
-  if (controlName === 'isSpecial' && target.checked) {
-    this.ParameterForm.patchValue({
-      isSpecial: true,
-      isSuperSpecial: false
+    if (controlName === 'isSpecial' && target.checked) {
+      this.ParameterForm.patchValue({
+        isSpecial: true,
+        isSuperSpecial: false
+      });
+    }
+
+    if (controlName === 'isSuperSpecial' && target.checked) {
+      this.ParameterForm.patchValue({
+        isSpecial: false,
+        isSuperSpecial: true
+      });
+    }
+
+    // Optional: If unchecked both, it's considered Normal
+    if (!this.ParameterForm.get('isSpecial')?.value && !this.ParameterForm.get('isSuperSpecial')?.value) {
+      // it's 'Normal' by logic, no flag needed
+      console.log('Element is Normal');
+    }
+  }
+
+  fetchParameterDropdown() {
+    this.parameterService.getChemicalParameterDropdown("", 0, 1000).subscribe({
+      next: (response) => {
+        this.allParameters = response || [];
+      },
+      error: (error) => {
+        console.error('Error fetching parameters:', error);
+      }
     });
   }
 
-  if (controlName === 'isSuperSpecial' && target.checked) {
+  onCalculatedToggle() {
+    if (!this.ParameterForm.value.isCalculated) {
+      this.ParameterForm.patchValue({ formula: '' });
+    }
+  }
+  openFormulaBuilder() {
+    this.tempFormula = this.ParameterForm.value.formula || '';
+    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
+    this.formulaBsModal.show();
+  }
+  addParameterToFormula(event: any) {
+    const paramId = event.target.value;
+    if (!paramId) return;
+
+    this.tempFormula += `{P${paramId}}`;
+  }
+  addOperator(op: string) {
+    this.tempFormula += ` ${op} `;
+  }
+  saveFormula() {
     this.ParameterForm.patchValue({
-      isSpecial: false,
-      isSuperSpecial: true
+      formula: this.tempFormula
+    });
+
+    this.closeFormulaModal();
+  }
+  closeFormulaModal() {
+    if (this.formulaBsModal) {
+      this.formulaBsModal.hide();
+    }
+  }
+  clearFormula() {
+    this.tempFormula = '';
+    this.ParameterForm.patchValue({
+      formula: ''
     });
   }
-
-  // Optional: If unchecked both, it's considered Normal
-  if (!this.ParameterForm.get('isSpecial')?.value && !this.ParameterForm.get('isSuperSpecial')?.value) {
-    // it's 'Normal' by logic, no flag needed
-    console.log('Element is Normal');
-  }
-}
-
 }
 
 

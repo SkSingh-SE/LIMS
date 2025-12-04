@@ -3,13 +3,14 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { DepartmentService } from '../../../services/department.service';
-import { Observable } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { ParameterService } from '../../../services/parameter.service';
 
 
 @Component({
@@ -24,6 +25,7 @@ export class LaboratoryTestComponent implements OnInit {
   labTestId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  parameterReloadKey: any;
 
   invoiceCaseOptions = [
     // Element Count
@@ -52,9 +54,11 @@ export class LaboratoryTestComponent implements OnInit {
     { label: '45mm', value: '45mm' }
   ];
   filteredInvoiceCaseOptions = this.invoiceCaseOptions;
+  selectedDepartment: any = null;
 
   constructor(private fb: FormBuilder, private departmentService: DepartmentService,
-    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService, private invoiceConfig: InvoiceCaseConfigurationService) {
+    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService, private invoiceConfig: InvoiceCaseConfigurationService,
+    private parameterService: ParameterService) {
 
   }
   ngOnInit(): void {
@@ -89,6 +93,8 @@ export class LaboratoryTestComponent implements OnInit {
       invoiceCases: this.fb.array([]),
       equation: [''],
       metalClassificationID: [0, Validators.required],
+      parameterIDs: [[]],
+      parameters: this.fb.array([])
     });
   }
 
@@ -100,7 +106,7 @@ export class LaboratoryTestComponent implements OnInit {
           const invoiceCaseArray = this.labTestForm.get('invoiceCases') as FormArray;
           const selectIds: number[] = [];
           invoiceCaseArray.clear();
-          response?.invoiceCases?.forEach((item :any) => {
+          response?.invoiceCases?.forEach((item: any) => {
             selectIds.push(item.invoiceCaseConfigID);
             invoiceCaseArray.push(
               this.fb.group({
@@ -112,6 +118,21 @@ export class LaboratoryTestComponent implements OnInit {
           });
           this.labTestForm.patchValue({ invoiceCaseIDs: selectIds });
 
+          const arr = this.labTestForm.get('parameters') as FormArray;
+          const ids: number[] = [];
+
+          arr.clear();
+
+          response?.parameters?.forEach((p: any) => {
+            ids.push(p.parameterID);
+            arr.push(this.fb.group({
+              id: [0],
+              laboratoryTestID: [id],
+              parameterID: [p.parameterID]
+            }));
+          });
+
+          this.labTestForm.patchValue({ parameterIDs: ids });
         }
       },
       error: (error) => {
@@ -154,6 +175,13 @@ export class LaboratoryTestComponent implements OnInit {
 
   onDepartmentSelected(item: any) {
     this.labTestForm.patchValue({ labDepartmentID: item.id });
+    this.selectedDepartment = item;
+
+    const arr = this.labTestForm.get('parameters') as FormArray;
+  arr.clear();
+
+  // ✅ trigger reload
+  this.parameterReloadKey = Date.now();
   }
 
   getMetalClassifications = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -182,4 +210,47 @@ export class LaboratoryTestComponent implements OnInit {
     });
     this.labTestForm.patchValue({ invoiceCaseIDs: selectIds })
   }
+
+
+  getParameters = (term: string, page: number, pageSize: number): Observable<any[]> => {
+
+  //  Safety check
+  if (!this.selectedDepartment || !this.selectedDepartment.name) {
+    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+  }
+
+  const dept = this.selectedDepartment.name.toLowerCase();
+
+  if (dept === 'mechanical') {
+    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+  }
+
+  if (dept === 'chemical') {
+    return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+  }
+
+  //  Default fallback
+  return this.parameterService.getParameterDropdown(term, page, pageSize);
+};
+
+
+
+  onParameterChange(selectedItems: any[]) {
+    const arr = this.labTestForm.get('parameters') as FormArray;
+    const ids: number[] = [];
+
+    arr.clear();
+
+    selectedItems.forEach(item => {
+      ids.push(item.id);
+      arr.push(this.fb.group({
+        id: [0],
+        laboratoryTestID: [this.labTestForm.get('id')?.value || 0],
+        parameterID: [item.id]
+      }));
+    });
+
+    this.labTestForm.patchValue({ parameterIDs: ids });
+  }
+
 }

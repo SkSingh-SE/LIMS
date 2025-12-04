@@ -16,7 +16,12 @@ import { ParameterUnitService } from '../../../services/parameter-unit.service';
 export class MechanicalParameterComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
+  @ViewChild('formulaModal') formulaModal!: ElementRef;
   private bsModal!: Modal;
+  private formulaBsModal!: Modal;
+
+  allParameters: any[] = [];
+  tempFormula: string = '';
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
@@ -88,6 +93,7 @@ export class MechanicalParameterComponent implements OnInit {
     this.fetchData();
     this.fetchParameterUnits();
     this.initForm();
+    this.fetchParameterDropdown();
   }
   initForm() {
     this.ParameterForm = this.fb.group({
@@ -98,6 +104,8 @@ export class MechanicalParameterComponent implements OnInit {
       note: [''],
       elementType: ['normal'],
       parameterType: ['Mechanical', Validators.required],
+      isCalculated: [false],
+      formula: ['']
     });
   }
   fetchData() {
@@ -281,7 +289,7 @@ export class MechanicalParameterComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Parameter Form';
       this.ParameterForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -302,6 +310,11 @@ export class MechanicalParameterComponent implements OnInit {
 
   onSubmit(): void {
     if (this.ParameterForm.valid) {
+
+      if (this.ParameterForm.value.isCalculated && !this.ParameterForm.value.formula) {
+        this.toastService.show('Formula is required for calculated parameter', 'warning');
+        return;
+      }
       let formData = this.ParameterForm.value;
       if (this.isEditMode) {
         this.parameterService.updateParameter(formData).subscribe({
@@ -330,6 +343,53 @@ export class MechanicalParameterComponent implements OnInit {
     }
   }
 
+  fetchParameterDropdown() {
+    this.parameterService.getMechanicalParameterDropdown("", 0, 1000).subscribe({
+      next: (response) => {
+        this.allParameters = response || [];
+      },
+      error: (error) => {
+        console.error('Error fetching parameters:', error);
+      }
+    });
+  }
+  onCalculatedToggle() {
+    if (!this.ParameterForm.value.isCalculated) {
+      this.ParameterForm.patchValue({ formula: '' });
+    }
+  }
+  openFormulaBuilder() {
+    this.tempFormula = this.ParameterForm.value.formula || '';
+    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
+    this.formulaBsModal.show();
+  }
+  addParameterToFormula(event: any) {
+    const paramId = event.target.value;
+    if (!paramId) return;
+
+    this.tempFormula += `{P${paramId}}`;
+  }
+  addOperator(op: string) {
+    this.tempFormula += ` ${op} `;
+  }
+  saveFormula() {
+    this.ParameterForm.patchValue({
+      formula: this.tempFormula
+    });
+
+    this.closeFormulaModal();
+  }
+  closeFormulaModal() {
+    if (this.formulaBsModal) {
+      this.formulaBsModal.hide();
+    }
+  }
+  clearFormula() {
+    this.tempFormula = '';
+    this.ParameterForm.patchValue({
+      formula: ''
+    });
+  }
 }
 
 

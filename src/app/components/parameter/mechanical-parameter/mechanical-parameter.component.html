@@ -1,227 +1,337 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div
-            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Mechanical Parameter List</label>
-            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Mechanical Parameter
-            </a>
-        </div>
-
-        <div *ngIf="!isLoading()" class="card-body">
-            <!-- Search -->
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()">
-                        <i class="bi bi-search"></i>
-                    </div>
-                </div>
-            </div>
-
-
-            <div *ngIf="ParameterList.length > 0 || filters.length > 0" class="table-responsive ">
-                <table class="table bordered-table  align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th *ngFor="let column of columns; let i = index">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal(column.key, $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                            <th class="align-middle text-center">Actions</th>
-                        </tr>
-
-
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let item of ParameterList; let i = index" class="text-sm">
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.aliasName }}</td>
-                            <td>{{ item.unitName }}</td>
-                            <td>{{ item.factor }}</td>
-                            <td>{{ item.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a (click)="openModal('view',item.id)" class="icon-link" title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-                                    <a (click)="openModal('edit',item.id)" class="icon-link" title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-                                    <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
-                                </div>
-                            </td>
-
-
-                        </tr>
-                    </tbody>
-                </table>
-
-
-            </div>
-            <div *ngIf="ParameterList.length == 0 && !isLoading()"
-                class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-
-                </div>
-            </div>
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center">
-                <!-- Page Size Selector -->
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-
-                <!-- Pagination Controls -->
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
-
-
-        </div>
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">Mechanical Parameter List</label>
+      <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
+        <i class="bi bi-plus-lg"></i>
+        Create Mechanical Parameter
+      </a>
     </div>
+
+    <div *ngIf="!isLoading()" class="card-body">
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="ParameterList.length > 0 || filters.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th *ngFor="let column of columns; let i = index">
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
+                    <i class="bi bi-funnel"></i>
+                  </span>
+                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                    <i class="bi bi-x-lg text-danger"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="align-middle text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of ParameterList; let i = index" class="text-sm">
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.aliasName }}</td>
+              <td>{{ item.unitName }}</td>
+              <td>{{ item.factor }}</td>
+              <td>{{ item.createdOn | date : "dd MMM, yyyy hh:mm a" }}</td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-2">
+                  <!-- Flex for spacing -->
+                  <a (click)="openModal('view', item.id)" class="icon-link" title="View">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
+                  </a>
+                  <a (click)="openModal('edit', item.id)" class="icon-link" title="Edit">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  </a>
+                  <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
+                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="ParameterList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+          <div class="fw-semibold">No records found</div>
+        </div>
+      </div>
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Page Size Selector -->
+        <div class="d-flex align-items-center">
+          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
+            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+          </select>
+        </div>
+
+        <!-- Pagination Controls -->
+        <ul class="pagination mb-0 d-flex align-items-center">
+          <li class="page-item" [class.disabled]="pageNumber === 1">
+            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
+          </li>
+          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
+            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Filter Modal -->
 <div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <!-- Close Button in the Top-Right Corner -->
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
-            (click)="closeFilterModal()"></button>
+  <div class="card py-2 px-3 shadow position-relative">
+    <!-- Close Button in the Top-Right Corner -->
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
 
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
 
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains
-            </option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater
-                Than</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than
-            </option>
-        </select>
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
+    </select>
 
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
-            class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
-        </div>
-
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+    <input
+      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
+      type="text"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter value"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'number'"
+      type="number"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter number"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
+      type="date"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+    />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
     </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
 </div>
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
-    aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header card-form-header text-white">
-                <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
-                    {{formTitle}}
-                </label>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close"
-                    (click)="closeModal()"></button>
+<div
+  id="customerTypeModal"
+  class="modal fade modal-fade"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  aria-labelledby="customerTypeModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+          {{ formTitle }}
+        </label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="ParameterForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <!-- Name Field -->
+          <div class="mb-1">
+            <label for="name" class="form-label">
+              Name
+              <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              class="form-control"
+              formControlName="name"
+              placeholder="Enter Name"
+              required
+              [ngClass]="{ 'is-invalid': ParameterForm.get('name')?.touched && ParameterForm.get('name')?.invalid }"
+              [attr.disabled]="isViewMode ? true : null"
+            />
+            <span *ngIf="ParameterForm.get('name')?.invalid && ParameterForm.get('name')?.touched" class="text-danger text-sm">
+              Name is required.
+            </span>
+          </div>
+          <!--Alias Name-->
+          <div class="mb-1">
+            <label for="aliasName" class="form-label">Alias Name</label>
+            <input
+              type="text"
+              id="aliasName"
+              class="form-control"
+              formControlName="aliasName"
+              placeholder="Enter Alias Name"
+              [ngClass]="{ 'is-invalid': ParameterForm.get('aliasName')?.touched && ParameterForm.get('aliasName')?.invalid }"
+              [attr.disabled]="isViewMode ? true : null"
+            />
+            <span *ngIf="ParameterForm.get('aliasName')?.invalid && ParameterForm.get('aliasName')?.touched" class="text-danger text-sm">
+              Alias Name is required.
+            </span>
+          </div>
+          <!--Parameter Unit Selection-->
+          <div class="mb-1">
+            <label for="unit" class="form-label">
+              Parameter Unit
+              <span class="text-danger">*</span>
+            </label>
+            <select
+              id="unit"
+              class="form-select"
+              formControlName="parameterUnitID"
+              [ngClass]="{ 'is-invalid': ParameterForm.get('parameterUnitID')?.touched && ParameterForm.get('parameterUnitID')?.invalid }"
+              [attr.disabled]="isViewMode ? true : null"
+            >
+              <option *ngFor="let unit of ParameterUnits" [value]="unit.id">{{ unit.name }}</option>
+              <option value="0" disabled selected>Select Parameter Unit</option>
+            </select>
+            <span
+              *ngIf="ParameterForm.get('parameterUnitID')?.invalid && ParameterForm.get('parameterUnitID')?.touched"
+              class="text-danger text-sm"
+            >
+              Parameter Unit is required.
+            </span>
+          </div>
+
+          <!--Note-->
+          <div class="mb-1">
+            <label for="note" class="form-label">Note</label>
+            <textarea
+              id="note"
+              class="form-control"
+              formControlName="note"
+              placeholder="Enter Note"
+              [ngClass]="{ 'is-invalid': ParameterForm.get('note')?.touched && ParameterForm.get('note')?.invalid }"
+              [attr.disabled]="isViewMode ? true : null"
+            ></textarea>
+          </div>
+          <!-- Is Calculated -->
+          <div class="form-check mt-2">
+            <input
+              class="form-check-input mt-1"
+              type="checkbox"
+              formControlName="isCalculated"
+              id="isCalculated"
+              (change)="onCalculatedToggle()"
+            />
+            <label class="form-check-label" for="isCalculated">Is Calculated Parameter</label>
+          </div>
+
+          <!-- Formula Builder -->
+          <div *ngIf="ParameterForm.value.isCalculated" class="mt-2">
+            <label class="form-label">Formula</label>
+            <div class="input-group">
+              <input type="text" class="form-control" formControlName="formula" placeholder="{P12} + {P15}" readonly />
+              <button type="button" class="btn btn-outline-danger-600" (click)="openFormulaBuilder()">Build Formula</button>
             </div>
-            <form [formGroup]="ParameterForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': ParameterForm.get('name')?.touched && ParameterForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="ParameterForm.get('name')?.invalid && ParameterForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
-                    </div>
-                    <!--Alias Name-->
-                    <div class="mb-1 ">
-                        <label for="aliasName" class="form-label">Alias Name</label>
-                        <input type="text" id="aliasName" class="form-control" formControlName="aliasName"
-                            placeholder="Enter Alias Name"
-                            [ngClass]="{'is-invalid': ParameterForm.get('aliasName')?.touched && ParameterForm.get('aliasName')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="ParameterForm.get('aliasName')?.invalid && ParameterForm.get('aliasName')?.touched"
-                            class="text-danger text-sm">
-                            Alias Name is required.
-                        </span>
-                    </div>
-                    <!--Parameter Unit Selection-->
-                    <div class="mb-1">
-                        <label for="unit" class="form-label">Parameter Unit <span class="text-danger">*</span></label>
-                        <select id="unit" class="form-select" formControlName="parameterUnitID"
-                            [ngClass]="{'is-invalid': ParameterForm.get('parameterUnitID')?.touched && ParameterForm.get('parameterUnitID')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null">
-                            <option *ngFor="let unit of ParameterUnits" [value]="unit.id">{{ unit.name }}</option>
-                            <option value="0" disabled selected>Select Parameter Unit</option>
-                        </select>
-                        <span
-                            *ngIf="ParameterForm.get('parameterUnitID')?.invalid && ParameterForm.get('parameterUnitID')?.touched"
-                            class="text-danger text-sm">
-                            Parameter Unit is required.
-                        </span>
-                    </div>
-                   
-                    <!--Note-->
-                    <div class="mb-1 ">
-                        <label for="note" class="form-label">Note</label>
-                        <textarea id="note" class="form-control" formControlName="note" placeholder="Enter Note"
-                            [ngClass]="{'is-invalid': ParameterForm.get('note')?.touched && ParameterForm.get('note')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null"></textarea>
-                        
-                    </div>
-
-                </div>
-
-                <!-- Modal Footer -->
-                <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white" [disabled]="ParameterForm.invalid">
-                        {{ isEditMode ? 'Update' : 'Save' }}
-                    </button>
-                </div>
-            </form>
+          </div>
         </div>
+
+        <!-- Modal Footer -->
+        <div *ngIf="!isViewMode" class="modal-footer">
+          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="ParameterForm.invalid">
+            {{ isEditMode ? "Update" : "Save" }}
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
+
+<!-- Formula Builder Modal -->
+ <div class="modal fade" #formulaModal tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Formula Builder</h6>
+        <button class="btn-close" (click)="closeFormulaModal()"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Parameter Dropdown -->
+        <div class="mb-2">
+          <label>Select Parameter</label>
+          <select class="form-select" (change)="addParameterToFormula($event)">
+            <option value="">Select</option>
+            <option *ngFor="let p of allParameters" [value]="p.id">
+              {{ p.name }} {{ '{P' + p.id + '}' }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Operators -->
+        <div class="mb-2">
+          <button class="btn btn-sm btn-secondary me-1" (click)="addOperator('+')">+</button>
+          <button class="btn btn-sm btn-secondary me-1" (click)="addOperator('-')">-</button>
+          <button class="btn btn-sm btn-secondary me-1" (click)="addOperator('*')">*</button>
+          <button class="btn btn-sm btn-secondary me-1" (click)="addOperator('/')">/</button>
+          <button class="btn btn-sm btn-secondary me-1" (click)="addOperator('(')">(</button>
+          <button class="btn btn-sm btn-secondary" (click)="addOperator(')')">)</button>
+        </div>
+
+        <!-- Formula Preview -->
+        <div>
+          <label class="form-label d-flex justify-content-between">
+            <span>Formula Preview</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearFormula()">Clear</button>
+          </label>
+          <input type="text" class="form-control"
+                 [value]="tempFormula" readonly />
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-dark" (click)="closeFormulaModal()">Cancel</button>
+        <button class="btn btn-success" (click)="saveFormula()">Apply</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+

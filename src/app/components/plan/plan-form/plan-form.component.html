@@ -546,18 +546,18 @@
                         <div class="d-flex justify-content-between">
                           <label class="form-label fw-semibold">Chemical Test - Sample No: {{ testPlan.get("sampleNo")?.value }}</label>
                           <label class="form-label fw-semibold">Report No: {{ chemTest.get("reportNo")?.value }}</label>
-                          <label class="form-label fw-semibold">URL: {{ chemTest.get("ulrNo")?.value }}</label>
+                          <label class="form-label fw-semibold">ULR: {{ chemTest.get("ulrNo")?.value }}</label>
                         </div>
                         <div formGroupName="testTypes" class="row my-2">
                           <div class="col-md-2" *ngFor="let test of testTypeList">
                             <div class="form-check">
                               <input
                                 type="checkbox"
-                                [formControlName]="test"
+                                [formControlName]="test.id"
                                 class="form-check-input mt-1"
-                                id="{{ test }}-{{ sampleIdx }}-{{ planIdx }}-{{ chemIdx }}"
+                                id="{{ test.id }}-{{ sampleIdx }}-{{ planIdx }}-{{ chemIdx }}"
                               />
-                              <label class="form-label" [for]="test + '-' + sampleIdx + '-' + planIdx + '-' + chemIdx">{{ test }}</label>
+                              <label class="form-label" [for]="test.id + '-' + sampleIdx + '-' + planIdx + '-' + chemIdx">{{ test.name }}</label>
                             </div>
                           </div>
                         </div>
@@ -585,26 +585,6 @@
                               [isDisabled]="isViewMode"
                               [selectedItem]="chemTest.get('specification2')?.value"
                             ></app-searchable-dropdown>
-                          </div>
-                          <div class="col-md-3">
-                            <!-- <app-searchable-dropdown
-                              class="w-100"
-                              [placeholder]="'Search Standard'"
-                              [labelName]="'Standard'"
-                              [fetchDataFn]="getTestMethodSpecificationDrop"
-                              (itemSelected)="onChemicalStandardSelected($event, sampleIdx, planIdx)"
-                              [hideLabel]="false"
-                              [required]="false"
-                              [isDisabled]="isViewMode"
-                              [selectedItem]="chemTest.get('standardID')?.value"
-                            ></app-searchable-dropdown> -->
-                            <label for="standard" class="form-label">Laboratory Test</label>
-                            <select class="form-select" formControlName="testMethod" [disabled]="isViewMode">
-                              <option value="">-- Select Laboratory Test --</option>
-                              <option *ngFor="let test of filteredTestMethods[`${sampleIdx}_${planIdx}`]" [value]="test.id">
-                                {{ test.name }}
-                              </option>
-                            </select>
                           </div>
                         </div>
                         <div

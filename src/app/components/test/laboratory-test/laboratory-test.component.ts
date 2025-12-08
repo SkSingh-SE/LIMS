@@ -92,7 +92,6 @@ export class LaboratoryTestComponent implements OnInit {
       invoiceCaseIDs: [''],
       invoiceCases: this.fb.array([]),
       equation: [''],
-      metalClassificationID: [0, Validators.required],
       parameterIDs: [[]],
       parameters: this.fb.array([])
     });
@@ -178,19 +177,13 @@ export class LaboratoryTestComponent implements OnInit {
     this.selectedDepartment = item;
 
     const arr = this.labTestForm.get('parameters') as FormArray;
-  arr.clear();
+    arr.clear();
 
-  // ✅ trigger reload
-  this.parameterReloadKey = Date.now();
+    // trigger reload
+    this.parameterReloadKey = Date.now();
   }
 
-  getMetalClassifications = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
-  };
 
-  onMetalClassificationSelected(item: any) {
-    this.labTestForm.patchValue({ metalClassificationID: item.id });
-  }
   getInvoiceCaseConfig = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.invoiceConfig.getInvoiceCaseConfigDropdown(term, page, pageSize);
   }
@@ -214,24 +207,18 @@ export class LaboratoryTestComponent implements OnInit {
 
   getParameters = (term: string, page: number, pageSize: number): Observable<any[]> => {
 
-  //  Safety check
-  if (!this.selectedDepartment || !this.selectedDepartment.name) {
-    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
-  }
-
-  const dept = this.selectedDepartment.name.toLowerCase();
-
-  if (dept === 'mechanical') {
-    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
-  }
-
-  if (dept === 'chemical') {
-    return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
-  }
-
-  //  Default fallback
-  return this.parameterService.getParameterDropdown(term, page, pageSize);
-};
+    if (!this.selectedDepartment || !this.selectedDepartment.name) {
+      return of([]);
+    }
+    const dept = this.selectedDepartment.name.toLowerCase();
+    if (dept === 'mechanical') {
+      return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+    }
+    if (dept === 'chemical') {
+      return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+    }
+    return this.parameterService.getParameterDropdown(term, page, pageSize);
+  };
 
 
 

@@ -1,0 +1,22 @@
+.compact-info div {
+  font-size: 13px;
+}
+
+.card {
+  border-radius: 10px;
+}
+
+
+
+.accordion-button {
+  background: #fff7f7;
+}
+
+.accordion-button:not(.collapsed) {
+  color: #b30000 !important;
+  background-color: #ffe5e5;
+}
+
+.btn-outline-danger {
+  padding: 2px 8px;
+}

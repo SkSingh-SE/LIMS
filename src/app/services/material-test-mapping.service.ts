@@ -30,5 +30,8 @@ export class MaterialTestMappingService {
     getAutoSuggestedTests(metalId:number|null,productConditionId:number|null, gradeId:string): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/AutoSuggest?metalClassificationID=${metalId}&productConditionID=${productConditionId}&gradeIDs=${gradeId}`);
     }
+    getAutoSuggestedGrads(metalId:number|null,productConditionId:number|null): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/AutoSuggestedGrade?metalClassificationID=${metalId}&productConditionID=${productConditionId}`);
+    }
 
 }

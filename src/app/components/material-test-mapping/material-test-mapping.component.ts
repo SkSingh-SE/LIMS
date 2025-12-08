@@ -277,6 +277,7 @@ export class MaterialTestMappingComponent implements OnInit {
 
 
   openModal(type: string, id: number): void {
+    this.resetFormState();
     this.mappingId = 0;
     if (id > 0) {
       this.mappingId = id;
@@ -285,7 +286,6 @@ export class MaterialTestMappingComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.MappingForm.reset();
       this.MappingForm.patchValue({ id: 0, isDefault: false, parameterIds: [] });
       this.formTitle = 'Test Mapping Form';
       this.MappingForm.enable();
@@ -307,8 +307,24 @@ export class MaterialTestMappingComponent implements OnInit {
     this.bsModal.show();
   }
 
+  private resetFormState() {
+  this.MappingForm.reset({
+    id: 0,
+    metalClassificationID: null,
+    productConditionID: null,
+    gradeID: null,
+    laboratoryTestID: null,
+    laboratoryTestIDs: [],
+    isDefault: false
+  });
+
+  this.laboratoryTests.clear();
+  this.parametersOptions = [];
+}
+
+
   closeModal(): void {
-    this.MappingForm.reset();
+    this.resetFormState();
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -324,7 +340,7 @@ export class MaterialTestMappingComponent implements OnInit {
   };
 
   getMaterialSpecificationGradeDropdown = (searchTerm: string, pageNumber: number, pageSize: number) => {
-      return this.materialSpecService.getGradeDropdownByMetalId(searchTerm, pageNumber, pageSize, this.MappingForm.value.metalClassificationID);
+      return this.materialSpecService.getMaterialSpecificationGradeDropdown(searchTerm, pageNumber, pageSize);
   };
 
   getTestMethodSpecificationDropdown = (searchTerm: string, pageNumber: number, pageSize: number) => {

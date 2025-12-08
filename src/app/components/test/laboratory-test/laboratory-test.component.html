@@ -53,17 +53,6 @@
             Sub Group is required.
           </span>
         </div>
-        <div>
-          <app-searchable-dropdown
-            [placeholder]="'Search metals'"
-            [labelName]="'Metal Classification'"
-            [fetchDataFn]="getMetalClassifications"
-            (itemSelected)="onMetalClassificationSelected($event)"
-            [isDisabled]="isViewMode"
-            [required]="true"
-            [selectedItem]="labTestForm.get('metalClassificationID')?.value"
-          ></app-searchable-dropdown>
-        </div>
 
         <div>
           <app-multi-select-dropdown

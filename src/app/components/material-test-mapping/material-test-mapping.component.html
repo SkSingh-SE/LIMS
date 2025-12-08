@@ -174,6 +174,22 @@
       <form [formGroup]="MappingForm" (ngSubmit)="onSubmit()">
         <div class="modal-body">
           <div class="row row-cols-2">
+            <!-- Grade Searchable Dropdown -->
+            <div class="mb-2">
+              <app-searchable-dropdown-modal
+                [placeholder]="'Search Grade'"
+                [labelName]="'Grade'"
+                [fetchDataFn]="getMaterialSpecificationGradeDropdown"
+                (itemSelected)="onGradeSelected($event)"
+                [hideLabel]="false"
+                [required]="true"
+                [isDisabled]="isViewMode"
+                [selectedItem]="MappingForm.get('gradeID')?.value"
+              ></app-searchable-dropdown-modal>
+              <span *ngIf="MappingForm.get('gradeID')?.invalid && MappingForm.get('gradeID')?.touched" class="text-danger small">
+                Grade is required.
+              </span>
+            </div>
             <!-- Metal Classification Searchable Dropdown -->
             <div class="mb-2">
               <app-searchable-dropdown-modal
@@ -202,22 +218,7 @@
               ></app-searchable-dropdown-modal>
             </div>
 
-            <!-- Grade Searchable Dropdown -->
-            <div class="mb-2">
-              <app-searchable-dropdown-modal
-                [placeholder]="'Search Grade'"
-                [labelName]="'Grade'"
-                [fetchDataFn]="getMaterialSpecificationGradeDropdown"
-                (itemSelected)="onGradeSelected($event)"
-                [hideLabel]="false"
-                [required]="true"
-                [isDisabled]="isViewMode"
-                [selectedItem]="MappingForm.get('gradeID')?.value"
-              ></app-searchable-dropdown-modal>
-              <span *ngIf="MappingForm.get('gradeID')?.invalid && MappingForm.get('gradeID')?.touched" class="text-danger small">
-                Grade is required.
-              </span>
-            </div>
+
 
             <!-- Laboratory Test Searchable Dropdown -->
             <div class="mb-2">

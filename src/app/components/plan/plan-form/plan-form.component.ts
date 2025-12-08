@@ -35,7 +35,8 @@ export class PlanFormComponent implements OnInit {
   sampleId!: number;
 
   yearCode = new Date().getFullYear().toString().slice(-2);
-  testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
+  // testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
+  testTypeList: { id: number, name: string }[] = [];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   filteredTestMethods: { [key: string]: any[] } = {};
   filteredStandardsMap: { [key: string]: any[] } = {};
@@ -54,7 +55,7 @@ export class PlanFormComponent implements OnInit {
     private router: Router,
     private productService: ProductConditionService,
     private testMappingService: MaterialTestMappingService,
-    private tpiService: TPIService
+    private tpiService: TPIService,
   ) { }
 
   ngOnInit(): void {
@@ -74,6 +75,7 @@ export class PlanFormComponent implements OnInit {
       this.isViewMode = state.mode === 'view' || state.mode === 'review';
       this.isEditMode = state.mode === 'edit';
     }
+    this.loadChemicalTestTypes();
 
     this.initForm();
     if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
@@ -140,7 +142,9 @@ export class PlanFormComponent implements OnInit {
 
   createChemicalTestGroup(reportNo: string, urlNo: string): FormGroup {
     const testTypesGroup: { [key: string]: any } = {};
-    this.testTypeList.forEach(type => testTypesGroup[type] = this.fb.control(false));
+    this.testTypeList.forEach(t => {
+      testTypesGroup[t.id] = this.fb.control(false);
+    });
     return this.fb.group({
       sampleNo: [''],
       reportNo: [reportNo || 'Auto Generate'],
@@ -375,9 +379,9 @@ export class PlanFormComponent implements OnInit {
           }))
         };
         // Check status and enable view mode
-        if (data?.status !== InwardStatus.IN_PROGRESS) {
-          this.isViewMode = true;
-        }
+        // if (data?.status !== InwardStatus.IN_PROGRESS) {
+        //   this.isViewMode = true;
+        // }
 
         this.updateFormFromPayload(formatted);
 
@@ -760,33 +764,40 @@ export class PlanFormComponent implements OnInit {
             })
           );
 
-          const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) =>
-            this.fb.group({
+          const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) => {
+
+            const testTypesGroup: any = {};
+            this.testTypeList.forEach(t => {
+              testTypesGroup[t.id] = [ct.testTypes?.[t.id] ?? false];
+            });
+
+            return this.fb.group({
               sampleNo: [sample.sampleNo],
               reportNo: [ct.reportNo],
               urlNo: [ct.urlNo],
-              testTypes: this.fb.group({
-                Spectro: [ct.testTypes?.Spectro ?? false],
-                Chemical: [ct.testTypes?.Chemical ?? false],
-                XRF: [ct.testTypes?.XRF ?? false],
-                'Full Analysis': [ct.testTypes?.['Full Analysis'] ?? false],
-                ROHS: [ct.testTypes?.ROHS ?? false]
-              }),
-              specification1: [ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null],
-              specification2: [ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null],
+              testTypes: this.fb.group(testTypesGroup),
+              specification1: [
+                ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null
+              ],
+              specification2: [
+                ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null
+              ],
               testMethod: [ct.testMethod],
-              elements: this.fb.array((ct.elements || []).map((el: any) => this.fb.group({
-                parameterID: [el.parameterID || 0],
-                specificationLineID: [el.specificationLineID || 0],
-                parameterName: [el.parameterName || ''],
-                minValue: [el.minValue ?? null],
-                maxValue: [el.maxValue ?? null],
-                parameterUnitID: [el.parameterUnitID || 0],
-                parameterUnit: [el.parameterUnit || ''],
-                selected: [el.selected ?? false]
-              })))
-            })
-          );
+              elements: this.fb.array((ct.elements || []).map((el: any) =>
+                this.fb.group({
+                  parameterID: [el.parameterID || 0],
+                  specificationLineID: [el.specificationLineID || 0],
+                  parameterName: [el.parameterName || ''],
+                  minValue: [el.minValue ?? null],
+                  maxValue: [el.maxValue ?? null],
+                  parameterUnitID: [el.parameterUnitID || 0],
+                  parameterUnit: [el.parameterUnit || ''],
+                  selected: [el.selected ?? false]
+                })
+              ))
+            });
+          });
+
 
           this.setDefaultTab(sampleIdx, planIdx, tp);
           return this.fb.group({
@@ -824,6 +835,7 @@ export class PlanFormComponent implements OnInit {
 
   // ────────────── Submission ──────────────
   onSave(): void {
+    debugger;
     const payload = this.buildPayload(SampleStatus.UNDER_PLANNING);
     this.inwardService.testPlanSave(payload).subscribe({
       next: () => {
@@ -968,4 +980,17 @@ export class PlanFormComponent implements OnInit {
   getMetalDrop = this.getMetalClassification;
   getProductConditionDrop = this.getProductConditions;
   getParameterDrop = this.getChemicalParameter;
+
+  loadChemicalTestTypes() {
+    this.laboratoryTestService.getLaboratoryTestDropdownForChemicals('',0,100).subscribe({
+      next: (data) => {
+        this.testTypeList = data || [];
+      },
+      error: (err) => {
+        console.error("Failed to load dynamic chemical test types", err);
+        this.testTypeList = [];
+      }
+    });
+  }
+
 }

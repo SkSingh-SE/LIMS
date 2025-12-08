@@ -1,0 +1,110 @@
+<div class="container-fluid p-3">
+
+  <!-- ====================== SECTION 1: SAMPLE SUMMARY ====================== -->
+  <div class="card shadow-sm mb-3 border-danger">
+    <div class="card-body">
+      <h5 class="text-danger fw-bold mb-3">Sample Information</h5>
+
+      <div class="row g-2 compact-info">
+        <div class="col-md-3"><strong>Customer:</strong> {{ inward.customerName }}</div>
+        <div class="col-md-3"><strong>Sample No:</strong> {{ sample.sampleNo }}</div>
+        <div class="col-md-3"><strong>Material:</strong> {{ sample.material }}</div>
+        <div class="col-md-3"><strong>Metal Class:</strong> {{ sample.metalClassification }}</div>
+
+        <div class="col-md-3"><strong>Condition:</strong> {{ sample.productCondition }}</div>
+        <div class="col-md-3"><strong>Batch No:</strong> {{ sample.batchNo }}</div>
+        <div class="col-md-6"><strong>Remarks:</strong> {{ sample.remarks }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== SECTION 2: TEST PLANS ====================== -->
+  <div class="accordion" id="plansAccordion" [formGroup]="resultForm">
+    <div [formArrayName]="'plans'">
+
+      <div *ngFor="let plan of plansFA.controls; let p = index" class="accordion-item border-danger mb-2" [formGroupName]="p">
+
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed fw-bold text-danger"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  [attr.data-bs-target]="'#plan-'+p">
+            {{ plans[p].type }} TESTS — (Specification: {{ plans[p].specification }} / Grade: {{ plans[p].grade }})
+          </button>
+        </h2>
+
+        <div [id]="'plan-'+p" class="accordion-collapse collapse" data-bs-parent="#plansAccordion">
+          <div class="accordion-body">
+            <div [formArrayName]="'tests'">
+
+              <!-- Each Test under the Plan -->
+              <div *ngFor="let test of getTests(p).controls; let t = index" class="card mb-3 border-secondary" [formGroupName]="t">
+
+                <div class="card-header bg-light">
+                  <h6 class="fw-bold">
+                    {{ plans[p].tests[t].name }} — {{ plans[p].tests[t].standard }}
+                    <span class="text-muted"> | Report: {{ plans[p].tests[t].reportNo }}</span>
+                  </h6>
+                </div>
+
+                <div class="card-body p-2">
+
+                  <!-- RESULT ENTRY TABLE -->
+                  <table class="table table-sm table-bordered align-middle">
+                    <thead class="table-danger text-center small">
+                      <tr>
+                        <th>Parameter</th>
+                        <th>Unit</th>
+                        <th style="width:150px;">Value</th>
+                        <th style="width:200px;">Remarks</th>
+                        <th style="width:80px;">Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody [formArrayName]="'parameters'">
+
+                      <tr *ngFor="let row of getParameters(p,t).controls; let r = index"
+                          [formGroupName]="r">
+
+                        <td><input class="form-control form-control-sm" formControlName="parameterName"></td>
+                        <td><input class="form-control form-control-sm" formControlName="unit"></td>
+                        <td><input class="form-control form-control-sm" formControlName="value"></td>
+                        <td><input class="form-control form-control-sm" formControlName="remarks"></td>
+
+                        <td class="text-center">
+                          <button class="btn btn-sm btn-outline-danger"
+                                  (click)="removeParameter(p,t,r)"
+                                  type="button">
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+
+                  <button class="btn btn-sm btn-outline-primary"
+                          (click)="addParameter(p,t)"
+                          type="button">
+                    + Add Parameter
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SAVE / COMPLETE -->
+  <div class="text-end mt-3">
+    <button class="btn btn-secondary me-2" (click)="saveResults()" type="button">Save</button>
+    <button class="btn btn-danger" (click)="completeResults()" type="button">Complete</button>
+  </div>
+
+</div>

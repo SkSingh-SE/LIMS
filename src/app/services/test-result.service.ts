@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class TestResultService {
-private apiUrl = environment.apiUrl +"/TestResult"; // Replace with actual API
+private apiUrl = environment.apiUrl +"/TestResults"; // Replace with actual API
 
     constructor(private http: HttpClient) {}
 
@@ -23,12 +23,16 @@ private apiUrl = environment.apiUrl +"/TestResult"; // Replace with actual API
       return this.http.get<any>(`${this.apiUrl}/complete/${id}`);
     }
 
-    createTestResult(payload: any): Observable<any> {
-      return this.http.post<any>(`${this.apiUrl}/create`, payload);
+    saveTestResult(payload: any): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/save-test-result`, payload);
     }
 
     updateTestResult( payload: any): Observable<any> {
       return this.http.put<any>(`${this.apiUrl}/update`, payload);
+    }
+
+    completeTestResult( payload: any): Observable<any> {
+      return this.http.put<any>(`${this.apiUrl}/complete`, payload);
     }
 
     updateParameter(headerId:number, parameterId:number, parameter:any): Observable<any> {
@@ -41,5 +45,9 @@ private apiUrl = environment.apiUrl +"/TestResult"; // Replace with actual API
 
     getTestResultDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+
+    getFullResultPayload(sampleId:number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/full-result-payload/${sampleId}`);
     }
 }

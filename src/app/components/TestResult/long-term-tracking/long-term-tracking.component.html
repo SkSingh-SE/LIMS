@@ -1,0 +1,430 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">
+        <i class="bi bi-hourglass-split"></i> Long-Term Test Tracking
+      </label>
+      <button class="btn btn-sm btn-light" routerLink="/testing/dashboard">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading()" class="card-body">
+      <!-- Search Bar -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search..."
+            [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()"
+          />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div *ngIf="longTermTests.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <!-- Sample No -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Sample No</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'sampleNo' && sortOrder === 'asc' }"
+                      (click)="applySorting('sampleNo')"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'sampleNo' && sortOrder === 'desc' }"
+                      (click)="applySorting('sampleNo')"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+
+              <!-- Test Name -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Test Name</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'testName' && sortOrder === 'asc' }"
+                      (click)="applySorting('testName')"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'testName' && sortOrder === 'desc' }"
+                      (click)="applySorting('testName')"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+
+              <!-- Duration -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Duration (Hours)</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'durationHours' && sortOrder === 'asc' }"
+                      (click)="applySorting('durationHours')"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'durationHours' && sortOrder === 'desc' }"
+                      (click)="applySorting('durationHours')"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+
+              <!-- Started At -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Started At</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'startedAt' && sortOrder === 'asc' }"
+                      (click)="applySorting('startedAt')"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'startedAt' && sortOrder === 'desc' }"
+                      (click)="applySorting('startedAt')"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+
+              <!-- Status -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Status</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'status' && sortOrder === 'asc' }"
+                      (click)="applySorting('status')"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === 'status' && sortOrder === 'desc' }"
+                      (click)="applySorting('status')"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+
+              <!-- Readings -->
+              <th>
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">Readings</span>
+                </div>
+              </th>
+
+              <!-- Actions -->
+              <th class="align-middle text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let test of longTermTests" class="align-middle">
+              <td class="fw-semibold">{{ test.sampleNo }}</td>
+              <td>{{ test.testName }}</td>
+              <td>{{ test.durationHours }}h</td>
+              <td>{{ test.startedAt | date:'short' }}</td>
+              <td>
+                <app-test-status-badge [status]="test.status"></app-test-status-badge>
+              </td>
+              <td>
+                <span class="badge bg-info">{{ test?.readings?.length || 0 }}</span>
+              </td>
+              <td>
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                  <!-- View Details -->
+                  <button
+                    class="btn btn-sm btn-outline-info"
+                    (click)="viewDetails(test.id)"
+                    title="View Details"
+                  >
+                    <i class="bi bi-eye"></i>
+                    <span class="d-none d-sm-inline">View</span>
+                  </button>
+
+                  <!-- Record Reading -->
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="recordReading(test)"
+                    [disabled]="!canRecordReading(test) || isSaving()"
+                    title="Record Reading"
+                  >
+                    <i class="bi bi-plus"></i>
+                    <span class="d-none d-sm-inline">Record</span>
+                  </button>
+
+                  <!-- Complete Test -->
+                  <button
+                    class="btn btn-sm btn-outline-success"
+                    (click)="completeTest(test)"
+                    [disabled]="!canCompleteTest(test) || isSaving()"
+                    title="Complete Test"
+                  >
+                    <i class="bi bi-check"></i>
+                    <span class="d-none d-sm-inline">Done</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No Data State -->
+      <div *ngIf="longTermTests.length === 0" class="text-center py-5">
+        <i class="bi bi-hourglass-bottom fs-1 text-muted d-block mb-2"></i>
+        <p class="text-muted">No long-term tests are currently running</p>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-danger" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div *ngIf="longTermTests.length > 0" class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <div class="d-flex align-items-center gap-2">
+          <label for="pageSize" class="form-label mb-0">Rows per page:</label>
+          <select
+            id="pageSize"
+            class="form-select form-select-sm"
+            style="width: auto;"
+            [(ngModel)]="pageSize"
+            (change)="changePageSize()"
+          >
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+          <span class="text-muted small">
+            Page {{ pageNumber }} of {{ totalPages }}
+            <span *ngIf="totalRecords">({{ totalRecords }} total)</span>
+          </span>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            (click)="onPageChange(pageNumber - 1)"
+            [disabled]="pageNumber <= 1"
+            title="Previous page"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            (click)="onPageChange(pageNumber + 1)"
+            [disabled]="pageNumber >= totalPages"
+            title="Next page"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            (click)="loadLongTermTests()"
+            title="Refresh data"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- DETAILS MODAL -->
+<!-- ================================================================ -->
+<div *ngIf="showDetails" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-0">Test Details</h5>
+          <small class="text-muted" *ngIf="selectedTest">{{ selectedTest.testName }}</small>
+        </div>
+        <button type="button" class="btn-close" (click)="closeDetails()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedTest">
+        <!-- Info Section -->
+        <div class="row mb-3 pb-3 border-bottom">
+          <div class="col-md-6 mb-2">
+            <strong>Sample No:</strong>
+            <br />
+            {{ selectedTest.sampleNo }}
+          </div>
+          <div class="col-md-6 mb-2">
+            <strong>Status:</strong>
+            <br />
+            <app-test-status-badge [status]="selectedTest.status"></app-test-status-badge>
+          </div>
+          <div class="col-md-6 mb-2">
+            <strong>Duration:</strong>
+            <br />
+            {{ selectedTest.durationHours }} hours
+          </div>
+          <div class="col-md-6 mb-2">
+            <strong>Started At:</strong>
+            <br />
+            {{ selectedTest.startedAt | date:'medium' }}
+          </div>
+          <div class="col-md-6" *ngIf="selectedTest.completedAt">
+            <strong>Completed At:</strong>
+            <br />
+            {{ selectedTest.completedAt | date:'medium' }}
+          </div>
+        </div>
+        <!-- Readings Section -->
+        <h6 class="mt-4 mb-3">
+          <i class="bi bi-graph-up"></i> Recorded Readings ({{ selectedTest!.readings.length || 0 }})
+        </h6>
+
+        <div class="table-responsive" *ngIf="selectedTest!.readings.length">
+          <table class="table table-sm table-striped">
+            <thead class="table-light">
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Recorded At</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reading of selectedTest.readings">
+                <td class="fw-semibold">{{ reading.parsed?.ParameterName }}</td>
+                <td>{{ reading.parsed?.Value }}</td>
+                <td><small>{{ reading.parsed?.RecordedAt | date:'short' }}</small></td>
+                <td><small>{{ reading.parsed?.Remarks || '-' }}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="!selectedTest!.readings.length" class="alert alert-info mb-0">
+          <i class="bi bi-info-circle"></i> No readings recorded yet
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetails()">Close</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="refreshDetails(selectedTest?.id!)"
+          [disabled]="isSaving()"
+        >
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button
+          type="button"
+          class="btn btn-success"
+          (click)="completeTest(selectedTest!)"
+          [disabled]="!canCompleteTest(selectedTest!) || isSaving()"
+        >
+          <i class="bi bi-check-lg"></i> Complete Test
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- RECORD READING MODAL -->
+<!-- ================================================================ -->
+<div *ngIf="showRecordModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Record Reading</h5>
+        <button type="button" class="btn-close" (click)="closeRecordModal()" [disabled]="isSaving()"></button>
+      </div>
+
+      <form [formGroup]="recordForm" (ngSubmit)="saveReading()">
+        <div class="modal-body">
+          <!-- Parameter Selection -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Parameter <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="parameterId">
+              <option value="" disabled selected>-- Select Parameter --</option>
+              <option *ngFor="let param of availableParameters" [value]="param.parameterID">
+                {{ param.parameterName }} ({{ param.unit }})
+              </option>
+            </select>
+            <small class="text-danger" *ngIf="recordForm.get('parameterId')?.invalid && recordForm.get('parameterId')?.touched">
+              Parameter is required
+            </small>
+          </div>
+
+          <!-- Value Input -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Value <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              class="form-control"
+              formControlName="value"
+              placeholder="Enter numeric value"
+              step="0.0001"
+              [ngClass]="{ 'is-invalid': recordForm.get('value')?.invalid && recordForm.get('value')?.touched }"
+            />
+            <small class="text-danger" *ngIf="recordForm.get('value')?.invalid && recordForm.get('value')?.touched">
+              Valid numeric value is required
+            </small>
+          </div>
+
+          <!-- Remarks -->
+          <div class="mb-3">
+            <label class="form-label">Remarks (Optional)</label>
+            <textarea
+              class="form-control"
+              formControlName="remarks"
+              placeholder="Add any remarks or notes"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeRecordModal()"
+            [disabled]="isSaving()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="recordForm.invalid || isSaving()"
+          >
+            <span *ngIf="isSaving()" class="spinner-border spinner-border-sm me-2"></span>
+            Save Reading
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,335 @@
+<div class="container-fluid p-3 redwhite-bg">
+  <!-- SECTION 1: SAMPLE SUMMARY -->
+  <div class="card shadow-sm mb-3 red-card">
+    <div class="card-body">
+      <legend
+        class="w-auto px-2 fw-semibold theme-color"
+        style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+      >
+        Sample Information
+      </legend>
+
+      <div class="row g-2 compact-info">
+        <div class="col-md-2">
+          <strong>Case No:</strong>
+          {{ inward.caseNo }}
+        </div>
+        <div class="col-md-2">
+          <strong>Customer</strong>
+          {{ inward.customerName }}
+        </div>
+        <div class="col-md-2">
+          <strong>Sample No:</strong>
+          {{ sample.sampleNo }}
+        </div>
+        <div class="col-md-2">
+          <strong>Material:</strong>
+          {{ sample.material }}
+        </div>
+        <div class="col-md-2">
+          <strong>Metal Class:</strong>
+          {{ sample.metalClassification }}
+        </div>
+
+        <div class="col-md-2">
+          <strong>Condition:</strong>
+          {{ sample.productCondition }}
+        </div>
+        <div class="col-md-2">
+          <strong>Batch No:</strong>
+          {{ sample.batchNo }}
+        </div>
+        <div class="col-md-3">
+          <strong>Remarks:</strong>
+          {{ sample.remarks }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: PLANS + TESTS -->
+  <div class="accordion" id="plansAccordion" [formGroup]="resultForm">
+    <div formArrayName="plans">
+      <div *ngFor="let plan of plansFA.controls; let p = index" class="accordion-item border-danger p-2" [formGroupName]="p">
+        <h2 class="accordion-header">
+          <button
+            class="accordion-button collapsed fw-bold text-danger py-2 px-2"
+            type="button"
+            data-bs-toggle="collapse"
+            [attr.data-bs-target]="'#plan-' + p"
+            aria-expanded="false"
+            [attr.aria-controls]="'plan-' + p"
+          >
+            {{ plans[p].type }} TESTS — (Specification: {{ plans[p].specification }})
+          </button>
+        </h2>
+
+        <div [id]="'plan-' + p" class="accordion-collapse collapse" data-bs-parent="#plansAccordion">
+          <div class="accordion-body">
+            <div formArrayName="tests">
+              <div
+                *ngFor="let test of getTests(p).controls; let t = index"
+                class="card mb-3 border-secondary test-card"
+                [formGroupName]="t"
+              >
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                  <h6 class="fw-bold mb-0">
+                    {{ plans[p].tests[t].name }}
+                    <span class="text-muted">(Report: {{ plans[p].tests[t].reportNo }})</span>
+                  </h6>
+                  <div class="d-flex gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="startTest(p, t)"
+                      [disabled]="plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Long-Term'"
+                      title="Start Test"
+                    >
+                      <i class="bi bi-play-fill"></i> Start
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      (click)="completeTest(p, t)"
+                      [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress'"
+                      title="Complete Test"
+                    >
+                      <i class="bi bi-check"></i> Complete
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      (click)="openMoveToLongTermModal(p, t)"
+                      [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' || plans[p].tests[t].status == 'Completed'"
+                      title="Move to Long-Term Tracking"
+                    >
+                      <i class="bi bi-hourglass"></i> Long-Term
+                    </button>
+                  </div>
+                </div>
+
+                <!-- RESULT ENTRY TABLE -->
+                <div class="card-body p-2">
+                  <table class="table table-sm table-bordered align-middle">
+                    <thead class="table-danger text-center small">
+                      <tr>
+                        <th>Parameter</th>
+                        <th>Unit</th>
+                        <th *ngIf="plans[p].type === 'Chemical'">Min</th>
+                        <th *ngIf="plans[p].type === 'Chemical'">Max</th>
+                        <th style="width: 150px">Value</th>
+                        <th *ngIf="plans[p].type === 'Chemical'">Status</th>
+                        <th style="width: 200px">Remarks</th>
+                        <th style="width: 80px">Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody formArrayName="parameters">
+                      <tr
+                        *ngFor="let row of getParameters(p, t).controls; let r = index"
+                        [formGroupName]="r"
+                        [ngClass]="getParameterRowClass(row.value)"
+                      >
+                        <td [class.row-disabled]="isParameterCalculated(row.value)">
+                          <app-searchable-dropdown
+                            class="w-100"
+                            [placeholder]="'Search Parameter'"
+                            [labelName]="'Parameter'"
+                            [fetchDataFn]="getParameterDrop(plans[p].type)"
+                            (itemSelected)="onParameterSelected(p, t, r, $event)"
+                            [hideLabel]="true"
+                            [selectedItem]="row.get('parameterID')?.value"
+                            [isDisabled]="isParameterCalculated(row.value)"
+                          ></app-searchable-dropdown>
+                        </td>
+                        <!-- Unit (Read-Only) -->
+                        <td>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            formControlName="unit"
+                            readonly
+                            [class.row-disabled]="isParameterCalculated(row.value)"
+                          />
+                        </td>
+
+                        <!-- Chemical Only: Min -->
+                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            formControlName="minValue"
+                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)"
+                            appDecimalOnly
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
+                          />
+                        </td>
+
+                        <!-- Chemical Only: Max -->
+                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            [ngClass]="{
+                              'is-invalid': plans[p].type === 'Chemical' && row.get('maxValue')?.invalid && row.get('maxValue')?.touched && row.get('maxValue')?.errors && row.get('altered')?.value
+                            }"
+                            formControlName="maxValue"
+                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)"
+                            appDecimalOnly
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
+                          />
+                          <span *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">Max is required</span>
+                        </td>
+
+                        <!-- Value Input with Auto-Focus -->
+                        <td [class.row-disabled]="isParameterCalculated(row.value)">
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            [attr.data-param-input]="p + '-' + t + '-' + r"
+                            formControlName="value"
+                            placeholder="Enter Value"
+                            (input)="onValueChanged(p, t, r)"
+                            (keydown)="onParameterKeyDown($event, p, t, r)"
+                            [readOnly]="isParameterCalculated(row.value)"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
+                            appDecimalOnly
+                          />
+                        </td>
+
+                        <!-- PASS / FAIL Badge (Chemical Only) -->
+                        <td *ngIf="plans[p].type === 'Chemical'" class="text-center">
+                          <span *ngIf="row.value.isWithinLimit === true" class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> PASS
+                          </span>
+                          <span *ngIf="row.value.isWithinLimit === false" class="badge bg-danger">
+                            <i class="bi bi-x-circle"></i> FAIL
+                          </span>
+                          <span *ngIf="row.value.isWithinLimit === null" class="badge bg-secondary">
+                            <i class="bi bi-dash-circle"></i> -
+                          </span>
+                        </td>
+
+                        <!-- Remarks -->
+                        <td>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            formControlName="remarks"
+                            placeholder="Add Remark"
+                            [readOnly]="isParameterCalculated(row.value)"
+                          />
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="text-center">
+                          <div class="btn-group btn-group-sm" role="group">
+                            <!-- Save/Update Button -->
+                            <button
+                              type="button"
+                              class="btn btn-outline-info"
+                              (click)="updateParameterInline(p, t, r)"
+                              [disabled]="isParameterCalculated(row.value) || !row.get('parameterID')?.value"
+                              title="Save parameter"
+                            >
+                              <i class="bi bi-cloud-upload"></i>
+                            </button>
+                            <!-- Delete Button -->
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger"
+                              (click)="removeParameter(p, t, r)"
+                              [disabled]="isParameterCalculated(row.value)"
+                              title="Remove parameter"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <button class="btn btn-sm btn-outline-danger-600" type="button" (click)="addParameter(p, t)">
+                    <i class="bi bi-plus-circle-dotted"></i>
+                    Add Parameter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="text-end mt-3">
+    <button class="btn btn-secondary me-2" type="button" (click)="saveResults()">Save</button>
+    <button class="btn btn-danger" type="button" (click)="completeResults()">Complete</button>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- MOVE TO LONG-TERM MODAL -->
+<!-- ================================================================ -->
+<div *ngIf="showMoveToLongTermModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Move Test to Long-Term Tracking</h5>
+        <button type="button" class="btn-close" (click)="closeMoveToLongTermModal()"></button>
+      </div>
+
+      <form [formGroup]="moveToLongTermForm" (ngSubmit)="submitMoveToLongTerm()">
+        <div class="modal-body">
+          <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle"></i>
+            <strong>Long-Term Tracking</strong><br>
+            This test will be moved to long-term tracking where periodic readings can be recorded.
+          </div>
+
+          <!-- Duration Hours Input -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Duration (Hours) <span class="text-danger">*</span>
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              formControlName="durationHours"
+              placeholder="Enter duration in hours (e.g., 72, 168, 720)"
+              min="1"
+              max="10000"
+              [ngClass]="{ 'is-invalid': moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched }"
+            />
+            <small class="d-block mt-2 text-muted">
+              <i class="bi bi-lightbulb"></i>
+              <strong>Common durations:</strong> 24h (1 day), 72h (3 days), 168h (1 week), 720h (30 days)
+            </small>
+            <small class="text-danger d-block mt-2" *ngIf="moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched">
+              Please enter a valid duration (1 to 10000 hours)
+            </small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeMoveToLongTermModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-warning"
+            [disabled]="moveToLongTermForm.invalid"
+          >
+            <i class="bi bi-hourglass"></i> Move to Long-Term
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -67,7 +67,11 @@ import { MaterialTestMappingComponent } from './components/material-test-mapping
 import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
 import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
 import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
-import { TestResultEntryComponent } from './components/TestResult/TestResultEntry/TestResultEntry.component';
+import { TestResultComponent } from './components/TestResult/test-result/test-result.component';
+import { LongTermTrackingComponent } from './components/TestResult/long-term-tracking/long-term-tracking.component';
+import { ReportingListComponent } from './components/report/reporting-list/reporting-list.component';
+import { ReportingPreviewComponent } from './components/report/reporting-preview/reporting-preview.component';
+import { TestResultEntryFormComponent } from './components/TestResult/test-result-entry-form/test-result-entry-form.component';
 
 
 export const routes: Routes = [
@@ -178,7 +182,15 @@ export const routes: Routes = [
             { path: 'workflow/edit/:id', component: WorkflowFormComponent },
             { path: 'workflow/details/:id', component: WorkflowFormComponent },
             { path: 'test-mapping', component: MaterialTestMappingComponent },
-            { path: 'test-result-entry', component: TestResultEntryComponent }
+            // Testing Department routes
+            { path: 'testing/dashboard', component: TestResultComponent },
+            { path: 'testing/perform/:id', component: TestResultEntryFormComponent },
+            { path: 'testing/longterm', component: LongTermTrackingComponent },
+            { path: 'testing/results/:id', component: TestResultEntryFormComponent },
+            {path: 'test-result', component: TestResultComponent },
+            // Reporting routes
+            { path: 'reporting', component: ReportingListComponent },
+            { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent }
         ]
     },
     { path: '**', redirectTo: '/login' }

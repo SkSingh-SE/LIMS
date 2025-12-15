@@ -1,0 +1,271 @@
+import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
+
+@Component({
+  selector: 'app-reporting-list',
+  templateUrl: './reporting-list.component.html',
+  styleUrls: ['./reporting-list.component.css'],
+  imports: [CommonModule, RouterModule, FormsModule]
+})
+export class ReportingListComponent implements OnInit {
+  @ViewChild('filterModal') filterModal!: ElementRef;
+  columns = [
+    { key: 'sampleNo', type: 'string', label: 'Sample No', filter: true },
+    { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
+    { key: 'customerName', type: 'string', label: 'Customer', filter: true },
+    { key: 'material', type: 'string', label: 'Material', filter: true },
+    { key: 'condition', type: 'string', label: 'Condition', filter: true },
+    { key: 'status', type: 'string', label: 'Status', filter: true },
+  ];
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+    caseNo: 'string',
+    customerName: 'string',
+    sampleNo: 'string',
+    material: 'string',
+    condition: 'string',
+    status: 'string'
+  };
+
+  filters: { column: string; type: string; value: any; value2?: any }[] = [];
+  filterColumn: string = 'string';
+  filterColumnTitle: string = 'string';
+  filterType: string = 'Contains';
+  filterValue: string = '';
+  filterValue2: string = '';
+  filterPosition = { top: '0px', left: '0px' };
+  isFilterOpen = false;
+
+  reportingData: ReportingListItem[] = [];
+  filteredData: ReportingListItem[] = [];
+  isLoading = signal(false);
+
+  // Search and Filter
+  searchTerm: string = '';
+
+  // Sorting
+  sortByColumn: string = 'sampleNo';
+  sortOrder: string = 'asc';
+
+  // Pagination
+  pageNumber: number = 1;
+  pageSize: number = 10;
+  pageSizes = [5, 10, 20, 50];
+  totalRecords: number = 0;
+
+  totalItems = 0;
+  payload = {
+    PageNumber: this.pageNumber,
+    PageSize: this.pageSize,
+    searchTerm: this.searchTerm,
+    sortByColumn: this.sortByColumn,
+    sortOrder: this.sortOrder,
+    filter: this.filters ?? null
+  };
+  // Available filter values (dummy)
+  customers: string[] = ['ABC Metals', 'Shreenath Steel', 'Tata Steel', 'JSW Steel', 'ArcelorMittal', 'SAIL'];
+  materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
+  statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
+
+  constructor(private reportingService: ReportingService) {}
+
+  ngOnInit(): void {
+    this.fetchData();
+  }
+
+  fetchData(): void {
+    this.isLoading.set(true);
+    this.reportingService.getReportingList().subscribe({
+      next: (data) => {
+        this.reportingData = data || [];
+        this.applyFiltersAndSort();
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading reporting data:', error);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  applyFiltersAndSort(): void {
+    let filtered = [...this.reportingData];
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(item =>
+        item.sampleNo.toLowerCase().includes(searchLower) ||
+        item.caseNo.toLowerCase().includes(searchLower) ||
+        item.customer.toLowerCase().includes(searchLower)
+      );
+    }
+
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let valueA = (a as any)[this.sortByColumn];
+      let valueB = (b as any)[this.sortByColumn];
+
+      if (typeof valueA === 'string') {
+        valueA = valueA.toLowerCase();
+        valueB = (valueB as any).toLowerCase();
+      }
+
+      if (valueA < valueB) {
+        return this.sortOrder === 'asc' ? -1 : 1;
+      } else if (valueA > valueB) {
+        return this.sortOrder === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    this.totalRecords = filtered.length;
+    this.pageNumber = 1; // Reset to first page
+
+    // Apply pagination
+    const startIndex = (this.pageNumber - 1) * this.pageSize;
+    this.filteredData = filtered.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  onSearch(): void {
+    this.applyFiltersAndSort();
+  }
+
+  applySorting(column: string): void {
+    if (this.sortByColumn === column) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortByColumn = column;
+      this.sortOrder = 'asc';
+    }
+    this.applyFiltersAndSort();
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.pageNumber = page;
+      this.applyFiltersAndSort();
+    }
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.pageNumber = 1;
+    this.applyFiltersAndSort();
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalRecords / this.pageSize);
+  }
+
+  onFilterChange(): void {
+    this.applyFiltersAndSort();
+  }
+
+  getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'badge bg-warning text-dark';
+      case 'Completed':
+        return 'badge bg-info text-white';
+      case 'ReadyForReport':
+        return 'badge bg-success text-white';
+      default:
+        return 'badge bg-secondary';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'ReadyForReport':
+        return 'Ready for Report';
+      default:
+        return status;
+    }
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalRecords);
+  }
+
+  getStartRecord(): number {
+    return (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  //filter modal logic
+  openFilterModal(column: string, event: MouseEvent) {
+    this.filterColumn = column;
+    this.columns.forEach(col => {
+      if (col.key === column) {
+        this.filterColumnTitle = col.label;
+      }
+    })
+    this.filterValue = '';
+    this.filterValue2 = '';
+
+    // Determine filter type dynamically
+    const columnType = this.filterColumnTypes[column];
+    switch (columnType) {
+      case 'string':
+        this.filterType = 'Contains';
+        break;
+      case 'number':
+        this.filterType = 'Equal';
+        break;
+      case 'date':
+        this.filterType = 'Between';
+        break;
+      default:
+        this.filterType = 'Contains';
+    }
+
+    this.isFilterOpen = true;
+    const target = event.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    if (this.filterModal) {
+      const modal = this.filterModal.nativeElement;
+      modal.style.display = 'block';
+      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
+      modal.style.left = `${rect.left + window.scrollX}px`;
+    }
+  }
+
+  applyFilter() {
+    if (!this.filterColumn || this.filterValue === '') return;
+
+    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
+    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+
+    if (existingFilterIndex > -1) {
+      this.filters[existingFilterIndex] = filterData;
+    } else {
+      this.filters.push(filterData);
+    }
+
+    this.fetchData();
+    this.closeFilterModal();
+  }
+
+  resetFilter(column: string) {
+    this.filters = this.filters.filter(filter => filter.column !== column);
+    this.payload.filter = this.filters;
+    this.fetchData();
+  }
+
+  closeFilterModal() {
+    if (this.filterModal) {
+      this.filterModal.nativeElement.style.display = 'none';
+    }
+  }
+    hasFilter(column: string): boolean {
+    return this.filters?.some(f => f.column === column) ?? false;
+  }
+  getColumnType(columnKey: string): string | undefined {
+    const column = this.columns.find(col => col.key === columnKey);
+    return column ? column.type : undefined;
+  }
+}

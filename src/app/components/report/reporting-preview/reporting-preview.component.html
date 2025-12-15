@@ -1,0 +1,270 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div *ngIf="!isLoading()" class="card report-preview-card w-100">
+    <!-- Header Section -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <div class="header-title my-2">
+        <h6 class="mt-1 mb-0">
+          <i class="bi bi-file-text"></i> Report Preview
+        </h6>
+        <small *ngIf="reportData" class="text-white-50">Sample No: {{ reportData.sampleNo }}</small>
+      </div>
+      <button class="btn btn-sm btn-light" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div *ngIf="reportData" class="card-body">
+      <!-- Sample Information Header -->
+      <div class="sample-info-header mb-2 p-2 border-bottom">
+        <div class="row">
+          <div class="col-md-2">
+            <div class="info-item">
+              <label class="info-label">Sample No</label>
+              <p class="info-value fw-semibold">{{ reportData.sampleNo }}</p>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="info-item">
+              <label class="info-label">Case No</label>
+              <p class="info-value fw-semibold">{{ reportData.caseNo }}</p>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="info-item">
+              <label class="info-label">Customer</label>
+              <p class="info-value fw-semibold">{{ reportData.customer }}</p>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="info-item">
+              <label class="info-label">Material</label>
+              <p class="info-value fw-semibold">{{ reportData.material }}</p>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="info-item">
+              <label class="info-label">Condition</label>
+              <p class="info-value fw-semibold">{{ reportData.condition }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [ngClass]="{ active: activeTab === 'summary' }"
+            (click)="setActiveTab('summary')"
+            href="javascript:void(0)"
+          >
+            <i class="bi bi-card-text"></i> Summary
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [ngClass]="{ active: activeTab === 'mechanical' }"
+            (click)="setActiveTab('mechanical')"
+            href="javascript:void(0)"
+          >
+            <i class="bi bi-gear"></i> Mechanical Tests
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [ngClass]="{ active: activeTab === 'chemical' }"
+            (click)="setActiveTab('chemical')"
+            href="javascript:void(0)"
+          >
+            <i class="bi bi-flask"></i> Chemical Tests
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [ngClass]="{ active: activeTab === 'longterm' }"
+            (click)="setActiveTab('longterm')"
+            href="javascript:void(0)"
+          >
+            <i class="bi bi-hourglass-split"></i> Long-Term Tests
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [ngClass]="{ active: activeTab === 'remarks' }"
+            (click)="setActiveTab('remarks')"
+            href="javascript:void(0)"
+          >
+            <i class="bi bi-chat-square-text"></i> Remarks
+          </a>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Summary Tab -->
+        <div *ngIf="activeTab === 'summary'" class="tab-pane active">
+          <div class="summary-section">
+            <h6 class="mb-3 fw-semibold">
+              <i class="bi bi-info-circle"></i> Test Summary
+            </h6>
+            <div class="summary-text p-3 bg-light border rounded">
+              <p class="mb-0">{{ reportData.summary }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mechanical Tests Tab -->
+        <div *ngIf="activeTab === 'mechanical'" class="tab-pane active">
+          <div class="mechanical-section">
+            <h6 class="mb-3 fw-semibold">
+              <i class="bi bi-gear"></i> Mechanical Test Results
+            </h6>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Standard</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let test of reportData.mechanicalTests">
+                    <td class="fw-semibold">{{ test.parameter }}</td>
+                    <td>{{ test.value }}</td>
+                    <td>{{ test.unit }}</td>
+                    <td>{{ test.standard }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="test.status === 'Pass' ? 'bg-success' : 'bg-danger'">
+                        {{ test.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chemical Tests Tab -->
+        <div *ngIf="activeTab === 'chemical'" class="tab-pane active">
+          <div class="chemical-section">
+            <h6 class="mb-3 fw-semibold">
+              <i class="bi bi-flask"></i> Chemical Analysis Results
+            </h6>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Element</th>
+                    <th>Percentage (%)</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let test of reportData.chemicalTests">
+                    <td class="fw-semibold">{{ test.element }}</td>
+                    <td>{{ test.percentage }}</td>
+                    <td>{{ test.min }}</td>
+                    <td>{{ test.max }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="test.status === 'Pass' ? 'bg-success' : 'bg-danger'">
+                        {{ test.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Long-Term Tests Tab -->
+        <div *ngIf="activeTab === 'longterm'" class="tab-pane active">
+          <div class="longterm-section">
+            <h6 class="mb-3 fw-semibold">
+              <i class="bi bi-hourglass-split"></i> Long-Term Test Results
+            </h6>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Started At</th>
+                    <th>Duration</th>
+                    <th>Readings</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let test of reportData.longTermTests">
+                    <td class="fw-semibold">{{ test.testName }}</td>
+                    <td>{{ test.startedAt }}</td>
+                    <td>{{ test.duration }}</td>
+                    <td class="text-center">{{ test.readings }}</td>
+                    <td>
+                      <span
+                        class="badge"
+                        [ngClass]="
+                          test.status === 'Completed' ? 'bg-success' : test.status === 'In Progress' ? 'bg-info' : 'bg-warning'
+                        "
+                      >
+                        {{ test.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Remarks Tab -->
+        <div *ngIf="activeTab === 'remarks'" class="tab-pane active">
+          <div class="remarks-section">
+            <h6 class="mb-3 fw-semibold">
+              <i class="bi bi-chat-square-text"></i> Remarks and Notes
+            </h6>
+            <div class="remarks-text p-3 bg-light border rounded">
+              <p class="mb-0" [innerText]="reportData.remarks"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-outline-success" (click)="generatePDF()" title="Generate PDF Report">
+          <i class="bi bi-file-pdf"></i> Generate PDF
+        </button>
+        <button class="btn btn-outline-primary" (click)="approveReport()" title="Approve Report">
+          <i class="bi bi-check-circle"></i> Approve
+        </button>
+        <button class="btn btn-outline-danger" (click)="rejectReport()" title="Reject Report">
+          <i class="bi bi-x-circle"></i> Reject
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="card w-100">
+    <div class="card-body text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+</div>

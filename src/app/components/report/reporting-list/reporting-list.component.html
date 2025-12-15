@@ -1,0 +1,202 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">
+        <i class="bi bi-file-text"></i> Reporting Dashboard
+      </label>
+      <button class="btn btn-sm btn-light" routerLink="/testing/dashboard">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading()" class="card-body">
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div *ngIf="filteredData.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+             <tr class="text-center align-middle">
+              <th *ngFor="let column of columns; let i = index">
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i
+                    *ngIf="column.filter"
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                    <i
+                    *ngIf="column.filter"
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                      (click)="applySorting(column.key)"
+                    ></i>
+                  </span>
+                  <span
+                    *ngIf="!hasFilter(column.key) && i != 0 && column.filter"
+                    class="cursor ms-2 mt-1"
+                    (click)="openFilterModal(column.key, $event)"
+                  >
+                    <i class="bi bi-funnel"></i>
+                  </span>
+                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                    <i class="bi bi-x-lg text-danger"></i>
+                  </span>
+                </div>
+              </th>
+
+              <th class="align-middle text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of filteredData" class="align-middle">
+              <td class="fw-semibold">{{ item.sampleNo }}</td>
+              <td>{{ item.caseNo }}</td>
+              <td>{{ item.customer }}</td>
+              <td>{{ item.material }}</td>
+              <td>{{ item.condition }}</td>
+              <td>
+                <span [ngClass]="getStatusBadgeClass(item.status)">
+                  {{ getStatusLabel(item.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                  <!-- Preview Button -->
+                  <button
+                    class="btn btn-sm btn-outline-info"
+                    [routerLink]="['/reporting/preview', item.sampleNo]"
+                    title="Preview Report"
+                  >
+                    <i class="bi bi-eye"></i>
+                    <span class="d-none d-sm-inline">Preview</span>
+                  </button>
+
+                  <!-- Generate PDF Button -->
+                  <button class="btn btn-sm btn-outline-success" title="Generate PDF" disabled>
+                    <i class="bi bi-file-pdf"></i>
+                    <span class="d-none d-sm-inline">PDF</span>
+                  </button>
+
+                  <!-- Approve Button -->
+                  <button class="btn btn-sm btn-outline-primary" title="Approve Report" disabled>
+                    <i class="bi bi-check-circle"></i>
+                    <span class="d-none d-sm-inline">Approve</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredData.length === 0" class="alert alert-info text-center">
+        <i class="bi bi-info-circle"></i> No records found matching your criteria.
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+          <label class="me-2">Items per page:</label>
+          <select class="form-select form-select-sm d-inline-block w-auto" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
+            <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
+          </select>
+        </div>
+
+        <div class="text-muted">
+          <small>
+            Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalRecords }} records
+          </small>
+        </div>
+
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
+              <a class="page-link cursor" (click)="onPageChange(1)">First</a>
+            </li>
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
+              <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
+            </li>
+
+            <li *ngFor="let page of [].constructor(totalPages); let i = index" class="page-item" [ngClass]="{ active: pageNumber === i + 1 }">
+              <a class="page-link cursor" (click)="onPageChange(i + 1)">{{ i + 1 }}</a>
+            </li>
+
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
+              <a class="page-link cursor" (click)="onPageChange(pageNumber + 1)">Next</a>
+            </li>
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
+              <a class="page-link cursor" (click)="onPageChange(totalPages)">Last</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="card-body text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative">
+    <!-- Close Button in the Top-Right Corner -->
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input
+      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
+      type="text"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter value"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'number'"
+      type="number"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter number"
+      (keydown.enter)="applyFilter()"
+    />
+    <input
+      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
+      type="date"
+      class="form-control mb-2"
+      [(ngModel)]="filterValue"
+    />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>

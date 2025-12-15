@@ -1,0 +1,134 @@
+.compact-info div {
+  font-size: 13px;
+}
+
+.card {
+  border-radius: 10px;
+}
+
+.accordion-button {
+  background: #fff7f7;
+}
+
+.accordion-button:not(.collapsed) {
+  color: #b30000 !important;
+  background-color: #ffe5e5;
+}
+
+.btn-outline-danger {
+  padding: 2px 8px;
+}
+
+.compact-info div {
+  font-size: 14px;
+}
+
+.table-sm input {
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+/* Parameter Table Row Styling */
+.row-error {
+  background-color: #ffe5e5;
+  border-left: 3px solid #dc3545;
+}
+
+.row-error input,
+.row-error textarea {
+  border-color: #dc3545 !important;
+  background-color: #fff5f5;
+}
+
+.row-ok {
+  background-color: #e5f5e5;
+  border-left: 3px solid #28a745;
+}
+
+.row-ok input,
+.row-ok textarea {
+  border-color: #28a745 !important;
+  background-color: #f5fff5;
+}
+
+.row-calculated {
+  background-color: #f0f0f0;
+  opacity: 0.85;
+}
+
+.row-calculated input,
+.row-calculated textarea,
+.row-calculated select,
+.row-disabled input,
+.row-disabled textarea,
+.row-disabled select {
+  background-color: #f5f5f5 !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+}
+
+.row-disabled {
+  background-color: #f8f9fa;
+}
+
+/* Badge Styling */
+.badge {
+  font-size: 11px;
+  padding: 0.35em 0.65em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge i {
+  font-size: 0.85em;
+}
+
+/* Focus States */
+.table-sm input:focus,
+.table-sm textarea:focus {
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Group Styling */
+.btn-group-sm .btn {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.btn-group-sm .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Test Card */
+.test-card {
+  border-left: 4px solid #dc3545;
+  transition: all 0.3s ease;
+}
+
+.test-card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .table-sm {
+    font-size: 11px;
+  }
+
+  .table-sm input {
+    padding: 2px 4px;
+    font-size: 11px;
+  }
+
+  .btn-group-sm {
+    flex-wrap: wrap;
+  }
+
+  .btn-group-sm .btn {
+    flex: 1 1 50%;
+  }
+}
+

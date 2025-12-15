@@ -2,52 +2,162 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { TestResultSaveDto, TestResultDashboardItem, LongTermTestDto, MoveToLongTermDto, LongTermRecordDto } from '../models/testResultModels';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TestResultService {
-private apiUrl = environment.apiUrl +"/TestResults"; // Replace with actual API
+  private apiUrl = environment.apiUrl + "/TestResults"; // Replace with actual API
 
-    constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-    getAllTestResults(filter:any): Observable<any> {
-      return this.http.post<any>(this.apiUrl+"/list", filter);
-    }
+  // ================================================================
+  // Dashboard & Listing
+  // ================================================================
+  /**
+   * Get all test results with filters (sample-wise dashboard)
+   */
+  getAllTestResults(filter: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + "/list", filter);
+  }
 
-    getTestResultHeader(id: number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/details/${id}`);
-    }
+  /**
+   * Get dashboard items (sample-wise listing for testing dashboard)
+   */
+  getDashboardItems(filter: any): Observable<TestResultDashboardItem[]> {
+    return this.http.post<TestResultDashboardItem[]>(this.apiUrl + "/dashboard", filter);
+  }
 
-    completeHeader(id: number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/complete/${id}`);
-    }
+  // ================================================================
+  // Test Result Details & Payload
+  // ================================================================
+  /**
+   * Get test result header details
+   */
+  getTestResultHeader(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/details/${id}`);
+  }
 
-    saveTestResult(payload: any): Observable<any> {
-      return this.http.post<any>(`${this.apiUrl}/save-test-result`, payload);
-    }
+  /**
+   * Get full result payload for a sample (for perform testing)
+   */
+  getFullResultPayload(sampleId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/full-result-payload/${sampleId}`);
+  }
 
-    updateTestResult( payload: any): Observable<any> {
-      return this.http.put<any>(`${this.apiUrl}/update`, payload);
-    }
+  // ================================================================
+  // Save & Update Operations
+  // ================================================================
+  /**
+   * Save test results
+   */
+  saveTestResult(payload: TestResultSaveDto): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/save-test-result`, payload);
+  }
 
-    completeTestResult( payload: any): Observable<any> {
-      return this.http.put<any>(`${this.apiUrl}/complete`, payload);
-    }
+  /**
+   * Update test result
+   */
+  updateTestResult(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update`, payload);
+  }
 
-    updateParameter(headerId:number, parameterId:number, parameter:any): Observable<any> {
-      return this.http.put<any>(`${this.apiUrl}/update-parameter`, {headerId, parameterId, parameter});
-    }
+  /**
+   * Update a single parameter
+   */
+  updateParameter(headerId: number, parameterId: number, parameter: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update-parameter/${headerId}/parameter/${parameterId}`, { parameter });
+  }
 
-    deleteTestResult(id: number): Observable<any> {
-      return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
-    }
+  // ================================================================
+  // Test Start / Complete Flow
+  // ================================================================
+  /**
+   * Start a test (mark as Started)
+   */
+  startTest(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/start-test/${headerId}`, {});
+  }
 
-    getTestResultDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
-    }
+  /**
+   * Complete a test (mark as Completed)
+   */
+  completeTest(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/complete-test/${headerId}`, {});
+  }
 
-    getFullResultPayload(sampleId:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/full-result-payload/${sampleId}`);
-    }
+  /**
+   * Complete test result (legacy)
+   */
+  completeTestResult(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/complete`, payload);
+  }
+
+  /**
+   * Complete header (legacy)
+   */
+  completeHeader(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/complete/${id}`);
+  }
+
+  // ================================================================
+  // Long-Term Test Operations
+  // ================================================================
+  /**
+   * Get list of all long-term tests
+   */
+  getLongTermTests(filter?: any): Observable<any> {
+    return this.http.post<LongTermTestDto[]>(`${this.apiUrl}/long-term/list`, filter || {});
+  }
+
+  /**
+   * Move test to long-term tracking
+   */
+  moveToLongTerm(headerId: number, durationHours: number): Observable<any> {
+    const payload: MoveToLongTermDto = { headerId, durationHours };
+    return this.http.post<any>(`${this.apiUrl}/move-to-long-term`, payload);
+  }
+
+  /**
+   * Record intermediate reading for long-term test
+   */
+  longTermRecord(payload: LongTermRecordDto): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/long-term/record`, payload);
+  }
+
+  /**
+   * Complete long-term test
+   */
+  completeLongTerm(longTermTestId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/long-term/complete/${longTermTestId}`, {});
+  }
+
+  /**
+   * Get long-term test details
+   */
+  getLongTermTestDetail(longTermTestId: number): Observable<LongTermTestDto> {
+    return this.http.get<LongTermTestDto>(`${this.apiUrl}/long-term/${longTermTestId}`);
+  }
+
+  // ================================================================
+  // Dropdown & Utility
+  // ================================================================
+  /**
+   * Get test result dropdown options
+   */
+  getTestResultDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  }
+
+  /**
+   * Delete test result
+   */
+  deleteTestResult(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
+  }
+
+  getParametersForHeader(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/parameters/header/${headerId}`);
+  }
 }

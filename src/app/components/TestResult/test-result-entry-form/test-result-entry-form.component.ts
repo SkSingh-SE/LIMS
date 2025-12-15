@@ -7,19 +7,22 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-TestResultEntryComponent',
-  templateUrl: './TestResultEntry.component.html',
-  styleUrls: ['./TestResultEntry.component.css'],
+  selector: 'app-test-result-entry-form',
+  templateUrl: './test-result-entry-form.component.html',
+  styleUrls: ['./test-result-entry-form.component.css'],
   imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent,DecimalOnlyDirective],
 })
-export class TestResultEntryComponent implements OnInit {
+export class TestResultEntryFormComponent implements OnInit {
 
+  sampleId: number = 0;
   inward: any = null;
   sample: any = null;
   plans: any[] = [];
   resultForm!: FormGroup;
+  isViewMode: boolean = false;
 
   // Store API metadata for save/complete
   apiMetadata: any = {
@@ -27,23 +30,116 @@ export class TestResultEntryComponent implements OnInit {
     chemicalTests: []
   };
 
+  // ================================================================
+  // Move to Long-Term Test
+  // ================================================================
+  showMoveToLongTermModal = false;
+  moveToLongTermForm!: FormGroup;
+  selectedTestForLongTerm: { planIndex: number; testIndex: number } | null = null;
+
   constructor(
     private fb: FormBuilder,
     private testResultService: TestResultService,
     private parameterService: ParameterService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      this.sampleId = Number(params.get('id'));
+    });
+    const state = history.state as { mode?: string };
+    if (state) {
+      if (state.mode === 'view') {
+        this.isViewMode = true;
+      }
+    }
     this.loadDummyData();
     this.buildForm();
-    this.loadFullResultPayload(34); // Sample ID
+    this.buildMoveToLongTermForm();
+    if(this.sampleId)
+      this.loadFullResultPayload(this.sampleId); // Sample ID
+  }
+
+  private buildMoveToLongTermForm(): void {
+    this.moveToLongTermForm = this.fb.group({
+      durationHours: ['', [Validators.required, Validators.min(1), Validators.max(10000)]]
+    });
+  }
+
+  openMoveToLongTermModal(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    if (test.status !== 'Started' && test.status !== 'In Progress' && test.status !== 'Completed') {
+      this.toastService.show('Test must be started or in progress before moving to long-term tracking', 'warning');
+      return;
+    }
+    this.selectedTestForLongTerm = { planIndex, testIndex };
+    this.moveToLongTermForm.reset();
+    this.showMoveToLongTermModal = true;
+  }
+
+  closeMoveToLongTermModal(): void {
+    this.showMoveToLongTermModal = false;
+    this.selectedTestForLongTerm = null;
+    this.moveToLongTermForm.reset();
+  }
+
+  submitMoveToLongTerm(): void {
+    if (!this.moveToLongTermForm.valid || !this.selectedTestForLongTerm) {
+      this.toastService.show('Please enter valid duration hours', 'warning');
+      return;
+    }
+
+    const { planIndex, testIndex } = this.selectedTestForLongTerm;
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+    const durationHours = this.moveToLongTermForm.get('durationHours')?.value;
+
+    console.log('Moving test to long-term:', { headerId, durationHours });
+
+    this.testResultService.moveToLongTerm(headerId, durationHours).subscribe({
+      next: (response) => {
+        this.toastService.show('Test moved to long-term tracking successfully', 'success');
+        this.closeMoveToLongTermModal();
+        // Refresh the test status
+        test.status = 'Long-Term';
+      },
+      error: (error) => {
+        console.error('Error moving test to long-term:', error);
+        this.toastService.show('Error moving test to long-term tracking', 'error');
+      }
+    });
   }
 
   loadFullResultPayload(sampleId: number): void {
+    if (!sampleId) {
+      console.warn('[TestResultEntry] No sample ID provided');
+      this.toastService.show('Sample ID is required', 'warning');
+      return;
+    }
+
     this.testResultService.getFullResultPayload(sampleId).subscribe({
       next: (data) => {
+        if (!data) {
+          console.warn('[TestResultEntry] Empty payload received from API');
+          this.toastService.show('No test result data found', 'warning');
+          return;
+        }
+
         console.log("Full Result Payload:", data);
+
+        // Validate critical fields
+        if (!data.inward) {
+          console.warn('[TestResultEntry] Missing inward data in payload');
+        }
+        if (!data.sample) {
+          console.warn('[TestResultEntry] Missing sample data in payload');
+        }
+        if (!data.plans || data.plans.length === 0) {
+          console.warn('[TestResultEntry] No test plans found in payload');
+        }
+
         // Map API response to component format
         this.mapApiResponseToComponentFormat(data);
         // Store metadata for save/complete
@@ -59,6 +155,7 @@ export class TestResultEntryComponent implements OnInit {
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
+        this.toastService.show('Failed to load test result data. Please try again.', 'error');
       }
     });
   }
@@ -144,6 +241,7 @@ export class TestResultEntryComponent implements OnInit {
               headerId: generalTest.headerId,
               name: generalTest.laboratoryTest || 'General Test',
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
+              status: generalTest.status || 'Pending',
               parameters: (generalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -180,6 +278,7 @@ export class TestResultEntryComponent implements OnInit {
               headerId: chemicalTest.headerId,
               name: chemicalTest.name || 'Chemical Test',
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
+              status: chemicalTest.status || 'Pending',
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -499,8 +598,7 @@ export class TestResultEntryComponent implements OnInit {
   // ----------------------------------------------------------------
   // 5. Save / Complete
   // ----------------------------------------------------------------
-  saveResults(): void {debugger
-
+  saveResults(): void {
     if (!this.resultForm.valid) {
       this.toastService.show("Please fill all required fields", 'error');
       return;
@@ -673,12 +771,153 @@ export class TestResultEntryComponent implements OnInit {
     const planType = this.plansFA.at(planIndex).get('type')?.value;
     const unit = selectedItem?.additionalValues ? selectedItem?.additionalValues["Unit"] : row.get('unit')?.value;
 
+    const value = Number(row.get('value')?.value);
+    const min = row.get('minValue')?.value;
+    const max = row.get('maxValue')?.value;
+
+    let pass = true;
+    if (min != null && value < min) pass = false;
+    if (max != null && value > max) pass = false;
+
     row.patchValue({
       parameterID: selectedItem.id,
       parameterName: selectedItem.name,
       unit: selectedItem.unit || unit,
       minValue: planType === 'Chemical' ? (row.value.minValue ?? 0) : null ,
-      maxValue: planType === 'Chemical' ? (row.value.maxValue ?? 0) : null
+      maxValue: planType === 'Chemical' ? (row.value.maxValue ?? 0) : null,
+      isWithinLimit: pass,
+    });
+  }
+
+  // ================================================================
+  // Test Start / Complete Flow
+  // ================================================================
+  startTest(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+
+    this.testResultService.startTest(headerId).subscribe({
+      next: (response) => {
+        test.status = 'Started';
+        this.toastService.show('Test started successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error starting test:', error);
+        this.toastService.show('Error starting test', 'error');
+      }
+    });
+  }
+
+  completeTest(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+
+    if (confirm('Are you sure you want to complete this test?')) {
+      this.testResultService.completeTest(headerId).subscribe({
+        next: (response) => {
+          test.status = 'Completed';
+          this.toastService.show('Test completed successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error completing test:', error);
+          this.toastService.show('Error completing test', 'error');
+        }
+      });
+    }
+  }
+
+  // ================================================================
+  // Auto-Focus & Keyboard Navigation
+  // ================================================================
+  /**
+   * Handle Enter key in parameter value input
+   * Auto-focus to next parameter row or add new if on last
+   */
+  onParameterKeyDown(event: KeyboardEvent, planIndex: number, testIndex: number, paramIndex: number): void {
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+    const parametersArray = this.getParameters(planIndex, testIndex);
+    const nextParamIndex = paramIndex + 1;
+
+    if (nextParamIndex < parametersArray.length) {
+      // Focus next parameter's value input
+      setTimeout(() => {
+        const nextValueInput = document.querySelector(
+          `[data-param-input="${planIndex}-${testIndex}-${nextParamIndex}"]`
+        ) as HTMLInputElement;
+        if (nextValueInput) {
+          nextValueInput.focus();
+        }
+      }, 0);
+    } else {
+      // Auto-add new parameter row if on last and it's not empty
+      const currentValue = parametersArray.at(paramIndex).get('value')?.value;
+      if (currentValue !== null && currentValue !== '') {
+        this.addParameter(planIndex, testIndex);
+        setTimeout(() => {
+          const newInput = document.querySelector(
+            `[data-param-input="${planIndex}-${testIndex}-${nextParamIndex}"]`
+          ) as HTMLInputElement;
+          if (newInput) {
+            newInput.focus();
+          }
+        }, 100);
+      }
+    }
+  }
+
+  /**
+   * Check if parameter is calculated (disabled for editing)
+   */
+  isParameterCalculated(param: any): boolean {
+    // Check if parameter has isCalculated flag or is marked as read-only
+    return param?.isCalculated === true || param?.isReadOnly === true;
+  }
+
+  /**
+   * Get CSS classes for parameter row based on state
+   */
+  getParameterRowClass(param: any): string {
+    const classes: string[] = [];
+
+    if (this.isValueOutOfRange(param)) {
+      classes.push('row-error');
+    } else if (this.isValueWithinRange(param)) {
+      classes.push('row-ok');
+    }
+
+    if (this.isParameterCalculated(param)) {
+      classes.push('row-calculated');
+    }
+
+    return classes.join(' ');
+  }
+
+  /**
+   * Inline update parameter via API
+   */
+  updateParameterInline(planIndex: number, testIndex: number, paramIndex: number): void {
+    const param = this.getParameters(planIndex, testIndex).at(paramIndex).value;
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+
+    if (!param.parameterID) {
+      this.toastService.show('Parameter not selected', 'warning');
+      return;
+    }
+
+    console.log('Updating parameter inline:', { headerId, paramId: param.id, parameterID: param.parameterID });
+
+    this.testResultService.updateParameter(headerId, param.parameterID, param).subscribe({
+      next: (response) => {
+        this.toastService.show('Parameter updated successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error updating parameter:', error);
+        this.toastService.show('Error updating parameter', 'error');
+      }
     });
   }
 }
+

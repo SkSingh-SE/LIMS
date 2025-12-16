@@ -3,12 +3,13 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule]
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -77,15 +78,39 @@ export class ReportingListComponent implements OnInit {
 
   fetchData(): void {
     this.isLoading.set(true);
-    this.reportingService.getReportingList().subscribe({
-      next: (data) => {
-        this.reportingData = data || [];
+    // Prefer dashboard API which supports paging/filtering. Fall back to local list when not available.
+    this.payload.PageNumber = this.pageNumber;
+    this.payload.PageSize = this.pageSize;
+    this.payload.searchTerm = this.searchTerm;
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.payload.filter = this.filters ?? null;
+
+    this.reportingService.getReportDashboardList(this.payload).subscribe({
+      next: (resp) => {
+        // Response shapes vary: try common properties
+        const items = resp?.items || resp?.data || resp || [];
+        this.reportingData = Array.isArray(items) ? items : [];
+        this.totalRecords = resp?.totalRecords || this.reportingData.length;
+        this.pageSize = resp?.pageSize || this.pageSize;
+        this.pageNumber = resp?.pageNumber || this.pageNumber;
         this.applyFiltersAndSort();
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error loading reporting data:', error);
-        this.isLoading.set(false);
+        console.error('Error loading reporting data (dashboard API):', error);
+        // fallback
+        this.reportingService.getReportingList().subscribe({
+          next: (data) => {
+            this.reportingData = data || [];
+            this.applyFiltersAndSort();
+            this.isLoading.set(false);
+          },
+          error: (err) => {
+            console.error('Fallback error loading reporting data:', err);
+            this.isLoading.set(false);
+          }
+        });
       }
     });
   }
@@ -130,6 +155,29 @@ export class ReportingListComponent implements OnInit {
     this.filteredData = filtered.slice(startIndex, startIndex + this.pageSize);
   }
 
+  performWorkflowAction(item: any, action: 'Approve' | 'Reject') {
+    if (!item?.workflowInstanceId) {
+      alert('No workflow instance available for this report.');
+      return;
+    }
+
+    const comments = prompt(`Enter comments for ${action.toLowerCase()} (optional):`, '');
+    if (comments === null) return; // Cancelled
+
+    this.isLoading.set(true);
+    this.reportingService.takeWorkflowAction(item.workflowInstanceId, action, comments || '').subscribe({
+      next: () => {
+        alert(`Report ${action}d successfully.`);
+        this.fetchData();
+      },
+      error: (err) => {
+        console.error('Workflow action failed:', err);
+        alert('Action failed. See console for details.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
   onSearch(): void {
     this.applyFiltersAndSort();
   }
@@ -165,27 +213,8 @@ export class ReportingListComponent implements OnInit {
     this.applyFiltersAndSort();
   }
 
-  getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'Pending':
-        return 'badge bg-warning text-dark';
-      case 'Completed':
-        return 'badge bg-info text-white';
-      case 'ReadyForReport':
-        return 'badge bg-success text-white';
-      default:
-        return 'badge bg-secondary';
-    }
-  }
 
-  getStatusLabel(status: string): string {
-    switch (status) {
-      case 'ReadyForReport':
-        return 'Ready for Report';
-      default:
-        return status;
-    }
-  }
+
 
   getEndRecord(): number {
     return Math.min(this.pageNumber * this.pageSize, this.totalRecords);

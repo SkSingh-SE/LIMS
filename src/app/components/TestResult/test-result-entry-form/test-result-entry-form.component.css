@@ -112,6 +112,35 @@
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
+/* Test Images Card */
+.test-images-card {
+  border: 1px solid #e9ecef;
+  background: #fff;
+}
+
+.image-thumb-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.image-thumb-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12);
+}
+
+/* Make file input visually consistent */
+input[type="file"].form-control {
+  padding: 0.35rem 0.75rem;
+}
+
+/* Small caption input styling inside input-group */
+.input-group .form-control.form-control-sm {
+  height: auto;
+}
+
+@media (max-width: 576px) {
+  .image-thumb-card img { height: 80px; }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .table-sm {

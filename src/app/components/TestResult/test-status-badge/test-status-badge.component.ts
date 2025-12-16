@@ -25,18 +25,45 @@ export class TestStatusBadgeComponent {
   @Input() status: string = 'Pending'; // 'Pending' | 'Started' | 'In Progress' | 'Completed' | 'Active'  | 'Paused'
 
   getBadgeClass(): string {
-    const baseClass = 'badge';
+    const base = 'badge';
+
     switch (this.status) {
+      // -------- Testing --------
       case 'Pending':
-        return `${baseClass} bg-secondary`;
+        return `${base} bg-secondary`;
+
       case 'Started':
-        return `${baseClass} bg-info`;
+        return `${base} bg-info`;
+
       case 'In Progress':
-        return `${baseClass} bg-warning text-dark`;
+        return `${base} bg-warning text-dark`;
+
+      case 'Long-Term':
+        return `${base} bg-warning text-dark`;
+
       case 'Completed':
-        return `${baseClass} bg-success`;
+        return `${base} bg-success`;
+
+      // -------- Reporting --------
+      case 'Ready for Report':
+        return `${base} bg-success`;
+
+      case 'Report Pending':
+        return `${base} bg-warning text-dark`;
+
+      case 'Approved':
+        return `${base} bg-success`;
+
+      case 'Rejected':
+        return `${base} bg-danger`;
+
+      // -------- Optional --------
+      case 'Draft':
+        return `${base} bg-info`;
+
       default:
-        return `${baseClass} bg-secondary`;
+        return `${base} bg-secondary`;
     }
   }
+
 }

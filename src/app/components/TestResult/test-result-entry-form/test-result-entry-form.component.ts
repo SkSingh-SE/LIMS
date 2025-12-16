@@ -7,16 +7,19 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
+import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-test-result-entry-form',
   templateUrl: './test-result-entry-form.component.html',
   styleUrls: ['./test-result-entry-form.component.css'],
-  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent,DecimalOnlyDirective],
+  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent,DecimalOnlyDirective,TestStatusBadgeComponent],
 })
 export class TestResultEntryFormComponent implements OnInit {
 
+  baseUrl: string = environment.baseUrl;
   sampleId: number = 0;
   inward: any = null;
   sample: any = null;
@@ -42,7 +45,8 @@ export class TestResultEntryFormComponent implements OnInit {
     private testResultService: TestResultService,
     private parameterService: ParameterService,
     private toastService: ToastService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -152,6 +156,18 @@ export class TestResultEntryFormComponent implements OnInit {
 
         // Patch values into form
         this.patchFormValues(data);
+        // Fetch images for all test headers so thumbnails are available in UI
+        try {
+          const headerSet = new Set<number>();
+          (this.plans || []).forEach((plan: any) => {
+            (plan.tests || []).forEach((t: any) => {
+              if (t && (t.headerId || t.headerId === 0)) headerSet.add(t.headerId);
+            });
+          });
+          headerSet.forEach(hId => this.fetchTestImages(hId));
+        } catch (e) {
+          console.warn('Failed to fetch initial test images', e);
+        }
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
@@ -898,6 +914,7 @@ export class TestResultEntryFormComponent implements OnInit {
    * Inline update parameter via API
    */
   updateParameterInline(planIndex: number, testIndex: number, paramIndex: number): void {
+    debugger;
     const param = this.getParameters(planIndex, testIndex).at(paramIndex).value;
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
@@ -919,5 +936,107 @@ export class TestResultEntryFormComponent implements OnInit {
       }
     });
   }
+
+  // ================================================================
+  // Test Images - UI state, preview, upload and fetch
+  // ================================================================
+  // Map of headerId -> array of existing images fetched from API
+  testImagesMap: Record<number, any[]> = {};
+
+  // Map of headerId -> selected files w/ captions & previews before upload
+  selectedFilesMap: Record<number, { file: File; caption: string; preview: string }[]> = {};
+
+  /**
+   * Determine if a TestResultHeader (identified by headerId) is completed.
+   * We approximate header status by checking if all tests sharing the headerId are Completed.
+   */
+  isHeaderCompleted(headerId: number): boolean {
+    if (!headerId && headerId !== 0) return false;
+    const relatedTests = this.plans.flatMap(p => p.tests || []).filter((t: any) => t.headerId === headerId);
+    if (!relatedTests || relatedTests.length === 0) return false;
+    return relatedTests.every((t: any) => t.status === 'Completed');
+  }
+
+  /** Handle file selection for a particular headerId */
+  onFilesSelected(event: Event, headerId: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input || !input.files) return;
+
+    const files = Array.from(input.files);
+    if (!this.selectedFilesMap[headerId]) this.selectedFilesMap[headerId] = [];
+
+    files.forEach(file => {
+      const preview = URL.createObjectURL(file);
+      this.selectedFilesMap[headerId].push({ file, caption: '', preview });
+    });
+
+    // reset the input so the same file can be re-selected if needed
+    input.value = '';
+  }
+
+  updateCaption(headerId: number, idx: number, value: string): void {
+    const arr = this.selectedFilesMap[headerId] || [];
+    if (arr[idx]) arr[idx].caption = value || '';
+  }
+
+  /** Upload selected files for a header */
+  uploadSelectedFiles(headerId: number): void {
+    const selected = this.selectedFilesMap[headerId] || [];
+    if (!selected.length) {
+      this.toastService.show('Please select files to upload', 'warning');
+      return;
+    }
+
+    const files = selected.map(s => s.file);
+    const captions = selected.map(s => s.caption || '');
+
+    // Call service (uses FormData internally)
+    this.testResultService.uploadTestImages(headerId, files, captions).subscribe({
+      next: (resp) => {
+        this.toastService.show('Images uploaded successfully', 'success');
+        // clear selected files for this header and refresh list
+        this.clearSelectedPreviews(headerId);
+        // this.fetchTestImages(headerId);
+        this.loadFullResultPayload(this.sampleId) // in case image info needed in payload
+      },
+      error: (err) => {
+        console.error('Image upload failed:', err);
+        this.toastService.show('Failed to upload images', 'error');
+      }
+    });
+  }
+
+  /** Clear selected previews and revoke object URLs */
+  private clearSelectedPreviews(headerId: number): void {
+    const arr = this.selectedFilesMap[headerId] || [];
+    arr.forEach(a => {
+      try { URL.revokeObjectURL(a.preview); } catch (e) {}
+    });
+    this.selectedFilesMap[headerId] = [];
+  }
+
+  /** Fetch images from API for a header and store in map */
+  fetchTestImages(headerId: number): void {
+    if (!headerId && headerId !== 0) return;
+    this.testResultService.getTestImages(headerId).subscribe({
+      next: (imgs) => {
+        this.testImagesMap[headerId] = imgs || [];
+      },
+      error: (err) => {
+        console.error('Failed to fetch test images:', err);
+        this.testImagesMap[headerId] = [];
+      }
+    });
+  }
+
+  /** Utility: open full image in new tab */
+  openImage(imgUrl: string): void {
+    if (!imgUrl) return;
+    window.open(this.baseUrl+imgUrl, '_blank');
+  }
+  cancel(): void {
+    this.router.navigate(['/testing/dashboard']);
+  }
+
 }
 

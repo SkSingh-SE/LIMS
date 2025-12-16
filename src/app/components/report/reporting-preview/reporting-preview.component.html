@@ -145,6 +145,7 @@
                       <span class="badge" [ngClass]="test.status === 'Pass' ? 'bg-success' : 'bg-danger'">
                         {{ test.status }}
                       </span>
+                      <app-test-status-badge [status]="test.status"></app-test-status-badge>
                     </td>
                   </tr>
                 </tbody>
@@ -206,22 +207,52 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let test of reportData.longTermTests">
-                    <td class="fw-semibold">{{ test.testName }}</td>
-                    <td>{{ test.startedAt }}</td>
-                    <td>{{ test.duration }}</td>
-                    <td class="text-center">{{ test.readings }}</td>
-                    <td>
-                      <span
-                        class="badge"
-                        [ngClass]="
-                          test.status === 'Completed' ? 'bg-success' : test.status === 'In Progress' ? 'bg-info' : 'bg-warning'
-                        "
-                      >
-                        {{ test.status }}
-                      </span>
-                    </td>
-                  </tr>
+                  <ng-container *ngFor="let test of reportData.longTermTests">
+                    <tr>
+                      <td class="fw-semibold">{{ test.testName }}</td>
+                      <td>{{ test.startedAt }}</td>
+                      <td>{{ test.duration }}</td>
+                      <td class="text-center">{{ test.readings }}</td>
+                      <td>
+                        <span
+                          class="badge"
+                          [ngClass]="
+                            test.status === 'Completed' ? 'bg-success' : test.status === 'In Progress' ? 'bg-info' : 'bg-warning'
+                          "
+                        >
+                          {{ test.status }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="5" class="p-0 border-0">
+                        <div *ngIf="test.parameters?.length" class="p-2 bg-white border-top">
+                          <strong>Parameters:</strong>
+                          <span *ngFor="let p of test.parameters" class="badge bg-light text-dark me-2">{{ p.name }}: {{ p.value }}</span>
+                        </div>
+                        <div *ngIf="test.readingsDetails?.length" class="p-2">
+                          <div class="table-responsive">
+                            <table class="table table-sm mb-2">
+                              <thead>
+                                <tr>
+                                  <th>Recorded At</th>
+                                  <th>Value</th>
+                                  <th>Remarks</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr *ngFor="let r of test.readingsDetails">
+                                  <td>{{ r.recordedAt | date }}</td>
+                                  <td>{{ r.value }}</td>
+                                  <td>{{ r.remarks }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
                 </tbody>
               </table>
             </div>

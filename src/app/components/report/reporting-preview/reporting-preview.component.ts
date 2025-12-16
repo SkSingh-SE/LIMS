@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ReportingService, ReportingPreview } from '../../../services/reporting.service';
+import { Router } from '@angular/router';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-reporting-preview',
   templateUrl: './reporting-preview.component.html',
   styleUrls: ['./reporting-preview.component.css'],
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule, TestStatusBadgeComponent]
 })
 export class ReportingPreviewComponent implements OnInit {
   reportData: ReportingPreview | null = null;
@@ -19,7 +21,8 @@ export class ReportingPreviewComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private reportingService: ReportingService
+    private reportingService: ReportingService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -60,14 +63,46 @@ export class ReportingPreviewComponent implements OnInit {
   }
 
   approveReport(): void {
-    console.log('Approve report clicked for:', this.sampleId);
-    // Dummy implementation
-    alert('Report approval not implemented yet.');
+    if (!this.reportData?.workflowInstanceId) {
+      alert('No workflow instance available for approval.');
+      return;
+    }
+    const comments = prompt('Enter approval comments (optional):', '');
+    if (comments === null) return;
+    this.isLoading.set(true);
+    this.reportingService.takeWorkflowAction(this.reportData.workflowInstanceId!, 'Approve', comments || '').subscribe({
+      next: () => {
+        alert('Report approved successfully.');
+        this.isLoading.set(false);
+        this.router.navigate(['/reporting']);
+      },
+      error: (err) => {
+        console.error('Approve failed:', err);
+        alert('Approve action failed. See console for details.');
+        this.isLoading.set(false);
+      }
+    });
   }
 
   rejectReport(): void {
-    console.log('Reject report clicked for:', this.sampleId);
-    // Dummy implementation
-    alert('Report rejection not implemented yet.');
+    if (!this.reportData?.workflowInstanceId) {
+      alert('No workflow instance available for rejection.');
+      return;
+    }
+    const comments = prompt('Enter rejection comments (optional):', '');
+    if (comments === null) return;
+    this.isLoading.set(true);
+    this.reportingService.takeWorkflowAction(this.reportData.workflowInstanceId!, 'Reject', comments || '').subscribe({
+      next: () => {
+        alert('Report rejected successfully.');
+        this.isLoading.set(false);
+        this.router.navigate(['/reporting']);
+      },
+      error: (err) => {
+        console.error('Reject failed:', err);
+        alert('Reject action failed. See console for details.');
+        this.isLoading.set(false);
+      }
+    });
   }
 }

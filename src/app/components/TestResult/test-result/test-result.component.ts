@@ -74,30 +74,18 @@ export class TestResultComponent implements OnInit {
   fetchData() {
     this.isLoading.set(true);
     // Prefer dashboard-specific API; fall back to list if needed
-    this.testresultService.getDashboardItems(this.payload).subscribe({
-      next: (response) => {
-        // response expected as array of dashboard items
-        this.listData = (response || []).map((item: any) => this.enrichDashboardItem(item));
-        this.totalItems = (response && (response as any).length) || 0;
+    this.testresultService.getAllTestResults(this.payload).subscribe({
+      next: (resp) => {
+        this.listData = (resp?.items || []).map((item: any) => this.enrichDashboardItem(item));
+        this.totalItems = resp?.totalRecords || 0;
+        this.pageSize = resp?.pageSize || 10;
+        this.pageNumber = resp?.pageNumber || 1;
         this.isLoading.set(false);
       },
-      error: (error) => {
-        console.error('Error fetching dashboard items:', error);
-        // Try fallback to generic list API
-        this.testresultService.getAllTestResults(this.payload).subscribe({
-          next: (resp) => {
-            this.listData = (resp?.items || []).map((item: any) => this.enrichDashboardItem(item));
-            this.totalItems = resp?.totalRecords || 0;
-            this.pageSize = resp?.pageSize || 10;
-            this.pageNumber = resp?.pageNumber || 1;
-            this.isLoading.set(false);
-          },
-          error: (err) => {
-            console.error('Fallback list API failed:', err);
-            this.listData = [];
-            this.isLoading.set(false);
-          }
-        });
+      error: (err) => {
+        console.error('Fallback list API failed:', err);
+        this.listData = [];
+        this.isLoading.set(false);
       }
     });
 
@@ -121,8 +109,6 @@ export class TestResultComponent implements OnInit {
 
     return {
       ...item,
-      // Ensure sampleStatus field maps correctly from status or derives from test array
-      sampleStatus: this.deriveSampleStatus(item),
       // Ensure proper ID references for routing
       sampleId: item.sampleId || item.id,
       planId: item.planId || null,
@@ -150,29 +136,7 @@ export class TestResultComponent implements OnInit {
     return item.hasLongTermTests === true || item.isLongTermTest === true;
   }
 
-  /**
-   * Derive overall sample status from individual test statuses
-   * Status priority: Completed > In Progress > Started > Pending
-   */
-  deriveSampleStatus(item: any): string {
-    // If status is already provided, use it
-    if (item.status && item.status !== 'Pending') {
-      return item.status;
-    }
 
-    // If tests array exists, derive from test states
-    if (Array.isArray(item.tests) && item.tests.length > 0) {
-      const statuses = item.tests.map((t: any) => t.status || t.testStatus || 'Pending');
-
-      if (statuses.some((s: string) => s === 'Completed')) return 'Completed';
-      if (statuses.some((s: string) => s === 'In Progress')) return 'In Progress';
-      if (statuses.some((s: string) => s === 'Started')) return 'Started';
-      if (statuses.some((s: string) => s === 'Pending')) return 'Pending';
-    }
-
-    // Default to Pending
-    return 'Pending';
-  }
 
   /**
    * Format tests for display
@@ -311,7 +275,7 @@ export class TestResultComponent implements OnInit {
   }
 
   onActionClick(action: any) {
-   console.log('Action clicked:', action);
+    console.log('Action clicked:', action);
   }
 
 }

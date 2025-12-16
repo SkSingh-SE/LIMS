@@ -119,27 +119,32 @@ export class ConfigManagerComponent implements OnInit {
     this.configService.getConfigurationsById(this.configId).subscribe({
       next: (res: any) => {
         if (res) {
-          const aliasArray: FormArray<FormGroup> = this.fb.array<FormGroup>([]);
-          (res.aliasNames || []).forEach((alias: any) => {
-            aliasArray.push(this.fb.group({
-              id: [alias.id],
-              invoiceConfigurationID: [alias.invoiceConfigurationID],
-              name: [alias.name]
-            }));
-          });
+          // Parse pipe-separated values into array for dropdown
+          const valuesArray = res.value ? res.value.split('|').map((item: string) => item.trim()) : [];
 
+          const aliasArray: FormArray<FormControl> = this.fb.array<FormControl>(
+            valuesArray.map((val: string) => this.fb.control(val))
+          );
+
+          // Patch form with correct field mapping
           this.configForm.patchValue({
             id: res.id,
-            selectionType: res.selectionType,
-            name: res.name,
-            aliasName: res.aliasName,
+            keyName: res.keyName,
+            groupName: res.groupName,
+            description: res.description,
             value: res.value,
-            start: res.start,
-            end: res.end,
-            unit: res.unit
+            valueType: res.valueType
           });
 
+          // Set values array for dropdown mode
           this.configForm.setControl('values', aliasArray);
+
+          // Trigger group change to properly show/hide value inputs
+          this.onGroupChange();
+
+          // Show modal only after data is successfully loaded
+          this.bsModal = new Modal(this.modalElement.nativeElement);
+          this.bsModal.show();
         }
       },
       error: err => {
@@ -262,39 +267,49 @@ export class ConfigManagerComponent implements OnInit {
     if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
-     
+
     }
   }
   openModal(type: string, id: number): void {
-    if (id > 0) {
-      this.configId = id;
-      this.getDetails();
-    }
+    // Reset form first
+    this.initForm();
+
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       if (this.values.length === 0) {
         this.addValue();
       }
       this.formTitle = 'Configuration Form';
       this.configForm.enable();
+
+      // Show modal immediately for create mode
+      this.bsModal = new Modal(this.modalElement.nativeElement);
+      this.bsModal.show();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Configuration Form';
       this.configForm.enable();
 
+      if (id > 0) {
+        this.configId = id;
+        // Fetch data and show modal only after data is loaded
+        this.getDetails();
+      }
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
       this.formTitle = 'View Configuration';
       this.configForm.disable();
-    }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
-    this.bsModal.show();
+      if (id > 0) {
+        this.configId = id;
+        // Fetch data and show modal only after data is loaded
+        this.getDetails();
+      }
+    }
   }
 
   closeModal(): void {
@@ -302,6 +317,7 @@ export class ConfigManagerComponent implements OnInit {
       this.bsModal.hide();
     }
     this.configForm.reset();
+    this.configId = 0;
   }
 
   onSubmit(): void {

@@ -60,7 +60,16 @@
             aria-expanded="false"
             [attr.aria-controls]="'plan-' + p"
           >
-            {{ plans[p].type }} TESTS — (Specification: {{ plans[p].specification }})
+            <span class="fw-semibold text-dark text-uppercase me-2">{{ plans[p].type }} Tests </span>
+
+
+            <span class="small text-danger-600">
+              <i class="bi bi-journal-text me-1"></i>
+               Specification:
+              <span class="fw-semibold">
+                {{ plans[p].specification }}
+              </span>
+            </span>
           </button>
         </h2>
 
@@ -72,39 +81,71 @@
                 class="card mb-3 border-secondary test-card"
                 [formGroupName]="t"
               >
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                  <h6 class="fw-bold mb-0">
-                    {{ plans[p].tests[t].name }}
-                    <span class="text-muted">(Report: {{ plans[p].tests[t].reportNo }})</span>
-                  </h6>
-                  <div class="d-flex gap-1">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="startTest(p, t)"
-                      [disabled]="plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Long-Term'"
-                      title="Start Test"
-                    >
-                      <i class="bi bi-play-fill"></i> Start
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-success"
-                      (click)="completeTest(p, t)"
-                      [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress'"
-                      title="Complete Test"
-                    >
-                      <i class="bi bi-check"></i> Complete
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-warning"
-                      (click)="openMoveToLongTermModal(p, t)"
-                      [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' || plans[p].tests[t].status == 'Completed'"
-                      title="Move to Long-Term Tracking"
-                    >
-                      <i class="bi bi-hourglass"></i> Long-Term
-                    </button>
+                <div class="card-header bg-light d-flex justify-content-between align-items-start">
+                  <div class="d-flex flex-column">
+                    <div class="fw-semibold text-dark">
+                      <span class="text-danger-600"> {{ plans[p].tests[t].name }}</span>
+                      <div class="me-0 d-flex align-items-center gap-2 small text-muted">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Report No:</span>
+                        <span class="badge bg-light text-dark border">
+                          {{ plans[p].tests[t].reportNo }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-end">
+                    <!-- Status Badge (top-right) -->
+                    <span class="badge me-2">
+                      <app-test-status-badge [status]="plans[p].tests[t].status"></app-test-status-badge>
+                    </span>
+
+                    <!-- Action buttons group (respect existing *ngIf and [disabled]) -->
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Test actions">
+                      <button
+                        *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="startTest(p, t)"
+                        [disabled]="
+                          plans[p].tests[t].status === 'Started' ||
+                          plans[p].tests[t].status === 'Completed' ||
+                          plans[p].tests[t].status === 'Long-Term'
+                        "
+                        title="Start Test"
+                      >
+                        <i class="bi bi-play-fill"></i>
+                        Start
+                      </button>
+
+                      <button
+                        *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
+                        type="button"
+                        class="btn btn-success"
+                        (click)="completeTest(p, t)"
+                        [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress'"
+                        title="Complete Test"
+                      >
+                        <i class="bi bi-check"></i>
+                        Complete
+                      </button>
+
+                      <button
+                        *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
+                        type="button"
+                        class="btn btn-warning"
+                        (click)="openMoveToLongTermModal(p, t)"
+                        [disabled]="
+                          (plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress') ||
+                          plans[p].tests[t].status == 'Completed'
+                        "
+                        title="Move to Long-Term Tracking"
+                      >
+                        <i class="bi bi-hourglass"></i>
+                        Long-Term
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -171,14 +212,24 @@
                             type="text"
                             class="form-control form-control-sm"
                             [ngClass]="{
-                              'is-invalid': plans[p].type === 'Chemical' && row.get('maxValue')?.invalid && row.get('maxValue')?.touched && row.get('maxValue')?.errors && row.get('altered')?.value
+                              'is-invalid':
+                                plans[p].type === 'Chemical' &&
+                                row.get('maxValue')?.invalid &&
+                                row.get('maxValue')?.touched &&
+                                row.get('maxValue')?.errors &&
+                                row.get('altered')?.value
                             }"
                             formControlName="maxValue"
                             [readOnly]="!row.value?.altered || isParameterCalculated(row.value)"
                             appDecimalOnly
                             [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
                           />
-                          <span *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">Max is required</span>
+                          <span
+                            *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched"
+                            class="text-danger small"
+                          >
+                            Max is required
+                          </span>
                         </td>
 
                         <!-- Value Input with Auto-Focus -->
@@ -200,13 +251,16 @@
                         <!-- PASS / FAIL Badge (Chemical Only) -->
                         <td *ngIf="plans[p].type === 'Chemical'" class="text-center">
                           <span *ngIf="row.value.isWithinLimit === true" class="badge bg-success">
-                            <i class="bi bi-check-circle"></i> PASS
+                            <i class="bi bi-check-circle"></i>
+                            PASS
                           </span>
                           <span *ngIf="row.value.isWithinLimit === false" class="badge bg-danger">
-                            <i class="bi bi-x-circle"></i> FAIL
+                            <i class="bi bi-x-circle"></i>
+                            FAIL
                           </span>
                           <span *ngIf="row.value.isWithinLimit === null" class="badge bg-secondary">
-                            <i class="bi bi-dash-circle"></i> -
+                            <i class="bi bi-dash-circle"></i>
+                            -
                           </span>
                         </td>
 
@@ -254,6 +308,81 @@
                     <i class="bi bi-plus-circle-dotted"></i>
                     Add Parameter
                   </button>
+
+                  <!-- TEST IMAGES SECTION -->
+                  <!-- TEST IMAGES - Bootstrap card -->
+                  <div class="card mt-3 test-images-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                      <h6 class="">Test Images</h6>
+                      <small class="text-muted" style="margin-top: -10px">Images for header: {{ plans[p].tests[t].headerId }}</small>
+                    </div>
+                    <div class="card-body">
+                      <!-- Upload controls hidden in view/read-only mode -->
+                      <div [class.d-none]="isViewMode">
+                        <div class="mb-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            class="form-control"
+                            (change)="onFilesSelected($event, plans[p].tests[t].headerId)"
+                          />
+                        </div>
+
+                        <div
+                          *ngIf="selectedFilesMap[plans[p].tests[t].headerId] && selectedFilesMap[plans[p].tests[t].headerId].length"
+                          class="mb-2"
+                        >
+                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index" class="input-group mb-2">
+                            <span class="input-group-text p-0" style="width: 90px">
+                              <img
+                                [src]="sf.preview"
+                                style="width: 90px; height: 60px; object-fit: cover; cursor: pointer"
+                                (click)="openImage(sf.preview)"
+                              />
+                            </span>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              [value]="sf.caption"
+                              (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)"
+                              placeholder="Optional caption"
+                            />
+                          </div>
+                          <div class="text-end">
+                            <button class="btn btn-sm btn-primary" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
+                              Upload Images
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Existing images grid (visible always) -->
+                      <div
+                        *ngIf="testImagesMap[plans[p].tests[t].headerId] && testImagesMap[plans[p].tests[t].headerId].length; else noImages"
+                      >
+                        <div class="row g-2">
+                          <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="col-6 col-md-3 col-lg-2">
+                            <div
+                              class="card image-thumb-card h-100"
+                              role="button"
+                              (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)"
+                            >
+                              <img
+                                [src]="baseUrl + img.filePath || img.fileUrl || img.thumbnailUrl"
+                                class="card-img-top"
+                                style="height: 100px; object-fit: cover"
+                              />
+                              <div class="card-body p-2 small text-truncate">{{ img.caption || img.name || "-" }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <ng-template #noImages>
+                        <div class="alert alert-secondary small mb-0">No images uploaded yet.</div>
+                      </ng-template>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -265,15 +394,16 @@
 
   <!-- Action Buttons -->
   <div class="text-end mt-3">
-    <button class="btn btn-secondary me-2" type="button" (click)="saveResults()">Save</button>
-    <button class="btn btn-danger" type="button" (click)="completeResults()">Complete</button>
+    <button class="btn btn-warning me-2" type="button" (click)="cancel()" >Cancel</button>
+    <button class="btn btn-success me-2" type="button" (click)="saveResults()">Save</button>
+    <!-- <button class="btn btn-danger" type="button" (click)="completeResults()">Complete</button> -->
   </div>
 </div>
 
 <!-- ================================================================ -->
 <!-- MOVE TO LONG-TERM MODAL -->
 <!-- ================================================================ -->
-<div *ngIf="showMoveToLongTermModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+<div *ngIf="showMoveToLongTermModal" class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -285,14 +415,16 @@
         <div class="modal-body">
           <div class="alert alert-info mb-3">
             <i class="bi bi-info-circle"></i>
-            <strong>Long-Term Tracking</strong><br>
+            <strong>Long-Term Tracking</strong>
+            <br />
             This test will be moved to long-term tracking where periodic readings can be recorded.
           </div>
 
           <!-- Duration Hours Input -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              Duration (Hours) <span class="text-danger">*</span>
+              Duration (Hours)
+              <span class="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -301,32 +433,29 @@
               placeholder="Enter duration in hours (e.g., 72, 168, 720)"
               min="1"
               max="10000"
-              [ngClass]="{ 'is-invalid': moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched }"
+              [ngClass]="{
+                'is-invalid': moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched
+              }"
             />
             <small class="d-block mt-2 text-muted">
               <i class="bi bi-lightbulb"></i>
-              <strong>Common durations:</strong> 24h (1 day), 72h (3 days), 168h (1 week), 720h (30 days)
+              <strong>Common durations:</strong>
+              24h (1 day), 72h (3 days), 168h (1 week), 720h (30 days)
             </small>
-            <small class="text-danger d-block mt-2" *ngIf="moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched">
+            <small
+              class="text-danger d-block mt-2"
+              *ngIf="moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched"
+            >
               Please enter a valid duration (1 to 10000 hours)
             </small>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="closeMoveToLongTermModal()"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn btn-warning"
-            [disabled]="moveToLongTermForm.invalid"
-          >
-            <i class="bi bi-hourglass"></i> Move to Long-Term
+          <button type="button" class="btn btn-secondary" (click)="closeMoveToLongTermModal()">Cancel</button>
+          <button type="submit" class="btn btn-warning" [disabled]="moveToLongTermForm.invalid">
+            <i class="bi bi-hourglass"></i>
+            Move to Long-Term
           </button>
         </div>
       </form>

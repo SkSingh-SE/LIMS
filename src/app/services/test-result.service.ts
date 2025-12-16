@@ -66,8 +66,8 @@ export class TestResultService {
   /**
    * Update a single parameter
    */
-  updateParameter(headerId: number, parameterId: number, parameter: any): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/update-parameter/${headerId}/parameter/${parameterId}`, { parameter });
+  updateParameter(headerId: number, parameterId: number, param: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/update-parameter/${headerId}/parameter/${parameterId}`, param);
   }
 
   // ================================================================
@@ -159,5 +159,35 @@ export class TestResultService {
 
   getParametersForHeader(headerId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/parameters/header/${headerId}`);
+  }
+
+  // ================================================================
+  // Image Uploads (Test-wise)
+  // ================================================================
+  /**
+   * Get images for a test header
+   * GET /api/test-results/{headerId}/images
+   */
+  getTestImages(headerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${headerId}/images`);
+  }
+
+  /**
+   * Upload multiple images for a test header. Expects FormData with files and captions.
+   * POST /api/test-results/{headerId}/images
+   */
+  uploadTestImages(headerId: number, files: File[], captions?: string[]): Observable<any> {
+    const fd = new FormData();
+    if (files && files.length) {
+      for (let i = 0; i < files.length; i++) {
+        fd.append('files', files[i], files[i].name);
+      }
+    }
+    if (captions && captions.length) {
+      // send captions as JSON string; backend may accept this or per-file captions
+      fd.append('captions', JSON.stringify(captions));
+    }
+
+    return this.http.post<any>(`${this.apiUrl}/${headerId}/images`, fd);
   }
 }

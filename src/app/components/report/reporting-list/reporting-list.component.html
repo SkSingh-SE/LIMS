@@ -67,33 +67,37 @@
               <td>{{ item.material }}</td>
               <td>{{ item.condition }}</td>
               <td>
-                <span [ngClass]="getStatusBadgeClass(item.status)">
-                  {{ getStatusLabel(item.status) }}
-                </span>
+                <app-test-status-badge [status]="item.status"></app-test-status-badge>
               </td>
               <td>
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
                   <!-- Preview Button -->
                   <button
                     class="btn btn-sm btn-outline-info"
-                    [routerLink]="['/reporting/preview', item.sampleNo]"
+                    [routerLink]="['/reporting/preview', item.reportHeaderId || item.sampleNo]"
                     title="Preview Report"
                   >
                     <i class="bi bi-eye"></i>
                     <span class="d-none d-sm-inline">Preview</span>
                   </button>
 
-                  <!-- Generate PDF Button -->
-                  <button class="btn btn-sm btn-outline-success" title="Generate PDF" disabled>
+                  <!-- Generate PDF Button (visible when Approved) -->
+                  <button *ngIf="item.status === 'Approved'" class="btn btn-sm btn-outline-success" title="Generate PDF">
                     <i class="bi bi-file-pdf"></i>
                     <span class="d-none d-sm-inline">PDF</span>
                   </button>
 
-                  <!-- Approve Button -->
-                  <button class="btn btn-sm btn-outline-primary" title="Approve Report" disabled>
-                    <i class="bi bi-check-circle"></i>
-                    <span class="d-none d-sm-inline">Approve</span>
-                  </button>
+                  <!-- Approve / Reject Buttons (visible when canTakeAction is true) -->
+                  <ng-container *ngIf="item.canTakeAction">
+                    <button class="btn btn-sm btn-outline-primary" title="Approve Report" (click)="performWorkflowAction(item, 'Approve')">
+                      <i class="bi bi-check-circle"></i>
+                      <span class="d-none d-sm-inline">Approve</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Reject Report" (click)="performWorkflowAction(item, 'Reject')">
+                      <i class="bi bi-x-circle"></i>
+                      <span class="d-none d-sm-inline">Reject</span>
+                    </button>
+                  </ng-container>
                 </div>
               </td>
             </tr>

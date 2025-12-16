@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { HttpClient } from '@angular/common/http';
 
 export interface ReportingListItem {
   sampleNo: string;
@@ -7,7 +9,10 @@ export interface ReportingListItem {
   customer: string;
   material: string;
   condition: string;
-  status: 'Pending' | 'Completed' | 'ReadyForReport';
+  status: 'Pending' | 'Completed' | 'ReadyForReport' | 'Report Pending' | 'Approved';
+  reportHeaderId?: string;
+  workflowInstanceId?: string;
+  canTakeAction?: boolean;
 }
 
 export interface ReportingPreview {
@@ -16,6 +21,8 @@ export interface ReportingPreview {
   customer: string;
   material: string;
   condition: string;
+  reportHeaderId?: string;
+  workflowInstanceId?: string;
   mechanicalTests: MechanicalTest[];
   chemicalTests: ChemicalTest[];
   longTermTests: LongTermTest[];
@@ -45,12 +52,21 @@ export interface LongTermTest {
   duration: string;
   readings: number;
   status: string;
+  parameters?: any[];
+  readingsDetails?: LongTermReading[];
+}
+
+export interface LongTermReading {
+  recordedAt: string;
+  value: number | string;
+  remarks?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReportingService {
+  private apiUrl = environment.apiUrl + "/Reporting";
   private dummyReportingList: ReportingListItem[] = [
     {
       sampleNo: 'S-001',
@@ -58,7 +74,10 @@ export class ReportingService {
       customer: 'ABC Metals',
       material: 'TMT',
       condition: 'As Rolled',
-      status: 'ReadyForReport'
+      status: 'ReadyForReport',
+      reportHeaderId: 'RH-1001',
+      workflowInstanceId: 'WF-9001',
+      canTakeAction: true
     },
     {
       sampleNo: 'S-002',
@@ -66,7 +85,10 @@ export class ReportingService {
       customer: 'Shreenath Steel',
       material: 'Billet',
       condition: 'Hot Rolled',
-      status: 'Completed'
+      status: 'Completed',
+      reportHeaderId: 'RH-1002',
+      workflowInstanceId: 'WF-9002',
+      canTakeAction: false
     },
     {
       sampleNo: 'S-003',
@@ -82,7 +104,10 @@ export class ReportingService {
       customer: 'JSW Steel',
       material: 'Plate',
       condition: 'Cold Rolled',
-      status: 'ReadyForReport'
+      status: 'Report Pending',
+      reportHeaderId: 'RH-1004',
+      workflowInstanceId: 'WF-9004',
+      canTakeAction: true
     },
     {
       sampleNo: 'S-005',
@@ -98,11 +123,18 @@ export class ReportingService {
       customer: 'SAIL',
       material: 'Bar',
       condition: 'As Rolled',
-      status: 'Completed'
+      status: 'Approved',
+      reportHeaderId: 'RH-1006',
+      workflowInstanceId: 'WF-9006',
+      canTakeAction: false
     }
   ];
 
-  constructor() { }
+  constructor(private http: HttpClient) { }
+
+   getReportDashboardList(filter: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + "/list", filter);
+  }
 
   getReportingList(): Observable<ReportingListItem[]> {
     return of(this.dummyReportingList);
@@ -112,6 +144,8 @@ export class ReportingService {
     const dummyPreview: ReportingPreview = {
       sampleNo: sampleId,
       caseNo: '24-00012',
+      reportHeaderId: 'RH-1001',
+      workflowInstanceId: 'WF-9001',
       customer: 'ABC Metals',
       material: 'TMT',
       condition: 'As Rolled',
@@ -130,11 +164,51 @@ export class ReportingService {
         { element: 'Sulfur', percentage: 0.025, min: 0.00, max: 0.030, status: 'Pass' }
       ],
       longTermTests: [
-        { testName: 'Corrosion Resistance (Salt Spray)', startedAt: '2024-01-15', duration: '1000 hours', readings: 24, status: 'In Progress' },
-        { testName: 'High Temperature Oxidation', startedAt: '2024-01-20', duration: '500 hours', readings: 12, status: 'In Progress' }
+        {
+          testName: 'Corrosion Resistance (Salt Spray)',
+          startedAt: '2024-01-15',
+          duration: '1000 hours',
+          readings: 24,
+          status: 'In Progress',
+          parameters: [
+            { name: 'Chamber Temp', value: '35°C' },
+            { name: 'Humidity', value: '95%' }
+          ],
+          readingsDetails: [
+            { recordedAt: '2024-01-16T10:00:00Z', value: 0.12, remarks: 'No visible change' },
+            { recordedAt: '2024-02-16T10:00:00Z', value: 0.15, remarks: 'Minor pitting' }
+          ]
+        },
+        {
+          testName: 'High Temperature Oxidation',
+          startedAt: '2024-01-20',
+          duration: '500 hours',
+          readings: 12,
+          status: 'In Progress',
+          parameters: [
+            { name: 'Temp', value: '650°C' },
+            { name: 'Atmosphere', value: 'Air' }
+          ],
+          readingsDetails: [
+            { recordedAt: '2024-01-25T08:00:00Z', value: 1.2, remarks: 'Scale forming' },
+            { recordedAt: '2024-02-05T08:00:00Z', value: 1.5, remarks: 'Increased oxidation' }
+          ]
+        }
       ],
       remarks: 'All test results are satisfactory. No defects observed. Ready for approval and report generation.'
     };
     return of(dummyPreview);
+  }
+
+  /**
+   * Call workflow action API for reporting (approve/reject)
+   */
+  takeWorkflowAction(workflowInstanceId: string, action: 'Approve' | 'Reject', comments?: string): Observable<any> {
+    const payload = {
+      workflowInstanceId,
+      action,
+      comments: comments || ''
+    };
+    return this.http.post<any>(this.apiUrl + '/workflow/action', payload);
   }
 }

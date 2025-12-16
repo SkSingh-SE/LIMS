@@ -70,13 +70,14 @@
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
                   <!-- Perform Testing Button -->
                   <button
-                    class="btn btn-sm btn-outline-primary"
+                  *ngIf="item.sampleStatus !== 'Completed'"
+                    class="btn btn-sm btn-outline-danger-600"
                     [routerLink]="['/testing/perform', item.sampleId]"
                     title="Perform Testing"
                     [disabled]="item.sampleStatus === 'Completed'"
                   >
                     <i class="bi bi-play-fill"></i>
-                    <span class="d-none d-sm-inline">Test</span>
+                    <span class="d-none d-sm-inline">Perform Test</span>
                   </button>
 
                   <!-- View Results Button -->

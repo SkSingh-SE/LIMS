@@ -1,23 +1,35 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { ReportingService, ReportingPreview } from '../../../services/reporting.service';
+import { ReportingService, ReportingPreview, WorkflowAction } from '../../../services/reporting.service';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-reporting-preview',
   templateUrl: './reporting-preview.component.html',
-  styleUrls: ['./reporting-preview.component.css'],
-  imports: [CommonModule, RouterModule, TestStatusBadgeComponent]
+  styleUrl: './reporting-preview.component.css',
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
 })
 export class ReportingPreviewComponent implements OnInit {
   reportData: ReportingPreview | null = null;
   isLoading = signal(false);
   sampleId: string = '';
 
-  // Active Tab
-  activeTab: string = 'summary';
+  // Collapsible sections
+  expandedMechanicalTests: Set<string> = new Set();
+  expandedChemicalTests: Set<string> = new Set();
+  expandedLongTermTests: Set<string> = new Set();
+
+  // Action panel
+  showActionPanel = false;
+  selectedAction: WorkflowAction | null = null;
+  actionRemark: string = '';
+
+  // internal flag to prevent double submits
+  private submitting = false;
+  pdfGenerating = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -38,7 +50,7 @@ export class ReportingPreviewComponent implements OnInit {
     this.isLoading.set(true);
     this.reportingService.getReportPreview(sampleId).subscribe({
       next: (data) => {
-        this.reportData = data;
+        this.reportData = this.normalizeReportPreview(data);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -48,60 +60,236 @@ export class ReportingPreviewComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: string): void {
-    this.activeTab = tab;
+  /**
+   * Normalize API payload so template can safely bind to properties.
+   * - Ensure arrays are non-null
+   * - Parse JSON strings inside long-term readings if necessary
+   * - Provide sensible defaults for optional fields
+   */
+  private normalizeReportPreview(src: ReportingPreview): ReportingPreview {
+    const dst: ReportingPreview = {
+      reportHeaderId: src.reportHeaderId || '',
+      workflowInstanceId: src.workflowInstanceId || '',
+      sampleNo: src.sampleNo || '',
+      caseNo: src.caseNo || '',
+      customer: src.customer || '',
+      material: src.material || '',
+      condition: src.condition || '',
+      reportNo: src.reportNo || '',
+      status: (src.status as any) || 'Pending',
+      mechanicalTests: (src.mechanicalTests || []).map(t => ({
+        testResultHeaderId: (t as any).testResultHeaderId || (t as any).testId || '',
+        testName: t.testName || '',
+        reportNo: t.reportNo || '',
+        specification1Name: t.specification1Name || '',
+        specification2Name: t.specification2Name || '',
+        status: (t.status as any) || 'Pending',
+        parameters: (t.parameters || []).map(p => ({
+          parameterID: (p as any).parameterID || (p as any).parameterId || '',
+          parameterName: p.parameterName || '',
+          value: p.value ?? '',
+          unit: p.unit || '',
+          minValue: p.minValue ?? '',
+          maxValue: p.maxValue ?? '',
+          isWithinLimit:  p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          remarks: p.remarks || ''
+        }))
+      })),
+      chemicalTests: (src.chemicalTests || []).map(t => ({
+        testResultHeaderId: (t as any).testResultHeaderId || (t as any).testId || '',
+        testName: t.testName || '',
+        reportNo: t.reportNo || '',
+        specification1Name: t.specification1Name || '',
+        specification2Name: t.specification2Name || '',
+        status: (t.status as any) || 'Pending',
+        parameters: (t.parameters || []).map(p => ({
+          parameterID: (p as any).parameterID || (p as any).parameterId || '',
+          parameterName: p.parameterName|| '',
+          value: p.value ?? '',
+          unit: p.unit || '',
+          minValue: p.minValue ?? '',
+          maxValue: p.maxValue ?? '',
+          isWithinLimit: p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          remarks: p.remarks || ''
+        }))
+      })),
+      longTermTests: (src.longTermTests || []).map(t => ({
+        longTermTestId: (t as any).longTermTestId || (t as any).id || '',
+        testName: t.testName || '',
+        durationHours: t.durationHours ?? 0,
+        startedAt: t.startedAt || '',
+        endedAt: t.endedAt || undefined,
+        status: (t.status as any) || 'Pending',
+        parameters: (t.parameters || []).map((p: any) => ({ parameterName: p.parameterName || p.name || '', value: p.value ?? '' })),
+        readings: (t.readings || []).map(r => {
+          const parsed = this.safeParseReading(r.parsed);
+          return {
+            recordedAt: r.recordedAt  || '',
+            parsed
+          };
+        })
+      })),
+      actions: src.actions || []
+    };
+
+    return dst;
+  }
+
+  private safeParseReading(raw: any): any {
+    if (raw == null) return null;
+    if (typeof raw === 'object') return raw;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        // not a JSON string, return raw string
+        return raw;
+      }
+    }
+    return raw;
+  }
+
+  /**
+   * Extract relevant fields from parsed reading data
+   * Handles both single object and array formats
+   */
+  extractReadingData(parsed: any): Array<{ parameterName: string; value: any; remarks: string }> {
+    if (!parsed) return [];
+
+    // If it's an array, process each item
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => this.extractSingleReading(item)).filter(item => item !== null);
+    }
+
+    // If it's a single object, wrap in array
+    const extracted = this.extractSingleReading(parsed);
+    return extracted ? [extracted] : [];
+  }
+
+  private extractSingleReading(item: any): { parameterName: string; value: any; remarks: string } | null {
+    if (!item || typeof item !== 'object') return null;
+
+    return {
+      parameterName: item.ParameterName || item.parameterName || '-',
+      value: item.Value !== undefined ? item.Value : (item.value !== undefined ? item.value : '-'),
+      remarks: item.Remarks || item.remarks || '-'
+    };
   }
 
   goBack(): void {
     window.history.back();
   }
 
-  generatePDF(): void {
-    console.log('Generate PDF clicked for:', this.sampleId);
-    // Dummy implementation
-    alert('PDF generation not implemented yet.');
+  // Collapsible toggle methods
+  toggleMechanicalTest(testId: string): void {
+    if (this.expandedMechanicalTests.has(testId)) {
+      this.expandedMechanicalTests.delete(testId);
+    } else {
+      this.expandedMechanicalTests.add(testId);
+    }
   }
 
-  approveReport(): void {
-    if (!this.reportData?.workflowInstanceId) {
-      alert('No workflow instance available for approval.');
-      return;
+  toggleChemicalTest(testId: string): void {
+    if (this.expandedChemicalTests.has(testId)) {
+      this.expandedChemicalTests.delete(testId);
+    } else {
+      this.expandedChemicalTests.add(testId);
     }
-    const comments = prompt('Enter approval comments (optional):', '');
-    if (comments === null) return;
+  }
+
+  toggleLongTermTest(testId: string): void {
+    if (this.expandedLongTermTests.has(testId)) {
+      this.expandedLongTermTests.delete(testId);
+    } else {
+      this.expandedLongTermTests.add(testId);
+    }
+  }
+
+  isMechanicalTestExpanded(testId: string): boolean {
+    return this.expandedMechanicalTests.has(testId);
+  }
+
+  isChemicalTestExpanded(testId: string): boolean {
+    return this.expandedChemicalTests.has(testId);
+  }
+
+  isLongTermTestExpanded(testId: string): boolean {
+    return this.expandedLongTermTests.has(testId);
+  }
+
+  // Action handling - matches ReviewOfRequestFormComponent pattern
+  submitReview(): void {
+    debugger;
+    if (!this.selectedAction || !this.reportData || this.submitting) return;
+    const actionKey = (this.selectedAction.action || '').toString().toLowerCase();
+    if (actionKey !== 'next' && !this.actionRemark) return;
+
+    this.submitting = true;
     this.isLoading.set(true);
-    this.reportingService.takeWorkflowAction(this.reportData.workflowInstanceId!, 'Approve', comments || '').subscribe({
+
+     const payload = {
+      id: this.reportData.workflowInstanceId,
+      action: this.selectedAction.action,
+      remarks: this.actionRemark || ''
+    };
+    this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
-        alert('Report approved successfully.');
+        this.submitting = false;
         this.isLoading.set(false);
+        this.showActionPanel = false;
+        // keep UX consistent with other screens
+        alert('Action completed successfully.');
         this.router.navigate(['/reporting']);
       },
       error: (err) => {
-        console.error('Approve failed:', err);
-        alert('Approve action failed. See console for details.');
+        this.submitting = false;
+        console.error('Action failed:', err);
         this.isLoading.set(false);
+        alert('Action failed. See console for details.');
       }
     });
   }
 
-  rejectReport(): void {
-    if (!this.reportData?.workflowInstanceId) {
-      alert('No workflow instance available for rejection.');
+  // Helper method to format status badge
+  getStatusClass(status: string): string {
+    const statusLower = status?.toLowerCase() || '';
+    if (statusLower === 'completed') return 'bg-success';
+    if (statusLower === 'running' || statusLower === 'in progress') return 'bg-info';
+    if (statusLower === 'pending') return 'bg-warning';
+    if (statusLower === 'failed') return 'bg-danger';
+    return 'bg-secondary';
+  }
+
+  /**
+   * Check if report status allows PDF generation
+   */
+  canGeneratePdf(): boolean {
+    if (!this.reportData) return false;
+    const allowedStatuses = ['Completed', 'Approved'];
+    return allowedStatuses.includes(this.reportData.status);
+  }
+
+  /**
+   * Generate PDF for the current report
+   */
+  generatePdf(): void {
+    if (!this.reportData || this.pdfGenerating) return;
+
+    if (!this.canGeneratePdf()) {
+      alert('PDF can only be generated for approved/completed reports.');
       return;
     }
-    const comments = prompt('Enter rejection comments (optional):', '');
-    if (comments === null) return;
-    this.isLoading.set(true);
-    this.reportingService.takeWorkflowAction(this.reportData.workflowInstanceId!, 'Reject', comments || '').subscribe({
+
+    this.pdfGenerating = true;
+    this.reportingService.generateReportPdf(this.reportData.reportHeaderId).subscribe({
       next: () => {
-        alert('Report rejected successfully.');
-        this.isLoading.set(false);
-        this.router.navigate(['/reporting']);
+        this.pdfGenerating = false;
+        alert('PDF generated successfully.');
       },
       error: (err) => {
-        console.error('Reject failed:', err);
-        alert('Reject action failed. See console for details.');
-        this.isLoading.set(false);
+        this.pdfGenerating = false;
+        console.error('PDF generation failed:', err);
+        alert('PDF generation failed. See console for details.');
       }
     });
   }

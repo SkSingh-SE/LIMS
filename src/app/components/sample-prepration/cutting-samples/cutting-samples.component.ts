@@ -3,12 +3,13 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CuttingService } from '../../../services/cutting.service';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-cutting-samples',
   templateUrl: './cutting-samples.component.html',
   styleUrls: ['./cutting-samples.component.css'],
-   imports: [CommonModule,RouterModule,FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent],
 })
 export class CuttingSamplesComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -16,8 +17,8 @@ export class CuttingSamplesComponent implements OnInit {
   columns = [
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
     { key: 'grandTotal', type: 'number', label: 'Grand Total', filter: true },
-    { key: 'prepRequired', type: 'string', label: 'Prep Required', filter: true },
-    { key: 'completed', type: 'string', label: 'Completed', filter: true },
+    { key: 'totalRequired', type: 'string', label: 'Prep Required', filter: true },
+    { key: 'completedCount', type: 'string', label: 'Completed', filter: true },
     { key: 'preparationStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },

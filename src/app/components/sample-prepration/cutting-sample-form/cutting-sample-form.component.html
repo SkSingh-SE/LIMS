@@ -51,7 +51,7 @@
               <div class="card-body d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <h6 class="mb-0">Sample #: {{ sCtrl.get("sampleNo")?.value }}</h6>
-                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
@@ -87,7 +87,7 @@
                         <th class="fw-medium px-2 text-center">Rate (₹)</th>
                         <th class="fw-medium px-2 text-center">Qty / Time</th>
                         <th class="fw-medium px-2 text-center">Total (₹)</th>
-                        <th></th>
+                        <th *ngIf="!isViewMode" class="fw-medium px-2 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -125,7 +125,7 @@
                           </ng-template>
                         </td>
                         <td class="text-center fw-semibold">{{ rowCtrl.get("total")?.value | number : "1.0-2" }}</td>
-                        <td class="text-center">
+                        <td *ngIf="!isViewMode" class="text-center">
                           <button type="button" class="btn btn-sm btn-danger" (click)="removeCutting(i, j)"><i class="bi bi-trash"></i></button>
                         </td>
                       </tr>
@@ -142,7 +142,7 @@
         <!-- Grand total & save -->
         <div class="text-end fs-5 fw-bold mb-3" *ngIf="samplesFA.length">GRAND TOTAL: ₹ {{ grandTotal() | number : "1.0-2" }}</div>
 
-        <div class="text-end gap-2">
+        <div *ngIf="!isViewMode" class="text-end gap-2">
           <button type="button" class="btn btn-warning me-2" (click)="onCancel()">Cancel</button>
           <button type="submit" class="btn btn-success" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
         </div>

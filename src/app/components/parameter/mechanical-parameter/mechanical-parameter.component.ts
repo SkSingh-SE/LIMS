@@ -22,6 +22,8 @@ export class MechanicalParameterComponent implements OnInit {
 
   allParameters: any[] = [];
   tempFormula: string = '';
+  numericInput: string = '';
+  formulaPreview: string = ''; // NEW: Store formula with parameter names
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
@@ -358,20 +360,46 @@ export class MechanicalParameterComponent implements OnInit {
       this.ParameterForm.patchValue({ formula: '' });
     }
   }
-  openFormulaBuilder() {
-    this.tempFormula = this.ParameterForm.value.formula || '';
-    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
-    this.formulaBsModal.show();
-  }
   addParameterToFormula(event: any) {
     const paramId = event.target.value;
     if (!paramId) return;
 
     this.tempFormula += `{P${paramId}}`;
+    this.updateFormulaPreview(); // NEW: Update preview
   }
+
+  addNumberToFormula() {
+    if (!this.numericInput || this.numericInput === '') return;
+
+    const numValue = parseFloat(this.numericInput);
+    if (isNaN(numValue)) {
+      this.toastService.show('Please enter a valid number', 'warning');
+      return;
+    }
+
+    this.tempFormula += ` ${this.numericInput}`;
+    this.numericInput = '';
+    this.updateFormulaPreview(); // NEW: Update preview
+  }
+
   addOperator(op: string) {
     this.tempFormula += ` ${op} `;
+    this.updateFormulaPreview(); // NEW: Update preview
   }
+
+  // NEW: Update formula preview with parameter names
+  private updateFormulaPreview() {
+    let preview = this.tempFormula;
+
+    // Replace {PX} with parameter name
+    this.allParameters.forEach(param => {
+      const regex = new RegExp(`\\{P${param.id}\\}`, 'g');
+      preview = preview.replace(regex, `{P${param.id}:${param.name}}`);
+    });
+
+    this.formulaPreview = preview;
+  }
+
   saveFormula() {
     this.ParameterForm.patchValue({
       formula: this.tempFormula
@@ -383,12 +411,22 @@ export class MechanicalParameterComponent implements OnInit {
     if (this.formulaBsModal) {
       this.formulaBsModal.hide();
     }
+    this.numericInput = '';
+    this.formulaPreview = ''; // NEW: Clear preview
   }
   clearFormula() {
     this.tempFormula = '';
+    this.numericInput = '';
+    this.formulaPreview = ''; // NEW: Clear preview
     this.ParameterForm.patchValue({
       formula: ''
     });
+  }
+  openFormulaBuilder() {
+    this.tempFormula = this.ParameterForm.value.formula || '';
+    this.updateFormulaPreview(); // NEW: Initialize preview
+    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
+    this.formulaBsModal.show();
   }
 }
 

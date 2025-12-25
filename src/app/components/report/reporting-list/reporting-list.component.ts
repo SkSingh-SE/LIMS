@@ -13,6 +13,7 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
+  pdfGeneratingId: string | null = null; // Track which item is generating PDF
   columns = [
     { key: 'sampleNo', type: 'string', label: 'Sample No', filter: true },
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
@@ -70,7 +71,7 @@ export class ReportingListComponent implements OnInit {
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
   statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
 
-  constructor(private reportingService: ReportingService) {}
+  constructor(private reportingService: ReportingService) { }
 
   ngOnInit(): void {
     this.fetchData();
@@ -91,6 +92,10 @@ export class ReportingListComponent implements OnInit {
         // Response shapes vary: try common properties
         const items = resp?.items || resp?.data || resp || [];
         this.reportingData = Array.isArray(items) ? items : [];
+        for (let i = 0; i < 5; i++) {
+          const safeItems = Array.isArray(items) ? items : [];
+          this.reportingData.push(...safeItems);
+        }
         this.totalRecords = resp?.totalRecords || this.reportingData.length;
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
@@ -155,7 +160,7 @@ export class ReportingListComponent implements OnInit {
     this.filteredData = filtered.slice(startIndex, startIndex + this.pageSize);
   }
 
-  performWorkflowAction(item: any, action: 'Approve' | 'Reject') {
+  performWorkflowAction(item: any, action: 'Next' | 'Cancel' | 'Back') {
     if (!item?.workflowInstanceId) {
       alert('No workflow instance available for this report.');
       return;
@@ -165,9 +170,14 @@ export class ReportingListComponent implements OnInit {
     if (comments === null) return; // Cancelled
 
     this.isLoading.set(true);
-    this.reportingService.takeWorkflowAction(item.workflowInstanceId, action, comments || '').subscribe({
+    const payload = {
+      id: item.workflowInstanceId,
+      action,
+      remarks: comments || ''
+    };
+    this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
-        alert(`Report ${action}d successfully.`);
+        alert(`Report action completed successfully.`);
         this.fetchData();
       },
       error: (err) => {
@@ -176,6 +186,46 @@ export class ReportingListComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  /**
+   * Generate PDF for approved/completed report
+   */
+  generatePdf(item: ReportingListItem, event: Event): void {
+    event.stopPropagation();
+
+    if (!item?.reportHeaderId) {
+      alert('Report ID is not available.');
+      return;
+    }
+
+    // Check if status allows PDF generation
+    if (!this.canGeneratePdf(item.status)) {
+      alert('PDF can only be generated for approved/completed reports.');
+      return;
+    }
+
+    this.pdfGeneratingId = item.reportHeaderId;
+    this.reportingService.generateReportPdf(item.reportHeaderId).subscribe({
+      next: (response) => {
+        this.pdfGeneratingId = null;
+        alert('PDF generated successfully.');
+        // Optionally: download PDF or refresh list
+      },
+      error: (err) => {
+        this.pdfGeneratingId = null;
+        console.error('PDF generation failed:', err);
+        alert('PDF generation failed. See console for details.');
+      }
+    });
+  }
+
+  /**
+   * Check if report status allows PDF generation
+   */
+  canGeneratePdf(status: string): boolean {
+    const allowedStatuses = ['Completed', 'Approved'];
+    return allowedStatuses.includes(status);
   }
 
   onSearch(): void {
@@ -290,7 +340,7 @@ export class ReportingListComponent implements OnInit {
       this.filterModal.nativeElement.style.display = 'none';
     }
   }
-    hasFilter(column: string): boolean {
+  hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
   }
   getColumnType(columnKey: string): string | undefined {

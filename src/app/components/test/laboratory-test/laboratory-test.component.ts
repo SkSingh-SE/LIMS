@@ -115,13 +115,9 @@ export class LaboratoryTestComponent implements OnInit {
               })
             );
           });
-          this.labTestForm.patchValue({ invoiceCaseIDs: selectIds });
-
-          const arr = this.labTestForm.get('parameters') as FormArray;
           const ids: number[] = [];
-
+          const arr = this.labTestForm.get('parameters') as FormArray;
           arr.clear();
-
           response?.parameters?.forEach((p: any) => {
             ids.push(p.parameterID);
             arr.push(this.fb.group({
@@ -131,7 +127,14 @@ export class LaboratoryTestComponent implements OnInit {
             }));
           });
 
-          this.labTestForm.patchValue({ parameterIDs: ids });
+          // ✅ defer patchValue
+          setTimeout(() => {
+            this.labTestForm.patchValue({
+              invoiceCaseIDs: selectIds,
+              parameterIDs: ids
+            });
+          });
+
         }
       },
       error: (error) => {
@@ -173,16 +176,26 @@ export class LaboratoryTestComponent implements OnInit {
   };
 
   onDepartmentSelected(item: any) {
+
     this.labTestForm.patchValue({ labDepartmentID: item.id });
     this.selectedDepartment = item;
 
-    const arr = this.labTestForm.get('parameters') as FormArray;
-    arr.clear();
+    // const arr = this.labTestForm.get('parameters') as FormArray;
+    // this.resetParameters();
 
-    // trigger reload
-    this.parameterReloadKey = Date.now();
+    queueMicrotask(() => {
+      this.parameterReloadKey = Date.now();
+    });
+
   }
+  resetParameters(): void {
+    (this.labTestForm.get('parameters') as FormArray).clear();
 
+    this.labTestForm.patchValue(
+      { parameterIDs: [] },
+      { emitEvent: false }
+    );
+  }
 
   getInvoiceCaseConfig = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.invoiceConfig.getInvoiceCaseConfigDropdown(term, page, pageSize);
@@ -207,10 +220,7 @@ export class LaboratoryTestComponent implements OnInit {
 
   getParameters = (term: string, page: number, pageSize: number): Observable<any[]> => {
 
-    if (!this.selectedDepartment || !this.selectedDepartment.name) {
-      return of([]);
-    }
-    const dept = this.selectedDepartment.name.toLowerCase();
+    const dept = this.selectedDepartment?.name.toLowerCase();
     if (dept === 'mechanical') {
       return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
     }
@@ -223,21 +233,30 @@ export class LaboratoryTestComponent implements OnInit {
 
 
   onParameterChange(selectedItems: any[]) {
+
+    if (selectedItems.length < 1) return;
+
     const arr = this.labTestForm.get('parameters') as FormArray;
     const ids: number[] = [];
 
-    arr.clear();
+    this.resetParameters();
 
     selectedItems.forEach(item => {
       ids.push(item.id);
-      arr.push(this.fb.group({
-        id: [0],
-        laboratoryTestID: [this.labTestForm.get('id')?.value || 0],
-        parameterID: [item.id]
-      }));
+      arr.push(
+        this.fb.group({
+          id: [0],
+          laboratoryTestID: [this.labTestForm.get('id')?.value || 0],
+          parameterID: [item.id]
+        })
+      );
     });
 
-    this.labTestForm.patchValue({ parameterIDs: ids });
+    this.labTestForm.patchValue(
+      { parameterIDs: ids },
+      { emitEvent: false }
+    );
   }
+
 
 }

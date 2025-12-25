@@ -20,6 +20,7 @@ export class SampleInwardListComponent implements OnInit {
     { key: 'contactEmail', type: 'string', label: 'Contact Email', filter: true },
     { key: 'contactPhone', type: 'string', label: 'Contact Phone', filter: true },
     { key: 'collectionTime', type: 'string', label: 'Collection Time', filter: true },
+    { key: 'inwardStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: true },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: true },
   ];
@@ -30,6 +31,7 @@ export class SampleInwardListComponent implements OnInit {
     contactEmail: 'string',
     contactPhone: 'string',
     collectionTime: 'string',
+    inwardStatus: 'string',
     modifiedBy: 'string',
     modifiedOn: 'string',
   };

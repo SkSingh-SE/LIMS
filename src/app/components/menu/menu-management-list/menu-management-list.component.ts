@@ -16,14 +16,14 @@ export class MenuManagementListComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'title', type: 'string', label: 'Title', filter: true },
-    { key: 'isExpanded', type: 'string', label: 'Children', filter: true },
-    { key: 'route', type: 'string', label: 'Route', filter: true }
+    // { key: 'isExpanded', type: 'string', label: 'Children', filter: true },
+    // { key: 'route', type: 'string', label: 'Route', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     title: 'string',
-    isExpanded: 'string',
-    route: 'string'
+    // isExpanded: 'string',
+    // route: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

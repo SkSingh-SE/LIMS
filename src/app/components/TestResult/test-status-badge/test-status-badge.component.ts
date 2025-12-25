@@ -57,6 +57,9 @@ export class TestStatusBadgeComponent {
       case 'Rejected':
         return `${base} bg-danger`;
 
+      case 'Report Generated':
+        return `${base} bg-dark-1 text-white`;
+
       // -------- Optional --------
       case 'Draft':
         return `${base} bg-info`;

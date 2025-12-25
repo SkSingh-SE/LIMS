@@ -283,7 +283,7 @@
 </div>
 
 <!-- Formula Builder Modal -->
- <div class="modal fade" #formulaModal tabindex="-1">
+<div class="modal fade" #formulaModal tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -292,16 +292,31 @@
       </div>
 
       <div class="modal-body">
-
         <!-- Parameter Dropdown -->
         <div class="mb-2">
           <label>Select Parameter</label>
           <select class="form-select" (change)="addParameterToFormula($event)">
             <option value="">Select</option>
-            <option *ngFor="let p of allParameters" [value]="p.id">
-              {{ p.name }} {{ '{P' + p.id + '}' }}
-            </option>
+            <option *ngFor="let p of allParameters" [value]="p.id">{{ p.name }} {{ "{P" + p.id + "}" }}</option>
           </select>
+        </div>
+
+        <!-- Numeric Input (NEW) -->
+        <div class="mb-2">
+          <label>Or Add Numeric Constant</label>
+          <div class="input-group">
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="numericInput"
+              placeholder="Enter number (e.g., 100, 0.5)"
+              step="any"
+              (keydown.enter)="addNumberToFormula()"
+            />
+            <button type="button" class="btn btn-outline-secondary" (click)="addNumberToFormula()">
+              Add Number
+            </button>
+          </div>
         </div>
 
         <!-- Operators -->
@@ -315,23 +330,22 @@
         </div>
 
         <!-- Formula Preview -->
-        <div>
-          <label class="form-label d-flex justify-content-between">
+        <div class="d-flex justify-content-between mb-1">
+          <label class="form-label">
             <span>Formula Preview</span>
-            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearFormula()">Clear</button>
           </label>
-          <input type="text" class="form-control"
-                 [value]="tempFormula" readonly />
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearFormula()">Clear</button>
         </div>
-
+        <div>
+          <input type="text" class="form-control" [value]="tempFormula" readonly />
+          {{formulaPreview}}
+        </div>
       </div>
 
       <div class="modal-footer">
         <button class="btn btn-dark" (click)="closeFormulaModal()">Cancel</button>
         <button class="btn btn-success" (click)="saveFormula()">Apply</button>
       </div>
-
     </div>
   </div>
 </div>
-

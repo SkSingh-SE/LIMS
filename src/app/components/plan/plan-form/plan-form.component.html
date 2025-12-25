@@ -409,7 +409,7 @@
                           <th class="fw-medium text-center">Sr No.</th>
                           <th class="fw-medium text-center">Test Method Standard</th>
                           <th class="fw-medium text-center">Laboratory Test</th>
-                          <th class="fw-medium text-center">Test Case </th>
+                          <th class="fw-medium text-center">Test Case</th>
                           <th class="fw-medium text-center">Quantity</th>
                           <th class="fw-medium text-center">
                             <div>Report No</div>
@@ -450,7 +450,10 @@
                                 {{ test.name }}
                               </option>
                             </select>
-                            <div *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched" class="text-danger small mt-1">
+                            <div
+                              *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched"
+                              class="text-danger small mt-1"
+                            >
                               Required
                             </div>
                           </td>
@@ -460,21 +463,20 @@
                               class="form-select"
                               formControlName="testCaseID"
                               [disabled]="isViewMode || !method.get('testMethodID')?.value"
-                              (change)="
-                                onTestCaseSelected(
-                                  { id: $any($event.target).value },
-                                  sampleIdx,
-                                  planIdx,
-                                  methodIdx
-                                )
-                              "
+                              (change)="onTestCaseSelected({ id: $any($event.target).value }, sampleIdx, planIdx, methodIdx)"
                             >
-                              <option value="">-- Select Test Case --</option>
-                              <option *ngFor="let testCase of filteredTestCases[`${sampleIdx}_${planIdx}_${methodIdx}`] || []" [value]="testCase.id">
+                              <option value="null">-- Select Test Case --</option>
+                              <option
+                                *ngFor="let testCase of filteredTestCases[`${sampleIdx}_${planIdx}_${methodIdx}`] || []"
+                                [value]="testCase.id"
+                              >
                                 {{ testCase.name }}
                               </option>
                             </select>
-                            <div *ngIf="method.get('testCaseID')?.hasError('required') && method.get('testCaseID')?.touched" class="text-danger small mt-1">
+                            <div
+                              *ngIf="method.get('testCaseID')?.hasError('required') && method.get('testCaseID')?.touched"
+                              class="text-danger small mt-1"
+                            >
                               Test Case is required
                             </div>
                           </td>
@@ -520,6 +522,15 @@
                       <i class="bi bi-plus-circle-dotted"></i>
                       Add Row
                     </button>
+                    <button
+                      *ngIf="!isViewMode"
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary ms-2"
+                      (click)="removeGeneralTest(sampleIdx, planIdx, 0)"
+                    >
+                      <i class="bi bi-trash"></i>
+                      Remove General Test
+                    </button>
                   </div>
                 </ng-container>
                 <button
@@ -557,7 +568,9 @@
                                 class="form-check-input mt-1"
                                 id="{{ test.id }}-{{ sampleIdx }}-{{ planIdx }}-{{ chemIdx }}"
                               />
-                              <label class="form-label" [for]="test.id + '-' + sampleIdx + '-' + planIdx + '-' + chemIdx">{{ test.name }}</label>
+                              <label class="form-label" [for]="test.id + '-' + sampleIdx + '-' + planIdx + '-' + chemIdx">
+                                {{ test.name }}
+                              </label>
                             </div>
                           </div>
                         </div>

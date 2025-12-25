@@ -137,7 +137,7 @@
                   </div>
                 </div>
 
-                <div class="">
+                <!-- <div class="">
                   <app-searchable-dropdown
                     class="w-100"
                     [placeholder]="'Search Metal Type'"
@@ -145,17 +145,11 @@
                     [fetchDataFn]="getMetalClassification"
                     (itemSelected)="onMetalClassificationSelected($event, gi)"
                     [hideLabel]="false"
-                    [required]="true"
+                    [required]="false"
                     [isDisabled]="isViewMode"
-                    [selectedItem]="grade.get('metalClassificationID')?.value"
+                    [selectedItem]="selectedMetalByGrade[gi]?.id"
                   ></app-searchable-dropdown>
-                  <div
-                    *ngIf="grade.get('metalClassificationID')?.touched && grade.get('standardOrganizationID')?.invalid"
-                    class="text-danger text-sm"
-                  >
-                    Metal Classification is required.
-                  </div>
-                </div>
+                </div> -->
                 <div class="form-check ps-3">
                   <input type="checkbox" class="form-check-input mt-1 ms-0 me-auto" formControlName="isUNS" id="isUNS-{{gi}}" />
                   <label class="form-label ms-1" for="isUNS-{{gi}}">UNS</label>
@@ -182,15 +176,27 @@
                     Mechanical
                   </a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'other'" (click)="selectSpecTab(gi, 'other')">Other</a>
-                </li>
+                </li> -->
               </ul>
               <div [formGroupName]="'specificationLines'">
                 <!-- Chemical Tab -->
                 <div class="p-2" *ngIf="selectedSpecTab[gi] === 'chemical'">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold fs-6 mb-0">Specification Lines</label>
+
+                    <app-searchable-dropdown
+                      class="w-50"
+                      [placeholder]="'Fetch Parameters by Metal Classification'"
+                      [labelName]="''"
+                      [fetchDataFn]="getMetalClassification"
+                      (itemSelected)="fetchParameterByMetal($event, gi)"
+                      [hideLabel]="true"
+                      [required]="false"
+                      [isDisabled]="isViewMode"
+                      [selectedItem]="selectedFetchParameterByGrade[gi]?.id"
+                    ></app-searchable-dropdown>
                     <button
                       *ngIf="!isViewMode"
                       type="button"
@@ -200,7 +206,9 @@
                       <i class="bi bi-plus-circle-dotted"></i>
                       Add Line
                     </button>
+
                   </div>
+
 
                   <div
                     #scrollContainer
@@ -435,6 +443,18 @@
                 <div class="p-2" *ngIf="selectedSpecTab[gi] === 'mechanical'">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold fs-6 mb-0">Specification Lines</label>
+
+                    <app-searchable-dropdown
+                      class="w-50"
+                      [placeholder]="'Fetch Parameters by Metal Classification'"
+                      [labelName]="''"
+                      [fetchDataFn]="getMetalClassification"
+                      (itemSelected)="fetchParameterByMetalMechanical($event, gi)"
+                      [hideLabel]="true"
+                      [required]="false"
+                      [isDisabled]="isViewMode"
+                      [selectedItem]="selectedFetchParameterByGrade[gi]?.id"
+                    ></app-searchable-dropdown>
                     <button
                       *ngIf="!isViewMode"
                       type="button"
@@ -444,6 +464,7 @@
                       <i class="bi bi-plus-circle-dotted"></i>
                       Add Line
                     </button>
+
                   </div>
 
                   <div
@@ -665,7 +686,7 @@
                   </div>
                 </div>
                 <!-- Other Tab -->
-                <div class="p-2" *ngIf="selectedSpecTab[gi] === 'other'">
+                <!-- <div class="p-2" *ngIf="selectedSpecTab[gi] === 'other'">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold fs-6 mb-0">Specification Lines</label>
                     <button
@@ -773,7 +794,6 @@
                               <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
                             </td>
                             <td>
-                              <!-- Unit Dropdown normal select -->
                               <select class="form-select wide-input" formControlName="parameterUnitID">
                                 <option value="" disabled selected>Select Unit</option>
                                 <option *ngFor="let unit of parameterUnits" [value]="unit.id">
@@ -818,7 +838,6 @@
                               />
                             </td>
                             <td>
-                              <!-- Specimen Dropdown normal select -->
                               <select class="form-select wide-input" formControlName="specimenOrientationID">
                                 <option value="null" disabled selected>Select Orientation</option>
                                 <option *ngFor="let specimen of specimenOriantations" [value]="specimen.id">
@@ -896,7 +915,7 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </div> -->
               </div>
             </div>
           </div>

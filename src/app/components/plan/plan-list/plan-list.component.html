@@ -63,7 +63,7 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a> -->
-                                    <a [routerLink]="['/sample/plan/edit', item.id]"
+                                    <a *ngIf="item.actionStatus == 'PENDING' && (item.currentStageStatus == 'INWARD_COMPLETED' || item.currentStageStatus == 'UNDER_PLANNING')" [routerLink]="['/sample/plan/edit', item.id]"
                                     [state]="{ mode: 'plan' }"
                                     class="btn btn-sm btn-outline-danger-600"
                                         title="Plan">

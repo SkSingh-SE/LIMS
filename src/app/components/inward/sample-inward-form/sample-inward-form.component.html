@@ -462,10 +462,10 @@
                           class="text-truncate me-2"
                           type="button"
                           (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
-                          title="{{ sample.get('standardFile')?.value }}"
+                          title="{{ sample.get('fileName')?.value }}"
                         >
                           <i class="bi bi-file-earmark-fill"></i>
-                          {{ sample.get("standardFile")?.value }}
+                          {{ sample.get("fileName")?.value }}
                         </span>
                         <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
                           <i class="bi bi-trash-fill fs-6 me-1"></i>

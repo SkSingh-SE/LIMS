@@ -86,6 +86,10 @@ export class MaterialSpecificationFormComponent implements OnInit {
 
   // store per-grade selected test method item
   selectedTestMethodByGrade: any[] = [];
+  // store per-grade selected metal classification (UI-only state)
+  selectedMetalByGrade: any[] = [];
+  // store per-grade selected fetch parameter (UI-only state)
+  selectedFetchParameterByGrade: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -162,8 +166,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
       grade: [''],
       isUNS: [false],
       unsSteelNumber: [''],
-      metalClassificationID: [''],
-      testMethodSpecificationID: ['', Validators.required], // per-grade test method
+      testMethodSpecificationID: ['', Validators.required],
       specificationLines: this.fb.group({
         chemical: this.fb.array([]),
         mechanical: this.fb.array([]),
@@ -171,13 +174,16 @@ export class MaterialSpecificationFormComponent implements OnInit {
       }),
     });
     this.grades.push(gradeGroup);
-    // ensure per-grade selectedTestMethod slot exists
     this.selectedTestMethodByGrade.push(null);
+    this.selectedMetalByGrade.push(null);
+    this.selectedFetchParameterByGrade.push(null);
   }
 
   removeGrade(index: number) {
     this.grades.removeAt(index);
     this.selectedTestMethodByGrade.splice(index, 1);
+    this.selectedMetalByGrade.splice(index, 1);
+    this.selectedFetchParameterByGrade.splice(index, 1);
   }
 
   getSpecificationLinesByTab(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other'): FormArray {
@@ -185,10 +191,8 @@ export class MaterialSpecificationFormComponent implements OnInit {
     return linesGroup.get(tab) as FormArray;
   }
 
-
-  addSpecificationLine(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
-    const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
-    const specificationLine = this.fb.group({
+  createSpecificationLineFormGroup(tab: 'chemical' | 'mechanical' | 'other'): FormGroup {
+    return this.fb.group({
       id: [0],
       gradeID: [0],
       manualSelection: [false],
@@ -213,6 +217,11 @@ export class MaterialSpecificationFormComponent implements OnInit {
       type: [tab],
       IsCustom: [false]
     });
+  }
+
+  addSpecificationLine(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
+    const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
+    const specificationLine = this.createSpecificationLineFormGroup(tab);
     lines.push(specificationLine);
   }
   removeSpecificationLine(gradeIndex: number, lineIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
@@ -239,9 +248,11 @@ export class MaterialSpecificationFormComponent implements OnInit {
           });
           this.grades.clear(); // Clear existing grades if any
           this.selectedTestMethodByGrade = [];
+          this.selectedMetalByGrade = [];
+          this.selectedFetchParameterByGrade = [];
 
           data.grades?.forEach((grade: any) => {
-            this.addGrade(); // Push a grade form (adds slot to selectedTestMethodByGrade)
+            this.addGrade(); // Push a grade form (adds slots to both arrays)
             const gradeIndex = this.grades.length - 1;
             const gradeGroup = this.grades.at(gradeIndex);
 
@@ -251,7 +262,6 @@ export class MaterialSpecificationFormComponent implements OnInit {
               grade: grade.grade,
               isUNS: grade.isUNS,
               unsSteelNumber: grade.unsSteelNumber,
-              metalClassificationID: grade.metalClassificationID, // typo from backend
               testMethodSpecificationID: grade.testMethodSpecificationID
             });
 
@@ -261,33 +271,32 @@ export class MaterialSpecificationFormComponent implements OnInit {
             grade.specificationLines?.forEach((line: any) => {
               const tab = line.type as 'chemical' | 'mechanical' | 'other';
               const formArray = linesGroup.get(tab) as FormArray;
-
-              formArray.push(this.fb.group({
-                id: [line.id],
-                gradeID: [line.gradeID],
-                manualSelection: [line.manualSelection],
-                parameterID: [line.parameterID],
-                minValue: [line.minValue],
-                maxValue: [line.maxValue],
-                notes: [line.notes],
-                parameterUnitID: [line.parameterUnitID],
-                minValueEquation: [line.minValueEquation],
-                maxValueEquation: [line.maxValueEquation],
-                minTolerance: [line.minTolerance],
-                maxTolerance: [line.maxTolerance],
-                specimenOrientationID: [line.specimenOrientationID],
-                dimensionalFactorID: [line.dimensionalFactorID],
-                lowerLimitValue: [line.lowerLimitValue],
-                upperLimitValue: [line.upperLimitValue],
-                heatTreatmentID: [line.heatTreatmentID],
-                productConditionID1: [line.productConditionID1],
-                productConditionID2: [line.productConditionID2],
-                laboratoryTests: this.fb.array([line.laboratoryTests]),
-                laboratoryTestIDs: this.fb.control(
-                  line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || []
-                ),
-                type: [tab]
-              }));
+              const lineGroup = this.createSpecificationLineFormGroup(tab);
+              lineGroup.patchValue({
+                id: line.id,
+                gradeID: line.gradeID,
+                manualSelection: line.manualSelection,
+                parameterID: line.parameterID,
+                minValue: line.minValue,
+                maxValue: line.maxValue,
+                notes: line.notes,
+                parameterUnitID: line.parameterUnitID,
+                minValueEquation: line.minValueEquation,
+                maxValueEquation: line.maxValueEquation,
+                minTolerance: line.minTolerance,
+                maxTolerance: line.maxTolerance,
+                specimenOrientationID: line.specimenOrientationID,
+                dimensionalFactorID: line.dimensionalFactorID,
+                lowerLimitValue: line.lowerLimitValue,
+                upperLimitValue: line.upperLimitValue,
+                heatTreatmentID: line.heatTreatmentID,
+                productConditionID1: line.productConditionID1,
+                productConditionID2: line.productConditionID2,
+                laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || []
+              });
+              const labTestsArray = lineGroup.get('laboratoryTests') as FormArray;
+              labTestsArray.push(this.fb.group({ laboratoryTests: this.fb.array([line.laboratoryTests]) }));
+              formArray.push(lineGroup);
             });
           });
 
@@ -345,12 +354,10 @@ export class MaterialSpecificationFormComponent implements OnInit {
 
     formattedData.grades = formValue?.grades?.map((grade: any) => {
       const { chemical = [], mechanical = [], other = [] } = grade.specificationLines || {};
-
-      // Combine all specificationLines into one flat array
       const combinedSpecificationLines = [...chemical, ...mechanical, ...other];
-
+      const { metalClassificationID, ...gradeCopy } = grade;
       return {
-        ...grade,
+        ...gradeCopy,
         specificationLines: combinedSpecificationLines
       };
     });
@@ -469,49 +476,69 @@ export class MaterialSpecificationFormComponent implements OnInit {
     return this.labTestService.getLaboratoryTestDropdown(term, page, pageSize);
   }
   onMetalClassificationSelected(item: any, gradeIndex: number) {
-    const grade = this.grades.at(gradeIndex);
-    grade.patchValue({
-      metalClassificationID: item.id,
-    });
-
-    // Fetch parameters for the selected metal classification
+    this.selectedMetalByGrade[gradeIndex] = item;
+    const currentTab = this.selectedSpecTab[gradeIndex] || 'chemical';
+    if (currentTab !== 'chemical') {
+      return;
+    }
     this.metalService.getParameterByMetalId(item.id).subscribe({
       next: (data) => {
-        // For each parameter, add to the correct tab based on parameterType
+        const linesArray = this.getSpecificationLinesByTab(gradeIndex, 'chemical');
+        const existingParamIds = linesArray.controls.map(ctrl => ctrl.get('parameterID')?.value);
+
         data.forEach((param: any) => {
-          const tab = (param.parameterType.toLowerCase() as 'chemical' | 'mechanical' | 'other');
-          const linesArray = this.getSpecificationLinesByTab(gradeIndex, tab);
+          const paramType = (param.parameterType.toLowerCase() as 'chemical' | 'mechanical' | 'other');
+          if (paramType === 'chemical' && !existingParamIds.includes(param.id)) {
+            const newLine = this.createSpecificationLineFormGroup('chemical');
+            newLine.patchValue({ parameterID: param.id });
+            linesArray.push(newLine);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching parameters by metal ID:', error);
+      },
+    });
+  }
 
-          // Get existing parameterIDs to avoid duplicates in this tab
-          const existingParamIds = linesArray.controls.map(ctrl => ctrl.get('parameterID')?.value);
+  fetchParameterByMetal(item: any, gradeIndex: number) {
+    this.selectedFetchParameterByGrade[gradeIndex] = item;
+    const linesArray = this.getSpecificationLinesByTab(gradeIndex, 'chemical');
+    const existingParamIds = linesArray.controls.map(ctrl => ctrl.get('parameterID')?.value);
 
-          if (!existingParamIds.includes(param.id)) {
-            // Add new line and set parameterID
-            const newLine = this.fb.group({
-              id: [0],
-              gradeID: [0],
-              manualSelection: [false],
-              parameterID: [param.id],
-              minValue: [null],
-              maxValue: [null],
-              notes: [''],
-              parameterUnitID: [''],
-              minValueEquation: [0],
-              maxValueEquation: [0],
-              minTolerance: [0],
-              maxTolerance: [0],
-              specimenOrientationID: [null],
-              dimensionalFactorID: [null],
-              lowerLimitValue: [''],
-              upperLimitValue: [''],
-              heatTreatmentID: [null],
-              productConditionID1: [null],
-              productConditionID2: [null],
-              laboratoryTests: this.fb.array([]),
-              laboratoryTestIDs: this.fb.control([]),
-              type: [tab],
-              IsCustom: [false]
-            });
+    this.metalService.getParameterByMetalId(item.id).subscribe({
+      next: (data) => {
+        data.forEach((param: any) => {
+          const paramType = (param.parameterType.toLowerCase() as 'chemical' | 'mechanical' | 'other');
+          if (paramType === 'chemical' && !existingParamIds.includes(param.id)) {
+            const newLine = this.createSpecificationLineFormGroup('chemical');
+            newLine.patchValue({
+              parameterID: param.id,
+              parameterUnitID: param.parameterUnitID
+             });
+            linesArray.push(newLine);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching parameters by metal ID:', error);
+      },
+    });
+  }
+
+  fetchParameterByMetalMechanical(item: any, gradeIndex: number) {
+    this.selectedFetchParameterByGrade[gradeIndex] = item;
+    const linesArray = this.getSpecificationLinesByTab(gradeIndex, 'mechanical');
+    const existingParamIds = linesArray.controls.map(ctrl => ctrl.get('parameterID')?.value);
+
+    this.metalService.getParameterByMetalId(item.id).subscribe({
+      next: (data) => {
+        data.forEach((param: any) => {
+          const paramType = (param.parameterType.toLowerCase() as 'chemical' | 'mechanical' | 'other');
+          if (paramType === 'mechanical' && !existingParamIds.includes(param.id)) {
+            const newLine = this.createSpecificationLineFormGroup('mechanical');
+            newLine.patchValue(
+              { parameterID: param.id, parameterUnitID: param.parameterUnitID });
             linesArray.push(newLine);
           }
         });

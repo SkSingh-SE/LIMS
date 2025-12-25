@@ -124,13 +124,12 @@
                         type="button"
                         class="btn btn-success"
                         (click)="completeTest(p, t)"
-                        [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress'"
+                        [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' && plans[p].tests[t].status !== 'Long-Term'"
                         title="Complete Test"
                       >
                         <i class="bi bi-check"></i>
                         Complete
                       </button>
-
                       <button
                         *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
                         type="button"
@@ -314,7 +313,7 @@
                   <div class="card mt-3 test-images-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                       <h6 class="">Test Images</h6>
-                      <small class="text-muted" style="margin-top: -10px">Images for header: {{ plans[p].tests[t].headerId }}</small>
+                      <small class="text-muted" style="margin-top: -10px">Images for header: {{ plans[p].tests[t].name }}</small>
                     </div>
                     <div class="card-body">
                       <!-- Upload controls hidden in view/read-only mode -->

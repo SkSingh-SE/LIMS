@@ -55,16 +55,15 @@
                             <td>{{ lab.name }}</td>
                             <td>{{ lab.departmentName }}</td>
                             <td>{{ lab.subGroup || '-' }}</td>
-                            <td>{{ lab.metalClassification || '-' }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/test/details', lab.id]"
-                                    [state]="{ mode: 'view' }" 
+                                    [state]="{ mode: 'view' }"
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/test/edit', lab.id]" 
+                                    <a [routerLink]="['/test/edit', lab.id]"
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">

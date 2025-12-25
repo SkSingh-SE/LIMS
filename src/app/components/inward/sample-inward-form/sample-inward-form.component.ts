@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from "../../../utility/components/searchable-dropdown/searchable-dropdown.component";
 import { Observable } from 'rxjs';
 import { CustomerService } from '../../../services/customer.service';
@@ -19,6 +19,8 @@ import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
+import { Injectable } from '@angular/core';
+import { CanDeactivate } from '@angular/router';
 
 @Component({
   selector: 'app-sample-inward-form',
@@ -53,6 +55,9 @@ export class SampleInwardFormComponent implements OnInit {
   isEditMode: boolean = false;
   sampleId: number = 0;
 
+  private bufferedAdditionalDetails: Record<string, any[]> = {};
+
+
   constructor(
     private fb: FormBuilder,
     private customerService: CustomerService,
@@ -68,7 +73,7 @@ export class SampleInwardFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private prodCondService: ProductConditionService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -146,9 +151,20 @@ export class SampleInwardFormComponent implements OnInit {
         country: [''],
         type: ['billing']
       }),
-      sampleDetails: this.fb.array([]),
+      sampleDetails: this.fb.array([], [
+        Validators.required,
+        this.minItemsValidator(1)  // At least 1 sample
+      ]),
       sampleAdditionalDetails: this.fb.array([])
     });
+  }
+
+  // Custom validator:
+  minItemsValidator(min: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const formArray = control as FormArray;
+      return formArray.length >= min ? null : { minItems: true };
+    };
   }
 
   // Getters
@@ -392,11 +408,11 @@ export class SampleInwardFormComponent implements OnInit {
                 ...sd,
                 additionalDetails: additionalSampleDetail
               };
-
               this.addSample(normalizedSample);
+
             });
             // Disable form if not in SAMPLE_INWARD_REGISTERED status
-            if (data?.status != InwardStatus.NOT_STARTED) {
+            if (data?.status !== InwardStatus.IN_PROGRESS && data?.status !== InwardStatus.NOT_STARTED) {
               this.isViewMode = true;
               this.disableFormRecursively(this.sampleInwardForm);
             }
@@ -548,13 +564,18 @@ export class SampleInwardFormComponent implements OnInit {
 
   // Sample Helpers
   addSample(existingSample: any = null): void {
-    const sampleNo = existingSample?.sampleNo ||
-      `${this.yearCode}-${(this.lastSampleNumber + this.sampleDetails.length).toString().padStart(6, '0')}`;
+    let sampleNo: string;
 
-    this.sampleNumbers.push(sampleNo);
-    this.sampleNumber = sampleNo;
+    if (existingSample?.sampleNo) {
+      // Editing: use existing sample number
+      sampleNo = existingSample.sampleNo;
+      this.manageSampleNumber('init', undefined, sampleNo);
+    } else {
+      // Adding new: generate next sample number
+      sampleNo = this.manageSampleNumber('add');
+    }
 
-    this.sampleDetails.push(this.fb.group({
+    const sampleForm = this.fb.group({
       id: [existingSample?.id || 0],
       sampleNo: [sampleNo],
       details: [existingSample?.details || '', Validators.required],
@@ -565,29 +586,45 @@ export class SampleInwardFormComponent implements OnInit {
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
       file: [null]
-    }));
+    });
 
-    this.addAdditionalDetailsForSample(sampleNo, existingSample?.additionalDetails || []);
+    this.sampleDetails.push(sampleForm);
+
+    const additionalDetails =
+      existingSample?.id > 0
+        ? existingSample.additionalDetails || []
+        : this.bufferedAdditionalDetails[sampleNo] || [];
+
+    this.addAdditionalDetailsForSample(sampleNo, additionalDetails);
   }
 
-  private addAdditionalDetailsForSample(sampleNo: string, additionalDetails: any[] = []): void {
-    const formArray = this.sampleAdditionalDetails as FormArray;
-    const existingLabels = formArray.controls.map((r) => r.get('label')?.value);
 
-    formArray.controls.forEach((row) => {
+  private addAdditionalDetailsForSample(
+    sampleNo: string,
+    additionalDetails: any[] = []
+  ): void {
+    const formArray = this.sampleAdditionalDetails as FormArray;
+    const existingLabels = formArray.controls.map(r => r.get('label')?.value);
+
+    formArray.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
       const label = row.get('label')?.value;
-      const match = additionalDetails.find((x: any) => x.label === label);
-      valuesArray.push(this.fb.control(match?.value ?? ''));
+      const match = additionalDetails.find(x => x.label === label);
+      if (match) {
+        // push the matching value for this sample into the row's values array
+        valuesArray.push(this.fb.control(match?.value ?? ''));
+      }
     });
 
     additionalDetails
-      .filter((ad: any) => !existingLabels.includes(ad.label))
-      .forEach((ad: any) => {
-        const valuesArray = this.fb.array([]);
-        for (let k = 0; k < this.sampleNumbers.length - 1; k++) {
-          valuesArray.push(this.fb.control(''));
-        }
+      .filter(ad => !existingLabels.includes(ad.label))
+      .forEach(ad => {
+        // create unique controls for each existing sample column (except the new one we will append below)
+        const valuesArray = this.fb.array(
+          Array.from({ length: Math.max(0, this.sampleNumbers.length - 1) }, () => this.fb.control(''))
+        );
+
+        // push the current sample's value as the last column
         valuesArray.push(this.fb.control(ad.value ?? ''));
 
         formArray.push(
@@ -601,18 +638,30 @@ export class SampleInwardFormComponent implements OnInit {
       });
 
     if (!additionalDetails.length && formArray.length > 0) {
-      formArray.controls.forEach((row) => {
-        const valuesArray = row.get('values') as FormArray;
-        valuesArray.push(this.fb.control(''));
+      formArray.controls.forEach(row => {
+        // append a new empty control for the newly added sample
+        (row.get('values') as FormArray).push(this.fb.control(''));
       });
     }
+
+    if (!this.bufferedAdditionalDetails[sampleNo]) {
+      this.bufferedAdditionalDetails[sampleNo] = additionalDetails;
+    }
   }
+
 
   removeSample(index: number): void {
     if (this.isViewMode) return;
 
+    const removedSampleNo = this.sampleDetails.at(index).get('sampleNo')?.value;
+
     this.sampleDetails.removeAt(index);
-    this.sampleNumbers.splice(index, 1);
+    this.manageSampleNumber('remove', index);
+
+    // Remove from buffered additional details if exists
+    if (removedSampleNo && this.bufferedAdditionalDetails[removedSampleNo]) {
+      delete this.bufferedAdditionalDetails[removedSampleNo];
+    }
 
     this.sampleAdditionalDetails.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
@@ -712,7 +761,8 @@ export class SampleInwardFormComponent implements OnInit {
   onUploadSampleImage(index: number, event: any): void {
     const file = event.target.files[0];
     if (file && this.validateFile(file, ['image/jpeg', 'image/png'])) {
-      this.sampleDetails.at(index).patchValue({ fileName: file.name, file: file });
+      // update file and fileName for preview; do not try to set input value programmatically
+      this.sampleDetails.at(index).patchValue({ fileName: file.name, file: file, sampleFilePath: '' });
     } else {
       event.target.value = '';
     }
@@ -824,7 +874,10 @@ export class SampleInwardFormComponent implements OnInit {
       }
     });
 
-    // Sample additional details
+    // BUFFER additional details client-side
+    const bufferedAdditionalDetails = value.sampleAdditionalDetails || [];
+
+    // Sample additional details – ONLY send if samples exist
     let addIndex = 0;
     if (Array.isArray(value.sampleAdditionalDetails) && this.sampleNumbers.length > 0) {
       value.sampleAdditionalDetails.forEach((row: any) => {
@@ -839,6 +892,10 @@ export class SampleInwardFormComponent implements OnInit {
           addIndex++;
         }
       });
+    } else if (Array.isArray(value.sampleAdditionalDetails) && this.sampleNumbers.length === 0) {
+      // WARN user: additional details will not be saved
+      this.toastService.show('⚠️ Please add at least one sample before saving additional details.', 'warning');
+      return; // Prevent save
     }
 
     const request$ = (value.id && value.id > 0)
@@ -855,6 +912,11 @@ export class SampleInwardFormComponent implements OnInit {
         this.toastService.show('Error saving sample inward. Please try again.', 'error');
       }
     });
+
+    // In onSubmit(), BEFORE sending:
+    const now = new Date();
+    formData.append('collectionTime', this.getCurrentTime());
+    formData.append('collectionDate', now.toISOString().split('T')[0]);
   }
 
   goToSampleTab(): void {
@@ -866,6 +928,92 @@ export class SampleInwardFormComponent implements OnInit {
 
   onCancel(): void {
     this.sampleInwardForm.reset();
-    this.router.navigate(['/sample/plan/inward']);
+    this.router.navigate(['/sample/inward']);  // Should be inward list, not plan
+  }
+
+  // Custom method to check if inward is completed
+  isInwardCompleted(inward: any): boolean {
+    return inward.status === InwardStatus.COMPLETED;
+  }
+
+  private generateSampleNumber(counter: number): string {
+    return `${this.yearCode}-${counter.toString().padStart(6, '0')}`;
+  }
+
+ private manageSampleNumber(
+  action: 'init' | 'add' | 'remove',
+  removeIndex?: number,
+  sampleNo?: string
+): string {
+
+    // INIT → rebinding / edit / API load
+    if (action === 'init') {
+      // if sampleNo is provided, ensure it exists in list
+      if (sampleNo && !this.sampleNumbers.includes(sampleNo)) {
+        this.sampleNumbers.push(sampleNo);
+      }
+
+      if (!this.sampleNumbers.length) {
+        this.lastSampleNumber = 0;
+        this.sampleNumber = '';
+        return '';
+      }
+
+      const maxCounter = Math.max(
+        ...this.sampleNumbers.map(sn => Number(sn.split('-')[1]))
+      );
+
+      this.lastSampleNumber = maxCounter;
+      this.sampleNumber = this.generateSampleNumber(maxCounter);
+      return this.sampleNumber;
+    }
+
+    // ADD → new sample (increment by 1)
+    if (action === 'add') {
+      this.lastSampleNumber += 1;
+      const newSampleNo = this.generateSampleNumber(this.lastSampleNumber);
+      this.sampleNumbers.push(newSampleNo);
+      this.sampleNumber = newSampleNo;
+      return newSampleNo;
+    }
+
+    // REMOVE → existing sample (recalculate from remaining)
+    if (action === 'remove' && typeof removeIndex === 'number') {
+      // Remove from sampleNumbers array
+      if (removeIndex >= 0 && removeIndex < this.sampleNumbers.length) {
+        this.sampleNumbers.splice(removeIndex, 1);
+      }
+
+      // Recalculate lastSampleNumber from remaining samples
+      if (this.sampleNumbers.length === 0) {
+        this.lastSampleNumber = 0;
+        this.sampleNumber = '';
+        return '';
+      }
+
+      const maxCounter = Math.max(
+        ...this.sampleNumbers.map(sn => Number(sn.split('-')[1]))
+      );
+
+      this.lastSampleNumber = maxCounter;
+      this.sampleNumber = this.generateSampleNumber(maxCounter);
+      return this.sampleNumber;
+    }
+
+    return this.sampleNumber;
+}
+
+
+
+
+}
+
+@Injectable()
+export class UnsavedChangesGuard implements CanDeactivate<SampleInwardFormComponent> {
+  canDeactivate(component: SampleInwardFormComponent): boolean {
+    if (component.sampleInwardForm.dirty) {
+      return confirm('You have unsaved changes. Are you sure?');
+    }
+    return true;
   }
 }

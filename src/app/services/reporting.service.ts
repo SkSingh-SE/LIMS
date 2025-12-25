@@ -3,6 +3,12 @@ import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
+export interface WorkflowAction {
+  id: string;
+  action: 'Next' | 'Cancel' | 'Back';
+  name: string;
+}
+
 export interface ReportingListItem {
   sampleNo: string;
   caseNo: string;
@@ -13,53 +19,70 @@ export interface ReportingListItem {
   reportHeaderId?: string;
   workflowInstanceId?: string;
   canTakeAction?: boolean;
+  actions?: WorkflowAction[];
+}
+
+export interface TestParameter {
+  parameterID: string;
+  parameterName: string;
+  value: number | string;
+  unit: string;
+  minValue: number | string;
+  maxValue: number | string;
+  isWithinLimit: boolean;
+  remarks?: string;
+}
+
+export interface MechanicalTest {
+  testResultHeaderId: string;
+  testName: string;
+  reportNo: string;
+  specification1Name: string;
+  specification2Name?: string;
+  status: 'Completed' | 'Running' | 'Pending' | 'Failed';
+  parameters: TestParameter[];
+}
+
+export interface ChemicalTest {
+  testResultHeaderId: string;
+  testName: string;
+  reportNo: string;
+  specification1Name: string;
+  specification2Name?: string;
+  status: 'Completed' | 'Running' | 'Pending' | 'Failed';
+  parameters: TestParameter[];
+}
+
+export interface LongTermTestReading {
+  recordedAt: string;
+  parsed?: any;
+}
+
+export interface LongTermTest {
+  longTermTestId: string;
+  testName: string;
+  durationHours: number;
+  startedAt: string;
+  endedAt?: string;
+  status: 'Completed' | 'Running' | 'Pending' | 'Failed';
+  parameters: Array<{ parameterName: string; value: number | string }>;
+  readings: LongTermTestReading[];
 }
 
 export interface ReportingPreview {
+  reportHeaderId: string;
+  workflowInstanceId: string;
   sampleNo: string;
   caseNo: string;
   customer: string;
   material: string;
   condition: string;
-  reportHeaderId?: string;
-  workflowInstanceId?: string;
+  reportNo: string;
+  status: 'Pending' | 'Completed' | 'Approved' | 'Rejected';
   mechanicalTests: MechanicalTest[];
   chemicalTests: ChemicalTest[];
   longTermTests: LongTermTest[];
-  remarks: string;
-  summary: string;
-}
-
-export interface MechanicalTest {
-  parameter: string;
-  value: number;
-  unit: string;
-  standard: string;
-  status: string;
-}
-
-export interface ChemicalTest {
-  element: string;
-  percentage: number;
-  min: number;
-  max: number;
-  status: string;
-}
-
-export interface LongTermTest {
-  testName: string;
-  startedAt: string;
-  duration: string;
-  readings: number;
-  status: string;
-  parameters?: any[];
-  readingsDetails?: LongTermReading[];
-}
-
-export interface LongTermReading {
-  recordedAt: string;
-  value: number | string;
-  remarks?: string;
+  actions: WorkflowAction[];
 }
 
 @Injectable({
@@ -140,75 +163,27 @@ export class ReportingService {
     return of(this.dummyReportingList);
   }
 
+  getReportReview(reportHeaderId: number): Observable<any> {
+   return this.http.get<any>(`${this.apiUrl}/preview/${reportHeaderId}`);
+  }
+
+
   getReportPreview(sampleId: string): Observable<ReportingPreview> {
-    const dummyPreview: ReportingPreview = {
-      sampleNo: sampleId,
-      caseNo: '24-00012',
-      reportHeaderId: 'RH-1001',
-      workflowInstanceId: 'WF-9001',
-      customer: 'ABC Metals',
-      material: 'TMT',
-      condition: 'As Rolled',
-      summary: 'Sample tested successfully. All mechanical and chemical parameters are within acceptable limits.',
-      mechanicalTests: [
-        { parameter: 'Tensile Strength', value: 550, unit: 'MPa', standard: 'IS:1786', status: 'Pass' },
-        { parameter: 'Yield Strength', value: 470, unit: 'MPa', standard: 'IS:1786', status: 'Pass' },
-        { parameter: 'Elongation', value: 14.5, unit: '%', standard: 'IS:1786', status: 'Pass' },
-        { parameter: 'Bending', value: 90, unit: 'Degree', standard: 'IS:1786', status: 'Pass' }
-      ],
-      chemicalTests: [
-        { element: 'Carbon', percentage: 0.25, min: 0.15, max: 0.35, status: 'Pass' },
-        { element: 'Manganese', percentage: 1.15, min: 0.85, max: 1.35, status: 'Pass' },
-        { element: 'Silicon', percentage: 0.35, min: 0.10, max: 0.50, status: 'Pass' },
-        { element: 'Phosphorus', percentage: 0.035, min: 0.00, max: 0.040, status: 'Pass' },
-        { element: 'Sulfur', percentage: 0.025, min: 0.00, max: 0.030, status: 'Pass' }
-      ],
-      longTermTests: [
-        {
-          testName: 'Corrosion Resistance (Salt Spray)',
-          startedAt: '2024-01-15',
-          duration: '1000 hours',
-          readings: 24,
-          status: 'In Progress',
-          parameters: [
-            { name: 'Chamber Temp', value: '35°C' },
-            { name: 'Humidity', value: '95%' }
-          ],
-          readingsDetails: [
-            { recordedAt: '2024-01-16T10:00:00Z', value: 0.12, remarks: 'No visible change' },
-            { recordedAt: '2024-02-16T10:00:00Z', value: 0.15, remarks: 'Minor pitting' }
-          ]
-        },
-        {
-          testName: 'High Temperature Oxidation',
-          startedAt: '2024-01-20',
-          duration: '500 hours',
-          readings: 12,
-          status: 'In Progress',
-          parameters: [
-            { name: 'Temp', value: '650°C' },
-            { name: 'Atmosphere', value: 'Air' }
-          ],
-          readingsDetails: [
-            { recordedAt: '2024-01-25T08:00:00Z', value: 1.2, remarks: 'Scale forming' },
-            { recordedAt: '2024-02-05T08:00:00Z', value: 1.5, remarks: 'Increased oxidation' }
-          ]
-        }
-      ],
-      remarks: 'All test results are satisfactory. No defects observed. Ready for approval and report generation.'
-    };
-    return of(dummyPreview);
+    // Call actual API endpoint
+    return this.http.get<ReportingPreview>(`${this.apiUrl}/preview/${sampleId}`);
+  }
+
+
+  takeWorkflowAction(payload:any): Observable<any> {
+    return this.http.post<any>(this.apiUrl + '/perform-action', payload);
   }
 
   /**
-   * Call workflow action API for reporting (approve/reject)
+   * Generate PDF for an approved/completed report
+   * @param reportHeaderId - ID of the report header
+   * @returns Observable with PDF generation response
    */
-  takeWorkflowAction(workflowInstanceId: string, action: 'Approve' | 'Reject', comments?: string): Observable<any> {
-    const payload = {
-      workflowInstanceId,
-      action,
-      comments: comments || ''
-    };
-    return this.http.post<any>(this.apiUrl + '/workflow/action', payload);
+  generateReportPdf(reportHeaderId: string | number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${reportHeaderId}/pdf`, {});
   }
 }

@@ -16,14 +16,14 @@ export class ReviewOfRequestComponent  implements OnInit {
   columns = [
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
     { key: 'customerName', type: 'string', label: 'Customer', filter: true },
-    { key: 'reviewStatus', type: 'string', label: 'Status', filter: true },
+    { key: 'inwardStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     caseNo: 'string',
     customerName: 'string',
-    reviewStatus: 'string',
+    inwardStatus: 'string',
     modifiedBy: 'string',
     modifiedOn: 'string',
   };

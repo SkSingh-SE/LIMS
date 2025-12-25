@@ -292,7 +292,7 @@ export class TestResultEntryFormComponent implements OnInit {
             {
               id: `chem-${chemicalTest.headerId}`,
               headerId: chemicalTest.headerId,
-              name: chemicalTest.name || 'Chemical Test',
+              name: chemicalTest.laboratoryTest || 'Chemical Test',
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
@@ -951,6 +951,7 @@ export class TestResultEntryFormComponent implements OnInit {
    * We approximate header status by checking if all tests sharing the headerId are Completed.
    */
   isHeaderCompleted(headerId: number): boolean {
+    debugger;
     if (!headerId && headerId !== 0) return false;
     const relatedTests = this.plans.flatMap(p => p.tests || []).filter((t: any) => t.headerId === headerId);
     if (!relatedTests || relatedTests.length === 0) return false;

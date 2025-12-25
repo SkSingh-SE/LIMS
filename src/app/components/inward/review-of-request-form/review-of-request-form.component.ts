@@ -9,9 +9,10 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { ParameterService } from '../../../services/parameter.service';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { Observable } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
+import { routes } from '../../../app.routes';
 
 @Component({
   selector: 'app-review-of-request-form',
@@ -58,6 +59,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private parameterService: ParameterService,
     private standardService: StandardOrgnizationService,
     private activeRoute: ActivatedRoute,
+    private router: Router,
     private workflowService: WorkflowService,
     private toast: ToastService
   ) { }
@@ -328,7 +330,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
   }
 
   submitReview() {
-    debugger;
     this.submitAttempted = true;
     if (!this.selectedAction) return;
     if (this.selectedAction?.action?.toLowerCase() !== 'next' && !this.reviewRemark) return;
@@ -343,6 +344,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
     this.workflowService.performWorkflowAction(payload).subscribe({
       next: (response) => {
         this.toast.show(response.message, "success");
+        this.router.navigate(['/sample/review']);
       },
       error: (error) => {
         console.error('Error performing action:', error);

@@ -46,7 +46,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   navbarHeight: number = 64;
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
-  
+
   constructor(
     private renderer: Renderer2,
     private cdr: ChangeDetectorRef,
@@ -63,16 +63,19 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngAfterViewInit() {
-    this.updateNavbarHeight();
-    setTimeout(() => this.distributeMenuItems(), 50);
-    this.menuItemEls.changes.subscribe(() => setTimeout(() => this.distributeMenuItems(), 25));
+  this.updateNavbarHeight();
 
-    // Add ResizeObserver back
-    if (this.menuContainer?.nativeElement) {
-      this.resizeObserver = new ResizeObserver(() => this.distributeMenuItems());
-      this.resizeObserver.observe(this.menuContainer.nativeElement);
-    }
-  }
+  this.menuItemEls.changes.subscribe(() => {
+    this.distributeMenuItems();
+  });
+
+  this.resizeObserver = new ResizeObserver(() => {
+    this.distributeMenuItems();
+  });
+
+  this.resizeObserver.observe(this.menuContainer.nativeElement);
+}
+
 
   ngAfterViewChecked() {
     this.updateNavbarHeight();
@@ -128,11 +131,17 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
         const show = (item.permissions?.length ? this.permissionService.hasAny(item.permissions) : true)
           || (copy.children && copy.children.length > 0);
 
-        if (show) acc.push(copy);
+        if (show) {
+          acc.push(copy);
+        } else {
+
+        }
         return acc;
       }, []);
     };
-    return filterRecursively(localMenus);
+    const result = filterRecursively(localMenus);
+
+    return result;
   }
 
   // -----------------------------
@@ -142,13 +151,17 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     this.userService.getUserMenuWithPermissions(id).subscribe({
       next: (res: MenuItem[]) => {
         try {
+
           // 1. Set global permissions
           const perms = this.collectPermissionsFromApi(res || []);
           this.permissionService.setPermissions(perms);
 
           // 2. Filter hardcoded menu by API response
+
           const filtered = this.filterMenusByApi(res || []);
-          this.menuItems = this.applyPermissionFilter(filtered);
+
+          const afterPermFilter = this.applyPermissionFilter(filtered);
+          this.menuItems = afterPermFilter;
 
           // 3. Update visible/overflow
           this.visibleMenuItems = [...this.menuItems];
@@ -174,12 +187,16 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   private filterMenusByApi(apiMenus: MenuItem[]): MenuItem[] {
-    if (!apiMenus || apiMenus.length === 0) return [];
+    if (!apiMenus || apiMenus.length === 0) {
+      return [];
+    }
 
     const filtered: MenuItem[] = [];
     for (const hard of this.menuItems) {
       const matchTop = this.findApiItemByTitle(apiMenus, hard.title);
-      if (!matchTop) continue;
+      if (!matchTop) {
+        continue;
+      }
 
       const filteredChildren: MenuItem[] = [];
       for (const child of hard.children || []) {
@@ -188,60 +205,75 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           filteredChildren.push({ ...child, permissions: apiChild.permissions || [], children: apiChild.children || [] });
         }
       }
-      if ((hard.route && hard.route.length) || filteredChildren.length > 0) filtered.push({ ...hard, children: filteredChildren });
+      if ((hard.route && hard.route.length) || filteredChildren.length > 0) {
+        filtered.push({ ...hard, children: filteredChildren });
+      } else {
+
+      }
     }
+
     return filtered;
   }
 
   // -----------------------------
   // Menu distribution & resize
   // -----------------------------
-  private distributeMenuItems() {
-    if (this.distributeScheduled) return;
-    this.distributeScheduled = true;
-    setTimeout(() => {
-      this.distributeScheduled = false;
-      try {
-        if (!this.menuContainer || !this.menuItemEls) return;
+ private distributeMenuItems() {
+  if (!this.menuContainer || !this.menuItemEls) return;
 
-        const containerWidth = (this.menuContainer.nativeElement as HTMLElement).clientWidth;
-        const rightWidth = this.navRight?.nativeElement?.offsetWidth || 0;
-        const buffer = 24;
-        const available = Math.max(80, containerWidth - rightWidth - buffer);
+  requestAnimationFrame(() => {
+    const containerWidth =
+      this.menuContainer.nativeElement.getBoundingClientRect().width;
 
-        const menuEls = this.menuItemEls.toArray();
-        const visible: MenuItem[] = [];
-        const overflow: MenuItem[] = [];
-        let used = 0;
+    const rightWidth =
+      this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
 
-        for (let i = 0; i < this.menuItems.length; i++) {
-          const item = this.menuItems[i];
-          const elRef = menuEls[i];
-          const w = elRef?.nativeElement?.getBoundingClientRect().width || Math.min(220, Math.max(80, item.title.length * 10 + 40));
+    const buffer = 32; // safe padding
+    const availableWidth = containerWidth - rightWidth - buffer;
 
-          if (used + w <= available || visible.length === 0) {
-            visible.push(item);
-            used += w;
-          } else {
-            overflow.push(item);
-          }
-        }
+    const menuEls = this.menuItemEls.toArray();
 
-        this.visibleMenuItems = visible;
-        this.menu2Items = overflow;
-        if (!this.isMenu2Open() && this.menu2Items.length === 0) this.isMenu2Open.set(false);
-        this.cdr.detectChanges();
-        setTimeout(() => this.updateNavbarHeight(), 20);
-      } catch (e) {
-        console.error('distributeMenuItems error', e);
+    let usedWidth = 0;
+    const visible: MenuItem[] = [];
+    const overflow: MenuItem[] = [];
+
+    this.menuItems.forEach((item, index) => {
+      const el = menuEls[index]?.nativeElement;
+      const width = el
+        ? el.getBoundingClientRect().width
+        : Math.max(100, item.title.length * 10 + 40);
+
+      if (usedWidth + width <= availableWidth || visible.length === 0) {
+        visible.push(item);
+        usedWidth += width;
+      } else {
+        overflow.push(item);
       }
-    }, 25);
-  }
+    });
+
+    // CRITICAL: Ensure no items are dropped
+    const totalAssigned = visible.length + overflow.length;
+    if (totalAssigned < this.menuItems.length) {
+      // Force all remaining items to overflow
+      const missingItems = this.menuItems.slice(totalAssigned);
+      overflow.push(...missingItems);
+    }
+
+    this.visibleMenuItems = visible;
+    this.menu2Items = overflow;
+
+    if (this.menu2Items.length === 0) {
+      this.isMenu2Open.set(false);
+    }
+
+    this.cdr.markForCheck();
+  });
+}
+
 
   @HostListener('window:resize')
   onResize() {
     this.distributeMenuItems();
-    this.updateNavbarHeight();
   }
 
   // -----------------------------

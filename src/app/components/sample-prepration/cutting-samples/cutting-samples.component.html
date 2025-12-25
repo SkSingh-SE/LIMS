@@ -51,19 +51,19 @@
                         <tr *ngFor="let item of listData; let i = index" class="text-sm">
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
-                                    <a *ngIf="!item.hasCutting" [routerLink]="['/sample/cutting/create', item.inwardId]"
+                                    <a *ngIf="item.id == 0" [routerLink]="['/sample/cutting/create', item.inwardId]"
                                     [state]="{ mode: 'create' }"
                                      class="icon-link"
                                         title="Create">
                                         <img src="/icons/add.svg" alt="Add" class="icon-svg">
                                     </a>
-                                    <a *ngIf="item.hasCutting" [routerLink]="['/sample/cutting/details', item.id]"
+                                    <a *ngIf="item.id > 0" [routerLink]="['/sample/cutting/details', item.id]"
                                     [state]="{ mode: 'view' }"
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a *ngIf="item.hasCutting" [routerLink]="['/sample/cutting/edit', item.id]"
+                                    <a *ngIf="item.id > 0 && item.preparationStatus !== 'Completed'" [routerLink]="['/sample/cutting/edit', item.id]"
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">
@@ -74,9 +74,11 @@
                             </td>
                             <td>{{ item.caseNo }}</td>
                             <td>{{ item.grandTotal }}</td>
-                            <td>{{ item.prepRequired }}</td>
-                            <td>{{ item.completed }}</td>
-                            <td>{{ item.preparationStatus }}</td>
+                            <td>{{ item.totalRequired }}</td>
+                            <td>{{ item.completedCount }}</td>
+                            <td>
+                              <app-test-status-badge [status]="item.preparationStatus"></app-test-status-badge>
+                            </td>
                             <td>{{ item.modifiedBy }}</td>
                             <td>{{ item.modifiedOn | date: 'dd MMM, yyyy' }}</td>
 

@@ -19,14 +19,12 @@ export class LaboratoryTestListComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Method Name', filter: true },
     { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
     { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
-    { key: 'metalClassification', type: 'string', label: 'Metal Classification', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     departmentName: 'string',
     subGroup: 'string',
-    metalClassification: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

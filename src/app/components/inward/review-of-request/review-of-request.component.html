@@ -87,14 +87,14 @@
                     Review
                   </a>
                   <div *ngIf="item.canTakeAction">
-                    <a *ngFor="let action of item.actions" class="icon-link d-inline-block" title="{{ action.name }}">
+                    <!-- <a *ngFor="let action of item.actions" class="icon-link d-inline-block" title="{{ action.name }}">
                       <img src="/icons/{{ action.action }}.svg" alt="Edit" class="icon-svg" />
-                    </a>
+                    </a> -->
                     <div ngbDropdown class="d-inline-block">
                       <button
                         *ngFor="let action of item.actions"
                         type="button"
-                        class="btn btn-sm btn-outline-danger-600 me-1"
+                        class="btn btn-sm btn-outline-danger-600 me-2"
                         (click)="onActionClick(action)"
                       >
                         {{ action.name }}
@@ -105,7 +105,7 @@
               </td>
               <td>{{ item.caseNo }}</td>
               <td>{{ item.customerName }}</td>
-              <td>{{ item.reviewStatus | lowercase }}</td>
+              <td>{{ item.inwardStatus | lowercase }}</td>
               <td>{{ item.modifiedBy }}</td>
               <td>{{ item.modifiedOn | date : "dd MMM, yyyy" }}</td>
             </tr>

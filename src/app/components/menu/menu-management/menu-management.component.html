@@ -63,9 +63,9 @@
         <div class="col-md-3">
           <input type="text" class="form-control" formControlName="title" placeholder="Submenu Title" maxlength="50" />
         </div>
-        <div class="col-md-3">
+        <!-- <div class="col-md-3">
           <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="100" />
-        </div>
+        </div> -->
         <div class="col-md-3">
           <input type="color" class="form-control form-control-color" formControlName="color" />
         </div>
@@ -75,12 +75,12 @@
       </div>
 
       <!-- Recursive Nested Submenus -->
-      <div class="ms-3 mt-2" formArrayName="submenu">
+      <!-- <div class="ms-3 mt-2" formArrayName="submenu">
         <ng-container *ngTemplateOutlet="submenuTemplate; context: { submenuArray: getSubmenuArray(sub) }"></ng-container>
         <button *ngIf="!isViewMode" class="btn btn-sm btn-outline-secondary mt-2" type="button" (click)="addSubmenu(getSubmenuArray(sub))">
           Add Nested Submenu
         </button>
-      </div>
+      </div> -->
     </div>
   </div>
 </ng-template>

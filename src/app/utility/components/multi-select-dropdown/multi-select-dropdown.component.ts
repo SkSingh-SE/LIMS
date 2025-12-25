@@ -54,6 +54,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+
     // Handle required validator dynamically
     if (changes['required']) {
       if (this.required) {
@@ -191,6 +192,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
 
   //  Sync selected values with available items
   private syncSelectedItems(emit: boolean = false): void {
+
     this.selectedValues = this.selectedValues || [];
     this.selectedItems = this.selectedValues?.map(id => this.items.find(item => item.id === id)).filter(Boolean);
 

@@ -156,6 +156,7 @@ export const routes: Routes = [
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'sample/prepration', component:CuttingSamplesComponent},
             { path: 'sample/cutting', component:CuttingSamplesComponent},
             { path: 'sample/cutting/create/:id', component:CuttingSampleFormComponent},
             { path: 'sample/cutting/edit/:id', component:CuttingSampleFormComponent},

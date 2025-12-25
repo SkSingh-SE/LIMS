@@ -98,9 +98,9 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 40, title: 'Inward', route: '/sample/inward', parentMenuID: 5, permissions: ['CanReadInward'], children: [], color: getRandomColor() },
         { id: 41, title: 'Plan', route: '/sample/plan', parentMenuID: 5, permissions: ['CanReadPlan'], children: [], color: getRandomColor() },
         { id: 42, title: 'Review', route: '/sample/review', parentMenuID: 5, permissions: ['CanReadReview'], children: [], color: getRandomColor() },
-        { id: 43, title: 'Preparation', route: '/sample/preparation', parentMenuID: 5, permissions: ['CanReadPreparation'], children: [], color: getRandomColor() },
+        { id: 43, title: 'Preparation', route: '/sample/prepration', parentMenuID: 5, permissions: ['CanReadPreparation'], children: [], color: getRandomColor() },
         { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 5, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
-        { id: 45, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 5, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
+        { id: 45, title: 'Sample Cutting', route: '/sample/prepration', parentMenuID: 5, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
         { id: 46, title: 'Machining Challan', route: '/sample/machining', parentMenuID: 5, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() }
       ]
     },
@@ -152,6 +152,50 @@ export function getAllMenuItems(): MenuItem[] {
             { id: 54, title: 'CF - Lab Employee', route: '/nabl/lab-employee', parentMenuID: 53, permissions: ['CanReadLabEmployeeMaster'], children: [], color: getRandomColor() }
           ]
         }
+      ]
+    },
+    {
+      id: 9,
+      title: 'Testing',
+      route: '',
+      parentMenuID: null,
+      permissions: [],
+      icon: 'bi-dropbox',
+      color: '',
+      children: [
+        { id: 56, title: 'Testing Dashboard', route: '/testing/dashboard', parentMenuID: 9, permissions: ['CanReadTestingDashboard'], children: [], color: getRandomColor() },
+        { id: 57, title: 'Perform Test', route: '/testing/perform/:id', parentMenuID: 9, permissions: ['CanReadPerformTest'], children: [], color: getRandomColor() },
+        { id: 58, title: 'Long Term Tracking', route: '/testing/longterm', parentMenuID: 9, permissions: ['CanReadLongTermTracking'], children: [], color: getRandomColor() },
+        { id: 59, title: 'Test Results', route: '/testing/results/:id', parentMenuID: 9, permissions: ['CanReadTestResults'], children: [], color: getRandomColor() }
+      ]
+    },
+    {
+      id: 10,
+      title: 'Configuration',
+      route: '',
+      parentMenuID: null,
+      permissions: [],
+      icon: 'bi-gear',
+      color: '',
+      children: [
+        { id: 60, title: 'Configuration Manager', route: '/config', parentMenuID: 10, permissions: ['CanReadConfiguration'], children: [], color: getRandomColor() },
+        { id: 61, title: 'Menu Management', route: '/menu', parentMenuID: 10, permissions: ['CanReadMenuManagement'], children: [], color: getRandomColor() },
+        { id: 62, title: 'Menu Permission', route: '/menu-permission', parentMenuID: 10, permissions: ['CanReadMenuPermission'], children: [], color: getRandomColor() },
+        { id: 63, title: 'Role Management', route: '/role', parentMenuID: 10, permissions: ['CanReadRoleManagement'], children: [], color: getRandomColor() },
+        { id: 64, title: 'User Permission', route: '/user-permission', parentMenuID: 10, permissions: ['CanReadUserPermission'], children: [], color: getRandomColor() },
+        { id: 65, title: 'Workflow', route: '/workflow', parentMenuID: 10, permissions: ['CanReadWorkflow'], children: [], color: getRandomColor() }
+      ]
+    },
+    {
+      id: 11,
+      title: 'Reporting',
+      route: '',
+      parentMenuID: null,
+      permissions: [],
+      icon: 'bi-file-text',
+      color: '',
+      children: [
+        { id: 66, title: 'Reporting Dashboard', route: '/reporting', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
       ]
     }
   ];

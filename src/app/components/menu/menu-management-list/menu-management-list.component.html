@@ -53,17 +53,17 @@
                         <tr *ngFor="let item of listData; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ item.title }}</td>
-                            <td>{{ item.isExpanded }}</td>
-                            <td>{{ item.route }}</td>
+                            <!-- <td>{{ item.isExpanded }}</td>
+                            <td>{{ item.route }}</td> -->
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
                                     <a [routerLink]="['/menu/details', item.id]"
-                                    [state]="{ mode: 'view' }" 
+                                    [state]="{ mode: 'view' }"
                                      class="icon-link"
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/menu/edit', item.id]" 
+                                    <a [routerLink]="['/menu/edit', item.id]"
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">

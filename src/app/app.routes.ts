@@ -72,6 +72,8 @@ import { LongTermTrackingComponent } from './components/TestResult/long-term-tra
 import { ReportingListComponent } from './components/report/reporting-list/reporting-list.component';
 import { ReportingPreviewComponent } from './components/report/reporting-preview/reporting-preview.component';
 import { TestResultEntryFormComponent } from './components/TestResult/test-result-entry-form/test-result-entry-form.component';
+import { ReportAmendComponent } from './components/report/report-amend/report-amend.component';
+import { PaymentComponent } from './components/public-access/payment/payment.component';
 
 
 export const routes: Routes = [
@@ -190,9 +192,11 @@ export const routes: Routes = [
             { path: 'testing/results/:id', component: TestResultEntryFormComponent },
             {path: 'test-result', component: TestResultComponent },
             // Reporting routes
-            { path: 'reporting', component: ReportingListComponent },
-            { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent }
+            { path: 'reporting/dashboard', component: ReportingListComponent },
+            { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
+            { path: 'reporting/amend/:id', component: ReportAmendComponent }
         ]
     },
+    {path: 'payment', component: PaymentComponent},
     { path: '**', redirectTo: '/login' }
 ];

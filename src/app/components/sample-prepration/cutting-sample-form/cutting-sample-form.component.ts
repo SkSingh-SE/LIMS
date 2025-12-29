@@ -25,6 +25,8 @@ export interface SampleDto {
   details: string;
   quantity: number;
   metalClassificationID?: number;
+  // backend sample id (when available)
+  sampleID?: number;
 }
 
 export interface CuttingChargePayload {
@@ -384,7 +386,10 @@ export class CuttingSampleFormComponent implements OnInit {
 
   private buildSampleGroup(sample: SampleDto): FormGroup {
     return this.fb.group({
+      // `id` represents the cutting-charge sample record id (0 for new)
       id: [sample.id],
+      // preserve backend sample id as `sampleID` so it flows end-to-end
+      sampleID: [sample.sampleID || 0],
       sampleNo: [sample.sampleNo],
       details: [sample.details],
       quantity: [sample.quantity],

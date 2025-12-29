@@ -11,6 +11,7 @@ export interface WorkflowAction {
 
 export interface ReportingListItem {
   sampleNo: string;
+  sampleId: number;
   caseNo: string;
   customer: string;
   material: string;
@@ -69,6 +70,13 @@ export interface LongTermTest {
   readings: LongTermTestReading[];
 }
 
+export interface AmendmentDetails {
+  amendmentRequestId: string;
+  reason: string;
+  fileName: string;
+  filePath: string;
+  requestedOn: string;
+}
 export interface ReportingPreview {
   reportHeaderId: string;
   workflowInstanceId: string;
@@ -83,6 +91,7 @@ export interface ReportingPreview {
   chemicalTests: ChemicalTest[];
   longTermTests: LongTermTest[];
   actions: WorkflowAction[];
+  amendment: AmendmentDetails | null;
 }
 
 @Injectable({
@@ -92,6 +101,7 @@ export class ReportingService {
   private apiUrl = environment.apiUrl + "/Reporting";
   private dummyReportingList: ReportingListItem[] = [
     {
+      sampleId: 101,
       sampleNo: 'S-001',
       caseNo: '24-00012',
       customer: 'ABC Metals',
@@ -103,6 +113,7 @@ export class ReportingService {
       canTakeAction: true
     },
     {
+      sampleId: 102,
       sampleNo: 'S-002',
       caseNo: '24-00013',
       customer: 'Shreenath Steel',
@@ -114,6 +125,7 @@ export class ReportingService {
       canTakeAction: false
     },
     {
+      sampleId: 103,
       sampleNo: 'S-003',
       caseNo: '24-00014',
       customer: 'Tata Steel',
@@ -122,6 +134,7 @@ export class ReportingService {
       status: 'Completed'
     },
     {
+      sampleId: 104,
       sampleNo: 'S-004',
       caseNo: '24-00015',
       customer: 'JSW Steel',
@@ -133,6 +146,7 @@ export class ReportingService {
       canTakeAction: true
     },
     {
+      sampleId: 105,
       sampleNo: 'S-005',
       caseNo: '24-00016',
       customer: 'ArcelorMittal',
@@ -141,6 +155,7 @@ export class ReportingService {
       status: 'Pending'
     },
     {
+      sampleId: 106,
       sampleNo: 'S-006',
       caseNo: '24-00017',
       customer: 'SAIL',
@@ -155,7 +170,7 @@ export class ReportingService {
 
   constructor(private http: HttpClient) { }
 
-   getReportDashboardList(filter: any): Observable<any> {
+  getReportDashboardList(filter: any): Observable<any> {
     return this.http.post<any>(this.apiUrl + "/list", filter);
   }
 
@@ -164,7 +179,7 @@ export class ReportingService {
   }
 
   getReportReview(reportHeaderId: number): Observable<any> {
-   return this.http.get<any>(`${this.apiUrl}/preview/${reportHeaderId}`);
+    return this.http.get<any>(`${this.apiUrl}/preview/${reportHeaderId}`);
   }
 
 
@@ -174,16 +189,20 @@ export class ReportingService {
   }
 
 
-  takeWorkflowAction(payload:any): Observable<any> {
+  takeWorkflowAction(payload: any): Observable<any> {
     return this.http.post<any>(this.apiUrl + '/perform-action', payload);
   }
 
   /**
    * Generate PDF for an approved/completed report
-   * @param reportHeaderId - ID of the report header
+   * @param sampleId - ID of the report header
    * @returns Observable with PDF generation response
    */
-  generateReportPdf(reportHeaderId: string | number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${reportHeaderId}/pdf`, {});
+  generateReportPdf(sampleId: string | number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/generate-pdf/${sampleId}`, {});
+  }
+
+  submitAmendment(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/request-amendment`, formData);
   }
 }

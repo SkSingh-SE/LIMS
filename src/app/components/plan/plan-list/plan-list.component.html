@@ -77,7 +77,8 @@
                             <td>{{ item.contactEmail }}</td>
                             <td>{{ item.contactPhone }}</td>
                             <td>{{ item.collectionTime | date: 'medium'}}</td>
-                            <td>{{ item.planStatus | lowercase}}</td>
+                            <td><app-test-status-badge [status]="item.planStatus"></app-test-status-badge>
+                            </td>
                             <td>{{ item.modifiedBy }}</td>
                             <td>{{ item.modifiedOn | date: 'dd MMM, yyyy' }}</td>
 

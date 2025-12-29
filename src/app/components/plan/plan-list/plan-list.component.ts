@@ -3,10 +3,11 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-plan-list',
-  imports: [CommonModule,RouterModule,FormsModule],
+  imports: [CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent],
   templateUrl: './plan-list.component.html',
   styleUrls: ['./plan-list.component.css']
 })

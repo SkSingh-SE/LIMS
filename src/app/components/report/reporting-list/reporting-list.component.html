@@ -2,18 +2,22 @@
   <div class="card basic-data-table w-100 border-0 shadow-sm">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-file-text"></i> Reporting Dashboard
+        <i class="bi bi-file-text"></i>
+        Reporting Dashboard
       </label>
-      <button class="btn btn-sm btn-light fw-semibold" routerLink="/testing/dashboard">
-        <i class="bi bi-arrow-left"></i> Back
-      </button>
     </div>
 
     <div *ngIf="!isLoading()" class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-3">
         <div class="w-25 input-group custom-search">
-          <input type="text" class="form-control border-secondary" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <input
+            type="text"
+            class="form-control border-secondary"
+            placeholder="Search..."
+            [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()"
+          />
           <div class="input-group-text pe-auto border-secondary cursor-pointer" (click)="onSearch()">
             <i class="bi bi-search"></i>
           </div>
@@ -24,19 +28,19 @@
       <div *ngIf="filteredData.length > 0" class="table-responsive">
         <table class="table bordered-table align-middle w-100 small">
           <thead class="table-light">
-             <tr class="text-center align-middle">
+            <tr class="text-center align-middle">
               <th *ngFor="let column of columns; let i = index" class="fw-semibold">
                 <div class="d-flex align-items-center justify-content-center">
                   <span class="dt-column-order">{{ column.label }}</span>
                   <span class="d-flex flex-column ms-2 mt-1">
                     <i
-                    *ngIf="column.filter"
+                      *ngIf="column.filter"
                       class="bi bi-caret-up sorting-icon-up"
                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
                       (click)="applySorting(column.key)"
                     ></i>
                     <i
-                    *ngIf="column.filter"
+                      *ngIf="column.filter"
                       class="bi bi-caret-down sorting-icon-down"
                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
                       (click)="applySorting(column.key)"
@@ -60,7 +64,7 @@
           </thead>
 
           <tbody>
-            <tr *ngFor="let item of filteredData" class="align-middle">
+            <tr *ngFor="let item of filteredData" class="align-middle text-center">
               <td class="fw-semibold text-danger">{{ item.sampleNo }}</td>
               <td>{{ item.caseNo }}</td>
               <td>{{ item.customer }}</td>
@@ -89,26 +93,45 @@
                     (click)="generatePdf(item, $event)"
                     [disabled]="pdfGeneratingId === item.reportHeaderId || isLoading()"
                   >
-                    <span *ngIf="pdfGeneratingId === item.reportHeaderId" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span
+                      *ngIf="pdfGeneratingId === item.reportHeaderId"
+                      class="spinner-border spinner-border-sm me-1"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                     <i *ngIf="pdfGeneratingId !== item.reportHeaderId" class="bi bi-file-pdf"></i>
-                    <span class="d-none d-sm-inline">{{ pdfGeneratingId === item.reportHeaderId ? 'Generating...' : ' PDF' }}</span>
+                    <span class="d-none d-sm-inline">{{ pdfGeneratingId === item.reportHeaderId ? "Generating..." : " PDF" }}</span>
                   </button>
-
+                  <!--  Amend Button (visible when canAmend is true) -->
+                  <button
+                    *ngIf="canAmend(item.status)"
+                    class="btn btn-sm btn-outline-warning-900 fw-semibold"
+                    title="Amend Report"
+                    (click)="openAmendment(item)"
+                  >
+                    <i class="bi bi-pencil-square"></i>
+                    <span class="d-none d-sm-inline"> Amend</span>
+                  </button>
                   <!-- Approve / Reject Buttons (visible when canTakeAction is true) -->
                   <ng-container *ngIf="item.canTakeAction && item.actions">
-                    <button *ngFor="let action of item.actions" class="btn btn-sm fw-semibold"
+                    <button
+                      *ngFor="let action of item.actions"
+                      class="btn btn-sm fw-semibold"
                       [ngClass]="{
-                        'btn-danger': action.name.toLowerCase().includes('approve'),
-                        'btn-outline-danger': action.name.toLowerCase().includes('reject'),
-                        'btn-outline-secondary': action.name.toLowerCase().includes('back')
+                        'btn-danger': action.action.toLowerCase().includes('next'),
+                        'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
+                        'btn-outline-secondary': action.action.toLowerCase().includes('back')
                       }"
                       [title]="action.name"
-                      (click)="performWorkflowAction(item, action.action)">
-                      <i class="bi"
-                        [class.bi-check-circle]="action.name.toLowerCase().includes('approve')"
-                        [class.bi-arrow-return-left]="action.name.toLowerCase().includes('back')"
-                        [class.bi-x-circle]="action.name.toLowerCase().includes('reject')"></i>
-                      <span class="d-none d-sm-inline">{{ action.name }}</span>
+                      (click)="performWorkflowAction(item, action.action)"
+                    >
+                      <i
+                        class="bi"
+                        [class.bi-check-circle]="action.action.toLowerCase().includes('next')"
+                        [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')"
+                        [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"
+                      ></i>
+                      <span class="d-none d-sm-inline"> {{ action.name }}</span>
                     </button>
                   </ng-container>
                 </div>
@@ -128,14 +151,16 @@
       <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
         <div>
           <label class="me-2 fw-semibold small">Items per page:</label>
-          <select class="form-select form-select-sm d-inline-block w-auto border-secondary" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
+          <select
+            class="form-select form-select-sm d-inline-block w-auto border-secondary"
+            [(ngModel)]="pageSize"
+            (change)="changePageSize(pageSize)"
+          >
             <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
           </select>
         </div>
 
-        <div class="text-muted small">
-          Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalRecords }} records
-        </div>
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalRecords }} records</div>
 
         <nav aria-label="Page navigation">
           <ul class="pagination pagination-sm mb-0">
@@ -146,7 +171,11 @@
               <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
             </li>
 
-            <li *ngFor="let page of [].constructor(totalPages); let i = index" class="page-item" [ngClass]="{ active: pageNumber === i + 1 }">
+            <li
+              *ngFor="let page of [].constructor(totalPages); let i = index"
+              class="page-item"
+              [ngClass]="{ active: pageNumber === i + 1 }"
+            >
               <a class="page-link cursor" (click)="onPageChange(i + 1)">{{ i + 1 }}</a>
             </li>
 

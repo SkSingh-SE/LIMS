@@ -28,7 +28,42 @@ export class TestStatusBadgeComponent {
     const base = 'badge';
 
     switch (this.status) {
-      // -------- Testing --------
+
+      // ===== Inward Flow =====
+      case 'NOT_STARTED':
+        return `${base} bg-secondary`;
+
+      case 'INWARD_REGISTERED':
+        return `${base} bg-info`;
+
+      case 'INWARD_COMPLETED':
+        return `${base} bg-success`;
+
+      case 'UNDER_PLANNING':
+        return `${base} bg-warning text-dark`;
+
+      case 'UNDER_REVIEW':
+        return `${base} bg-warning text-dark`;
+
+      case 'REVIEW_COMPLETED':
+        return `${base} bg-info`;
+
+      case 'IN_PROGRESS':
+        return `${base} bg-warning text-dark`;
+
+      case 'PARTIALLY_COMPLETED':
+        return `${base} bg-warning text-dark`;
+
+      case 'COMPLETED':
+        return `${base} bg-success`;
+
+      case 'REJECTED':
+        return `${base} bg-danger`;
+
+      case 'CANCELLED':
+        return `${base} bg-dark`;
+
+      // ===== Existing Testing / Reporting statuses (unchanged) =====
       case 'Pending':
         return `${base} bg-secondary`;
 
@@ -44,7 +79,9 @@ export class TestStatusBadgeComponent {
       case 'Completed':
         return `${base} bg-success`;
 
-      // -------- Reporting --------
+      case 'Force Completed':
+        return `${base} bg-warning text-dark`;
+
       case 'Ready for Report':
         return `${base} bg-success`;
 
@@ -60,7 +97,9 @@ export class TestStatusBadgeComponent {
       case 'Report Generated':
         return `${base} bg-dark-1 text-white`;
 
-      // -------- Optional --------
+      case 'Under Amendment Review':
+        return `${base} bg-secondary`;
+
       case 'Draft':
         return `${base} bg-info`;
 
@@ -68,5 +107,6 @@ export class TestStatusBadgeComponent {
         return `${base} bg-secondary`;
     }
   }
+
 
 }

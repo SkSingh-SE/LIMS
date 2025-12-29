@@ -3,10 +3,11 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-sample-inward-list',
-  imports: [CommonModule,RouterModule,FormsModule],
+  imports: [CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent],
   templateUrl: './sample-inward-list.component.html',
   styleUrl: './sample-inward-list.component.css'
 })

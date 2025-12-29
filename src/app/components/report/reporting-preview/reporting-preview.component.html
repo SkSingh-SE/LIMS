@@ -1,4 +1,4 @@
-<div class="container-fluid py-2">
+<div class="container-fluid py-2 pb-5">
   <!-- Loading State -->
   <div *ngIf="isLoading()" class="card border-0 shadow-sm mt-2">
     <div class="card-body text-center py-4">
@@ -88,7 +88,7 @@
             <strong>{{ test.testName }}</strong>
             <small class="text-muted">Report: {{ test.reportNo }}</small>
           </div>
-          <span class="badge" [ngClass]="getStatusClass(test.status)">{{ test.status }}</span>
+          <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
         <!-- Test Details (Expandable) -->
@@ -159,7 +159,7 @@
             <strong>{{ test.testName }}</strong>
             <small class="text-muted">Report: {{ test.reportNo }}</small>
           </div>
-          <span class="badge" [ngClass]="getStatusClass(test.status)">{{ test.status }}</span>
+          <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
         <!-- Test Details (Expandable) -->
@@ -230,7 +230,7 @@
             <strong>{{ test.testName }}</strong>
             <small class="text-muted">Duration: {{ test.durationHours }}h</small>
           </div>
-          <span class="badge" [ngClass]="getStatusClass(test.status)">{{ test.status }}</span>
+          <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
         <!-- Test Details (Expandable) -->
@@ -341,7 +341,7 @@
 
             <label
               class="btn fw-semibold"
-              [class.btn-danger]="act.name.toLowerCase().includes('approve')"
+              [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
               [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
               [class.btn-outline-secondary]="act.name.toLowerCase().includes('back')"
               [for]="'action_' + act.action"
@@ -381,33 +381,113 @@
     </div>
   </div>
 
-  <!-- Footer Action Buttons -->
-  <div *ngIf="reportData && !showActionPanel" class="d-flex gap-2 justify-content-end py-3 px-3">
-    <button class="btn btn-outline-secondary btn-sm fw-semibold" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i>
-      Back
-    </button>
+  <div *ngIf="reportData?.amendment" class="card border-warning mb-3">
+    <div class="card-header bg-warning text-dark fw-semibold">
+      <i class="bi bi-pencil-square"></i>
+      Amendment Details
+    </div>
 
-    <ng-container *ngFor="let action of reportData.actions">
-      <button
-        type="button"
-        class="btn btn-sm fw-semibold"
-        [ngClass]="{
-          'btn-danger': action.name.toLowerCase().includes('approve'),
-          'btn-outline-danger': action.name.toLowerCase().includes('reject'),
-          'btn-outline-secondary': action.name.toLowerCase().includes('back')
-        }"
-        (click)="selectedAction = action; showActionPanel = true"
-        [disabled]="isLoading()"
-      >
-        <i
-          class="bi"
-          [class.bi-check2-circle]="action.name.toLowerCase().includes('approve')"
-          [class.bi-arrow-return-left]="action.name.toLowerCase().includes('back')"
-          [class.bi-x-circle]="action.name.toLowerCase().includes('reject')"
-        ></i>
-        {{ action.name }}
-      </button>
-    </ng-container>
+    <div class="card-body">
+      <div class="row g-3 align-items-start">
+        <!-- LEFT: DETAILS -->
+        <div class="col-md-9">
+          <div class="mb-3">
+            <strong>Reason:</strong>
+            <div class="text-muted">
+              {{ reportData?.amendment?.reason }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <strong>Requested On:</strong>
+            <div class="text-muted">
+              {{ reportData?.amendment?.requestedOn | date : "dd-MMM-yyyy HH:mm" }}
+            </div>
+          </div>
+
+          <!-- Non-image document -->
+          <ng-container
+            *ngIf="
+              reportData?.amendment?.filePath &&
+              !(
+                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') ||
+                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') ||
+                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png') ||
+                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.webp')
+              )
+            "
+          >
+            <div>
+              <strong>Supporting Document:</strong>
+              <div>
+                <a [href]="reportData?.amendment?.filePath" target="_blank" class="link-primary">
+                  {{ reportData?.amendment?.fileName }}
+                </a>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- RIGHT: IMAGE PREVIEW -->
+        <div
+          class="col-md-3"
+          *ngIf="
+            reportData?.amendment?.filePath &&
+            (reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') ||
+              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') ||
+              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png') ||
+              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.webp'))
+          "
+        >
+          <div
+            class="border rounded h-100 d-flex flex-column align-items-center justify-content-center p-2"
+            style="cursor: pointer"
+            (click)="openFileInNewTab(reportData?.amendment?.filePath)"
+          >
+            <img
+              [src]="baseUrl + reportData?.amendment?.filePath"
+              [alt]="reportData?.amendment?.fileName"
+              class="img-fluid mb-2"
+              style="max-height: 140px; object-fit: contain"
+            />
+            <small class="text-muted text-center">Click to view</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixed Footer Action Buttons -->
+  <div *ngIf="reportData && !showActionPanel" class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow-sm z-3">
+    <div class="container-fluid">
+      <div class="d-flex gap-2 justify-content-end py-3 px-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i>
+          Back
+        </button>
+
+        <ng-container *ngFor="let action of reportData.actions">
+          <button
+            type="button"
+            class="btn btn-sm fw-semibold"
+            [ngClass]="{
+              'btn-outline-success': action.action.toLowerCase().includes('next'),
+              'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
+              'btn-outline-secondary': action.action.toLowerCase().includes('back')
+            }"
+            (click)="selectedAction = action; showActionPanel = true"
+            [disabled]="isLoading()"
+          >
+            <i
+              class="bi"
+              [class.bi-check2-circle]="action.action.toLowerCase().includes('next')",
+              [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')",
+              [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"
+            ></i>
+            {{ action.name }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
   </div>
 </div>

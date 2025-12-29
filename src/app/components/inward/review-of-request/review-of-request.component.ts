@@ -3,12 +3,13 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 
 @Component({
   selector: 'app-review-of-request',
   templateUrl: './review-of-request.component.html',
   styleUrl: './review-of-request.component.css',
-  imports: [CommonModule,RouterModule,FormsModule]
+  imports: [CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent]
 })
 export class ReviewOfRequestComponent  implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;

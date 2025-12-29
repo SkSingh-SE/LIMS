@@ -19,6 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
+              <th class="align-middle text-center">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -49,23 +50,11 @@
                 </div>
               </th>
 
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             <tr *ngFor="let item of listData" class="align-middle">
-              <td class="fw-semibold">{{ item.sampleNo }}</td>
-              <td>{{ item.caseNo }}</td>
-              <td>{{ item.customerName }}</td>
-              <td>{{ item.material }}</td>
-              <td>{{ item.condition }}</td>
-              <td>
-                <small class="text-muted">{{ item.tests }}</small>
-              </td>
-              <td class="">
-                <app-test-status-badge [status]="item.sampleStatus"></app-test-status-badge>
-              </td>
               <td>
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
                   <!-- Perform Testing Button -->
@@ -102,6 +91,18 @@
                   </button>
                 </div>
               </td>
+              <td class="fw-semibold">{{ item.sampleNo }}</td>
+              <td>{{ item.caseNo }}</td>
+              <td>{{ item.customerName }}</td>
+              <td>{{ item.material }}</td>
+              <td>{{ item.condition }}</td>
+              <td>
+                <small class="text-muted">{{ item.tests }}</small>
+              </td>
+              <td class="">
+                <app-test-status-badge [status]="item.sampleStatus"></app-test-status-badge>
+              </td>
+
             </tr>
           </tbody>
         </table>

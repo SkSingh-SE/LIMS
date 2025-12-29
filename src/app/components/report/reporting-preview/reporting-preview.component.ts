@@ -5,6 +5,7 @@ import { ReportingService, ReportingPreview, WorkflowAction } from '../../../ser
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-reporting-preview',
@@ -13,6 +14,7 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
   imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
 })
 export class ReportingPreviewComponent implements OnInit {
+  baseUrl = environment.baseUrl;
   reportData: ReportingPreview | null = null;
   isLoading = signal(false);
   sampleId: string = '';
@@ -129,7 +131,8 @@ export class ReportingPreviewComponent implements OnInit {
           };
         })
       })),
-      actions: src.actions || []
+      actions: src.actions || [],
+      amendment: src.amendment || null
     };
 
     return dst;
@@ -239,7 +242,7 @@ export class ReportingPreviewComponent implements OnInit {
         this.showActionPanel = false;
         // keep UX consistent with other screens
         alert('Action completed successfully.');
-        this.router.navigate(['/reporting']);
+        this.router.navigate(['/reporting/dashboard']);
       },
       error: (err) => {
         this.submitting = false;
@@ -250,15 +253,7 @@ export class ReportingPreviewComponent implements OnInit {
     });
   }
 
-  // Helper method to format status badge
-  getStatusClass(status: string): string {
-    const statusLower = status?.toLowerCase() || '';
-    if (statusLower === 'completed') return 'bg-success';
-    if (statusLower === 'running' || statusLower === 'in progress') return 'bg-info';
-    if (statusLower === 'pending') return 'bg-warning';
-    if (statusLower === 'failed') return 'bg-danger';
-    return 'bg-secondary';
-  }
+
 
   /**
    * Check if report status allows PDF generation
@@ -292,5 +287,9 @@ export class ReportingPreviewComponent implements OnInit {
         alert('PDF generation failed. See console for details.');
       }
     });
+  }
+
+  openFileInNewTab(filePath: string | null | undefined): void {
+    if (filePath) window.open(this.baseUrl + filePath, '_blank');
   }
 }

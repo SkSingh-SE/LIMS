@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-reporting-list',
@@ -71,7 +72,7 @@ export class ReportingListComponent implements OnInit {
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
   statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
 
-  constructor(private reportingService: ReportingService) { }
+  constructor(private reportingService: ReportingService, private router: Router, private toast: ToastService) { }
 
   ngOnInit(): void {
     this.fetchData();
@@ -92,10 +93,7 @@ export class ReportingListComponent implements OnInit {
         // Response shapes vary: try common properties
         const items = resp?.items || resp?.data || resp || [];
         this.reportingData = Array.isArray(items) ? items : [];
-        for (let i = 0; i < 5; i++) {
-          const safeItems = Array.isArray(items) ? items : [];
-          this.reportingData.push(...safeItems);
-        }
+
         this.totalRecords = resp?.totalRecords || this.reportingData.length;
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
@@ -161,29 +159,49 @@ export class ReportingListComponent implements OnInit {
   }
 
   performWorkflowAction(item: any, action: 'Next' | 'Cancel' | 'Back') {
-    if (!item?.workflowInstanceId) {
-      alert('No workflow instance available for this report.');
+    debugger;
+    const selectedAction = item.actions?.find(
+      (a: any) => a.action === action
+    );
+
+    if (!selectedAction) {
+      this.toast.show('Invalid action selected.', 'error');
       return;
     }
 
-    const comments = prompt(`Enter comments for ${action.toLowerCase()} (optional):`, '');
-    if (comments === null) return; // Cancelled
+    let comments: string | null = '';
 
-    this.isLoading.set(true);
+    // Prompt ONLY for non-Next actions
+    if (action !== 'Next') {
+      const input = prompt(
+        `Enter comments for ${action.toLowerCase()} (optional):`,
+        ''
+      );
+      if (input === null && input === "") {
+        return; // user cancelled
+      }
+      comments = input;
+      if (comments === null || comments.trim() === '') {
+        this.toast.show('Comments are required for this action.', 'error');
+        return;
+      }
+    }
+
     const payload = {
-      id: item.workflowInstanceId,
-      action,
+      id: selectedAction.id,
+      action: selectedAction.action,
+      name: selectedAction.name,
       remarks: comments || ''
     };
+
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
-        alert(`Report action completed successfully.`);
+        this.toast.show('Action completed successfully.', 'success');
         this.fetchData();
       },
       error: (err) => {
         console.error('Workflow action failed:', err);
-        alert('Action failed. See console for details.');
-        this.isLoading.set(false);
+        this.toast.show('Action failed. See console for details.', 'error');
       }
     });
   }
@@ -206,7 +224,7 @@ export class ReportingListComponent implements OnInit {
     }
 
     this.pdfGeneratingId = item.reportHeaderId;
-    this.reportingService.generateReportPdf(item.reportHeaderId).subscribe({
+    this.reportingService.generateReportPdf(item.sampleId).subscribe({
       next: (response) => {
         this.pdfGeneratingId = null;
         alert('PDF generated successfully.');
@@ -346,5 +364,12 @@ export class ReportingListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  canAmend(status: string): boolean {
+    return ['Completed', 'Approved', 'Report Generated'].includes(status);
+  }
+  openAmendment(item: any): void {
+    this.router.navigate(['/reporting/amend', item.reportHeaderId]);
   }
 }

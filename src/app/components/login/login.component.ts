@@ -48,7 +48,7 @@ export class LoginComponent {
             this.pushService.subscribeToPush();
           }
 
-          this.router.navigate(['/employee']);
+          this.router.navigate(['/sample/inward']);
         },
         error: (err) => {
           this.errorMessage.set(err?.errorMessage);

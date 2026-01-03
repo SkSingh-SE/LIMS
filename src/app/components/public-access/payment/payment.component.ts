@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { PaymentService } from '../../../services/payment.service';
-import { PaymentData, PaymentTokenValidationResponse } from '../../../models/paymentData';
+import { PaymentData, PaymentTokenValidationResponse, getPaymentTypeString } from '../../../models/paymentData';
 import { CommonModule } from '@angular/common';
 
 declare const Razorpay: any;
@@ -19,7 +19,7 @@ export class PaymentComponent implements OnInit {
 
   token!: string;
   paymentForm!: FormGroup;
-  loading = true;
+  loading = false;
   error: string | null = null;
   success = false;
 
@@ -31,15 +31,18 @@ export class PaymentComponent implements OnInit {
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token')!;
     this.buildForm();
-    this.validateToken();
+     this.validateToken();
   }
 
   private buildForm(): void {
     this.paymentForm = this.fb.nonNullable.group({
       customerName: [''],
       orderNo: [''],
-      paymentType: [''],
-      amount: [0]
+      paymentType: [0], // Numeric value for backend
+      amount: [0],
+      currency: [''],
+      razorpayKey: [''],
+      razorpayOrderId: ['']
     });
   }
 
@@ -48,17 +51,20 @@ export class PaymentComponent implements OnInit {
 
     this.paymentService.validateToken(this.token).subscribe({
       next: (res: PaymentTokenValidationResponse) => {
-        if (!res.isValid || !res.data) {
+        if (!res.isValid) {
           this.error = res.message ?? 'Invalid or expired payment link';
           this.loading = false;
           return;
         }
 
         this.paymentForm.patchValue({
-          customerName: res.data.customerName,
-          orderNo: res.data.orderNo,
-          paymentType: res.data.paymentType,
-          amount: res.data.amount
+          customerName: res.customerName,
+          orderNo: res.orderNo,
+          paymentType: res.paymentType,
+          amount: res.amount,
+          currency: res.currency,
+          razorpayKey: res.razorpayKey,
+          razorpayOrderId: res.razorpayOrderId
         });
 
         this.loading = false;
@@ -68,6 +74,11 @@ export class PaymentComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  getPaymentTypeDisplay(): string {
+    const paymentType = this.paymentForm.get('paymentType')?.value;
+    return paymentType ? getPaymentTypeString(paymentType) : '';
   }
 
   payNow(): void {
@@ -80,7 +91,7 @@ export class PaymentComponent implements OnInit {
       amount: data.amount * 100,
       currency: data.currency,
       name: 'Divine Metallurgical Services',
-      description: `${data.paymentType} - ${data.orderNo}`,
+      description: `${getPaymentTypeString(data.paymentType)} - ${data.orderNo}`,
       order_id: data.razorpayOrderId,
       handler: (response: any) => this.verifyPayment(response),
       theme: { color: '#495057' }

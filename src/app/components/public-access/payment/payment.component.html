@@ -63,7 +63,8 @@
           <input
             type="text"
             class="form-control bg-light"
-            formControlName="paymentType"
+            [value]="getPaymentTypeDisplay()"
+            readonly
           />
         </div>
 

@@ -4,6 +4,8 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TestResultService } from '../../../services/test-result.service';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
+import { ToastService } from '../../../services/toast.service';
+import { PaymentService } from '../../../services/payment.service';
 
 @Component({
   selector: 'app-test-result',
@@ -63,7 +65,7 @@ export class TestResultComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private testresultService: TestResultService) {
+  constructor(private fb: FormBuilder, private testresultService: TestResultService, private toastService: ToastService, private paymentService: PaymentService) {
   }
 
 
@@ -277,6 +279,7 @@ export class TestResultComponent implements OnInit {
   onActionClick(action: any) {
     console.log('Action clicked:', action);
   }
+
 
 }
 

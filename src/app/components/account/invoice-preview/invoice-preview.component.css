@@ -1,0 +1,8 @@
+/* Component-specific styles if needed */
+@media print {
+  .card-header,
+  button {
+    display: none !important;
+  }
+}
+

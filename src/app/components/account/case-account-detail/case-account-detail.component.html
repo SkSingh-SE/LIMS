@@ -1,0 +1,198 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">
+        <i class="bi bi-file-earmark-text"></i>
+        Case Account Detail
+      </label>
+      <button class="btn btn-outline-light me-3" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading() && caseSummary" class="card-body">
+      <!-- Case Summary Section -->
+      <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Case Summary</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>Case No:</strong>
+              <p class="text-muted">{{ caseSummary.caseNo || caseSummary.case_no }}</p>
+            </div>
+            <div class="col-md-3">
+              <strong>Customer Name:</strong>
+              <p class="text-muted">{{ caseSummary.customerName || caseSummary.customer_name }}</p>
+            </div>
+            <div class="col-md-3">
+              <strong>Customer Type:</strong>
+              <p class="text-muted">{{ caseSummary.customerType || caseSummary.customer_type }}</p>
+            </div>
+            <div class="col-md-3">
+              <strong>PI Status:</strong>
+              <p>
+                <span [ngClass]="getInvoiceStatusBadgeClass(caseSummary.piStatus || caseSummary.pi_status)">
+                  {{ caseSummary.piStatus || caseSummary.pi_status || 'N/A' }}
+                </span>
+              </p>
+            </div>
+            <div class="col-md-3">
+              <strong>Invoice Status:</strong>
+              <p>
+                <span [ngClass]="getInvoiceStatusBadgeClass(caseSummary.invoiceStatus || caseSummary.invoice_status)">
+                  {{ caseSummary.invoiceStatus || caseSummary.invoice_status || 'N/A' }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Section -->
+      <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Invoice</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="!invoice">
+            <p class="text-muted mb-3">No invoice has been generated for this case.</p>
+            <button
+              class="btn btn-primary"
+              (click)="generateInvoice()"
+              [disabled]="isGeneratingInvoice() || isReadOnly"
+            >
+              <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
+              <i *ngIf="!isGeneratingInvoice()" class="bi bi-file-earmark-plus me-2"></i>
+              {{ isGeneratingInvoice() ? 'Generating...' : 'Generate Invoice' }}
+            </button>
+          </div>
+
+          <div *ngIf="invoice">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <strong>Invoice No:</strong>
+                <p class="text-muted">{{ invoice.invoiceNo || invoice.invoice_no }}</p>
+              </div>
+              <div class="col-md-4">
+                <strong>Invoice Status:</strong>
+                <p>
+                  <span [ngClass]="getInvoiceStatusBadgeClass(invoice.status)">
+                    {{ invoice.status }}
+                  </span>
+                </p>
+              </div>
+              <div class="col-md-4">
+                <strong>Invoice Amount:</strong>
+                <p class="text-muted">{{ invoice.amount | currency: 'INR' }}</p>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-outline-primary"
+                (click)="openInvoicePreview()"
+              >
+                <i class="bi bi-eye me-2"></i>Preview Invoice
+              </button>
+              <button
+                class="btn btn-success"
+                (click)="sendInvoice('email')"
+                [disabled]="isSendingInvoice() || isReadOnly"
+              >
+                <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i>
+                {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
+              </button>
+              <button
+                class="btn btn-success"
+                (click)="sendInvoice('whatsapp')"
+                [disabled]="isSendingInvoice() || isReadOnly"
+              >
+                <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!isSendingInvoice()" class="bi bi-whatsapp me-2"></i>
+                {{ isSendingInvoice() ? 'Sending...' : 'Send WhatsApp' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment List Section -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Payment List</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="!isLoadingPayments() && payments.length > 0" class="table-responsive">
+            <table class="table table-bordered align-middle w-100">
+              <thead class="table-light">
+                <tr class="text-center">
+                  <th>Date</th>
+                  <th>Payment Type</th>
+                  <th>Against</th>
+                  <th>Reference</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th *ngIf="!isReadOnly">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let payment of payments" class="text-center">
+                  <td>{{ (payment.date || payment.createdDate || payment.created_date) | date: 'MMM dd, yyyy' }}</td>
+                  <td>{{ payment.paymentType || payment.payment_type }}</td>
+                  <td>{{ payment.against }}</td>
+                  <td>{{ payment.reference || payment.referenceNo || payment.reference_no }}</td>
+                  <td>{{ payment.amount | currency: 'INR' }}</td>
+                  <td>
+                    <span [ngClass]="getPaymentStatusBadgeClass(payment.status)">
+                      {{ payment.status }}
+                    </span>
+                  </td>
+                  <td *ngIf="!isReadOnly">
+                    <button
+                      *ngIf="canSendPaymentLink(payment.status)"
+                      class="btn btn-sm btn-primary"
+                      (click)="sendPaymentLink(payment.paymentOrderId || payment.payment_order_id || payment.id)"
+                      [disabled]="sendingPaymentLinkId === (payment.paymentOrderId || payment.payment_order_id || payment.id)"
+                    >
+                      <span
+                        *ngIf="sendingPaymentLinkId === (payment.paymentOrderId || payment.payment_order_id || payment.id)"
+                        class="spinner-border spinner-border-sm me-1"
+                      ></span>
+                      <i
+                        *ngIf="sendingPaymentLinkId !== (payment.paymentOrderId || payment.payment_order_id || payment.id)"
+                        class="bi bi-send me-1"
+                      ></i>
+                      {{ payment.status?.toLowerCase() === 'failed' ? 'Resend Link' : 'Send Link' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="!isLoadingPayments() && payments.length === 0" class="alert alert-light border text-center py-4">
+            <i class="bi bi-info-circle text-secondary"></i>
+            <p class="mb-0 text-secondary">No payments found for this case.</p>
+          </div>
+
+          <div *ngIf="isLoadingPayments()" class="text-center py-4">
+            <div class="spinner-border text-danger" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="card-body text-center py-5">
+      <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+</div>
+

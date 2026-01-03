@@ -137,6 +137,8 @@ export class SampleInwardFormComponent implements OnInit {
         city: [''],
         state: [''],
         country: [''],
+        mobileNo: [''],
+        emailId: [''],
         type: ['reporting']
       }),
       billingTo: this.fb.group({
@@ -149,6 +151,8 @@ export class SampleInwardFormComponent implements OnInit {
         city: [''],
         state: [''],
         country: [''],
+        mobileNo: [''],
+        emailId: [''],
         type: ['billing']
       }),
       sampleDetails: this.fb.array([], [
@@ -263,14 +267,17 @@ export class SampleInwardFormComponent implements OnInit {
         this.reportingToContactPerson = [];
 
         if (Array.isArray(this.customerData?.contactPersons)) {
+          // When creating new (sampleId === 0), set selected: true by default
+          const defaultSelected = this.sampleId === 0;
+
           this.customerData.contactPersons.forEach((contact: any) => {
             contact.contactID = contact.id;
-            this.addContact(contact);
-
-            if (contact.sendBill) this.billingToContactPerson.push(contact);
-            if (contact.sendReport) this.reportingToContactPerson.push(contact);
+            this.addContact(contact, defaultSelected);
             this.contactPersons.push(contact);
           });
+
+          // Update contact lists based on selected, sendBill, and sendReport
+          this.updateContactLists();
 
           if (this.billingToContactPerson.length > 0) {
             this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
@@ -373,7 +380,7 @@ export class SampleInwardFormComponent implements OnInit {
                 this.contactControls.push(
                   this.fb.group({
                     id: c.id,
-                    selected: c.selected,
+                    selected: c.selected !== undefined ? c.selected : true,
                     contactID: c.contactID,
                     name: c.name,
                     mobileNo: c.mobileNo,
@@ -383,9 +390,10 @@ export class SampleInwardFormComponent implements OnInit {
                     inwardID: c.inwardID
                   })
                 );
-                if (c.sendBill) this.billingToContactPerson.push(c);
-                if (c.sendReport) this.reportingToContactPerson.push(c);
               });
+
+              // Update contact lists based on selected, sendBill, and sendReport
+              this.updateContactLists();
             }
 
             // Override Reporting To & Billing To
@@ -412,7 +420,7 @@ export class SampleInwardFormComponent implements OnInit {
 
             });
             // Disable form if not in SAMPLE_INWARD_REGISTERED status
-            if (data?.status !== InwardStatus.IN_PROGRESS && data?.status !== InwardStatus.NOT_STARTED) {
+            if ( data?.status !== InwardStatus.INWARD_REGISTERED  && data?.status !== SampleStatus.INWARD_COMPLETED) {
               this.isViewMode = true;
               this.disableFormRecursively(this.sampleInwardForm);
             }
@@ -454,14 +462,16 @@ export class SampleInwardFormComponent implements OnInit {
     if (!selectedCustomer) return;
 
     const patch = {
-      contactPersonID: selectedCustomer?.id || '',
+      contactPersonID: selectedCustomer?.id || selectedCustomer?.contactID || '',
       contactPersonName: selectedCustomer?.name || '',
       address: selectedCustomer?.address || '',
       pinCode: selectedCustomer?.pinCode || '',
       area: selectedCustomer?.area || '',
       city: selectedCustomer?.city || '',
       state: selectedCustomer?.state || '',
-      country: selectedCustomer?.country || 'India'
+      country: selectedCustomer?.country || 'India',
+      mobileNo: selectedCustomer?.mobileNo || '',
+      emailId: selectedCustomer?.emailId || ''
     };
 
     if (section === 'reportingTo') {
@@ -473,17 +483,39 @@ export class SampleInwardFormComponent implements OnInit {
     }
   }
 
+  // Helper method to update billing and reporting contact lists based on selected, sendBill, and sendReport
+  private updateContactLists(): void {
+    this.billingToContactPerson = [];
+    this.reportingToContactPerson = [];
+
+    this.contactControls.controls.forEach((contactControl, index) => {
+      const contactFormValue = contactControl.value;
+      // Only include contacts that are selected
+      if (contactFormValue.selected) {
+        // Merge form control value with original contact from contactPersons to preserve properties like areaID
+        const originalContact = this.contactPersons.find(c => c.contactID === contactFormValue.contactID || c.id === contactFormValue.contactID) || {};
+        const mergedContact = { ...originalContact, ...contactFormValue };
+
+        if (contactFormValue.sendBill) {
+          this.billingToContactPerson.push(mergedContact);
+        }
+        if (contactFormValue.sendReport) {
+          this.reportingToContactPerson.push(mergedContact);
+        }
+      }
+    });
+  }
+
   onSendBillChange(index: number): void {
     if (this.isViewMode) return;
 
     const contact = this.contactControls.at(index).value;
 
-    if (contact.sendBill) {
-      if (!this.billingToContactPerson.some(c => c.id === contact.contactID)) {
-        this.billingToContactPerson.push(contact);
-      }
-    } else {
-      this.billingToContactPerson = this.billingToContactPerson.filter(c => c.id !== contact.id);
+    // Update contact lists based on selected, sendBill, and sendReport
+    this.updateContactLists();
+
+    // Reset billingTo if sendBill is unchecked and this contact was selected
+    if (!contact.sendBill && this.billingTo.get('contactPersonID')?.value === contact.contactID) {
       this.billingTo.reset();
     }
   }
@@ -493,12 +525,31 @@ export class SampleInwardFormComponent implements OnInit {
 
     const contact = this.contactControls.at(index).value;
 
-    if (contact.sendReport) {
-      if (!this.reportingToContactPerson.some(c => c.id === contact.contactID)) {
-        this.reportingToContactPerson.push(contact);
+    // Update contact lists based on selected, sendBill, and sendReport
+    this.updateContactLists();
+
+    // Reset reportingTo if sendReport is unchecked and this contact was selected
+    if (!contact.sendReport && this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
+      this.reportingTo.reset();
+    }
+  }
+
+  onContactSelectedChange(index: number): void {
+    if (this.isViewMode) return;
+
+    const contact = this.contactControls.at(index).value;
+
+    // Update contact lists based on selected, sendBill, and sendReport
+    this.updateContactLists();
+
+    // Reset billingTo/reportingTo if contact is deselected and was currently selected
+    if (!contact.selected) {
+      if (this.billingTo.get('contactPersonID')?.value === contact.contactID) {
+        this.billingTo.reset();
       }
-    } else {
-      this.reportingToContactPerson = this.reportingToContactPerson.filter(c => c.id !== contact.id);
+      if (this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
+        this.reportingTo.reset();
+      }
     }
   }
 
@@ -549,10 +600,10 @@ export class SampleInwardFormComponent implements OnInit {
   }
 
   // Contact Helpers
-  addContact(contact: any): void {
+  addContact(contact: any, selected: boolean = false): void {
     this.contactControls.push(this.fb.group({
       id: [contact.id || 0],
-      selected: [false],
+      selected: [selected],
       contactID: [contact.id || 0],
       name: [contact?.name || ''],
       mobileNo: [contact?.mobileNo || ''],
@@ -854,7 +905,10 @@ export class SampleInwardFormComponent implements OnInit {
     ['reportingTo', 'billingTo'].forEach(section => {
       const sec = value[section] || {};
       Object.keys(sec).forEach(k => {
-        formData.append(`${section}.${k}`, sec[k] ?? '');
+        const val = sec[k];
+        if (val !== undefined && val !== null) {
+          formData.append(`${section}.${k}`, String(val));
+        }
       });
     });
 

@@ -74,6 +74,10 @@ import { ReportingPreviewComponent } from './components/report/reporting-preview
 import { TestResultEntryFormComponent } from './components/TestResult/test-result-entry-form/test-result-entry-form.component';
 import { ReportAmendComponent } from './components/report/report-amend/report-amend.component';
 import { PaymentComponent } from './components/public-access/payment/payment.component';
+import { AccountDashboardComponent } from './components/account/account-dashboard/account-dashboard.component';
+import { CaseAccountListComponent } from './components/account/case-account-list/case-account-list.component';
+import { CaseAccountDetailComponent } from './components/account/case-account-detail/case-account-detail.component';
+import { InvoicePreviewComponent } from './components/account/invoice-preview/invoice-preview.component';
 
 
 export const routes: Routes = [
@@ -194,9 +198,14 @@ export const routes: Routes = [
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
-            { path: 'reporting/amend/:id', component: ReportAmendComponent }
+            { path: 'reporting/amend/:id', component: ReportAmendComponent },
+            // Account routes
+            { path: 'accounts/dashboard', component: AccountDashboardComponent },
+            { path: 'accounts/cases', component: CaseAccountListComponent },
+            { path: 'accounts/cases/:id', component: CaseAccountDetailComponent },
+            { path: 'accounts/invoices/:id/preview', component: InvoicePreviewComponent }
         ]
     },
-    {path: 'payment', component: PaymentComponent},
+    {path: 'payment/:token', component: PaymentComponent},
     { path: '**', redirectTo: '/login' }
 ];

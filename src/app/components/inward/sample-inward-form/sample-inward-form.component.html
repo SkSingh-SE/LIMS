@@ -163,7 +163,7 @@
                 <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
                   <td class="text-center">
                     <span class="form-check d-flex align-items-center justify-content-center">
-                      <input type="checkbox" class="form-check-input mt-1" formControlName="selected" />
+                      <input type="checkbox" class="form-check-input mt-1" formControlName="selected" (change)="onContactSelectedChange(i)" />
                     </span>
                   </td>
                   <td>
@@ -235,6 +235,14 @@
                       <strong>Country:</strong>
                       {{ reportingTo.get("country")?.value }}
                     </div>
+                    <div>
+                      <strong>Mobile No:</strong>
+                      {{ reportingTo.get("mobileNo")?.value || "-" }}
+                    </div>
+                    <div>
+                      <strong>Email ID:</strong>
+                      {{ reportingTo.get("emailId")?.value || "-" }}
+                    </div>
                   </div>
                 </ng-container>
               </div>
@@ -283,6 +291,14 @@
                     <div>
                       <strong>Country:</strong>
                       {{ billingTo.get("country")?.value }}
+                    </div>
+                    <div>
+                      <strong>Mobile No:</strong>
+                      {{ billingTo.get("mobileNo")?.value || "-" }}
+                    </div>
+                    <div>
+                      <strong>Email ID:</strong>
+                      {{ billingTo.get("emailId")?.value || "-" }}
                     </div>
                   </div>
                 </ng-container>

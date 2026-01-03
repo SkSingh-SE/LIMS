@@ -1,0 +1,26 @@
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.filter-modal {
+  position: absolute;
+  display: none;
+  z-index: 1000;
+}
+
+.sorting-icon-up {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -3px;
+}
+
+.sorting-icon-down {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -3px;
+}
+

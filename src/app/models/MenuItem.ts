@@ -195,7 +195,7 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-file-text',
       color: '',
       children: [
-        { id: 66, title: 'Reporting Dashboard', route: '/reporting', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
+        { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
       ]
     }
   ];

@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root'
 })
 export class PaymentService {
-  private apiUrl = environment.apiUrl + "/ProductConditionMaster";
+  private apiUrl = environment.apiUrl + "/Payments";
 
   constructor(private http: HttpClient) { }
 

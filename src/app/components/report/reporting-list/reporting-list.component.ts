@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { ToastService } from '../../../services/toast.service';
+import { PaymentService } from '../../../services/payment.service';
 
 @Component({
   selector: 'app-reporting-list',
@@ -72,7 +73,7 @@ export class ReportingListComponent implements OnInit {
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
   statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
 
-  constructor(private reportingService: ReportingService, private router: Router, private toast: ToastService) { }
+  constructor(private reportingService: ReportingService, private router: Router, private toast: ToastService, private paymentService: PaymentService) { }
 
   ngOnInit(): void {
     this.fetchData();
@@ -371,5 +372,22 @@ export class ReportingListComponent implements OnInit {
   }
   openAmendment(item: any): void {
     this.router.navigate(['/reporting/amend', item.reportHeaderId]);
+  }
+  generatePi(item: any) {
+    const payload = {
+      paymentType: 2,
+      sampleID: item.sampleId,
+      customerId: item.customerID,
+      caseNo: item.caseNo,
+      amount: 150
+    };
+    this.paymentService.processPayment(payload).subscribe({
+      next: (resp) => {
+        this.toast.show('PI generated successfully.', 'success');
+      },
+      error: (err) => {
+        this.toast.show('Failed to generate PI.', 'error');
+      }
+    });
   }
 }

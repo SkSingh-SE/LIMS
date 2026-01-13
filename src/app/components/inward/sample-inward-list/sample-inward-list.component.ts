@@ -4,6 +4,8 @@ import { SampleInwardService } from '../../../services/sample-inward.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
 
 @Component({
   selector: 'app-sample-inward-list',
@@ -67,7 +69,28 @@ export class SampleInwardListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private inwardService: SampleInwardService) {
+  constructor(
+    private fb: FormBuilder, 
+    private inwardService: SampleInwardService,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService
+  ) {
+  }
+
+  /**
+   * Check if inward can be edited based on status
+   */
+  canEditInward(item: any): boolean {
+    const status = item.inwardStatus || item.status || '';
+    return this.statusHelper.canEditInward(status) && this.roleHelper.canEditInward();
+  }
+
+  /**
+   * Check if inward can be deleted based on status
+   */
+  canDeleteInward(item: any): boolean {
+    const status = item.inwardStatus || item.status || '';
+    return this.statusHelper.canDeleteInward(status) && this.roleHelper.canDeleteInward();
   }
 
 
@@ -206,5 +229,9 @@ export class SampleInwardListComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
+  // Expose statusHelper to template
+  get statusHelperService() {
+    return this.statusHelper;
+  }
 }
 

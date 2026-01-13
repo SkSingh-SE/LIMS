@@ -4,10 +4,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AccountService } from '../../../services/account.service';
 import { ToastService } from '../../../services/toast.service';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 @Component({
   selector: 'app-case-account-detail',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, HasPermissionDirective],
   templateUrl: './case-account-detail.component.html',
   styleUrl: './case-account-detail.component.css'
 })
@@ -23,12 +27,17 @@ export class CaseAccountDetailComponent implements OnInit {
   caseSummary: any = null;
   payments: any[] = [];
   invoice: any = null;
+  proformaInvoice: any = null;
+  advancePayments: any[] = [];
+  isGeneratingPI = signal(false);
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private accountService: AccountService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService
   ) { }
 
   ngOnInit(): void {
@@ -50,7 +59,9 @@ export class CaseAccountDetailComponent implements OnInit {
     this.accountService.getCaseSummary(this.inwardId).subscribe({
       next: (response) => {
         this.caseSummary = response;
-        this.invoice = response?.invoice || null;
+        this.invoice = response?.finalInvoice || response?.invoice || null;
+        this.proformaInvoice = response?.proformaInvoice || response?.pi || null;
+        this.advancePayments = response?.advancePayments || [];
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -77,24 +88,81 @@ export class CaseAccountDetailComponent implements OnInit {
     });
   }
 
+  /**
+   * Generate Proforma Invoice (PI) - Manual, Accounts role only
+   */
+  generatePI(): void {
+    if (!this.canGeneratePI()) {
+      this.toastService.show('PI cannot be generated at this stage', 'error');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to generate a Proforma Invoice for this case?')) {
+      return;
+    }
+
+    this.isGeneratingPI.set(true);
+    this.accountService.generatePI(this.inwardId).subscribe({
+      next: (response) => {
+        this.toastService.show('Proforma Invoice generated successfully', 'success');
+        this.loadCaseSummary();
+        this.isGeneratingPI.set(false);
+      },
+      error: (error) => {
+        console.error('Error generating PI:', error);
+        this.toastService.show(error?.error?.message || 'Failed to generate Proforma Invoice', 'error');
+        this.isGeneratingPI.set(false);
+      }
+    });
+  }
+
+  /**
+   * Generate Final Invoice - Only after report approval and advance payment
+   */
   generateInvoice(): void {
-    if (!confirm('Are you sure you want to generate an invoice for this case?')) {
+    if (!this.canGenerateInvoice()) {
+      this.toastService.show('Final Invoice cannot be generated at this stage. Report must be approved and advance payment completed.', 'error');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to generate a Final Invoice for this case?')) {
       return;
     }
 
     this.isGeneratingInvoice.set(true);
     this.accountService.generateInvoice(this.inwardId).subscribe({
       next: (response) => {
-        this.toastService.show('Invoice generated successfully', 'success');
-        this.loadCaseSummary(); // Reload to get the new invoice
+        this.toastService.show('Final Invoice generated successfully', 'success');
+        this.loadCaseSummary();
         this.isGeneratingInvoice.set(false);
       },
       error: (error) => {
         console.error('Error generating invoice:', error);
-        this.toastService.show(error?.error?.message || 'Failed to generate invoice', 'error');
+        this.toastService.show(error?.error?.message || 'Failed to generate Final Invoice', 'error');
         this.isGeneratingInvoice.set(false);
       }
     });
+  }
+
+  /**
+   * Check if PI can be generated
+   */
+  canGeneratePI(): boolean {
+    if (!this.caseSummary) return false;
+    if(this.caseSummary?.piStatus.toUpperCase() === 'PENDING') {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if Final Invoice can be generated
+   */
+  canGenerateInvoice(): boolean {
+    if (!this.caseSummary) return false;
+    const billingStatus = this.caseSummary.billingStatus || this.caseSummary.billing_status || '';
+    const reportStatus = this.caseSummary.reportStatus || this.caseSummary.report_status || '';
+    return this.statusHelper.canGenerateInvoice(billingStatus, reportStatus) && this.roleHelper.canGenerateInvoice();
   }
 
   sendInvoice(method: 'email' | 'whatsapp' = 'email'): void {
@@ -170,6 +238,14 @@ export class CaseAccountDetailComponent implements OnInit {
     if (this.invoice?.invoiceId || this.invoice?.invoice_id) {
       this.router.navigate(['/accounts/invoices', this.invoice.invoiceId || this.invoice.invoice_id, 'preview']);
     }
+  }
+
+  openPaymentDetail(payment: any): void {
+    // For now, just show payment details in console or navigate to case detail with payment highlighted
+    // In future, can create a payment detail modal or page
+    console.log('Payment details:', payment);
+    // Could navigate to a payment detail page if it exists
+    // this.router.navigate(['/accounts/payments', payment.id]);
   }
 
   goBack(): void {

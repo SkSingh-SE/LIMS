@@ -11,9 +11,9 @@
         Sample Details
       </button>
     </li>
-    <!-- <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+    <li *ngIf="shouldShowPlanTab()" class="nav-item" role="presentation">
       <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">Plan</button>
-    </li> -->
+    </li>
   </ul>
 
   <!-- removed global ngSubmit to avoid accidental nested submissions -->
@@ -610,10 +610,13 @@
         </div>
       </div>
 
-      <!-- PLAN TAB TABLE FORMAT -->
-      <!-- <div class="tab-pane fade show" id="plan" role="tabpanel">
-        <app-plan-form [inwardID]="sampleId" [mode]="'review'"></app-plan-form>
-      </div> -->
+      <!-- PLAN TAB -->
+      <div class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
+        <app-plan-form 
+          [inwardID]="sampleId" 
+          [mode]="isPlanEditable() ? 'plan' : 'review'">
+        </app-plan-form>
+      </div>
 
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>

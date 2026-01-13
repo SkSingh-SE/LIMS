@@ -16,6 +16,12 @@
                         <input type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
                             maxlength="100"
                             [ngClass]="{ 'is-invalid': customerForm.get('name')?.touched && customerForm.get('name')?.invalid }" />
+                            <!-- toogle button -->
+                            <div class="form-check mt-1">
+                                <input type="checkbox" class="form-check-input mt-1" formControlName="isVerified"
+                                    id="isVerified" (click)="verifyCustomer($event)" />
+                                <label class="form-check-label form-label mb-0" for="isVerified">Verified</label>
+                            </div>
                         <div *ngIf="customerForm.get('name')?.touched && customerForm.get('name')?.invalid"
                             class="text-danger text-sm">
                             Name is required.

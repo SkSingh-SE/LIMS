@@ -1,0 +1,66 @@
+<div class="org-chart-header" [class.light-mode]="!isDarkMode">
+  <button class="back-btn btn btn-sm" routerLink="/">
+    <i class="bi bi-arrow-left"></i> Back to Dashboard
+  </button>
+  <h6>Organization Hierarchy</h6>
+  
+  <div class="header-actions">
+       <button class="icon-btn" (click)="toggleTheme()" [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+        <i class="bi" [class.bi-sun-fill]="isDarkMode" [class.bi-moon-fill]="!isDarkMode"></i>
+      </button>
+      <button class="icon-btn" (click)="toggleLayout()" [title]="isHorizontal ? 'Switch to Vertical View' : 'Switch to Horizontal View'">
+          <i class="bi" [class.bi-list-ul]="isHorizontal" [class.bi-diagram-3]="!isHorizontal"></i>
+      </button>
+  </div>
+</div>
+
+<div class="org-chart-container" [class.light-mode]="!isDarkMode" [class.vertical-layout]="!isHorizontal">
+  
+  <!-- Floating Zoom Controls -->
+  <div class="zoom-controls">
+    <button (click)="zoomIn()" title="Zoom In"><i class="bi bi-plus-lg"></i></button>
+    <button (click)="resetZoom()" title="Reset Zoom"><i class="bi bi-aspect-ratio"></i></button>
+    <button (click)="zoomOut()" title="Zoom Out"><i class="bi bi-dash-lg"></i></button>
+  </div>
+
+  <div class="tree" [style.transform]="'scale(' + zoomLevel + ')'" [style.transform-origin]="'top center'">
+    <ul>
+      <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: rootNode }"></ng-container>
+    </ul>
+  </div>
+</div>
+
+<ng-template #nodeTemplate let-node>
+  <li>
+    <div class="node-card" [class.expanded]="node.isExpanded" [class.collapsed]="!node.isExpanded && node.children?.length">
+      <div class="node-content">
+        <div class="node-avatar" [style.background-color]="node.color || '#4b5563'">
+          <span class="initials">{{ node.initial }}</span>
+             <img *ngIf="node.imageUrl" [src]="node.imageUrl" alt="Avatar" class="avatar-img">
+        </div>
+        <div class="node-info">
+          <div class="node-name">{{ node.name }}</div>
+          <div class="node-role">{{ node.role }}</div>
+          <div class="node-location">{{ node.location }}</div>
+          <div class="node-department">{{ node.department }}</div>
+        </div>
+      </div>
+      
+      <!-- Expand/Collapse Button -->
+      <button 
+        *ngIf="node.children && node.children.length > 0" 
+        class="toggle-btn" 
+        (click)="toggleNode(node)"
+        [style.background-color]="'#dc3545'">
+        {{ node.isExpanded ? '-' : '+' }}
+      </button>
+       <div class="line-down" *ngIf="node.children && node.children.length > 0 && node.isExpanded"></div>
+    </div>
+
+    <ul *ngIf="node.children && node.children.length > 0 && node.isExpanded">
+      <ng-container *ngFor="let child of node.children">
+        <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"></ng-container>
+      </ng-container>
+    </ul>
+  </li>
+</ng-template>

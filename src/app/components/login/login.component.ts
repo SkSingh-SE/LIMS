@@ -48,7 +48,7 @@ export class LoginComponent {
             this.pushService.subscribeToPush();
           }
 
-          this.router.navigate(['/sample/inward']);
+          this.router.navigate(['/']); // Redirect to main dashboard
         },
         error: (err) => {
           this.errorMessage.set(err?.errorMessage);

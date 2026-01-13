@@ -11,10 +11,16 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule,ReactiveFormsModule,RouterModule]
 })
 export class ReportAmendComponent implements OnInit {
-amendForm!: FormGroup;
+  amendForm!: FormGroup;
   reportHeaderId!: number;
   selectedFile: File | null = null;
   isSubmitting = false;
+  amendmentType: 'INTERNAL' | 'CUSTOMER' | null = null;
+  isTypeDeterminedByBackend = false;
+  amendmentTypeOptions = [
+    { value: 'INTERNAL', label: 'Internal Amendment (Free, No re-pricing)' },
+    { value: 'CUSTOMER', label: 'Customer Amendment (Chargeable, Re-approval required)' }
+  ];
 
   constructor(
     private fb: FormBuilder,
@@ -26,12 +32,22 @@ amendForm!: FormGroup;
   ngOnInit(): void {
     this.reportHeaderId = +this.route.snapshot.paramMap.get('id')!;
 
+    // Load amendment type from backend if available
+    this.loadAmendmentInfo();
+
     this.amendForm = this.fb.group({
-      id:[0],
+      id: [0],
       reportHeaderId: [this.reportHeaderId],
+      amendmentType: [this.amendmentType || 'CUSTOMER'], // Default to CUSTOMER if not determined
       reason: ['', [Validators.required, Validators.minLength(10)]],
       file: [null, Validators.required]
     });
+  }
+
+  loadAmendmentInfo(): void {
+    // TODO: Load amendment info from backend to determine type
+    // For now, defaulting to allowing selection
+    // If backend determines type, set isTypeDeterminedByBackend = true
   }
 
   get f() {
@@ -55,6 +71,7 @@ amendForm!: FormGroup;
 
     const formData = new FormData();
     formData.append('reportHeaderId', this.reportHeaderId.toString());
+    formData.append('amendmentType', this.amendForm.get('amendmentType')?.value || 'CUSTOMER');
     formData.append('reason', this.f['reason'].value);
     formData.append('file', this.selectedFile);
 
@@ -62,7 +79,9 @@ amendForm!: FormGroup;
 
     this.reportingService.submitAmendment(formData).subscribe({
       next: () => {
-        alert('Amendment submitted successfully and sent for review.');
+        const type = this.amendForm.get('amendmentType')?.value;
+        const typeLabel = type === 'INTERNAL' ? 'Internal' : 'Customer';
+        alert(`${typeLabel} amendment submitted successfully and sent for review.`);
         this.router.navigate(['/reporting/dashboard']);
       },
       error: (err) => {
@@ -70,6 +89,14 @@ amendForm!: FormGroup;
         this.isSubmitting = false;
       }
     });
+  }
+
+  getAmendmentTypeLabel(): string {
+    const type = this.amendForm.get('amendmentType')?.value;
+    if (type === 'INTERNAL') {
+      return 'Internal Amendment (Free, No re-pricing, No re-approval)';
+    }
+    return 'Customer Amendment (Chargeable, Re-approval required, Re-pricing after approval)';
   }
 
   cancel(): void {

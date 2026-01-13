@@ -6,12 +6,15 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { environment } from '../../../../environments/environment';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 
 @Component({
   selector: 'app-reporting-preview',
   templateUrl: './reporting-preview.component.html',
   styleUrl: './reporting-preview.component.css',
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective]
 })
 export class ReportingPreviewComponent implements OnInit {
   baseUrl = environment.baseUrl;
@@ -33,10 +36,16 @@ export class ReportingPreviewComponent implements OnInit {
   private submitting = false;
   pdfGenerating = false;
 
+  // Pricing data (read-only, from backend)
+  pricingData: any = null;
+  hasPriceSnapshot = false;
+
   constructor(
     private route: ActivatedRoute,
     private reportingService: ReportingService,
-    private router: Router
+    private router: Router,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService
   ) {}
 
   ngOnInit(): void {
@@ -53,6 +62,9 @@ export class ReportingPreviewComponent implements OnInit {
     this.reportingService.getReportPreview(sampleId).subscribe({
       next: (data) => {
         this.reportData = this.normalizeReportPreview(data);
+        // Extract pricing data if available (read-only after approval)
+        this.pricingData = (data as any)?.pricing || (data as any)?.priceSnapshot || null;
+        this.hasPriceSnapshot = !!this.pricingData || !!(data as any)?.hasPriceSnapshot || false;
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -260,8 +272,27 @@ export class ReportingPreviewComponent implements OnInit {
    */
   canGeneratePdf(): boolean {
     if (!this.reportData) return false;
-    const allowedStatuses = ['Completed', 'Approved'];
-    return allowedStatuses.includes(this.reportData.status);
+    return this.statusHelper.canGeneratePDF(this.reportData.status);
+  }
+
+  /**
+   * Check if pricing can be viewed (read-only after approval)
+   */
+  canViewPricing(): boolean {
+    if (!this.reportData) return false;
+    return this.statusHelper.canViewPricing(this.reportData.status);
+  }
+
+  /**
+   * Check if user can approve reports
+   */
+  canApproveReport(): boolean {
+    return this.roleHelper.canApproveReport();
+  }
+
+  // Expose statusHelper to template
+  get statusHelperService() {
+    return this.statusHelper;
   }
 
   /**

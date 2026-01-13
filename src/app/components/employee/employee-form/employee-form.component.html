@@ -700,6 +700,7 @@
                     [fetchDataFn]="getDepartments"
                     (itemSelected)="onDepartmentSelected($event)"
                     [isDisabled]="isViewMode"
+                    [required]="true"
                     [selectedItem]="personalInfoForm.get('departmentID')?.value"
                   ></app-searchable-dropdown>
                 </div>
@@ -708,10 +709,11 @@
                 <div class="col">
                   <app-searchable-dropdown
                     [placeholder]="'Search employee'"
-                    [labelName]="'Reporting Manager'"
+                    [labelName]="'Reporting Manager/Supervisor'"
                     [fetchDataFn]="getEmployees"
                     (itemSelected)="onEmployeeSelected($event)"
                     [isDisabled]="isViewMode"
+                    [required]="true"
                     [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"
                   ></app-searchable-dropdown>
                 </div>
@@ -777,7 +779,9 @@
 
             <!-- Bank Details -->
             <div class="mt-2">
-              <h6 class="text-xl text-neutral-500 border-bottom border-dark-subtle pb-2">Bank & Other Details</h6>
+              <div class="mb-2">
+                <label class="text-danger fw-bold border-bottom border-danger">Bank & Other Details</label>
+              </div>
               <div class="row gy-1">
                 <!-- PAN Number -->
                 <div class="col-auto col-md-4 col-lg-3">

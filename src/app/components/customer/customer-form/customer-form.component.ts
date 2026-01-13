@@ -22,10 +22,9 @@ import { DispatchModeService } from '../../../services/dispatch-mode.service';
 import { AreaService } from '../../../services/area.service';
 import { ConfigService } from '../../../services/config.service';
 
+
 @Component({
   selector: 'app-customer-form',
-  // mark as standalone to use "imports"
-  standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
@@ -37,7 +36,7 @@ export class CustomerFormComponent implements OnInit {
   departments: any[] = [];
   customerTypes: any[] = ['Walk in', 'Credit Customer', 'Relationship Credit Customer'];
   companyCategory: any[] = [];
-  dispatchModes:any[] =[];
+  dispatchModes: any[] = [];
   discountOptions = [
     { name: '5%', value: 5 },
     { name: '10%', value: 10 },
@@ -128,6 +127,9 @@ export class CustomerFormComponent implements OnInit {
       dTestoActive: [false],
       blockDTestoUser: [false],
       blockReason: [''],
+      isVerified: [false],
+      verifiedBy: [0],
+      verifiedOn: [''],
       contactPersons: this.fb.array([]),
       customerCompanyCategories: this.fb.array([], Validators.required),
       customerDispatchModes: this.fb.array([], Validators.required),
@@ -321,7 +323,7 @@ export class CustomerFormComponent implements OnInit {
   }
   fetchLocationDataForContact(contact: FormGroup): void {
     const areaId = contact.get('areaID')?.value;
-    const areaList:any[] = contact.get('areaOptions')?.value;
+    const areaList: any[] = contact.get('areaOptions')?.value;
     const selectedArea = areaList.find(a => a.areaId == areaId);
     if (selectedArea) {
       contact.patchValue({
@@ -532,15 +534,31 @@ export class CustomerFormComponent implements OnInit {
       }
     });
   }
-  getCustomerTypes = ():any => {
-     this.configService.getConfigurationValueBykey('Customer Type').subscribe({
+  getCustomerTypes = (): any => {
+    this.configService.getConfigurationValueBykey('Customer Type').subscribe({
       next: (res) => {
-        if (res ) {
+        if (res) {
           this.customerTypes = res;
         }
       },
       error: (err) => {
         console.error('Error fetching customer types:', err);
+      }
+    });
+  }
+  verifyCustomer(event: Event): void {
+    debugger;
+    const checkbox = event.target as HTMLInputElement;
+    var status = false;
+    if (checkbox && checkbox.type === 'checkbox') {
+      status = checkbox.checked;
+    }
+    this.customerService.verifyCustomer(this.customerId, status).subscribe({
+      next: (res) => {
+        this.toastService.show('Customer verified/unverified successfully', 'success');
+      },
+      error: (err) => {
+        console.error('Error verifying customer:', err);
       }
     });
   }

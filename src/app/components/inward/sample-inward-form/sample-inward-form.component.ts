@@ -24,7 +24,7 @@ import { CanDeactivate } from '@angular/router';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -54,6 +54,7 @@ export class SampleInwardFormComponent implements OnInit {
   isViewMode: boolean = false;
   isEditMode: boolean = false;
   sampleId: number = 0;
+  currentInwardStatus: InwardStatus | string = '';
 
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
@@ -326,6 +327,9 @@ export class SampleInwardFormComponent implements OnInit {
 
               this.fetchArea(customer?.areaID, this.sampleInwardForm);
             }
+
+            // Store current status for Plan tab control
+            this.currentInwardStatus = data.status || '';
 
             // Override with Inward Data
             this.sampleInwardForm.patchValue({
@@ -904,10 +908,28 @@ export class SampleInwardFormComponent implements OnInit {
     // Reporting & Billing
     ['reportingTo', 'billingTo'].forEach(section => {
       const sec = value[section] || {};
+      // Map camelCase to PascalCase for backend
+      const fieldMapping: Record<string, string> = {
+        'id': 'Id',
+        'contactPersonID': 'ContactPersonID',
+        'contactPersonName': 'ContactPersonName',
+        'address': 'Address',
+        'pinCode': 'PinCode',
+        'area': 'Area',
+        'city': 'City',
+        'state': 'State',
+        'country': 'Country',
+        'mobileNo': 'MobileNo',
+        'emailId': 'EmailId',
+        'type': 'Type'
+      };
+      
       Object.keys(sec).forEach(k => {
         const val = sec[k];
         if (val !== undefined && val !== null) {
-          formData.append(`${section}.${k}`, String(val));
+          const pascalKey = fieldMapping[k] || k.charAt(0).toUpperCase() + k.slice(1);
+          const sectionName = section === 'reportingTo' ? 'ReportingTo' : 'BillingTo';
+          formData.append(`${sectionName}.${pascalKey}`, String(val));
         }
       });
     });
@@ -988,6 +1010,16 @@ export class SampleInwardFormComponent implements OnInit {
   // Custom method to check if inward is completed
   isInwardCompleted(inward: any): boolean {
     return inward.status === InwardStatus.COMPLETED;
+  }
+
+  // Check if Plan tab should be visible
+  shouldShowPlanTab(): boolean {
+    return this.currentInwardStatus !== InwardStatus.INWARD_REGISTERED;
+  }
+
+  // Check if Plan form should be editable
+  isPlanEditable(): boolean {
+    return this.currentInwardStatus === InwardStatus.INWARD_COMPLETED;
   }
 
   private generateSampleNumber(counter: number): string {

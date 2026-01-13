@@ -78,7 +78,6 @@
                     Plan
                   </a>
                   <a
-                    *ngIf="item.canTakeAction"
                     [routerLink]="['/sample/review', item.id]"
                     [state]="{ mode: 'plan' }"
                     class="btn btn-sm btn-outline-danger-600"
@@ -103,10 +102,30 @@
                   </div>
                 </div>
               </td>
-              <td>{{ item.caseNo }}</td>
-              <td>{{ item.customerName }}</td>
+              <td class="fw-semibold">
+                <a
+                  [routerLink]="['/sample/inward/details', item.id]"
+                  [state]="{ mode: 'view' }"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View details for ' + item.caseNo"
+                >
+                  {{ item.caseNo }}
+                </a>
+              </td>
               <td>
-                 <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
+                <a
+                  *ngIf="item.customerID"
+                  [routerLink]="['/customer/details', item.customerID]"
+                  [state]="{ mode: 'view' }"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View customer details for ' + item.customerName"
+                >
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
+              <td>
+                <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
               </td>
               <td>{{ item.modifiedBy }}</td>
               <td>{{ item.modifiedOn | date : "dd MMM, yyyy" }}</td>

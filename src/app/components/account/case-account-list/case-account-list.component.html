@@ -64,7 +64,14 @@
 
           <tbody>
             <tr *ngFor="let item of dataList" class="align-middle text-center">
-              <td class="fw-semibold">{{ item.caseNo || item.case_no }}</td>
+              <td class="fw-semibold">
+                <a
+                  [routerLink]="['/accounts/cases', item.inwardId || item.id]"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View details for ' + (item.caseNo || item.case_no)">
+                  {{ item.caseNo || item.case_no }}
+                </a>
+              </td>
               <td>{{ item.customerName || item.customer_name }}</td>
               <td>{{ item.customerType || item.customer_type }}</td>
               <td>

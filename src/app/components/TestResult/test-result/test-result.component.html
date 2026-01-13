@@ -91,7 +91,14 @@
                   </button>
                 </div>
               </td>
-              <td class="fw-semibold">{{ item.sampleNo }}</td>
+              <td class="fw-semibold">
+                <a 
+                  [routerLink]="['/testing/results', item.sampleId]"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View test results for ' + item.sampleNo">
+                  {{ item.sampleNo }}
+                </a>
+              </td>
               <td>{{ item.caseNo }}</td>
               <td>{{ item.customerName }}</td>
               <td>{{ item.material }}</td>

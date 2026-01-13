@@ -1,13 +1,402 @@
-.cursor-pointer {
+/* Account Dashboard Container */
+.account-dashboard-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 80px);
+}
+
+/* Dashboard Header */
+.dashboard-header {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.dashboard-subtitle {
+  color: #6c757d;
+  margin-bottom: 0;
+}
+
+/* Loading Animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Refresh Status */
+.refresh-status {
+  text-align: right;
+  margin-top: 8px;
+}
+
+.refresh-status small {
+  line-height: 1.3;
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-left: 10px;
+  border-left: 4px solid #007bff;
+}
+
+/* Account Cards */
+.account-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  border-left: 4px solid transparent;
+  height: 100%;
+}
+
+.account-card.clickable-card {
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+.account-card.clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.card {
-  transition: transform 0.2s, box-shadow 0.2s;
+.account-card.clickable-card:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.account-card.clickable-card:active {
+  transform: translateY(0);
+}
+
+/* Account Card Status Styles */
+.account-card-normal {
+  border-left-color: #007bff;
+}
+
+.account-card-normal .card-status-indicator {
+  background-color: #007bff;
+}
+
+.account-card-normal .card-icon i {
+  color: #007bff;
+}
+
+.account-card-warning {
+  border-left-color: #ffc107;
+}
+
+.account-card-warning .card-status-indicator {
+  background-color: #ffc107;
+}
+
+.account-card-warning .card-icon i {
+  color: #ffc107;
+}
+
+.account-card-critical {
+  border-left-color: #dc3545;
+}
+
+.account-card-critical .card-status-indicator {
+  background-color: #dc3545;
+}
+
+.account-card-critical .card-icon i {
+  color: #dc3545;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 123, 255, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.account-card-warning .card-icon {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.account-card-critical .card-icon {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.card-icon i {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.card-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #007bff;
+}
+
+/* Card Body */
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-count {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.card-description {
+  font-size: 0.875rem;
+  color: #6c757d;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
+/* Loading Skeletons */
+.skeleton-card {
+  background-color: white;
+}
+
+.card-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-header {
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+  width: 60%;
+}
+
+.skeleton-count {
+  height: 40px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+  width: 40%;
+  margin: 8px 0;
+}
+
+.skeleton-description {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+  width: 80%;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Quick Actions Section */
+.quick-actions-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-card .btn {
+  padding: 12px 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.quick-actions-card .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Empty State */
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 40px;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  color: #6c757d;
+  margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .account-dashboard-container {
+    padding: 15px;
+  }
+  
+  .dashboard-header {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .card-count {
+    font-size: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.2rem;
+  }
+  
+  .account-card {
+    padding: 16px;
+    min-height: 120px;
+  }
+
+  .card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .card-icon i {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 576px) {
+  .account-dashboard-container {
+    padding: 10px;
+  }
+  
+  .dashboard-header .row {
+    text-align: center;
+  }
+  
+  .dashboard-header .col-md-4 {
+    margin-top: 15px;
+  }
+  
+  .card-count {
+    font-size: 1.8rem;
+  }
+  
+  .account-card {
+    padding: 12px;
+    min-height: 100px;
+  }
+
+  .card-title {
+    font-size: 0.9rem;
+  }
+
+  .card-description {
+    font-size: 0.8rem;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .account-card {
+    border: 2px solid #000;
+  }
+
+  .account-card-normal {
+    border-left-color: #0056b3;
+  }
+
+  .account-card-warning {
+    border-left-color: #e0a800;
+  }
+
+  .account-card-critical {
+    border-left-color: #b02a37;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .account-card,
+  .card-icon,
+  .card-status-indicator,
+  .quick-actions-card .btn {
+    transition: none;
+  }
+
+  .account-card.clickable-card:hover,
+  .quick-actions-card .btn:hover {
+    transform: none;
+  }
+
+  .loading,
+  .pulse,
+  .spin {
+    animation: none;
+  }
 }
 

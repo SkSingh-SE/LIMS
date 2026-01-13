@@ -33,6 +33,7 @@ export class PlanFormComponent implements OnInit {
   isViewMode = false;
   isEditMode = false;
   sampleId!: number;
+  currentStatus: SampleStatus | string = '';
 
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList: { id: number, name: string }[] = [];
@@ -61,15 +62,15 @@ export class PlanFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.activeroute.paramMap.subscribe(params => {
-      this.sampleId = Number(params.get('id'));
-      this.inwardID = this.sampleId;
-    });
+    let isRouted = false;
 
-    this.activeroute.queryParamMap.subscribe(params => {
-      const mode = params.get('mode') || '';
-      this.isViewMode = mode === 'view';
-      this.isEditMode = mode === 'edit' || mode === 'review';
+    this.activeroute.paramMap.subscribe(params => {
+      const routeId = params.get('id');
+      if (routeId) {
+        isRouted = true;
+        this.sampleId = Number(routeId);
+        this.inwardID = this.sampleId;
+      }
     });
 
     // Use Router's navigation extras instead of raw history API
@@ -82,8 +83,33 @@ export class PlanFormComponent implements OnInit {
       }
     }
 
+    // Fallback to history.state if navigation state is not available
+    const historyState = history.state as { mode?: string };
+    if (historyState?.mode && !navigation?.extras?.state) {
+      this.isViewMode = historyState.mode === 'view' || historyState.mode === 'review';
+      this.isEditMode = historyState.mode === 'edit';
+    }
+
+    // If component is embedded (has @Input mode but not routed), use @Input mode
+    // Check if we're not in a routed context
+    const routeId = this.activeroute.snapshot.paramMap.get('id');
+    if (!routeId && this.mode) {
+      // We're embedded, use @Input mode to determine view mode
+      if (this.mode === 'review') {
+        this.isViewMode = true;
+      } else if (this.mode === 'plan') {
+        this.isViewMode = false;
+      }
+    }
+
     this.loadChemicalTestTypes();
     this.initForm();
+
+    // If in view mode and form is initialized, disable it immediately
+    if (this.isViewMode && this.planForm) {
+      this.disableFormRecursively(this.planForm);
+    }
+
     if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
   }
 
@@ -208,6 +234,26 @@ export class PlanFormComponent implements OnInit {
   getTestPlansArray(sample: AbstractControl): AbstractControl[] {
     const arr = sample.get('testPlans') as FormArray;
     return arr ? arr.controls : [];
+  }
+
+  // Check if at least one plan exists with at least one test (general or chemical)
+  hasValidPlans(): boolean {
+    // Check all samples
+    for (let i = 0; i < this.samples.length; i++) {
+      const testPlans = this.getTestPlans(i);
+      // Check each plan in this sample
+      for (let j = 0; j < testPlans.length; j++) {
+        const plan = testPlans.at(j) as FormGroup;
+        const generalTests = plan.get('generalTests') as FormArray;
+        const chemicalTests = plan.get('chemicalTests') as FormArray;
+
+        // Plan is valid if it has at least one general test or one chemical test
+        if (generalTests.length > 0 || chemicalTests.length > 0) {
+          return true; // Found at least one valid plan
+        }
+      }
+    }
+    return false; // No valid plans found
   }
 
   getTestArray(sampleIndex: number, planIndex: number, type: 'generalTests' | 'chemicalTests'): FormArray {
@@ -365,6 +411,9 @@ export class PlanFormComponent implements OnInit {
     this.inwardService.getSampleInwardWithPlans(sampleId).subscribe({
       next: (data) => {
         if (!data) return;
+
+        // Store current status for Send for Review button visibility
+        this.currentStatus = data.status || '';
 
         const formatted = {
           id: data.id,
@@ -944,12 +993,26 @@ debugger;
 
   // ────────────── Submission ──────────────
   onSave(): void {
-    debugger;
+    // Mark form as touched to show validation errors
+    this.planForm.markAllAsTouched();
+
+    // Check if form is valid
+    if (!this.planForm.valid) {
+      this.toastService.show('Please fix form validation errors.', 'warning');
+      return;
+    }
+
+    // Check if at least one valid plan exists
+    if (!this.hasValidPlans()) {
+      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+      return;
+    }
+
     const payload = this.buildPayload(SampleStatus.UNDER_PLANNING);
     this.inwardService.testPlanSave(payload).subscribe({
       next: () => {
         this.toastService.show('Test Plan saved successfully!', 'success');
-        this.router.navigate(['/sample/plan']);
+        this.router.navigate(['/sample/inward']);
       },
       error: (err) => {
         console.error('[PlanForm] Save Error:', err);
@@ -958,7 +1021,27 @@ debugger;
     });
   }
 
+  // Check if Send for Review button should be visible
+  canSendForReview(): boolean {
+    return this.currentStatus === SampleStatus.UNDER_PLANNING;
+  }
+
   onSendForReview(): void {
+    // Mark form as touched to show validation errors
+    this.planForm.markAllAsTouched();
+
+    // Check if form is valid
+    if (!this.planForm.valid) {
+      this.toastService.show('Please fix form validation errors.', 'warning');
+      return;
+    }
+
+    // Check if at least one valid plan exists
+    if (!this.hasValidPlans()) {
+      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+      return;
+    }
+
     const payload = this.buildPayload(SampleStatus.UNDER_REVIEW_REQUEST);
     this.inwardService.sendTestPlanForReview(payload).subscribe({
       next: () => {
@@ -1071,7 +1154,7 @@ debugger;
 
   onCancel(): void {
     this.planForm.reset();
-    this.router.navigate(['/sample/plan/inward']);
+    this.router.navigate(['/sample/inward']);
   }
 
   // ────────────── UI Helpers ──────────────

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './components/layout/layout.component';
+import { MainDashboardComponent } from './components/main-dashboard/main-dashboard.component';
 import { ListDesignationComponent } from './components/designation/list-designation/list-designation.component';
 import { FileUploadComponent } from './components/file-upload/file-upload.component';
 import { EmployeeListComponent } from './components/employee/employee-list/employee-list.component';
@@ -87,6 +88,7 @@ export const routes: Routes = [
         component: LayoutComponent,
         canActivate: [authGuard],
         children: [
+            { path: '', component: MainDashboardComponent }, // Default route - main dashboard
             { path: 'designation', component: ListDesignationComponent },
             { path: 'designation/create', component: DesignationFormComponent },
             { path: 'designation/edit/:id', component: DesignationFormComponent },
@@ -162,24 +164,24 @@ export const routes: Routes = [
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
-            { path: 'sample/prepration', component:CuttingSamplesComponent},
-            { path: 'sample/cutting', component:CuttingSamplesComponent},
-            { path: 'sample/cutting/create/:id', component:CuttingSampleFormComponent},
-            { path: 'sample/cutting/edit/:id', component:CuttingSampleFormComponent},
-            { path: 'sample/cutting/details/:id', component:CuttingSampleFormComponent},
-            { path: 'sample/machining', component:MachiningChallanComponent},
-            { path: 'sample/plan', component:PlanListComponent},
-            { path: 'sample/plan/edit/:id', component:PlanFormComponent},
-            { path: 'sample/review', component:ReviewOfRequestComponent},
-            { path: 'sample/review/:id', component:ReviewOfRequestFormComponent},
-            { path: 'sample/inward', component:SampleInwardListComponent},
-            { path: 'sample/inward/create', component:SampleInwardFormComponent},
-            { path: 'sample/inward/edit/:id', component:SampleInwardFormComponent},
-            { path: 'sample/inward/details/:id', component:SampleInwardFormComponent},
-            { path: 'config', component:ConfigManagerComponent },
-            { path: 'menu', component: MenuManagementListComponent},
-            { path: 'menu-permission', component: MenuPermissionComponent},
-            { path: 'role', component: RoleFormComponent},
+            { path: 'sample/prepration', component: CuttingSamplesComponent },
+            { path: 'sample/cutting', component: CuttingSamplesComponent },
+            { path: 'sample/cutting/create/:id', component: CuttingSampleFormComponent },
+            { path: 'sample/cutting/edit/:id', component: CuttingSampleFormComponent },
+            { path: 'sample/cutting/details/:id', component: CuttingSampleFormComponent },
+            { path: 'sample/machining', component: MachiningChallanComponent },
+            { path: 'sample/plan', component: PlanListComponent },
+            { path: 'sample/plan/edit/:id', component: PlanFormComponent },
+            { path: 'sample/review', component: ReviewOfRequestComponent },
+            { path: 'sample/review/:id', component: ReviewOfRequestFormComponent },
+            { path: 'sample/inward', component: SampleInwardListComponent },
+            { path: 'sample/inward/create', component: SampleInwardFormComponent },
+            { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent },
+            { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'config', component: ConfigManagerComponent },
+            { path: 'menu', component: MenuManagementListComponent },
+            { path: 'menu-permission', component: MenuPermissionComponent },
+            { path: 'role', component: RoleFormComponent },
             { path: 'menu/create', component: MenuManagementComponent },
             { path: 'menu/edit/:id', component: MenuManagementComponent },
             { path: 'menu/details/:id', component: MenuManagementComponent },
@@ -189,12 +191,13 @@ export const routes: Routes = [
             { path: 'workflow/edit/:id', component: WorkflowFormComponent },
             { path: 'workflow/details/:id', component: WorkflowFormComponent },
             { path: 'test-mapping', component: MaterialTestMappingComponent },
+            { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
             { path: 'testing/perform/:id', component: TestResultEntryFormComponent },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent },
-            {path: 'test-result', component: TestResultComponent },
+            { path: 'test-result', component: TestResultComponent },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
@@ -206,6 +209,6 @@ export const routes: Routes = [
             { path: 'accounts/invoices/:id/preview', component: InvoicePreviewComponent }
         ]
     },
-    {path: 'payment/:token', component: PaymentComponent},
+    { path: 'payment/:token', component: PaymentComponent },
     { path: '**', redirectTo: '/login' }
 ];

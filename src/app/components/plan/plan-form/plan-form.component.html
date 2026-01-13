@@ -722,6 +722,12 @@
   <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
     <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
     <button type="button" class="btn btn-success px-3" (click)="onSave()" [disabled]="!planForm.valid">Save Plan</button>
-    <button type="button" class="btn btn-info" (click)="onSendForReview()">Send for Review</button>
+    <button 
+      *ngIf="canSendForReview()" 
+      type="button" 
+      class="btn btn-info" 
+      (click)="onSendForReview()">
+      Send for Review
+    </button>
   </div>
 </div>

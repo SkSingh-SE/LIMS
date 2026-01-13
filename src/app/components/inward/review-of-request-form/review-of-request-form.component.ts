@@ -13,6 +13,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 @Component({
   selector: 'app-review-of-request-form',
@@ -29,6 +31,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
   reviewRemark: string = '';
   submitAttempted = false;
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
+  reviewStatus: SampleStatus = SampleStatus.UNDER_REVIEW_REQUEST;
 
   // Dropdown data maps
   specificationMap: { [id: string]: string } = {};
@@ -115,6 +118,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
             notDestroyed: data.notDestroyed,
             statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
             decisionRule: data.decisionRule ?? 'Not Applicable',
+
             samples: (data.sampleDetails || []).map((s: any) => {
               // Find additional details for this sample
               const additionalDetails = (data.sampleAdditionalDetails || [])
@@ -186,6 +190,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
               };
             })
           };
+          this.reviewStatus = data.status;
           this.showReviewButton.set(data.canTakeAction);
           this.actions = data.actions || [];
           if (this.actions.length > 0) {
@@ -387,4 +392,18 @@ export class ReviewOfRequestFormComponent implements OnInit {
     window.removeEventListener('touchmove', this.onDragMove);
     window.removeEventListener('touchend', this.stopDrag);
   };
+
+  // Get badge class based on review status
+  getStatusBadgeClass(): string {
+    switch (this.reviewStatus) {
+      case SampleStatus.UNDER_REVIEW_REQUEST:
+        return 'bg-warning text-dark';
+      case SampleStatus.REVIEW_COMPLETED:
+        return 'bg-success';
+      case SampleStatus.REQUEST_REJECTED:
+        return 'bg-danger';
+      default:
+        return 'bg-secondary';
+    }
+  }
 }

@@ -5,13 +5,15 @@ import { Router, RouterModule } from '@angular/router';
 import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { ToastService } from '../../../services/toast.service';
-import { PaymentService } from '../../../services/payment.service';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -73,7 +75,13 @@ export class ReportingListComponent implements OnInit {
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
   statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
 
-  constructor(private reportingService: ReportingService, private router: Router, private toast: ToastService, private paymentService: PaymentService) { }
+  constructor(
+    private reportingService: ReportingService,
+    private router: Router,
+    private toast: ToastService,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService
+  ) { }
 
   ngOnInit(): void {
     this.fetchData();
@@ -243,8 +251,21 @@ export class ReportingListComponent implements OnInit {
    * Check if report status allows PDF generation
    */
   canGeneratePdf(status: string): boolean {
-    const allowedStatuses = ['Completed', 'Approved'];
-    return allowedStatuses.includes(status);
+    return this.statusHelper.canGeneratePDF(status);
+  }
+
+  /**
+   * Check if user can approve reports
+   */
+  canApproveReport(): boolean {
+    return this.roleHelper.canApproveReport();
+  }
+
+  /**
+   * Check if user can request amendments
+   */
+  canRequestAmendment(): boolean {
+    return this.roleHelper.canRequestAmendment();
   }
 
   onSearch(): void {
@@ -368,26 +389,27 @@ export class ReportingListComponent implements OnInit {
   }
 
   canAmend(status: string): boolean {
-    return ['Completed', 'Approved', 'Report Generated'].includes(status);
+    return this.statusHelper.canAmendReport(status);
   }
+
   openAmendment(item: any): void {
     this.router.navigate(['/reporting/amend', item.reportHeaderId]);
   }
-  generatePi(item: any) {
-    const payload = {
-      paymentType: 2,
-      sampleID: item.sampleId,
-      customerId: item.customerID,
-      caseNo: item.caseNo,
-      amount: 150
-    };
-    this.paymentService.processPayment(payload).subscribe({
-      next: (resp) => {
-        this.toast.show('PI generated successfully.', 'success');
-      },
-      error: (err) => {
-        this.toast.show('Failed to generate PI.', 'error');
-      }
-    });
+
+  /**
+   * Check if pricing can be viewed (read-only after approval)
+   */
+  canViewPricing(item: any): boolean {
+    return this.statusHelper.canViewPricing(item.status || '');
+  }
+
+  getItemPrice(item: ReportingListItem): string | number {
+    const itemAny = item as any;
+    return itemAny.totalAmount || itemAny.price || itemAny.pricing?.totalAmount || 'N/A';
+  }
+
+  // Expose statusHelper to template
+  get statusHelperService() {
+    return this.statusHelper;
   }
 }

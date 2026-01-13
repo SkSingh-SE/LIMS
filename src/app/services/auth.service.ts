@@ -80,4 +80,49 @@ export class AuthService {
     const userData = this.getUserData();
     return userData ? userData.token : null;
   }
+
+  /**
+   * Get user roles from stored user data
+   */
+  getUserRoles(): string[] {
+    const userData = this.getUserData();
+    if (!userData || !userData.roles) {
+      return [];
+    }
+    
+    // Handle both single role string and array of roles
+    return Array.isArray(userData.roles) ? userData.roles : [userData.roles];
+  }
+
+  /**
+   * Check if user has a specific role
+   */
+  hasRole(role: string): boolean {
+    const userRoles = this.getUserRoles();
+    return userRoles.includes(role);
+  }
+
+  /**
+   * Check if user has any of the specified roles
+   */
+  hasAnyRole(roles: string[]): boolean {
+    const userRoles = this.getUserRoles();
+    return roles.some(role => userRoles.includes(role));
+  }
+
+  /**
+   * Check if user has all of the specified roles
+   */
+  hasAllRoles(roles: string[]): boolean {
+    const userRoles = this.getUserRoles();
+    return roles.every(role => userRoles.includes(role));
+  }
+
+  /**
+   * Get user's primary role (first role in the array)
+   */
+  getPrimaryRole(): string | null {
+    const userRoles = this.getUserRoles();
+    return userRoles.length > 0 ? userRoles[0] : null;
+  }
 }

@@ -48,18 +48,76 @@
             <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
 
             <!-- Action -->
-            <button
-              *ngIf="canGeneratePdf()"
-              class="btn btn-sm btn-outline-warning-500 d-flex align-items-center gap-1"
-              (click)="generatePdf()"
-              [disabled]="pdfGenerating || isLoading()"
-              title="Generate PDF"
-            >
-              <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
-              <span>{{ pdfGenerating ? "Generating…" : "PDF" }}</span>
-            </button>
+            <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting']">
+              <button
+                *ngIf="canGeneratePdf()"
+                class="btn btn-sm btn-outline-warning-500 d-flex align-items-center gap-1"
+                (click)="generatePdf()"
+                [disabled]="pdfGenerating || isLoading() || !canGeneratePdf()"
+                title="Generate PDF"
+              >
+                <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
+                <span>{{ pdfGenerating ? "Generating…" : "PDF" }}</span>
+              </button>
+            </ng-container>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Section (Read-Only, Only After Approval) -->
+  <div *ngIf="canViewPricing() && pricingData" class="card border-0 shadow-sm mb-2">
+    <div class="card-header py-2 d-flex align-items-center justify-content-between bg-info text-white">
+      <span class="fw-semibold">
+        <i class="bi bi-currency-rupee"></i>
+        Pricing Information
+        <span *ngIf="hasPriceSnapshot" class="badge bg-light text-dark ms-2">
+          <i class="bi bi-lock-fill"></i> Price Snapshot
+        </span>
+      </span>
+      <small class="text-white-50">Read-Only</small>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <small class="text-muted d-block">Total Amount</small>
+          <strong class="text-dark fs-5">{{ pricingData.totalAmount || pricingData.amount | currency: 'INR' }}</strong>
+        </div>
+        <div class="col-md-3" *ngIf="pricingData.subTotal">
+          <small class="text-muted d-block">Sub Total</small>
+          <strong class="text-dark">{{ pricingData.subTotal | currency: 'INR' }}</strong>
+        </div>
+        <div class="col-md-3" *ngIf="pricingData.tax">
+          <small class="text-muted d-block">Tax</small>
+          <strong class="text-dark">{{ pricingData.tax | currency: 'INR' }}</strong>
+        </div>
+        <div class="col-md-3" *ngIf="pricingData.discount">
+          <small class="text-muted d-block">Discount</small>
+          <strong class="text-dark">{{ pricingData.discount | currency: 'INR' }}</strong>
+        </div>
+        <div class="col-md-12" *ngIf="pricingData.snapshotDate">
+          <small class="text-muted">Price Snapshot Date: {{ pricingData.snapshotDate | date: 'medium' }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Amendment History Section -->
+  <div *ngIf="reportData?.amendment" class="card border-0 shadow-sm mb-2">
+    <div class="card-header py-2 bg-warning text-dark">
+      <span class="fw-semibold">
+        <i class="bi bi-file-earmark-text"></i>
+        Amendment History
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-info mb-0">
+        <strong>Amendment Request:</strong> {{ reportData?.amendment?.reason || 'N/A' }}
+        <br>
+        <small class="text-muted" *ngIf="reportData?.amendment?.requestedOn">
+          Requested on: {{ reportData?.amendment?.requestedOn | date: 'medium' }}
+        </small>
       </div>
     </div>
   </div>
@@ -328,19 +386,21 @@
       style="max-width: 700px; border-top: 4px solid #da261c; z-index: 1060"
     >
       <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div class="btn-group" role="group">
-          <ng-container *ngFor="let act of reportData?.actions">
-            <input
-              type="radio"
-              class="btn-check"
-              name="reportAction"
-              [id]="'action_' + act.action"
-              [value]="act"
-              [(ngModel)]="selectedAction"
-            />
+        <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting', 'CanApproveReport']">
+          <div class="btn-group" role="group" *ngIf="canApproveReport()">
+            <ng-container *ngFor="let act of reportData?.actions">
+              <input
+                type="radio"
+                class="btn-check"
+                name="reportAction"
+                [id]="'action_' + act.action"
+                [value]="act"
+                [(ngModel)]="selectedAction"
+                [disabled]="!statusHelperService.canApproveReport(reportData?.status || '') && act.action.toLowerCase().includes('next')"
+              />
 
-            <label
-              class="btn fw-semibold"
+              <label
+                class="btn fw-semibold"
               [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
               [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
               [class.btn-outline-secondary]="act.name.toLowerCase().includes('back')"
@@ -355,28 +415,29 @@
               {{ act.name }}
             </label>
           </ng-container>
-        </div>
+          </div>
 
-        <textarea
-          *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
-          class="form-control border-danger flex-grow-1"
-          [(ngModel)]="actionRemark"
-          rows="2"
-          placeholder="Enter reason..."
-          required
-        ></textarea>
+          <textarea
+            *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
+            class="form-control border-danger flex-grow-1"
+            [(ngModel)]="actionRemark"
+            rows="2"
+            placeholder="Enter reason..."
+            required
+          ></textarea>
 
-        <button
-          class="btn btn-danger px-4 fw-semibold"
-          [disabled]="!selectedAction || (selectedAction.action.toLowerCase() !== 'next' && !actionRemark)"
-          (click)="submitReview()"
-        >
-          <i class="bi bi-send-check"></i>
-          Submit
-        </button>
-        <button class="btn btn-link text-secondary ms-2" (click)="showActionPanel = false" aria-label="Close">
-          <i class="bi bi-x-lg fs-5"></i>
-        </button>
+          <button
+            class="btn btn-danger px-4 fw-semibold"
+            [disabled]="!selectedAction || (selectedAction.action.toLowerCase() !== 'next' && !actionRemark) || !statusHelperService.canApproveReport(reportData?.status || '')"
+            (click)="submitReview()"
+          >
+            <i class="bi bi-send-check"></i>
+            Submit
+          </button>
+          <button class="btn btn-link text-secondary ms-2" (click)="showActionPanel = false" aria-label="Close">
+            <i class="bi bi-x-lg fs-5"></i>
+          </button>
+        </ng-container>
       </div>
     </div>
   </div>

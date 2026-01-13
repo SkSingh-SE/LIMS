@@ -1,0 +1,14 @@
+/**
+ * Billing Status Enum
+ * Matches backend billing status values
+ */
+export enum BillingStatus {
+  NO_PRICING = 'NO_PRICING',
+  PRICING_PENDING = 'PRICING_PENDING',
+  PRICED = 'PRICED',
+  PI_GENERATED = 'PI_GENERATED',
+  ADVANCE_PAID = 'ADVANCE_PAID',
+  INVOICE_GENERATED = 'INVOICE_GENERATED',
+  PAYMENT_COMPLETED = 'PAYMENT_COMPLETED'
+}
+

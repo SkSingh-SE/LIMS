@@ -1,0 +1,83 @@
+<div class="notification-panel">
+  <!-- Panel Header -->
+  <div class="panel-header">
+    <div class="panel-title">
+      <i class="ri-notification-line"></i>
+      <span>Notifications</span>
+    </div>
+    <button
+      *ngIf="!isEmpty() && hasMoreNotifications()"
+      class="view-all-btn"
+      (click)="onViewAllClick()"
+      type="button"
+      aria-label="View all notifications">
+      View All
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="panel-loading">
+    <div class="notification-skeleton" *ngFor="let item of [1,2,3]">
+      <div class="skeleton-icon"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-title"></div>
+        <div class="skeleton-message"></div>
+        <div class="skeleton-time"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications List -->
+  <div *ngIf="!isLoading && !isEmpty()" class="notifications-list">
+    <div
+      *ngFor="let notification of getSortedNotifications(); trackBy: trackByNotificationId"
+      class="notification-item"
+      [class]="getPriorityClass(notification.priority)"
+      [class.clickable]="!!notification.actionUrl"
+      (click)="onNotificationClick(notification)"
+      role="button"
+      [attr.aria-label]="notification.title + ': ' + notification.message"
+      tabindex="0"
+      (keydown.enter)="onNotificationClick(notification)"
+      (keydown.space)="onNotificationClick(notification)">
+
+      <!-- Notification Icon -->
+      <div class="notification-icon">
+        <i [class]="getPriorityIcon(notification.priority)"></i>
+      </div>
+
+      <!-- Notification Content -->
+      <div class="notification-content">
+        <div class="notification-header">
+          <div class="notification-title">{{ notification.title }}</div>
+          <div class="notification-time">{{ formatTimestamp(notification.createdAt) }}</div>
+        </div>
+        <div class="notification-message">
+          {{ truncateMessage(notification.message) }}
+        </div>
+      </div>
+
+      <!-- Priority Indicator -->
+      <div class="priority-indicator"></div>
+    </div>
+
+    <!-- More Notifications Indicator -->
+    <div *ngIf="hasMoreNotifications()" class="more-notifications">
+      <button
+        class="more-btn"
+        (click)="onViewAllClick()"
+        type="button">
+        +{{ getAdditionalCount() }} more notifications
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && isEmpty()" class="panel-empty">
+    <div class="empty-icon">
+      <i class="ri-notification-off-line"></i>
+    </div>
+    <div class="empty-title">No notifications</div>
+    <div class="empty-message">You're all caught up! New notifications will appear here.</div>
+  </div>
+</div>

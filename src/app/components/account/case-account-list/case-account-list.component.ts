@@ -164,7 +164,7 @@ export class CaseAccountListComponent implements OnInit {
   }
 
   openCaseDetail(inwardId: number, mode: 'edit' | 'view' = 'edit'): void {
-    this.router.navigate(['/accounts/cases', inwardId], { queryParams: { mode } });
+    this.router.navigate(['/accounts/cases', inwardId], { state: { mode } });
   }
 
   openFilterModal(column: string, event: MouseEvent): void {

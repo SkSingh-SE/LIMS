@@ -14,6 +14,29 @@
     <div class="card-body">
       <form [formGroup]="amendForm" (ngSubmit)="submit()">
 
+        <!-- Amendment Type -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Amendment Type <span class="text-danger">*</span>
+          </label>
+          <select 
+            class="form-select" 
+            formControlName="amendmentType"
+            [disabled]="isTypeDeterminedByBackend"
+          >
+            <option *ngFor="let option of amendmentTypeOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <div class="form-text">
+            <i class="bi bi-info-circle"></i>
+            {{ getAmendmentTypeLabel() }}
+          </div>
+          <div *ngIf="isTypeDeterminedByBackend" class="alert alert-info mt-2 mb-0">
+            <small>Amendment type is determined by the system based on the request source.</small>
+          </div>
+        </div>
+
         <!-- Amendment Reason -->
         <div class="mb-3">
           <label class="form-label fw-semibold">

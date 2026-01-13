@@ -72,7 +72,15 @@
 
                                 </div>
                             </td>
-                            <td>{{ item.caseNo }}</td>
+                            <td class="fw-semibold">
+                                <a
+                                    [routerLink]="['/sample/inward/details', item.inwardId]"
+                                    [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View details for ' + item.caseNo">
+                                    {{ item.caseNo }}
+                                </a>
+                            </td>
                             <td>{{ item.grandTotal }}</td>
                             <td>{{ item.totalRequired }}</td>
                             <td>{{ item.completedCount }}</td>

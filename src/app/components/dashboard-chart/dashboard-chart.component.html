@@ -1,0 +1,45 @@
+<div class="dashboard-chart-container" *ngIf="isVisible">
+  <!-- Loading State -->
+  <div class="chart-loading" *ngIf="isLoading">
+    <div class="skeleton-chart"></div>
+  </div>
+
+  <!-- Error or Empty State -->
+  <div class="chart-error" *ngIf="(hasError || !hasData()) && !isLoading">
+    <div class="error-content">
+      <div class="error-icon">
+        <i class="bi bi-bar-chart-line"></i>
+      </div>
+      <h6 class="error-title">No data available</h6>
+      <p class="error-message" *ngIf="hasError">{{ errorMessage }}</p>
+    </div>
+  </div>
+
+  <!-- Chart Content -->
+  <div class="chart-wrapper" *ngIf="!isLoading && !hasError && hasData()">
+    <div class="chart-header">
+      <div class="chart-title-wrapper">
+        <span class="chart-title">{{ getSafeTitle() }}</span>
+        <div class="chart-badge" *ngIf="chartData.chartType">{{ chartData.chartType }}</div>
+      </div>
+      <div class="chart-actions">
+        <button type="button" class="btn-icon" (click)="downloadChart()" title="Download Chart">
+          <i class="bi bi-download"></i>
+        </button>
+      </div>
+    </div>
+    <div class="chart-body">
+      <canvas #chartCanvas class="chart-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden State (when not visible due to role restrictions) -->
+<div class="chart-hidden" *ngIf="!isVisible && chartData">
+  <div class="hidden-content">
+    <div class="hidden-icon">
+      <i class="bi bi-eye-slash"></i>
+    </div>
+    <small class="text-muted">Chart not available for your role</small>
+  </div>
+</div>

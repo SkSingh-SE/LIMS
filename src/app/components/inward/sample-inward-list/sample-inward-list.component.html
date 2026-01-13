@@ -60,22 +60,37 @@
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/sample/inward/edit', item.id]"
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
+                                    <a
+                                      [routerLink]="['/sample/inward/edit', item.id]"
+                                      [state]="{ mode: 'edit' }"
+                                      class="icon-link"
+                                      [class.disabled]="!canEditInward(item)"
+                                      [title]="canEditInward(item) ? 'Edit' : 'Edit not allowed for current status'"
+                                      [attr.aria-disabled]="!canEditInward(item)">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-                                    <a *ngIf="item.actionStatus == 'PENDING' && (item.currentStageStatus == 'INWARD_REGISTERED' || item.currentStageStatus == 'INWARD_COMPLETED')" [routerLink]="['/sample/plan/edit', item.id]"
-                                    [state]="{ mode: 'plan' }"
-                                    class="btn btn-sm btn-outline-danger-600"
-                                        title="Plan">
-                                        Plan
                                     </a>
                                 </div>
                             </td>
-                            <td>{{ item.caseNo }}</td>
-                            <td>{{ item.customerName }}</td>
+                            <td class="fw-semibold">
+                                <a
+                                    [routerLink]="['/sample/inward/details', item.id]"
+                                    [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View details for ' + item.caseNo">
+                                    {{ item.caseNo }}
+                                </a>
+                            </td>
+                            <td>
+                                <a
+                                    *ngIf="item.customerID"
+                                    [routerLink]="['/customer/details', item.customerID]"
+                                    [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View customer details for ' + item.customerName">
+                                    {{ item.customerName }}
+                                </a>
+                                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+                            </td>
                             <td>{{ item.contactPersonName }}</td>
                             <td>{{ item.contactEmail }}</td>
                             <td>{{ item.contactPhone }}</td>

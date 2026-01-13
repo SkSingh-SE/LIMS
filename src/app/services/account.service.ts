@@ -52,7 +52,15 @@ export class AccountService {
   }
 
   /**
-   * Generate invoice for a case
+   * Generate Proforma Invoice (PI) for a case
+   * POST /api/accounts/cases/{inwardId}/generate-pi
+   */
+  generatePI(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-proforma-invoice`, {});
+  }
+
+  /**
+   * Generate Final Invoice for a case
    * POST /api/accounts/cases/{inwardId}/generate-invoice
    */
   generateInvoice(inwardId: number): Observable<any> {

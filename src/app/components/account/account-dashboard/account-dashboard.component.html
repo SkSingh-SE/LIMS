@@ -1,80 +1,198 @@
-<div class="container-fluid d-flex flex-column align-items-center mt-4">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
-    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-calculator"></i>
-        Account Dashboard
-      </label>
+<div class="account-dashboard-container">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2 class="dashboard-title">
+          <i class="bi bi-calculator me-2"></i>
+          Account Dashboard
+        </h2>
+        <p class="dashboard-subtitle">Manage your account-related activities and track financial status</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button 
+          class="btn btn-outline-primary btn-sm" 
+          (click)="loadDashboard()"
+          [disabled]="isLoading()">
+          <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+          Refresh
+        </button>
+        <div class="refresh-status" *ngIf="lastUpdated">
+          <small class="text-muted d-block">
+            Last updated: {{ formatTimestamp(lastUpdated) }}
+          </small>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div *ngIf="!isLoading()" class="card-body p-4">
-      <div class="row g-4">
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="dashboard-section">
+      <h4 class="section-title">Account Overview</h4>
+      <div class="row">
+        <!-- Card Skeletons -->
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" *ngFor="let item of getSkeletonArray(4)">
+          <div class="account-card skeleton-card">
+            <div class="card-loading">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-count"></div>
+              <div class="skeleton-description"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading()" class="dashboard-content">
+    <div class="dashboard-section">
+      <h4 class="section-title">Account Overview</h4>
+      <div class="row">
         <!-- PI Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="account-card account-card-warning clickable-card" 
                (click)="navigateToCaseList('pi-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-file-earmark-text text-warning" style="font-size: 3rem;"></i>
+               role="button"
+               tabindex="0"
+               (keydown.enter)="navigateToCaseList('pi-pending')"
+               (keydown.space)="navigateToCaseList('pi-pending')"
+               [attr.aria-label]="'PI Pending: ' + dashboardData.piPending + ' cases'">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="bi bi-file-earmark-text"></i>
               </div>
-              <h5 class="card-title text-muted mb-2">PI Pending</h5>
-              <h2 class="text-warning mb-0">{{ dashboardData.piPending }}</h2>
+              <div class="card-status-indicator"></div>
+            </div>
+            <div class="card-body">
+              <div class="card-count">{{ formatCount(dashboardData.piPending) }}</div>
+              <div class="card-title">PI Pending</div>
+              <div class="card-description">Proforma invoices awaiting processing</div>
             </div>
           </div>
         </div>
 
         <!-- Invoice Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="account-card account-card-normal clickable-card" 
                (click)="navigateToCaseList('invoice-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-receipt text-info" style="font-size: 3rem;"></i>
+               role="button"
+               tabindex="0"
+               (keydown.enter)="navigateToCaseList('invoice-pending')"
+               (keydown.space)="navigateToCaseList('invoice-pending')"
+               [attr.aria-label]="'Invoice Pending: ' + dashboardData.invoicePending + ' cases'">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="bi bi-receipt"></i>
               </div>
-              <h5 class="card-title text-muted mb-2">Invoice Pending</h5>
-              <h2 class="text-info mb-0">{{ dashboardData.invoicePending }}</h2>
+              <div class="card-status-indicator"></div>
+            </div>
+            <div class="card-body">
+              <div class="card-count">{{ formatCount(dashboardData.invoicePending) }}</div>
+              <div class="card-title">Invoice Pending</div>
+              <div class="card-description">Invoices ready for generation</div>
             </div>
           </div>
         </div>
 
         <!-- Payment Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="account-card account-card-critical clickable-card" 
                (click)="navigateToCaseList('payment-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-credit-card text-danger" style="font-size: 3rem;"></i>
+               role="button"
+               tabindex="0"
+               (keydown.enter)="navigateToCaseList('payment-pending')"
+               (keydown.space)="navigateToCaseList('payment-pending')"
+               [attr.aria-label]="'Payment Pending: ' + dashboardData.paymentPending + ' cases'">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="bi bi-credit-card"></i>
               </div>
-              <h5 class="card-title text-muted mb-2">Payment Pending</h5>
-              <h2 class="text-danger mb-0">{{ dashboardData.paymentPending }}</h2>
+              <div class="card-status-indicator"></div>
+            </div>
+            <div class="card-body">
+              <div class="card-count">{{ formatCount(dashboardData.paymentPending) }}</div>
+              <div class="card-title">Payment Pending</div>
+              <div class="card-description">Outstanding payments requiring attention</div>
             </div>
           </div>
         </div>
 
         <!-- Fully Settled Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="account-card account-card-normal clickable-card" 
                (click)="navigateToCaseList('fully-settled')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+               role="button"
+               tabindex="0"
+               (keydown.enter)="navigateToCaseList('fully-settled')"
+               (keydown.space)="navigateToCaseList('fully-settled')"
+               [attr.aria-label]="'Fully Settled: ' + dashboardData.fullySettled + ' cases'">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="bi bi-check-circle"></i>
               </div>
-              <h5 class="card-title text-muted mb-2">Fully Settled</h5>
-              <h2 class="text-success mb-0">{{ dashboardData.fullySettled }}</h2>
+              <div class="card-status-indicator"></div>
+            </div>
+            <div class="card-body">
+              <div class="card-count">{{ formatCount(dashboardData.fullySettled) }}</div>
+              <div class="card-title">Fully Settled</div>
+              <div class="card-description">Completed transactions</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <!-- Quick Actions Section -->
+    <div class="dashboard-section">
+      <h4 class="section-title">Quick Actions</h4>
+      <div class="row">
+        <div class="col-12">
+          <div class="quick-actions-card">
+            <div class="row g-3">
+              <div class="col-md-3 col-sm-6">
+                <button class="btn btn-outline-primary w-100" (click)="navigateToCaseList()">
+                  <i class="bi bi-list-ul me-2"></i>
+                  View All Cases
+                </button>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <button class="btn btn-outline-success w-100" (click)="navigateToCaseList('fully-settled')">
+                  <i class="bi bi-check-circle me-2"></i>
+                  Settled Cases
+                </button>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <button class="btn btn-outline-warning w-100" (click)="navigateToCaseList('pi-pending')">
+                  <i class="bi bi-file-earmark-text me-2"></i>
+                  Pending PIs
+                </button>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <button class="btn btn-outline-danger w-100" (click)="navigateToCaseList('payment-pending')">
+                  <i class="bi bi-credit-card me-2"></i>
+                  Pending Payments
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="isEmpty()" class="empty-state">
+      <div class="text-center py-5">
+        <i class="bi bi-calculator empty-state-icon"></i>
+        <h4>No Account Data Available</h4>
+        <p class="text-muted">
+          Account dashboard data will appear here once cases are available.
+        </p>
+        <button class="btn btn-primary" (click)="loadDashboard()">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh Dashboard
+        </button>
       </div>
     </div>
   </div>

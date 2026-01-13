@@ -1,0 +1,50 @@
+/* Review Floating Action Button */
+.review-fab-btn {
+  width: 100px;
+  height: 56px;
+  border-radius: 12px;
+  padding: 0;
+  z-index: 1050;
+  user-select: none;
+  cursor: grab;
+}
+
+.review-fab-text {
+  font-size: 0.8rem;
+  white-space: normal;
+}
+
+/* Review Action Panel */
+.review-action-panel {
+  bottom: 0;
+  z-index: 1060;
+}
+
+.review-action-overlay {
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 1059;
+}
+
+.review-action-card {
+  max-width: 700px;
+  border-top: 4px solid #b71c1c;
+  z-index: 1060;
+}
+
+/* Preview Image */
+.preview-image {
+  object-fit: contain;
+  min-height: 150px;
+  min-width: 100px;
+}
+
+/* Cursor pointer utility */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* List style disc */
+.list-disc {
+  list-style-type: disc;
+}
+

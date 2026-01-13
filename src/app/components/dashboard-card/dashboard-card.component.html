@@ -1,0 +1,57 @@
+<div
+  class="dashboard-card"
+  [class.clickable]="!isLoading && !isCustomizationMode && !hasError"
+  [class]="'card-status-' + (card.status.toLowerCase() || 'normal')"
+  [class.loading]="isLoading"
+  [class.error]="hasError"
+  (click)="onCardClick()"
+  role="button"
+  [tabindex]="isCustomizationMode || hasError ? -1 : 0">
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="card-loading">
+    <div class="skeleton-header"></div>
+    <div class="skeleton-count"></div>
+    <div class="skeleton-description"></div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="hasError && !isLoading" class="card-error">
+    <div class="error-icon"><i class="bi bi-exclamation-triangle"></i></div>
+    <div class="error-message">{{ errorMessage }}</div>
+  </div>
+
+  <!-- Card Content -->
+  <div *ngIf="!isLoading && !hasError && card" class="card-content">
+    <header class="card-header">
+      <div class="card-icon">
+        <i [class]="getStatusIcon()"></i>
+      </div>
+      <div class="urgent-indicator" *ngIf="card.metadata?.['HasUrgent']">
+        <i class="bi bi-lightning-fill"></i> URGENT
+      </div>
+    </header>
+
+    <div class="card-body">
+      <div class="card-metrics">
+        <span class="count-number">{{ formatCount(getSafeCount()) }}</span>
+      </div>
+
+      <a *ngIf="card.metadata?.['route']" [href]="card.metadata!['route']" class="card-title-link">
+         <span class="card-title-text">{{ getSafeTitle() }}</span>
+      </a>
+       <span *ngIf="!card.metadata?.['route']"
+        class="card-title-text compact-title">
+    {{ getSafeTitle() }}
+  </span>
+
+      <p class="card-description" *ngIf="hasDescription()">
+        {{ getSafeDescription() }}
+      </p>
+    </div>
+
+    <footer class="card-footer" *ngIf="card.metadata?.['LastUpdated']">
+      <small>Updated: {{ card.metadata!['LastUpdated'] | date:'shortTime' }}</small>
+    </footer>
+  </div>
+</div>

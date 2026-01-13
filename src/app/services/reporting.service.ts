@@ -21,6 +21,10 @@ export interface ReportingListItem {
   workflowInstanceId?: string;
   canTakeAction?: boolean;
   actions?: WorkflowAction[];
+  totalAmount?: number;
+  price?: number;
+  pricing?: any;
+  customerID?: number;
 }
 
 export interface TestParameter {
@@ -92,6 +96,9 @@ export interface ReportingPreview {
   longTermTests: LongTermTest[];
   actions: WorkflowAction[];
   amendment: AmendmentDetails | null;
+  pricing?: any;
+  priceSnapshot?: any;
+  hasPriceSnapshot?: boolean;
 }
 
 @Injectable({

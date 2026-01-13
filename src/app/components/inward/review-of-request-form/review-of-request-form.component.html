@@ -1,52 +1,91 @@
 <div class="container-fluid py-2">
+  <!-- Review Status Section -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-12 col-md-6">
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-clipboard-check me-2"></i>
+            Review Status
+          </h5>
+        </div>
+        <div class="col-12 col-md-6 text-md-end mt-2 mt-md-0">
+          <span class="badge fs-6 px-3 py-2" [ngClass]="getStatusBadgeClass()">
+            {{ reviewStatus }}
+
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1. Customer & Inward Header -->
-  <div class="card border shadow-sm mt-2 mb-2 position-relative">
-    <legend
-      class="w-auto px-2 fw-semibold theme-color"
-      style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-    >
-      Customer & Inward Details
-    </legend>
-    <div class="card-body small d-flex flex-wrap gap-4 mt-3">
-      <div>
-        <strong class="text-danger">Customer:</strong>
-        {{ plan?.customerName || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Case No:</strong>
-        {{ plan?.caseNo || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Contact:</strong>
-        {{ plan?.customerContact || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Address:</strong>
-        {{ plan?.customerAddress || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Sample Receipt Note:</strong>
-        {{ plan?.sampleReceiptNote || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Urgent:</strong>
-        {{ plan?.urgent ? "Yes" : "No" }}
-      </div>
-      <div>
-        <strong class="text-danger">Return Sample:</strong>
-        {{ plan?.returnSample ? "Yes" : "No" }}
-      </div>
-      <div>
-        <strong class="text-danger">Not Destroyed:</strong>
-        {{ plan?.notDestroyed ? "Yes" : "No" }}
-      </div>
-      <div>
-        <strong class="text-danger">Statement of Conformity:</strong>
-        {{ plan?.statementOfConformity || "-" }}
-      </div>
-      <div>
-        <strong class="text-danger">Decision Rule:</strong>
-        {{ plan?.decisionRule || "-" }}
+  <div class="card border shadow-sm mb-3">
+    <div class="card-header bg-light">
+      <h6 class="mb-0 fw-semibold theme-color">Customer & Inward Details</h6>
+    </div>
+    <div class="card-body small">
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Customer:</strong>
+            <span class="ms-2">{{ plan?.customerName || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Case No:</strong>
+            <span class="ms-2">{{ plan?.caseNo || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Contact:</strong>
+            <span class="ms-2">{{ plan?.customerContact || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Address:</strong>
+            <span class="ms-2">{{ plan?.customerAddress || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Sample Receipt Note:</strong>
+            <span class="ms-2">{{ plan?.sampleReceiptNote || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Urgent:</strong>
+            <span class="ms-2">{{ plan?.urgent ? "Yes" : "No" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Return Sample:</strong>
+            <span class="ms-2">{{ plan?.returnSample ? "Yes" : "No" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Not Destroyed:</strong>
+            <span class="ms-2">{{ plan?.notDestroyed ? "Yes" : "No" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Statement of Conformity:</strong>
+            <span class="ms-2">{{ plan?.statementOfConformity || "-" }}</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="mb-2">
+            <strong class="text-danger">Decision Rule:</strong>
+            <span class="ms-2">{{ plan?.decisionRule || "-" }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -55,76 +94,102 @@
   <div class="row g-2">
     <div class="col-12" *ngFor="let sample of samples; let sampleIdx = index">
       <div class="card border-0 shadow-sm mb-2">
-        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background: #d32f2f">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center bg-danger-600">
           <span class="fw-semibold text-white">
             <i class="bi bi-box"></i>
             Sample {{ sample.sampleNo }}
           </span>
         </div>
         <div class="card-body small">
-          <div class="row">
+          <div class="row g-3">
             <!-- LEFT: Sample Details -->
             <div class="col-md-10">
-              <div class="row g-2 mb-2">
+              <div class="row g-3 mb-3">
                 <div class="col-md-4">
-                  <strong>Details:</strong>
-                  {{ sample.details || "-" }}
+                  <div class="mb-2">
+                    <strong>Details:</strong>
+                    <span class="ms-2">{{ sample.details || "-" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Category:</strong>
-                  {{ sample.category || "-" }}
+                  <div class="mb-2">
+                    <strong>Category:</strong>
+                    <span class="ms-2">{{ sample.category || "-" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Nature:</strong>
-                  {{ sample.nature || "-" }}
-                </div>
-              </div>
-              <div class="row g-2 mb-2">
-                <div class="col-md-4">
-                  <strong>Quantity:</strong>
-                  {{ sample.quantity || "0" }}
+                  <div class="mb-2">
+                    <strong>Nature:</strong>
+                    <span class="ms-2">{{ sample.nature || "-" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Remarks:</strong>
-                  {{ sample.remarks || "-" }}
+                  <div class="mb-2">
+                    <strong>Quantity:</strong>
+                    <span class="ms-2">{{ sample.quantity || "0" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>TPI Required:</strong>
-                  <span [class.text-danger]="sample.tpiRequired">{{ sample.tpiRequired ? "Yes" : "No" }}</span>
+                  <div class="mb-2">
+                    <strong>Remarks:</strong>
+                    <span class="ms-2">{{ sample.remarks || "-" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Cutting Required:</strong>
-                  <span [class.text-danger]="sample.preparationRequired">{{ sample.preparationRequired ? "Yes" : "No" }}</span>
+                  <div class="mb-2">
+                    <strong>TPI Required:</strong>
+                    <span class="ms-2" [class.text-danger]="sample.tpiRequired">{{ sample.tpiRequired ? "Yes" : "No" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Machining Required:</strong>
-                  <span [class.text-danger]="sample.machiningRequired">{{ sample.machiningRequired ? "Yes" : "No" }}</span>
+                  <div class="mb-2">
+                    <strong>Cutting Required:</strong>
+                    <span class="ms-2" [class.text-danger]="sample.preparationRequired">{{ sample.preparationRequired ? "Yes" : "No" }}</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-2">
+                    <strong>Machining Required:</strong>
+                    <span class="ms-2" [class.text-danger]="sample.machiningRequired">{{ sample.machiningRequired ? "Yes" : "No" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4" *ngIf="sample.machiningRequired">
-                  <strong>Machining Amount:</strong>
-                  {{ sample.machiningAmount }}
+                  <div class="mb-2">
+                    <strong>Machining Amount:</strong>
+                    <span class="ms-2">{{ sample.machiningAmount }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4" *ngIf="sample.machiningRequired">
-                  <strong>Specimen:</strong>
-                  {{ sample.specimen }}
+                  <div class="mb-2">
+                    <strong>Specimen:</strong>
+                    <span class="ms-2">{{ sample.specimen }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Other Preparation:</strong>
-                  <span [class.text-danger]="sample.otherPreparation">{{ sample.otherPreparation ? "Yes" : "No" }}</span>
+                  <div class="mb-2">
+                    <strong>Other Preparation:</strong>
+                    <span class="ms-2" [class.text-danger]="sample.otherPreparation">{{ sample.otherPreparation ? "Yes" : "No" }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4" *ngIf="sample.otherPreparation">
-                  <strong>Other Preparation Charge:</strong>
-                  {{ sample.otherPreparationCharge }}
+                  <div class="mb-2">
+                    <strong>Other Preparation Charge:</strong>
+                    <span class="ms-2">{{ sample.otherPreparationCharge }}</span>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <strong>Test Instructions:</strong>
-                  {{ sample.testInstructions || "-" }}
+                  <div class="mb-2">
+                    <strong>Test Instructions:</strong>
+                    <span class="ms-2">{{ sample.testInstructions || "-" }}</span>
+                  </div>
                 </div>
                 <!-- Additional Details -->
                 <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
                   <div class="col-md-4">
-                    <strong>{{ row.label }}:</strong>
-                    {{ row.value }}
+                    <div class="mb-2">
+                      <strong>{{ row.label }}:</strong>
+                      <span class="ms-2">{{ row.value }}</span>
+                    </div>
                   </div>
                 </ng-container>
               </div>
@@ -133,15 +198,13 @@
             <div class="col-md-2 d-flex align-items-center justify-content-center">
               <div
                 *ngIf="sample.sampleFilePath"
-                class="preview-box w-100 h-100"
-                style="cursor: pointer"
+                class="preview-box w-100 h-100 cursor-pointer"
                 (click)="openFileInNewTab(sample.sampleFilePath)"
               >
                 <img
                   [src]="baseUrl + sample.sampleFilePath"
                   [alt]="sample.fileName"
-                  class="img-fluid rounded border w-100 h-100"
-                  style="object-fit: contain; min-height: 150px; min-width: 100px"
+                  class="img-fluid rounded border w-100 h-100 preview-image"
                 />
               </div>
               <div *ngIf="!sample.sampleFilePath" class="text-muted small">No Image</div>
@@ -149,14 +212,11 @@
           </div>
 
           <!-- General Test Table -->
-          <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="card border shadow-sm mt-2 mb-2 position-relative">
-            <legend
-              class="w-auto px-2 fw-semibold theme-color"
-              style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-            >
-              General Tests
-            </legend>
-            <div class="table-responsive mt-2 p-2">
+          <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="card border shadow-sm mt-3 mb-2">
+            <div class="card-header bg-light">
+              <h6 class="mb-0 fw-semibold theme-color">General Tests</h6>
+            </div>
+            <div class="table-responsive p-3">
               <table class="table table-compact align-middle">
                 <thead class="table-light text-center">
                   <tr class="text-nowrap text-muted small">
@@ -191,14 +251,11 @@
           </div>
 
           <!-- Chemical Test Table -->
-          <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="card border shadow-sm mt-2 mb-2 position-relative">
-            <legend
-              class="w-auto px-2 fw-semibold theme-color"
-              style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-            >
-              Chemical Tests
-            </legend>
-            <div class="table-responsive p-2">
+          <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="card border shadow-sm mt-3 mb-2">
+            <div class="card-header bg-light">
+              <h6 class="mb-0 fw-semibold theme-color">Chemical Tests</h6>
+            </div>
+            <div class="table-responsive p-3">
               <table class="table table-compact align-middle">
                 <thead class="table-light text-center">
                   <tr class="text-nowrap text-muted small">
@@ -231,7 +288,7 @@
                     <td>{{ getStandardName(test.standardID) }}</td>
                     <td>
                       <div *ngIf="(getElementsArray(test)).length > 0">
-                        <ul class="mb-0 ps-3" style="list-style-type: disc">
+                        <ul class="mb-0 ps-3 list-disc">
                           <li *ngFor="let element of getElementsArray(test)">
                             {{ getParameterName(element.parameterID) }}
                           </li>
@@ -253,37 +310,26 @@
   <!-- Floating Action Button (FAB) -->
   <button
     #reviewBtn
-    class="btn btn-danger shadow-lg position-fixed d-flex align-items-center justify-content-center"
-    [ngStyle]="{
-      'left.px': dragPosition.x,
-      'top.px': dragPosition.y,
-      right: 'auto',
-      bottom: 'auto',
-      width: '100px',
-      height: '56px',
-      'z-index': 1050,
-      'border-radius': '12px',
-      padding: 0
-    }"
+    class="btn btn-danger shadow-lg position-fixed d-flex align-items-center justify-content-center review-fab-btn"
+    [style.left.px]="dragPosition.x"
+    [style.top.px]="dragPosition.y"
     (mousedown)="startDrag($event)"
     (touchstart)="startDrag($event)"
     (click)="showActionPanel = true"
     *ngIf="!showActionPanel && showReviewButton()"
     aria-label="Open Review Action"
-    style="user-select: none; cursor: grab"
   >
-    <span class="fw-bold" style="font-size: 0.8rem; white-space: normal">Review Action</span>
+    <span class="fw-bold review-fab-text">Review Action</span>
   </button>
 
   <!-- Slide-up Action Panel -->
   <div
-    class="position-fixed start-0 end-0"
+    class="position-fixed start-0 end-0 bottom-0 review-action-panel"
     [ngClass]="{ 'd-block': showActionPanel, 'd-none': !showActionPanel }"
-    style="bottom: 0; z-index: 1060"
   >
     <!-- Overlay (now before the card and with lower z-index) -->
-    <div class="position-fixed top-0 start-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.15); z-index: 1059"></div>
-    <div class="card shadow-lg mx-auto mb-0 position-relative" style="max-width: 700px; border-top: 4px solid #b71c1c; z-index: 1060">
+    <div class="position-fixed top-0 start-0 w-100 h-100 review-action-overlay"></div>
+    <div class="card shadow-lg mx-auto mb-0 position-relative review-action-card">
       <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="btn-group" role="group">
           <!-- <input type="radio" class="btn-check" name="reviewAction" id="approveRadio" value="approve" [(ngModel)]="reviewAction" />

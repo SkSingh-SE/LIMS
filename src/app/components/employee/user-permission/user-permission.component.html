@@ -1,4 +1,4 @@
-<div class="container-fluid animation-fade-in">
+<div [ngClass]="containerClass" class="animation-fade-in">
   <div class="row g-4">
     <!-- All Permissions (Available) -->
     <div class="col-12 col-lg-5">
@@ -47,12 +47,13 @@
                 <div *ngFor="let p of group.permissions" 
                      class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
                      [class.border-primary]="isAvailableSelected(p.id)"
-                     (click)="toggleAvailablePermission(p.id)">
+                     (click)="!isViewMode && toggleAvailablePermission(p.id)">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="text-secondary small fw-medium">{{ p.displayName }}</span>
+                    <i class="bi bi-shield-lock text-muted small"></i>
+                    <span class="text-secondary fw-medium">{{ p.displayName }}</span>
                   </div>
                   <div class="form-check m-0 pointer-events-none"> <!-- click handled by parent -->
-                    <input class="form-check-input" type="checkbox" [checked]="isAvailableSelected(p.id)">
+                    <input class="form-check-input" type="checkbox" [checked]="isAvailableSelected(p.id)" [disabled]="isViewMode">
                   </div>
                 </div>
               </div>
@@ -71,7 +72,7 @@
     <div class="col-12 col-lg-2 d-flex flex-column align-items-center justify-content-center gap-3 py-4">
       <button type="button"
         class="btn btn-primary shadow-lg rounded-circle action-btn transition-transform"
-        [disabled]="availableSelection.size === 0"
+        [disabled]="availableSelection.size === 0 || isViewMode"
         (click)="moveToAssigned()"
         title="Assign selected permissions">
         <i class="bi bi-chevron-right d-none d-lg-block fs-4"></i>
@@ -80,7 +81,7 @@
 
       <button type="button"
         class="btn btn-outline-danger shadow-sm rounded-circle action-btn transition-transform"
-        [disabled]="assignedSelection.size === 0"
+        [disabled]="assignedSelection.size === 0 || isViewMode"
         (click)="moveToAvailable()"
         title="Remove selected permissions">
         <i class="bi bi-chevron-left d-none d-lg-block fs-4"></i>
@@ -103,7 +104,7 @@
           </h6>
         </div>
         <div class="card-body bg-light-subtle">
-          <div class="mb-3">
+          <div class="mb-3" *ngIf="allowUserSelection">
             <app-searchable-dropdown
               [placeholder]="'Search User...'"
               [labelName]="''"
@@ -131,19 +132,16 @@
                 <div *ngFor="let p of group.permissions" 
                      class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
                      [class.border-danger]="isAssignedSelected(p.id)"
-                     (click)="toggleAssignedPermission(p.id)">
+                     (click)="!isViewMode && p.isOverride && toggleAssignedPermission(p.id)">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="text-dark small fw-medium">{{ p.displayName }}</span>
-                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-1" style="font-size: 0.65rem;">ROLE</span>
+                    <i class="bi bi-shield-check text-success small"></i>
+                    <span class="text-dark fw-bold">{{ p.displayName }}</span>
+                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-1" style="font-size: 0.65rem;">ROLE IMPLICIT</span>
                   </div>
                   <div class="form-check m-0 pointer-events-none">
-                     <!-- Only enable checkbox if it is an Override permission (special permission) -->
-                     <!-- Actually, based on logic, if it's on the right list, can we remove it? -->
-                     <!-- Logic: Role permissions might be shown here if we want? But code shows only assigned ones. -->
-                     <!-- If we are showing "User Special Permissions", then all should be removable. -->
                      <input class="form-check-input" type="checkbox" 
                             [checked]="isAssignedSelected(p.id)"
-                            [disabled]="!p.isOverride"> 
+                            [disabled]="!p.isOverride || isViewMode"> 
                   </div>
                 </div>
               </div>
@@ -165,7 +163,7 @@
   </div>
 
   <!-- Bottom Actions -->
-  <div class="fixed-bottom bg-white border-top shadow-lg py-3 px-4 d-flex justify-content-between align-items-center z-3">
+  <div class="fixed-bottom bg-white border-top shadow-lg py-3 px-4 d-flex justify-content-between align-items-center z-3" *ngIf="!isViewMode">
     <div class="text-muted small">
       <i class="bi bi-info-circle me-1"></i> Changes are not saved until you click 'Save Permissions'.
     </div>

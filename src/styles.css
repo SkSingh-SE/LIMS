@@ -153,7 +153,7 @@ body {
     font-size: 14px !important;
     font-weight: 400 !important;
     padding: 3px !important;
-    
+
 }
 .select2-selection--multiple:disabled{
     background: var(--bs-secondary-bg) !important;
@@ -251,7 +251,7 @@ body {
   border-spacing: 0;
   margin-top: 5px;
   border-radius: 10px;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .table-compact th,
@@ -287,3 +287,45 @@ body {
 }
 
 /* Table css end here */
+
+
+/* Normalize Angular Material controls to look like Bootstrap form-control */
+.mat-form-field.mat-form-field-appearance-outline .mat-form-field-wrapper {
+  padding: 0 !important;
+}
+
+.mat-form-field .mat-form-field-infix {
+  padding: 6px 12px !important; /* match Bootstrap-like padding */
+  height: 38px !important; /* desired consistent height */
+  align-items: center !important;
+}
+
+.mat-form-field-appearance-outline .mat-form-field-outline {
+  border-radius: 4px !important;
+}
+
+/* Autocomplete panel: inherit font-size and padding similar to selects */
+.mat-autocomplete-panel {
+  font-size: 14px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Chips should visually match form-control height */
+.mat-chip-list .mat-chip {
+  height: 28px;
+  line-height: 28px;
+  margin: 0 4px 0 0;
+}
+
+/* Reduce the extra Mat subscript/hint spacing when placed inline */
+.mat-form-field-subscript-wrapper {
+  margin-top: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Utility: make our component look bootstrap-like */
+.mat-bootstrap-like .mat-form-field-infix {
+  padding: 6px 12px !important;
+}
+

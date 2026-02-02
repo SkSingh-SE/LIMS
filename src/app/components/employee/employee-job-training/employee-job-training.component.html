@@ -1,0 +1,310 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">Job Training & Evaluation</label>
+      <button 
+        *ngIf="!isViewMode" 
+        class="btn btn-outline-light me-3"
+        (click)="openAddTrainingModal()">
+        <i class="bi bi-plus-lg"></i> Add Training
+      </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div *ngIf="isLoading()" class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading()" class="card-body">
+      <!-- Summary Cards -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-journal-check fs-2 text-primary mb-2"></i>
+              <h3 class="mb-0 fw-bold">{{ summaryData.totalTrainings }}</h3>
+              <p class="text-muted small mb-0">Total Trainings</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-check-circle fs-2 text-success mb-2"></i>
+              <h3 class="mb-0 fw-bold text-success">{{ summaryData.activeTrainings }}</h3>
+              <p class="text-muted small mb-0">Active Trainings</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-x-circle fs-2 text-danger mb-2"></i>
+              <h3 class="mb-0 fw-bold text-danger">{{ summaryData.expiredTrainings }}</h3>
+              <p class="text-muted small mb-0">Expired Trainings</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-exclamation-triangle fs-2 text-warning mb-2"></i>
+              <h3 class="mb-0 fw-bold text-warning">{{ summaryData.upcomingExpiry }}</h3>
+              <p class="text-muted small mb-0">Expiring Soon (30d)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()">
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training History Table -->
+      <div *ngIf="filteredRecords.length > 0 || filters.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+            <tr class="align-middle">
+              <th *ngFor="let column of columns; let i = index">
+                <div class="d-flex align-items-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                      (click)="applySorting(column.key)"></i>
+                    <i class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                      (click)="applySorting(column.key)"></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                    (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                    (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                </div>
+              </th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of paginatedRecords; let i = index" class="text-sm">
+              <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+              <td>{{ record.trainingType }}</td>
+              <td>{{ record.testMethod }}</td>
+              <td>{{ record.trainerName }}</td>
+              <td>{{ record.trainingDate | date: 'dd MMM, yyyy' }}</td>
+              <td>{{ record.validTill | date: 'dd MMM, yyyy' }}</td>
+              <td>
+                <span [ngClass]="getEvaluationClass(record.evaluationResult)">
+                  {{ record.evaluationResult }}
+                </span>
+              </td>
+              <td>
+                <span [ngClass]="getStatusClass(record.status)">
+                  {{ record.status }}
+                </span>
+              </td>
+              <td class="text-center">
+                <button 
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="viewTraining(record)">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No Records -->
+      <div *ngIf="filteredRecords.length === 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+          <div class="fw-semibold">No records found</div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Page Size Selector -->
+        <div class="d-flex align-items-center">
+          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize()">
+            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+          </select>
+        </div>
+
+        <!-- Pagination Controls -->
+        <ul class="pagination mb-0 d-flex align-items-center">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" (click)="goToPage(currentPage - 1)">Previous</a>
+          </li>
+          <li *ngFor="let page of getPaginationArray()" class="page-item" [class.active]="currentPage === page">
+            <a class="page-link" (click)="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" (click)="goToPage(currentPage + 1)">Next</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative">
+    <!-- Close Button -->
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+      (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+      class="form-control mb-2" [(ngModel)]="filterValue" />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>
+
+<!-- Training Modal -->
+<div class="modal fade" [class.show]="showTrainingModal()" [style.display]="showTrainingModal() ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-journal-plus me-2"></i>
+          {{ trainingForm.get('id')?.value ? 'View Training' : 'Add Training' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="trainingForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Training Type <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="trainingType">
+                <option value="">Select Type</option>
+                <option value="Initial">Initial</option>
+                <option value="Refresher">Refresher</option>
+              </select>
+              <div class="text-danger small" *ngIf="trainingForm.get('trainingType')?.invalid && trainingForm.get('trainingType')?.touched">
+                Training type is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Test Method / Equipment <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="testMethod">
+                <option value="">Select Method</option>
+                <option value="HPLC Operation">HPLC Operation</option>
+                <option value="GC-MS Analysis">GC-MS Analysis</option>
+                <option value="UV-Vis Spectroscopy">UV-Vis Spectroscopy</option>
+                <option value="Karl Fischer Titration">Karl Fischer Titration</option>
+                <option value="pH Meter Calibration">pH Meter Calibration</option>
+              </select>
+              <div class="text-danger small" *ngIf="trainingForm.get('testMethod')?.invalid && trainingForm.get('testMethod')?.touched">
+                Test method is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Trainer Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="trainerName" placeholder="Enter trainer name">
+              <div class="text-danger small" *ngIf="trainingForm.get('trainerName')?.invalid && trainingForm.get('trainerName')?.touched">
+                Trainer name is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Training Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="trainingDate">
+              <div class="text-danger small" *ngIf="trainingForm.get('trainingDate')?.invalid && trainingForm.get('trainingDate')?.touched">
+                Training date is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Valid Till <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="validTill">
+              <div class="text-danger small" *ngIf="trainingForm.get('validTill')?.invalid && trainingForm.get('validTill')?.touched">
+                Valid till date is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Evaluation Result <span class="text-danger">*</span></label>
+              <div class="d-flex gap-3 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="evaluationResult" value="Pass" id="resultPass">
+                  <label class="form-check-label" for="resultPass">Pass</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="evaluationResult" value="Fail" id="resultFail">
+                  <label class="form-check-label" for="resultFail">Fail</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="evaluationResult" value="Conditional" id="resultConditional">
+                  <label class="form-check-label" for="resultConditional">Conditional</label>
+                </div>
+              </div>
+              <div class="text-danger small" *ngIf="trainingForm.get('evaluationResult')?.invalid && trainingForm.get('evaluationResult')?.touched">
+                Evaluation result is required
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Remarks</label>
+              <textarea class="form-control" rows="3" formControlName="remarks" placeholder="Enter any additional remarks"></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Attachment (UI Only)</label>
+              <input type="file" class="form-control" disabled>
+              <small class="text-muted">File upload functionality will be implemented with backend integration</small>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          (click)="saveTraining()"
+          *ngIf="!isViewMode && !trainingForm.disabled"
+          [disabled]="trainingForm.invalid">
+          <i class="bi bi-save me-1"></i>Save Training
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showTrainingModal()" *ngIf="showTrainingModal()"></div>

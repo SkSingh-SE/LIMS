@@ -14,7 +14,7 @@
               [fetchDataFn]="fetchSampleInwardDropdown"
               placeholder="Search Collection No."
               [required]="true"
-              [isDisabled]="isEditMode || isViewMode"
+              [isDisabled]="true"
               (itemSelected)="onInwardSelected($event)"
               [selectedItem]="selectedInwardId"
             ></app-searchable-dropdown>
@@ -144,6 +144,9 @@
 
         <div *ngIf="!isViewMode" class="text-end gap-2">
           <button type="button" class="btn btn-warning me-2" (click)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-info me-2 text-white" (click)="printSampleCuttingRaw()">
+            <i class="bi bi-printer me-1"></i> Print Raw Format
+          </button>
           <button type="submit" class="btn btn-success" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
         </div>
       </div>

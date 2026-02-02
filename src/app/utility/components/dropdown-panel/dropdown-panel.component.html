@@ -1,10 +1,24 @@
-<ul class="list-group " style="max-height: 200px; overflow-y: auto;" (scroll)="onScrollEvent($event)" (keydown)="onKeyDown($event)">
-    <li class="list-group-item cursor-pointer"
-        *ngFor="let item of items; let i = index"  
-        (click)="onSelect(item)">
-      {{ item.name }}
-    </li>
-    <li *ngIf="items.length == 0" class="list-group-item  text-muted"><span class="fw-lighter fst-italic fs-6"> No Record</span></li>
+<ul
+  class="list-group dropdown-panel"
+  tabindex="0"
+  style="max-height: 200px; overflow-y: auto;"
+  (scroll)="onScrollEvent($event)"
+  (keydown)="onKeyDown($event)"
+>
+  <li
+    *ngFor="let item of items; let i = index"
+    [id]="'dropdown-item-' + i"
+    class="list-group-item cursor-pointer"
+    [class.active]="i === highlightedIndex"
+    (click)="onSelect(item, i)"
+  >
+    {{ item.name }}
+  </li>
 
-  </ul>
-  
+  <li
+    *ngIf="items.length === 0"
+    class="list-group-item text-muted text-center"
+  >
+    <span class="fw-lighter fst-italic fs-6">No Record</span>
+  </li>
+</ul>

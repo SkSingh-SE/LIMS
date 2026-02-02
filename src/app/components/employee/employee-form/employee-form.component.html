@@ -1185,24 +1185,27 @@
                 </div> -->
       </fieldset>
       <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane border-0">
-        <div class="text-center mb-40">
-          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
-          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
-          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        <div class="card-header card-form-header text-white text-center">
+          <h6 class="text-center">Job Training & Evaluation</h6>
+        </div>
+        <div class="card-body">
+          <app-employee-job-training [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-job-training>
         </div>
       </fieldset>
       <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane border-0">
-        <div class="text-center mb-40">
-          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
-          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
-          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        <div class="card-header card-form-header text-white text-center">
+          <h6 class="text-center">Performance Record</h6>
+        </div>
+        <div class="card-body">
+          <app-employee-performance-record [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-performance-record>
         </div>
       </fieldset>
       <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane border-0">
-        <div class="text-center mb-40">
-          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
-          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
-          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        <div class="card-header card-form-header text-white text-center">
+            <h6 class="text-center">User Management</h6>
+        </div>
+        <div class="card-body">
+            <app-employee-user-management [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-user-management>
         </div>
       </fieldset>
       <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane border-0">

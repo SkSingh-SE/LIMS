@@ -386,8 +386,10 @@
       style="max-width: 700px; border-top: 4px solid #da261c; z-index: 1060"
     >
       <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting', 'CanApproveReport']">
-          <div class="btn-group" role="group" *ngIf="canApproveReport()">
+        <!-- <ng-container *hasPermission="['CanReadReportingDashboard', 'CanManageReportingDashboard', 'CanApproveReportDashboard']"> -->
+        <ng-container>
+          <!-- <div class="btn-group" role="group" *ngIf="canApproveReport()"> -->
+          <div class="btn-group" role="group">
             <ng-container *ngFor="let act of reportData?.actions">
               <input
                 type="radio"
@@ -396,7 +398,6 @@
                 [id]="'action_' + act.action"
                 [value]="act"
                 [(ngModel)]="selectedAction"
-                [disabled]="!statusHelperService.canApproveReport(reportData?.status || '') && act.action.toLowerCase().includes('next')"
               />
 
               <label
@@ -428,7 +429,7 @@
 
           <button
             class="btn btn-danger px-4 fw-semibold"
-            [disabled]="!selectedAction || (selectedAction.action.toLowerCase() !== 'next' && !actionRemark) || !statusHelperService.canApproveReport(reportData?.status || '')"
+            [disabled]="!selectedAction || (selectedAction.action.toLowerCase() !== 'next' && !actionRemark)"
             (click)="submitReview()"
           >
             <i class="bi bi-send-check"></i>

@@ -16,7 +16,7 @@ import { DropdownPanelComponent } from '../dropdown-panel/dropdown-panel.compone
   styleUrl: './searchable-dropdown.component.css'
 })
 export class SearchableDropdownComponent {
- 
+
   @Input() placeholder = 'Type to search...';
   @Input() labelName = 'Select Item';
   @Input() required = false;
@@ -38,6 +38,7 @@ export class SearchableDropdownComponent {
   pageSize = 20;
   loading = false;
   hasMore = true;
+  highlightedIndex = -1;
 
   private searchSubject = new Subject<string>();
   private sub = new Subscription();
@@ -72,11 +73,11 @@ export class SearchableDropdownComponent {
     if (changes['selectedItem'] && changes['selectedItem'].currentValue) {
       const matched = this.dropdownData.find(x => x.id === this.selectedItem);
       if (matched) {
-        if(this.selectedLabel.length === 0) {
+        if (this.selectedLabel.length === 0) {
           this.selectedLabel = matched.name;
           this.selectItem(matched);
         }
-        
+
       } else {
         this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
           const found = data.find(x => x.id === this.selectedItem);
@@ -101,7 +102,7 @@ export class SearchableDropdownComponent {
   }
   openDropdownPanel(): void {
     const inputRect = this.inputRef.nativeElement.getBoundingClientRect();
-    const inputWidth = inputRect.width;
+    const inputWidth = Math.round(inputRect.width);
 
     const positionStrategy = this.overlay.position()
       .flexibleConnectedTo(this.inputRef.nativeElement)
@@ -127,8 +128,8 @@ export class SearchableDropdownComponent {
         positionStrategy,
         scrollStrategy: this.overlay.scrollStrategies.reposition(),
         hasBackdrop: false, // No backdrop for dropdown
-        minWidth: inputWidth,
-        maxWidth: inputWidth,
+       width: inputWidth+40,            // ✅ EXACT match
+      panelClass: 'dropdown-panel', // for styling
       });
     }
 
@@ -136,6 +137,7 @@ export class SearchableDropdownComponent {
       const dropdownPortal = new ComponentPortal(DropdownPanelComponent, this.vcr);
       this.dropdownComponentRef = this.overlayRef.attach(dropdownPortal);
       this.dropdownComponentRef.instance.items = this.dropdownData;
+      this.dropdownComponentRef.instance.selectedItemId = this.selectedItem;
 
       this.dropdownComponentRef.instance.selectItem.subscribe((item: any) => {
         this.selectItem(item);
@@ -147,6 +149,7 @@ export class SearchableDropdownComponent {
 
       setTimeout(() => {
         document.addEventListener('click', this.handleOutsideClick, true);
+
       });
     } else {
       this.dropdownComponentRef.instance.items = this.dropdownData;
@@ -198,7 +201,46 @@ export class SearchableDropdownComponent {
     document.removeEventListener('click', this.handleOutsideClick, true);
   }
 
+  handleKeydown(event: KeyboardEvent): void {
+    if (!this.overlayRef || !this.overlayRef.hasAttached()) return;
 
+    const itemsLength = this.dropdownData.length;
+    if (!itemsLength) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.highlightedIndex =
+          (this.highlightedIndex + 1) % itemsLength;
+        this.scrollToHighlighted();
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        this.highlightedIndex =
+          (this.highlightedIndex - 1 + itemsLength) % itemsLength;
+        this.scrollToHighlighted();
+        break;
+
+      case 'Enter':
+        event.preventDefault();
+        if (this.highlightedIndex >= 0) {
+          const item = this.dropdownData[this.highlightedIndex];
+          this.selectItem(item);
+        }
+        break;
+
+      case 'Escape':
+        this.closeDropdown();
+        break;
+    }
+  }
+
+  private scrollToHighlighted(): void {
+    if (!this.dropdownComponentRef) return;
+
+    this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;
+  }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();

@@ -33,6 +33,7 @@ export class SearchableDropdownModalComponent {
   showDropdown = false;
   selectedLabel: string = '';
   randomId = 'input-' + Math.random().toString(36).substring(2, 10);
+  highlightedIndex: number = -1;
 
 
   private searchSubject = new Subject<string>();
@@ -50,6 +51,9 @@ export class SearchableDropdownModalComponent {
       this.dropdownData = data;
       this.hasMore = data.length === this.pageSize;
       this.pageNo++;
+      // set initial highlighted index (prefer selectedItem if present)
+      const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
+      this.highlightedIndex = idx >= 0 ? idx : (this.dropdownData.length ? 0 : -1);
     });
 
     this.subscription.add(sub);
@@ -65,6 +69,40 @@ export class SearchableDropdownModalComponent {
     }
   }
 
+  handleKeydown(event: KeyboardEvent): void {
+    if (!this.showDropdown) return;
+
+    const itemsLength = this.dropdownData.length;
+    if (!itemsLength) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.highlightedIndex = (this.highlightedIndex + 1 + itemsLength) % itemsLength;
+        this.scrollToHighlighted();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.highlightedIndex = (this.highlightedIndex - 1 + itemsLength) % itemsLength;
+        this.scrollToHighlighted();
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (this.highlightedIndex >= 0 && this.highlightedIndex < this.dropdownData.length) {
+          const item = this.dropdownData[this.highlightedIndex];
+          if (this.isMultiSelect) {
+            this.toggleItem(item);
+          } else {
+            this.selectItem(item);
+          }
+        }
+        break;
+      case 'Escape':
+        this.showDropdown = false;
+        break;
+    }
+  }
+
   loadMore() {
     if (this.loading || !this.hasMore) return;
     this.loading = true;
@@ -74,12 +112,20 @@ export class SearchableDropdownModalComponent {
       this.hasMore = data.length === this.pageSize;
       this.pageNo++;
       this.loading = false;
+      // ensure highlightedIndex is valid after loading more
+      if (this.highlightedIndex === -1 && this.dropdownData.length) {
+        const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
+        this.highlightedIndex = idx >= 0 ? idx : 0;
+      }
     });
   }
 
   selectItem(item: any) {
     this.selectedLabel = item.name;
     this.itemSelected.emit(item);
+    // reflect selection visually
+    const idx = this.dropdownData.findIndex(d => d.id === item.id);
+    this.highlightedIndex = idx >= 0 ? idx : -1;
   }
   onScroll(event: any) {
     const div = event.target;
@@ -133,7 +179,9 @@ export class SearchableDropdownModalComponent {
             if (found) {
               this.dropdownData = [found, ...this.dropdownData];
               this.selectedLabel = found.name;
-              this.selectItem(found);
+                this.selectItem(found);
+                const idx = this.dropdownData.findIndex(d => d.id === found.id);
+                this.highlightedIndex = idx >= 0 ? idx : -1;
             }
           });
         }
@@ -142,6 +190,15 @@ export class SearchableDropdownModalComponent {
 
 
   }
+
+    private scrollToHighlighted(): void {
+      if (this.highlightedIndex < 0) return;
+      const id = this.randomId + '-item-' + this.highlightedIndex;
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    }
 
   toggleItem(item: any): void {
     const index = this.selectedItems.findIndex(i => i.id === item.id);

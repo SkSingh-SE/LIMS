@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { UserService } from '../../../services/user.service';
@@ -26,7 +26,7 @@ interface Permission {
   templateUrl: './user-permission.component.html',
   styleUrl: './user-permission.component.css'
 })
-export class UserPermissionComponent implements OnInit {
+export class UserPermissionComponent implements OnInit, OnChanges {
   selectedUser: string = '';
 
   // Master Data
@@ -44,10 +44,26 @@ export class UserPermissionComponent implements OnInit {
   permissionSearch: string = '';
   expandedGroupNames: Set<string> = new Set();
 
+  @Input() targetUserId: string = '';
+  @Input() allowUserSelection: boolean = true;
+  @Input() containerClass: string = 'container-fluid';
+  @Input() isViewMode: boolean = false;
+
   constructor(private userService: UserService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.getPermissions();
+    if (this.targetUserId) {
+      this.selectedUser = this.targetUserId;
+      this.fetchUserPermissions(this.targetUserId);
+    }
+  }
+
+  ngOnChanges(changes: any) {
+    if (changes.targetUserId && changes.targetUserId.currentValue) {
+      this.selectedUser = changes.targetUserId.currentValue;
+      this.fetchUserPermissions(this.selectedUser);
+    }
   }
 
   // 1. Fetch Master Permissions

@@ -129,7 +129,7 @@
                     <!-- Metal Classification -->
                     <div class="col-12 col-md-6">
                       <app-searchable-dropdown
-                        [placeholder]="'Search Metal Classification'"
+                        [placeholder]="'Type & Search Metal Classification'"
                         [labelName]="'Metal Classification'"
                         [fetchDataFn]="getMetalDrop"
                         (itemSelected)="onMetalClassificationSelected($event, sampleIdx)"
@@ -141,7 +141,7 @@
                     <!-- Product Condition -->
                     <div class="col-12 col-md-6">
                       <app-searchable-dropdown
-                        [placeholder]="'Search Product Condition'"
+                        [placeholder]="'Type & Search Product Condition'"
                         [labelName]="'Product Condition'"
                         [fetchDataFn]="getProductConditionDrop"
                         (itemSelected)="onProductConditionSelected($event, sampleIdx)"
@@ -283,7 +283,7 @@
                 <div *ngIf="sample.get('tpiRequired')?.value === true" class="col-md-3">
                   <app-searchable-dropdown
                     class="col-md-3"
-                    [placeholder]="'Search TPI Agency'"
+                    [placeholder]="'Type & Search TPI Agency'"
                     [labelName]="'TPI Agency'"
                     [fetchDataFn]="getTPIAgencies"
                     (itemSelected)="onTPISelected($event, sampleIdx)"
@@ -375,7 +375,7 @@
                     <div class="row row-cols-auto row-cols-md-2 mb-2">
                       <div class="">
                         <app-searchable-dropdown
-                          [placeholder]="'Search Specification'"
+                          [placeholder]="'Type & Search Specification'"
                           [labelName]="'Specification'"
                           [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(sampleIdx)"
                           (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
@@ -387,7 +387,7 @@
                       </div>
                       <div class="">
                         <app-searchable-dropdown
-                          [placeholder]="'Search Specification'"
+                          [placeholder]="'Type & Search Specification'"
                           [labelName]="'Specification 2'"
                           [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(sampleIdx)"
                           (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'generalTests')"
@@ -577,7 +577,7 @@
                         <div class="row mt-3">
                           <div class="col-md-3">
                             <app-searchable-dropdown
-                              [placeholder]="'Search Specification'"
+                              [placeholder]="'Type & Search Specification'"
                               [labelName]="'Specification'"
                               [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(sampleIdx)"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
@@ -589,7 +589,7 @@
                           </div>
                           <div class="col-md-3">
                             <app-searchable-dropdown
-                              [placeholder]="'Search Specification'"
+                              [placeholder]="'Type & Search Specification'"
                               [labelName]="'Specification 2'"
                               [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(sampleIdx)"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
@@ -633,7 +633,7 @@
                                 <td>
                                   <app-searchable-dropdown
                                     class="w-100"
-                                    [placeholder]="'Search Parameter'"
+                                    [placeholder]="'Type & Search Parameter'"
                                     [labelName]="'Parameter'"
                                     [fetchDataFn]="getParameterDrop"
                                     (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)"
@@ -722,10 +722,10 @@
   <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
     <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
     <button type="button" class="btn btn-success px-3" (click)="onSave()" [disabled]="!planForm.valid">Save Plan</button>
-    <button 
-      *ngIf="canSendForReview()" 
-      type="button" 
-      class="btn btn-info" 
+    <button
+      *ngIf="canSendForReview()"
+      type="button"
+      class="btn btn-info"
       (click)="onSendForReview()">
       Send for Review
     </button>

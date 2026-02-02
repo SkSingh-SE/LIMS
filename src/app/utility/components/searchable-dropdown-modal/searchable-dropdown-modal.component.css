@@ -1,0 +1,36 @@
+/* Modal inline dropdown styling adapted from dropdown-panel */
+.list-group {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.list-group-item {
+	border: none;
+	border-bottom: 1px solid #f1f1f1;
+	padding: 6px 12px;
+	font-size: 0.875rem;
+	color: #212529;
+	cursor: pointer;
+	user-select: none;
+	background: transparent;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.list-group-item:hover {
+	background-color: #de1a2e;
+	color: #fff;
+}
+
+.list-group-item.active,
+.list-group-item:hover.active {
+	background-color: #de1a2e;
+	color: #fff;
+}
+
+/* Scrollbar polish */
+.list-group::-webkit-scrollbar { width: 6px; }
+.list-group::-webkit-scrollbar-thumb { background-color: #ced4da; border-radius: 3px; }
+.list-group::-webkit-scrollbar-track { background: transparent; }
+
+.cursor-pointer { cursor: pointer; }

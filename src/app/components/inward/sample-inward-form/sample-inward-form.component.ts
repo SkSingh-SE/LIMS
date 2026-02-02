@@ -424,7 +424,7 @@ export class SampleInwardFormComponent implements OnInit {
 
             });
             // Disable form if not in SAMPLE_INWARD_REGISTERED status
-            if ( data?.status !== InwardStatus.INWARD_REGISTERED  && data?.status !== SampleStatus.INWARD_COMPLETED) {
+            if (data?.status !== InwardStatus.INWARD_REGISTERED && data?.status !== SampleStatus.INWARD_COMPLETED) {
               this.isViewMode = true;
               this.disableFormRecursively(this.sampleInwardForm);
             }
@@ -923,7 +923,7 @@ export class SampleInwardFormComponent implements OnInit {
         'emailId': 'EmailId',
         'type': 'Type'
       };
-      
+
       Object.keys(sec).forEach(k => {
         const val = sec[k];
         if (val !== undefined && val !== null) {
@@ -1026,11 +1026,11 @@ export class SampleInwardFormComponent implements OnInit {
     return `${this.yearCode}-${counter.toString().padStart(6, '0')}`;
   }
 
- private manageSampleNumber(
-  action: 'init' | 'add' | 'remove',
-  removeIndex?: number,
-  sampleNo?: string
-): string {
+  private manageSampleNumber(
+    action: 'init' | 'add' | 'remove',
+    removeIndex?: number,
+    sampleNo?: string
+  ): string {
 
     // INIT → rebinding / edit / API load
     if (action === 'init') {
@@ -1087,10 +1087,12 @@ export class SampleInwardFormComponent implements OnInit {
     }
 
     return this.sampleNumber;
-}
+  }
 
 
-
+  trackByIndex(index: number) {
+    return index;
+  }
 
 }
 

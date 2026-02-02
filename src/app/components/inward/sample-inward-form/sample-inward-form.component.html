@@ -33,7 +33,7 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <app-searchable-dropdown
-                [placeholder]="'Search Customer'"
+                [placeholder]="'Type & Search Customer'"
                 [labelName]="'Select Customer'"
                 [fetchDataFn]="getCustomers"
                 (itemSelected)="onCustomerSelect($event)"
@@ -446,12 +446,12 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let sample of sampleDetails.controls; let i = index" [formGroupName]="i">
+                <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
                   <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly /></td>
                   <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
                   <td>
                     <app-searchable-dropdown
-                      [placeholder]="'Search Metal Classification'"
+                      [placeholder]="'Type & Search Metal Classification'"
                       [hideLabel]="true"
                       [fetchDataFn]="getMetalClassification"
                       (itemSelected)="onMetalClassificationSelected($event,i)"
@@ -461,7 +461,7 @@
                   </td>
                   <td>
                     <app-searchable-dropdown
-                      [placeholder]="'Search Product Condition'"
+                      [placeholder]="'Type & Search Product Condition'"
                       [hideLabel]="true"
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
@@ -612,8 +612,8 @@
 
       <!-- PLAN TAB -->
       <div class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
-        <app-plan-form 
-          [inwardID]="sampleId" 
+        <app-plan-form
+          [inwardID]="sampleId"
           [mode]="isPlanEditable() ? 'plan' : 'review'">
         </app-plan-form>
       </div>

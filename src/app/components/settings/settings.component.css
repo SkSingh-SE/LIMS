@@ -1,0 +1,953 @@
+/* ============================================
+   SETTINGS COMPONENT - COMPACT FORM LAYOUT
+   Theme: LIMS Laboratory Management System
+   Color Accent: #DA261C (Red)
+   Optimized for: Minimal vertical scrolling, standard design
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   BASE CONTAINER & LAYOUT
+   ============================================ */
+
+.settings-container {
+  background: #f5f5f5;
+  min-height: 90vh;
+  padding: 1rem;
+}
+
+.settings-layout {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0 auto;
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+
+.settings-sidebar {
+  flex: none;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section {
+  padding: 0;
+}
+
+.sidebar-title {
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+}
+
+.nav-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nav-menu-item {
+  margin: 0;
+}
+
+.nav-menu-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: left;
+}
+
+.nav-menu-btn:hover {
+  background: rgba(218, 38, 28, 0.08);
+  border-color: rgba(218, 38, 28, 0.15);
+  color: #DA261C;
+}
+
+.nav-menu-btn.active {
+  background: rgba(218, 38, 28, 0.12);
+  border-left: 3px solid #DA261C;
+  color: #DA261C;
+  padding-left: calc(1rem - 1px);
+  font-weight: 600;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(218, 38, 28, 0.12);
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: #DA261C;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.nav-menu-btn.active .nav-icon {
+  background: #DA261C;
+  color: white;
+  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.2);
+}
+
+.nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+/* Tab action helpers */
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-dirty-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #DA261C;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.08);
+}
+
+.settings-main {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 2rem);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   TAB PANES & ANIMATIONS
+   ============================================ */
+
+.settings-tab-pane,
+.form-page {
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   FORM TITLES & HEADERS
+   ============================================ */
+
+.form-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.form-title i {
+  color: #DA261C;
+  font-size: 1.15rem;
+}
+
+.form-title-small {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 1rem 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ============================================
+   COMPACT FORM LAYOUT
+   ============================================ */
+
+.compact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.form-row-full {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ============================================
+   FORM LABELS & CONTROLS
+   ============================================ */
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+  display: block;
+}
+
+.form-label .required {
+  color: #DA261C;
+  font-weight: 700;
+  margin-left: 0.2rem;
+}
+
+.form-control {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  background: white;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.form-control:focus {
+  border-color: #DA261C;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.08);
+}
+
+.form-control:hover:not(:focus) {
+  border-color: #ccc;
+}
+
+.form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+.form-control.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.08);
+}
+
+.form-control[readonly],
+.form-control:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #e9ecef;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 70px;
+  font-family: inherit;
+}
+
+select.form-control {
+  cursor: pointer;
+}
+
+.form-control-small {
+  width: 70px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* ============================================
+   CHECKBOXES & RADIO BUTTONS
+   ============================================ */
+
+.checkbox-control {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+
+
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.radio-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #DA261C;
+}
+
+/* ============================================
+   FILE UPLOAD - INLINE STYLE
+   ============================================ */
+
+.file-upload-inline {
+  position: relative;
+  border: 2px dashed #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.file-upload-inline input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+}
+
+.file-upload-inline:hover {
+  border-color: #DA261C;
+  background: rgba(218, 38, 28, 0.03);
+}
+
+.file-upload-inline.has-file {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.03);
+}
+
+.file-label {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.file-label i {
+  font-size: 1rem;
+}
+
+.file-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  pointer-events: auto;
+  font-size: 0.85rem;
+  color: #495057;
+  flex-wrap: wrap;
+}
+
+.file-preview img {
+  max-width: 90px;
+  max-height: 90px;
+  border-radius: 4px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+}
+
+.btn-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.btn-remove:hover {
+  background: #c82333;
+  transform: scale(1.15);
+}
+
+/* ============================================
+   SIGNATURE SECTION
+   ============================================ */
+
+.signature-upload {
+  min-height: 100px;
+}
+
+.signature-upload .file-preview img {
+  max-width: 110px;
+  max-height: 110px;
+}
+
+.signatures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.signature-item {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.9rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.signature-header {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.signature-info {
+  flex: 1;
+}
+
+.signature-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.signature-designation {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.15rem;
+}
+
+.signature-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  background: #f0f0f0;
+  color: #666;
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+.signature-status.active {
+  background: rgba(40, 167, 69, 0.15);
+  color: #28a745;
+  font-weight: 600;
+}
+
+.signature-preview {
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.signature-preview img {
+  max-width: 100px;
+  max-height: 70px;
+  border-radius: 4px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+}
+
+.btn-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: #DA261C;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-edit:hover {
+  background: #c82333;
+  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.2);
+}
+
+.btn-edit i {
+  font-size: 0.9rem;
+}
+
+/* Signature actions */
+.signature-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-delete {
+  padding: 0.5rem 0.7rem;
+  border-radius: 4px;
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #eee;
+  color: #c82333;
+  border-color: #c82333;
+}
+
+.no-signature {
+  color: #888;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  background: #fcfcfc;
+  border: 1px dashed #eee;
+}
+
+/* ============================================
+   GST BREAKDOWN
+   ============================================ */
+
+.gst-breakdown {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.gst-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: center;
+  flex: 1;
+}
+
+.gst-item label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+}
+
+/* ============================================
+   PREVIEW BOX
+   ============================================ */
+
+.preview-box {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.85rem;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.preview-box strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #212529;
+}
+
+.preview-box code {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  display: block;
+  color: #DA261C;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+}
+
+/* ============================================
+   FORM PANEL (Add/Edit Forms)
+   ============================================ */
+
+.form-panel {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.form-panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ============================================
+   FORM ACTIONS & BUTTONS
+   ============================================ */
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #DA261C;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #c82333;
+  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.25);
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e5e5;
+  border-color: #ccc;
+}
+
+/* ============================================
+   FORM FOOTER
+   ============================================ */
+
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: 3px solid #DA261C;
+  border-radius: 0 0 8px 8px;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+}
+
+.action-info {
+  font-size: 0.9rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-sidebar {
+    flex: none;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-menu-btn {
+    justify-content: center;
+    padding: 0.6rem;
+  }
+
+  .nav-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 992px) {
+  .settings-layout {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .settings-sidebar {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    position: static;
+    max-height: none;
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .nav-menu-item {
+    flex: 0 1 calc(25% - 0.2rem);
+    min-width: 120px;
+  }
+
+  .nav-label {
+    display: inline;
+  }
+
+  .nav-menu-btn {
+    padding: 0.5rem 0.6rem;
+    justify-content: flex-start;
+  }
+
+  .nav-menu-btn.active {
+    padding-left: calc(0.6rem - 2px);
+  }
+
+  .settings-main {
+    max-height: none;
+  }
+
+  .gst-breakdown {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 0.5rem;
+  }
+
+  .settings-main {
+    padding: 0.75rem;
+    max-height: none;
+  }
+
+  .nav-menu-item {
+    flex: 1 1 calc(33.333% - 0.2rem);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-title {
+    font-size: 1rem;
+  }
+
+  .signature-item {
+    flex-direction: column;
+  }
+
+  .signature-header {
+    flex-direction: column;
+  }
+
+  .btn-edit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-footer {
+    margin: 1.5rem -0.75rem -0.75rem -0.75rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .nav-menu-item {
+    flex: 1 1 calc(50% - 0.2rem);
+  }
+
+  .form-title {
+    font-size: 0.95rem;
+    gap: 0.4rem;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+  }
+
+  .form-control {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .btn {
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .action-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
+  }
+
+  .action-info {
+    font-size: 0.8rem;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.me-1 {
+  margin-right: 0.5rem;
+}
+
+.bi {
+  display: inline-block;
+}
+
+.d-flex {
+  display: flex;
+}
+
+input::placeholder {
+  color: #adb5bd;
+}

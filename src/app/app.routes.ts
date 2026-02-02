@@ -79,6 +79,8 @@ import { AccountDashboardComponent } from './components/account/account-dashboar
 import { CaseAccountListComponent } from './components/account/case-account-list/case-account-list.component';
 import { CaseAccountDetailComponent } from './components/account/case-account-detail/case-account-detail.component';
 import { InvoicePreviewComponent } from './components/account/invoice-preview/invoice-preview.component';
+import { SettingsComponent } from './components/settings/settings.component';
+
 
 
 export const routes: Routes = [
@@ -166,6 +168,7 @@ export const routes: Routes = [
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
             { path: 'sample/prepration', component: CuttingSamplesComponent },
             { path: 'sample/cutting', component: CuttingSamplesComponent },
+            { path: 'sample/cutting/raw-format', loadComponent: () => import('./components/sample-prepration/sample-cutting-raw-format/sample-cutting-raw-format.component').then(m => m.SampleCuttingRawFormatComponent) },
             { path: 'sample/cutting/create/:id', component: CuttingSampleFormComponent },
             { path: 'sample/cutting/edit/:id', component: CuttingSampleFormComponent },
             { path: 'sample/cutting/details/:id', component: CuttingSampleFormComponent },
@@ -178,6 +181,7 @@ export const routes: Routes = [
             { path: 'sample/inward/create', component: SampleInwardFormComponent },
             { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent },
             { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'settings', component: SettingsComponent },
             { path: 'config', component: ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent },
             { path: 'menu-permission', component: MenuPermissionComponent },

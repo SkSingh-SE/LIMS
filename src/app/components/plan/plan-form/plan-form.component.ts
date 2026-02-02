@@ -373,12 +373,12 @@ export class PlanFormComponent implements OnInit {
 
     if (remainingGeneral === 0 && remainingChemical === 0) {
       // Optional: track deleted plan id if persisted
-    const planId = testPlanGroup.get('id')?.value;
-    if (planId && planId > 0) {
-      this.deletedPlanIds?.push(planId);
-    }
+      const planId = testPlanGroup.get('id')?.value;
+      if (planId && planId > 0) {
+        this.deletedPlanIds?.push(planId);
+      }
 
-    testPlansArray.removeAt(planIndex);
+      testPlansArray.removeAt(planIndex);
     } else {
       // Clear the specific error if present
       const currentErrors = testPlanGroup.errors;
@@ -453,7 +453,7 @@ export class PlanFormComponent implements OnInit {
           sampleTestPlans: (data.sampleTestPlans || []).map((tp: any) => ({
             sampleID: tp.sampleID,
             sampleNo: tp.sampleNo,
-            id:tp.id,
+            id: tp.id,
             generalTests: (tp.generalTests || []).map((gt: any) => ({
               id: gt.id,
               sampleNo: gt.sampleNo,
@@ -473,6 +473,7 @@ export class PlanFormComponent implements OnInit {
               }))
             })),
             chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
+              id: ct.id,
               sampleNo: ct.sampleNo,
               reportNo: ct.reportNo,
               ulrNo: ct.ulrNo,
@@ -691,7 +692,7 @@ export class PlanFormComponent implements OnInit {
                 }
               } else {
                 this.filteredTestMethods[key] = [];
-                this.toastService.show('No suggested chemical test methods found.', 'info');
+                this.toastService.show('No suggested chemical test methods found for selected specifications.', 'info');
               }
             },
             error: (err) => {
@@ -702,36 +703,81 @@ export class PlanFormComponent implements OnInit {
       }
 
       // Fetch chemical elements
-      this.materialSpecificationService.getChemicalElementsBySpecifications(spec1 || 0, spec2 || 0)
+      this.materialSpecificationService
+        .getChemicalElementsBySpecifications(spec1 || 0, spec2 || 0)
         .subscribe({
           next: (elements: any[]) => {
             const elementsArray = section.get('elements') as FormArray;
-            elementsArray.clear();
 
             if (!elements || elements.length === 0) {
-              this.toastService.show('No chemical elements found for selected specifications.', 'info');
+              this.toastService.show(
+                'No chemical elements found for selected specifications.',
+                'info'
+              );
               return;
             }
 
-            elements.forEach((el) => {
-              elementsArray.push(this.fb.group({
-                parameterID: [el.parameterID || el.id || 0],
-                specificationLineID: [el.specificationLineID || 0],
-                parameterName: [el.parameterName || ''],
-                minValue: [el.minValue ?? null],
-                maxValue: [el.maxValue ?? null],
-                parameterUnitID: [el.parameterUnitID || 0],
-                parameterUnit: [el.parameterUnit || ''],
-                selected: [!!el.isCommon || false]
-              }));
+            const existingMap = new Map<number, AbstractControl>();
+
+            elementsArray.controls.forEach(ctrl => {
+              const id = ctrl.get('parameterID')?.value;
+              existingMap.set(id, ctrl);
             });
 
+            const nextControls: AbstractControl[] = [];
+
+            elements.forEach(el => {
+              const id = el.parameterID || el.id || 0;
+              const existing = existingMap.get(id);
+
+              if (existing) {
+                const patch: any = {
+                  specificationLineID: el.specificationLineID || 0,
+                  parameterName: el.parameterName || '',
+                  minValue: el.minValue ?? null,
+                  maxValue: el.maxValue ?? null,
+                  parameterUnitID: el.parameterUnitID || 0,
+                  parameterUnit: el.parameterUnit || '',
+                };
+
+                if (el.isCommon !== undefined && el.isCommon !== null) {
+                  patch.selected = el.isCommon ?? false;
+                }
+
+                existing.patchValue(patch);
+                nextControls.push(existing);
+              } else {
+                nextControls.push(
+                  this.fb.group({
+                    parameterID: [id],
+                    specificationLineID: [el.specificationLineID || 0],
+                    parameterName: [el.parameterName || ''],
+                    minValue: [el.minValue ?? null],
+                    maxValue: [el.maxValue ?? null],
+                    parameterUnitID: [el.parameterUnitID || 0],
+                    parameterUnit: [el.parameterUnit || ''],
+                    selected: [false],
+                  })
+                );
+              }
+            });
+
+            // Replace FormArray contents safely (no clear)
+            while (elementsArray.length) {
+              elementsArray.removeAt(0);
+            }
+            nextControls.forEach(ctrl => elementsArray.push(ctrl));
           },
-          error: (err) => {
+
+          error: err => {
             console.error('[PlanForm] Error fetching chemical elements', err);
-            this.toastService.show('Error fetching chemical elements. Please try again.', 'error');
-          }
+            this.toastService.show(
+              'Error fetching chemical elements. Please try again.',
+              'error'
+            );
+          },
         });
+
     }
   }
 
@@ -798,7 +844,7 @@ export class PlanFormComponent implements OnInit {
   onGeneralTestStandardSelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
     const methods = this.getMethodRows(sampleIndex, planIndex);
     if (!methods) return;
-debugger;
+    debugger;
     const methodCtrl = methods.at(methodIndex);
     if (!methodCtrl) return;
     methodCtrl.patchValue({ standardID: item?.id ?? null });
@@ -951,26 +997,26 @@ debugger;
         testPlans: this.fb.array(testPlansArr)
       }));
 
-    setTimeout(() => {
-      this.samples.controls.forEach((sample, sampleIdx) => {
-        const plans = sample.get('testPlans') as FormArray;
+      setTimeout(() => {
+        this.samples.controls.forEach((sample, sampleIdx) => {
+          const plans = sample.get('testPlans') as FormArray;
 
-        plans.controls.forEach((plan, planIdx) => {
-          const generalTests = plan.get('generalTests') as FormArray;
+          plans.controls.forEach((plan, planIdx) => {
+            const generalTests = plan.get('generalTests') as FormArray;
 
-          generalTests.controls.forEach((gt) => {
-            const methods = gt.get('methods') as FormArray;
+            generalTests.controls.forEach((gt) => {
+              const methods = gt.get('methods') as FormArray;
 
-            methods.controls.forEach((method, methodIdx) => {
-              const testMethodID = method.get('testMethodID')?.value;
-              this.loadTestCasesForRow(sampleIdx, planIdx, methodIdx, testMethodID);
+              methods.controls.forEach((method, methodIdx) => {
+                const testMethodID = method.get('testMethodID')?.value;
+                this.loadTestCasesForRow(sampleIdx, planIdx, methodIdx, testMethodID);
+              });
             });
           });
         });
       });
     });
-  });
-}
+  }
   private loadTestCasesForRow(
     sampleIdx: number,
     planIdx: number,
@@ -990,6 +1036,7 @@ debugger;
       }
     });
   }
+
 
   // ────────────── Submission ──────────────
   onSave(): void {

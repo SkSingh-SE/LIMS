@@ -30,7 +30,7 @@ export interface SampleDto {
 }
 
 export interface CuttingChargePayload {
-  id:number;
+  id: number;
   inwardId: number;
   samples: Array<{
     id: string;
@@ -120,9 +120,9 @@ export class CuttingSampleFormComponent implements OnInit {
 
   // ────────────── Mode Detection ──────────────
   private checkEditMode(): void {
-    let id:number = 0;
+    let id: number = 0;
     this.route.paramMap.subscribe(params => {
-        id = Number(params.get('id'));
+      id = Number(params.get('id'));
     });
 
     const state = history.state as { mode?: string };
@@ -132,7 +132,7 @@ export class CuttingSampleFormComponent implements OnInit {
     } else if (state?.mode === 'edit') {
       this.isEditMode = true;
       this.cuttingChargeId = id;
-    }else if (state?.mode === 'create') {
+    } else if (state?.mode === 'create') {
       this.selectedInwardId = id;
     }
 
@@ -162,37 +162,37 @@ export class CuttingSampleFormComponent implements OnInit {
 
   private populateFormWithData(data: CuttingChargeResponse): void {
     // Load inward details first
-   // Populate samples
-        data.samples.forEach(sampleData => {
-          const sampleGroup = this.fb.group({
-            id: [sampleData.id],
-            cuttingChargeHeaderID: [sampleData.cuttingChargeHeaderID],
-            sampleID: [sampleData.sampleID],
-            sampleNo: [sampleData.sampleNo],
-            details: [sampleData.id],
-            quantity: [sampleData.id],
-            metalClassificationID: [sampleData.metalClassificationID, Validators.required],
-            cuttingChargeDetails: this.fb.array([])
-          });
+    // Populate samples
+    data.samples.forEach(sampleData => {
+      const sampleGroup = this.fb.group({
+        id: [sampleData.id],
+        cuttingChargeHeaderID: [sampleData.cuttingChargeHeaderID],
+        sampleID: [sampleData.sampleID],
+        sampleNo: [sampleData.sampleNo],
+        details: [sampleData.id],
+        quantity: [sampleData.id],
+        metalClassificationID: [sampleData.metalClassificationID, Validators.required],
+        cuttingChargeDetails: this.fb.array([])
+      });
 
-          // Populate cutting details
-          sampleData.cuttingChargeDetails.forEach(cuttingData => {
-            const cuttingGroup = this.fb.group({
-              id: [cuttingData.id],
-              cuttingChargeSampleID: [cuttingData.cuttingChargeSampleID],
-              cuttingID: [cuttingData.cuttingID],
-              cuttingType: [cuttingData.cuttingType],
-              unitType: [cuttingData.unitType],
-              rate: [{ value: cuttingData.rate, disabled: this.isViewMode }],
-              quantity: [{ value: cuttingData.quantity, disabled: this.isViewMode }],
-              total: [{ value: cuttingData.total, disabled: true }]
-            });
-
-            (sampleGroup.get('cuttingChargeDetails') as FormArray).push(cuttingGroup);
-          });
-
-          this.samplesFA.push(sampleGroup);
+      // Populate cutting details
+      sampleData.cuttingChargeDetails.forEach(cuttingData => {
+        const cuttingGroup = this.fb.group({
+          id: [cuttingData.id],
+          cuttingChargeSampleID: [cuttingData.cuttingChargeSampleID],
+          cuttingID: [cuttingData.cuttingID],
+          cuttingType: [cuttingData.cuttingType],
+          unitType: [cuttingData.unitType],
+          rate: [{ value: cuttingData.rate, disabled: this.isViewMode }],
+          quantity: [{ value: cuttingData.quantity, disabled: this.isViewMode }],
+          total: [{ value: cuttingData.total, disabled: true }]
         });
+
+        (sampleGroup.get('cuttingChargeDetails') as FormArray).push(cuttingGroup);
+      });
+
+      this.samplesFA.push(sampleGroup);
+    });
   }
 
   // ────────────── Form Initialization ──────────────
@@ -316,7 +316,7 @@ export class CuttingSampleFormComponent implements OnInit {
     this.selectedInwardId = item.id;
     this.selectedInwardItem = item;
 
-    if(this.isEditMode || this.isViewMode) {
+    if (this.isEditMode || this.isViewMode) {
       return; // Do not reload samples in edit/view mode
     }
     this.inwardService.getSampleInwardById(item.id).subscribe({
@@ -498,5 +498,12 @@ export class CuttingSampleFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/sample/cutting']);
+  }
+
+  printSampleCuttingRaw(): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/sample/cutting/raw-format'])
+    );
+    window.open(url, '_blank');
   }
 }

@@ -96,3 +96,18 @@
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Custom Toggle Switch for Permissions */
+.form-check-input {
+    cursor: pointer;
+}
+.form-check-input:checked {
+    background-color: #198754; /* Success green for assigned */
+    border-color: #198754;
+}
+
+/* Left side (Available) overrides if needed */
+.card-header.bg-gradient-primary + .card-body .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}

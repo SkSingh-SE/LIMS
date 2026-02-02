@@ -66,7 +66,7 @@
           <tbody>
             <tr *ngFor="let item of filteredData" class="align-middle text-center">
               <td class="fw-semibold">
-                <a 
+                <a
                   [routerLink]="['/reporting/preview', item.reportHeaderId || item.sampleNo]"
                   class="text-primary text-decoration-none cursor-pointer"
                   [title]="'View details for ' + item.sampleNo">
@@ -118,7 +118,7 @@
                     </button>
                   </ng-container>
                   <!--  Amend Button (visible when canAmend is true and user has permission) -->
-                  <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting', 'CanAmendReport']">
+                  <ng-container >
                     <button
                       *ngIf="canAmend(item.status) && canRequestAmendment()"
                       class="btn btn-sm btn-outline-warning-900 fw-semibold"

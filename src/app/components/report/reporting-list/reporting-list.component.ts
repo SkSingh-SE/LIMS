@@ -265,6 +265,7 @@ export class ReportingListComponent implements OnInit {
    * Check if user can request amendments
    */
   canRequestAmendment(): boolean {
+    return true;
     return this.roleHelper.canRequestAmendment();
   }
 
@@ -389,6 +390,7 @@ export class ReportingListComponent implements OnInit {
   }
 
   canAmend(status: string): boolean {
+    return true;
     return this.statusHelper.canAmendReport(status);
   }
 

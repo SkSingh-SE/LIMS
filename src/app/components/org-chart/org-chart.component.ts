@@ -19,7 +19,7 @@ export interface OrgNode {
 
 @Component({
   selector: 'app-org-chart',
-  standalone: true,
+
   imports: [CommonModule, RouterLink],
   templateUrl: './org-chart.component.html',
   styleUrls: ['./org-chart.component.css']

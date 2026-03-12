@@ -1,0 +1,13 @@
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}

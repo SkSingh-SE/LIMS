@@ -1,0 +1,47 @@
+.container-width {
+    width: var(--print-content-width);
+}
+
+.skill-matrix-table {
+    font-size: 13px;
+    border-collapse: collapse;
+}
+
+.skill-matrix-table th {
+    background-color: #f8f9fa;
+    vertical-align: middle;
+    padding: 4px !important;
+}
+
+.skill-matrix-table td {
+    vertical-align: middle;
+    padding: 6px !important;
+}
+
+.vertical-text {
+    height: 120px;
+    white-space: nowrap;
+    width: 30px;
+    position: relative;
+}
+
+.vertical-text-content {
+    transform: rotate(-90deg);
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform-origin: left bottom;
+    width: 100px;
+    text-align: left;
+}
+
+.legend-section {
+    font-size: 12px;
+}
+
+@media print {
+    .print-frame {
+        width: var(--print-content-width) !important;
+        margin: 0 auto !important;
+    }
+}

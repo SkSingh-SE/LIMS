@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-35: Measurement of Uncertainty Records'"
+    [addButtonLabel]="'Add Record'"
+    [addRoute]="'/measurement-uncertainty/create'"
+    [baseRoute]="'/measurement-uncertainty'"
+    [columns]="columns"
+    [data]="listData"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)"
+  ></app-nabl-register-table>
+</div>

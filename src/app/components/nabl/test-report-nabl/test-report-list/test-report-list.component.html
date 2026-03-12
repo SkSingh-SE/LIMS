@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-39: Test Report'"
+    [addButtonLabel]="'Add Report'"
+    [addRoute]="'/test-report/create'"
+    [baseRoute]="'/test-report'"
+    [columns]="columns"
+    [data]="listData"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)"
+  ></app-nabl-register-table>
+</div>

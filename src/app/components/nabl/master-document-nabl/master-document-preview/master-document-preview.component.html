@@ -1,0 +1,71 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading()" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="headerInfo.formatNo"
+        [mainTitle]="'MASTER LIST OF DOCUMENTS'"
+        [docNo]="headerInfo.docNo"
+        [issueNo]="headerInfo.issueNo"
+        [issueDate]="headerInfo.issueDate"
+        [revNo]="headerInfo.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <table class="table table-bordered border-dark text-center align-middle">
+        <thead class="bg-light fw-bold">
+          <tr>
+            <th style="width: 60px">Sr. No.</th>
+            <th>Document Name</th>
+            <th>Controlled Document No.</th>
+            <th style="width: 120px">Issue No. / Date</th>
+            <th style="width: 130px">Rev. No. / Date</th>
+            <th>Copy Holder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data">
+            <td>{{ item.srNo }}</td>
+            <td class="text-start">{{ item.documentName }}</td>
+            <td>{{ item.documentNo }}</td>
+            <td>{{ item.issueNo }} / {{ item.issueDate | date: "dd-MM-yy" }}</td>
+            <td>{{ item.revNo }} / {{ item.revDate | date: "dd-MM-yy" }}</td>
+            <td>{{ item.copyHolder }}</td>
+          </tr>
+          <!-- Empty rows if needed -->
+          <tr *ngIf="data.length < 5">
+            <td colspan="6" style="height: 300px"></td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'General Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

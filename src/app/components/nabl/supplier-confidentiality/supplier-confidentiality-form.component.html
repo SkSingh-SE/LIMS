@@ -1,0 +1,151 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="agreementForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="agreementForm.disabled">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Document Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-2">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Supplier Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('supplier')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['supplier'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Supplier Information</span>
+          </div>
+          <div *ngIf="openSections['supplier']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Select Supplier <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="supplierId" (change)="onSupplierChange($event)">
+                  <option value="null" disabled>Select a supplier</option>
+                  <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Supplier Name</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="supplierName" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="contactPerson" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Address</label>
+                <textarea class="form-control bg-light border-dashed" formControlName="address" rows="1" readonly></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Agreement Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('agreement')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['agreement'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Agreement Terms & Content</span>
+          </div>
+          <div *ngIf="openSections['agreement']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Agreement Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="agreementDate" [readonly]="isViewMode">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Valid Until <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="validUntil" [readonly]="isViewMode">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Status <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="status">
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="terminated">Terminated</option>
+                </select>
+              </div>
+              <div class="row mt-3">
+                <label class="form-label">Agreement Terms / Remarks</label>
+                <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Type agreement terms here..." [readOnly]="isViewMode"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Review & Approval -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Review & Approval</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small">Reviewed By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" formControlName="reviewedBy" [readonly]="isViewMode">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small">Reviewed Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" formControlName="reviewedDate" [readonly]="isViewMode">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small">Approved By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" formControlName="approvedBy" [readonly]="isViewMode">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small">Approval Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" formControlName="approvalDate" [readonly]="isViewMode">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="agreementForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

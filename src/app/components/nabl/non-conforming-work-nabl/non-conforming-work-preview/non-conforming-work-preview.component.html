@@ -1,0 +1,82 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'NON-CONFORMING WORK'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Info -->
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 30%">Date / Month & Year</td>
+              <td>{{ data.dateMonthYear }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Content Sections -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Non-Conformance Detail</div>
+        <div class="ql-editor p-3" [innerHTML]="data.ncDetail"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Root Cause Analysis</div>
+        <div class="ql-editor p-3" [innerHTML]="data.rootCauseAnalysis"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Corrective Action</div>
+        <div class="ql-editor p-3" [innerHTML]="data.correctiveAction"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 30%">NC Closer Date</td>
+              <td>{{ data.closerDate | date: "dd.MM.yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'TD/QM'"
+        [preparedByRole]="'Signature Of TD/QM'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

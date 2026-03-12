@@ -14076,7 +14076,7 @@ td.fc-header-center {
 
 .ql-editor {
   border-radius: 12px;
-  min-height: 600px;
+  min-height: 50px;
 }
 
 .ql-picker-label, .ql-formats {

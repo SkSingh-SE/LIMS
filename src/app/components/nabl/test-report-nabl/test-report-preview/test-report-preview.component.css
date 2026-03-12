@@ -1,0 +1,27 @@
+@media print {
+  .d-print-none {
+    display: none !important;
+  }
+  .fs-7 {
+    font-size: 0.8rem;
+  }
+  .table-bordered > :not(caption) > * > * {
+    border-width: 1px;
+    border-color: #000;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+.fs-7 {
+  font-size: 0.8rem;
+}

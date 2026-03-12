@@ -1,0 +1,152 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" [title]="'Supplier Evaluation Record (F-26)'" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="SUPPLIER EVALUATION RECORD"
+        [formatNo]="record.formatNo || 'F-26'"
+        [issueNo]="record.issueNo || '01'"
+        [revNo]="record.revNo || '00'"
+        [issueDate]="record.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="preview-body p-1">
+        <!-- Section I: Supplier Info -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="4" class="py-2 px-3 fw-bold">
+                <i class="bi bi-info-circle me-2"></i>
+                I. SUPPLIER & DOCUMENT INFORMATION
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Supplier Name</td>
+              <td style="width: 25%">{{ record.supplierName }}</td>
+              <td class="bg-light fw-bold small" style="width: 25%">Document No.</td>
+              <td style="width: 25%">{{ record.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Contact Person</td>
+              <td>{{ record.contactPerson || "--" }}</td>
+              <td class="bg-light fw-bold small">Evaluation Date</td>
+              <td>{{ record.date | date: "dd/MM/yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Materials / Services</td>
+              <td colspan="3">{{ record.materialsSupplied }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Evaluation Period</td>
+              <td colspan="3">
+                {{ record.evaluatingPeriodFrom | date: "dd/MM/yyyy" }} to {{ record.evaluatingPeriodTo | date: "dd/MM/yyyy" }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section II: Evaluation Assessment -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="5" class="py-2 px-3 fw-bold">
+                <i class="bi bi-list-check me-2"></i>
+                II. EVALUATION ASSESSMENT
+              </th>
+            </tr>
+            <tr class="bg-light text-center small fw-bold">
+              <th style="width: 40px">SN</th>
+              <th>Evaluation Parameter</th>
+              <th style="width: 100px">Max Score</th>
+              <th style="width: 100px">Obtained</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let item of record.criteria; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ item.parameter }}</td>
+              <td class="text-center">{{ item.maxScore }}</td>
+              <td class="text-center fw-bold">{{ item.scoreObtained }}</td>
+              <td>{{ item.remarks }}</td>
+            </tr>
+            <tr class="fw-bold bg-light">
+              <td colspan="2" class="text-end pe-3">TOTAL SCORE</td>
+              <td class="text-center">{{ record.maxPossibleScore }}</td>
+              <td class="text-center text-primary">{{ record.totalScore }}</td>
+              <td>
+                Performance:
+                <span class="text-primary">{{ record.percentageScore }}%</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section III: Conclusion -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="2" class="py-2 px-3 fw-bold">
+                <i class="bi bi-check2-circle me-2"></i>
+                III. OVERALL CONCLUSION
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Recommendation</td>
+              <td
+                style="width: 75%"
+                class="fw-bold fs-6"
+                [ngClass]="{
+                  'text-success': record.recommendation === 'Approved',
+                  'text-danger': record.recommendation === 'Rejected',
+                  'text-warning': record.recommendation === 'Conditionally Approved',
+                }"
+              >
+                {{ record.recommendation | uppercase }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section IV: Remarks -->
+        <div class="border border-dark mb-0">
+          <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark">
+            <i class="bi bi-pencil-square me-2"></i>
+            IV. GENERAL REMARKS
+          </div>
+          <div class="p-3 ql-editor small" [innerHTML]="record.generalRemarks || 'No additional remarks provided.'"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record.evaluatedBy || ''"
+        [reviewedApprovedByName]="record.approvedBy || ''"
+        issuedByName="Quality Manager"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

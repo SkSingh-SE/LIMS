@@ -1,0 +1,146 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'TEST REPORT'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Report Header Info -->
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Report No. (ULR)</td>
+              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Date of Issue</td>
+              <td class="border-0">{{ data.dateOfIssue | date: "dd.MM.yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Customer & Sample Details -->
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="border-0 border-end-2 w-50" valign="top">
+                <div class="fw-bold mb-1 text-decoration-underline">ISSUED TO:</div>
+                <div class="fw-bold fs-6">{{ data.customerName }}</div>
+                <div class="small">{{ data.customerAddress }}</div>
+                <div class="small mt-2" *ngIf="data.customerReference">
+                  <span class="fw-bold">Customer Ref:</span>
+                  {{ data.customerReference }}
+                </div>
+              </td>
+              <td class="border-0 w-50 p-0" valign="top">
+                <table class="table table-borderless table-sm mb-0 small">
+                  <tr>
+                    <td class="label-cell border-0 border-end border-bottom" style="width: 40%">Sample Description</td>
+                    <td class="border-0 border-bottom">{{ data.sampleDescription }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell border-0 border-end border-bottom">Lab Sample ID</td>
+                    <td class="border-0 border-bottom">{{ data.sampleId }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell border-0 border-end border-bottom">Qty / Condition</td>
+                    <td class="border-0 border-bottom">{{ data.quantity || "-" }} / {{ data.conditionOnReceipt }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell border-0 border-end border-bottom">Date of Receipt</td>
+                    <td class="border-0 border-bottom">{{ data.dateOfReceipt | date: "dd.MM.yyyy" }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell border-0 border-end border-bottom">Date(s) of Testing</td>
+                    <td class="border-0 border-bottom">{{ data.dateOfTesting }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell border-0 border-end">Env. Conditions</td>
+                    <td class="border-0">{{ data.environmentalConditions || "Ambient" }}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Test Results -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">TEST RESULTS</div>
+        <table class="table table-bordered mb-0 align-middle small">
+          <thead class="table-light text-center">
+            <tr>
+              <th class="border-dark" style="width: 50px">S.N.</th>
+              <th class="border-dark">Test Parameter(s)</th>
+              <th class="border-dark">Test Method / Standard</th>
+              <th class="border-dark">Requirement / Specified Limit</th>
+              <th class="border-dark">Observed Value / Result</th>
+              <th class="border-dark" style="width: 80px">Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let res of data.results; let i = index" class="text-center">
+              <td class="border-dark">{{ i + 1 }}</td>
+              <td class="border-dark text-start">{{ res.testParameter }}</td>
+              <td class="border-dark">{{ res.testMethod }}</td>
+              <td class="border-dark">{{ res.requirement || "-" }}</td>
+              <td class="border-dark fw-bold">{{ res.result }}</td>
+              <td class="border-dark">{{ res.unit }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Remarks / Notes -->
+      <div class="section mb-3 border-2 border-dark" *ngIf="data.remarks">
+        <div class="section-title border-bottom-2">Remarks / Notes</div>
+        <div class="section-content p-3 ql-editor small">
+          <div [innerHTML]="data.remarks"></div>
+          <ol class="mt-3 ps-3 text-muted" style="font-size: 0.75rem">
+            <li>The results relate only to the sample(s) tested.</li>
+            <li>This Test Report shall not be reproduced except in full, without written approval of the Laboratory.</li>
+            <li>The sample will be retained for 30 days from the date of issue of test report, unless specified otherwise.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="text-center fw-bold mt-4 small">--- End of Report ---</div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

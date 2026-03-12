@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="F-28: List of Test Methods & External Documents"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/nabl/test-method"
+  addRoute="/nabl/test-method/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

@@ -1,0 +1,34 @@
+<div [ngClass]="'print-frame orientation-' + orientation">
+  <table class="print-table">
+    <thead>
+      <tr>
+        <td>
+          <div #headerContainer class="header-container">
+            <ng-content select="[header]"></ng-content>
+          </div>
+        </td>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td>
+          <div class="body-block">
+            <ng-content select="[body]"></ng-content>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+
+    <!-- tfoot after tbody: correct HTML spec order; display:table-footer-group repeats on every printed page naturally without position:fixed -->
+    <tfoot>
+      <tr>
+        <td>
+          <div #footerContainer class="footer-container">
+            <ng-content select="[footer]"></ng-content>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

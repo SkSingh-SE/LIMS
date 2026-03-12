@@ -16,7 +16,7 @@ interface TrainingRecord {
 
 @Component({
     selector: 'app-employee-job-training',
-    standalone: true,
+
     imports: [CommonModule, ReactiveFormsModule, FormsModule],
     templateUrl: './employee-job-training.component.html',
     styleUrl: './employee-job-training.component.css'

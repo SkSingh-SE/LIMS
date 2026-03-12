@@ -1,0 +1,49 @@
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+.agreement-content {
+    padding: 20px 40px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    text-align: justify;
+}
+
+.section-title {
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #000;
+}
+
+.signature-line {
+    border-top: 1px solid #000;
+    width: 200px;
+    margin-top: 50px;
+    margin-bottom: 5px;
+}
+
+@media print {
+    .print-frame {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        width: var(--print-content-width) !important;
+        max-width: var(--print-content-width) !important;
+    }
+
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

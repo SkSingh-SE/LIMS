@@ -1,0 +1,13 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    title="Master List of Reference Materials (F-17)"
+    [columns]="columns"
+    [data]="items"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [addRoute]="'/reference-material/create'"
+    [baseRoute]="'/reference-material'"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)">
+  </app-nabl-register-table>
+</div>

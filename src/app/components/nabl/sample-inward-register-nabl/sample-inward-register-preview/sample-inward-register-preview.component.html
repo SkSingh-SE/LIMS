@@ -1,0 +1,87 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center" *ngIf="data">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [issueNo]="data.issueNo"
+        [revNo]="data.revNo"
+        [title]="'SAMPLE INWARD REGISTER (RECEIPT SECTION)'"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="record-content">
+        <!-- Register Table -->
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered border-dark align-middle small text-center">
+            <thead class="bg-light fw-bold">
+              <tr>
+                <th style="width: 40px">Sr. No.</th>
+                <th style="width: 100px">Receipt Date</th>
+                <th>Sample Description</th>
+                <th style="width: 80px">Qty / Mass</th>
+                <th>Customer Name & Address</th>
+                <th style="width: 120px">Test Request Ref (F-27)</th>
+                <th style="width: 100px">Target Date of Completion</th>
+                <th style="width: 100px">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of data.entries">
+                <td>{{ entry.srNo }}</td>
+                <td>{{ entry.receiptDate | date: "dd-MM-yyyy" }}</td>
+                <td class="text-start">{{ entry.sampleDescription }}</td>
+                <td>{{ entry.quantity }}</td>
+                <td class="text-start">{{ entry.customerName }}</td>
+                <td class="fw-bold">{{ entry.testRequestRef }}</td>
+                <td>{{ entry.targetCompletionDate | date: "dd-MM-yyyy" }}</td>
+                <td>{{ entry.remarks }}</td>
+              </tr>
+              <!-- Empty rows for visual consistency if few entries -->
+              <tr *ngFor="let i of [].constructor(Math.max(0, 10 - data.entries.length)); let idx = index">
+                <td>{{ data.entries.length + idx + 1 }}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row mt-5 pt-4">
+          <div class="col-6">
+            <div class="border-top border-dark pt-2 text-center signature-block-col">
+              <p class="m-0 fw-bold small">{{ data.preparedBy }}</p>
+              <p class="m-0 extra-small text-muted">Prepared By (Receptionist)</p>
+            </div>
+          </div>
+          <div class="col-6 text-end d-flex justify-content-end">
+            <div class="border-top border-dark pt-2 text-center signature-block-col">
+              <p class="m-0 fw-bold small">{{ data.reviewedBy }}</p>
+              <p class="m-0 extra-small text-muted">Reviewed By (Quality Manager)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

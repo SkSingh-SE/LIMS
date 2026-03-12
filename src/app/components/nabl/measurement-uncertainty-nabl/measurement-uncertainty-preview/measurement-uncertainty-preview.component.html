@@ -1,0 +1,172 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'MEASUREMENT OF UNCERTAINTY RECORDS'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">I. Basic Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Document No.</td>
+              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Date</td>
+              <td class="border-0">{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Test Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">II. Test Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Test Parameter</td>
+              <td class="border-0">{{ data.testParameter }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Test Method</td>
+              <td class="border-0 border-top-2">{{ data.testMethod }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Equipment Used</td>
+              <td class="border-0 border-top-2">{{ data.equipmentUsed }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Sample Description</td>
+              <td class="border-0 border-top-2">{{ data.sampleDescription }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Measurement Readings -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">III. Measurement Readings</div>
+        <table class="table table-bordered mb-0">
+          <thead class="table-light text-center">
+            <tr>
+              <th class="border-dark" style="width: 80px">Sr. No.</th>
+              <th class="border-dark">Measured Value</th>
+              <th class="border-dark">Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reading of data.readings; let i = index" class="text-center">
+              <td class="border-dark">{{ i + 1 }}</td>
+              <td class="border-dark">{{ reading.measuredValue }}</td>
+              <td class="border-dark">{{ reading.unit }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Uncertainty Budget -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">IV. Uncertainty Budget</div>
+        <table class="table table-bordered mb-0">
+          <thead class="table-light text-center small">
+            <tr>
+              <th class="border-dark">Source of Uncertainty</th>
+              <th class="border-dark">Type</th>
+              <th class="border-dark">Distribution</th>
+              <th class="border-dark">Std. Uncertainty (u)</th>
+              <th class="border-dark">Sensitivity (c)</th>
+              <th class="border-dark">Contribution (u×c)²</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let src of data.uncertaintySources" class="text-center small">
+              <td class="border-dark text-start">{{ src.source }}</td>
+              <td class="border-dark">{{ src.type }}</td>
+              <td class="border-dark">{{ src.distribution }}</td>
+              <td class="border-dark">{{ src.standardUncertainty }}</td>
+              <td class="border-dark">{{ src.sensitivityCoefficient }}</td>
+              <td class="border-dark">{{ src.contribution }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Statistical Results -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">V. Statistical Analysis Results</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Mean (x̄)</td>
+              <td class="border-0">{{ data.mean }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Combined Uncertainty (uc)</td>
+              <td class="border-0 fw-bold">{{ data.combinedUncertainty }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Standard Deviation (s)</td>
+              <td class="border-0 border-top-2">{{ data.standardDeviation }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Coverage Factor (k)</td>
+              <td class="border-0 border-top-2">{{ data.coverageFactor }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Type A Uncertainty</td>
+              <td class="border-0 border-top-2">{{ data.typeAUncertainty }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Confidence Level</td>
+              <td class="border-0 border-top-2">{{ data.confidenceLevel }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Type B Uncertainty</td>
+              <td class="border-0 border-top-2">{{ data.typeBUncertainty }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2 font-weight-bold text-success">
+                Expanded Uncertainty (U)
+              </td>
+              <td class="border-0 border-top-2 fw-bold text-success fs-5">± {{ data.expandedUncertainty }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Remarks -->
+      <div class="section mb-3 border-2 border-dark" *ngIf="data.remarks">
+        <div class="section-title border-bottom-2">VI. Remarks</div>
+        <div class="section-content p-3">{{ data.remarks }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

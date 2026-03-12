@@ -1,0 +1,137 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" routerLink="/environment-monitoring">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="monitorForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Period Details</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-12">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Room / Laboratory Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="roomName"
+                  [class.is-invalid]="monitorForm.get('roomName')?.invalid && monitorForm.get('roomName')?.touched">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Month <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="month">
+                  <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Year <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="year">
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                 <!-- Spacing -->
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Temp Objective (C) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="tempObjective" placeholder="e.g. 25 +/- 2">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Humidity Objective (%) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="humidityObjective" placeholder="e.g. 45-65">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Daily Monitoring Logs -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('records')">
+            <i class="bi" [ngClass]="openSections['records'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Daily Monitoring Logs</span>
+          </div>
+          <div *ngIf="openSections['records']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm mb-0 align-middle">
+                <thead class="bg-light sticky-top">
+                  <tr>
+                    <th class="text-center" style="width: 50px;">Day</th>
+                    <th class="text-center">Temp (C)</th>
+                    <th class="text-center">Humidity (%)</th>
+                    <th class="text-center">Monitoring Time</th>
+                    <th class="text-center">Observed By</th>
+                    <th class="text-center">Verification</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="dailyRecords">
+                  <tr *ngFor="let record of dailyRecords.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold">{{ record.get('day')?.value }}</td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="temperature"></td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="humidity"></td>
+                    <td><input type="time" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="observedTime"></td>
+                    <td><input type="text" class="form-control form-control-sm border-0 bg-transparent" formControlName="observedBy"></td>
+                    <td><input type="text" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="remarks" placeholder="Verified"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: General Remarks & Deviations -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('remarks')">
+            <i class="bi" [ngClass]="openSections['remarks'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. General Remarks & Deviations</span>
+          </div>
+          <div *ngIf="openSections['remarks']" class="section-body">
+            <div class="row">
+                <label class="form-label fw-bold">Observations / Deviations / Actions Taken</label>
+                <quill-editor formControlName="generalRemarks" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter any deviations or actions taken during the month..."></quill-editor>
+              
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-dark" routerLink="/environment-monitoring">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="monitorForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

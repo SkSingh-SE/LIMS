@@ -1,0 +1,161 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-11'"
+          [mainTitle]="'ON JOB TRAINING & EVALUATION / INDUCTION TRAINING RECORD FOR FRESH EMPLOYEES'"
+          [docNo]="'DMSPL / Level-04 / Format / F-11'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Info Table -->
+      <table class="table table-bordered mb-3 border-2 border-dark info-table">
+        <tbody>
+          <tr>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Name of the Employee:-</td>
+            <td class="border-2 border-dark" colspan="3"><strong>{{ record.employeeName }}</strong></td>
+          </tr>
+          <tr>
+            <td class="label-cell border-2 border-dark">Qualification:-</td>
+            <td class="border-2 border-dark" colspan="3">{{ record.qualification }}</td>
+          </tr>
+          <tr>
+            <td class="label-cell border-2 border-dark">Date of Joining:-</td>
+            <td class="border-2 border-dark" style="width: 25%;">{{ record.dateOfJoining | date:'dd/MM/yyyy' }}</td>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Position in Organization:-</td>
+            <td class="border-2 border-dark">{{ record.position }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section: ON JOB TRAINING -->
+      <div class="section-container mb-3 border-2 border-dark">
+        <div class="section-header text-center fw-bold border-bottom-2 py-1 bg-light">ON JOB TRAINING</div>
+        <table class="table table-bordered mb-0 border-0 compact-table">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Date of Training</td>
+              <td class="border-0 border-end-2 border-bottom-2" style="width: 25%;">{{ record.trainingDate | date:'dd/MM/yyyy' }}</td>
+              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Name of Trainer</td>
+              <td class="border-0 border-bottom-2">{{ record.trainerName }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Sample Name</td>
+              <td class="border-0 border-end-2 border-bottom-2">{{ record.sampleName }}</td>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Trainer Designation</td>
+              <td class="border-0 border-bottom-2">{{ record.trainerDesignation }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Sample Ref No</td>
+              <td class="border-0 border-end-2 border-bottom-2">{{ record.sampleRefNo }}</td>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Parameter</td>
+              <td class="border-0 border-bottom-2">{{ record.parameter }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2">Test Method / SOP</td>
+              <td class="border-0 border-end-2">{{ record.testMethod }}</td>
+              <td class="border-0" colspan="2"></td>
+            </tr>
+            <tr class="signature-row">
+              <td class="label-cell border-0 border-end-2 border-top-2">Signature Trainee:-</td>
+              <td class="border-0 border-end-2 border-top-2 signature-cell"></td>
+              <td class="label-cell border-0 border-end-2 border-top-2">Signature Trainer:-</td>
+              <td class="border-0 border-top-2 signature-cell"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section: TRAINING EVALUATION -->
+      <div class="section-container mb-3 border-2 border-dark">
+        <div class="section-header text-center fw-bold border-bottom-2 py-1 bg-light">TRAINING EVALUATION</div>
+        <table class="table table-bordered mb-0 border-0 compact-table">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Date of Evaluation</td>
+              <td class="border-0 border-end-2 border-bottom-2" style="width: 25%;">{{ record.evaluationDate | date:'dd/MM/yyyy' }}</td>
+              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Mode of Evaluation</td>
+              <td class="border-0 border-bottom-2">{{ record.evaluationMode }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Parameter</td>
+              <td class="border-0 border-end-2 border-bottom-2">{{ record.evalParameter }}</td>
+              <td class="label-cell border-0 border-end-2 border-bottom-2">Test Method / SOP</td>
+              <td class="border-0 border-bottom-2">{{ record.evalTestMethod }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="p-2 border-bottom-2 fw-bold bg-light-gray">
+          Mode of Evaluation: Retesting or Replicate testing,
+        </div>
+
+        <table class="table table-bordered mb-0 border-0 text-center eval-results-table">
+          <thead>
+            <tr class="border-bottom-2">
+              <th class="border-0 border-end-2 py-1">Observed Value-1</th>
+              <th class="border-0 border-end-2 py-1">Observed Value-2</th>
+              <th class="border-0 border-end-2 py-1">Observed Value-Average</th>
+              <th class="border-0 border-end-2 py-1">Original Value</th>
+              <th class="border-0 py-1">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.observedValue1 }}</td>
+              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.observedValue2 }}</td>
+              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.averageValue }}</td>
+              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.originalValue }}</td>
+              <td class="border-0 py-2">{{ record.evaluationResult.remarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="p-2 border-top-2 min-h-60">
+          <strong>Trainer Comments/Remarks:</strong>
+          <p class="mt-1 mb-0">{{ record.trainerComments || 'None' }}</p>
+        </div>
+
+        <table class="table table-bordered mb-0 border-0 signature-row">
+          <tbody>
+            <tr class="border-top-2">
+              <td class="label-cell border-0 border-end-2" style="width: 25%;">Signature of Trainer:</td>
+              <td class="border-0 border-end-2 signature-cell" style="width: 25%;"></td>
+              <td class="label-cell border-0 border-end-2" style="width: 25%;">Signature of Trainee:</td>
+              <td class="border-0 signature-cell" style="width: 25%;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="'General Manager'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="'Managing Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

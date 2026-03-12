@@ -40,7 +40,7 @@
             maxlength="100"
             [ngClass]="{
               'is-invalid':
-                testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched
+                testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched,
             }"
           />
           <span
@@ -144,7 +144,10 @@
             </div>
 
             <div>
-              <label class="form-label">Standard File Attachment <span class="text-danger">*</span></label>
+              <label class="form-label">
+                Standard File Attachment
+                <span class="text-danger">*</span>
+              </label>
               <ng-container *ngIf="group.get('standardFilePath')?.value; else uploadField">
                 <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                   <span

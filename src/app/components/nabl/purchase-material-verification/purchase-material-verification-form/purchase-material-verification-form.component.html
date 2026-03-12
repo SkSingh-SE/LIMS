@@ -1,0 +1,184 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading" [formGroup]="verificationForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-25" />
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No</label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No</label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Supplier & Invoice Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('supplier')">
+            <i class="bi" [ngClass]="openSections['supplier'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Supplier &amp; Invoice Information</span>
+          </div>
+          <div *ngIf="openSections['supplier']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="supplierName" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Invoice / Challan No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="invoiceNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="invoiceDate" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">GRN Number</label>
+                <input type="text" class="form-control" formControlName="grnNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Material Verification Checklist -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('items')">
+            <div>
+              <i class="bi" [ngClass]="openSections['items'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Material Verification Checklist</span>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addItem(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add Item
+            </button>
+          </div>
+          <div *ngIf="openSections['items']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 small fw-bold text-muted">Material Description <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 150px">PO / Indent No <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Verified Qty <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted">Observations <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 130px">Status <span class="text-danger">*</span></th>
+                    <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3">
+                      <input type="text" class="form-control form-control-sm" placeholder="Material Name" formControlName="materialName" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" placeholder="PO/Indent" formControlName="poNumber" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="verifiedQuantity" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" placeholder="Observation..." formControlName="observation" />
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="verificationStatus">
+                        <option *ngFor="let opt of verificationStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeItem(i)" [disabled]="items.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Overall Verdict -->
+            <div class="p-3 border-top">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Overall Verdict <span class="text-danger">*</span></label>
+                  <select class="form-select" formControlName="overallStatus">
+                    <option *ngFor="let opt of overallStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+                  </select>
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label">Remarks / Deviations Observed</label>
+                  <quill-editor formControlName="remarks" [modules]="quillModules" [readOnly]="isViewMode" placeholder="General remarks..."></quill-editor>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Validation & Approvals -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Validation &amp; Approvals</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">Inspected / Verified By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="verifiedBy" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Authorized / Approved By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="approvedBy" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="verificationForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

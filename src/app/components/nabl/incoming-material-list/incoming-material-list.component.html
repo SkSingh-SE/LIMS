@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="Incoming Material Inspection Record (F-24)"
+  [columns]="columns"
+  [data]="records"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/incoming-material"
+  addRoute="/incoming-material/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

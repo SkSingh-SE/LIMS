@@ -1,0 +1,136 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record()?.formatNo || 'F-17'"
+          [mainTitle]="'MASTER LIST OF REFERENCE MATERIAL (CRM)'"
+          [docNo]="'DMSPL / Level-04 / Format / F-17'"
+          [issueNo]="record()?.issueNo || '01'"
+          [revNo]="record()?.revNo || '00'"
+          [issueDate]="record()?.date || ''">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="p-4">
+        <!-- Main Details Table -->
+        <table class="table table-bordered sm-table mb-4">
+          <tr>
+            <th style="width: 25%;">Material Name</th>
+            <td colspan="3" class="fw-bold">{{ record()?.materialName }}</td>
+          </tr>
+          <tr>
+            <th style="width: 25%;">Material Code</th>
+            <td style="width: 25%;">{{ record()?.materialCode }}</td>
+            <th style="width: 25%;">Category</th>
+            <td style="width: 25%;">{{ record()?.category }}</td>
+          </tr>
+          <tr>
+            <th>Type</th>
+            <td>{{ record()?.type | titlecase }}</td>
+            <th>Grade</th>
+            <td>{{ record()?.grade }}</td>
+          </tr>
+          <tr>
+            <th>Manufacturer</th>
+            <td colspan="3">{{ record()?.manufacturer }}</td>
+          </tr>
+          <tr>
+            <th>Batch / Lot No.</th>
+            <td>{{ record()?.batchNo }} <span *ngIf="record()?.lotNo">/ {{ record()?.lotNo }}</span></td>
+            <th>Document No.</th>
+            <td>{{ record()?.documentNo }}</td>
+          </tr>
+        </table>
+
+        <h6 class="fw-bold border-bottom pb-1 mb-2">Technical Specifications</h6>
+        <div class="p-2 border rounded mb-4 font-sm bg-light">
+          <div class="mb-2"><strong>Details:</strong> <div class="d-inline-block" [innerHTML]="record()?.specifications"></div></div>
+          <div class="row">
+            <div class="col-4">
+              <p class="mb-1"><strong>Purity:</strong> {{ record()?.purity || 'N/A' }}%</p>
+              <p class="mb-1"><strong>Concentration:</strong> {{ record()?.concentration || 'N/A' }}</p>
+            </div>
+            <div class="col-4">
+              <p class="mb-1"><strong>State:</strong> {{ record()?.physicalState | titlecase }}</p>
+              <p class="mb-1"><strong>Shelf Life:</strong> {{ record()?.shelfLife }} Months</p>
+            </div>
+            <div class="col-4">
+              <p class="mb-1 text-danger"><strong>Expiry:</strong> {{ record()?.expiryDate | date: 'dd MMM, yyyy' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="fw-bold border-bottom pb-1 mb-2">Certification & Traceability</h6>
+        <table class="table table-bordered sm-table mb-4">
+          <tr>
+            <th style="width: 25%;">Certificate No.</th>
+            <td style="width: 25%;">{{ record()?.certificateNo || 'N/A' }}</td>
+            <th style="width: 25%;">Certification Date</th>
+            <td style="width: 25%;">{{ record()?.certificationDate | date: 'dd MMM, yyyy' }}</td>
+          </tr>
+          <tr>
+            <th>Certified By</th>
+            <td colspan="3">{{ record()?.certifiedBy || 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Traceability</th>
+            <td colspan="3">{{ record()?.traceability || 'N/A' }}</td>
+          </tr>
+        </table>
+
+        <h6 class="fw-bold border-bottom pb-1 mb-2">Inventory & Storage</h6>
+        <div class="row g-3">
+          <div class="col-6">
+            <table class="table table-bordered sm-table">
+              <tr>
+                <th style="width: 50%;">Current Stock</th>
+                <td>{{ record()?.currentStock }} {{ record()?.unitOfMeasure }}</td>
+              </tr>
+              <tr>
+                <th>Reorder Level</th>
+                <td>{{ record()?.reorderLevel }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-6">
+            <table class="table table-bordered sm-table">
+              <tr>
+                <th style="width: 50%;">Storage Location</th>
+                <td>{{ record()?.storageLocation }}</td>
+              </tr>
+              <tr>
+                <th>Conditions</th>
+                <td>{{ record()?.storageConditions }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="'Store In-charge'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

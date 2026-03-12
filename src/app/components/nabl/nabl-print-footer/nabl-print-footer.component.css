@@ -1,0 +1,68 @@
+:host {
+    display: contents;
+}
+
+.nabl-footer-container {
+    display: flex;
+    flex: 1;
+    /* match the width of the print frame so header/footer align exactly */
+    width: var(--print-content-width);
+    max-width: 100%;
+    height: var(--print-footer-height, 130px);
+    overflow: hidden;
+    border: 2px solid #000;
+    font-family: 'Times New Roman', Times, serif;
+    background: white;
+    /* ensure the entire footer is rendered together on a single page */
+    page-break-inside: avoid !important;
+}
+
+.footer-block {
+    flex: 1;
+    border-right: 2px solid #000;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-block:last-child {
+    border-right: none;
+}
+
+.sig-space {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.sig-img {
+    max-height: 60px;
+    object-fit: contain;
+}
+
+.footer-label {
+    border-top: 2px solid #000;
+    font-weight: bold;
+    padding: 6px 5px;
+    font-size: 12px;
+    text-transform: uppercase;
+    background-color: #f8f9fa;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.footer-name {
+    padding: 6px 5px;
+    font-size: 12px;
+    font-weight: bold;
+    border-top: 1px solid #000;
+}
+
+@media print {
+    .nabl-footer-container {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

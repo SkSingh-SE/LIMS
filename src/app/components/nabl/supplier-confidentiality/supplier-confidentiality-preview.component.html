@@ -1,0 +1,103 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record()?.formatNo || 'F-2'"
+          [mainTitle]="'SUPPLIER CONFIDENTIALITY AGREEMENT'"
+          [docNo]="'DMSPL / Level-04 / Format / F-2'"
+          [issueNo]="record()?.issueNo || '01'"
+          [revNo]="record()?.revNo || '00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="agreement-content p-4">
+        <div class="supplier-info mb-4">
+          <table class="table table-bordered sm-table">
+            <tr>
+              <th style="width: 25%;">Supplier Name</th>
+              <td>{{ record()?.supplierName }}</td>
+            </tr>
+            <tr>
+              <th>Contact Person</th>
+              <td>{{ record()?.contactPerson }}</td>
+            </tr>
+            <tr>
+              <th>Address</th>
+              <td>{{ record()?.address }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="agreement-text mt-4">
+          <p class="mb-4">
+            This Confidentiality Agreement (the "Agreement") is entered into on <strong>{{ record()?.agreementDate | date: 'dd/MM/yyyy' }}</strong> 
+            between <strong>Divine Metallurgical Services Pvt. Ltd. (DMSPL)</strong> and the Supplier named above.
+          </p>
+
+          <h6 class="fw-bold mb-2">1. Purpose</h6>
+          <p class="mb-3">
+            The Supplier may be provided with or have access to certain proprietary and confidential information of DMSPL or its customers during the course of providing products or services.
+          </p>
+
+          <h6 class="fw-bold mb-2">2. Confidential Information</h6>
+          <p class="mb-3">
+            "Confidential Information" includes, but is not limited to, test results, customer names, technical data, drawings, specifications, processes, and any other information marked as confidential or which by its nature should be considered confidential.
+          </p>
+
+          <h6 class="fw-bold mb-2">3. Obligations of the Supplier</h6>
+          <ul class="mb-4">
+            <li>To hold all Confidential Information in strict confidence and not to disclose it to any third party without prior written consent from DMSPL.</li>
+            <li>To use the Confidential Information solely for the purpose of fulfilling its obligations to DMSPL.</li>
+            <li>To protect Confidential Information with at least the same degree of care as it uses for its own similar information.</li>
+            <li>To ensure that its employees or subcontractors who have access to Confidential Information are bound by similar confidentiality obligations.</li>
+          </ul>
+
+          <h6 class="fw-bold mb-2">4. Duration</h6>
+          <p class="mb-4">
+            This agreement remains valid until <strong>{{ record()?.validUntil | date: 'dd/MM/yyyy' }}</strong>. The obligations of confidentiality shall survive the termination or expiration of this agreement.
+          </p>
+        </div>
+
+        <div class="signature-section mt-5 pt-5">
+          <div class="row">
+            <div class="col-6">
+              <div class="signature-line mb-2"></div>
+              <p class="mb-0 fw-bold">Authorized Signatory</p>
+              <p class="text-muted small">(For Supplier)</p>
+            </div>
+            <div class="col-6 text-end">
+              <div class="signature-line mb-2 ms-auto" style="width: 200px;"></div>
+              <p class="mb-0 fw-bold">Authorized Signatory</p>
+              <p class="text-muted small">(For DMSPL)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="record()?.reviewedBy || 'Quality Manager'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="record()?.approvedBy || 'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

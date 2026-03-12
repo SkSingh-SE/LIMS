@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="F-33: Sample Labels"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/nabl/sample-label"
+  addRoute="/nabl/sample-label/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

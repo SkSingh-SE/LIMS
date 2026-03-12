@@ -1,0 +1,117 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printRecord()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-15'"
+          mainTitle="REVIEW OF CALIBRATION CERTIFICATE"
+          [docNo]="'DMSPL / Level-04 / Format / F-15'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Certificate & Equipment Summary -->
+      <table class="table table-bordered border-2 border-dark mb-3 info-table">
+        <tbody>
+          <tr>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Certificate Details</td>
+            <td class="border-2 border-dark">
+              <div>No: <span class="fw-bold">{{ record.certificateNo }}</span></div>
+              <div>Date: <span class="fw-medium">{{ record.calibrationDate | date:'dd.MM.yyyy' }}</span></div>
+              <div>Agency: <span class="fw-medium">{{ record.calibratingAgency }}</span></div>
+            </td>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Equipment Details</td>
+            <td class="border-2 border-dark">
+              <div class="fw-bold">{{ record.equipmentName }} ({{ record.equipmentNo }})</div>
+              <div>ID: {{ record.equipmentId }} | SN: {{ record.serialNo }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Calibration Points Table -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Calibration Results Review</div>
+        <div class="p-0">
+          <table class="table table-bordered table-sm mb-0 text-center align-middle">
+            <thead class="bg-light">
+              <tr class="small text-uppercase">
+                <th>Parameter</th>
+                <th>Nominal</th>
+                <th>Measured</th>
+                <th>Deviation</th>
+                <th>Tolerance</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let point of record.calibrationPoints">
+                <td class="text-start px-2">{{ point.parameter }}</td>
+                <td>{{ point.nominalValue }}</td>
+                <td>{{ point.measuredValue }}</td>
+                <td>{{ point.deviation }}</td>
+                <td>{{ point.tolerance }}</td>
+                <td>
+                  <span class="fw-bold" [ngClass]="point.passFail === 'pass' ? 'text-success' : 'text-danger'">
+                    {{ point.passFail | uppercase }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Measurement Uncertainty</div>
+        <div class="section-content ql-editor p-3" [innerHTML]="record.uncertainty || 'N/A'"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Review Comments & Remarks</div>
+        <div class="section-content ql-editor p-3" [innerHTML]="record.reviewComments || record.remarks || 'No comments.'"></div>
+      </div>
+
+      <!-- Signatures Footer -->
+      <div class="mt-4 pt-5">
+        <table class="table table-bordered border-2 border-dark text-center">
+          <tbody>
+            <tr>
+              <td style="width: 50%; height: 80px;" class="align-bottom pb-1">
+                <div class="fw-bold">Reviewed By</div>
+                <div class="small">{{ record.reviewedBy }}</div>
+                <div class="small">{{ record.reviewDate | date:'dd.MM.yyyy' }}</div>
+              </td>
+              <td style="width: 50%;" class="align-bottom pb-1">
+                <div class="fw-bold">Approved By</div>
+                <div class="small">(Technical Manager / QM)</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

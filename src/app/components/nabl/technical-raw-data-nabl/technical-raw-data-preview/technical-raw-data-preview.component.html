@@ -1,0 +1,113 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="record.formatNo"
+        [mainTitle]="'TECHNICAL RAW DATA RECORD'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + record.formatNo"
+        [issueNo]="record.issueNo"
+        [issueDate]="record.date"
+        [revNo]="record.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Section I: Test Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">I. Test Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 25%">Test Method</td>
+              <td class="border-0 fw-bold">{{ record.testMethodName }}</td>
+              <td class="label-cell border-0 border-end-2 border-start-2" style="width: 20%">Reference</td>
+              <td class="border-0">{{ record.testMethodRef }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Equipment Used</td>
+              <td class="border-0 border-top-2">{{ record.equipmentUsed }}</td>
+              <td class="label-cell border-0 border-end-2 border-start-2 border-top-2">Sample Description</td>
+              <td class="border-0 border-top-2">{{ record.sampleDescription }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Analyst Name</td>
+              <td class="border-0 border-top-2" colspan="3">{{ record.analystName }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section II: Raw Data Readings -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">II. Raw Data Readings</div>
+        <div class="table-responsive">
+          <table class="table table-bordered mb-0 text-center">
+            <thead>
+              <tr>
+                <th class="label-cell" style="width: 40px">Sr.</th>
+                <th class="label-cell">Sample / CRM ID</th>
+                <th class="label-cell">Parameter</th>
+                <th class="label-cell" style="width: 60px">Unit</th>
+                <th class="label-cell" style="width: 85px">Reading 1</th>
+                <th class="label-cell" style="width: 85px">Reading 2</th>
+                <th class="label-cell" style="width: 85px">Reading 3</th>
+                <th class="label-cell bg-primary-subtle" style="width: 85px">Mean</th>
+                <th class="label-cell" style="width: 75px">SD</th>
+                <th class="label-cell" style="width: 75px">RSD %</th>
+                <th class="label-cell">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of record.readings">
+                <td>{{ r.srNo }}</td>
+                <td class="text-start fw-medium">{{ r.sampleId }}</td>
+                <td>{{ r.parameter }}</td>
+                <td>{{ r.unit }}</td>
+                <td>{{ r.reading1 }}</td>
+                <td>{{ r.reading2 }}</td>
+                <td>{{ r.reading3 }}</td>
+                <td class="fw-bold bg-primary-subtle">{{ r.mean }}</td>
+                <td class="font-monospace text-muted" style="font-size: 0.8rem">{{ r.sd }}</td>
+                <td class="fw-bold">{{ r.rsd }}%</td>
+                <td class="text-start">{{ r.remarks }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section III: Conclusion -->
+      <div class="section border-2 border-dark mb-3">
+        <div class="section-title border-bottom-2">III. Conclusion</div>
+        <div class="section-content p-3">{{ record.conclusion || "N/A" }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record.preparedBy"
+        [issuedByName]="record.issuedBy"
+        [reviewedApprovedByName]="record.reviewedApprovedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

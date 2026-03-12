@@ -1,0 +1,117 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'QUALITY ASSURANCE / CONTROL PLAN'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Plan Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">I. Plan Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Document No.</td>
+              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Plan Year</td>
+              <td class="border-0 fw-bold">{{ data.planYear }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 15%">Date</td>
+              <td class="border-0">{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Discipline</td>
+              <td class="border-0 border-top-2">{{ data.discipline }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Group/Subgroup</td>
+              <td class="border-0 border-top-2" colspan="3">{{ data.materialProductGroup }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Lab In-charge</td>
+              <td class="border-0 border-top-2" colspan="5">{{ data.labIncharge }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Activities Table -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">II. QA / QC Activities</div>
+        <table class="table table-bordered mb-0 align-middle small">
+          <thead class="table-light text-center">
+            <tr>
+              <th class="border-dark" style="width: 50px">S.N.</th>
+              <th class="border-dark">Activity Name</th>
+              <th class="border-dark">Frequency</th>
+              <th class="border-dark">Target / Criteria</th>
+              <th class="border-dark">Planned Date</th>
+              <th class="border-dark">Actual Date</th>
+              <th class="border-dark">Result Status</th>
+              <th class="border-dark">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let activity of data.activities; let i = index" class="text-center">
+              <td class="border-dark">{{ i + 1 }}</td>
+              <td class="border-dark text-start">{{ activity.activityName }}</td>
+              <td class="border-dark">{{ activity.plannedFrequency }}</td>
+              <td class="border-dark">{{ activity.targetCriteria }}</td>
+              <td class="border-dark">{{ activity.plannedDate | date: "dd-MM-yyyy" }}</td>
+              <td class="border-dark">{{ activity.actualDate ? (activity.actualDate | date: "dd-MM-yyyy") : "-" }}</td>
+              <td class="border-dark">
+                <span
+                  [class.text-success]="activity.resultStatus === 'Satisfactory'"
+                  [class.text-danger]="activity.resultStatus === 'Not Satisfactory'"
+                  class="fw-bold"
+                >
+                  {{ activity.resultStatus }}
+                </span>
+              </td>
+              <td class="border-dark">{{ activity.remarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Note -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">III. Note</div>
+        <div class="section-content p-3 ql-editor small">
+          Quality assurance activities shall be planned as per ISO/IEC 17025 requirements. Results of QA activities shall be evaluated.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

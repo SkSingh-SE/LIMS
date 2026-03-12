@@ -1,0 +1,131 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'RETESTING OF RETAINED SAMPLES'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">I. Basic Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Document No.</td>
+              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Date</td>
+              <td class="border-0">{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Discipline</td>
+              <td class="border-0 border-top-2" colspan="3">{{ data.discipline }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Sample Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">II. Sample Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Sample Name</td>
+              <td class="border-0">{{ data.sampleName }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Original Sample ID / TRN</td>
+              <td class="border-0 fw-bold">{{ data.originalSampleId }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Group / Subgroup</td>
+              <td class="border-0 border-top-2" colspan="3">{{ data.groupSubgroup }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Date of Original Testing</td>
+              <td class="border-0 border-top-2">{{ data.dateOfOriginalTesting | date: "dd.MM.yyyy" }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Date of Retesting</td>
+              <td class="border-0 border-top-2">{{ data.dateOfRetesting | date: "dd.MM.yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Retesting Details -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">III. Retesting Parameters & Results</div>
+        <table class="table table-bordered mb-0 align-middle small">
+          <thead class="table-light text-center">
+            <tr>
+              <th class="border-dark" style="width: 50px" rowspan="2">S.N.</th>
+              <th class="border-dark" rowspan="2">Parameter Tested</th>
+              <th class="border-dark" colspan="2">Result of Testing</th>
+              <th class="border-dark" rowspan="2">Acceptable Limits</th>
+              <th class="border-dark" rowspan="2">Deviation (T1 - T2)</th>
+              <th class="border-dark" rowspan="2">Status</th>
+            </tr>
+            <tr>
+              <th class="border-dark">Original (T1)</th>
+              <th class="border-dark">Retesting (T2)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let param of data.parameters; let i = index" class="text-center">
+              <td class="border-dark">{{ i + 1 }}</td>
+              <td class="border-dark text-start">{{ param.parameterTested }}</td>
+              <td class="border-dark">{{ param.originalResult }}</td>
+              <td class="border-dark">{{ param.retestResult }}</td>
+              <td class="border-dark">{{ param.acceptableLimits }}</td>
+              <td class="border-dark">{{ param.deviation }}</td>
+              <td class="border-dark">
+                <span [class.text-danger]="param.status !== 'Satisfactory'" class="fw-bold">
+                  {{ param.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Remarks -->
+      <div class="section mb-3 border-2 border-dark" *ngIf="data.remarks">
+        <div class="section-title border-bottom-2">IV. Remarks / Note</div>
+        <div class="section-content p-3 ql-editor small">
+          {{ data.remarks }}
+          <br />
+          <span class="text-muted fst-italic mt-2 d-block">
+            If result is not satisfactory, raise non-conforming work and take corrective action.
+          </span>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="data.analyst" [reviewedApprovedByName]="data.authorizedSignatory"></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

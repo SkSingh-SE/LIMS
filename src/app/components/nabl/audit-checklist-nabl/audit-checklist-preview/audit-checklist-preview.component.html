@@ -1,0 +1,94 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'AUDIT CHECKLIST & OBSERVATION'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="audit-info border border-dark p-2 mb-3">
+        <div class="row">
+          <div class="col-3">
+            <strong>Audit Date:</strong>
+            {{ data.auditDate | date: "dd/MM/yyyy" }}
+          </div>
+          <div class="col-3">
+            <strong>Area / Dept:</strong>
+            {{ data.areaDepartment }}
+          </div>
+          <div class="col-3">
+            <strong>Auditor:</strong>
+            {{ data.auditorName }}
+          </div>
+          <div class="col-3">
+            <strong>Auditee:</strong>
+            {{ data.auditeeName }}
+          </div>
+        </div>
+      </div>
+
+      <table class="table table-bordered border-dark align-middle">
+        <thead class="bg-light fw-bold text-center">
+          <tr>
+            <th style="width: 60px">Sr. No.</th>
+            <th style="width: 100px">Clause No.</th>
+            <th style="width: 300px">Requirement</th>
+            <th>Observation</th>
+            <th style="width: 100px">Compliance (Yes/No/NA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data.items; let i = index">
+            <td class="text-center">{{ i + 1 }}</td>
+            <td class="text-center">{{ item.clauseNo }}</td>
+            <td>{{ item.requirement }}</td>
+            <td>
+              <div class="ql-editor" [innerHTML]="item.observation"></div>
+            </td>
+            <td class="text-center">
+              <strong>{{ item.compliance }}</strong>
+            </td>
+          </tr>
+          <!-- Filling space -->
+          <tr *ngIf="data.items.length < 5">
+            <td colspan="5" [style.height.px]="100 * (5 - data.items.length)"></td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Auditor'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Auditee'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,215 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-clipboard2-check fs-4 me-2"></i>
+        <label class="fw-medium fs-5 m-0">{{ formTitle }}</label>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-light d-flex align-items-center" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i>
+          Back to List
+        </button>
+        <button
+          *ngIf="!isViewMode"
+          type="button"
+          (click)="onSubmit()"
+          [disabled]="checklistForm.invalid || isLoading"
+          class="btn btn-sm btn-light text-primary d-flex align-items-center fw-bold"
+        >
+          <i class="bi bi-check-circle me-1"></i>
+          {{ isEditMode ? "Update Checklist" : "Save Checklist" }}
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4 bg-light-soft">
+      <form [formGroup]="checklistForm" [class.ra-form-disabled]="isViewMode">
+        <div class="accordion custom-accordion" id="auditChecklistAccordion">
+
+          <!-- Section I: Header Information -->
+          <div class="accordion-item border-0 mb-3 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button bg-primary-subtle text-primary fw-bold"
+                type="button"
+                (click)="toggleSection('header')"
+                [attr.aria-expanded]="openSections['header']"
+              >
+                <i class="bi bi-info-circle me-2"></i>
+                I. Header Information
+              </button>
+            </h2>
+            <div [class.show]="openSections['header']" class="accordion-collapse collapse">
+              <div class="accordion-body bg-white">
+                <div class="row gy-3">
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Form Number
+                      <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select form-select-sm" formControlName="formatNo">
+                      <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Document No.
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="docNo" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Issue No
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="issueNo" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Date
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" class="form-control form-control-sm" formControlName="issueDate" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Rev No
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="revNo" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section II: Audit Details -->
+          <div class="accordion-item border-0 mb-3 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button bg-primary-subtle text-primary fw-bold"
+                type="button"
+                (click)="toggleSection('auditDetails')"
+                [attr.aria-expanded]="openSections['auditDetails']"
+              >
+                <i class="bi bi-calendar2-check me-2"></i>
+                II. Audit Details
+              </button>
+            </h2>
+            <div [class.show]="openSections['auditDetails']" class="accordion-collapse collapse">
+              <div class="accordion-body bg-white">
+                <div class="row gy-3">
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Audit Date
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" class="form-control form-control-sm" formControlName="auditDate" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Area / Dept
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="areaDepartment" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Auditor Name
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="auditorName" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                      Auditee Name
+                      <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" formControlName="auditeeName" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section III: Checklist Items -->
+          <div class="accordion-item border-0 mb-3 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header d-flex justify-content-between align-items-center bg-primary-subtle pe-3">
+              <button
+                class="accordion-button bg-primary-subtle text-primary fw-bold"
+                type="button"
+                (click)="toggleSection('checklistItems')"
+                [attr.aria-expanded]="openSections['checklistItems']"
+              >
+                <i class="bi bi-list-check me-2"></i>
+                III. Checklist & Observations
+              </button>
+              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary py-1" (click)="addItem()">
+                <i class="bi bi-plus-lg me-1"></i>
+                Add Item
+              </button>
+            </h2>
+            <div [class.show]="openSections['checklistItems']" class="accordion-collapse collapse">
+              <div class="accordion-body bg-white p-3">
+                <div formArrayName="items">
+                  <div
+                    *ngFor="let item of items.controls; let i = index"
+                    [formGroupName]="i"
+                    class="border p-3 mb-3 rounded bg-light position-relative"
+                  >
+                    <button
+                      *ngIf="!isViewMode && items.length > 1"
+                      type="button"
+                      class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                      (click)="removeItem(i)"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    <div class="row gy-3">
+                      <div class="col-md-2">
+                        <label class="form-label fw-semibold text-dark small mb-1">
+                          Clause No
+                          <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control form-control-sm" formControlName="clauseNo" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label fw-semibold text-dark small mb-1">
+                          Requirement
+                          <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control form-control-sm" formControlName="requirement" />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label fw-semibold text-dark small mb-1">
+                          Compliance
+                          <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select form-select-sm" formControlName="compliance">
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                          <option value="NA">NA</option>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label fw-semibold text-dark small mb-1 fw-bold">
+                          Observation
+                          <span class="text-danger">*</span>
+                        </label>
+                        <quill-editor formControlName="observation" [modules]="quillModules"></quill-editor>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

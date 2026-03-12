@@ -1,0 +1,23 @@
+<div class="nabl-footer-container">
+    <div class="footer-block">
+        <div class="sig-space">
+            <img *ngIf="showSignatures" src="/assets/images/signature_placeholder_gm.png" class="sig-img" onerror="this.style.opacity='0'">
+        </div>
+        <div class="footer-label">{{ preparedByRole }}</div>
+        <div class="footer-name">{{ preparedByName }}</div>
+    </div>
+    <div class="footer-block">
+        <div class="sig-space">
+            <img *ngIf="showSignatures" src="/assets/images/signature_placeholder_qm.png" class="sig-img" onerror="this.style.opacity='0'">
+        </div>
+        <div class="footer-label">{{ issuedByRole }}</div>
+        <div class="footer-name">{{ issuedByName }}</div>
+    </div>
+    <div class="footer-block">
+        <div class="sig-space">
+            <img *ngIf="showSignatures" src="/assets/images/signature_placeholder_md.png" class="sig-img" onerror="this.style.opacity='0'">
+        </div>
+        <div class="footer-label">{{ reviewedApprovedByRole }}</div>
+        <div class="footer-name">{{ reviewedApprovedByName }}</div>
+    </div>
+</div>

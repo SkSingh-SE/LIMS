@@ -1,0 +1,51 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.signature-block-container {
+    font-family: 'Times New Roman', Times, serif;
+    margin-top: 20px;
+}
+
+.block-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.signature-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.signature-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 10px;
+    border: 1px solid #000;
+    font-size: 12px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.signature-table td {
+    padding: 8px 10px;
+    border: 1px solid #000;
+    min-height: 35px;
+    vertical-align: middle;
+}
+
+.sig-cell {
+    min-width: 120px;
+    height: 40px;
+}
+
+@media print {
+    .signature-table th {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

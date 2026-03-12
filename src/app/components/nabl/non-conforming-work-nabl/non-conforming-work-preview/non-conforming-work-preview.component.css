@@ -1,0 +1,41 @@
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+.section-title {
+  background-color: #f8f9fa;
+  padding: 8px 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.label-cell {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.border-2 {
+  border-width: 2px !important;
+}
+.border-dark {
+  border-color: #000 !important;
+}
+.border-bottom-2 {
+  border-bottom: 2px solid #000 !important;
+}
+
+.ql-editor {
+  min-height: 100px;
+  line-height: 1.5;
+}

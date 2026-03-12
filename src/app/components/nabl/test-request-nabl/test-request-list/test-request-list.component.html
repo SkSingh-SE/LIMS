@@ -1,0 +1,9 @@
+<app-nabl-register-table
+  title="F-27: Test Request & Sample Receipt Record"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/nabl/test-request"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

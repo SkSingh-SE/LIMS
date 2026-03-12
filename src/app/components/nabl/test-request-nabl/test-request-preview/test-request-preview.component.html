@@ -1,0 +1,164 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center" *ngIf="data">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        formatNo="F-27"
+        issueNo="01"
+        revNo="00"
+        mainTitle="Test Request & Sample Receipt Record"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="record-content">
+        <!-- Basic Case Info -->
+        <div class="row mb-4 border-bottom pb-3">
+          <div class="col-6">
+            <label class="fw-bold text-muted small d-block">Case Number / TRN</label>
+            <span class="fs-5 fw-semibold">{{ data.caseNo }}</span>
+          </div>
+          <div class="col-6 text-end">
+            <label class="fw-bold text-muted small d-block">Date & Time of Receipt</label>
+            <span class="fs-6">{{ data.collectionDate | date: "dd-MM-yyyy" }} at {{ data.collectionTime }}</span>
+          </div>
+        </div>
+
+        <!-- Customer Section -->
+        <div class="section-box border rounded p-3 mb-4">
+          <h6 class="section-title fw-bold text-primary mb-3">
+            <i class="bi bi-person-fill me-2"></i>
+            CUSTOMER INFORMATION
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="fw-bold small d-block">Customer Name</label>
+              <span>{{ data.customerName }}</span>
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold small d-block">GST Number</label>
+              <span>{{ data.gstNo || "N/A" }}</span>
+            </div>
+            <div class="col-12">
+              <label class="fw-bold small d-block">Address</label>
+              <span class="text-wrap">{{ data.address }}, {{ data.area }}, {{ data.city }}, {{ data.state }} - {{ data.pinCode }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Details Table -->
+        <div class="section-box mb-4">
+          <h6 class="section-title fw-bold text-primary mb-3">
+            <i class="bi bi-box-seam-fill me-2"></i>
+            SAMPLE DETAILS
+          </h6>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+              <thead class="bg-light text-center small">
+                <tr>
+                  <th style="width: 50px">S.N.</th>
+                  <th>Sample No.</th>
+                  <th>Sample Description</th>
+                  <th>Qty</th>
+                  <th>Metal Classification</th>
+                  <th>Condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let sample of data.sampleDetails; let i = index">
+                  <td class="text-center">{{ i + 1 }}</td>
+                  <td class="fw-medium">{{ sample.sampleNo }}</td>
+                  <td>{{ sample.details }}</td>
+                  <td class="text-center">{{ sample.quantity }}</td>
+                  <td>{{ sample.metalClassificationName || "N/A" }}</td>
+                  <td>{{ sample.productConditionName || "Received in Good Condition" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Additional Requirements -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="section-box border rounded p-3 h-100">
+              <h6 class="section-title fw-bold text-primary mb-3">
+                <i class="bi bi-clipboard-check-fill me-2"></i>
+                REQUEST DETAILS
+              </h6>
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <strong>Urgent Testing:</strong>
+                  {{ data.urgent ? "Yes" : "No" }}
+                </li>
+                <li class="mb-2">
+                  <strong>Return Sample:</strong>
+                  {{ data.returnSample ? "Yes" : "No" }}
+                </li>
+                <li class="mb-2">
+                  <strong>Hold Testing:</strong>
+                  {{ data.holdTesting ? "Yes" : "No" }}
+                </li>
+                <li>
+                  <strong>PO Number:</strong>
+                  {{ data.poNumber || "N/A" }}
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="section-box border rounded p-3 h-100">
+              <h6 class="section-title fw-bold text-primary mb-3">
+                <i class="bi bi-truck me-2"></i>
+                DISPATCH & BILLING
+              </h6>
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <strong>Bill Required:</strong>
+                  {{ data.billRequired ? "Yes" : "No" }}
+                </li>
+                <li class="mb-2">
+                  <strong>PI Required:</strong>
+                  {{ data.advancePIRequired ? "Yes" : "No" }}
+                </li>
+                <li>
+                  <strong>Dispatch Modes:</strong>
+                  <span *ngFor="let mode of data.dispatchModes; let last = last">{{ mode.dispatchModeName }}{{ !last ? ", " : "" }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="section-box border rounded p-3 mb-5" *ngIf="data.sampleReceiptNote">
+          <h6 class="section-title fw-bold text-primary mb-2">RECEIPT NOTES / REMARKS</h6>
+          <p class="small mb-0">{{ data.sampleReceiptNote }}</p>
+        </div>
+
+        <!-- Signature Block -->
+        <div class="mt-4">
+          <app-nabl-signature-block
+            [signatories]="[
+              { designation: 'Customer / Representative', name: 'Signatory' },
+              { designation: 'Received By', name: 'Laboratory In-charge' },
+            ]"
+          ></app-nabl-signature-block>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

@@ -1,0 +1,92 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to Employee List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && matrix" orientation="landscape">
+    <!-- header slot -->
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="matrix ? matrix.formatNo : ''"
+          [mainTitle]="'SKILL MATRIX'"
+          [docNo]="'DMSPL / Level-04 / Format / ' + (matrix ? matrix.formatNo : '')"
+          [issueNo]="matrix ? matrix.issueNo : ''"
+          [revNo]="matrix ? matrix.revNo : ''">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <!-- body slot -->
+    <ng-container body>
+      <div class="matrix-overview mb-2 px-2">
+          <strong>Title:</strong> {{ matrix.title }}
+          <span *ngIf="matrix.decision">| <strong>Decision:</strong> {{ matrix.decision }}</span>
+          | <strong>Last Updated:</strong> {{ matrix.lastUpdated | date:'dd/MM/yyyy' }}
+      </div>
+
+      <!-- Skill Matrix Table -->
+      <table class="table table-bordered border-2 border-dark skill-matrix-table">
+        <thead class="table-light">
+          <tr class="text-center border-2 border-dark">
+            <th class="border-2 border-dark align-middle" rowspan="2" style="width: 50px;">Sr. No.</th>
+            <th class="border-2 border-dark align-middle" rowspan="2">Employee Name</th>
+            <th class="border-2 border-dark align-middle" rowspan="2">Designation</th>
+            <th class="border-2 border-dark py-1" [attr.colspan]="matrix.skills.length">Skills / Competencies</th>
+          </tr>
+          <tr class="text-center border-2 border-dark">
+              <th *ngFor="let skill of matrix.skills" class="border-2 border-dark vertical-text py-3">
+                  <div class="vertical-text-content">{{ skill }}</div>
+              </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of matrix.employeeSkills; let i = index" class="border-2 border-dark">
+            <td class="border-2 border-dark text-center">{{ i + 1 }}</td>
+            <td class="border-2 border-dark px-2"><strong>{{ emp.employeeName }}</strong></td>
+            <td class="border-2 border-dark px-2">{{ emp.designationName }}</td>
+            <td *ngFor="let skill of matrix.skills" class="border-2 border-dark text-center fw-bold">
+              {{ emp.skills[skill] || '-' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Legend Section -->
+      <div class="legend-section mt-4 px-2">
+          <h6 class="fw-bold mb-2">Legend / Codes:</h6>
+          <div class="d-flex gap-4">
+              <div class="legend-item">
+                  <span class="fw-bold me-2">T:</span> Trained (Under training)
+              </div>
+              <div class="legend-item">
+                  <span class="fw-bold me-2">A:</span> Authorized / Competent to perform
+              </div>
+              <div class="legend-item">
+                  <span class="fw-bold me-2">✓:</span> Applicable / Performed
+              </div>
+          </div>
+      </div>
+    </ng-container>
+
+    <!-- footer slot -->
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="'General Manager'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="'Managing Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

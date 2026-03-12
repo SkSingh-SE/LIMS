@@ -1,0 +1,199 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading" [formGroup]="evaluationForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-26" />
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No</label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No</label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Supplier Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('supplier')">
+            <i class="bi" [ngClass]="openSections['supplier'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Supplier Information</span>
+          </div>
+          <div *ngIf="openSections['supplier']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="supplierName" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-control" formControlName="contactPerson" />
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Materials / Services Supplied <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="materialsSupplied" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Evaluation Period (From) <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="evaluatingPeriodFrom" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Evaluation Period (To) <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="evaluatingPeriodTo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Evaluation Criteria -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('evaluation')">
+            <div>
+              <i class="bi" [ngClass]="openSections['evaluation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Evaluation Criteria</span>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addCriteria(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add Criteria
+            </button>
+          </div>
+          <div *ngIf="openSections['evaluation']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 small fw-bold text-muted">Evaluation Parameter <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Max Score <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Score Obtained <span class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted">Remarks</th>
+                    <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="criteria">
+                  <tr *ngFor="let item of criteria.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3">
+                      <input type="text" class="form-control form-control-sm" placeholder="Parameter" formControlName="parameter" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="maxScore" (ngModelChange)="calculateTotals()" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="scoreObtained" (ngModelChange)="calculateTotals()" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" placeholder="Remarks..." formControlName="remarks" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeCriteria(i)" [disabled]="criteria.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="table-light fw-bold">
+                    <td class="ps-3 text-end">Total:</td>
+                    <td class="text-center">
+                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold" formControlName="maxPossibleScore" readonly tabindex="-1" />
+                    </td>
+                    <td class="text-center">
+                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold" formControlName="totalScore" readonly tabindex="-1" />
+                    </td>
+                    <td [attr.colspan]="isViewMode ? 1 : 2">
+                      <div class="d-flex align-items-center ps-2">
+                        <span class="me-2 small">Performance:</span>
+                        <input class="form-control form-control-sm border-0 bg-transparent fw-bold text-primary" style="width: 70px" formControlName="percentageScore" readonly tabindex="-1" />
+                        <span class="small">%</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="p-3 border-top">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Overall Recommendation <span class="text-danger">*</span></label>
+                  <select class="form-select" formControlName="recommendation">
+                    <option *ngFor="let opt of recommendationOptions" [value]="opt.value">{{ opt.label }}</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">General Remarks / Areas of Improvement</label>
+                  <quill-editor formControlName="generalRemarks" [modules]="quillModules" [readOnly]="isViewMode" placeholder="Overall analysis..."></quill-editor>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Validation & Approvals -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Validation &amp; Approvals</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">Evaluated By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="evaluatedBy" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Approved By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="approvedBy" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="evaluationForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

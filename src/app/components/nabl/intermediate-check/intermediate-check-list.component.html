@@ -1,0 +1,13 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    title="Intermediate Check Records (F-16)"
+    [columns]="columns"
+    [data]="items"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [addRoute]="'/intermediate-check-records/create'"
+    [baseRoute]="'/intermediate-check-records'"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)">
+  </app-nabl-register-table>
+</div>

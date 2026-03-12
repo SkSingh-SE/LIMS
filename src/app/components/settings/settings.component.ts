@@ -7,7 +7,7 @@ import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-settings',
-  standalone: true,
+
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']

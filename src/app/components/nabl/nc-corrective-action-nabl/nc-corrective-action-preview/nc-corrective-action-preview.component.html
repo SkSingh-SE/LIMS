@@ -1,0 +1,112 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'NON-CONFORMITY & CORRECTIVE ACTION REPORT'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Info -->
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 15%">Date</td>
+              <td style="width: 20%">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="label-cell" style="width: 15%">NC No.</td>
+              <td style="width: 15%">{{ data.ncNo }}</td>
+              <td class="label-cell" style="width: 15%">Clause No.</td>
+              <td style="width: 20%">{{ data.clauseNo }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Section</td>
+              <td colspan="2">{{ data.section }}</td>
+              <td class="label-cell">Activity</td>
+              <td colspan="2">{{ data.activityAssessed }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Auditor</td>
+              <td colspan="2">{{ data.auditor }}</td>
+              <td class="label-cell">Auditee</td>
+              <td colspan="2">{{ data.auditee }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Content Sections -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Non-Conformity Observed</div>
+        <div class="ql-editor p-3" [innerHTML]="data.ncObserved"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Corrective Action Proposed</div>
+        <div class="ql-editor p-3" [innerHTML]="data.correctiveActionProposed"></div>
+        <table class="table table-bordered mb-0 border-top-2">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 25%">Time Required</td>
+              <td style="width: 25%">{{ data.timeRequired }}</td>
+              <td class="label-cell" style="width: 25%">Proposed By</td>
+              <td style="width: 25%">{{ data.proposedBy }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Approved By (MD/TD)</td>
+              <td colspan="3">{{ data.approvedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Corrective Action Taken</div>
+        <div class="ql-editor p-3" [innerHTML]="data.correctiveActionTaken"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Preventive Action</div>
+        <div class="ql-editor p-3" [innerHTML]="data.preventiveAction"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Effectiveness of Corrective Action</div>
+        <div class="ql-editor p-3" [innerHTML]="data.effectivenessOfAction"></div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="data.auditee"
+        [issuedByName]="data.auditor"
+        [reviewedApprovedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

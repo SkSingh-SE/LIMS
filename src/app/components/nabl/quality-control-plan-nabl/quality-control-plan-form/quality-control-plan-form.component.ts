@@ -1,0 +1,142 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { QualityControlPlanService } from '../../../../services/quality-control-plan.service';
+import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { ToastService } from '../../../../services/toast.service';
+
+import { QuillModule } from 'ngx-quill';
+
+@Component({
+    selector: 'app-quality-control-plan-form',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    templateUrl: './quality-control-plan-form.component.html',
+    styleUrl: './quality-control-plan-form.component.css'
+})
+export class QualityControlPlanFormComponent implements OnInit {
+    qcpForm!: FormGroup;
+    recordId: number = 0;
+    isEditMode = false;
+    isViewMode = false;
+    isLoading = signal(false);
+    formTitle = 'Add Quality Control Plan (F-37)';
+    formNumbers: string[] = NablFormsHelper.getFormNumbers();
+
+    openSections: { [key: string]: boolean } = {
+        header: true,
+        planInfo: true,
+        activities: true,
+        approval: true
+    };
+
+    quillModules = {
+        toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'header': 1 }, { 'header': 2 }],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            [{ 'script': 'sub' }, { 'script': 'super' }],
+            [{ 'indent': '-1' }, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'font': [] }],
+            [{ 'align': [] }],
+            ['clean']
+        ]
+    };
+
+    constructor(
+        private fb: FormBuilder,
+        private service: QualityControlPlanService,
+        private router: Router,
+        private route: ActivatedRoute,
+        private toastService: ToastService
+    ) { }
+
+    ngOnInit(): void {
+        this.initForm();
+        this.recordId = Number(this.route.snapshot.params['id']);
+        const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
+        if (path === 'details') { this.isViewMode = true; this.formTitle = 'View Quality Control Plan'; this.qcpForm.disable(); }
+        else if (path === 'edit') { this.isEditMode = true; this.formTitle = 'Edit Quality Control Plan'; }
+        if (this.recordId) { this.loadData(); } else { this.addActivity(); }
+    }
+
+    initForm(): void {
+        const today = new Date().toISOString().split('T')[0];
+        const currentYear = new Date().getFullYear().toString();
+        this.qcpForm = this.fb.group({
+            id: [0],
+            formatNo: ['F-37', Validators.required],
+            issueNo: ['01', Validators.required],
+            revNo: ['00', Validators.required],
+            date: [today, Validators.required],
+            documentNo: ['', Validators.required],
+            planYear: [currentYear, Validators.required],
+            discipline: ['', Validators.required],
+            materialProductGroup: ['', Validators.required],
+            labIncharge: ['', Validators.required],
+            activities: this.fb.array([]),
+            preparedBy: ['', Validators.required],
+            reviewedBy: [''],
+            approvedBy: [''],
+            status: ['Active']
+        });
+    }
+
+    get activities(): FormArray { return this.qcpForm.get('activities') as FormArray; }
+
+    addActivity(): void {
+        const activityGroup = this.fb.group({
+            srNo: [this.activities.length + 1],
+            activityName: ['', Validators.required],
+            plannedFrequency: ['', Validators.required],
+            targetCriteria: ['', Validators.required],
+            plannedDate: [''],
+            actualDate: [''],
+            resultStatus: ['Pending'],
+            remarks: ['']
+        });
+        this.activities.push(activityGroup);
+    }
+
+    removeActivity(index: number): void {
+        if (this.activities.length > 1) {
+            this.activities.removeAt(index);
+            this.activities.controls.forEach((ctrl, i) => ctrl.get('srNo')?.setValue(i + 1));
+        }
+    }
+
+    loadData(): void {
+        this.isLoading.set(true);
+        this.service.getById(this.recordId).subscribe({
+            next: (data) => {
+                if (data) {
+                    if (data.activities) { this.activities.clear(); data.activities.forEach(() => this.addActivity()); }
+                    this.qcpForm.patchValue(data);
+                    if (this.isViewMode) this.qcpForm.disable();
+                }
+                this.isLoading.set(false);
+            },
+            error: () => this.isLoading.set(false)
+        });
+    }
+
+    onSubmit(): void {
+        if (this.qcpForm.invalid) { this.qcpForm.markAllAsTouched(); return; }
+        this.isLoading.set(true);
+        const formData = this.qcpForm.getRawValue();
+        const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
+        obs.subscribe({
+            next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/quality-control-plan']); },
+            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error'); this.isLoading.set(false); }
+        });
+    }
+
+    onCancel(): void { this.router.navigate(['/quality-control-plan']); }
+    toggleSection(section: string): void { this.openSections[section] = !this.openSections[section]; }
+}

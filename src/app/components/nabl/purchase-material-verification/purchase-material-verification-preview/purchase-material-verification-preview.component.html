@@ -1,0 +1,147 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" [title]="'Purchase Material Verification Record (F-25)'" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="PURCHASE MATERIAL VERIFICATION RECORD"
+        [formatNo]="record.formatNo || 'F-25'"
+        [issueNo]="record.issueNo || '01'"
+        [revNo]="record.revNo || '00'"
+        [issueDate]="record.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="preview-body p-1">
+        <!-- Section I: Supplier & Document Info -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="4" class="py-2 px-3 fw-bold">
+                <i class="bi bi-info-circle me-2"></i>
+                I. SUPPLIER & DOCUMENT INFORMATION
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Supplier Name</td>
+              <td style="width: 25%">{{ record.supplierName }}</td>
+              <td class="bg-light fw-bold small" style="width: 25%">Document No.</td>
+              <td style="width: 25%">{{ record.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Invoice / Challan No.</td>
+              <td>{{ record.invoiceNo }}</td>
+              <td class="bg-light fw-bold small">Invoice Date</td>
+              <td>{{ record.invoiceDate | date: "dd/MM/yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">GRN Number</td>
+              <td>{{ record.grnNo || "--" }}</td>
+              <td class="bg-light fw-bold small">Verification Date</td>
+              <td>{{ record.date | date: "dd/MM/yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section II: Material Verification Details -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="6" class="py-2 px-3 fw-bold">
+                <i class="bi bi-list-check me-2"></i>
+                II. MATERIAL VERIFICATION CHECKLIST
+              </th>
+            </tr>
+            <tr class="bg-light text-center small fw-bold">
+              <th style="width: 40px">SN</th>
+              <th>Material Description</th>
+              <th style="width: 120px">PO / Indent</th>
+              <th style="width: 100px">Qty.</th>
+              <th>Observations</th>
+              <th style="width: 80px">Status</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let item of record.items; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ item.materialName }}</td>
+              <td class="text-center">{{ item.poNumber }}</td>
+              <td class="text-center">{{ item.verifiedQuantity }}</td>
+              <td>{{ item.observation }}</td>
+              <td
+                class="text-center fw-bold"
+                [class.text-success]="item.verificationStatus === 'Pass'"
+                [class.text-danger]="item.verificationStatus === 'Fail'"
+              >
+                {{ item.verificationStatus }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section III: Overall Verdict -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="2" class="py-2 px-3 fw-bold">
+                <i class="bi bi-check2-circle me-2"></i>
+                III. OVERALL VERDICT
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Final Outcome</td>
+              <td
+                style="width: 75%"
+                class="fw-bold fs-6"
+                [ngClass]="{
+                  'text-success': record.overallStatus === 'Accepted',
+                  'text-danger': record.overallStatus === 'Rejected',
+                  'text-warning': record.overallStatus === 'Hold',
+                }"
+              >
+                {{ record.overallStatus | uppercase }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section IV: Remarks -->
+        <div class="border border-dark mb-0">
+          <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark">
+            <i class="bi bi-pencil-square me-2"></i>
+            IV. REMARKS & DEVIATIONS
+          </div>
+          <div class="p-3 ql-editor small" [innerHTML]="record.remarks || 'No additional remarks provided.'"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record.verifiedBy || ''"
+        [reviewedApprovedByName]="record.approvedBy || ''"
+        issuedByName="Dept. Head / QM"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

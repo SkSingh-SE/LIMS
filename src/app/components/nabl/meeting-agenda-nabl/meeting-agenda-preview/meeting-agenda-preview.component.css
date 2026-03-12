@@ -1,0 +1,40 @@
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+.meeting-notice-content {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.tbl-preview {
+  font-size: 0.95rem;
+}
+
+.border-dark {
+  border-color: #000 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+th,
+td {
+  padding: 8px !important;
+  border: 1px solid #000 !important;
+}
+
+ol li {
+  padding-left: 5px;
+}

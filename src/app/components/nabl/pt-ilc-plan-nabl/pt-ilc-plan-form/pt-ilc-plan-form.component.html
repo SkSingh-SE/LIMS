@@ -1,0 +1,210 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="planForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">Format Details</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control fw-bold" formControlName="documentNo" placeholder="PT-0001" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Laboratory Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('labInfo')">
+            <i class="bi" [ngClass]="openSections['labInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Laboratory Information</span>
+          </div>
+          <div *ngIf="openSections['labInfo']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">
+                  Laboratory ID (CAB ID)
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="laboratoryId" placeholder="T-0287" />
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">
+                  Laboratory Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="laboratoryName" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Field of Accreditation
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="fieldOfAccreditation" placeholder="TESTING" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Period of Participation
+                  <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="periodOfParticipation"
+                  placeholder="1st Apr-2025 to 31st Mar-2027"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Proficiency Testing / ILC Activities -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('entries')">
+            <div>
+              <i class="bi" [ngClass]="openSections['entries'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Proficiency Testing / ILC Activities</span>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-light py-0 me-3" (click)="addEntry(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i>
+              Add Entry
+            </button>
+          </div>
+          <div *ngIf="openSections['entries']" class="section-body p-0">
+            <div class="table-responsive m-0">
+              <table class="table table-bordered mb-0 small">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 fw-bold text-muted" style="width: 50px">Sr.</th>
+                    <th class="py-2 fw-bold text-muted">Discipline</th>
+                    <th class="py-2 fw-bold text-muted">Group/Subgroup</th>
+                    <th class="py-2 fw-bold text-muted">PT Activity (1st Year)</th>
+                    <th class="py-2 fw-bold text-muted">PT Activity (2nd Year)</th>
+                    <th class="py-2 fw-bold text-muted">Status (1st Year)</th>
+                    <th class="py-2 fw-bold text-muted">Status (2nd Year)</th>
+                    <th class="py-2 fw-bold text-muted">Remarks (1st Year)</th>
+                    <th class="py-2 fw-bold text-muted">Remarks (2nd Year)</th>
+                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="entries">
+                  <tr *ngFor="let entry of entries.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3 text-center">{{ i + 1 }}</td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="accreditedDiscipline" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="groupSubgroup" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="ptActivityYear1" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="ptActivityYear2" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="statusYear1" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="statusYear2" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="remarksYear1" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="remarksYear2" /></td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeEntry(i)" [disabled]="entries.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Approval & Acceptance -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Approval & Acceptance</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">
+                  Prepared By
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="preparedBy" placeholder="General Manager" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issued By</label>
+                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Quality Manager" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Reviewed & Approved By</label>
+                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Managing Director" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12">
+                <label class="form-label fw-bold">Notes</label>
+                <quill-editor
+                  formControlName="notes"
+                  [modules]="quillModules"
+                  [readOnly]="isViewMode"
+                  placeholder="Enter any additional notes..."
+                ></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="planForm.invalid || isLoading()">
+            {{ isEditMode ? "Update Record" : "Save Record" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

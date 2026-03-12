@@ -8,7 +8,7 @@ import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-list-designation',
-  standalone: true,
+
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './list-designation.component.html',
   styleUrl: './list-designation.component.css'

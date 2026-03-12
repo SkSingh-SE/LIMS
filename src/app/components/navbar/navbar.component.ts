@@ -31,7 +31,7 @@ import { PermissionService } from '../../utility/permission/permission.service';
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
+
   imports: [CommonModule, RouterModule, NotificationBellComponent],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
@@ -63,18 +63,18 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngAfterViewInit() {
-  this.updateNavbarHeight();
+    this.updateNavbarHeight();
 
-  this.menuItemEls.changes.subscribe(() => {
-    this.distributeMenuItems();
-  });
+    this.menuItemEls.changes.subscribe(() => {
+      this.distributeMenuItems();
+    });
 
-  this.resizeObserver = new ResizeObserver(() => {
-    this.distributeMenuItems();
-  });
+    this.resizeObserver = new ResizeObserver(() => {
+      this.distributeMenuItems();
+    });
 
-  this.resizeObserver.observe(this.menuContainer.nativeElement);
-}
+    this.resizeObserver.observe(this.menuContainer.nativeElement);
+  }
 
 
   ngAfterViewChecked() {
@@ -101,6 +101,16 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   activeMenu = signal<string | null>(null);
   activeSubmenu = signal<string | null>(null);
   isMenu2Open = signal(false);
+
+  // Hover-driven dropdown state
+  hoveredSubmenuId = signal<number | null>(null);
+  hoveredGroupId   = signal<number | null>(null);
+  private submenuTimer: ReturnType<typeof setTimeout> | null = null;
+  private groupTimer:   ReturnType<typeof setTimeout> | null = null;
+
+  // Click-driven active state for L3 / L4 items
+  activeNestedItemId = signal<number | null>(null);
+  activeDeepItemId   = signal<number | null>(null);
 
   notifications = [
     { userImg: 'user-avatar.png', userName: 'John Doe', message: 'Sent you a message', time: '5 mins ago' },
@@ -160,8 +170,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
           const filtered = this.filterMenusByApi(res || []);
 
-          const afterPermFilter = this.applyPermissionFilter(filtered);
-          this.menuItems = afterPermFilter;
+          // commented for development
+          // const afterPermFilter = this.applyPermissionFilter(filtered);
+          // this.menuItems = afterPermFilter;
 
           // 3. Update visible/overflow
           this.visibleMenuItems = [...this.menuItems];
@@ -218,57 +229,57 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   // -----------------------------
   // Menu distribution & resize
   // -----------------------------
- private distributeMenuItems() {
-  if (!this.menuContainer || !this.menuItemEls) return;
+  private distributeMenuItems() {
+    if (!this.menuContainer || !this.menuItemEls) return;
 
-  requestAnimationFrame(() => {
-    const containerWidth =
-      this.menuContainer.nativeElement.getBoundingClientRect().width;
+    requestAnimationFrame(() => {
+      const containerWidth =
+        this.menuContainer.nativeElement.getBoundingClientRect().width;
 
-    const rightWidth =
-      this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
+      const rightWidth =
+        this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
 
-    const buffer = 32; // safe padding
-    const availableWidth = containerWidth - rightWidth - buffer;
+      const buffer = 32; // safe padding
+      const availableWidth = containerWidth - rightWidth - buffer;
 
-    const menuEls = this.menuItemEls.toArray();
+      const menuEls = this.menuItemEls.toArray();
 
-    let usedWidth = 0;
-    const visible: MenuItem[] = [];
-    const overflow: MenuItem[] = [];
+      let usedWidth = 0;
+      const visible: MenuItem[] = [];
+      const overflow: MenuItem[] = [];
 
-    this.menuItems.forEach((item, index) => {
-      const el = menuEls[index]?.nativeElement;
-      const width = el
-        ? el.getBoundingClientRect().width
-        : Math.max(100, item.title.length * 10 + 40);
+      this.menuItems.forEach((item, index) => {
+        const el = menuEls[index]?.nativeElement;
+        const width = el
+          ? el.getBoundingClientRect().width
+          : Math.max(100, item.title.length * 10 + 40);
 
-      if (usedWidth + width <= availableWidth || visible.length === 0) {
-        visible.push(item);
-        usedWidth += width;
-      } else {
-        overflow.push(item);
+        if (usedWidth + width <= availableWidth || visible.length === 0) {
+          visible.push(item);
+          usedWidth += width;
+        } else {
+          overflow.push(item);
+        }
+      });
+
+      // CRITICAL: Ensure no items are dropped
+      const totalAssigned = visible.length + overflow.length;
+      if (totalAssigned < this.menuItems.length) {
+        // Force all remaining items to overflow
+        const missingItems = this.menuItems.slice(totalAssigned);
+        overflow.push(...missingItems);
       }
+
+      this.visibleMenuItems = visible;
+      this.menu2Items = overflow;
+
+      if (this.menu2Items.length === 0) {
+        this.isMenu2Open.set(false);
+      }
+
+      this.cdr.markForCheck();
     });
-
-    // CRITICAL: Ensure no items are dropped
-    const totalAssigned = visible.length + overflow.length;
-    if (totalAssigned < this.menuItems.length) {
-      // Force all remaining items to overflow
-      const missingItems = this.menuItems.slice(totalAssigned);
-      overflow.push(...missingItems);
-    }
-
-    this.visibleMenuItems = visible;
-    this.menu2Items = overflow;
-
-    if (this.menu2Items.length === 0) {
-      this.isMenu2Open.set(false);
-    }
-
-    this.cdr.markForCheck();
-  });
-}
+  }
 
 
   @HostListener('window:resize')
@@ -301,6 +312,45 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     this.isMenu2Open.set(false);
   }
 
+  setActiveNestedItem(item: MenuItem) {
+    this.activeNestedItemId.set(item.id);
+    this.activeDeepItemId.set(null);
+  }
+
+  setActiveDeepItem(item: MenuItem, groupId: number) {
+    this.activeDeepItemId.set(item.id);
+    this.activeNestedItemId.set(groupId); // highlight the parent group too
+  }
+
+  // ── Hover dropdown handlers ──────────────────────────────
+  onSubmenuEnter(id: number) {
+    if (this.submenuTimer) { clearTimeout(this.submenuTimer); this.submenuTimer = null; }
+    this.hoveredSubmenuId.set(id);
+  }
+
+  onSubmenuLeave() {
+    this.submenuTimer = setTimeout(() => { this.hoveredSubmenuId.set(null); this.hoveredGroupId.set(null); }, 150);
+  }
+
+  onDropdownEnter(id: number) {
+    if (this.submenuTimer) { clearTimeout(this.submenuTimer); this.submenuTimer = null; }
+    this.hoveredSubmenuId.set(id);
+  }
+
+  onDropdownLeave() {
+    this.submenuTimer = setTimeout(() => { this.hoveredSubmenuId.set(null); this.hoveredGroupId.set(null); }, 150);
+  }
+
+  onGroupEnter(id: number) {
+    if (this.groupTimer)   { clearTimeout(this.groupTimer);   this.groupTimer   = null; }
+    if (this.submenuTimer) { clearTimeout(this.submenuTimer); this.submenuTimer = null; }
+    this.hoveredGroupId.set(id);
+  }
+
+  onGroupLeave() {
+    this.groupTimer = setTimeout(() => { this.hoveredGroupId.set(null); }, 150);
+  }
+
   menuOpenClose() {
     this.isMenu2Open.set(!this.isMenu2Open());
     setTimeout(() => this.updateNavbarHeight(), 300);
@@ -310,8 +360,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     this.authService.logout();
   }
   ngOnDestroy() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
+    if (this.resizeObserver) { this.resizeObserver.disconnect(); }
+    if (this.submenuTimer)   { clearTimeout(this.submenuTimer); }
+    if (this.groupTimer)     { clearTimeout(this.groupTimer); }
   }
 }

@@ -1,0 +1,208 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="materialForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="materialForm.disabled">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Document Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-17">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark">Issue Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="issueDate">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Material Identification -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('material')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['material'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Material Identification</span>
+          </div>
+          <div *ngIf="openSections['material']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Material Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="materialName">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Material Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="materialCode">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Category <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="category">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Type</label>
+                <select class="form-select" formControlName="type">
+                  <option value="physical">Physical</option>
+                  <option value="chemical">Chemical</option>
+                  <option value="biological">Biological</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Grade</label>
+                <input type="text" class="form-control" formControlName="grade">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Manufacturer <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="manufacturer">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark">Batch / Lot No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control text-uppercase" formControlName="batchNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Technical Specifications -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('technical')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['technical'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Technical Specifications & Storage</span>
+          </div>
+          <div *ngIf="openSections['technical']" class="section-body">
+            <div class="row g-3 mt-2">
+              <div class="row mb-2">
+                <label class="form-label">Technical Specifications <span class="text-danger">*</span></label>
+                <quill-editor formControlName="specifications" [modules]="quillModules" placeholder="Type technical specifications here..." [readOnly]="isViewMode"></quill-editor>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Purity (%)</label>
+                <input type="number" class="form-control" formControlName="purity">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Physical State</label>
+                <select class="form-select" formControlName="physicalState">
+                  <option value="solid">Solid</option>
+                  <option value="liquid">Liquid</option>
+                  <option value="gas">Gas</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Shelf Life (Months) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="shelfLife">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Expiry Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="expiryDate">
+              </div>
+              <div class="col-12 mt-3">
+                  <label class="form-label">Storage Conditions <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control border-dashed" formControlName="storageConditions" placeholder="e.g. Store at 25°C, away from direct sunlight">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Certification -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('certification')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['certification'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Certification & Traceability</span>
+          </div>
+          <div *ngIf="openSections['certification']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Certificate No.</label>
+                <input type="text" class="form-control" formControlName="certificateNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Certification Date</label>
+                <input type="date" class="form-control" formControlName="certificationDate">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Certified By</label>
+                <input type="text" class="form-control" formControlName="certifiedBy">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Traceability Details</label>
+                <textarea class="form-control border-dashed" formControlName="traceability" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Inventory -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('inventory')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['inventory'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Inventory Management</span>
+          </div>
+          <div *ngIf="openSections['inventory']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Current Stock <span class="text-danger">*</span></label>
+                <input type="number" class="form-control fw-bold text-primary" formControlName="currentStock">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="unitOfMeasure" placeholder="e.g. Liter, Kg, Number">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Reorder Level</label>
+                <input type="number" class="form-control text-warning" formControlName="reorderLevel">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Storage Location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="storageLocation">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="materialForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

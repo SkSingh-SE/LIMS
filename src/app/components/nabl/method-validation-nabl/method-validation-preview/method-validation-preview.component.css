@@ -1,0 +1,62 @@
+.print-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    color: #000;
+}
+
+.bg-light-soft {
+    background-color: #fdfdfd;
+}
+
+.table th {
+    background-color: #f8f9fa !important;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.table td {
+    font-size: 0.8rem;
+    height: 40px;
+}
+
+.extra-small {
+    font-size: 0.75rem;
+}
+
+.border-dark {
+    border-color: #000 !important;
+}
+
+.border-primary {
+    border-color: #0d6efd !important;
+}
+
+.italic {
+    font-style: italic;
+}
+
+@media print {
+    .print-container {
+        width: 100%;
+        max-width: none;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .d-print-none {
+        display: none !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}
+
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}

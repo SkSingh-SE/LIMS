@@ -1,0 +1,183 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="checkForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="checkForm.disabled">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Document Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-16">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issue Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="issueDate">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Equipment & Period -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('equipment')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['equipment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Equipment & Check Period</span>
+          </div>
+          <div *ngIf="openSections['equipment']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Month <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="checkMonth" (change)="generateDailyRows()">
+                  <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Year <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="checkYear" (change)="generateDailyRows()">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="location">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Select Equipment <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="equipmentId" (change)="onEquipmentChange($event)">
+                  <option [value]="null" disabled>Select Equipment</option>
+                  <option *ngFor="let e of equipments" [value]="e.id">{{ e.name }} ({{ e.equipmentNo }})</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Equipment No</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentNo" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Next Calibration Due <span class="text-danger">*</span></label>
+                <input type="date" class="form-control border-warning" formControlName="nextCalibrationDue">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Daily Check Grid -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('daily')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['daily'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Daily Intermediate Check Records</span>
+          </div>
+          <div *ngIf="openSections['daily']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 80px;">Date</th>
+                    <th style="width: 130px;">Status <span class="text-danger">*</span></th>
+                    <th>Env. Condition / Parameter</th>
+                    <th>Observations / Value</th>
+                    <th style="width: 110px;">Check Time</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="dailyRecords">
+                  <tr *ngFor="let row of dailyRecords.controls; let i = index" [formGroupName]="i" [ngClass]="{'bg-light': row.get('checkStatus')?.value === 'not-performed'}">
+                    <td class="text-center fw-bold text-secondary">
+                      {{ row.get('date')?.value | date: 'dd/MM' }}
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="checkStatus" [ngClass]="{'text-success fw-bold': row.get('checkStatus')?.value === 'ok', 'text-danger fw-bold': row.get('checkStatus')?.value === 'deviation'}">
+                        <option value="ok">OK ✅</option>
+                        <option value="deviation">Deviation ❌</option>
+                        <option value="not-performed">N/P (Holiday)</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="equipmentCondition" placeholder="e.g. 24.5 C">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="observations" placeholder="Normal function">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm text-center" formControlName="checkTime" placeholder="09:30 AM">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Summary & Verification -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('summary')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['summary'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Summary & Verification Personnel</span>
+          </div>
+          <div *ngIf="openSections['summary']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6 mb-2 d-flex flex-column">
+                <label class="form-label">Deviations Observed (if any)</label>
+                <quill-editor formControlName="deviationsObserved" [modules]="quillModules" placeholder="Type deviations here..." [readOnly]="isViewMode"></quill-editor>
+              </div>
+              <div class="col-md-6 mb-2 d-flex flex-column">
+                <label class="form-label">Corrective Actions Taken</label>
+                <quill-editor formControlName="correctiveActions" [modules]="quillModules" placeholder="Type corrective actions here..." [readOnly]="isViewMode"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">Checked By (Technician) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm border-dashed text-primary fw-semibold" formControlName="checkedBy">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">Verified By (Quality Manager)</label>
+                <input type="text" class="form-control form-control-sm border-dashed" formControlName="verifiedBy">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="checkForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

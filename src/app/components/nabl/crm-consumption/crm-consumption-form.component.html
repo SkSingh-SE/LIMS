@@ -1,0 +1,203 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="consumptionForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="consumptionForm.disabled">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Document Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-18">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issue Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="issueDate">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Reference Material Selection -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('material')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['material'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Material Identification & Check Period</span>
+          </div>
+          <div *ngIf="openSections['material']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Month <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="consumptionMonth" (change)="generateDailyRows()">
+                  <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Year <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="consumptionYear" (change)="generateDailyRows()">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Select CRM Material <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="referenceMaterialId" (change)="onMaterialChange($event)">
+                  <option [value]="null" disabled>Select Material</option>
+                  <option *ngFor="let m of materials" [value]="m.id">{{ m.materialName }} ({{ m.materialCode }})</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Batch / Lot No.</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="batchNo" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Opening Balance</label>
+                <div class="input-group">
+                  <input type="number" class="form-control bg-light fw-bold" formControlName="openingStock" readonly>
+                  <span class="input-group-text bg-light fw-semibold small">{{ consumptionForm.get('unitOfMeasure')?.value }}</span>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Received in Month</label>
+                <input type="number" class="form-control border-info" formControlName="received" (input)="calculateSummary()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Daily Consumption Grid -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('grid')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['grid'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Daily CRM Consumption Records</span>
+          </div>
+          <div *ngIf="openSections['grid']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 80px;">Date</th>
+                    <th style="width: 110px;">Consumed</th>
+                    <th style="width: 110px;">Wastage</th>
+                    <th>Purpose of Use / Equipment</th>
+                    <th style="width: 150px;">Analysis By</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="dailyConsumption">
+                  <tr *ngFor="let row of dailyConsumption.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">
+                      {{ row.get('date')?.value | date: 'dd/MM' }}
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center border-dashed" formControlName="quantityConsumed">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center border-dashed text-danger" formControlName="quantityWasted">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="purpose" placeholder="e.g. Test method identification">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="performedBy">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Month-end Summary -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('summary')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['summary'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Month-end Inventory Summary</span>
+          </div>
+          <div *ngIf="openSections['summary']" class="section-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-3">
+                <div class="p-2 border rounded bg-light text-center">
+                  <label class="form-label fw-semibold text-primary small d-block mb-1">Total Consumed</label>
+                  <h4 class="mb-0 fw-bold text-primary">{{ consumptionForm.get('consumed')?.value }}</h4>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="p-2 border rounded bg-light text-center">
+                  <label class="form-label fw-semibold text-danger small d-block mb-1">Total Wastage</label>
+                  <h4 class="mb-0 fw-bold text-danger">{{ consumptionForm.get('wastage')?.value }}</h4>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="p-2 border rounded bg-primary text-white text-center shadow-sm">
+                  <label class="form-label fw-semibold small d-block mb-1">Closing Stock</label>
+                  <h4 class="mb-0 fw-bold">{{ consumptionForm.get('closingStock')?.value }}</h4>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Purpose of Use <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="purposeOfUse">
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="row mb-2">
+                <label class="form-label">General Remarks</label>
+                <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Type additional remarks here..." [readOnly]="isViewMode"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">Recorded By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm border-dashed text-primary fw-semibold" formControlName="recordedBy">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">Verified By (Quality Manager)</label>
+                <input type="text" class="form-control form-control-sm border-dashed" formControlName="verifiedBy">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="consumptionForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

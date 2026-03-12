@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-sample-cutting-raw-format',
-    standalone: true,
+
     imports: [CommonModule],
     templateUrl: './sample-cutting-raw-format.component.html',
     styleUrls: ['./sample-cutting-raw-format.component.css']

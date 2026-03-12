@@ -1,0 +1,99 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'DOCUMENT CHANGE REQUEST FORM'"
+        [docNo]="data.docNo"
+        [issueNo]="data.headerIssueNo"
+        [issueDate]="data.headerIssueDate"
+        [revNo]="data.headerRevNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="section mb-0 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 30%">Date:-</td>
+              <td>{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Document Title:-</td>
+              <td>{{ data.documentTitle }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Doc. No:-</td>
+              <td>{{ data.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Issue No. / Rev. No:-</td>
+              <td>{{ data.issueNo }} / {{ data.revNo }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Changes Required:-</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="content-cell">
+                <div class="ql-editor" [innerHTML]="data.changesRequired"></div>
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Justification:-</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="content-cell">
+                <div class="ql-editor" [innerHTML]="data.justification"></div>
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">Initiated By:-</td>
+              <td>{{ data.initiatedBy }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Approved By:- (Director)</td>
+              <td>{{ data.approvedBy }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Action Taken By Quality Manager:-</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="content-cell">
+                <div class="ql-editor" [innerHTML]="data.actionTaken"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'General Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

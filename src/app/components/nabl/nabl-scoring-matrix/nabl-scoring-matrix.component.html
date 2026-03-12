@@ -1,0 +1,98 @@
+<div class="scoring-matrix-container">
+    <div class="table-responsive">
+        <table class="table table-bordered scoring-table">
+            <thead>
+                <tr>
+                    <th class="sno-col" rowspan="2">Activity No.</th>
+                    <th rowspan="2">Activity</th>
+                    <th rowspan="2">Risk</th>
+                    <th rowspan="2">Opportunity</th>
+                    <th colspan="3" class="text-center">Rating</th>
+                    <th rowspan="2">Mitigate</th>
+                    <th rowspan="2">Action Plan</th>
+                    <th rowspan="2">Effectiveness of Action</th>
+                    <th *ngIf="showRevisedRisk" colspan="3" class="text-center">Revised Risk Rating</th>
+                    <th *ngFor="let col of extraColumns" rowspan="2" [style.width]="col.width || 'auto'">
+                        {{ col.label }}
+                    </th>
+                </tr>
+                <tr>
+                    <th class="score-col">S</th>
+                    <th class="score-col">P</th>
+                    <th class="score-col">S×P</th>
+                    <th *ngIf="showRevisedRisk" class="score-col">S</th>
+                    <th *ngIf="showRevisedRisk" class="score-col">P</th>
+                    <th *ngIf="showRevisedRisk" class="score-col">S×P</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of rows; let i = index">
+                    <td class="text-center fw-bold">{{ i + 1 }}</td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.activity }}</ng-container>
+                        <input *ngIf="editable" type="text" class="form-control form-control-sm"
+                               [value]="row.activity" (change)="onValueChange(row, 'activity', $any($event.target).value)">
+                    </td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.risk }}</ng-container>
+                        <textarea *ngIf="editable" class="form-control form-control-sm"
+                                  [value]="row.risk" (change)="onValueChange(row, 'risk', $any($event.target).value)" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.opportunity }}</ng-container>
+                        <textarea *ngIf="editable" class="form-control form-control-sm"
+                                  [value]="row.opportunity" (change)="onValueChange(row, 'opportunity', $any($event.target).value)" rows="2"></textarea>
+                    </td>
+                    <td class="text-center score-col">
+                        <ng-container *ngIf="!editable">{{ row.severity }}</ng-container>
+                        <input *ngIf="editable" type="number" class="form-control form-control-sm text-center" min="1" max="5"
+                               [value]="row.severity" (change)="onValueChange(row, 'severity', +$any($event.target).value)">
+                    </td>
+                    <td class="text-center score-col">
+                        <ng-container *ngIf="!editable">{{ row.probability }}</ng-container>
+                        <input *ngIf="editable" type="number" class="form-control form-control-sm text-center" min="1" max="5"
+                               [value]="row.probability" (change)="onValueChange(row, 'probability', +$any($event.target).value)">
+                    </td>
+                    <td class="text-center score-col fw-bold" [ngClass]="getRiskClass(row.riskRating)">
+                        {{ row.riskRating }}
+                    </td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.mitigate }}</ng-container>
+                        <textarea *ngIf="editable" class="form-control form-control-sm"
+                                  [value]="row.mitigate" (change)="onValueChange(row, 'mitigate', $any($event.target).value)" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.actionPlan }}</ng-container>
+                        <textarea *ngIf="editable" class="form-control form-control-sm"
+                                  [value]="row.actionPlan" (change)="onValueChange(row, 'actionPlan', $any($event.target).value)" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <ng-container *ngIf="!editable">{{ row.effectiveness }}</ng-container>
+                        <textarea *ngIf="editable" class="form-control form-control-sm"
+                                  [value]="row.effectiveness" (change)="onValueChange(row, 'effectiveness', $any($event.target).value)" rows="2"></textarea>
+                    </td>
+                    <ng-container *ngIf="showRevisedRisk">
+                        <td class="text-center score-col">
+                            <ng-container *ngIf="!editable">{{ row.revisedSeverity }}</ng-container>
+                            <input *ngIf="editable" type="number" class="form-control form-control-sm text-center" min="1" max="5"
+                                   [value]="row.revisedSeverity" (change)="onValueChange(row, 'revisedSeverity', +$any($event.target).value)">
+                        </td>
+                        <td class="text-center score-col">
+                            <ng-container *ngIf="!editable">{{ row.revisedProbability }}</ng-container>
+                            <input *ngIf="editable" type="number" class="form-control form-control-sm text-center" min="1" max="5"
+                                   [value]="row.revisedProbability" (change)="onValueChange(row, 'revisedProbability', +$any($event.target).value)">
+                        </td>
+                        <td class="text-center score-col fw-bold" [ngClass]="getRiskClass(row.revisedRiskRating || 0)">
+                            {{ row.revisedRiskRating }}
+                        </td>
+                    </ng-container>
+                    <td *ngFor="let col of extraColumns">
+                        <ng-container *ngIf="!editable">{{ row[col.key] }}</ng-container>
+                        <input *ngIf="editable" type="text" class="form-control form-control-sm"
+                               [value]="row[col.key] || ''" (change)="onValueChange(row, col.key, $any($event.target).value)">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,48 @@
+/* Environment Monitoring Form Styles */
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.is-invalid {
+  border-color: #dc3545;
+}
+
+.btn-danger {
+  background-color: #c41e3a;
+  border-color: #c41e3a;
+}
+
+.btn-danger:hover {
+  background-color: #a01729;
+  border-color: #a01729;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.85rem;
+  height: auto;
+}
+
+.table-sm tbody tr:hover {
+  background-color: #f9f9f9;
+}

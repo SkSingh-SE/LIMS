@@ -1,0 +1,184 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="effectivenessForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information (Mandatory Pattern) -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">NABL Compliance Header</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList" placeholder="e.g. F-10">
+                <datalist id="formNumbersList">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No</label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No</label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Evaluation Date</label>
+                <input type="date" class="form-control" formControlName="evaluationDate">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Employee & Training Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('employee')">
+            <i class="bi" [ngClass]="openSections['employee'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Employee & Training Information</span>
+          </div>
+          <div *ngIf="openSections['employee']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Employee Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="employeeName" placeholder="Enter Full Name"
+                  [class.is-invalid]="effectivenessForm.get('employeeName')?.invalid && effectivenessForm.get('employeeName')?.touched">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Course Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="courseTitle" placeholder="e.g. ISO 17025 Awareness">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Training Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="trainingDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Trainer Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="trainerName" placeholder="Enter Trainer's Name">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Organization / Agency</label>
+                <input type="text" class="form-control" formControlName="organization" placeholder="Internal / Name of External Agency">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Pre-Training Assessment -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('pre')">
+            <i class="bi" [ngClass]="openSections['pre'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Pre-Training Assessment</span>
+            <div class="ms-auto pe-3 text-muted small">Score range: 1-10</div>
+          </div>
+          <div *ngIf="openSections['pre']" class="section-body">
+            <div formArrayName="preAssessment">
+              <div *ngFor="let item of preAssessment.controls; let i = index" [formGroupName]="i" class="flat-card mb-3 p-3">
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-9">
+                    <label class="form-label fw-medium">Criterion #{{ i + 1 }}</label>
+                    <input type="text" class="form-control bg-light" formControlName="criterion" readonly>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-medium">Score (1-10) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" formControlName="score" min="1" max="10" placeholder="Score">
+                    <div *ngIf="item.get('score')?.invalid && item.get('score')?.touched" class="text-danger small mt-1">Required (1-10)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Post-Training Assessment -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('post')">
+            <i class="bi" [ngClass]="openSections['post'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Post-Training Assessment</span>
+            <div class="ms-auto pe-3 text-muted small">Score range: 1-10</div>
+          </div>
+          <div *ngIf="openSections['post']" class="section-body">
+            <div formArrayName="postAssessment">
+              <div *ngFor="let item of postAssessment.controls; let i = index" [formGroupName]="i" class="flat-card mb-3 p-3">
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-9">
+                    <label class="form-label fw-medium">Criterion #{{ i + 1 }}</label>
+                    <input type="text" class="form-control bg-light" formControlName="criterion" readonly>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-medium">Score (1-10) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" formControlName="score" min="1" max="10" placeholder="Score">
+                    <div *ngIf="item.get('score')?.invalid && item.get('score')?.touched" class="text-danger small mt-1">Required (1-10)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Effectiveness Evaluation & Recommendations -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('evaluation')">
+            <i class="bi" [ngClass]="openSections['evaluation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Effectiveness Evaluation & Recommendations</span>
+          </div>
+          <div *ngIf="openSections['evaluation']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Evaluation Mode</label>
+                <select class="form-select" formControlName="evaluationMode">
+                  <option *ngFor="let mode of evaluationModes" [value]="mode">{{ mode }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Evaluator Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="evaluatorName" placeholder="Enter Evaluator Name">
+              </div>
+              <div class="col-md-4">
+                <div class="form-switch switch-primary mt-4 pt-2">
+                  <input class="form-check-input mt-1" type="checkbox" id="isEffective" formControlName="isEffective">
+                  <label class="form-check-label fw-bold ms-2" for="isEffective">Is Training Effective?</label>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <label class="form-label fw-bold">Recommendations & Further Training Needs</label>
+                <quill-editor formControlName="recommendations" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter detailed recommendations or future training requirements..."></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="effectivenessForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isViewMode ? 'Record Details' : (isEditMode ? 'Update Record' : 'Save Record') }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

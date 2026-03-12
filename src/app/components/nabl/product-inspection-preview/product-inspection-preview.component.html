@@ -1,0 +1,113 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" [title]="'Product & Service Inspection Plan (F-23)'" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="Product & Service Inspection Plan"
+        [formatNo]="record()?.formatNo || 'F-23'"
+        [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'"
+        [issueDate]="record()?.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="preview-body p-1">
+        <!-- Section I: Product Info -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="4" class="py-2 px-3 fw-bold">
+                <i class="bi bi-info-circle me-2"></i>
+                I. PRODUCT / SERVICE INFORMATION
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Product / Service Name</td>
+              <td style="width: 25%">{{ record()?.productName }}</td>
+              <td class="bg-light fw-bold small" style="width: 25%">Product Code</td>
+              <td style="width: 25%">{{ record()?.productCode }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Category</td>
+              <td>{{ record()?.category }}</td>
+              <td class="bg-light fw-bold small">Inspection Stage</td>
+              <td class="fw-bold text-success">{{ record()?.inspectionStage }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Plan Number</td>
+              <td>{{ record()?.documentNo }}</td>
+              <td class="bg-light fw-bold small">Effective Date</td>
+              <td>{{ record()?.date | date: "dd/MM/yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section II: Inspection Parameters -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="6" class="py-2 px-3 fw-bold">
+                <i class="bi bi-list-check me-2"></i>
+                II. INSPECTION PARAMETERS
+              </th>
+            </tr>
+            <tr class="bg-light text-center small fw-bold">
+              <th style="width: 40px">SN</th>
+              <th>Parameter</th>
+              <th>Requirement</th>
+              <th style="width: 100px">Method</th>
+              <th style="width: 80px">Frequency</th>
+              <th>Acceptance Criteria</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let p of record()?.parameters; let i = index">
+              <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+              <td>{{ p.parameterName }}</td>
+              <td>{{ p.requirement }}</td>
+              <td class="text-center">{{ p.methodOfCheck }}</td>
+              <td class="text-center">{{ p.frequency }}</td>
+              <td>{{ p.acceptanceCriteria }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section III: Remarks -->
+        <div class="border border-dark mb-0">
+          <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark">
+            <i class="bi bi-pencil-square me-2"></i>
+            III. SPECIAL INSTRUCTIONS & REMARKS
+          </div>
+          <div class="p-3 ql-editor small" [innerHTML]="record()?.remarks || 'No additional instructions provided.'"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record()?.preparedBy || ''"
+        issuedByName="Manager (Quality)"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

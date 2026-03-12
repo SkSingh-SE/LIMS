@@ -1,0 +1,112 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record()?.formatNo || 'F-16'"
+          [mainTitle]="'INTERMEDIATE CHECK RECORDS'"
+          [docNo]="'DMSPL / Level-04 / Format / F-16'"
+          [issueNo]="record()?.issueNo || '01'"
+          [revNo]="record()?.revNo || '00'"
+          [issueDate]="record()?.date || ''">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="p-4">
+        <!-- Equipment & Period Details -->
+        <div class="row g-3 mb-4">
+          <div class="col-8">
+            <table class="table table-bordered sm-table">
+              <tr>
+                <th style="width: 25%;">Equipment Name</th>
+                <td>{{ record()?.equipmentName }}</td>
+              </tr>
+              <tr>
+                <th>Equipment No.</th>
+                <td>{{ record()?.equipmentNo }}</td>
+              </tr>
+              <tr>
+                <th>Location</th>
+                <td>{{ record()?.location }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-4 text-end">
+            <h6 class="mb-1"><strong>Period:</strong> {{ getMonthName(record()?.checkMonth || 1) }} {{ record()?.checkYear }}</h6>
+            <p class="mb-0 small text-muted">Doc No: {{ record()?.documentNo }}</p>
+          </div>
+        </div>
+
+        <!-- Daily Records Table -->
+        <table class="table table-bordered compact-table text-center mb-4">
+          <thead class="table-light align-middle font-xs">
+            <tr>
+              <th rowspan="2" style="width: 40px;">Date</th>
+              <th rowspan="2" style="width: 60px;">Status</th>
+              <th colspan="2">Observation / Condition</th>
+              <th rowspan="2" style="width: 80px;">Time</th>
+            </tr>
+            <tr>
+              <th>Equipment Condition</th>
+              <th>Specific Observations</th>
+            </tr>
+          </thead>
+          <tbody class="font-xs">
+            <tr *ngFor="let row of record()?.dailyRecords">
+              <td class="fw-bold">{{ row.date | date: 'dd/MM' }}</td>
+              <td>
+                <span [ngClass]="{'text-success': row.checkStatus === 'ok', 'text-danger': row.checkStatus === 'deviation'}">
+                  {{ row.checkStatus | uppercase }}
+                </span>
+              </td>
+              <td>{{ row.equipmentCondition }}</td>
+              <td>{{ row.observations }}</td>
+              <td>{{ row.checkTime }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Summary Section -->
+        <div class="summary-box p-3 border rounded mb-4 font-sm bg-light">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <h6 class="fw-bold border-bottom pb-1">Deviations Observed:</h6>
+              <div [innerHTML]="record()?.deviationsObserved"></div>
+              <div *ngIf="!record()?.deviationsObserved" class="text-muted fst-italic">None recorded</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <h6 class="fw-bold border-bottom pb-1">Corrective Actions:</h6>
+              <div [innerHTML]="record()?.correctiveActions"></div>
+              <div *ngIf="!record()?.correctiveActions" class="text-muted fst-italic">N/A</div>
+            </div>
+          </div>
+          <p class="mt-2 mb-0 fw-bold">Next Calibration Due: {{ record()?.nextCalibrationDue | date: 'dd MMM, yyyy' }}</p>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="record()?.checkedBy || 'Technician'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="record()?.verifiedBy || 'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

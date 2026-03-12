@@ -1,0 +1,192 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { CompetenceRequirementService } from '../../../services/competence-requirement.service';
+import { DesignationService } from '../../../services/designation.service';
+import { ToastService } from '../../../services/toast.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { Observable } from 'rxjs';
+import { QuillModule } from 'ngx-quill';
+import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+
+@Component({
+  selector: 'app-competence-requirement-form',
+
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule],
+  templateUrl: './competence-requirement-form.component.html',
+  styleUrl: './competence-requirement-form.component.css'
+})
+export class CompetenceRequirementFormComponent implements OnInit {
+  requirementForm!: FormGroup;
+  isEditMode: boolean = false;
+  isViewMode: boolean = false;
+  requirementId: number = 0;
+  formTitle = 'Create Competence Requirement';
+  formNumbers: string[] = NablFormsHelper.getFormNumbers();
+
+  openSections: { [key: string]: boolean } = {
+    header: true,
+    criteria: true
+  };
+
+  quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+      ['blockquote', 'code-block'],
+      [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
+      [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
+      [{ 'direction': 'rtl' }],                         // text direction
+      [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+      [{ 'font': [] }],
+      [{ 'align': [] }],
+      ['clean']                                         // remove formatting button
+    ]
+  };
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private competenceRequirementService: CompetenceRequirementService,
+    private designationService: DesignationService,
+    private toastService: ToastService
+  ) { }
+
+  ngOnInit(): void {
+    this.initForm();
+
+    this.route.paramMap.subscribe(params => {
+      this.requirementId = Number(params.get('id'));
+      if (this.requirementId > 0) {
+        this.loadData();
+      }
+    });
+
+    const state = history.state as { mode?: string };
+    if (state && state.mode === 'view') {
+      this.formTitle = 'Competence Requirement Details';
+      this.isViewMode = true;
+      this.requirementForm.disable();
+    } else if (state && state.mode === 'edit') {
+      this.formTitle = 'Edit Competence Requirement';
+      this.isEditMode = true;
+      this.isViewMode = false;
+    }
+  }
+
+  initForm(): void {
+    this.requirementForm = this.fb.group({
+      id: [0],
+      formatNo: ['F-4', Validators.required],
+      issueNo: ['01', Validators.required],
+      revNo: ['00', Validators.required],
+      date: [new Date().toISOString().split('T')[0], Validators.required],
+      isExternal: [false],
+      positionId: [null],
+      positionName: [''],
+      relatedActivity: [''],
+      minimumEducation: ['', Validators.required],
+      minimumExperience: ['', Validators.required],
+      approvedBy: ['', Validators.required]
+    });
+
+    // Handle conditional validation based on isExternal
+    this.requirementForm.get('isExternal')?.valueChanges.subscribe(isExternal => {
+      if (isExternal) {
+        this.requirementForm.get('positionId')?.clearValidators();
+        this.requirementForm.get('relatedActivity')?.setValidators([Validators.required]);
+      } else {
+        this.requirementForm.get('positionId')?.setValidators([Validators.required]);
+        this.requirementForm.get('relatedActivity')?.clearValidators();
+      }
+      this.requirementForm.get('positionId')?.updateValueAndValidity();
+      this.requirementForm.get('relatedActivity')?.updateValueAndValidity();
+    });
+  }
+
+  loadData(): void {
+    this.competenceRequirementService.getById(this.requirementId).subscribe({
+      next: (data) => {
+        if (data) {
+          const formValues = { ...data };
+          // Handle Versioning on Load
+          if (this.isEditMode) {
+            // Increment Rev No on Edit
+            const currentRev = parseInt(data.revNo || '00');
+            formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
+            // Keep current date for edit
+            formValues.date = new Date().toISOString().split('T')[0];
+          }
+
+          this.requirementForm.patchValue(formValues);
+          if (this.isViewMode) {
+            this.requirementForm.disable();
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching requirement:', error);
+        this.toastService.show('Error loading competence requirement', 'error');
+        this.router.navigate(['/competence-requirement']);
+      }
+    });
+  }
+
+  getDesignations = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.designationService.getDesignationDropdown(term, page, pageSize);
+  };
+
+  onDesignationSelected(item: any): void {
+    this.requirementForm.patchValue({
+      positionId: item.id,
+      positionName: item.name
+    });
+  }
+
+  toggleSection(section: string): void {
+    this.openSections[section] = !this.openSections[section];
+  }
+
+  onSubmit(): void {
+    if (this.requirementForm.valid) {
+      const formData = this.requirementForm.getRawValue();
+
+      if (this.isEditMode) {
+        formData.id = this.requirementId;
+        this.competenceRequirementService.update(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message || 'Updated successfully', 'success');
+            this.router.navigate(['/competence-requirement']);
+          },
+          error: (error) => {
+            console.error('Error updating requirement:', error);
+            this.toastService.show('Error updating competence requirement', 'error');
+          }
+        });
+      } else {
+        this.competenceRequirementService.create(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message || 'Created successfully', 'success');
+            this.router.navigate(['/competence-requirement']);
+          },
+          error: (error) => {
+            console.error('Error creating requirement:', error);
+            this.toastService.show('Error creating competence requirement', 'error');
+          }
+        });
+      }
+    } else {
+      this.requirementForm.markAllAsTouched();
+      this.toastService.show('Please fill all required fields', 'warning');
+    }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/competence-requirement']);
+  }
+}

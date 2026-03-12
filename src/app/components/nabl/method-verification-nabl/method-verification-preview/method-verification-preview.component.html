@@ -1,0 +1,128 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center" *ngIf="data">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [issueNo]="data.issueNo"
+        [revNo]="data.revNo"
+        [title]="'METHOD VERIFICATION RECORD'"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="record-content">
+        <!-- Method Info Block -->
+        <div class="border border-dark p-3 mb-4 bg-light-soft">
+          <div class="row g-2 small">
+            <div class="col-md-6 border-bottom border-dark-subtle pb-1">
+              <span class="fw-bold">Test Method Name:</span> {{ data.testMethodName }}
+            </div>
+            <div class="col-md-6 border-bottom border-dark-subtle pb-1">
+              <span class="fw-bold">Reference Standard:</span> {{ data.referenceStandard }}
+            </div>
+            <div class="col-md-4">
+              <span class="fw-bold">Equipment Used:</span> {{ data.equipmentUsed }}
+            </div>
+            <div class="col-md-4">
+              <span class="fw-bold">Matrix:</span> {{ data.matrix }}
+            </div>
+            <div class="col-md-4">
+              <span class="fw-bold">Range:</span> {{ data.range }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Parameters Table -->
+        <h6 class="fw-bold text-uppercase border-bottom border-2 border-primary pb-1 mb-2 small">
+          I. Performance Parameters &amp; Acceptance Criteria
+        </h6>
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered border-dark align-middle small">
+            <thead class="bg-light text-center fw-bold">
+              <tr>
+                <th style="width: 150px">Parameter</th>
+                <th>Acceptance Criteria</th>
+                <th>Observed Value</th>
+                <th style="width: 80px">Result</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of data.performanceParameters">
+                <td class="fw-bold">{{ p.parameter }}</td>
+                <td>{{ p.acceptanceCriteria }}</td>
+                <td>{{ p.observedValue }}</td>
+                <td class="text-center font-monospace" [class.text-success]="p.result === 'Pass'" [class.text-danger]="p.result === 'Fail'">
+                  {{ p.result }}
+                </td>
+                <td>{{ p.remarks }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Raw Data Table -->
+        <h6 class="fw-bold text-uppercase border-bottom border-2 border-primary pb-1 mb-2 small">
+          II. Raw Data &amp; Replicate Analysis
+        </h6>
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered border-dark align-middle small text-center">
+            <thead class="bg-light fw-bold">
+              <tr>
+                <th class="text-start" style="width: 150px">Sample / CRM ID</th>
+                <th>Reading 1</th>
+                <th>Reading 2</th>
+                <th>Reading 3</th>
+                <th class="bg-primary-subtle border-primary">Mean</th>
+                <th>SD</th>
+                <th style="width: 80px">RSD %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of data.rawData">
+                <td class="text-start small fw-medium">{{ r.sampleId }}</td>
+                <td>{{ r.reading1 }}</td>
+                <td>{{ r.reading2 }}</td>
+                <td>{{ r.reading3 }}</td>
+                <td class="fw-bold bg-primary-subtle border-primary">{{ r.mean }}</td>
+                <td class="font-monospace text-muted" style="font-size: 0.7rem">{{ r.sd }}</td>
+                <td class="fw-bold" [class.text-danger]="r.rsd > 2">{{ r.rsd }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Conclusion Block -->
+        <div class="border border-dark p-3 mb-4">
+          <span class="fw-bold text-decoration-underline small d-block mb-1">Conclusion:</span>
+          <p class="m-0 small text-muted">{{ data.conclusion }}</p>
+        </div>
+
+        <!-- Signature Block -->
+        <div class="mt-4">
+          <app-nabl-signature-block
+            [signatories]="[
+              { designation: 'Prepared By', name: data.preparedBy },
+              { designation: 'Reviewed By', name: data.reviewedBy },
+              { designation: 'Approved By', name: data.approvedBy },
+            ]"
+          ></app-nabl-signature-block>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

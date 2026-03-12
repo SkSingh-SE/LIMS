@@ -77,24 +77,50 @@
       *ngFor="let subMenuItem of subMenus()"
       class="submenu-item"
       (click)="setActiveSubMenu(subMenuItem)"
+      (mouseenter)="onSubmenuEnter(subMenuItem.id)"
+      (mouseleave)="onSubmenuLeave()"
       [ngClass]="{ active: activeSubmenu() === subMenuItem.title }"
     >
       <ng-container *ngIf="subMenuItem.children && subMenuItem.children.length > 0; else leafLink">
-        <div class="dropdown p-0">
-          <div class="btn dropdown-toggle p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="header-font m-0 p-0">{{ subMenuItem.title }}</span>
-          </div>
-          <ul class="dropdown-menu">
-            <li *ngFor="let nestedSubMenu of subMenuItem.children" class="px-2 py-2">
-              <a [routerLink]="nestedSubMenu.route" class="label-font m-0 p-0">{{ nestedSubMenu.title }}</a>
-            </li>
+        <div class="dropdown">
+          <span class="submenu-label dropdown-toggle">{{ subMenuItem.title }}</span>
+          <ul class="dropdown-menu"
+              [class.show]="hoveredSubmenuId() === subMenuItem.id"
+              (mouseenter)="onDropdownEnter(subMenuItem.id)"
+              (mouseleave)="onDropdownLeave()">
+            <ng-container *ngFor="let nestedSubMenu of subMenuItem.children">
+              <!-- Group with children: fly-out panel -->
+              <ng-container *ngIf="nestedSubMenu.children && nestedSubMenu.children.length > 0; else singleNestedItem">
+                <li class="dropdown-submenu"
+                    [ngClass]="{ 'active-group': activeNestedItemId() === nestedSubMenu.id }"
+                    (mouseenter)="onGroupEnter(nestedSubMenu.id)"
+                    (mouseleave)="onGroupLeave()">
+                  <a class="has-submenu">{{ nestedSubMenu.title }}</a>
+                  <ul class="dropdown-menu submenu-panel"
+                      [class.show]="hoveredGroupId() === nestedSubMenu.id"
+                      (mouseenter)="onGroupEnter(nestedSubMenu.id)"
+                      (mouseleave)="onGroupLeave()">
+                    <li *ngFor="let deepItem of nestedSubMenu.children"
+                        [ngClass]="{ 'active-deep': activeDeepItemId() === deepItem.id }">
+                      <a [routerLink]="deepItem.route"
+                         (click)="setActiveDeepItem(deepItem, nestedSubMenu.id)">{{ deepItem.title }}</a>
+                    </li>
+                  </ul>
+                </li>
+              </ng-container>
+              <!-- Leaf: direct link -->
+              <ng-template #singleNestedItem>
+                <li [ngClass]="{ 'active-nested': activeNestedItemId() === nestedSubMenu.id }">
+                  <a [routerLink]="nestedSubMenu.route"
+                     (click)="setActiveNestedItem(nestedSubMenu)">{{ nestedSubMenu.title }}</a>
+                </li>
+              </ng-template>
+            </ng-container>
           </ul>
         </div>
       </ng-container>
       <ng-template #leafLink>
-        <a [routerLink]="subMenuItem.route" class="page-link">
-          <span class="label-font m-0 p-0">{{ subMenuItem.title }}</span>
-        </a>
+        <a [routerLink]="subMenuItem.route" class="submenu-label">{{ subMenuItem.title }}</a>
       </ng-template>
     </div>
   </div>

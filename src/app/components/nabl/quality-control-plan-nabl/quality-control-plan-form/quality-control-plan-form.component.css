@@ -1,0 +1,32 @@
+/* F-37 Form Styles */
+.ra-form-disabled {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.accordion-section {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.section-header {
+  background-color: #f8f9fa;
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.section-header:hover {
+  background-color: #e9ecef;
+}
+
+.section-body {
+  padding: 20px;
+}
+
+.card-form-header {
+  background-color: #343a40;
+}

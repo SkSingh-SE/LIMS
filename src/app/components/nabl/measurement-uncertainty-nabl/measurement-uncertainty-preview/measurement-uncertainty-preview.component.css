@@ -1,0 +1,18 @@
+/* Preview print styles */
+@media print {
+  .d-print-none {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}

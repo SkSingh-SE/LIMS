@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'Induction Training Records'"
+    [addButtonLabel]="'Create New Record'"
+    [addRoute]="'/induction-training/create'"
+    [baseRoute]="'/induction-training'"
+    [columns]="columns"
+    [data]="records"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)">
+  </app-nabl-register-table>
+</div>

@@ -1,0 +1,228 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Format No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" />
+                <datalist id="formNumbers">
+                  <option *ngFor="let num of formNumbers" [value]="num"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">TRN / Case No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="TRN-0001" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No.</label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No.</label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Customer Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('customer')">
+            <i class="bi" [ngClass]="openSections['customer'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Customer Information</span>
+          </div>
+          <div *ngIf="openSections['customer']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="customerName" placeholder="Enter company name" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">GST Number</label>
+                <input type="text" class="form-control" formControlName="gstNo" placeholder="GSTIN-0000" />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Address <span class="text-danger">*</span></label>
+                <textarea class="form-control" formControlName="address" rows="2" placeholder="Full address"></textarea>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Contact Person <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="contactPerson" placeholder="Name" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Mobile No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="mobileNo" placeholder="10-digit number" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" formControlName="email" placeholder="example@email.com" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Sample Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('samples')">
+            <div>
+              <i class="bi" [ngClass]="openSections['samples'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Sample Details</span>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addSample(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add Sample
+            </button>
+          </div>
+          <div *ngIf="openSections['samples']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 small fw-bold text-muted" style="width: 150px">Sample No.</th>
+                    <th class="py-2 small fw-bold text-muted">Description &amp; Identification</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 100px">Qty</th>
+                    <th class="py-2 small fw-bold text-muted">Classification</th>
+                    <th class="py-2 small fw-bold text-muted">Condition</th>
+                    <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="samples">
+                  <tr *ngFor="let sample of samples.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3">
+                      <input type="text" class="form-control form-control-sm" formControlName="sampleNo" placeholder="S-001" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="description" placeholder="Material details" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="quantity" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="metalClassification" placeholder="Ferrous/Non-Ferrous" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="condition" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeSample(i)" [disabled]="samples.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Requirements & Dispatch -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('requirements')">
+            <i class="bi" [ngClass]="openSections['requirements'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Requirements &amp; Dispatch</span>
+          </div>
+          <div *ngIf="openSections['requirements']" class="section-body">
+            <div class="row g-4">
+              <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">TESTING REQUIREMENTS</label>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="urgent" formControlName="urgent" />
+                  <label class="form-check-label small fw-medium" for="urgent">Urgent testing required</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="return" formControlName="returnSample" />
+                  <label class="form-check-label small" for="return">Return tested sample</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="hold" formControlName="holdTesting" />
+                  <label class="form-check-label small" for="hold">Hold testing until approval</label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">DISPATCH MODES</label>
+                <div class="d-flex flex-wrap gap-3">
+                  <div class="form-check" *ngFor="let mode of dispatchModeOptions">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'mode-' + mode"
+                      [checked]="isDispatchModeSelected(mode)"
+                      (change)="onDispatchModeToggle(mode, $event)"
+                      [disabled]="isViewMode"
+                    />
+                    <label class="form-check-label small" [for]="'mode-' + mode">{{ mode }}</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">BILLING INFO</label>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="bill" formControlName="billRequired" />
+                  <label class="form-check-label small" for="bill">Tax Invoice Required</label>
+                </div>
+                <div>
+                  <label class="form-label small">PO Number</label>
+                  <input type="text" class="form-control form-control-sm" formControlName="poNumber" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Review & Signatures -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('signatures')">
+            <i class="bi" [ngClass]="openSections['signatures'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Review &amp; Signatures</span>
+          </div>
+          <div *ngIf="openSections['signatures']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Prepared / Received By (Lab In-charge) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Authorized / Reviewed By</label>
+                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Quality Manager / Tech Manager" />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Remarks / Receipt Note</label>
+                <quill-editor formControlName="remarks" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Any special observations during sample receipt"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="requestForm.invalid || isLoading()">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

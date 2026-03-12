@@ -1,0 +1,132 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="raForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">F-4 Format Details</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="formatNo">
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                  [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="raForm.get('designationId')?.value"></app-searchable-dropdown>
+                <span
+                  *ngIf="raForm.get('designationId')?.invalid && raForm.get('designationId')?.touched"
+                  class="text-danger text-sm">Designation is required.</span>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.01" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Matrix Content -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('matrix')">
+            <i class="bi" [ngClass]="openSections['matrix'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Matrix Content</span>
+          </div>
+          <div *ngIf="openSections['matrix']" class="section-body">
+            <p class="text-muted mb-3">Define the specific responsibilities and authorities for this role as per NABL requirements.</p>
+            <div class="row mb-3">
+              <div class="row d-flex">
+                <label class="form-label fw-bold">Responsibilities <span class="text-danger">*</span></label>
+                <quill-editor formControlName="responsibilities" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter key duties..."
+                  [ngClass]="{'is-invalid': raForm.get('responsibilities')?.touched && raForm.get('responsibilities')?.invalid}"></quill-editor>
+                <span *ngIf="raForm.get('responsibilities')?.invalid && raForm.get('responsibilities')?.touched"
+                  class="text-danger text-sm">Responsibilities are required.</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row d-flex">
+                <label class="form-label fw-bold">Authorities <span class="text-danger">*</span></label>
+                <quill-editor formControlName="authorities" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter specific powers..."
+                  [ngClass]="{'is-invalid': raForm.get('authorities')?.touched && raForm.get('authorities')?.invalid}"></quill-editor>
+                <span *ngIf="raForm.get('authorities')?.invalid && raForm.get('authorities')?.touched"
+                  class="text-danger text-sm">Authorities are required.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Approval & Acceptance -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Approval & Acceptance</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <p class="text-muted mb-3">Official approval signatures and employee acceptance tracking.</p>
+            <div class="row gy-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">Prepared By (General Manager)</label>
+                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issued By (Quality Manager)</label>
+                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Reviewed & Approved By (Managing Director)</label>
+                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="employeeAccepted"
+                    id="employeeAccepted" />
+                  <label class="form-check-label" for="employeeAccepted">
+                    I hereby accept the responsibilities & authorities assigned to me.
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="raForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

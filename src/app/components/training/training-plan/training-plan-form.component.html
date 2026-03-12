@@ -1,0 +1,143 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading()" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="planForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-8">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="Enter Document No">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Planning Year <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="planningYear" placeholder="2025">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Plan Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="planDate">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Approval Status <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="approvalStatus">
+                  <option *ngFor="let status of approvalStatuses">{{ status }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Training Courses -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('courses')">
+            <i class="bi" [ngClass]="openSections['courses'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Training Courses</span>
+          </div>
+          <div *ngIf="openSections['courses']" class="section-body">
+            <div *ngIf="!isViewMode" class="mb-3">
+              <button type="button" (click)="addCourse()" class="btn btn-sm navbar-background text-white">
+                <i class="bi bi-plus-lg"></i> Add Course
+              </button>
+            </div>
+
+            <div formArrayName="courses">
+              <div *ngFor="let course of courses.controls; let i = index" [formGroupName]="i" class="card mb-3 p-3 bg-light border flat-card">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                  <h6 class="mb-0 text-primary fw-bold">Course #{{ i + 1 }}</h6>
+                  <button *ngIf="!isViewMode" type="button" (click)="removeCourse(i)" class="btn btn-sm btn-outline-danger border-0">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                <div class="row g-2">
+                  <div class="col-md-2">
+                    <label class="form-label small fw-bold">Code *</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="courseCode" placeholder="CTR-001">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold">Training Description *</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="courseName" placeholder="Requirement of National/International standards">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label small fw-bold">Month</label>
+                    <select class="form-select form-select-sm" formControlName="tentativeMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let m of months" [value]="m">{{ m }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label small fw-bold">Agency</label>
+                    <select class="form-select form-select-sm" formControlName="agency">
+                      <option *ngFor="let a of agencies" [value]="a">{{ a }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-bold">To be attended by (Audience)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="targetAudience" placeholder="All staff / Specific Dept">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label small fw-bold">Provider/Agency</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="provider" placeholder="Internal / External Agency Name">
+                  </div>
+                  <div class="col-md-1">
+                    <label class="form-label small fw-bold">Days *</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="duration">
+                  </div>
+                  <div class="col-md-5">
+                    <label class="form-label small fw-bold">Remarks</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="remarks" placeholder="Notes or additional info">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="planForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Plan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

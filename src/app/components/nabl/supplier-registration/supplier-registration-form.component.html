@@ -1,0 +1,353 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg border-0">
+    <!-- Premium Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-building-fill-gear fs-4 me-2"></i>
+        <header class="text-md fw-medium">{{ formTitle }}</header>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i>
+          Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border " role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form
+        *ngIf="!isLoading()"
+        [formGroup]="registrationForm"
+        (ngSubmit)="onSubmit()"
+        [class.ra-form-disabled]="registrationForm.disabled"
+      >
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-4">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">I. Document Control Information</span>
+            <div class="ms-auto text-muted small">F-19</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList" placeholder="e.g. F-19" />
+                <datalist id="formNumbersList">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Document No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo" placeholder="e.g. SR-2025-001" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Basic Information -->
+        <div class="accordion-section mb-4">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('basic')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['basic'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Supplier Basic Information</span>
+          </div>
+          <div *ngIf="openSections['basic']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Supplier Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="supplierName" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Address
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="address" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Contact Person
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="contactPerson" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Designation
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="designation" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Mobile No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="mobileNo" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Email ID
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="email" class="form-control shadow-sm" formControlName="email" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Website</label>
+                <input type="text" class="form-control shadow-sm" formControlName="website" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Business Details -->
+        <div class="accordion-section mb-4">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('business')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['business'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Nature of Business & Registration</span>
+          </div>
+          <div *ngIf="openSections['business']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Nature of Business
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select shadow-sm" formControlName="natureOfBusiness">
+                  <option value="Manufacturer">Manufacturer</option>
+                  <option value="Authorized Dealer">Authorized Dealer</option>
+                  <option value="Stockist">Stockist</option>
+                  <option value="Service Provider">Service Provider</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-semibold text-dark small">
+                  Products/Services Offered
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="productsServicesOffered" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  GST No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="gstNo" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  PAN No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="panNo" />
+              </div>
+              <div class="col-md-4 d-flex align-items-center mt-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="isoCertified" id="isoCertified" />
+                  <label class="form-check-label fw-semibold" for="isoCertified">ISO Certified?</label>
+                </div>
+              </div>
+              <div class="col-12" *ngIf="registrationForm.get('isoCertified')?.value">
+                <label class="form-label fw-semibold text-dark small">ISO Certification Details</label>
+                <input type="text" class="form-control shadow-sm" formControlName="isoDetails" placeholder="e.g. ISO 9001:2015" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Bank Details -->
+        <div class="accordion-section mb-4" formGroupName="bankDetails">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('bank')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['bank'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Bank Details (for Payments)</span>
+          </div>
+          <div *ngIf="openSections['bank']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Bank Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="bankName" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Account Number
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="accountNo" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  IFSC Code
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="ifscCode" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Branch
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="branch" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Document Submission -->
+        <div class="accordion-section mb-4" formGroupName="documentsSubmitted">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('documents')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['documents'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">V. Document Checklist</span>
+          </div>
+          <div *ngIf="openSections['documents']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="gstCertificate" id="gstCert" />
+                  <label class="form-check-label fw-semibold small" for="gstCert">GST Cert.</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="panCard" id="panCard" />
+                  <label class="form-check-label fw-semibold small" for="panCard">PAN Card</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="isoCertificate" id="isoCert" />
+                  <label class="form-check-label fw-semibold small" for="isoCert">ISO Cert.</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="cancelledCheque" id="canCheque" />
+                  <label class="form-check-label fw-semibold small" for="canCheque">Cancelled Cheque</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="msmeCertificate" id="msmeCert" />
+                  <label class="form-check-label fw-semibold small" for="msmeCert">MSME Cert.</label>
+                </div>
+              </div>
+              <div class="col-12 mt-3">
+                <label class="form-label fw-semibold text-dark small">Other Documents</label>
+                <input type="text" class="form-control shadow-sm" formControlName="otherDocs" placeholder="Specify if any" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section VI: Status & Remarks -->
+        <div class="accordion-section mb-4">
+          <div
+            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('status')"
+            style="cursor: pointer"
+          >
+            <i class="bi" [ngClass]="openSections['status'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">VI. Status & Personnel</span>
+          </div>
+          <div *ngIf="openSections['status']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Registration Status
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select shadow-sm" formControlName="registrationStatus">
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-semibold text-dark small">Remarks</label>
+                <input type="text" class="form-control shadow-sm" formControlName="remarks" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">
+                  Recorded By
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="recordedBy" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Verified By</label>
+                <input type="text" class="form-control shadow-sm" formControlName="verifiedBy" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white px-4 fw-semibold shadow-sm" [disabled]="registrationForm.invalid">
+            <i class="bi bi-check2-circle me-1"></i>
+            {{ isEditMode ? "Update" : "Save" }} Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

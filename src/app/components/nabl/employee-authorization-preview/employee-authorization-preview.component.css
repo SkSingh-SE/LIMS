@@ -1,0 +1,39 @@
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+.matrix-table {
+    font-size: 13px;
+    border-collapse: collapse;
+}
+
+.matrix-table th {
+    background-color: #f8f9fa;
+    vertical-align: middle;
+    padding: 8px !important;
+}
+
+.matrix-table td {
+    vertical-align: top;
+    padding: 8px !important;
+    line-height: 1.4;
+}
+
+.text-sm {
+    font-size: 12px;
+}
+
+@media print {
+    .print-frame {
+        width: var(--print-content-width) !important;
+        margin: 0 auto !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

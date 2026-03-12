@@ -1,0 +1,60 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+<div class="label-master-container p-4" *ngIf="data">
+  <!-- Print Instruction -->
+  <div class="d-print-none alert alert-info small mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    This label is designed to be printed on standard adhesive paper. Click "Print Label" to see the output.
+  </div>
+
+  <!-- Multiple Labels for convenience (e.g. for duplicates) -->
+  <div class="d-flex flex-wrap gap-4 justify-content-center">
+    <!-- Single Label Block -->
+    <div class="sample-label-box" *ngFor="let i of [1, 2]">
+      <div class="label-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">SAMPLE IDENTIFICATION</span>
+        <span class="label-format">{{ data.formatNo }}</span>
+      </div>
+
+      <div class="label-content">
+        <div class="label-row">
+          <span class="label-key">SAMPLE ID:</span>
+          <span class="label-value fw-bold fs-5">{{ data.sampleId }}</span>
+        </div>
+        <div class="label-row">
+          <span class="label-key">DATE:</span>
+          <span class="label-value">{{ data.receiptDate | date: "dd-MM-yyyy" }}</span>
+        </div>
+        <div class="label-row">
+          <span class="label-key">DESC:</span>
+          <span class="label-value">{{ data.description }}</span>
+        </div>
+        <div class="label-row">
+          <span class="label-key">QTY:</span>
+          <span class="label-value">{{ data.quantity }}</span>
+        </div>
+        <div class="label-row border-0">
+          <span class="label-key">TESTS:</span>
+          <span class="label-value">{{ data.testParameters }}</span>
+        </div>
+      </div>
+
+      <div class="label-footer d-flex justify-content-between pt-2">
+        <span>{{ data.issueNo }}/{{ data.revNo }}</span>
+        <span class="fw-bold">LABORATORY USE ONLY</span>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+</div>

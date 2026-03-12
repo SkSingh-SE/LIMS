@@ -1,0 +1,83 @@
+.label-master-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.sample-label-box {
+  width: 350px;
+  background-color: #fff;
+  border: 2px solid #000;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  color: #000;
+}
+
+.label-header {
+  border-bottom: 2px solid #000;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.label-format {
+  background: #000;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.label-row {
+  display: flex;
+  border-bottom: 1px dashed #ccc;
+  padding: 6px 0;
+}
+
+.label-key {
+  width: 80px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.label-value {
+  flex: 1;
+  font-size: 0.8rem;
+}
+
+.label-footer {
+  border-top: 1px solid #000;
+  margin-top: 10px;
+  font-size: 0.65rem;
+}
+
+@media print {
+  body {
+    background-color: #fff !important;
+  }
+
+  .label-master-container {
+    padding: 0 !important;
+    background-color: #fff !important;
+  }
+
+  .d-print-none {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .sample-label-box {
+    margin: 10px;
+    break-inside: avoid;
+  }
+}
+
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}

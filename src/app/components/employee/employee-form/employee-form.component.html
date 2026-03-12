@@ -1026,7 +1026,15 @@
               <ng-container formGroupName="predefined">
                 <ng-container *ngFor="let key of predefinedKeys">
                   <div class="col-auto col-md-4 col-lg-3 mb-1">
-                    <label class="form-label">{{ keyLabels[key] }}</label>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label mb-0">{{ keyLabels[key] }}</label>
+                      <button *ngIf="key === 'confidentialityAgreement' && employeeId" 
+                              type="button" 
+                              class="btn btn-link py-0 text-primary text-decoration-none small"
+                              [routerLink]="['/employee/impartiality-agreement', employeeId]">
+                        <i class="bi bi-printer me-1"></i>Print F-1
+                      </button>
+                    </div>
                     <ng-container *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath; else uploadField">
                       <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                         <span

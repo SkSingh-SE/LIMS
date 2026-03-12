@@ -1,0 +1,121 @@
+<div class="container-fluid py-4">
+  <div class="card shadow border-0">
+    <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-primary fw-bold" style="color: #b71c1c !important;">{{ formTitle }}</h4>
+        <button class="btn btn-outline-secondary btn-sm" routerLink="/employee/competence">
+          <i class="bi bi-arrow-left"></i> Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body px-4">
+      <div *ngIf="isLoading()" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status" style="color: #b71c1c !important;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="reportForm" (ngSubmit)="onSubmit()">
+
+        <h5 class="text-muted border-bottom pb-2 mb-3 mt-2">Employee Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label fw-bold small text-muted">Employee Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" formControlName="employeeName"
+              [ngClass]="{'is-invalid': reportForm.get('employeeName')?.invalid && reportForm.get('employeeName')?.touched}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold small text-muted">Designation <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" formControlName="designationName"
+              [ngClass]="{'is-invalid': reportForm.get('designationName')?.invalid && reportForm.get('designationName')?.touched}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold small text-muted">Evaluation From <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm" formControlName="evaluationPeriodFrom"
+              [ngClass]="{'is-invalid': reportForm.get('evaluationPeriodFrom')?.invalid && reportForm.get('evaluationPeriodFrom')?.touched}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold small text-muted">Evaluation To <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm" formControlName="evaluationPeriodTo"
+              [ngClass]="{'is-invalid': reportForm.get('evaluationPeriodTo')?.invalid && reportForm.get('evaluationPeriodTo')?.touched}">
+          </div>
+        </div>
+
+        <h5 class="text-muted border-bottom pb-2 mb-3">Performance Evaluation (Please ✓)</h5>
+        
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered table-hover evaluation-table align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th class="text-start" style="width: 40%;">Description</th>
+                <th *ngFor="let opt of ratingOptions">{{ opt }}</th>
+              </tr>
+            </thead>
+            <tbody formArrayName="parameters">
+              <tr *ngFor="let param of parametersAttr.controls; let i = index" [formGroupName]="i">
+                <td class="text-start fw-medium text-muted small px-3">
+                  {{ param.get('name')?.value }}
+                  <input type="hidden" formControlName="name">
+                </td>
+                <td *ngFor="let opt of ratingOptions" 
+                    class="rating-cell" 
+                    [class.selected]="param.get('rating')?.value === opt"
+                    (click)="setRating(i, opt)">
+                  <i class="bi bi-check-lg" *ngIf="param.get('rating')?.value === opt"></i>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="small text-danger" *ngIf="parametersAttr.invalid && parametersAttr.touched">
+            Please provide a rating for all parameters.
+          </div>
+        </div>
+
+        <h5 class="text-muted border-bottom pb-2 mb-3">Overall Assessment</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-12">
+            <label class="form-label fw-bold small text-muted">Overall rating (Lowest 1 to Highest 10) <span class="text-danger">*</span></label>
+            <div class="d-flex flex-wrap gap-2 mt-1">
+              <div class="rating-box" 
+                   *ngFor="let n of overallRatingOptions"
+                   [class.active]="reportForm.get('overallRating')?.value === n"
+                   [class.disabled]="isViewMode"
+                   (click)="!isViewMode && reportForm.get('overallRating')?.setValue(n)">
+                {{ n }}
+              </div>
+            </div>
+            <div class="small text-danger mt-1" *ngIf="reportForm.get('overallRating')?.invalid && reportForm.get('overallRating')?.touched">
+              Please select an overall rating.
+            </div>
+          </div>
+          
+          <div class="col-md-12 mt-3">
+            <label class="form-label fw-bold small text-muted">Specific training required</label>
+            <textarea class="form-control form-control-sm" formControlName="specificTrainingRequired" rows="2" placeholder="Enter if any specific training is needed..."></textarea>
+          </div>
+          
+          <div class="col-md-6 mt-3">
+            <label class="form-label fw-bold small text-muted">Evaluation Done By <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" formControlName="evaluationDoneBy"
+              [ngClass]="{'is-invalid': reportForm.get('evaluationDoneBy')?.invalid && reportForm.get('evaluationDoneBy')?.touched}">
+          </div>
+          
+          <div class="col-md-6 mt-3">
+            <label class="form-label fw-bold small text-muted">Evaluation Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm" formControlName="evaluationDate"
+              [ngClass]="{'is-invalid': reportForm.get('evaluationDate')?.invalid && reportForm.get('evaluationDate')?.touched}">
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top" *ngIf="!isViewMode">
+          <button type="button" class="btn btn-secondary px-4" routerLink="/employee/competence">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: #b71c1c; border-color: #b71c1c;">
+            <i class="bi bi-save me-1"></i> Save Report
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,156 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" [title]="'Incoming Material Inspection Record (F-24)'" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="Incoming Material Inspection Record"
+        [formatNo]="record()?.formatNo || 'F-24'"
+        [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'"
+        [issueDate]="record()?.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="preview-body p-1">
+        <!-- Section I: Material & Receipt Info -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="4" class="py-2 px-3 fw-bold">
+                <i class="bi bi-box-seam me-2"></i>
+                I. MATERIAL & RECEIPT DETAILS
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Material Name</td>
+              <td style="width: 25%">{{ record()?.materialName }}</td>
+              <td class="bg-light fw-bold small" style="width: 25%">Material Code</td>
+              <td style="width: 25%">{{ record()?.materialCode }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Supplier Name</td>
+              <td>{{ record()?.supplierName }}</td>
+              <td class="bg-light fw-bold small">Invoice No.</td>
+              <td>{{ record()?.invoiceNo }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Batch / Lot No.</td>
+              <td>{{ record()?.batchNo }} {{ record()?.lotNo ? "/ " + record()?.lotNo : "" }}</td>
+              <td class="bg-light fw-bold small">Quantity Received</td>
+              <td>{{ record()?.quantityReceived }} {{ record()?.unitOfMeasure }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Record Number</td>
+              <td>{{ record()?.documentNo }}</td>
+              <td class="bg-light fw-bold small">GRN No.</td>
+              <td>{{ record()?.grnNo || "--" }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section II: Inspection Results -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="5" class="py-2 px-3 fw-bold">
+                <i class="bi bi-list-check me-2"></i>
+                II. INSPECTION PARAMETERS & OBSERVATIONS
+              </th>
+            </tr>
+            <tr class="bg-light text-center small fw-bold">
+              <th style="width: 40px">SN</th>
+              <th>Parameter Name</th>
+              <th>Standard Requirement</th>
+              <th>Observation</th>
+              <th style="width: 100px">Result</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let r of record()?.results; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ r.parameterName }}</td>
+              <td>{{ r.requirement }}</td>
+              <td>{{ r.observation }}</td>
+              <td class="text-center fw-bold" [class.text-success]="r.result === 'Pass'" [class.text-danger]="r.result === 'Fail'">
+                {{ r.result }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section III: Outcome -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="2" class="py-2 px-3 fw-bold">
+                <i class="bi bi-check2-circle me-2"></i>
+                III. INSPECTION OUTCOME
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 25%">Final Status</td>
+              <td
+                style="width: 75%"
+                class="fw-bold fs-6"
+                [ngClass]="{
+                  'text-success': record()?.inspectionStatus === 'Accepted',
+                  'text-danger': record()?.inspectionStatus === 'Rejected',
+                  'text-warning': record()?.inspectionStatus === 'Conditional',
+                }"
+              >
+                {{ record()?.inspectionStatus | uppercase }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section IV: Deviations & Corrective Actions -->
+        <div class="row g-0 border border-dark mb-0">
+          <div class="col-md-6 border-end border-dark">
+            <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark small">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              DEVIATIONS OBSERVED
+            </div>
+            <div class="p-3 ql-editor small" [innerHTML]="record()?.deviations || 'None.'"></div>
+          </div>
+          <div class="col-md-6">
+            <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark small">
+              <i class="bi bi-tools me-2"></i>
+              CORRECTIVE ACTIONS
+            </div>
+            <div class="p-3 ql-editor small" [innerHTML]="record()?.correctiveActions || 'No actions required.'"></div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record()?.inspectedBy || ''"
+        [reviewedApprovedByName]="record()?.verifiedBy || ''"
+        issuedByName="Quality Manager"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

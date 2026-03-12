@@ -1,0 +1,108 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'PROFICIENCY TESTING / ILC PLAN'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Lab Information -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">I. Laboratory Information</div>
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell border-0 border-end-2" style="width: 30%">Laboratory ID (CAB ID)</td>
+              <td class="border-0 fw-bold">{{ data.laboratoryId }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Period of Participation</td>
+              <td class="border-0">{{ data.periodOfParticipation }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell border-0 border-end-2 border-top-2">Laboratory Name</td>
+              <td class="border-0 border-top-2">{{ data.laboratoryName }}</td>
+              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Field of Accreditation</td>
+              <td class="border-0 border-top-2">{{ data.fieldOfAccreditation }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PT/ILC Plan Details -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">II. PT / ILC Activities Plan</div>
+        <table class="table table-bordered mb-0 align-middle small">
+          <thead class="table-light text-center">
+            <tr>
+              <th class="border-dark" rowspan="2" style="width: 50px">S.N.</th>
+              <th class="border-dark" rowspan="2">Accredited Discipline(s)</th>
+              <th class="border-dark" rowspan="2">Group(s)/Subgroups</th>
+              <th class="border-dark" colspan="2">PT/ILC Activities Plan</th>
+              <th class="border-dark" colspan="2">Status and Result</th>
+              <th class="border-dark" colspan="2">Remarks</th>
+            </tr>
+            <tr>
+              <th class="border-dark">1st Year</th>
+              <th class="border-dark">2nd Year</th>
+              <th class="border-dark">1st Year</th>
+              <th class="border-dark">2nd Year</th>
+              <th class="border-dark">1st Year</th>
+              <th class="border-dark">2nd Year</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data.entries; let i = index" class="text-center">
+              <td class="border-dark">{{ i + 1 }}</td>
+              <td class="border-dark text-start">{{ entry.accreditedDiscipline }}</td>
+              <td class="border-dark">{{ entry.groupSubgroup }}</td>
+              <td class="border-dark">{{ entry.ptActivityYear1 }}</td>
+              <td class="border-dark">{{ entry.ptActivityYear2 }}</td>
+              <td class="border-dark">{{ entry.statusYear1 }}</td>
+              <td class="border-dark">{{ entry.statusYear2 }}</td>
+              <td class="border-dark">{{ entry.remarksYear1 }}</td>
+              <td class="border-dark">{{ entry.remarksYear2 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Notes -->
+      <div class="section mb-3 border-2 border-dark" *ngIf="data.notes">
+        <div class="section-title border-bottom-2">III. Notes</div>
+        <div class="section-content p-3 ql-editor small">{{ data.notes }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [issuedByName]="data.issuedBy"
+        [reviewedApprovedByName]="data.reviewedApprovedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

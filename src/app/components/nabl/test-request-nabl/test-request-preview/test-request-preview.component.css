@@ -1,0 +1,46 @@
+.print-container {
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.section-box {
+  background-color: #fff;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 5px;
+}
+
+.extra-small {
+  font-size: 0.7rem;
+}
+
+@media print {
+  .print-container {
+    width: 100%;
+    max-width: none;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .d-print-none {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}

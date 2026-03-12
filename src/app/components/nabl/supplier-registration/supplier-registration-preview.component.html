@@ -1,0 +1,188 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="record()?.formatNo || 'F-19'"
+        [mainTitle]="'SUPPLIER REGISTRATION FORM'"
+        [docNo]="'DMSPL / Level-04 / Format / F-19'"
+        [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'"
+        [issueDate]="record()?.date || ''"
+        [revDate]="record()?.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="p-4">
+        <!-- I. Basic Information -->
+        <div class="mb-4">
+          <h6 class="fw-bold border-bottom pb-1 text-primary">I. SUPPLIER BASIC INFORMATION</h6>
+          <table class="table table-bordered sm-table mt-2">
+            <tr>
+              <th style="width: 25%">Supplier Name</th>
+              <td colspan="3" class="fw-bold">{{ record()?.supplierName }}</td>
+            </tr>
+            <tr>
+              <th style="width: 25%">Address</th>
+              <td colspan="3">{{ record()?.address }}</td>
+            </tr>
+            <tr>
+              <th style="width: 25%">Contact Person</th>
+              <td style="width: 25%">{{ record()?.contactPerson }}</td>
+              <th style="width: 25%">Designation</th>
+              <td style="width: 25%">{{ record()?.designation }}</td>
+            </tr>
+            <tr>
+              <th>Mobile No.</th>
+              <td>{{ record()?.mobileNo }}</td>
+              <th>Email ID</th>
+              <td>{{ record()?.email }}</td>
+            </tr>
+            <tr>
+              <th>Website</th>
+              <td colspan="3">{{ record()?.website || "-" }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- II. Business Details -->
+        <div class="mb-4">
+          <h6 class="fw-bold border-bottom pb-1 text-primary">II. NATURE OF BUSINESS & REGISTRATION</h6>
+          <table class="table table-bordered sm-table mt-2">
+            <tr>
+              <th style="width: 25%">Nature of Business</th>
+              <td style="width: 25%">{{ record()?.natureOfBusiness }}</td>
+              <th style="width: 25%">GST No.</th>
+              <td style="width: 25%">{{ record()?.gstNo }}</td>
+            </tr>
+            <tr>
+              <th>PAN No.</th>
+              <td>{{ record()?.panNo }}</td>
+              <th>ISO Certified?</th>
+              <td>{{ record()?.isoCertified ? "Yes (" + record()?.isoDetails + ")" : "No" }}</td>
+            </tr>
+            <tr>
+              <th>Products/Services Offered</th>
+              <td colspan="3">{{ record()?.productsServicesOffered }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- III. Bank Details -->
+        <div class="mb-4">
+          <h6 class="fw-bold border-bottom pb-1 text-primary">III. BANK DETAILS</h6>
+          <table class="table table-bordered sm-table mt-2">
+            <tr>
+              <th style="width: 25%">Bank Name</th>
+              <td style="width: 25%">{{ record()?.bankDetails?.bankName }}</td>
+              <th style="width: 25%">Account No.</th>
+              <td style="width: 25%">{{ record()?.bankDetails?.accountNo }}</td>
+            </tr>
+            <tr>
+              <th>IFSC Code</th>
+              <td>{{ record()?.bankDetails?.ifscCode }}</td>
+              <th>Branch</th>
+              <td>{{ record()?.bankDetails?.branch }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- IV. Documents Submitted -->
+        <div class="mb-4">
+          <h6 class="fw-bold border-bottom pb-1 text-primary">IV. DOCUMENT CHECKLIST</h6>
+          <div class="row row-cols-3 g-2 mt-2">
+            <div class="col d-flex align-items-center">
+              <i
+                class="bi"
+                [ngClass]="record()?.documentsSubmitted?.gstCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
+              ></i>
+              <span class="ms-2 small">GST Certificate</span>
+            </div>
+            <div class="col d-flex align-items-center">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.panCard ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+              <span class="ms-2 small">PAN Card</span>
+            </div>
+            <div class="col d-flex align-items-center">
+              <i
+                class="bi"
+                [ngClass]="record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
+              ></i>
+              <span class="ms-2 small">ISO Certificate</span>
+            </div>
+            <div class="col d-flex align-items-center">
+              <i
+                class="bi"
+                [ngClass]="record()?.documentsSubmitted?.cancelledCheque ? 'bi-check-square-fill text-success' : 'bi-square'"
+              ></i>
+              <span class="ms-2 small">Cancelled Cheque</span>
+            </div>
+            <div class="col d-flex align-items-center">
+              <i
+                class="bi"
+                [ngClass]="record()?.documentsSubmitted?.msmeCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
+              ></i>
+              <span class="ms-2 small">MSME Certificate</span>
+            </div>
+          </div>
+          <div class="mt-2 small text-muted" *ngIf="record()?.documentsSubmitted?.otherDocs">
+            <strong>Other Docs:</strong>
+            {{ record()?.documentsSubmitted?.otherDocs }}
+          </div>
+        </div>
+
+        <!-- V. Status & Remarks -->
+        <div class="mb-4">
+          <h6 class="fw-bold border-bottom pb-1 text-primary">V. EVALUATION STATUS</h6>
+          <div class="p-3 border rounded bg-light">
+            <div class="row">
+              <div class="col-md-4">
+                <strong>Status:</strong>
+                <span
+                  class="badge"
+                  [ngClass]="{
+                    'bg-warning': record()?.registrationStatus === 'Pending',
+                    'bg-success': record()?.registrationStatus === 'Approved',
+                    'bg-danger': record()?.registrationStatus === 'Rejected',
+                  }"
+                >
+                  {{ record()?.registrationStatus }}
+                </span>
+              </div>
+              <div class="col-12 mt-3">
+                <div class="p-3 border rounded bg-light">
+                  <h6 class="fw-bold border-bottom pb-1 mb-2">Verification Remarks</h6>
+                  <div [innerHTML]="record()?.remarks"></div>
+                  <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record()?.recordedBy || 'Admin'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="record()?.verifiedBy || 'Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

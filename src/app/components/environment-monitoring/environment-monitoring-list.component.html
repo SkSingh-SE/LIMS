@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'Environment Monitoring Records (F-12)'"
+    [addButtonLabel]="'Create Record'"
+    [addRoute]="'/environment-monitoring/create'"
+    [baseRoute]="'/environment-monitoring'"
+    [columns]="columns"
+    [data]="records"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)">
+  </app-nabl-register-table>
+</div>

@@ -1,0 +1,161 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="feedbackForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="docNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="issueDate" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Customer Info -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('customerInfo')">
+            <i class="bi" [ngClass]="openSections['customerInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Customer Information</span>
+          </div>
+          <div *ngIf="openSections['customerInfo']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">
+                  Customer Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="customerName" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Contact Person
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="contactPerson" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Ratings -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('ratings')">
+            <i class="bi" [ngClass]="openSections['ratings'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Performance Ratings (1: Poor, 5: Excellent)</span>
+          </div>
+          <div *ngIf="openSections['ratings']" class="section-body">
+            <div formArrayName="ratings">
+              <div
+                *ngFor="let r of ratingsArray.controls; let i = index"
+                [formGroupName]="i"
+                class="row mb-2 align-items-center rating-row py-2 border-bottom"
+              >
+                <div class="col-md-8">
+                  <span class="fw-medium">{{ r.get("parameter")?.value }}</span>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex gap-3">
+                    <div *ngFor="let val of [1, 2, 3, 4, 5]" class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [id]="'rating_' + i + '_' + val"
+                        [value]="val"
+                        formControlName="rating"
+                      />
+                      <label class="form-check-label" [for]="'rating_' + i + '_' + val">{{ val }}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Comments & Suggestions -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('comments')">
+            <i class="bi" [ngClass]="openSections['comments'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Additional Comments & Suggestions</span>
+          </div>
+          <div *ngIf="openSections['comments']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-12">
+                <label class="form-label fw-bold">Comments</label>
+                <quill-editor formControlName="comments" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Suggestions for Improvement</label>
+                <quill-editor formControlName="suggestions" [modules]="quillModules"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="feedbackForm.invalid">
+            {{ isEditMode ? "Update Feedback" : "Save Feedback" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-dropdown-panel',
-  standalone: true,
+
   imports: [CommonModule],
   templateUrl: './dropdown-panel.component.html',
   styleUrl: './dropdown-panel.component.css'

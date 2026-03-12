@@ -1,0 +1,77 @@
+.card-form-header {
+    background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
+    border-bottom: none;
+    padding: 0.75rem 1.25rem;
+}
+
+/* Accordion Sections */
+.accordion-section {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.section-header:hover {
+    background: linear-gradient(135deg, #e9ecef, #dee2e6);
+}
+
+.section-header .bi {
+    font-size: 14px;
+    color: #6c757d;
+    transition: transform 0.2s;
+}
+
+.section-body {
+    padding: 16px;
+    background: #fff;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+/* Form Disabled State */
+.ra-form-disabled .form-control:disabled,
+.ra-form-disabled .form-select:disabled,
+.ra-form-disabled input:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Responsive Table */
+.table-responsive {
+    border-radius: 0.375rem;
+    overflow-x: auto;
+}
+
+table.table {
+    margin-bottom: 0;
+}
+
+table.table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+table.table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+table.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}

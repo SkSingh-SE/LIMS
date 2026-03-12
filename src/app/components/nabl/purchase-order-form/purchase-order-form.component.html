@@ -1,0 +1,217 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg border-0">
+    <!-- Premium Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-file-earmark-text-fill fs-4 me-2"></i>
+        <header class="text-md fw-medium">{{ formTitle }}</header>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i> Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <div *ngIf="isLoading()" class="text-center py-5">
+        <div class="spinner-border " role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="poForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="poForm.disabled">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">I. Document Control Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-22">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">PO Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo" placeholder="DMSPL-PO-YYYY-XXX">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Reference Indent No.</label>
+                <input type="text" class="form-control shadow-sm" formControlName="indentNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Supplier Details -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('supplier')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['supplier'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Supplier Information</span>
+          </div>
+          <div *ngIf="openSections['supplier']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Supplier Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="supplierName">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">GST Selection / No.</label>
+                <input type="text" class="form-control shadow-sm" formControlName="gstNo">
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold text-dark small">Address <span class="text-danger">*</span></label>
+                <textarea class="form-control shadow-sm" formControlName="supplierAddress" rows="2"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Order Type <span class="text-danger">*</span></label>
+                <select class="form-select shadow-sm" formControlName="poType">
+                    <option *ngFor="let t of poTypes" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Currency <span class="text-danger">*</span></label>
+                <select class="form-select shadow-sm" formControlName="currency">
+                    <option *ngFor="let c of currencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Items List -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('items')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['items'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Line Items</span>
+          </div>
+          <div *ngIf="openSections['items']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Description / Specification <span class="text-danger">*</span></th>
+                    <th style="width: 100px;">Qty <span class="text-danger">*</span></th>
+                    <th style="width: 100px;">Unit <span class="text-danger">*</span></th>
+                    <th style="width: 150px;">Unit Price <span class="text-danger">*</span></th>
+                    <th style="width: 150px;">Amount</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="description" rows="1"></textarea>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center border-dashed" formControlName="quantity">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm text-center border-dashed" formControlName="unitOfMeasure">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-end border-dashed" formControlName="unitPrice">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-end bg-light border-dashed fw-bold" formControlName="totalAmount">
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-outline-danger btn-sm border-0" (click)="removeItem(i)" [disabled]="items.length <= 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-light font-sm">
+                    <tr>
+                        <td colspan="5" class="text-end fw-bold">Sub Total</td>
+                        <td class="text-end fw-bold">{{ poForm.get('totalAmount')?.value | number:'1.2-2' }}</td>
+                        <td *ngIf="!isViewMode"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold border-0 bg-white"></td>
+                        <td class="text-end fw-bold">GST (%)
+                            <input type="number" class="form-control form-control-sm d-inline-block text-center ms-2" style="width: 60px;" formControlName="gstPercentage">
+                        </td>
+                        <td class="text-end fw-bold text-secondary">{{ poForm.get('gstAmount')?.value | number:'1.2-2' }}</td>
+                        <td *ngIf="!isViewMode"></td>
+                    </tr>
+                    <tr class="table-primary">
+                        <td colspan="5" class="text-end fw-bold text-uppercase">Grand Total</td>
+                        <td class="text-end fw-bold fs-6">{{ poForm.get('grandTotal')?.value | number:'1.2-2' }}</td>
+                        <td *ngIf="!isViewMode"></td>
+                    </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+              <button type="button" class="btn btn-outline-danger-600 btn-sm px-3" (click)="addItem()">
+                <i class="bi bi-plus-circle me-1"></i> Add More Item
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Terms & Conditions -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('terms')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['terms'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Terms, Conditions & Signatories</span>
+          </div>
+          <div *ngIf="openSections['terms']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Expected Delivery Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control shadow-sm" formControlName="deliveryDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Payment Terms <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="paymentTerms" placeholder="e.g. 30 Days Net">
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-semibold text-dark small">Terms & Conditions <span class="text-danger">*</span></label>
+                <quill-editor formControlName="termsAndConditions" [modules]="quillModules" placeholder="Enter standard terms and conditions..."></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Prepared By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="preparedBy">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Authorized / Approved By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="authorizedBy">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white px-4 fw-semibold shadow-sm" [disabled]="poForm.invalid">
+            <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Purchase Order
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

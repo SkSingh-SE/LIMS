@@ -1,0 +1,13 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    title="Supplier Registration Records (F-19)"
+    [columns]="columns"
+    [data]="items"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [addRoute]="'/supplier-registration/create'"
+    [baseRoute]="'/supplier-registration'"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)"
+  ></app-nabl-register-table>
+</div>

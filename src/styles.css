@@ -1,66 +1,233 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+@import "quill/dist/quill.snow.css";
 
 /* You can add global styles to this file, and also import other style files */
 
 :root {
-    --nav-height: 60px;
-    --transition-speed: 0.3s;
-    --primary-color: #DA261C;
-    /* Bootstrap 5 primary color by default */
-    --primary-hover: #d50a0ace;
-    --select2-multiple-height: 35px !important;
-    --select2-option-highlighted-background: #d50a0ace;
-    --select2-selection-border-radius: 5px;
-    --select2-selection-choice-line-height: 23px;
-    /* Default value, will be updated by JavaScript */
+  --nav-height: 60px;
+  --transition-speed: 0.3s;
+  --primary-color: #da261c;
+  /* Bootstrap 5 primary color by default */
+  --primary-hover: #d50a0ace;
+  --select2-multiple-height: 35px !important;
+  --select2-option-highlighted-background: #d50a0ace;
+  --select2-selection-border-radius: 5px;
+  --select2-selection-choice-line-height: 23px;
+  /* Default value, will be updated by JavaScript */
 }
 
-
-
 body {
-    margin: 0;
-    font-family: var(--bs-font-sans-serif);
+  margin: 0;
+  font-family: var(--bs-font-sans-serif);
 }
 
 .content-container {
-    margin-top: var(--nav-height);
-    margin-bottom: auto;
-    min-height: fit-content;
-    transition: margin-top var(--transition-speed) ease-in-out;
+  margin-top: var(--nav-height);
+  margin-bottom: auto;
+  min-height: fit-content;
+  transition: margin-top var(--transition-speed) ease-in-out;
+}
+
+@media print {
+  app-navbar,
+  .navbar,
+  app-toast,
+  app-global-loader,
+  #btn-back-to-top,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .content-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+  }
+
+  * {
+    box-sizing: border-box !important;
+  }
+
+  /* NABL Print Frame Framework (v3) */
+  :root {
+    --print-page-width: 210mm;
+    --print-header-height: 170px; /* Standard NABL Header Height */
+    --print-footer-height: 130px; /* Standard NABL Footer Height */
+    --print-margin-top: 5mm;
+    --print-margin-bottom: 10mm;
+    --print-margin-side: 5mm;
+    --print-content-width: calc(var(--print-page-width) - (2 * var(--print-margin-side)));
+  }
+
+  .print-frame {
+    width: var(--print-content-width);
+    margin-left: var(--print-margin-side) !important;
+    margin-right: auto !important;
+    padding: 0 !important;
+    background: white;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  .print-table td {
+    padding: 0 !important;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table tfoot {
+    display: table-footer-group;
+  }
+
+  .print-footer-spacer {
+    display: none; /* tfoot with table-footer-group repeats naturally — no manual spacer needed */
+  }
+
+  .footer-container {
+    /* position: fixed removed — caused blank first page in Chrome print */
+    display: block !important;
+    width: 100%;
+    background: white;
+    box-sizing: border-box;
+  }
+
+  .no-screen-display {
+    display: none !important;
+  }
+
+  /* Orientation handling */
+  .orientation-portrait {
+    --print-page-width: 210mm;
+  }
+
+  .orientation-landscape {
+    --print-page-width: 297mm;
+  }
+
+  @page {
+    size: auto;
+    margin: 5mm 0 12mm 0; /* fixed values — CSS variables don't work inside @page */
+
+    /* Override Chrome's default browser headers/footers:
+       blank out date, title, URL — keep only page number at bottom-right */
+    @top-left    { content: ""; }
+    @top-center  { content: ""; }
+    @top-right   { content: ""; }
+    @bottom-left { content: ""; }
+    @bottom-center { content: ""; }
+    @bottom-right  {
+      content: counter(page);
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
+      color: #333;
+    }
+  }
+
+  /* Prevent content break inside essential blocks, but allow it for large editors */
+  .section,
+  .info-table,
+  .header-block {
+    page-break-inside: avoid !important;
+  }
+
+  /* Allow multipart rendering for rich text content */
+  .ql-editor,
+  .content-body,
+  .body-block {
+    page-break-inside: auto !important;
+    overflow: visible !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* The print-frame's outer tbody <tr> wraps the ENTIRE body content.
+     Keeping page-break-inside: avoid on it makes Chrome push all content to page 2.
+     Override it to allow natural flow starting from page 1. */
+  .print-table > tbody > tr {
+    page-break-inside: auto !important;
+  }
+
+  /* Ensure scrollable table wrappers don't clip content in print */
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  /* utility helpers that developers can apply when they need explicit
+       page breaks or want to prevent one inside an element */
+  .page-break-before {
+    page-break-before: always;
+  }
+  .page-break-after {
+    page-break-after: always;
+  }
+  .page-break-inside-avoid,
+  .avoid-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* consolidate color adjustment rules for printable components */
+  .header-main,
+  .title-row,
+  .nabl-footer-container,
+  .footer-label,
+  .footer-container,
+  .section-title {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Clear default bootstrap container padding in print */
+  .container,
+  .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 
 .navbar-background {
-    background-color: #DA261C !important;
+  background-color: #da261c !important;
 }
 .bg-theme {
-    background-color: #DA261C !important;
+  background-color: #da261c !important;
 }
-.theme-color{
- color: #DA261C;
+.theme-color {
+  color: #da261c;
 }
-.theme-border{
-  border: 1px solid #DA261C !important;
+.theme-border {
+  border: 1px solid #da261c !important;
 }
 .card-form-header {
-    font-family: 'Poppins', none;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: lighter;
-    background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-
+  font-family: "Poppins", none;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: lighter;
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%) !important;
 }
 
 .header-font {
-    font-family: 'Poppins', none;
-    font-size: 14px;
-    font-style: normal;
-    font-weight: lighter;
+  font-family: "Poppins", none;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: lighter;
 }
 .label-font {
-    font-family: 'Poppins', none;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: normal;
+  font-family: "Poppins", none;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: normal;
 }
 
 /* @media (max-width: 768px) {
@@ -75,24 +242,21 @@ body {
   } */
 
 .input-group-text.is-invalid {
-    border: 1px solid #dc3545 !important;
-    border-radius: 0.375rem;
+  border: 1px solid #dc3545 !important;
+  border-radius: 0.375rem;
 }
 
 .input-group .form-control.is-invalid {
-    border-right: none !important;
+  border-right: none !important;
 }
 
 .input-group.left-input-group .form-control.is-invalid {
   border-right: 1px solid #dc3545 !important;
 }
 .card .card-header {
-    padding: 0.5rem 0.5rem !important;
-    height: 47px !important;
+  padding: 0.5rem 0.5rem !important;
+  height: 47px !important;
 }
-
-
-
 
 .input-group .form-check-input {
   border: 1px solid var(--text-secondary-light);
@@ -105,8 +269,6 @@ body {
   margin-top: 0;
   cursor: pointer;
 }
-
-
 
 .input-group .form-check-input:checked::before {
   transform: translate(-50%, -50%) scale(1);
@@ -122,7 +284,7 @@ body {
 .input-group .form-check-input::before {
   position: absolute;
   content: "";
-  width:80%;
+  width: 80%;
   height: 80%;
   background-color: var(--red);
   border-radius: inherit;
@@ -139,28 +301,26 @@ body {
 }
 
 .form-check-input:checked {
-    background-color: transparent !important;
-    border-color: #FF2C1F !important;
+  background-color: transparent !important;
+  border-color: #ff2c1f !important;
 }
 
-.select2-selection__placeholder{
-    color: #6B7280 !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
+.select2-selection__placeholder {
+  color: #6b7280 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
 }
-.select2-selection--multiple{
-    color: #6B7280 !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
-    padding: 3px !important;
-
+.select2-selection--multiple {
+  color: #6b7280 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  padding: 3px !important;
 }
-.select2-selection--multiple:disabled{
-    background: var(--bs-secondary-bg) !important;
+.select2-selection--multiple:disabled {
+  background: var(--bs-secondary-bg) !important;
 }
 
 /* select css start here */
-
 
 /* pagination css */
 .pagination-container {
@@ -269,7 +429,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-   padding: 0.4rem 0.5rem !important;
+  padding: 0.4rem 0.5rem !important;
 }
 
 .table-compact tbody tr:nth-child(odd) {
@@ -287,7 +447,6 @@ body {
 }
 
 /* Table css end here */
-
 
 /* Normalize Angular Material controls to look like Bootstrap form-control */
 .mat-form-field.mat-form-field-appearance-outline .mat-form-field-wrapper {
@@ -329,3 +488,112 @@ body {
   padding: 6px 12px !important;
 }
 
+/* Global Accordion Sections */
+.accordion-section {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.section-header:hover {
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+}
+
+.section-header .bi {
+  font-size: 14px;
+  color: #da261c;
+  transition: transform 0.2s;
+}
+
+.section-body {
+  padding: 20px;
+  background: #fff;
+}
+
+/* Global Quill Editor Refinement */
+.ql-toolbar.ql-snow {
+  border: 1px solid #ced4da !important;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  background-color: #f8f9fa;
+  padding: 8px;
+  display: block;
+  width: 100%;
+}
+
+.ql-container.ql-snow {
+  border: 1px solid #ced4da !important;
+  border-top: none !important;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  height: auto !important;
+  min-height: 150px;
+  background-color: #ffffff;
+  width: 100%;
+}
+
+.ql-editor {
+  height: auto !important;
+  min-height: 150px;
+  color: #212529;
+  padding: 12px 15px;
+}
+
+/* Form Control Hover & Focus Effects */
+.form-control,
+.form-select {
+  transition: all 0.2s ease-in-out;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: #da261c;
+  background-color: #fff8f8;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #da261c;
+  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1);
+}
+
+/* Flat Card Styling for List items inside forms */
+.flat-card {
+  border: 1px solid #eee !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  transition: transform 0.2s ease;
+}
+
+.flat-card:hover {
+  transform: translateY(-2px);
+  border-color: #da261c !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* NABL Form Utility Classes */
+.input-narrow {
+  max-width: 80px;
+}
+.input-format-no {
+  max-width: 130px;
+}
+.signature-block-col {
+  width: 200px;
+}

@@ -1,0 +1,176 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="changeForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="docNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="headerIssueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="headerIssueDate" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="headerRevNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Document Basic Info -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('docInfo')">
+            <i class="bi" [ngClass]="openSections['docInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Document Basic Information</span>
+          </div>
+          <div *ngIf="openSections['docInfo']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Document Title
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="documentTitle" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Doc. No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="documentNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Issue No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Rev. No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Changes & Justification -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('changes')">
+            <i class="bi" [ngClass]="openSections['changes'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Changes Required & Justification</span>
+          </div>
+          <div *ngIf="openSections['changes']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-12">
+                <label class="form-label fw-bold">
+                  Changes Required
+                  <span class="text-danger">*</span>
+                </label>
+                <quill-editor formControlName="changesRequired" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">
+                  Justification
+                  <span class="text-danger">*</span>
+                </label>
+                <quill-editor formControlName="justification" [modules]="quillModules"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Approval & Action -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Approval & Action Taken</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">
+                  Initiated By
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="initiatedBy" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Approved By (Director)
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="approvedBy" />
+              </div>
+              <div class="col-12 text-blue mt-3 mb-1 fw-bold">Action Taken By Quality Manager:</div>
+              <div class="col-12">
+                <quill-editor formControlName="actionTaken" [modules]="quillModules"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="changeForm.invalid">
+            {{ isEditMode ? "Update Request" : "Save Request" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

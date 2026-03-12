@@ -1,0 +1,245 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="jobDescForm" (ngSubmit)="onSubmit()" [class.job-desc-form-disabled]="isViewMode">
+
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-3">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                  [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="jobDescForm.get('designationId')?.value"></app-searchable-dropdown>
+                <span
+                  *ngIf="jobDescForm.get('designationId')?.invalid && jobDescForm.get('designationId')?.touched"
+                  class="text-danger text-sm small">Designation is required.</span>
+              </div>
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [labelName]="'Department'"
+                  [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="jobDescForm.get('departmentId')?.value"></app-searchable-dropdown>
+                <span
+                  *ngIf="jobDescForm.get('departmentId')?.invalid && jobDescForm.get('departmentId')?.touched"
+                  class="text-danger text-sm small">Department is required.</span>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Reporting To <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="reportingTo"
+                  placeholder="Immediate Superior" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Doc No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Education & Experience -->
+
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('education')">
+            <i class="bi" [ngClass]="openSections['education'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Educational & Experience Criteria</span>
+          </div>
+          <div *ngIf="openSections['education']" class="section-body">
+            <div class="row gap-2">
+              <div class="row d-flex">
+                <label class="form-label">Minimum Qualification <span class="text-danger">*</span></label>
+                <quill-editor formControlName="minimumQualification" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="e.g., Graduate in Science/Metallurgy, ITI, etc."
+                  [ngClass]="{'is-invalid': jobDescForm.get('minimumQualification')?.touched && jobDescForm.get('minimumQualification')?.invalid}"></quill-editor>
+                <span
+                  *ngIf="jobDescForm.get('minimumQualification')?.invalid && jobDescForm.get('minimumQualification')?.touched"
+                  class="text-danger text-sm">Minimum Qualification is required.</span>
+              </div>
+              <div class="row d-flex">
+                <label class="form-label">Technical Training Required</label>
+                <quill-editor formControlName="technicalTraining" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="e.g., Training on Spectrometer, ISO 17025 Awareness"></quill-editor>
+              </div>
+              <div class="row d-flex">
+                <label class="form-label">Experience</label>
+                <quill-editor formControlName="experience" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="e.g., Minimum 2 years in a testing laboratory"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Principal Accountabilities & Duties -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('duties')">
+            <i class="bi" [ngClass]="openSections['duties'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Principal Accountabilities & Duties</span>
+          </div>
+          <div *ngIf="openSections['duties']" class="section-body row d-flex">
+            <label class="form-label text-muted mb-1">Define the "What" and "How" of the job <span
+                class="text-danger">*</span></label>
+            <quill-editor formControlName="principalAccountabilities" [modules]="quillModules" [readOnly]="isViewMode"
+              placeholder="List down the key responsibilities..."
+              [ngClass]="{'is-invalid': jobDescForm.get('principalAccountabilities')?.touched && jobDescForm.get('principalAccountabilities')?.invalid}"></quill-editor>
+            <span
+              *ngIf="jobDescForm.get('principalAccountabilities')?.invalid && jobDescForm.get('principalAccountabilities')?.touched"
+              class="text-danger text-sm">Principal Accountabilities are required.</span>
+          </div>
+        </div>
+
+        <!-- Section IV: Authorities -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('authorities')">
+            <i class="bi" [ngClass]="openSections['authorities'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Authorities (Critical for NABL)</span>
+          </div>
+          <div *ngIf="openSections['authorities']" class="section-body">
+            <p class="text-muted mb-3">NABL auditors verify who is authorized to do what. Select applicable
+              authorities:</p>
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <div class="form-check authority-check">
+                  <input class="form-check-input" type="checkbox" formControlName="authorityStopTesting"
+                    id="authStop" />
+                  <label class="form-check-label" for="authStop">
+                    <i class="bi bi-stop-circle text-danger me-1"></i>
+                    <strong>Authority to Stop Testing</strong>
+                    <div class="text-muted small">In case of equipment malfunction or environmental deviation</div>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check authority-check">
+                  <input class="form-check-input" type="checkbox" formControlName="authorityIssueReports"
+                    id="authReport" />
+                  <label class="form-check-label" for="authReport">
+                    <i class="bi bi-file-earmark-check text-success me-1"></i>
+                    <strong>Authority to Issue Test Reports</strong>
+                    <div class="text-muted small">Usually for HOD / QM / TM</div>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check authority-check">
+                  <input class="form-check-input" type="checkbox" formControlName="authorityAccessConfidential"
+                    id="authConfidential" />
+                  <label class="form-check-label" for="authConfidential">
+                    <i class="bi bi-shield-lock text-warning me-1"></i>
+                    <strong>Authority to Access Confidential Data</strong>
+                    <div class="text-muted small">Customer files and results</div>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check authority-check">
+                  <input class="form-check-input" type="checkbox" formControlName="authorityEquipmentCalibration"
+                    id="authCalibration" />
+                  <label class="form-check-label" for="authCalibration">
+                    <i class="bi bi-tools text-primary me-1"></i>
+                    <strong>Authority for Equipment Calibration</strong>
+                    <div class="text-muted small">To interact with external calibration agencies</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: QMS Responsibilities -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('qms')">
+            <i class="bi" [ngClass]="openSections['qms'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Quality Management System (QMS) Responsibilities</span>
+          </div>
+          <div *ngIf="openSections['qms']" class="section-body">
+            <quill-editor class="w-100" formControlName="qmsResponsibilities" [modules]="quillModules" [readOnly]="isViewMode"
+              placeholder="List down QMS related responsibilities..."></quill-editor>
+          </div>
+        </div>
+
+        <!-- Section VI: Confidentiality & Impartiality -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('confidentiality')">
+            <i class="bi" [ngClass]="openSections['confidentiality'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">VI. Confidentiality & Impartiality Commitment</span>
+          </div>
+          <div *ngIf="openSections['confidentiality']" class="section-body">
+            <quill-editor class="w-100" formControlName="confidentialityClause" [modules]="quillModules" [readOnly]="isViewMode"></quill-editor>
+          </div>
+        </div>
+
+        <!-- Section VII: Approval & Acceptance -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('approval')">
+            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">VII. Approval & Acceptance</span>
+          </div>
+          <div *ngIf="openSections['approval']" class="section-body">
+            <div class="row gy-2">
+              <div class="col-md-4">
+                <label class="form-label">Prepared By (Quality Manager)</label>
+                <input type="text" class="form-control" formControlName="preparedByName"
+                  placeholder="Name of Quality Manager" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Approved By (Director)</label>
+                <input type="text" class="form-control" formControlName="approvedByName"
+                  placeholder="Name of Director" />
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="employeeAccepted"
+                    id="employeeAccepted" />
+                  <label class="form-check-label" for="employeeAccepted">
+                    I have read and understood my job description
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-dark" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="jobDescForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

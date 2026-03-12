@@ -1,0 +1,130 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" [title]="'Purchase Indent / Request (F-21)'" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="Purchase Indent / Purchase Request"
+        [formatNo]="record()?.formatNo || 'F-21'"
+        [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'"
+        [issueDate]="record()?.date || ''"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="preview-body p-1">
+        <!-- Section I: Indent Info -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="4" class="py-2 px-3 fw-bold">
+                <i class="bi bi-info-circle me-2"></i>
+                I. INDENT INFORMATION
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bg-light fw-bold small" style="width: 20%">Indent Number</td>
+              <td style="width: 30%">{{ record()?.documentNo }}</td>
+              <td class="bg-light fw-bold small" style="width: 20%">Date</td>
+              <td style="width: 30%">{{ record()?.date | date: "dd/MM/yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="bg-light fw-bold small">Department</td>
+              <td>{{ record()?.departmentName }}</td>
+              <td class="bg-light fw-bold small">Priority</td>
+              <td>
+                <span
+                  class="fw-bold"
+                  [ngClass]="{
+                    'text-danger': record()?.priority === 'Urgent' || record()?.priority === 'High',
+                    'text-warning': record()?.priority === 'Medium',
+                    'text-info': record()?.priority === 'Low',
+                  }"
+                >
+                  {{ record()?.priority | uppercase }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section II: Items Table -->
+        <table class="table table-bordered border-dark mb-3">
+          <thead>
+            <tr class="bg-light text-primary">
+              <th colspan="5" class="py-2 px-3 fw-bold">
+                <i class="bi bi-list-check me-2"></i>
+                II. REQUIRED ITEMS / SERVICES
+              </th>
+            </tr>
+            <tr class="bg-light text-center small fw-bold">
+              <th style="width: 50px">SN</th>
+              <th>Description / Specification</th>
+              <th style="width: 100px">Qty</th>
+              <th style="width: 80px">Unit</th>
+              <th style="width: 150px">Est. Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of record()?.items; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ item.description }}</td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td class="text-center">{{ item.unitOfMeasure }}</td>
+              <td class="text-end">₹ {{ item.estimatedCost || 0 | number: "1.2-2" }}</td>
+            </tr>
+            <tr class="fw-bold">
+              <td colspan="4" class="text-end bg-light">Total Estimated Cost</td>
+              <td class="text-end text-primary">₹ {{ totalEstimatedCost() | number: "1.2-2" }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Section III: Remarks -->
+        <div class="border border-dark mb-0">
+          <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark">
+            <i class="bi bi-pencil-square me-2"></i>
+            III. INSTRUCTIONS & REMARKS
+          </div>
+          <div class="p-3 ql-editor" [innerHTML]="record()?.remarks || 'No additional instructions provided.'"></div>
+          <div class="p-2 border-top border-dark bg-light d-flex justify-content-between small">
+            <span>
+              <strong>Status:</strong>
+              <span [class.text-success]="record()?.status === 'Approved'">{{ record()?.status }}</span>
+            </span>
+            <span>
+              <strong>Indentor:</strong>
+              {{ record()?.preparedBy }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record()?.preparedBy || ''"
+        issuedByName="Dept. Head / QM"
+        reviewedApprovedByName="Director / MD"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

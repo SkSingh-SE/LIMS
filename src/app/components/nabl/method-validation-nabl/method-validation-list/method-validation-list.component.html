@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="F-30: Method Validation Records"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/nabl/method-validation"
+  addRoute="/nabl/method-validation/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

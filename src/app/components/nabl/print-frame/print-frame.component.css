@@ -1,0 +1,7 @@
+/* Styles for the standalone print-frame wrapper are minimal; most of the
+   layout is provided by the global print media rules in src/styles.css. */
+:host {
+    display: block;
+}
+
+/* nothing fancy here, the parent project should apply orientation classes */

@@ -55,38 +55,240 @@
     cursor: pointer;
 }
 
+/* ── Submenu Bar ─────────────────────────────────────────── */
 .submenu-container {
     flex-grow: 1;
-    padding: 5px 5px;
+    padding: 5px 12px;
     display: flex;
-    font-weight: bold;
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
-    background-color: #ceccc5d2;
-
+    gap: 4px;
+    background: #ffffff;
+    border-top: 3px solid #DA261C;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.09);
 }
 
-/* Updated Menu Item Styling */
+/* ── Submenu Item ─────────────────────────────────────────── */
 .submenu-container .submenu-item {
-    text-align: center;
+    display: flex;
     align-items: center;
-    font-size: 5px !important;
     font-family: 'Poppins', sans-serif;
+    font-size: 13px;
     font-weight: 500;
-    padding: 2px 2px;
-    transition: background 0.3s ease-in-out, color 0.3s;
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
     cursor: pointer;
-    margin: 0 1px;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+                box-shadow 0.2s ease;
+    white-space: nowrap;
 }
 
 /* Hover and Active State */
 .submenu-container .submenu-item:hover,
 .submenu-container .submenu-item.active {
-    background-color: rgb(255, 255, 255);
-    border-radius: 5px;
-    border: shadow black;
-    color: black;
+    background-color: #DA261C;
+    color: #fff;
+    border-color: #c2201a;
+    box-shadow: 0 2px 8px rgba(218, 38, 28, 0.35);
+    border-radius: 6px;
+}
+
+/* ── Unified submenu label (leaf & dropdown-toggle) ─────── */
+.submenu-item .submenu-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: inherit;
+    background: transparent;
+    border: none;
+    padding: 0;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: none !important;
+    display: inline-block;
+}
+
+.submenu-item .submenu-label.dropdown-toggle::after {
+    font-size: 10px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.submenu-item:hover .submenu-label,
+.submenu-item.active .submenu-label {
+    color: #fff;
+}
+
+/* ── Nested Dropdown Menu ────────────────────────────────── */
+.submenu-item .dropdown-menu {
+    min-width: 210px;
+    max-width: 290px;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.13), 0 3px 8px rgba(0, 0, 0, 0.07);
+    padding: 6px;
+    background: #fff;
+    margin-top: 6px !important;
+    animation: submenuDropIn 0.18s ease;
+    overflow: visible;   /* must NOT be hidden — fly-out panel sits outside this box */
+}
+
+@keyframes submenuDropIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.submenu-item .dropdown-menu li {
+    padding: 0 !important;
+    list-style: none;
+}
+
+.submenu-item .dropdown-menu li a {
+    display: block;
+    padding: 8px 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: #444;
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease,
+                border-color 0.15s ease, padding-left 0.15s ease;
+}
+
+.submenu-item .dropdown-menu li a:hover {
+    background-color: #fef2f2;
+    color: #DA261C;
+    border-left-color: #DA261C;
+    padding-left: 20px;
+}
+
+/* Divider between nested items */
+.submenu-item .dropdown-menu li + li {
+    border-top: 1px solid #f3f3f3;
+}
+
+/* ── Active states for L3 leaf item ─────────────────────── */
+.submenu-item .dropdown-menu li.active-nested > a {
+    background-color: #DA261C;
+    color: #fff !important;
+    border-left-color: #c2201a;
+    padding-left: 20px;
+}
+
+/* ── Active state for L3 group label ────────────────────── */
+.submenu-item .dropdown-submenu.active-group > .has-submenu {
+    background-color: #fef2f2;
+    color: #DA261C !important;
+    border-left-color: #DA261C;
+    font-weight: 600;
+}
+
+/* ── Third-level hover sub-panel ────────────────────────── */
+.submenu-item .dropdown-submenu {
+    position: relative;
+}
+
+/* The group label row */
+.submenu-item .dropdown-submenu > .has-submenu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.submenu-item .dropdown-submenu > .has-submenu::after {
+    content: '›';
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.submenu-item .dropdown-submenu:hover > .has-submenu,
+.submenu-item .dropdown-submenu .submenu-panel.show ~ .has-submenu,
+.submenu-item li.dropdown-submenu:has(.submenu-panel.show) > .has-submenu {
+    background-color: #fef2f2;
+    color: #DA261C;
+    border-left-color: #DA261C;
+    padding-left: 18px;
+}
+
+/* The fly-out panel */
+.submenu-item .dropdown-submenu .submenu-panel {
+    display: none;
+    position: absolute;
+    top: -6px;
+    left: 100%;
+    min-width: 230px;
+    max-width: 300px;
+    border: none;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 8px 6px 28px rgba(0,0,0,0.13), 2px 2px 8px rgba(0,0,0,0.07);
+    background: #fff;
+    animation: submenuDropIn 0.15s ease;
+    z-index: 1060;
+}
+
+/* fly-out shown via Angular [class.show] — needs !important to beat specificity */
+.submenu-item .dropdown-submenu .submenu-panel.show {
+    display: block !important;
+}
+
+/* items inside fly-out panel */
+.submenu-item .dropdown-submenu .submenu-panel li {
+    padding: 0 !important;
+    list-style: none;
+    border-top: none !important;
+}
+
+.submenu-item .dropdown-submenu .submenu-panel li + li {
+    border-top: 1px solid #f3f3f3 !important;
+}
+
+.submenu-item .dropdown-submenu .submenu-panel li a {
+    display: block;
+    padding: 8px 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #444;
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, padding-left 0.15s;
+}
+
+.submenu-item .dropdown-submenu .submenu-panel li a:hover {
+    background-color: #fef2f2;
+    color: #DA261C;
+    border-left-color: #DA261C;
+    padding-left: 20px;
+}
+
+/* ── Active state for L4 fly-out item ───────────────────── */
+.submenu-item .dropdown-submenu .submenu-panel li.active-deep > a {
+    background-color: #DA261C;
+    color: #fff !important;
+    border-left-color: #c2201a;
+    padding-left: 20px;
 }
 
 /* Hover and Active State */
@@ -110,8 +312,25 @@
     font-size: 16px;
 }
 
+/* keep Bootstrap user-profile dropdown minimal */
 .dropdown-menu {
-    min-width: 150px;
+    min-width: 160px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    border: none;
+    padding: 6px;
+}
+
+.dropdown-menu .dropdown-item {
+    border-radius: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #fef2f2;
+    color: #DA261C;
 }
 
 /* Responsive Design */

@@ -1,0 +1,191 @@
+<div
+  class="register-table-wrapper"
+  [class.card]="showCardWrapper"
+  [class.basic-data-table]="showCardWrapper"
+  [class.w-100]="showCardWrapper"
+>
+  <!-- Card Header (when showCardWrapper is true) -->
+  <div *ngIf="showCardWrapper && title" class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+    <label class="text-md fw-medium ms-3">{{ title }}</label>
+    <a *ngIf="addRoute" [routerLink]="addRoute" class="btn btn-outline-light btn-sm me-3">
+      <i class="bi bi-plus-lg"></i>
+      {{ addButtonLabel }}
+    </a>
+  </div>
+
+  <div [class.card-body]="showCardWrapper">
+    <!-- Search & Controls Bar -->
+    <div class="d-flex justify-content-end mb-2 no-print" *ngIf="showPagination">
+      <div class="w-25 input-group custom-search">
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Search..."
+          [(ngModel)]="searchTerm"
+          (keydown.enter)="onSearch()"
+        />
+        <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
+          <i class="bi bi-search"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="data.length > 0 || filters.length > 0" class="table-responsive">
+      <table class="table bordered-table align-middle w-100">
+        <thead class="table-light text-center align-middle">
+          <tr>
+            <th *ngIf="showSerialNumber" style="width: 60px">SN</th>
+            <th *ngFor="let col of columns" [style.width]="col.width || 'auto'">
+              <div class="d-flex align-items-center justify-content-center">
+                <span class="dt-column-order">{{ col.label }}</span>
+                <span class="d-flex flex-column ms-2 mt-2">
+                  <i
+                    class="bi bi-caret-up sorting-icon-up"
+                    [ngClass]="{ 'text-danger': sortByColumn === col.key && sortOrder === 'asc' }"
+                    (click)="applySorting(col.key)"
+                  ></i>
+                  <i
+                    class="bi bi-caret-down sorting-icon-down"
+                    [ngClass]="{ 'text-danger': sortByColumn === col.key && sortOrder === 'desc' }"
+                    (click)="applySorting(col.key)"
+                  ></i>
+                </span>
+                <span *ngIf="!hasFilter(col.key) && col.filter" class="cursor-pointer ms-2 mt-1" (click)="openFilterModal(col.key, $event)">
+                  <i class="bi bi-funnel"></i>
+                </span>
+                <span *ngIf="hasFilter(col.key) && col.filter" class="cursor-pointer ms-1 mt-1" (click)="resetFilter(col.key)">
+                  <i class="bi bi-x-lg text-danger"></i>
+                </span>
+              </div>
+            </th>
+            <th *ngIf="showActions" class="align-middle text-center no-print" style="width: 150px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoading">
+            <td [colSpan]="columns.length + (showActions ? 1 : 0) + (showSerialNumber ? 1 : 0)" class="text-center py-4">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
+              Loading...
+            </td>
+          </tr>
+          <tr *ngFor="let row of data; let i = index" class="text-sm text-center">
+            <td *ngIf="showSerialNumber">{{ getSerialNumber(i) }}</td>
+            <td *ngFor="let col of columns" class="align-middle">
+              <span *ngIf="col.type === 'date'">{{ row[col.key] | date: "dd MMM, yyyy" }}</span>
+              <span *ngIf="col.type !== 'date'">
+                {{ row[col.key] | truncate: 30 }}
+              </span>
+            </td>
+            <td *ngIf="showActions" class="text-center no-print">
+              <div class="d-flex justify-content-center gap-2">
+                <!-- Route-based navigation when baseRoute is set -->
+                <ng-container *ngIf="baseRoute; else eventActions">
+                  <a [routerLink]="[baseRoute + '/details', row.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
+                  </a>
+                  <a [routerLink]="[baseRoute + '/edit', row.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  </a>
+                  <a [routerLink]="[baseRoute + '/preview', row.id]" class="icon-link" title="Print Preview">
+                    <i class="bi bi-printer fs-5 text-primary"></i>
+                  </a>
+                  <a class="icon-link cursor-pointer" title="Delete" (click)="onDelete.emit(row.id)">
+                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
+                  </a>
+                </ng-container>
+                <!-- Event-based actions when baseRoute is not set -->
+                <ng-template #eventActions>
+                  <a class="icon-link cursor-pointer" title="View" (click)="onView.emit(row.id)">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
+                  </a>
+                  <a class="icon-link cursor-pointer" title="Edit" (click)="onEdit.emit(row.id)">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  </a>
+                  <a class="icon-link cursor-pointer" title="Preview" (click)="onPreview.emit(row.id)">
+                    <i class="bi bi-printer fs-5 text-primary"></i>
+                  </a>
+                  <a class="icon-link cursor-pointer" title="Delete" (click)="onDelete.emit(row.id)">
+                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
+                  </a>
+                </ng-template>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && data.length === 0 && filters.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+      <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+        <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+        <div class="fw-semibold">No records found</div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-3 no-print" *ngIf="showPagination && totalItems > 0">
+      <div class="d-flex align-items-center">
+        <select class="form-select form-select-sm w-auto" (change)="changePageSize($event)">
+          <option *ngFor="let size of pageSizes" [value]="size" [selected]="size === pageSize">{{ size }} per page</option>
+        </select>
+      </div>
+      <ul class="pagination pagination-sm mb-0 d-flex align-items-center">
+        <li class="page-item" [class.disabled]="pageNumber === 1">
+          <a class="page-link cursor-pointer" (click)="changePage(pageNumber - 1)">Previous</a>
+        </li>
+        <li *ngFor="let page of totalPages" class="page-item" [class.active]="page === pageNumber">
+          <a class="page-link cursor-pointer" (click)="changePage(page)">{{ page }}</a>
+        </li>
+        <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
+          <a class="page-link cursor-pointer" (click)="changePage(pageNumber + 1)">Next</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Filter Modal -->
+  <div #filterModal class="filter-modal shadow" style="display: none">
+    <div class="card py-2 px-3 position-relative border-0">
+      <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+      <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle }}</label>
+
+      <select class="form-select form-select-sm mb-2" [(ngModel)]="filterType">
+        <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+        <option *ngIf="getColumnType(filterColumn) === 'string'" value="StartsWith">Starts With</option>
+        <option *ngIf="getColumnType(filterColumn) === 'string'" value="EndsWith">Ends With</option>
+        <option *ngIf="getColumnType(filterColumn) === 'number'" value="Equal">Equal</option>
+        <option *ngIf="getColumnType(filterColumn) === 'number'" value="GreaterThan">Greater Than</option>
+        <option *ngIf="getColumnType(filterColumn) === 'number'" value="LessThan">Less Than</option>
+        <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      </select>
+
+      <input
+        *ngIf="getColumnType(filterColumn) !== 'date'"
+        type="text"
+        class="form-control form-control-sm mb-2"
+        [(ngModel)]="filterValue"
+        placeholder="Value"
+        (keydown.enter)="applyFilter()"
+      />
+      <input
+        *ngIf="getColumnType(filterColumn) === 'date'"
+        type="date"
+        class="form-control form-control-sm mb-2"
+        [(ngModel)]="filterValue"
+      />
+      <input
+        *ngIf="getColumnType(filterColumn) === 'date' && filterType === 'Between'"
+        type="date"
+        class="form-control form-control-sm mb-2"
+        [(ngModel)]="filterValue2"
+        placeholder="End date"
+      />
+
+      <div class="d-flex gap-1">
+        <button class="btn btn-primary btn-sm flex-fill" (click)="applyFilter()">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>

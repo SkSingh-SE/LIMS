@@ -16,7 +16,7 @@ interface PerformanceRecord {
 
 @Component({
     selector: 'app-employee-performance-record',
-    standalone: true,
+
     imports: [CommonModule, ReactiveFormsModule, FormsModule],
     templateUrl: './employee-performance-record.component.html',
     styleUrl: './employee-performance-record.component.css'

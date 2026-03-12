@@ -1,0 +1,71 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading()" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="headerInfo.formatNo"
+        [mainTitle]="'TRAINED INTERNAL AUDITORS LIST'"
+        [docNo]="headerInfo.docNo"
+        [issueNo]="headerInfo.issueNo"
+        [issueDate]="headerInfo.issueDate"
+        [revNo]="headerInfo.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <table class="table table-bordered border-dark text-center align-middle">
+        <thead class="bg-light fw-bold">
+          <tr>
+            <th style="width: 60px">Sr. No.</th>
+            <th>Name of Auditor</th>
+            <th>Qualification / Competence</th>
+            <th style="width: 150px">Training Date</th>
+            <th style="width: 120px">Exam Score</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="text-start">{{ item.auditorName }}</td>
+            <td class="text-start">{{ item.qualification }}</td>
+            <td>{{ item.trainingDate | date: "dd/MM/yyyy" }}</td>
+            <td>{{ item.examScore }}</td>
+            <td class="text-start">{{ item.remarks }}</td>
+          </tr>
+          <!-- Empty rows for filling space -->
+          <tr *ngIf="data.length < 10">
+            <td colspan="6" [style.height.px]="40 * (10 - data.length)"></td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Quality Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

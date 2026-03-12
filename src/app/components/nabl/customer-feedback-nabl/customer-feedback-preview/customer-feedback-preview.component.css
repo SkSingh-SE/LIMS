@@ -1,0 +1,41 @@
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+table {
+  border: 1px solid #000 !important;
+}
+
+th,
+td {
+  border: 1px solid #000 !important;
+  padding: 8px !important;
+}
+
+.customer-info {
+  font-size: 0.95rem;
+}
+
+.ql-editor {
+  min-height: 80px;
+  line-height: 1.4;
+  padding: 5px 0;
+}
+
+.border-dark {
+  border-color: #000 !important;
+}
+
+thead th {
+  background-color: #f2f2f2 !important;
+}

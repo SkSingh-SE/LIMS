@@ -1,0 +1,81 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'RISK & OPPORTUNITY ASSESSMENT'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <table class="table table-bordered border-dark align-middle">
+        <thead>
+          <tr class="bg-light text-center fw-bold">
+            <th style="width: 100px">Date</th>
+            <th>Activity / Process</th>
+            <th>Risk Identified</th>
+            <th>Opportunity Identification</th>
+            <th>Mitigation Plan</th>
+            <th>Responsibility</th>
+            <th>Effectiveness of Action Taken</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-center">{{ data.date | date: "dd.MM.yyyy" }}</td>
+            <td>{{ data.activityProcess }}</td>
+            <td class="content-cell">
+              <div class="ql-editor p-1" [innerHTML]="data.riskIdentified"></div>
+            </td>
+            <td class="content-cell">
+              <div class="ql-editor p-1" [innerHTML]="data.opportunity"></div>
+            </td>
+            <td class="content-cell">
+              <div class="ql-editor p-1" [innerHTML]="data.mitigationPlan"></div>
+            </td>
+            <td class="text-center">{{ data.responsibility }}</td>
+            <td class="content-cell">
+              <div class="ql-editor p-1" [innerHTML]="data.effectiveness"></div>
+            </td>
+          </tr>
+          <!-- Empty row for filling space if needed -->
+          <tr *ngIf="!data">
+            <td colspan="7" style="height: 400px"></td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'General Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

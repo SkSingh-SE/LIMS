@@ -1,0 +1,95 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'COMPLAINT REGISTER'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Info Table -->
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 25%">Month & Year</td>
+              <td style="width: 25%">{{ data.monthYear }}</td>
+              <td class="label-cell" style="width: 25%">Complaint No.</td>
+              <td style="width: 25%">{{ data.complaintNo }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Date</td>
+              <td>{{ data.dateOfComplaint | date: "dd.MM.yyyy" }}</td>
+              <td class="label-cell">Complainant</td>
+              <td>{{ data.complainantName }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Full Width Sections -->
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Details of Complaint</div>
+        <div class="ql-editor p-3" [innerHTML]="data.detailsOfComplaint"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Validation of Complaint</div>
+        <div class="ql-editor p-3" [innerHTML]="data.validationOfComplaint"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Outcome of Investigation</div>
+        <div class="ql-editor p-3" [innerHTML]="data.outcomeOfInvestigation"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Corrective Actions Taken</div>
+        <div class="ql-editor p-3" [innerHTML]="data.correctiveActionsTaken"></div>
+      </div>
+
+      <div class="section mb-3 border-2 border-dark">
+        <table class="table table-bordered mb-0">
+          <tbody>
+            <tr>
+              <td class="label-cell" style="width: 30%">Reference No & Date (Customer Response)</td>
+              <td>{{ data.referenceNoDate }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Quality Manager'"
+        [preparedByRole]="'Signature of QM'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

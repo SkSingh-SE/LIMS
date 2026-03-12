@@ -1,0 +1,53 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RiskAssessmentService } from '../../../../services/risk-assessment.service';
+import { NablRegisterTableComponent, RegisterColumn } from '../../nabl-register-table/nabl-register-table.component';
+
+@Component({
+    selector: 'app-risk-assessment-list',
+    standalone: true,
+    imports: [CommonModule, NablRegisterTableComponent],
+    templateUrl: './risk-assessment-list.component.html',
+    styleUrl: './risk-assessment-list.component.css'
+})
+export class RiskAssessmentListComponent implements OnInit {
+    title = 'F-46: Risk & Opportunity Assessment';
+    addButtonLabel = 'New Assessment';
+    addRoute = '/risk-assessment/create';
+    baseRoute = '/risk-assessment';
+
+    columns: RegisterColumn[] = [
+        { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
+        { key: 'activityProcess', label: 'Activity/Process', type: 'string', filter: true },
+        { key: 'responsibility', label: 'Responsibility', type: 'string', filter: true }
+    ];
+
+    data = signal<any[]>([]);
+    totalItems = signal(0);
+    isLoading = signal(false);
+
+    constructor(private service: RiskAssessmentService) { }
+
+    ngOnInit() {
+        this.fetchData();
+    }
+
+    fetchData(params: any = {}) {
+        this.isLoading.set(true);
+        this.service.getAll().subscribe({
+            next: (resp) => {
+                this.data.set(resp);
+                this.totalItems.set(resp.length);
+                this.isLoading.set(false);
+            },
+            error: (err) => {
+                console.error('Error fetching risk assessments:', err);
+                this.isLoading.set(false);
+            }
+        });
+    }
+
+    onPageChange(params: any) {
+        this.fetchData(params);
+    }
+}

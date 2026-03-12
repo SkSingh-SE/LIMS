@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'Training Effectiveness Records (F-10)'"
+    [addButtonLabel]="'Create Record'"
+    [addRoute]="'/training-effectiveness/create'"
+    [baseRoute]="'/training-effectiveness'"
+    [columns]="columns"
+    [data]="records"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)">
+  </app-nabl-register-table>
+</div>

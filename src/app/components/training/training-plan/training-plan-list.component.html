@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'Training Plans (F-8)'"
+    [addButtonLabel]="'Create Training Plan'"
+    [addRoute]="'/training-plan/create'"
+    [baseRoute]="'/training-plan'"
+    [columns]="columns"
+    [data]="trainingPlans"
+    [totalItems]="totalItems"
+    [isLoading]="isLoading()"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deletePlan($event)">
+  </app-nabl-register-table>
+</div>

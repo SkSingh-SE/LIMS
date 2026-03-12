@@ -1,0 +1,133 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record()?.formatNo || 'F-18'"
+          [mainTitle]="'CRM CONSUMPTION RECORD'"
+          [docNo]="'DMSPL / Level-04 / Format / F-18'"
+          [issueNo]="record()?.issueNo || '01'"
+          [revNo]="record()?.revNo || '00'"
+          [issueDate]="record()?.date || ''">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="p-4">
+        <!-- Top Details Section -->
+        <div class="row g-3 mb-4">
+          <div class="col-8">
+            <table class="table table-bordered sm-table">
+              <tr>
+                <th style="width: 25%;">Material Name</th>
+                <td colspan="3" class="fw-bold">{{ record()?.materialName }}</td>
+              </tr>
+              <tr>
+                <th style="width: 25%;">Material Code</th>
+                <td style="width: 25%;">{{ record()?.materialCode }}</td>
+                <th style="width: 25%;">Batch No.</th>
+                <td style="width: 25%;">{{ record()?.batchNo }}</td>
+              </tr>
+              <tr>
+                <th>Purpose of Use</th>
+                <td colspan="3">{{ record()?.purposeOfUse }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-4 text-end">
+            <h6 class="mb-1"><strong>Period:</strong> {{ getMonthName(record()?.consumptionMonth || 1) }} {{ record()?.consumptionYear }}</h6>
+            <p class="mb-0 small text-muted">Doc No: {{ record()?.documentNo }}</p>
+            <p class="mb-0 small text-muted">Unit: {{ record()?.unitOfMeasure }}</p>
+          </div>
+        </div>
+
+        <!-- Stock Summary Row -->
+        <div class="row g-2 mb-4 text-center">
+          <div class="col">
+            <div class="p-2 border rounded bg-light font-sm">
+              <div class="text-muted small">Opening Stock</div>
+              <div class="fw-bold">{{ record()?.openingStock }}</div>
+            </div>
+          </div>
+          <div class="col-12">
+          <div class="p-3 border rounded bg-light">
+            <h6 class="fw-bold border-bottom pb-1 mb-2">General Remarks</h6>
+            <div [innerHTML]="record()?.remarks"></div>
+            <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
+          </div>
+        </div>
+          <div class="col">
+            <div class="p-2 border rounded bg-light font-sm">
+              <div class="text-muted small">Received</div>
+              <div class="fw-bold">{{ record()?.received }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 border rounded bg-primary text-white font-sm">
+              <div class="small">Consumed</div>
+              <div class="fw-bold">{{ record()?.consumed }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 border rounded bg-danger text-white font-sm">
+              <div class="small">Wastage</div>
+              <div class="fw-bold">{{ record()?.wastage }}</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-2 border rounded bg-success text-white font-sm">
+              <div class="small">Closing Stock</div>
+              <div class="fw-bold">{{ record()?.closingStock }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Consumption Table -->
+        <table class="table table-bordered compact-table text-center mb-4">
+          <thead class="table-light align-middle font-xs">
+            <tr>
+              <th style="width: 40px;">Date</th>
+              <th style="width: 80px;">Consumed</th>
+              <th style="width: 80px;">Wastage</th>
+              <th>Purpose / Remarks</th>
+              <th style="width: 120px;">Analysis By</th>
+            </tr>
+          </thead>
+          <tbody class="font-xs">
+            <tr *ngFor="let row of record()?.dailyConsumption">
+              <td class="fw-bold">{{ row.date | date: 'dd/MM' }}</td>
+              <td>{{ row.quantityConsumed }}</td>
+              <td>{{ row.quantityWasted || '-' }}</td>
+              <td class="text-start ps-2">{{ row.purpose }}</td>
+              <td>{{ row.performedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="record()?.recordedBy || 'Technician'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="record()?.verifiedBy || 'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+.label-cell {
+  background-color: #f8f9fa;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.content-cell {
+  padding: 0 !important;
+}
+
+.border-2 {
+  border-width: 2px !important;
+}
+.border-dark {
+  border-color: #000 !important;
+}
+
+.ql-editor {
+  min-height: 80px;
+  line-height: 1.4;
+  padding: 10px;
+}
+
+table {
+  border-collapse: collapse !important;
+}
+
+td {
+  border: 1px solid #000 !important;
+}

@@ -54,7 +54,7 @@ export class TestMethodSpecificationComponent implements OnInit {
       standardOrganizationID: ['', Validators.required],
       testMethodStandard: ['', Validators.required],
       name: ['', Validators.required],
-      part:[''],
+      part: [''],
       versions: this.fb.array([])
     });
   }
@@ -190,7 +190,7 @@ export class TestMethodSpecificationComponent implements OnInit {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-       const baseUrl = environment.baseUrl;
+      const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {
@@ -294,7 +294,7 @@ export class TestMethodSpecificationComponent implements OnInit {
     versions.controls.forEach((group, idx) => {
       if (idx !== selectedIndex) {
         group.get('default')?.setValue(false, { emitEvent: false });
-      }else{
+      } else {
         group.get('default')?.setValue(true, { emitEvent: false });
       }
     });

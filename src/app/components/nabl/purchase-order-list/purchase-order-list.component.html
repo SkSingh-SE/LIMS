@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="Purchase Order (F-22)"
+  [columns]="columns"
+  [data]="orders"
+  [totalItems]="totalItems"
+  [isLoading]="isLoading()"
+  baseRoute="/purchase-order"
+  addRoute="/purchase-order/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

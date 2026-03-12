@@ -1,0 +1,15 @@
+.rtb-container { display: flex; gap: 12px; }
+.palette { width: 200px; }
+.canvas { background: #f3f4f6; min-height: 60vh; overflow: auto; }
+.properties { width: 320px; }
+.canvas-card { background: #fff; }
+.palette-item { cursor: move; }
+.section-card { border: 1px dashed transparent; }
+.section-card:hover { border-color: #e0e0e0; }
+.section-card.selected { border-color: #dc3545; }
+.field-row:hover, .column-row:hover { background: #fff7f7; }
+.json-preview { max-height: 200px; overflow: auto; background: #fff; padding: 8px; }
+.btn { font-size: 12px; }
+.shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.section-title { font-weight: 600; }
+.collapsed .card-body > :not(.d-flex) { display: none; }

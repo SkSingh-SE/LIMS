@@ -1,0 +1,53 @@
+/* Training Effectiveness Preview Styles */
+.print-frame {
+  background-color: white;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+  padding: 0.5rem;
+}
+
+.text-sm {
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+@media print {
+  .card {
+    border: none;
+    box-shadow: none;
+  }
+
+  .card-body {
+    padding: 0;
+  }
+
+  /* Hide non-printable elements */
+  .btn,
+  .navbar,
+  .footer {
+    display: none !important;
+  }
+
+  /* Page break settings */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-frame {
+    page-break-after: always;
+  }
+}

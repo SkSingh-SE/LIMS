@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-test-status-badge',
-  standalone: true,
+
   imports: [CommonModule],
   template: `
     <span [ngClass]="getBadgeClass()">

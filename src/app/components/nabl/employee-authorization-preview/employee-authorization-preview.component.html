@@ -1,0 +1,64 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to Employee List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-7B'"
+          [mainTitle]="'EQUIPMENT AUTHORIZATION (On Site)'"
+          [docNo]="'DMSPL / Level-04 / Format / F-7'"
+          [issueNo]="'01'"
+          [revNo]="'01 / 05.03.2025'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Authorization Matrix Table -->
+      <table class="table table-bordered border-2 border-dark matrix-table">
+        <thead class="table-light">
+          <tr class="text-center border-2 border-dark">
+            <th class="border-2 border-dark">Department</th>
+            <th class="border-2 border-dark">Personnel</th>
+            <th class="border-2 border-dark">UID</th>
+            <th class="border-2 border-dark">Equipment</th>
+            <th class="border-2 border-dark">Test method authorization</th>
+            <th class="border-2 border-dark">Test authorization</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of authorizations" class="border-2 border-dark">
+            <td class="border-2 border-dark px-2">{{ row.department }}</td>
+            <td class="border-2 border-dark px-2">{{ row.personnelName }}</td>
+            <td class="border-2 border-dark px-2">{{ row.uid }}</td>
+            <td class="border-2 border-dark px-2 text-sm">{{ row.equipment }}</td>
+            <td class="border-2 border-dark px-2">{{ row.testMethodAuthorization }}</td>
+            <td class="border-2 border-dark px-2">{{ row.testAuthorization }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="'General Manager'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="'Managing Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

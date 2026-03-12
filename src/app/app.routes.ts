@@ -80,6 +80,55 @@ import { CaseAccountListComponent } from './components/account/case-account-list
 import { CaseAccountDetailComponent } from './components/account/case-account-detail/case-account-detail.component';
 import { InvoicePreviewComponent } from './components/account/invoice-preview/invoice-preview.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { JobDescriptionListComponent } from './components/nabl/job-description-list/job-description-list.component';
+import { JobDescriptionFormComponent } from './components/nabl/job-description-form/job-description-form.component';
+import { JobDescriptionPreviewComponent } from './components/nabl/job-description-preview/job-description-preview.component';
+import { ResponsibilityAuthorityListComponent } from './components/nabl/responsibility-authority-list/responsibility-authority-list.component';
+import { ResponsibilityAuthorityFormComponent } from './components/nabl/responsibility-authority-form/responsibility-authority-form.component';
+import { ResponsibilityAuthorityPreviewComponent } from './components/nabl/responsibility-authority-preview/responsibility-authority-preview.component';
+import { ImpartialityAgreementPreviewComponent } from './components/nabl/impartiality-agreement-preview/impartiality-agreement-preview.component';
+import { EmployeeCompetencePreviewComponent } from './components/nabl/employee-competence-preview/employee-competence-preview.component';
+import { EmployeeTrainingPreviewComponent } from './components/nabl/employee-training-preview/employee-training-preview.component';
+import { EmployeeAuthorizationPreviewComponent } from './components/nabl/employee-authorization-preview/employee-authorization-preview.component';
+import { SkillMatrixPreviewComponent } from './components/designation/skill-matrix/skill-matrix-preview/skill-matrix-preview.component';
+import { SkillMatrixListComponent } from './components/designation/skill-matrix/skill-matrix-list/skill-matrix-list.component';
+import { SkillMatrixFormComponent } from './components/designation/skill-matrix/skill-matrix-form/skill-matrix-form.component';
+import { TrainingPlanListComponent } from './components/training/training-plan/training-plan-list.component';
+import { TrainingPlanFormComponent } from './components/training/training-plan/training-plan-form.component';
+import { TrainingPlanPreviewComponent } from './components/training/training-plan/training-plan-preview.component';
+import { TrainingEffectivenessListComponent } from './components/training/training-effectiveness/training-effectiveness-list.component';
+import { TrainingEffectivenessFormComponent } from './components/training/training-effectiveness/training-effectiveness-form.component';
+import { TrainingEffectivenessPreviewComponent } from './components/training/training-effectiveness/training-effectiveness-preview.component';
+import { EnvironmentMonitoringListComponent } from './components/environment-monitoring/environment-monitoring-list.component';
+import { EnvironmentMonitoringFormComponent } from './components/environment-monitoring/environment-monitoring-form.component';
+import { EnvironmentMonitoringPreviewComponent } from './components/environment-monitoring/environment-monitoring-preview.component';
+import { TestRequestNablListComponent } from './components/nabl/test-request-nabl/test-request-list/test-request-list.component';
+import { TestRequestNablFormComponent } from './components/nabl/test-request-nabl/test-request-form/test-request-form.component';
+import { TestRequestNablPreviewComponent } from './components/nabl/test-request-nabl/test-request-preview/test-request-preview.component';
+import { TestMethodNablListComponent } from './components/nabl/test-method-nabl/test-method-list/test-method-list.component';
+import { TestMethodNablFormComponent } from './components/nabl/test-method-nabl/test-method-form/test-method-form.component';
+import { TestMethodNablPreviewComponent } from './components/nabl/test-method-nabl/test-method-preview/test-method-preview.component';
+import { MethodVerificationNablListComponent } from './components/nabl/method-verification-nabl/method-verification-list/method-verification-list.component';
+import { MethodVerificationNablFormComponent } from './components/nabl/method-verification-nabl/method-verification-form/method-verification-form.component';
+import { MethodVerificationNablPreviewComponent } from './components/nabl/method-verification-nabl/method-verification-preview/method-verification-preview.component';
+import { MethodValidationNablListComponent } from './components/nabl/method-validation-nabl/method-validation-list/method-validation-list.component';
+import { MethodValidationNablFormComponent } from './components/nabl/method-validation-nabl/method-validation-form/method-validation-form.component';
+import { MethodValidationNablPreviewComponent } from './components/nabl/method-validation-nabl/method-validation-preview/method-validation-preview.component';
+import { SampleInwardRegisterNablListComponent } from './components/nabl/sample-inward-register-nabl/sample-inward-register-list/sample-inward-register-list.component';
+import { SampleInwardRegisterNablFormComponent } from './components/nabl/sample-inward-register-nabl/sample-inward-register-form/sample-inward-register-form.component';
+import { SampleInwardRegisterNablPreviewComponent } from './components/nabl/sample-inward-register-nabl/sample-inward-register-preview/sample-inward-register-preview.component';
+import { SampleMusterRegisterNablListComponent } from './components/nabl/sample-muster-register-nabl/sample-muster-register-list/sample-muster-register-list.component';
+import { SampleMusterRegisterNablFormComponent } from './components/nabl/sample-muster-register-nabl/sample-muster-register-form/sample-muster-register-form.component';
+import { SampleMusterRegisterNablPreviewComponent } from './components/nabl/sample-muster-register-nabl/sample-muster-register-preview/sample-muster-register-preview.component';
+import { SampleLabelNablListComponent } from './components/nabl/sample-label-nabl/sample-label-list/sample-label-list.component';
+import { SampleLabelNablFormComponent } from './components/nabl/sample-label-nabl/sample-label-form/sample-label-form.component';
+import { SampleLabelNablPreviewComponent } from './components/nabl/sample-label-nabl/sample-label-preview/sample-label-preview.component';
+import { TechnicalRawDataListComponent } from './components/nabl/technical-raw-data-nabl/technical-raw-data-list/technical-raw-data-list.component';
+import { TechnicalRawDataFormComponent } from './components/nabl/technical-raw-data-nabl/technical-raw-data-form/technical-raw-data-form.component';
+import { TechnicalRawDataPreviewComponent } from './components/nabl/technical-raw-data-nabl/technical-raw-data-preview/technical-raw-data-preview.component';
+// Removed direct imports for lazy loading
+
+
 
 
 
@@ -123,6 +172,127 @@ export const routes: Routes = [
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
+            { path: 'job-description', component: JobDescriptionListComponent },
+            { path: 'job-description/create', component: JobDescriptionFormComponent },
+            { path: 'job-description/edit/:id', component: JobDescriptionFormComponent },
+            { path: 'job-description/details/:id', component: JobDescriptionFormComponent },
+            { path: 'job-description/preview/:id', component: JobDescriptionPreviewComponent },
+            { path: 'employee/impartiality-agreement/:id', component: ImpartialityAgreementPreviewComponent },
+            { path: 'employee/competence-report/:id', component: EmployeeCompetencePreviewComponent },
+            { path: 'employee/training-record/:id', component: EmployeeTrainingPreviewComponent },
+            { path: 'employee/equipment-authorization', component: EmployeeAuthorizationPreviewComponent },
+            { path: 'employee/equipment-authorization/list', loadComponent: () => import('./components/nabl/employee-authorization-list/employee-authorization-list.component').then(m => m.EmployeeAuthorizationListComponent) },
+            { path: 'employee/equipment-authorization/create', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) },
+            { path: 'employee/equipment-authorization/edit/:id', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) },
+            { path: 'employee/equipment-authorization/details/:id', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) },
+
+            { path: 'employee/competence', loadComponent: () => import('./components/nabl/employee-competence-list/employee-competence-list.component').then(m => m.EmployeeCompetenceListComponent) },
+            { path: 'employee/competence/create', loadComponent: () => import('./components/nabl/employee-competence-form/employee-competence-form.component').then(m => m.EmployeeCompetenceFormComponent) },
+            { path: 'employee/competence/edit/:id', loadComponent: () => import('./components/nabl/employee-competence-form/employee-competence-form.component').then(m => m.EmployeeCompetenceFormComponent) },
+            { path: 'employee/competence/details/:id', loadComponent: () => import('./components/nabl/employee-competence-form/employee-competence-form.component').then(m => m.EmployeeCompetenceFormComponent) },
+            { path: 'employee/competence/preview/:id', loadComponent: () => import('./components/nabl/employee-competence-preview/employee-competence-preview.component').then(m => m.EmployeeCompetencePreviewComponent) },
+            { path: 'employee/skill-matrix', component: SkillMatrixPreviewComponent },
+            { path: 'skill-matrix', component: SkillMatrixListComponent },
+            { path: 'skill-matrix/create', component: SkillMatrixFormComponent },
+            { path: 'skill-matrix/details/:id', component: SkillMatrixFormComponent },
+            { path: 'skill-matrix/edit/:id', component: SkillMatrixFormComponent },
+            { path: 'skill-matrix/preview/:id', component: SkillMatrixPreviewComponent },
+            { path: 'responsibility-authority', component: ResponsibilityAuthorityListComponent },
+            { path: 'responsibility-authority/create', component: ResponsibilityAuthorityFormComponent },
+            { path: 'responsibility-authority/edit/:id', component: ResponsibilityAuthorityFormComponent },
+            { path: 'responsibility-authority/details/:id', component: ResponsibilityAuthorityFormComponent },
+            { path: 'responsibility-authority/preview/:id', component: ResponsibilityAuthorityPreviewComponent },
+            { path: 'competence-requirement', loadComponent: () => import('./components/nabl/competence-requirement-list/competence-requirement-list.component').then(m => m.CompetenceRequirementListComponent) },
+            { path: 'competence-requirement/create', loadComponent: () => import('./components/nabl/competence-requirement-form/competence-requirement-form.component').then(m => m.CompetenceRequirementFormComponent) },
+            { path: 'competence-requirement/edit/:id', loadComponent: () => import('./components/nabl/competence-requirement-form/competence-requirement-form.component').then(m => m.CompetenceRequirementFormComponent) },
+            { path: 'competence-requirement/details/:id', loadComponent: () => import('./components/nabl/competence-requirement-form/competence-requirement-form.component').then(m => m.CompetenceRequirementFormComponent) },
+            { path: 'competence-requirement/preview/:id', loadComponent: () => import('./components/nabl/competence-requirement-preview/competence-requirement-preview.component').then(m => m.CompetenceRequirementPreviewComponent) },
+
+            { path: 'induction-training', loadComponent: () => import('./components/nabl/induction-training-list/induction-training-list.component').then(m => m.InductionTrainingListComponent) },
+            { path: 'induction-training/create', loadComponent: () => import('./components/nabl/induction-training-form/induction-training-form.component').then(m => m.InductionTrainingFormComponent) },
+            { path: 'induction-training/edit/:id', loadComponent: () => import('./components/nabl/induction-training-form/induction-training-form.component').then(m => m.InductionTrainingFormComponent) },
+            { path: 'induction-training/details/:id', loadComponent: () => import('./components/nabl/induction-training-form/induction-training-form.component').then(m => m.InductionTrainingFormComponent) },
+            { path: 'induction-training/preview/:id', loadComponent: () => import('./components/nabl/induction-training-preview/induction-training-preview.component').then(m => m.InductionTrainingPreviewComponent) },
+
+
+            // Training Plan Routes (F-8)
+            { path: 'training-plan', component: TrainingPlanListComponent },
+            { path: 'training-plan/create', component: TrainingPlanFormComponent },
+            { path: 'training-plan/edit/:id', component: TrainingPlanFormComponent },
+            { path: 'training-plan/details/:id', component: TrainingPlanFormComponent },
+            { path: 'training-plan/preview/:id', component: TrainingPlanPreviewComponent },
+            // Supplier Evaluation Record (F-26)
+            { path: 'supplier-evaluation', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-list/supplier-evaluation-record-list.component').then(m => m.SupplierEvaluationRecordListComponent) },
+            { path: 'supplier-evaluation/create', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/edit/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/details/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/preview/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-preview/supplier-evaluation-record-preview.component').then(m => m.SupplierEvaluationRecordPreviewComponent) },
+            // Test Request & Sample Receipt (F-27)
+            { path: 'nabl/test-request', component: TestRequestNablListComponent },
+            { path: 'nabl/test-request/create', component: TestRequestNablFormComponent },
+            { path: 'nabl/test-request/edit/:id', component: TestRequestNablFormComponent },
+            { path: 'nabl/test-request/details/:id', component: TestRequestNablFormComponent },
+            { path: 'nabl/test-request/preview/:id', component: TestRequestNablPreviewComponent },
+            // F-28: List of Test Methods & External Documents
+            { path: 'nabl/test-method', component: TestMethodNablListComponent },
+            { path: 'nabl/test-method/create', component: TestMethodNablFormComponent },
+            { path: 'nabl/test-method/edit/:id', component: TestMethodNablFormComponent },
+            { path: 'nabl/test-method/details/:id', component: TestMethodNablFormComponent },
+            { path: 'nabl/test-method/preview/:id', component: TestMethodNablPreviewComponent },
+            // F-29: Method Verification Records
+            { path: 'nabl/method-verification', component: MethodVerificationNablListComponent },
+            { path: 'nabl/method-verification/create', component: MethodVerificationNablFormComponent },
+            { path: 'nabl/method-verification/edit/:id', component: MethodVerificationNablFormComponent },
+            { path: 'nabl/method-verification/details/:id', component: MethodVerificationNablFormComponent },
+            { path: 'nabl/method-verification/preview/:id', component: MethodVerificationNablPreviewComponent },
+            // F-30: Method Validation Records
+            { path: 'nabl/method-validation', component: MethodValidationNablListComponent },
+            { path: 'nabl/method-validation/create', component: MethodValidationNablFormComponent },
+            { path: 'nabl/method-validation/edit/:id', component: MethodValidationNablFormComponent },
+            { path: 'nabl/method-validation/details/:id', component: MethodValidationNablFormComponent },
+            { path: 'nabl/method-validation/preview/:id', component: MethodValidationNablPreviewComponent },
+            // F-31: Sample Inward Register
+            { path: 'nabl/sample-inward-register', component: SampleInwardRegisterNablListComponent },
+            { path: 'nabl/sample-inward-register/create', component: SampleInwardRegisterNablFormComponent },
+            { path: 'nabl/sample-inward-register/edit/:id', component: SampleInwardRegisterNablFormComponent },
+            { path: 'nabl/sample-inward-register/details/:id', component: SampleInwardRegisterNablFormComponent },
+            { path: 'nabl/sample-inward-register/preview/:id', component: SampleInwardRegisterNablPreviewComponent },
+            // F-32: Sample Muster Register
+            { path: 'nabl/sample-muster-register', component: SampleMusterRegisterNablListComponent },
+            { path: 'nabl/sample-muster-register/create', component: SampleMusterRegisterNablFormComponent },
+            { path: 'nabl/sample-muster-register/edit/:id', component: SampleMusterRegisterNablFormComponent },
+            { path: 'nabl/sample-muster-register/details/:id', component: SampleMusterRegisterNablFormComponent },
+            { path: 'nabl/sample-muster-register/preview/:id', component: SampleMusterRegisterNablPreviewComponent },
+            // F-33: Sample Label
+            { path: 'nabl/sample-label', component: SampleLabelNablListComponent },
+            { path: 'nabl/sample-label/create', component: SampleLabelNablFormComponent },
+            { path: 'nabl/sample-label/edit/:id', component: SampleLabelNablFormComponent },
+            { path: 'nabl/sample-label/details/:id', component: SampleLabelNablFormComponent },
+            { path: 'nabl/sample-label/preview/:id', component: SampleLabelNablPreviewComponent },
+            // F-34: Technical Raw Data
+            { path: 'nabl/technical-raw-data', component: TechnicalRawDataListComponent },
+            { path: 'nabl/technical-raw-data/create', component: TechnicalRawDataFormComponent },
+            { path: 'nabl/technical-raw-data/edit/:id', component: TechnicalRawDataFormComponent },
+            { path: 'nabl/technical-raw-data/details/:id', component: TechnicalRawDataFormComponent },
+            { path: 'nabl/technical-raw-data/preview/:id', component: TechnicalRawDataPreviewComponent },
+            // Training Effectiveness Routes (F-10)
+            { path: 'training-effectiveness', component: TrainingEffectivenessListComponent },
+            { path: 'training-effectiveness/create', component: TrainingEffectivenessFormComponent },
+            { path: 'training-effectiveness/edit/:id', component: TrainingEffectivenessFormComponent },
+            { path: 'training-effectiveness/details/:id', component: TrainingEffectivenessFormComponent },
+            { path: 'training-effectiveness/preview/:id', component: TrainingEffectivenessPreviewComponent },
+            // Training Attendance Routes (F-9)
+            { path: 'training-attendance', loadComponent: () => import('./components/training/training-attendance/training-attendance-list.component').then(m => m.TrainingAttendanceListComponent) },
+            { path: 'training-attendance/create', loadComponent: () => import('./components/training/training-attendance/training-attendance-form.component').then(m => m.TrainingAttendanceFormComponent) },
+            { path: 'training-attendance/edit/:id', loadComponent: () => import('./components/training/training-attendance/training-attendance-form.component').then(m => m.TrainingAttendanceFormComponent) },
+            { path: 'training-attendance/details/:id', loadComponent: () => import('./components/training/training-attendance/training-attendance-form.component').then(m => m.TrainingAttendanceFormComponent) },
+            { path: 'training-attendance/preview/:id', loadComponent: () => import('./components/training/training-attendance/training-attendance-preview.component').then(m => m.TrainingAttendancePreviewComponent) },
+            // Environment Monitoring Routes (F-12)
+            { path: 'environment-monitoring', component: EnvironmentMonitoringListComponent },
+            { path: 'environment-monitoring/create', component: EnvironmentMonitoringFormComponent },
+            { path: 'environment-monitoring/edit/:id', component: EnvironmentMonitoringFormComponent },
+            { path: 'environment-monitoring/details/:id', component: EnvironmentMonitoringFormComponent },
+            { path: 'environment-monitoring/preview/:id', component: EnvironmentMonitoringPreviewComponent },
             { path: 'standard-organization', component: StandardOrgnizationComponent },
             { path: 'universal-code-type', component: UniversalCodeTypeComponent },
             { path: 'material-specification', component: MaterialSpecificationListComponent },
@@ -165,6 +335,232 @@ export const routes: Routes = [
             { path: 'calibration-agency/create', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
+            // Equipment History Card Routes (F-14)
+            { path: 'equipment-history-card', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-list.component').then(m => m.EquipmentHistoryListComponent) },
+            { path: 'equipment-history-card/create', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent) },
+            { path: 'equipment-history-card/edit/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent) },
+            { path: 'equipment-history-card/details/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent) },
+            { path: 'equipment-history-card/preview/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-preview.component').then(m => m.EquipmentHistoryPreviewComponent) },
+            // Supplier Confidentiality Agreement Routes (F-2)
+            { path: 'supplier-confidentiality-agreement', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-list.component').then(m => m.SupplierConfidentialityListComponent) },
+            { path: 'supplier-confidentiality-agreement/create', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-form.component').then(m => m.SupplierConfidentialityFormComponent) },
+            { path: 'supplier-confidentiality-agreement/edit/:id', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-form.component').then(m => m.SupplierConfidentialityFormComponent) },
+            { path: 'supplier-confidentiality-agreement/details/:id', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-form.component').then(m => m.SupplierConfidentialityFormComponent) },
+            { path: 'supplier-confidentiality-agreement/preview/:id', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-preview.component').then(m => m.SupplierConfidentialityPreviewComponent) },
+            // Calibration Review Routes (F-15)
+            { path: 'calibration-review', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-list.component').then(m => m.CalibrationReviewListComponent) },
+            { path: 'calibration-review/create', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent) },
+            { path: 'calibration-review/edit/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent) },
+            { path: 'calibration-review/details/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent) },
+            { path: 'calibration-review/preview/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-preview.component').then(m => m.CalibrationReviewPreviewComponent) },
+            // Intermediate Check Records Routes (F-16)
+            { path: 'intermediate-check-records', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-list.component').then(m => m.IntermediateCheckListComponent) },
+            { path: 'intermediate-check-records/create', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-form.component').then(m => m.IntermediateCheckFormComponent) },
+            { path: 'intermediate-check-records/edit/:id', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-form.component').then(m => m.IntermediateCheckFormComponent) },
+            { path: 'intermediate-check-records/details/:id', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-form.component').then(m => m.IntermediateCheckFormComponent) },
+            { path: 'intermediate-check-records/preview/:id', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-preview.component').then(m => m.IntermediateCheckPreviewComponent) },
+            // Reference Material list Routes (F-17)
+            { path: 'reference-material', loadComponent: () => import('./components/nabl/reference-material/reference-material-list.component').then(m => m.ReferenceMaterialListComponent) },
+            { path: 'reference-material/create', loadComponent: () => import('./components/nabl/reference-material/reference-material-form.component').then(m => m.ReferenceMaterialFormComponent) },
+            { path: 'reference-material/edit/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-form.component').then(m => m.ReferenceMaterialFormComponent) },
+            { path: 'reference-material/details/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-form.component').then(m => m.ReferenceMaterialFormComponent) },
+            { path: 'reference-material/preview/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-preview.component').then(m => m.ReferenceMaterialPreviewComponent) },
+            // Reference Material Consumption Routes (F-18)
+            { path: 'reference-material-consumption', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-list.component').then(m => m.CrmConsumptionListComponent) },
+            { path: 'reference-material-consumption/create', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-form.component').then(m => m.CrmConsumptionFormComponent) },
+            { path: 'reference-material-consumption/edit/:id', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-form.component').then(m => m.CrmConsumptionFormComponent) },
+            { path: 'reference-material-consumption/details/:id', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-form.component').then(m => m.CrmConsumptionFormComponent) },
+            { path: 'reference-material-consumption/preview/:id', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-preview.component').then(m => m.CrmConsumptionPreviewComponent) },
+            // Supplier Registration (F-19)
+            { path: 'supplier-registration', loadComponent: () => import('./components/nabl/supplier-registration/supplier-registration-list.component').then(m => m.SupplierRegistrationListComponent) },
+            { path: 'supplier-registration/create', loadComponent: () => import('./components/nabl/supplier-registration/supplier-registration-form.component').then(m => m.SupplierRegistrationFormComponent) },
+            { path: 'supplier-registration/edit/:id', loadComponent: () => import('./components/nabl/supplier-registration/supplier-registration-form.component').then(m => m.SupplierRegistrationFormComponent) },
+            { path: 'supplier-registration/details/:id', loadComponent: () => import('./components/nabl/supplier-registration/supplier-registration-form.component').then(m => m.SupplierRegistrationFormComponent) },
+            { path: 'supplier-registration/preview/:id', loadComponent: () => import('./components/nabl/supplier-registration/supplier-registration-preview.component').then(m => m.SupplierRegistrationPreviewComponent) },
+            // Approved List of Suppliers (F-20)
+            { path: 'approved-supplier', loadComponent: () => import('./components/nabl/approved-supplier-list/approved-supplier-list.component').then(m => m.ApprovedSupplierListComponent) },
+            { path: 'approved-supplier/create', loadComponent: () => import('./components/nabl/approved-supplier-form/approved-supplier-form.component').then(m => m.ApprovedSupplierFormComponent) },
+            { path: 'approved-supplier/edit/:id', loadComponent: () => import('./components/nabl/approved-supplier-form/approved-supplier-form.component').then(m => m.ApprovedSupplierFormComponent) },
+            { path: 'approved-supplier/details/:id', loadComponent: () => import('./components/nabl/approved-supplier-form/approved-supplier-form.component').then(m => m.ApprovedSupplierFormComponent) },
+            { path: 'approved-supplier/preview/:id', loadComponent: () => import('./components/nabl/approved-supplier-preview/approved-supplier-preview.component').then(m => m.ApprovedSupplierPreviewComponent) },
+            // Purchase Indent / Request Routes (F-21)
+            { path: 'purchase-indent', loadComponent: () => import('./components/nabl/purchase-indent-list/purchase-indent-list.component').then(m => m.PurchaseIndentListComponent) },
+            { path: 'purchase-indent/create', loadComponent: () => import('./components/nabl/purchase-indent-form/purchase-indent-form.component').then(m => m.PurchaseIndentFormComponent) },
+            { path: 'purchase-indent/edit/:id', loadComponent: () => import('./components/nabl/purchase-indent-form/purchase-indent-form.component').then(m => m.PurchaseIndentFormComponent) },
+            { path: 'purchase-indent/details/:id', loadComponent: () => import('./components/nabl/purchase-indent-form/purchase-indent-form.component').then(m => m.PurchaseIndentFormComponent) },
+            { path: 'purchase-indent/preview/:id', loadComponent: () => import('./components/nabl/purchase-indent-preview/purchase-indent-preview.component').then(m => m.PurchaseIndentPreviewComponent) },
+            // Purchase Order Routes (F-22)
+            { path: 'purchase-order', loadComponent: () => import('./components/nabl/purchase-order-list/purchase-order-list.component').then(m => m.PurchaseOrderListComponent) },
+            { path: 'purchase-order/create', loadComponent: () => import('./components/nabl/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent) },
+            { path: 'purchase-order/edit/:id', loadComponent: () => import('./components/nabl/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent) },
+            { path: 'purchase-order/details/:id', loadComponent: () => import('./components/nabl/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent) },
+            { path: 'purchase-order/preview/:id', loadComponent: () => import('./components/nabl/purchase-order-preview/purchase-order-preview.component').then(m => m.PurchaseOrderPreviewComponent) },
+            // Product & Service Inspection Plan Routes (F-23)
+            { path: 'product-inspection', loadComponent: () => import('./components/nabl/product-inspection-list/product-inspection-list.component').then(m => m.ProductInspectionListComponent) },
+            { path: 'product-inspection/create', loadComponent: () => import('./components/nabl/product-inspection-form/product-inspection-form.component').then(m => m.ProductInspectionFormComponent) },
+            { path: 'product-inspection/edit/:id', loadComponent: () => import('./components/nabl/product-inspection-form/product-inspection-form.component').then(m => m.ProductInspectionFormComponent) },
+            { path: 'product-inspection/details/:id', loadComponent: () => import('./components/nabl/product-inspection-form/product-inspection-form.component').then(m => m.ProductInspectionFormComponent) },
+            { path: 'product-inspection/preview/:id', loadComponent: () => import('./components/nabl/product-inspection-preview/product-inspection-preview.component').then(m => m.ProductInspectionPreviewComponent) },
+            // Incoming Material Inspection Record Routes (F-24)
+            { path: 'incoming-material', loadComponent: () => import('./components/nabl/incoming-material-list/incoming-material-list.component').then(m => m.IncomingMaterialListComponent) },
+            { path: 'incoming-material/create', loadComponent: () => import('./components/nabl/incoming-material-form/incoming-material-form.component').then(m => m.IncomingMaterialFormComponent) },
+            { path: 'incoming-material/edit/:id', loadComponent: () => import('./components/nabl/incoming-material-form/incoming-material-form.component').then(m => m.IncomingMaterialFormComponent) },
+            { path: 'incoming-material/details/:id', loadComponent: () => import('./components/nabl/incoming-material-form/incoming-material-form.component').then(m => m.IncomingMaterialFormComponent) },
+            { path: 'incoming-material/preview/:id', loadComponent: () => import('./components/nabl/incoming-material-preview/incoming-material-preview.component').then(m => m.IncomingMaterialPreviewComponent) },
+            // Purchase Material Verification Records (F-25)
+            { path: 'purchase-material-verification', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-list/purchase-material-verification-list.component').then(m => m.PurchaseMaterialVerificationListComponent) },
+            { path: 'purchase-material-verification/create', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-form/purchase-material-verification-form.component').then(m => m.PurchaseMaterialVerificationFormComponent) },
+            { path: 'purchase-material-verification/edit/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-form/purchase-material-verification-form.component').then(m => m.PurchaseMaterialVerificationFormComponent) },
+            { path: 'purchase-material-verification/details/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-form/purchase-material-verification-form.component').then(m => m.PurchaseMaterialVerificationFormComponent) },
+            { path: 'purchase-material-verification/preview/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-preview/purchase-material-verification-preview.component').then(m => m.PurchaseMaterialVerificationPreviewComponent) },
+            // Supplier Evaluation Record (F-26)
+            { path: 'supplier-evaluation', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-list/supplier-evaluation-record-list.component').then(m => m.SupplierEvaluationRecordListComponent) },
+            { path: 'supplier-evaluation/create', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/edit/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/details/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent) },
+            { path: 'supplier-evaluation/preview/:id', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-preview/supplier-evaluation-record-preview.component').then(m => m.SupplierEvaluationRecordPreviewComponent) },
+
+            // F-35: Measurement of Uncertainty Records
+            { path: 'measurement-uncertainty', loadComponent: () => import('./components/nabl/measurement-uncertainty-nabl/measurement-uncertainty-list/measurement-uncertainty-list.component').then(m => m.MeasurementUncertaintyListComponent) },
+            { path: 'measurement-uncertainty/create', loadComponent: () => import('./components/nabl/measurement-uncertainty-nabl/measurement-uncertainty-form/measurement-uncertainty-form.component').then(m => m.MeasurementUncertaintyFormComponent) },
+            { path: 'measurement-uncertainty/edit/:id', loadComponent: () => import('./components/nabl/measurement-uncertainty-nabl/measurement-uncertainty-form/measurement-uncertainty-form.component').then(m => m.MeasurementUncertaintyFormComponent) },
+            { path: 'measurement-uncertainty/details/:id', loadComponent: () => import('./components/nabl/measurement-uncertainty-nabl/measurement-uncertainty-form/measurement-uncertainty-form.component').then(m => m.MeasurementUncertaintyFormComponent) },
+            { path: 'measurement-uncertainty/preview/:id', loadComponent: () => import('./components/nabl/measurement-uncertainty-nabl/measurement-uncertainty-preview/measurement-uncertainty-preview.component').then(m => m.MeasurementUncertaintyPreviewComponent) },
+
+            // F-36: PT / ILC Plan
+            { path: 'pt-ilc-plan', loadComponent: () => import('./components/nabl/pt-ilc-plan-nabl/pt-ilc-plan-list/pt-ilc-plan-list.component').then(m => m.PtIlcPlanListComponent) },
+            { path: 'pt-ilc-plan/create', loadComponent: () => import('./components/nabl/pt-ilc-plan-nabl/pt-ilc-plan-form/pt-ilc-plan-form.component').then(m => m.PtIlcPlanFormComponent) },
+            { path: 'pt-ilc-plan/edit/:id', loadComponent: () => import('./components/nabl/pt-ilc-plan-nabl/pt-ilc-plan-form/pt-ilc-plan-form.component').then(m => m.PtIlcPlanFormComponent) },
+            { path: 'pt-ilc-plan/details/:id', loadComponent: () => import('./components/nabl/pt-ilc-plan-nabl/pt-ilc-plan-form/pt-ilc-plan-form.component').then(m => m.PtIlcPlanFormComponent) },
+            { path: 'pt-ilc-plan/preview/:id', loadComponent: () => import('./components/nabl/pt-ilc-plan-nabl/pt-ilc-plan-preview/pt-ilc-plan-preview.component').then(m => m.PtIlcPlanPreviewComponent) },
+
+            // F-37: Quality Assurance / Control Plan
+            { path: 'quality-control-plan', loadComponent: () => import('./components/nabl/quality-control-plan-nabl/quality-control-plan-list/quality-control-plan-list.component').then(m => m.QualityControlPlanListComponent) },
+            { path: 'quality-control-plan/create', loadComponent: () => import('./components/nabl/quality-control-plan-nabl/quality-control-plan-form/quality-control-plan-form.component').then(m => m.QualityControlPlanFormComponent) },
+            { path: 'quality-control-plan/edit/:id', loadComponent: () => import('./components/nabl/quality-control-plan-nabl/quality-control-plan-form/quality-control-plan-form.component').then(m => m.QualityControlPlanFormComponent) },
+            { path: 'quality-control-plan/details/:id', loadComponent: () => import('./components/nabl/quality-control-plan-nabl/quality-control-plan-form/quality-control-plan-form.component').then(m => m.QualityControlPlanFormComponent) },
+            { path: 'quality-control-plan/preview/:id', loadComponent: () => import('./components/nabl/quality-control-plan-nabl/quality-control-plan-preview/quality-control-plan-preview.component').then(m => m.QualityControlPlanPreviewComponent) },
+
+            // F-38: Retesting of Retained Sample
+            { path: 'retesting-retained-sample', loadComponent: () => import('./components/nabl/retesting-of-retained-sample-nabl/retesting-of-retained-sample-list/retesting-of-retained-sample-list.component').then(m => m.RetestingOfRetainedSampleListComponent) },
+            { path: 'retesting-retained-sample/create', loadComponent: () => import('./components/nabl/retesting-of-retained-sample-nabl/retesting-of-retained-sample-form/retesting-of-retained-sample-form.component').then(m => m.RetestingOfRetainedSampleFormComponent) },
+            { path: 'retesting-retained-sample/edit/:id', loadComponent: () => import('./components/nabl/retesting-of-retained-sample-nabl/retesting-of-retained-sample-form/retesting-of-retained-sample-form.component').then(m => m.RetestingOfRetainedSampleFormComponent) },
+            { path: 'retesting-retained-sample/details/:id', loadComponent: () => import('./components/nabl/retesting-of-retained-sample-nabl/retesting-of-retained-sample-form/retesting-of-retained-sample-form.component').then(m => m.RetestingOfRetainedSampleFormComponent) },
+            { path: 'retesting-retained-sample/preview/:id', loadComponent: () => import('./components/nabl/retesting-of-retained-sample-nabl/retesting-of-retained-sample-preview/retesting-of-retained-sample-preview.component').then(m => m.RetestingOfRetainedSamplePreviewComponent) },
+
+            // F-39: Test Report
+            { path: 'test-report', loadComponent: () => import('./components/nabl/test-report-nabl/test-report-list/test-report-list.component').then(m => m.TestReportListComponent) },
+            { path: 'test-report/create', loadComponent: () => import('./components/nabl/test-report-nabl/test-report-form/test-report-form.component').then(m => m.TestReportFormComponent) },
+            { path: 'test-report/edit/:id', loadComponent: () => import('./components/nabl/test-report-nabl/test-report-form/test-report-form.component').then(m => m.TestReportFormComponent) },
+            { path: 'test-report/details/:id', loadComponent: () => import('./components/nabl/test-report-nabl/test-report-form/test-report-form.component').then(m => m.TestReportFormComponent) },
+            { path: 'test-report/preview/:id', loadComponent: () => import('./components/nabl/test-report-nabl/test-report-preview/test-report-preview.component').then(m => m.TestReportPreviewComponent) },
+
+            // F-40: Complaint Register
+            { path: 'complaint-register', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-list/complaint-list.component').then(m => m.ComplaintListComponent) },
+            { path: 'complaint-register/create', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-form/complaint-form.component').then(m => m.ComplaintFormComponent) },
+            { path: 'complaint-register/edit/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-form/complaint-form.component').then(m => m.ComplaintFormComponent) },
+            { path: 'complaint-register/details/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-form/complaint-form.component').then(m => m.ComplaintFormComponent) },
+            { path: 'complaint-register/preview/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-preview/complaint-preview.component').then(m => m.ComplaintPreviewComponent) },
+
+            // F-41: Non-Conforming Work Records
+            { path: 'non-conforming-work', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-list/non-conforming-work-list.component').then(m => m.NonConformingWorkListComponent) },
+            { path: 'non-conforming-work/create', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-form/non-conforming-work-form.component').then(m => m.NonConformingWorkFormComponent) },
+            { path: 'non-conforming-work/edit/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-form/non-conforming-work-form.component').then(m => m.NonConformingWorkFormComponent) },
+            { path: 'non-conforming-work/details/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-form/non-conforming-work-form.component').then(m => m.NonConformingWorkFormComponent) },
+            { path: 'non-conforming-work/preview/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-preview/non-conforming-work-preview.component').then(m => m.NonConformingWorkPreviewComponent) },
+
+            // F-42: NC & Corrective Action Report
+            { path: 'nc-corrective-action', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-list/nc-corrective-action-list.component').then(m => m.NcCorrectiveActionListComponent) },
+            { path: 'nc-corrective-action/create', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-form/nc-corrective-action-form.component').then(m => m.NcCorrectiveActionFormComponent) },
+            { path: 'nc-corrective-action/edit/:id', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-form/nc-corrective-action-form.component').then(m => m.NcCorrectiveActionFormComponent) },
+            { path: 'nc-corrective-action/details/:id', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-form/nc-corrective-action-form.component').then(m => m.NcCorrectiveActionFormComponent) },
+            { path: 'nc-corrective-action/preview/:id', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-preview/nc-corrective-action-preview.component').then(m => m.NcCorrectiveActionPreviewComponent) },
+
+            // F-43: Master List of Documents
+            { path: 'master-document', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-list/master-document-list.component').then(m => m.MasterDocumentListComponent) },
+            { path: 'master-document/create', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent) },
+            { path: 'master-document/edit/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent) },
+            { path: 'master-document/details/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent) },
+            { path: 'master-document/preview', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview/master-document-preview.component').then(m => m.MasterDocumentPreviewComponent) },
+
+            // F-44: Document Change Request Form
+            { path: 'document-change-request', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-list/document-change-request-list.component').then(m => m.DocumentChangeRequestListComponent) },
+            { path: 'document-change-request/create', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-form/document-change-request-form.component').then(m => m.DocumentChangeRequestFormComponent) },
+            { path: 'document-change-request/edit/:id', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-form/document-change-request-form.component').then(m => m.DocumentChangeRequestFormComponent) },
+            { path: 'document-change-request/details/:id', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-form/document-change-request-form.component').then(m => m.DocumentChangeRequestFormComponent) },
+            { path: 'document-change-request/preview/:id', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-preview/document-change-request-preview.component').then(m => m.DocumentChangeRequestPreviewComponent) },
+
+            // F-45: Document Review Record
+            { path: 'document-review', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-list/document-review-list.component').then(m => m.DocumentReviewListComponent) },
+            { path: 'document-review/create', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent) },
+            { path: 'document-review/edit/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent) },
+            { path: 'document-review/details/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent) },
+            { path: 'document-review/preview', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview/document-review-preview.component').then(m => m.DocumentReviewPreviewComponent) },
+
+            // F-46: Risk & Opportunity Assessment
+            { path: 'risk-assessment', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-list/risk-assessment-list.component').then(m => m.RiskAssessmentListComponent) },
+            { path: 'risk-assessment/create', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-form/risk-assessment-form.component').then(m => m.RiskAssessmentFormComponent) },
+            { path: 'risk-assessment/edit/:id', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-form/risk-assessment-form.component').then(m => m.RiskAssessmentFormComponent) },
+            { path: 'risk-assessment/details/:id', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-form/risk-assessment-form.component').then(m => m.RiskAssessmentFormComponent) },
+            { path: 'risk-assessment/preview/:id', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-preview/risk-assessment-preview.component').then(m => m.RiskAssessmentPreviewComponent) },
+
+            // F-47: Customer Feedback Form
+            { path: 'customer-feedback', loadComponent: () => import('./components/nabl/customer-feedback-nabl/customer-feedback-list/customer-feedback-list.component').then(m => m.CustomerFeedbackListComponent) },
+            { path: 'customer-feedback/create', loadComponent: () => import('./components/nabl/customer-feedback-nabl/customer-feedback-form/customer-feedback-form.component').then(m => m.CustomerFeedbackFormComponent) },
+            { path: 'customer-feedback/edit/:id', loadComponent: () => import('./components/nabl/customer-feedback-nabl/customer-feedback-form/customer-feedback-form.component').then(m => m.CustomerFeedbackFormComponent) },
+            { path: 'customer-feedback/details/:id', loadComponent: () => import('./components/nabl/customer-feedback-nabl/customer-feedback-form/customer-feedback-form.component').then(m => m.CustomerFeedbackFormComponent) },
+            { path: 'customer-feedback/preview/:id', loadComponent: () => import('./components/nabl/customer-feedback-nabl/customer-feedback-preview/customer-feedback-preview.component').then(m => m.CustomerFeedbackPreviewComponent) },
+
+            // F-48: Customer Feedback Analysis
+            { path: 'feedback-analysis', loadComponent: () => import('./components/nabl/feedback-analysis-nabl/feedback-analysis-list/feedback-analysis-list.component').then(m => m.FeedbackAnalysisListComponent) },
+            { path: 'feedback-analysis/create', loadComponent: () => import('./components/nabl/feedback-analysis-nabl/feedback-analysis-form/feedback-analysis-form.component').then(m => m.FeedbackAnalysisFormComponent) },
+            { path: 'feedback-analysis/edit/:id', loadComponent: () => import('./components/nabl/feedback-analysis-nabl/feedback-analysis-form/feedback-analysis-form.component').then(m => m.FeedbackAnalysisFormComponent) },
+            { path: 'feedback-analysis/details/:id', loadComponent: () => import('./components/nabl/feedback-analysis-nabl/feedback-analysis-form/feedback-analysis-form.component').then(m => m.FeedbackAnalysisFormComponent) },
+            { path: 'feedback-analysis/preview/:id', loadComponent: () => import('./components/nabl/feedback-analysis-nabl/feedback-analysis-preview/feedback-analysis-preview.component').then(m => m.FeedbackAnalysisPreviewComponent) },
+
+            // F-49: Trained Internal Auditors List
+            { path: 'internal-auditor', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-list/internal-auditor-list.component').then(m => m.InternalAuditorListComponent) },
+            { path: 'internal-auditor/create', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) },
+            { path: 'internal-auditor/edit/:id', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) },
+            { path: 'internal-auditor/details/:id', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) },
+            { path: 'internal-auditor/preview', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-preview/internal-auditor-preview.component').then(m => m.InternalAuditorPreviewComponent) },
+
+            // F-50: Audit Schedule & Plan
+            { path: 'audit-plan', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-list/audit-plan-list.component').then(m => m.AuditPlanListComponent) },
+            { path: 'audit-plan/create', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent) },
+            { path: 'audit-plan/edit/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent) },
+            { path: 'audit-plan/details/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent) },
+            { path: 'audit-plan/preview', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-preview/audit-plan-preview.component').then(m => m.AuditPlanPreviewComponent) },
+
+            // F-51: Audit Checklist & Observation
+            { path: 'audit-checklist', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-list/audit-checklist-list.component').then(m => m.AuditChecklistListComponent) },
+            { path: 'audit-checklist/create', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-form/audit-checklist-form.component').then(m => m.AuditChecklistFormComponent) },
+            { path: 'audit-checklist/edit/:id', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-form/audit-checklist-form.component').then(m => m.AuditChecklistFormComponent) },
+            { path: 'audit-checklist/details/:id', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-form/audit-checklist-form.component').then(m => m.AuditChecklistFormComponent) },
+            { path: 'audit-checklist/preview/:id', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-preview/audit-checklist-preview.component').then(m => m.AuditChecklistPreviewComponent) },
+
+            // F-52: Audit Summary Report
+            { path: 'audit-summary', loadComponent: () => import('./components/nabl/audit-summary-nabl/audit-summary-list/audit-summary-list.component').then(m => m.AuditSummaryListComponent) },
+            { path: 'audit-summary/create', loadComponent: () => import('./components/nabl/audit-summary-nabl/audit-summary-form/audit-summary-form.component').then(m => m.AuditSummaryFormComponent) },
+            { path: 'audit-summary/edit/:id', loadComponent: () => import('./components/nabl/audit-summary-nabl/audit-summary-form/audit-summary-form.component').then(m => m.AuditSummaryFormComponent) },
+            { path: 'audit-summary/details/:id', loadComponent: () => import('./components/nabl/audit-summary-nabl/audit-summary-form/audit-summary-form.component').then(m => m.AuditSummaryFormComponent) },
+            { path: 'audit-summary/preview/:id', loadComponent: () => import('./components/nabl/audit-summary-nabl/audit-summary-preview/audit-summary-preview.component').then(m => m.AuditSummaryPreviewComponent) },
+
+            // F-53: Meeting Notice / Agenda for MRM
+            { path: 'meeting-agenda', loadComponent: () => import('./components/nabl/meeting-agenda-nabl/meeting-agenda-list/meeting-agenda-list.component').then(m => m.MeetingAgendaListComponent) },
+            { path: 'meeting-agenda/create', loadComponent: () => import('./components/nabl/meeting-agenda-nabl/meeting-agenda-form/meeting-agenda-form.component').then(m => m.MeetingAgendaFormComponent) },
+            { path: 'meeting-agenda/edit/:id', loadComponent: () => import('./components/nabl/meeting-agenda-nabl/meeting-agenda-form/meeting-agenda-form.component').then(m => m.MeetingAgendaFormComponent) },
+            { path: 'meeting-agenda/details/:id', loadComponent: () => import('./components/nabl/meeting-agenda-nabl/meeting-agenda-form/meeting-agenda-form.component').then(m => m.MeetingAgendaFormComponent) },
+            { path: 'meeting-agenda/preview/:id', loadComponent: () => import('./components/nabl/meeting-agenda-nabl/meeting-agenda-preview/meeting-agenda-preview.component').then(m => m.MeetingAgendaPreviewComponent) },
+
+            // F-54: Minutes of Management Review Meeting
+            { path: 'meeting-minutes', loadComponent: () => import('./components/nabl/meeting-minutes-nabl/meeting-minutes-list/meeting-minutes-list.component').then(m => m.MeetingMinutesListComponent) },
+            { path: 'meeting-minutes/create', loadComponent: () => import('./components/nabl/meeting-minutes-nabl/meeting-minutes-form/meeting-minutes-form.component').then(m => m.MeetingMinutesFormComponent) },
+            { path: 'meeting-minutes/edit/:id', loadComponent: () => import('./components/nabl/meeting-minutes-nabl/meeting-minutes-form/meeting-minutes-form.component').then(m => m.MeetingMinutesFormComponent) },
+            { path: 'meeting-minutes/details/:id', loadComponent: () => import('./components/nabl/meeting-minutes-nabl/meeting-minutes-form/meeting-minutes-form.component').then(m => m.MeetingMinutesFormComponent) },
+            { path: 'meeting-minutes/preview/:id', loadComponent: () => import('./components/nabl/meeting-minutes-nabl/meeting-minutes-preview/meeting-minutes-preview.component').then(m => m.MeetingMinutesPreviewComponent) },
+
+            // Training Effectiveness Routes (F-10)
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
             { path: 'sample/prepration', component: CuttingSamplesComponent },
             { path: 'sample/cutting', component: CuttingSamplesComponent },
@@ -206,6 +602,8 @@ export const routes: Routes = [
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
             { path: 'reporting/amend/:id', component: ReportAmendComponent },
+            { path: 'report-template-builder', loadComponent: () => import('./components/report-template-builder/report-template-builder.component').then(m => m.ReportTemplateBuilderComponent) },
+            { path: 'report-template-builder/edit/:id', loadComponent: () => import('./components/report-template-builder/report-template-builder.component').then(m => m.ReportTemplateBuilderComponent) },
             // Account routes
             { path: 'accounts/dashboard', component: AccountDashboardComponent },
             { path: 'accounts/cases', component: CaseAccountListComponent },

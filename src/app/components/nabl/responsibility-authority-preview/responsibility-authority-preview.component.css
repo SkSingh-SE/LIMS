@@ -1,0 +1,70 @@
+/* Base Styles for Screen */
+.container-width {
+    max-width: 900px;
+}
+
+.print-frame {
+    background-color: white;
+    padding: 40px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    font-family: 'Times New Roman', Times, serif;
+    color: #000;
+    margin: 20px auto;
+}
+
+.orientation-portrait {
+    max-width: 900px;
+}
+
+.label-cell {
+  background: #f8f9fa !important;
+  font-weight: bold !important;
+  color: #000 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.section {
+  border: 2px solid #000;
+  overflow: visible;
+}
+
+.section-title {
+  background: #f0f0f0 !important;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-bottom: 2px solid #000;
+  color: #000;
+  text-transform: uppercase;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.section-content {
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #000;
+}
+
+.border-end-2 { border-right: 2px solid #000 !important; }
+.border-bottom-2 { border-bottom: 2px solid #000 !important; }
+.border-top-2 { border-top: 2px solid #000 !important; }
+
+/* Print Overrides */
+@media print {
+  .print-frame {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}

@@ -1,0 +1,56 @@
+.container-width {
+    max-width: 900px;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+.label-cell {
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+
+.bg-light-gray {
+    background-color: #eee;
+}
+
+.compact-table td {
+    padding: 0.4rem 0.5rem !important;
+}
+
+.eval-results-table th, .eval-results-table td {
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.signature-cell {
+    height: 50px;
+}
+
+.min-h-60 {
+    min-height: 60px;
+}
+
+.border-bottom-2 {
+    border-bottom: 2px solid #000 !important;
+}
+
+.border-top-2 {
+    border-top: 2px solid #000 !important;
+}
+
+.border-end-2 {
+    border-right: 2px solid #000 !important;
+}
+
+@media print {
+    .print-frame {
+        width: var(--print-content-width) !important;
+        margin: 0 auto !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

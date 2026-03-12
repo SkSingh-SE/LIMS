@@ -1,0 +1,95 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" routerLink="/employee/equipment-authorization/list">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <!-- Loading Overlay -->
+      <div *ngIf="isLoading()" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading()" [formGroup]="authForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Authorization Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('details')">
+            <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Authorization Details</span>
+          </div>
+          <div *ngIf="openSections['details']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="formatNo">
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Department <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="department"
+                  [ngClass]="{'is-invalid': authForm.get('department')?.invalid && authForm.get('department')?.touched}">
+                  <option value="">Select Department</option>
+                  <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Personnel Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="personnelName"
+                  [ngClass]="{'is-invalid': authForm.get('personnelName')?.invalid && authForm.get('personnelName')?.touched}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Personnel UID <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="uid"
+                  [ngClass]="{'is-invalid': authForm.get('uid')?.invalid && authForm.get('uid')?.touched}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Equipment & Methods -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('equipment')">
+            <i class="bi" [ngClass]="openSections['equipment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Equipment & Methods</span>
+          </div>
+          <div *ngIf="openSections['equipment']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label fw-bold">Equipment List <span class="text-danger">*</span></label>
+                <quill-editor formControlName="equipment" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="List down authorized equipment..."></quill-editor>
+                <div *ngIf="authForm.get('equipment')?.invalid && authForm.get('equipment')?.touched" class="text-danger text-sm mt-1">Equipment list is required</div>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Test Method Authorization <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="testMethodAuthorization">
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Test Authorization <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="testAuthorization">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-dark" routerLink="/employee/equipment-authorization/list">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="authForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Authorization
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

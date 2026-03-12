@@ -1,0 +1,81 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+    <!-- Action Bar (hidden on print) -->
+    <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+        <button class="btn btn-dark btn-sm" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </button>
+        <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+            <i class="bi bi-printer"></i> Print
+        </button>
+    </div>
+
+    <app-print-frame *ngIf="!isLoading && matrix" orientation="portrait">
+      <ng-container header>
+        <app-nabl-print-header
+            [formatNo]="matrix.formatNo"
+            [mainTitle]="'RESPONSIBILITY & AUTHORITY MATRIX'"
+            [docNo]="'DMSPL / Level-04 / Format / ' + matrix.formatNo"
+            [issueNo]="matrix.issueNo"
+            [issueDate]="matrix.date"
+            [revNo]="matrix.revNo">
+        </app-nabl-print-header>
+      </ng-container>
+
+      <ng-container body>
+        <!-- Content Section -->
+        <div class="section mb-3 border-2 border-dark">
+            <div class="section-title border-bottom-2">I. Designation Details</div>
+            <table class="table table-bordered mb-0">
+                <tbody>
+                    <tr>
+                        <td class="label-cell border-0 border-end-2" style="width: 30%;">Designation</td>
+                        <td class="border-0 fw-bold">{{ matrix.designationName }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section mb-3 border-2 border-dark">
+            <div class="section-title border-bottom-2">II. Responsibilities</div>
+            <div class="section-content ql-editor p-3" [innerHTML]="matrix.responsibilities"></div>
+        </div>
+
+        <div class="section mb-3 border-2 border-dark">
+            <div class="section-title border-bottom-2">III. Authorities</div>
+            <div class="section-content ql-editor p-3" [innerHTML]="matrix.authorities"></div>
+        </div>
+
+        <!-- Employee Acceptance -->
+        <div class="section border-2 border-dark mb-3">
+            <div class="section-title border-bottom-2">IV. Employee Acceptance</div>
+            <table class="table table-bordered mb-0">
+                <tbody>
+                    <tr>
+                        <td class="label-cell border-0 border-end-2" style="width: 30%;">Status</td>
+                        <td class="border-0">{{ matrix.employeeAccepted ? 'Digitally Accepted' : 'Pending' }}</td>
+                    </tr>
+                    <tr *ngIf="matrix.employeeAccepted">
+                        <td class="label-cell border-0 border-end-2 border-top-2">Accepted On</td>
+                        <td class="border-0 border-top-2">{{ matrix.acceptanceTimestamp | date:'dd.MM.yyyy HH:mm' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+      </ng-container>
+
+      <ng-container footer>
+        <app-nabl-print-footer
+            [preparedByName]="matrix.preparedBy"
+            [issuedByName]="matrix.issuedBy"
+            [reviewedApprovedByName]="matrix.reviewedApprovedBy">
+        </app-nabl-print-footer>
+      </ng-container>
+    </app-print-frame>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>

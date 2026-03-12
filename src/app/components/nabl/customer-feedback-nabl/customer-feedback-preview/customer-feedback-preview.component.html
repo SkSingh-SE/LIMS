@@ -1,0 +1,96 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-dark btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      Back to List
+    </button>
+    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'CUSTOMER FEEDBACK FORM'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="customer-info border border-dark p-2 mb-3">
+        <div class="row">
+          <div class="col-6">
+            <strong>Customer Name:</strong>
+            {{ data.customerName }}
+          </div>
+          <div class="col-6">
+            <strong>Date:</strong>
+            {{ data.date | date: "dd.MM.yyyy" }}
+          </div>
+        </div>
+        <div class="row mt-1">
+          <div class="col-12">
+            <strong>Contact Person:</strong>
+            {{ data.contactPerson }}
+          </div>
+        </div>
+      </div>
+
+      <p class="fw-bold mb-2">Please rate our performance on a scale of 1 to 5 (1-Poor, 5-Excellent):</p>
+
+      <table class="table table-bordered border-dark text-center align-middle mb-4">
+        <thead class="bg-light">
+          <tr>
+            <th style="width: 60px">Sr. No.</th>
+            <th class="text-start">Performance Parameters</th>
+            <th style="width: 100px">Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of data.ratings; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="text-start">{{ r.parameter }}</td>
+            <td>
+              <strong>{{ r.rating }}</strong>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sections-container">
+        <div class="section mb-3 border border-dark p-2">
+          <div class="fw-bold border-bottom border-dark pb-1 mb-2">Comments (if any):</div>
+          <div class="ql-editor" [innerHTML]="data.comments"></div>
+        </div>
+
+        <div class="section mb-3 border border-dark p-2">
+          <div class="fw-bold border-bottom border-dark pb-1 mb-2">Suggestions for Improvement:</div>
+          <div class="ql-editor" [innerHTML]="data.suggestions"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Customer/Representative'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

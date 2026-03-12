@@ -1,0 +1,57 @@
+.print-container {
+  max-width: 1200px; /* Wider for register view */
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  color: #000;
+}
+
+.table th {
+  background-color: #f8f9fa !important;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 8px 4px;
+}
+
+.table td {
+  font-size: 0.75rem;
+  height: 35px;
+  padding: 6px 4px;
+}
+
+.border-dark {
+  border-color: #000 !important;
+}
+
+.extra-small {
+  font-size: 0.65rem;
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  .print-container {
+    width: 100%;
+    max-width: none;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .d-print-none {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}

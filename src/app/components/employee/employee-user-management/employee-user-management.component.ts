@@ -16,7 +16,7 @@ import { ipRestrictionValidator } from '../../../utility/validators/ip-restricti
 
 @Component({
   selector: 'app-employee-user-management',
-  standalone: true,
+
   imports: [CommonModule, ReactiveFormsModule, FormsModule, UserPermissionComponent, SearchableDropdownComponent, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
   templateUrl: './employee-user-management.component.html',
   styleUrl: './employee-user-management.component.css'
@@ -83,7 +83,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
       // Access Control
       allowRemoteLogin: [false],
-      ipRestriction: ['',ipRestrictionValidator],
+      ipRestriction: ['', ipRestrictionValidator],
       workingHours: [''],
       startTime: [''],
       endTime: [''],
@@ -188,7 +188,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       return;
     }
     // Event-based API call (immediate)
-    this.userService.resetPassword(this.employeeId,newPass).subscribe({
+    this.userService.resetPassword(this.employeeId, newPass).subscribe({
       next: () => {
         this.toastService.show('Password reset successfully.', 'success');
         this.userForm.get('password')?.reset();
@@ -349,12 +349,12 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     return `${start}-${end}`;
   }
 
-  private parseWorkingHours(value: string | undefined | null): Array<{start:string,end:string}> {
+  private parseWorkingHours(value: string | undefined | null): Array<{ start: string, end: string }> {
     if (!value) return [];
     // support single or comma-separated; take first as primary
     return value.split(',').map(part => {
-      const [s,e] = part.split('-');
-      return { start: (s||'').trim(), end: (e||'').trim() };
+      const [s, e] = part.split('-');
+      return { start: (s || '').trim(), end: (e || '').trim() };
     }).filter(r => r.start && r.end);
   }
 

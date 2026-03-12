@@ -1,0 +1,35 @@
+.container-width {
+  max-width: 900px;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+.summary-info {
+  font-size: 1rem;
+}
+
+.ql-editor {
+  min-height: 100px;
+  line-height: 1.5;
+  padding: 0;
+}
+
+.border-dark {
+  border-color: #000 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+.summary-section {
+  page-break-inside: avoid;
+}

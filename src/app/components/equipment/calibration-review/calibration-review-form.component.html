@@ -1,0 +1,222 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ getTitle() }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading" [formGroup]="reviewForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="reviewForm.disabled">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('document')">
+            <i class="bi" [ngClass]="openSections['document'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Document Information</span>
+          </div>
+          <div *ngIf="openSections['document']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-15">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Document No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issue Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="issueDate">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Certificate & Agency -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('certificate')">
+            <i class="bi" [ngClass]="openSections['certificate'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Certificate & Agency Information</span>
+          </div>
+          <div *ngIf="openSections['certificate']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Certificate No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="certificateNo">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Calibration Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="calibrationDate">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Next Due Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="nextCalibrationDate">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Calibrating Agency <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="calibratingAgency">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Agency Accreditation No</label>
+                <input type="text" class="form-control" formControlName="agencyAccreditationNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Equipment Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('equipment')">
+            <i class="bi" [ngClass]="openSections['equipment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Equipment Information</span>
+          </div>
+          <div *ngIf="openSections['equipment']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Equipment ID <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="equipmentId">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentName">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentNo">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Serial No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="serialNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Calibration Results -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('points')">
+            <i class="bi" [ngClass]="openSections['points'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Calibration Points & Results</span>
+          </div>
+          <div *ngIf="openSections['points']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm mb-0 align-middle">
+                <thead class="bg-light sticky-top">
+                  <tr>
+                    <th class="text-center">Parameter</th>
+                    <th class="text-center">Nominal</th>
+                    <th class="text-center">Measured</th>
+                    <th class="text-center">Deviation</th>
+                    <th class="text-center">Tolerance</th>
+                    <th class="text-center">Pass/Fail</th>
+                    <th class="text-center" style="width: 50px;">
+                      <button type="button" class="btn btn-sm btn-link p-0 text-primary" (click)="addCalibrationPoint()" *ngIf="!reviewForm.disabled">
+                        <i class="bi bi-plus-circle"></i>
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="calibrationPoints">
+                  <tr *ngFor="let point of calibrationPointsArray.controls; let i = index" [formGroupName]="i">
+                    <td><input type="text" class="form-control form-control-sm border-0 bg-transparent" formControlName="parameter"></td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="nominalValue"></td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="measuredValue"></td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="deviation"></td>
+                    <td><input type="number" class="form-control form-control-sm border-0 bg-transparent text-center" formControlName="tolerance"></td>
+                    <td>
+                      <select class="form-select form-select-sm border-0 bg-transparent shadow-none" formControlName="passFail">
+                        <option value="pass">Pass</option>
+                        <option value="fail">Fail</option>
+                      </select>
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-link p-0 text-danger" (click)="removeCalibrationPoint(i)" *ngIf="!reviewForm.disabled">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex p-3 gap-3">
+              <div class="col d-flex flex-column">
+                <label class="form-label fw-bold">Measurement Uncertainty</label>
+                <quill-editor formControlName="uncertainty" [modules]="quillModules" 
+                  placeholder="Enter details of measurement uncertainty..."></quill-editor>
+              </div>
+              <div class="col d-flex flex-column">
+                <label class="form-label fw-bold">General Remarks</label>
+                <quill-editor formControlName="remarks" [modules]="quillModules" 
+                  placeholder="Enter any general remarks..."></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Review Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('review')">
+            <i class="bi" [ngClass]="openSections['review'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Review Details</span>
+          </div>
+          <div *ngIf="openSections['review']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Review Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="reviewDate">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Reviewed By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="reviewedBy">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Review Status <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="reviewStatus">
+                  <option *ngFor="let status of reviewStatusOptions" [value]="status.value">{{ status.label }}</option>
+                </select>
+              </div>
+              <div class="row mt-2">
+                <label class="form-label fw-bold">Review Comments</label>
+                <quill-editor formControlName="reviewComments" [modules]="quillModules" 
+                  placeholder="Enter review comments..."></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!reviewForm.disabled" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn navbar-background text-white" [disabled]="reviewForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Review
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

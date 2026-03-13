@@ -116,7 +116,6 @@ body {
   }
 
   @page {
-    size: auto;
     margin: 5mm 0 12mm 0; /* fixed values — CSS variables don't work inside @page */
 
     /* Override Chrome's default browser headers/footers:
@@ -178,15 +177,17 @@ body {
     page-break-inside: avoid !important;
   }
 
-  /* consolidate color adjustment rules for printable components */
-  .header-main,
-  .title-row,
-  .nabl-footer-container,
-  .footer-label,
-  .footer-container,
-  .section-title {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  /* Force background colors/images to print for all content inside the print frame */
+  .header-container *,
+  .body-block *,
+  .footer-container * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove Quill's default min-height so short content doesn't create blank space in print */
+  .ql-editor {
+    min-height: 0 !important;
   }
 
   /* Clear default bootstrap container padding in print */
@@ -596,4 +597,96 @@ body {
 }
 .signature-block-col {
   width: 200px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NABL DOCUMENT BODY — Shared section / table styling
+   Used by ALL preview components for a consistent A4 document look.
+   Mirrors the JD preview design: black-bordered sections, gray title
+   bars, fixed-layout inner tables, and label-cell shading.
+════════════════════════════════════════════════════════════════ */
+
+/* Section block: thick black border wraps each logical section */
+.doc-section {
+  border: 2px solid #000;
+  overflow: visible;
+  margin-bottom: 12px;
+}
+
+/* Section title bar: gray background, uppercase label */
+.sec-title {
+  background: #e8e8e8 !important;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border-bottom: 2px solid #000;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Section rich-text / prose body */
+.sec-body {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #000;
+}
+
+/* Label cell inside a table — light gray, bold */
+.lbl {
+  background: #f2f2f2 !important;
+  font-weight: 700;
+  color: #000 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Inner table: fixed layout prevents overflow beyond A4 frame */
+.inner-table {
+  table-layout: fixed;
+  word-wrap: break-word;
+  margin-bottom: 0 !important;
+  width: 100%;
+}
+
+.inner-table td,
+.inner-table th {
+  padding: 7px 10px;
+  font-size: 0.88rem;
+  color: #000;
+  border: 1px solid #000 !important;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Table header row: gray background, uppercase */
+.tbl-head th {
+  background: #f2f2f2 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NABL PREVIEW PAGE — Document Viewer Background
+   Applied to every container that wraps an app-print-frame,
+   giving all preview pages a consistent dark gray document-viewer look.
+════════════════════════════════════════════════════════════════ */
+@media screen {
+  /* Any Bootstrap container-fluid/container that directly holds
+     a print-frame host element gets the dark gray viewer background. */
+  .nabl-preview-page {
+    background: #6b6b6b;
+    min-height: calc(100vh - 60px);
+    padding: 32px 24px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: auto;
+  }
 }

@@ -1,17 +1,49 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      NC &amp; Corrective Action Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -25,71 +57,76 @@
 
     <ng-container body>
       <!-- Basic Info -->
-      <div class="section mb-3 border-2 border-dark">
-        <table class="table table-bordered mb-0">
+      <div class="doc-section mb-3">
+        <div class="sec-title">BASIC INFORMATION</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell" style="width: 15%">Date</td>
+              <td class="lbl" style="width: 15%">Date</td>
               <td style="width: 20%">{{ data.date | date: "dd.MM.yyyy" }}</td>
-              <td class="label-cell" style="width: 15%">NC No.</td>
+              <td class="lbl" style="width: 15%">NC No.</td>
               <td style="width: 15%">{{ data.ncNo }}</td>
-              <td class="label-cell" style="width: 15%">Clause No.</td>
+              <td class="lbl" style="width: 15%">Clause No.</td>
               <td style="width: 20%">{{ data.clauseNo }}</td>
             </tr>
             <tr>
-              <td class="label-cell">Section</td>
+              <td class="lbl">Section</td>
               <td colspan="2">{{ data.section }}</td>
-              <td class="label-cell">Activity</td>
+              <td class="lbl">Activity</td>
               <td colspan="2">{{ data.activityAssessed }}</td>
             </tr>
             <tr>
-              <td class="label-cell">Auditor</td>
+              <td class="lbl">Auditor</td>
               <td colspan="2">{{ data.auditor }}</td>
-              <td class="label-cell">Auditee</td>
+              <td class="lbl">Auditee</td>
               <td colspan="2">{{ data.auditee }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Content Sections -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Non-Conformity Observed</div>
-        <div class="ql-editor p-3" [innerHTML]="data.ncObserved"></div>
+      <!-- Non-Conformity Observed -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">NON-CONFORMITY OBSERVED</div>
+        <div class="sec-body" [innerHTML]="data.ncObserved"></div>
       </div>
 
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Corrective Action Proposed</div>
-        <div class="ql-editor p-3" [innerHTML]="data.correctiveActionProposed"></div>
-        <table class="table table-bordered mb-0 border-top-2">
+      <!-- Corrective Action Proposed -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CORRECTIVE ACTION PROPOSED</div>
+        <div class="sec-body" [innerHTML]="data.correctiveActionProposed"></div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell" style="width: 25%">Time Required</td>
+              <td class="lbl" style="width: 25%">Time Required</td>
               <td style="width: 25%">{{ data.timeRequired }}</td>
-              <td class="label-cell" style="width: 25%">Proposed By</td>
+              <td class="lbl" style="width: 25%">Proposed By</td>
               <td style="width: 25%">{{ data.proposedBy }}</td>
             </tr>
             <tr>
-              <td class="label-cell">Approved By (MD/TD)</td>
+              <td class="lbl">Approved By (MD/TD)</td>
               <td colspan="3">{{ data.approvedBy }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Corrective Action Taken</div>
-        <div class="ql-editor p-3" [innerHTML]="data.correctiveActionTaken"></div>
+      <!-- Corrective Action Taken -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CORRECTIVE ACTION TAKEN</div>
+        <div class="sec-body" [innerHTML]="data.correctiveActionTaken"></div>
       </div>
 
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Preventive Action</div>
-        <div class="ql-editor p-3" [innerHTML]="data.preventiveAction"></div>
+      <!-- Preventive Action -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">PREVENTIVE ACTION</div>
+        <div class="sec-body" [innerHTML]="data.preventiveAction"></div>
       </div>
 
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Effectiveness of Corrective Action</div>
-        <div class="ql-editor p-3" [innerHTML]="data.effectivenessOfAction"></div>
+      <!-- Effectiveness of Corrective Action -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EFFECTIVENESS OF CORRECTIVE ACTION</div>
+        <div class="sec-body" [innerHTML]="data.effectivenessOfAction"></div>
       </div>
     </ng-container>
 
@@ -102,11 +139,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

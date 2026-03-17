@@ -1,17 +1,49 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      PT / ILC Plan Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -25,68 +57,68 @@
 
     <ng-container body>
       <!-- Lab Information -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">I. Laboratory Information</div>
-        <table class="table table-bordered mb-0">
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. LABORATORY INFORMATION</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Laboratory ID (CAB ID)</td>
-              <td class="border-0 fw-bold">{{ data.laboratoryId }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Period of Participation</td>
-              <td class="border-0">{{ data.periodOfParticipation }}</td>
+              <td class="lbl" style="width: 30%">Laboratory ID (CAB ID)</td>
+              <td class="fw-bold" style="width: 20%">{{ data.laboratoryId }}</td>
+              <td class="lbl" style="width: 30%">Period of Participation</td>
+              <td style="width: 20%">{{ data.periodOfParticipation }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Laboratory Name</td>
-              <td class="border-0 border-top-2">{{ data.laboratoryName }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Field of Accreditation</td>
-              <td class="border-0 border-top-2">{{ data.fieldOfAccreditation }}</td>
+              <td class="lbl">Laboratory Name</td>
+              <td>{{ data.laboratoryName }}</td>
+              <td class="lbl">Field of Accreditation</td>
+              <td>{{ data.fieldOfAccreditation }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- PT/ILC Plan Details -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">II. PT / ILC Activities Plan</div>
-        <table class="table table-bordered mb-0 align-middle small">
-          <thead class="table-light text-center">
-            <tr>
-              <th class="border-dark" rowspan="2" style="width: 50px">S.N.</th>
-              <th class="border-dark" rowspan="2">Accredited Discipline(s)</th>
-              <th class="border-dark" rowspan="2">Group(s)/Subgroups</th>
-              <th class="border-dark" colspan="2">PT/ILC Activities Plan</th>
-              <th class="border-dark" colspan="2">Status and Result</th>
-              <th class="border-dark" colspan="2">Remarks</th>
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. PT / ILC ACTIVITIES PLAN</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th rowspan="2" style="width: 50px">S.N.</th>
+              <th rowspan="2">Accredited Discipline(s)</th>
+              <th rowspan="2">Group(s)/Subgroups</th>
+              <th colspan="2">PT/ILC Activities Plan</th>
+              <th colspan="2">Status and Result</th>
+              <th colspan="2">Remarks</th>
             </tr>
-            <tr>
-              <th class="border-dark">1st Year</th>
-              <th class="border-dark">2nd Year</th>
-              <th class="border-dark">1st Year</th>
-              <th class="border-dark">2nd Year</th>
-              <th class="border-dark">1st Year</th>
-              <th class="border-dark">2nd Year</th>
+            <tr class="tbl-head">
+              <th>1st Year</th>
+              <th>2nd Year</th>
+              <th>1st Year</th>
+              <th>2nd Year</th>
+              <th>1st Year</th>
+              <th>2nd Year</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let entry of data.entries; let i = index" class="text-center">
-              <td class="border-dark">{{ i + 1 }}</td>
-              <td class="border-dark text-start">{{ entry.accreditedDiscipline }}</td>
-              <td class="border-dark">{{ entry.groupSubgroup }}</td>
-              <td class="border-dark">{{ entry.ptActivityYear1 }}</td>
-              <td class="border-dark">{{ entry.ptActivityYear2 }}</td>
-              <td class="border-dark">{{ entry.statusYear1 }}</td>
-              <td class="border-dark">{{ entry.statusYear2 }}</td>
-              <td class="border-dark">{{ entry.remarksYear1 }}</td>
-              <td class="border-dark">{{ entry.remarksYear2 }}</td>
+              <td>{{ i + 1 }}</td>
+              <td class="text-start">{{ entry.accreditedDiscipline }}</td>
+              <td>{{ entry.groupSubgroup }}</td>
+              <td>{{ entry.ptActivityYear1 }}</td>
+              <td>{{ entry.ptActivityYear2 }}</td>
+              <td>{{ entry.statusYear1 }}</td>
+              <td>{{ entry.statusYear2 }}</td>
+              <td>{{ entry.remarksYear1 }}</td>
+              <td>{{ entry.remarksYear2 }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Notes -->
-      <div class="section mb-3 border-2 border-dark" *ngIf="data.notes">
-        <div class="section-title border-bottom-2">III. Notes</div>
-        <div class="section-content p-3 ql-editor small">{{ data.notes }}</div>
+      <div class="doc-section mb-3" *ngIf="data.notes">
+        <div class="sec-title">III. NOTES</div>
+        <div class="sec-body">{{ data.notes }}</div>
       </div>
     </ng-container>
 
@@ -98,11 +130,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

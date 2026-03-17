@@ -1,76 +1,362 @@
-/* Base color */
-.nav-pills .nav-link {
-  color: #1a1a80; /* Bootstrap's red */
-  border: 1px solid transparent;
-  transition: all 0.3s ease;
+/* ─── Nav Tabs ─── */
+.nav-tabs {
+  border-bottom: 2px solid #e9ecef;
 }
 
-/* Hover and focus */
-.nav-pills .nav-link:hover,
-.nav-pills .nav-link:focus {
-  color: #fff;
-  background-color: #ff2c1f;
+.nav-tabs .nav-link {
+  color: #495057;
+  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.25s ease;
+  font-size: 0.9rem;
 }
 
-/* Active state */
-.nav-pills .nav-link.active {
-  background-color: #ff2c1f;
-  color: #fff;
-  border-color: #ff2c1f;
-}
-
-.nav-pills .nav-link {
-  border-radius: 0.5rem;
-}
-
-.card {
-  border-color: #ff2c1f !important;
-  border-radius: 10px;
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color, #da261c);
+  border-bottom-color: rgba(218, 38, 28, 0.3);
   background: transparent;
-  border: 0;
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 0;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--primary-color, #da261c);
+  border-color: transparent;
+  border-bottom: 3px solid var(--primary-color, #da261c);
+  background: transparent;
+  font-weight: 600;
+}
+
+/* ─── Fieldset / Legends ─── */
+fieldset.border {
+  border-color: #dee2e6 !important;
+  background: #fff;
+}
+
+fieldset legend {
+  font-size: 0.875rem !important;
+  color: var(--primary-color, #da261c);
+  background: #fff;
+  padding: 0 0.5rem;
+}
+
+/* ─── Cards ─── */
+.card {
+  border: 1px solid #e9ecef !important;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .card .card-header {
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  background: #ff2c1f;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background: var(--primary-color, #da261c);
+  color: #fff;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
 }
 
+.card .card-body {
+  padding: 1rem;
+}
+
+/* ─── Customer Detail Card ─── */
+.card .fw-semibold.text-danger {
+  color: var(--primary-color, #da261c) !important;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.6rem !important;
+}
+
+/* ─── Tables ─── */
+.table-compact {
+  font-size: 0.82rem;
+}
+
+.table-compact th {
+  background: #f8f9fa;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.3px;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-compact td {
+  padding: 0.4rem 0.6rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* ─── Form Controls ─── */
+.form-control,
+.form-select {
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #da261c;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
+}
+
+/* Native select — red dropdown arrow */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.3rem;
+}
+
+/* ─── Force red theme buttons ─── */
+:host ::ng-deep .btn-outline-primary,
+.btn-outline-primary {
+  color: #da261c !important;
+  border-color: #da261c !important;
+}
+
+:host ::ng-deep .btn-outline-primary:hover,
+.btn-outline-primary:hover {
+  background-color: #da261c !important;
+  border-color: #da261c !important;
+  color: #fff !important;
+}
+
+/* ─── File Upload ─── */
 input::file-selector-button {
   color: #fff;
-  background-color: #ff2c1f;
+  background-color: var(--primary-color, #da261c);
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
 }
+
+input::file-selector-button:hover {
+  background-color: var(--primary-hover, #b91c1c);
+}
+
 .input-file {
   cursor: pointer !important;
 }
 
-.nav-tabs .nav-link {
-  color: #1a1a80;
-  /* Custom color */
-}
-.nav-tabs .nav-link.active {
-  color: #fff !important;
-  /* Active tab color */
-  border-color: #ff2c1f;
-  background: #ff2c1f;
-  border-bottom: 0;
+/* ─── Billing Note ─── */
+.billing-note {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fff5f5, #fef2f2);
+  border-left: 4px solid var(--primary-color, #da261c);
+  border-radius: 6px;
+  margin: 1rem 0;
+  font-size: 0.82rem;
+  color: #555;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  line-height: 1.5;
 }
 
-.billing-note {
-  padding: 20px;
-  background: #b5b3b3;
-  border-left: 5px solid var(--primary-color);
-  border-radius: 8px;
-  margin-top: 15px; /* Compact: Reduced margin-top */
-  margin-bottom: 15px; /* Compact: Reduced margin-bottom */
-  font-size: 0.9em; /* Compact: Reduced font size */
-  color: #555;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  line-height: 1.4; /* Compact: Reduced line height */
-}
 .billing-note strong {
-  color: var(--primary-dark);
+  color: var(--primary-color, #da261c);
+}
+
+/* ─── Buttons ─── */
+.btn {
+  font-size: 0.85rem;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.btn-success {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.btn-success:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.btn-warning {
+  color: #fff;
+}
+
+/* ─── Radio & Checkbox Alignment ─── */
+.form-check-inline {
+  margin-right: 1rem;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+}
+
+/* ─── Responsive Tweaks ─── */
+@media (max-width: 768px) {
+  .nav-tabs .nav-link {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.82rem;
+  }
+
+  .billing-note {
+    padding: 0.6rem 0.8rem;
+  }
+}
+
+/* ─── Subtle Animations ─── */
+.tab-pane {
+  animation: fadeIn 0.25s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════ JOB CARD PRINT STYLES ═══════ */
+.job-card-print {
+  display: none;
+}
+
+@media print {
+  /* Hide everything except job card */
+  :host > div > *:not(.job-card-print) {
+    display: none !important;
+  }
+
+  .job-card-print {
+    display: block !important;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #000;
+  }
+
+  .jc-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  .jc-title {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 8px 0;
+  }
+
+  .jc-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  .jc-section {
+    margin-bottom: 12px;
+  }
+
+  .jc-section-title {
+    font-weight: 700;
+    font-size: 13px;
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-left: 3px solid #da261c;
+    margin-bottom: 6px;
+  }
+
+  .jc-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6px;
+  }
+
+  .jc-info-table td {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid #ddd;
+  }
+
+  .jc-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .jc-table th {
+    background: #f0f0f0;
+    font-size: 10px;
+    text-transform: uppercase;
+    padding: 5px 6px;
+    border: 1px solid #999;
+    text-align: left;
+  }
+
+  .jc-table td {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    font-size: 11px;
+  }
+
+  .jc-table tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+
+  .jc-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 10px;
+  }
+
+  .jc-sign-block {
+    text-align: center;
+    font-size: 11px;
+  }
+
+  .jc-sign-line {
+    width: 150px;
+    border-bottom: 1px solid #000;
+    margin-bottom: 4px;
+    height: 40px;
+  }
 }

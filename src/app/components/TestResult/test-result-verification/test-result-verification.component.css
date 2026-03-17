@@ -1,0 +1,110 @@
+.card .card-header {
+  padding: 0.5rem 0.5rem !important;
+  height: 47px !important;
+}
+
+.table thead th {
+  cursor: pointer;
+}
+
+.table thead th:hover {
+  background-color: #f8f9fa;
+}
+
+.bordered-table thead tr th {
+  padding: 6px 8px !important;
+}
+
+.bordered-table tbody tr td {
+  padding: 6px 8px !important;
+}
+
+.btn.btn-sm {
+  padding: 0.2rem 0.5rem !important;
+}
+
+.custom-search {
+  height: 36px;
+}
+
+.custom-search input,
+.custom-search .input-group-text {
+  height: 100%;
+}
+
+.cursor {
+  cursor: pointer;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Status Badges */
+.badge-pending {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge-verified {
+  background-color: #198754 !important;
+  color: #fff !important;
+}
+
+.badge-rejected {
+  background-color: #dc3545 !important;
+  color: #fff !important;
+}
+
+.badge-default {
+  background-color: #6c757d !important;
+  color: #fff !important;
+}
+
+/* Expanded Row */
+.expanded-row td {
+  background-color: #f8f9fa;
+}
+
+.expanded-row .table-sm th,
+.expanded-row .table-sm td {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.5rem !important;
+}
+
+/* Custom Modal Overlay */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal-custom {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+}
+
+.modal-custom .card {
+  border: none;
+  border-radius: 8px;
+}
+
+/* Chevron icon transition */
+.bi-chevron-right,
+.bi-chevron-down {
+  transition: transform 0.2s ease;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+tr.cursor:hover {
+  background-color: #f8f9fa;
+}

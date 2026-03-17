@@ -162,6 +162,37 @@ export class TestResultService {
   }
 
   // ================================================================
+  // Phase 2A: Enhanced Test Execution
+  // ================================================================
+  /**
+   * Trigger formula calculations for a test header
+   */
+  calculateParameters(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/calculate-parameters/${headerId}`, {});
+  }
+
+  /**
+   * Add a standalone parameter to a test header
+   */
+  addStandaloneParameter(headerId: number, dto: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/add-standalone-parameter/${headerId}`, dto);
+  }
+
+  /**
+   * Add a parameter from another test method
+   */
+  addParameterFromMethod(headerId: number, dto: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/add-parameter-from-method/${headerId}`, dto);
+  }
+
+  /**
+   * Get lab room environment conditions at test time
+   */
+  getEnvironmentAtTime(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
+  }
+
+  // ================================================================
   // Image Uploads (Test-wise)
   // ================================================================
   /**
@@ -170,6 +201,37 @@ export class TestResultService {
    */
   getTestImages(headerId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/${headerId}/images`);
+  }
+
+  // ================================================================
+  // Phase 2B: Test-Level Price Calculation
+  // ================================================================
+  /**
+   * Calculate test price based on parameters × InvoiceCasePrice
+   */
+  calculatePrice(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/calculate-price/${headerId}`, {});
+  }
+
+  /**
+   * Get price breakdown per parameter
+   */
+  getPriceBreakdown(headerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/price-breakdown/${headerId}`);
+  }
+
+  /**
+   * Override calculated price with manual amount and reason
+   */
+  overridePrice(headerId: number, dto: { amount: number; reason: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/override-price/${headerId}`, dto);
+  }
+
+  /**
+   * Get price summary: calculated, override, final price
+   */
+  getPriceSummary(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/price-summary/${headerId}`);
   }
 
   /**
@@ -189,5 +251,83 @@ export class TestResultService {
     }
 
     return this.http.post<any>(`${this.apiUrl}/${headerId}/images`, fd);
+  }
+
+  // ================================================================
+  // Phase 1: NABL Scope Validation
+  // ================================================================
+  getNablScopeCheck(headerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/nabl-scope-check/${headerId}`);
+  }
+
+  // ================================================================
+  // Phase 2: Uncertainty Integration
+  // ================================================================
+  getUncertainty(headerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/uncertainty/${headerId}`);
+  }
+
+  // ================================================================
+  // Phase 4: Machine Data Integration
+  // ================================================================
+  fetchMachineData(dto: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/machine-integration/push-data`, dto);
+  }
+
+  getPendingMachineTests(equipmentId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/machine-integration/pending-tests/${equipmentId}`);
+  }
+
+  getMachineDataLogs(headerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/machine-integration/logs/${headerId}`);
+  }
+
+  // ================================================================
+  // Phase 5: Test Verification Workflow
+  // ================================================================
+  submitForVerification(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/submit-for-verification/${headerId}`, {});
+  }
+
+  getVerificationList(filter: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verification-list`, filter);
+  }
+
+  verifyTest(headerId: number, comments: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify/${headerId}`, { comments });
+  }
+
+  rejectVerification(headerId: number, comments: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reject-verification/${headerId}`, { comments });
+  }
+
+  getPreparationStatus(sampleId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/preparation-status/${sampleId}`);
+  }
+
+  // ================================================================
+  // Phase 6: Unified Price View
+  // ================================================================
+  getUnifiedPriceSummary(sampleId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/unified-price-summary/${sampleId}`);
+  }
+
+  // ================================================================
+  // Machining Charge Line Items
+  // ================================================================
+  getMachiningItems(sampleId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/machining-items/${sampleId}`);
+  }
+
+  addMachiningItem(sampleId: number, dto: { description: string; amount: number; remark?: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/machining-items/${sampleId}`, dto);
+  }
+
+  updateMachiningItem(itemId: number, dto: { description: string; amount: number; remark?: string }): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/machining-items/${itemId}`, dto);
+  }
+
+  deleteMachiningItem(itemId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/machining-items/${itemId}`);
   }
 }

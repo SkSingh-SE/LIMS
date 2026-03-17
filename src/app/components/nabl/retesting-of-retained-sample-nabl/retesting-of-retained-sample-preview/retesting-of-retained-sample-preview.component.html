@@ -1,17 +1,48 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Retesting of Retained Sample
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -25,76 +56,76 @@
 
     <ng-container body>
       <!-- Basic Information -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">I. Basic Information</div>
-        <table class="table table-bordered mb-0">
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. Basic Information</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Document No.</td>
-              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Date</td>
-              <td class="border-0">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 25%">Document No.</td>
+              <td class="fw-bold" style="width: 25%">{{ data.documentNo }}</td>
+              <td class="lbl" style="width: 25%">Date</td>
+              <td style="width: 25%">{{ data.date | date: "dd.MM.yyyy" }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Discipline</td>
-              <td class="border-0 border-top-2" colspan="3">{{ data.discipline }}</td>
+              <td class="lbl">Discipline</td>
+              <td colspan="3">{{ data.discipline }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Sample Information -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">II. Sample Information</div>
-        <table class="table table-bordered mb-0">
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. Sample Information</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Sample Name</td>
-              <td class="border-0">{{ data.sampleName }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Original Sample ID / TRN</td>
-              <td class="border-0 fw-bold">{{ data.originalSampleId }}</td>
+              <td class="lbl" style="width: 25%">Sample Name</td>
+              <td style="width: 25%">{{ data.sampleName }}</td>
+              <td class="lbl" style="width: 25%">Original Sample ID / TRN</td>
+              <td class="fw-bold" style="width: 25%">{{ data.originalSampleId }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Group / Subgroup</td>
-              <td class="border-0 border-top-2" colspan="3">{{ data.groupSubgroup }}</td>
+              <td class="lbl">Group / Subgroup</td>
+              <td colspan="3">{{ data.groupSubgroup }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Date of Original Testing</td>
-              <td class="border-0 border-top-2">{{ data.dateOfOriginalTesting | date: "dd.MM.yyyy" }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Date of Retesting</td>
-              <td class="border-0 border-top-2">{{ data.dateOfRetesting | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl">Date of Original Testing</td>
+              <td>{{ data.dateOfOriginalTesting | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl">Date of Retesting</td>
+              <td>{{ data.dateOfRetesting | date: "dd.MM.yyyy" }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Retesting Details -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">III. Retesting Parameters & Results</div>
-        <table class="table table-bordered mb-0 align-middle small">
-          <thead class="table-light text-center">
-            <tr>
-              <th class="border-dark" style="width: 50px" rowspan="2">S.N.</th>
-              <th class="border-dark" rowspan="2">Parameter Tested</th>
-              <th class="border-dark" colspan="2">Result of Testing</th>
-              <th class="border-dark" rowspan="2">Acceptable Limits</th>
-              <th class="border-dark" rowspan="2">Deviation (T1 - T2)</th>
-              <th class="border-dark" rowspan="2">Status</th>
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. Retesting Parameters & Results</div>
+        <table class="table table-bordered inner-table align-middle small">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 50px" rowspan="2">S.N.</th>
+              <th rowspan="2">Parameter Tested</th>
+              <th colspan="2">Result of Testing</th>
+              <th rowspan="2">Acceptable Limits</th>
+              <th rowspan="2">Deviation (T1 - T2)</th>
+              <th rowspan="2">Status</th>
             </tr>
-            <tr>
-              <th class="border-dark">Original (T1)</th>
-              <th class="border-dark">Retesting (T2)</th>
+            <tr class="tbl-head text-center">
+              <th>Original (T1)</th>
+              <th>Retesting (T2)</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let param of data.parameters; let i = index" class="text-center">
-              <td class="border-dark">{{ i + 1 }}</td>
-              <td class="border-dark text-start">{{ param.parameterTested }}</td>
-              <td class="border-dark">{{ param.originalResult }}</td>
-              <td class="border-dark">{{ param.retestResult }}</td>
-              <td class="border-dark">{{ param.acceptableLimits }}</td>
-              <td class="border-dark">{{ param.deviation }}</td>
-              <td class="border-dark">
+              <td>{{ i + 1 }}</td>
+              <td class="text-start">{{ param.parameterTested }}</td>
+              <td>{{ param.originalResult }}</td>
+              <td>{{ param.retestResult }}</td>
+              <td>{{ param.acceptableLimits }}</td>
+              <td>{{ param.deviation }}</td>
+              <td>
                 <span [class.text-danger]="param.status !== 'Satisfactory'" class="fw-bold">
                   {{ param.status }}
                 </span>
@@ -105,9 +136,9 @@
       </div>
 
       <!-- Remarks -->
-      <div class="section mb-3 border-2 border-dark" *ngIf="data.remarks">
-        <div class="section-title border-bottom-2">IV. Remarks / Note</div>
-        <div class="section-content p-3 ql-editor small">
+      <div class="doc-section mb-3" *ngIf="data.remarks">
+        <div class="sec-title">IV. Remarks / Note</div>
+        <div class="sec-body">
           {{ data.remarks }}
           <br />
           <span class="text-muted fst-italic mt-2 d-block">
@@ -121,11 +152,4 @@
       <app-nabl-print-footer [preparedByName]="data.analyst" [reviewedApprovedByName]="data.authorizedSignatory"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

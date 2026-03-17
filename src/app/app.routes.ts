@@ -79,6 +79,10 @@ import { AccountDashboardComponent } from './components/account/account-dashboar
 import { CaseAccountListComponent } from './components/account/case-account-list/case-account-list.component';
 import { CaseAccountDetailComponent } from './components/account/case-account-detail/case-account-detail.component';
 import { InvoicePreviewComponent } from './components/account/invoice-preview/invoice-preview.component';
+import { CustomerLedgerComponent } from './components/account/customer-ledger/customer-ledger.component';
+import { RecordPaymentComponent } from './components/account/record-payment/record-payment.component';
+import { AgingReportComponent } from './components/account/aging-report/aging-report.component';
+import { OutstandingReportComponent } from './components/account/outstanding-report/outstanding-report.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { JobDescriptionListComponent } from './components/nabl/job-description-list/job-description-list.component';
 import { JobDescriptionFormComponent } from './components/nabl/job-description-form/job-description-form.component';
@@ -327,6 +331,7 @@ export const routes: Routes = [
             { path: 'equipment/edit/:id', component: EquipmentFormComponent },
             { path: 'equipment/details/:id', component: EquipmentFormComponent },
             { path: 'invoice-case-config', component: InvoiceCaseConfigurationsComponent },
+            { path: 'master/price-dimension-type', loadComponent: () => import('./components/test/price-dimension-type/price-dimension-type.component').then(m => m.PriceDimensionTypeComponent) },
             { path: 'invoice-case', component: InvoiceCaseListComponent },
             { path: 'invoice-case/create', component: InvoiceCaseComponent },
             { path: 'invoice-case/edit/:id', component: InvoiceCaseComponent },
@@ -597,6 +602,7 @@ export const routes: Routes = [
             { path: 'testing/perform/:id', component: TestResultEntryFormComponent },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent },
+            { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
@@ -608,7 +614,16 @@ export const routes: Routes = [
             { path: 'accounts/dashboard', component: AccountDashboardComponent },
             { path: 'accounts/cases', component: CaseAccountListComponent },
             { path: 'accounts/cases/:id', component: CaseAccountDetailComponent },
-            { path: 'accounts/invoices/:id/preview', component: InvoicePreviewComponent }
+            { path: 'accounts/invoices/:id/preview', component: InvoicePreviewComponent },
+            { path: 'account/ledger', component: CustomerLedgerComponent },
+            { path: 'account/record-payment', component: RecordPaymentComponent },
+            { path: 'account/aging-report', component: AgingReportComponent },
+            { path: 'account/outstanding-report', component: OutstandingReportComponent },
+            { path: 'accounts/purchase-orders', loadComponent: () => import('./components/account/customer-po/customer-po.component').then(m => m.CustomerPOComponent) },
+
+            // NABL Dashboard & Audit
+            { path: 'nabl/dashboard', loadComponent: () => import('./components/nabl/nabl-dashboard/nabl-dashboard.component').then(m => m.NablDashboardComponent) },
+            { path: 'nabl/audit-print', loadComponent: () => import('./components/nabl/nabl-audit-print/nabl-audit-print.component').then(m => m.NablAuditPrintComponent) },
         ]
     },
     { path: 'payment/:token', component: PaymentComponent },

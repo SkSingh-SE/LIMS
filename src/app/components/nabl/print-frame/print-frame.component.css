@@ -1,7 +1,112 @@
-/* Styles for the standalone print-frame wrapper are minimal; most of the
-   layout is provided by the global print media rules in src/styles.css. */
 :host {
     display: block;
 }
 
-/* nothing fancy here, the parent project should apply orientation classes */
+/* ════════════════════════════════════════════════════════════════
+   PRINT — Frame sizing & centering
+   These rules live here (in print-frame's own component CSS) so
+   Angular's scoped attribute selector matches .print-frame correctly.
+   Rules in host-component CSS (JD, R&A, etc.) cannot reach .print-frame
+   because it belongs to this component's template, not theirs.
+════════════════════════════════════════════════════════════════ */
+@media print {
+    .print-frame {
+        /* Center on every print page regardless of orientation */
+        margin: 0 auto !important;
+        /* Strip the screen-only bottom padding */
+        padding-bottom: 0 !important;
+    }
+
+    /* Explicit A4 widths bypass CSS-variable resolution issues in print */
+    .print-frame.orientation-portrait  { width: 200mm !important; }
+    .print-frame.orientation-landscape { width: 287mm !important; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SCREEN — A4 Paper Simulation
+════════════════════════════════════════════════════════════════ */
+@media screen {
+
+    /* ── A4 Page Frame ─────────────────────────────────────────── */
+    .print-frame {
+        background: #ffffff;
+        font-family: 'Times New Roman', Times, serif;
+        color: #000;
+
+        /* Layered shadow: close ambient + medium spread + far diffuse = realistic paper lift */
+        box-shadow:
+            0 1px 2px  rgba(0, 0, 0, 0.10),
+            0 3px 8px  rgba(0, 0, 0, 0.10),
+            0 10px 28px rgba(0, 0, 0, 0.12),
+            0 24px 56px rgba(0, 0, 0, 0.08);
+
+        border: 1px solid #c4c4c4;
+
+        /* Small bottom padding: visual breathing room after the footer */
+        padding-bottom: 10px;
+
+        margin: 0 auto 48px auto;
+        box-sizing: border-box;
+
+        /* Clip content to the A4 boundary — prevents inner tables/sections
+           from visually overflowing the white page box. */
+        overflow: hidden;
+    }
+
+    /* Portrait A4: 210mm × 297mm ≈ 794px at 96dpi */
+    .orientation-portrait  { width: 794px;  }
+
+    /* Landscape A4: 297mm × 210mm ≈ 1123px */
+    .orientation-landscape { width: 1123px; }
+
+    /* ── Print Table ───────────────────────────────────────────── */
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        /* Forces the single-column td to exactly equal the frame width,
+           preventing inner tables from expanding body-block beyond A4 bounds. */
+        table-layout: fixed;
+    }
+
+    .print-table td {
+        padding: 0;
+        vertical-align: top;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    /* ── Section Gaps ──────────────────────────────────────────────
+       Gray strip gaps between sections:
+         header → body : padding-bottom on thead td
+         body → footer : padding-top on tfoot td
+       The inner content blocks carry explicit white so only the
+       padding strip shows as the gray separator.
+    ─────────────────────────────────────────────────────────────── */
+    .print-table thead td {
+        padding-bottom: 8px;
+        background: #e0e0e0;
+    }
+
+    .print-table tfoot td {
+        padding-top: 8px;
+        background: #e0e0e0;
+    }
+
+    /* ── Content Area Backgrounds ──────────────────────────────────
+       Explicit white so the gray gap strips remain clearly visible.
+    ─────────────────────────────────────────────────────────────── */
+    .header-container {
+        background: #ffffff;
+    }
+
+    .body-block {
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .footer-container {
+        background: #ffffff;
+    }
+}

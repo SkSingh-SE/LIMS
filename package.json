@@ -6,7 +6,11 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "lint": "ng lint"
+    "test": "ng test",
+    "test:ci": "ng test --no-watch",
+    "lint": "ng lint",
+    "e2e": "npx playwright test",
+    "e2e:report": "npx playwright show-report playwright-report"
   },
   "private": true,
   "dependencies": {
@@ -39,9 +43,17 @@
     "@angular-devkit/build-angular": "^19.1.5",
     "@angular/cli": "^19.1.5",
     "@angular/compiler-cli": "^19.1.0",
+    "@playwright/test": "^1.58.2",
     "@types/bootstrap": "^5.2.10",
+    "@types/jasmine": "^6.0.0",
     "angular-eslint": "21.0.1",
     "eslint": "^9.39.1",
+    "jasmine-core": "^6.1.0",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-coverage": "^2.2.1",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.2.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "8.46.4"
   }

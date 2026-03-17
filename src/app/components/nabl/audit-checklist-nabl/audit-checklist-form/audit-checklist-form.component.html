@@ -208,6 +208,40 @@
             </div>
           </div>
 
+          <!-- Section: Related Forms -->
+          <div class="accordion-item border-0 mb-3 shadow-sm rounded overflow-hidden" *ngIf="relatedAuditPlan">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button bg-primary-subtle text-primary fw-bold"
+                type="button"
+                (click)="toggleSection('relatedForms')"
+                [attr.aria-expanded]="openSections['relatedForms']"
+              >
+                <i class="bi bi-link-45deg me-2"></i>
+                Related Forms
+              </button>
+            </h2>
+            <div [class.show]="openSections['relatedForms']" class="accordion-collapse collapse">
+              <div class="accordion-body bg-white">
+                <div class="card border-start border-primary border-3 mb-2">
+                  <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="badge bg-secondary me-2">F-39</span>
+                      <strong>Audit Plan</strong>
+                      <span class="text-muted ms-2">{{ relatedAuditPlan.documentNo || 'N/A' }}</span>
+                      <span class="badge ms-2" [ngClass]="'bg-' + (relatedAuditPlan.status === 'Approved' ? 'success' : relatedAuditPlan.status === 'Rejected' ? 'danger' : 'info')">
+                        {{ relatedAuditPlan.status }}
+                      </span>
+                    </div>
+                    <a [routerLink]="['/audit-plan/details', relatedAuditPlan.id]" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>View
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </form>
     </div>

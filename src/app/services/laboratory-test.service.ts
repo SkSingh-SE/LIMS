@@ -39,7 +39,4 @@ export class LaboratoryTestService {
       return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
-    getTestCasesByTestMethodId(testMethodId:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/test-cases/${testMethodId}`);
-    }
 }

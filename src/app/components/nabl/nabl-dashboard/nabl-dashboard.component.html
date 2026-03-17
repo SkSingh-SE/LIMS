@@ -1,0 +1,287 @@
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0 fw-bold">NABL Dashboard</h4>
+        <a routerLink="/nabl/audit-print" class="btn btn-primary btn-sm">
+            <i class="bi bi-printer me-1"></i>
+            Audit Print
+        </a>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading dashboard data...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        {{ errorMessage }}
+        <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadDashboard()">Retry</button>
+    </div>
+
+    <div *ngIf="dashboard && !isLoading">
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-1">Total Forms</div>
+                        <div class="fs-3 fw-bold text-dark">{{ dashboard.totalForms }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-1">Draft</div>
+                        <div class="fs-3 fw-bold text-secondary">{{ dashboard.draftCount }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-1">Submitted</div>
+                        <div class="fs-3 fw-bold text-info">{{ dashboard.submittedCount }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-1">Approved</div>
+                        <div class="fs-3 fw-bold text-success">{{ dashboard.approvedCount }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-1">Rejected</div>
+                        <div class="fs-3 fw-bold text-danger">{{ dashboard.rejectedCount }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Pending Reviews -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-hourglass-split text-warning me-2"></i>
+                            Pending Reviews
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div *ngIf="dashboard.pendingReviews.length === 0" class="text-center py-4 text-muted">
+                            No pending reviews.
+                        </div>
+                        <div class="table-responsive" *ngIf="dashboard.pendingReviews.length > 0">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Form</th>
+                                        <th>Document No</th>
+                                        <th>Date</th>
+                                        <th>Prepared By</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of dashboard.pendingReviews">
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ item.formCode }}</span>
+                                        </td>
+                                        <td>{{ item.documentNo || '-' }}</td>
+                                        <td>{{ item.date | date:'dd-MMM-yyyy' }}</td>
+                                        <td>{{ item.preparedBy || '-' }}</td>
+                                        <td>
+                                            <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
+                                               class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Reviews -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-calendar-event text-primary me-2"></i>
+                            Upcoming Review Dates
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div *ngIf="dashboard.upcomingReviews.length === 0" class="text-center py-4 text-muted">
+                            No upcoming reviews in the next 30 days.
+                        </div>
+                        <div class="table-responsive" *ngIf="dashboard.upcomingReviews.length > 0">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Form</th>
+                                        <th>Document No</th>
+                                        <th>Review Date</th>
+                                        <th>Days Left</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of dashboard.upcomingReviews">
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ item.formCode }}</span>
+                                        </td>
+                                        <td>{{ item.documentNo || '-' }}</td>
+                                        <td>{{ item.nextReviewDate | date:'dd-MMM-yyyy' }}</td>
+                                        <td>
+                                            <span class="badge" [ngClass]="item.daysUntilReview <= 7 ? 'bg-danger' : 'bg-warning text-dark'">
+                                                {{ item.daysUntilReview }} days
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
+                                               class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expiring Documents Alert -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                            Expiring / Overdue Documents
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div *ngIf="dashboard.expiringDocuments.length === 0" class="text-center py-4 text-muted">
+                            No expiring or overdue documents.
+                        </div>
+                        <div class="table-responsive" *ngIf="dashboard.expiringDocuments.length > 0">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Form</th>
+                                        <th>Document No</th>
+                                        <th>Effective Date</th>
+                                        <th>Next Review</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of dashboard.expiringDocuments"
+                                        [class.table-danger]="item.isOverdue">
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ item.formCode }}</span>
+                                        </td>
+                                        <td>{{ item.documentNo || '-' }}</td>
+                                        <td>{{ item.effectiveDate | date:'dd-MMM-yyyy' }}</td>
+                                        <td>{{ item.nextReviewDate | date:'dd-MMM-yyyy' }}</td>
+                                        <td>
+                                            <span class="badge" [ngClass]="item.isOverdue ? 'bg-danger' : 'bg-warning text-dark'">
+                                                {{ item.isOverdue ? 'Overdue' : 'Expiring Soon' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
+                                               class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Summary Table -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-table text-primary me-2"></i>
+                            Forms Summary by Type
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Form Code</th>
+                                        <th>Form Type</th>
+                                        <th class="text-center">Total</th>
+                                        <th class="text-center">Draft</th>
+                                        <th class="text-center">Submitted</th>
+                                        <th class="text-center">Reviewed</th>
+                                        <th class="text-center">Approved</th>
+                                        <th class="text-center">Rejected</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of dashboard.formSummary; let i = index">
+                                        <td>{{ i + 1 }}</td>
+                                        <td><span class="badge bg-light text-dark">{{ item.formCode }}</span></td>
+                                        <td>{{ getFormDisplayName(item.formType) }}</td>
+                                        <td class="text-center fw-bold">{{ item.total }}</td>
+                                        <td class="text-center">
+                                            <span *ngIf="item.draft > 0" class="text-secondary">{{ item.draft }}</span>
+                                            <span *ngIf="item.draft === 0">-</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span *ngIf="item.submitted > 0" class="text-info">{{ item.submitted }}</span>
+                                            <span *ngIf="item.submitted === 0">-</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span *ngIf="item.reviewed > 0" class="text-primary">{{ item.reviewed }}</span>
+                                            <span *ngIf="item.reviewed === 0">-</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span *ngIf="item.approved > 0" class="text-success">{{ item.approved }}</span>
+                                            <span *ngIf="item.approved === 0">-</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span *ngIf="item.rejected > 0" class="text-danger">{{ item.rejected }}</span>
+                                            <span *ngIf="item.rejected === 0">-</span>
+                                        </td>
+                                        <td>
+                                            <a [routerLink]="[getFormRouteBase(item.formType)]"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

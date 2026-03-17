@@ -50,6 +50,7 @@ export class EmployeeFormComponent {
   activeFormKey: number = 1;
   residentialAreas: any[] = [];
   permanentAreas: any[] = [];
+  designationRoleName: string = '';
   // Define the form group
   personalInfoForm!: FormGroup;
   qualificationForm!: FormGroup;
@@ -155,6 +156,10 @@ export class EmployeeFormComponent {
       roleID: [null],
       password: ['', [Validators.required, Validators.minLength(6)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
+      qualificationSummary: [''],
+      experience: [''],
+      trainingRecordsJson: [''],
+      competencyLevel: [''],
     });
 
     this.qualificationForm = this.fb.group({
@@ -189,6 +194,20 @@ export class EmployeeFormComponent {
           dateOfBirth: this.formatDateForInput(data.dateOfBirth),
           dateOfJoin: this.formatDateForInput(data.dateOfJoin)
         });
+
+        // Resolve role name from designation
+        if (data.designation?.role?.name) {
+          this.designationRoleName = data.designation.role.name;
+        } else if (data.designationID) {
+          this.designationService.getDesignationById(data.designationID).subscribe({
+            next: (designation) => {
+              this.designationRoleName = designation?.role?.name || '';
+            },
+            error: () => {
+              this.designationRoleName = '';
+            }
+          });
+        }
 
         this.setQualifications(data.qualifications || []);
 
@@ -231,6 +250,21 @@ export class EmployeeFormComponent {
   }
   onDesignationSelected(item: any) {
     this.personalInfoForm.patchValue({ designationID: item.id });
+    // Fetch designation details to resolve the role from Designation -> Role
+    this.designationService.getDesignationById(item.id).subscribe({
+      next: (designation) => {
+        if (designation?.role?.name) {
+          this.designationRoleName = designation.role.name;
+          this.personalInfoForm.patchValue({ roleID: designation.roleID });
+        } else {
+          this.designationRoleName = '';
+          this.personalInfoForm.patchValue({ roleID: null });
+        }
+      },
+      error: () => {
+        this.designationRoleName = '';
+      }
+    });
   }
   onDepartmentSelected(item: any) {
     this.personalInfoForm.patchValue({ departmentID: item.id });

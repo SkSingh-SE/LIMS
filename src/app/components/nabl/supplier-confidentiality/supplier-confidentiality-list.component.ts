@@ -18,7 +18,7 @@ export class SupplierConfidentialityListComponent implements OnInit {
     searchTerm = '';
 
     columns: RegisterColumn[] = [
-        { key: 'formatNo', label: 'Format No', type: 'string' },
+        { key: 'documentNo', label: 'Document No', type: 'string' },
         { key: 'supplierName', label: 'Supplier Name', type: 'string' },
         { key: 'contactPerson', label: 'Contact Person', type: 'string' },
         { key: 'agreementDate', label: 'Agreement Date', type: 'date' },

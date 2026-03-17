@@ -1,4 +1,4 @@
-/** ================================= Table Of Contents =================================== /
+/* * ================================= Table Of Contents =================================== /
 1. Abstract Css
     1.1 Function Css
     1.2 Variables Css
@@ -10748,19 +10748,19 @@ h6, .h6 {
   border-color: var(--danger-800) !important;
 }
 
-.btn-outline-danger-600 {
+.btn-outline-primary {
   background-color: transparent !important;
   color: var(--danger-600) !important;
   border-color: var(--danger-600) !important;
 }
 
-.btn-outline-danger-600:hover {
+.btn-outline-primary:hover {
   background-color: var(--danger-600) !important;
   color: #fff !important;
   border-color: var(--danger-600) !important;
 }
 
-.btn-outline-danger-600:active, .btn-outline-danger-600:focus {
+.btn-outline-primary:active, .btn-outline-primary:focus {
   background-color: var(--danger-800) !important;
   color: #fff !important;
   border-color: var(--danger-800) !important;
@@ -12727,7 +12727,7 @@ select:invalid {
   border-color: var(--primary-600) !important;
 }
 
-.btn-check:checked + .btn-outline-danger-600 {
+.btn-check:checked + .btn-outline-primary {
   background-color: var(--danger-600) !important;
   border-color: var(--danger-600) !important;
 }

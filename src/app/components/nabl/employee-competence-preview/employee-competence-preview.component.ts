@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EmployeeCompetenceService } from '../../../services/employee-competence.service';
@@ -19,11 +19,15 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
     report: EmployeeCompetenceReport | null = null;
     isLoading: boolean = true;
     ratingOptions = ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'];
+    orientation: 'portrait' | 'landscape' = 'portrait';
+    orientationManual = false;
+    private orientationDetected = false;
 
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private competenceService: EmployeeCompetenceService
+        private competenceService: EmployeeCompetenceService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -45,6 +49,7 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
                     this.report = data;
                 }
                 this.isLoading = false;
+                setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading competence report:', err);
@@ -53,8 +58,48 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
         });
     }
 
+    private autoDetectOrientation(): void {
+        if (this.orientationManual || this.orientationDetected) return;
+        this.orientationDetected = true;
+        const bodyBlock = document.querySelector('.body-block') as HTMLElement | null;
+        if (!bodyBlock) return;
+        let needsLandscape = false;
+        bodyBlock.querySelectorAll<HTMLElement>('table').forEach(table => {
+            if (table.scrollWidth > table.clientWidth + 8) needsLandscape = true;
+        });
+        bodyBlock.querySelectorAll<HTMLElement>('tr').forEach(row => {
+            if (row.children.length > 5) needsLandscape = true;
+        });
+        const detected: 'portrait' | 'landscape' = needsLandscape ? 'landscape' : 'portrait';
+        if (detected !== this.orientation) {
+            this.orientation = detected;
+            this.cdr.detectChanges();
+        }
+    }
+
+    setOrientation(o: 'portrait' | 'landscape'): void {
+        this.orientation = o;
+        this.orientationManual = true;
+    }
+
+    resetToAuto(): void {
+        this.orientationManual = false;
+        this.orientationDetected = false;
+        this.orientation = 'portrait';
+        setTimeout(() => this.autoDetectOrientation(), 100);
+    }
+
     printPage(): void {
+        document.getElementById('ec-print-size')?.remove();
+        const styleEl = document.createElement('style');
+        styleEl.id = 'ec-print-size';
+        styleEl.textContent = `@page { size: A4 ${this.orientation}; }`;
+        document.head.appendChild(styleEl);
+        const originalTitle = document.title;
+        document.title = '';
         window.print();
+        document.title = originalTitle;
+        document.head.removeChild(styleEl);
     }
 
     goBack(): void {

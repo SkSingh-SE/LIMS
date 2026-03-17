@@ -34,7 +34,7 @@ export class TrainingPlanListComponent implements OnInit {
       PageSize: 10,
       searchTerm: '',
       sortByColumn: 'id',
-      sortOrder: 'asc',
+      sortOrder: 'desc',
       filter: []
     });
   }
@@ -69,7 +69,7 @@ export class TrainingPlanListComponent implements OnInit {
               PageSize: 10,
               searchTerm: '',
               sortByColumn: 'id',
-              sortOrder: 'asc',
+              sortOrder: 'desc',
               filter: []
             });
           }

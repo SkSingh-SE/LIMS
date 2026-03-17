@@ -23,7 +23,7 @@
           <button
             *ngIf="!isViewMode"
             type="button"
-            class="btn btn-sm btn-outline-danger-600 me-2"
+            class="btn btn-sm btn-outline-primary me-2"
             (click)="addSpecification()"
             aria-label="Add Specification"
           >
@@ -238,7 +238,7 @@
                 <button
                   *ngIf="!isViewMode"
                   type="button"
-                  class="btn btn-outline-danger-600 btn-sm ms-2"
+                  class="btn btn-outline-primary btn-sm ms-2"
                   (click)="addParameter(i)"
                   aria-label="Add Parameter"
                 >
@@ -253,7 +253,7 @@
 
       <!-- <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
         <a class="btn btn-sm btn-outline-warning me-2" routerLink="/scope" role="button" aria-label="Cancel"> <i class="bi bi-x-circle"></i> Cancel</a>
-        <button [disabled]="!scopeForm.valid || !hasAnyParameter" type="submit" class="btn btn-sm btn-outline-danger-600" aria-label="Save Scope">
+        <button [disabled]="!scopeForm.valid || !hasAnyParameter" type="submit" class="btn btn-sm btn-outline-primary" aria-label="Save Scope">
           <i class="bi bi-save"></i> Save
         </button>
       </div> -->

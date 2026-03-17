@@ -1,17 +1,60 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Audit Summary Report
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -24,46 +67,44 @@
     </ng-container>
 
     <ng-container body>
-      <div class="summary-info border border-dark p-2 mb-4">
-        <div class="row">
-          <div class="col-6">
-            <strong>Audit Date:</strong>
-            {{ data.auditDate | date: "dd.MM.yyyy" }}
-          </div>
-          <div class="col-6">
-            <strong>Areas Covered:</strong>
-            {{ data.areasCovered }}
-          </div>
-        </div>
-        <div class="row mt-2">
-          <div class="col-6">
-            <strong>Total Major NCs:</strong>
-            {{ data.majorNCs }}
-          </div>
-          <div class="col-6">
-            <strong>Total Minor NCs:</strong>
-            {{ data.minorNCs }}
-          </div>
-        </div>
+
+      <!-- Audit Overview -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">AUDIT OVERVIEW</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Audit Date</td>
+              <td style="width: 25%">{{ data.auditDate | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 25%">Areas Covered</td>
+              <td style="width: 25%">{{ data.areasCovered }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Total Major NCs</td>
+              <td>{{ data.majorNCs }}</td>
+              <td class="lbl">Total Minor NCs</td>
+              <td>{{ data.minorNCs }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="summary-section mb-4">
-        <div class="fw-bold bg-light border border-dark p-2 mb-0">1. OBSERVATIONS SUMMARY:</div>
-        <div class="border border-top-0 border-dark p-3">
-          <div class="ql-editor" [innerHTML]="data.observationSummary"></div>
-        </div>
+      <!-- 1. Observations Summary -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">1. OBSERVATIONS SUMMARY</div>
+        <div class="sec-body" [innerHTML]="data.observationSummary"></div>
       </div>
 
-      <div class="summary-section mb-4">
-        <div class="fw-bold bg-light border border-dark p-2 mb-0">2. CONCLUSION:</div>
-        <div class="border border-top-0 border-dark p-3">
-          <div class="ql-editor" [innerHTML]="data.conclusion"></div>
-        </div>
+      <!-- 2. Conclusion -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">2. CONCLUSION</div>
+        <div class="sec-body" [innerHTML]="data.conclusion"></div>
       </div>
 
-      <div class="mt-5 text-center">
+      <div class="mt-4 text-center">
         <p><em>End of Report</em></p>
       </div>
+
     </ng-container>
 
     <ng-container footer>
@@ -76,10 +117,4 @@
     </ng-container>
   </app-print-frame>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

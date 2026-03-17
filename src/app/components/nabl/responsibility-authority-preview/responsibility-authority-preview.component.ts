@@ -10,7 +10,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 
 @Component({
   selector: 'app-responsibility-authority-preview',
-
   imports: [CommonModule, RouterModule, NablPrintHeaderComponent, NablPrintFooterComponent, PrintFrameComponent],
   templateUrl: './responsibility-authority-preview.component.html',
   styleUrl: './responsibility-authority-preview.component.css'
@@ -18,6 +17,9 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 export class ResponsibilityAuthorityPreviewComponent implements OnInit {
   matrix: ResponsibilityAuthorityMatrix | null = null;
   isLoading = true;
+
+  orientation: 'portrait' | 'landscape' = 'portrait';
+  orientationManual = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -48,8 +50,24 @@ export class ResponsibilityAuthorityPreviewComponent implements OnInit {
     }
   }
 
+  setOrientation(o: 'portrait' | 'landscape'): void {
+    this.orientation = o;
+    this.orientationManual = true;
+  }
+
   printPage(): void {
+    document.getElementById('ra-print-page-size')?.remove();
+    const styleEl = document.createElement('style');
+    styleEl.id = 'ra-print-page-size';
+    styleEl.textContent = `@page { size: A4 ${this.orientation}; }`;
+    document.head.appendChild(styleEl);
+
+    const originalTitle = document.title;
+    document.title = '';
     window.print();
+    document.title = originalTitle;
+
+    document.head.removeChild(styleEl);
   }
 
   goBack(): void {

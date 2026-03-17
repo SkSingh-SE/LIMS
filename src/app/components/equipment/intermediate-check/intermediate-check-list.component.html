@@ -136,6 +136,8 @@
     </div>
     <div class="col-md-6">
       <nav aria-label="Page navigation">
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination pagination-sm justify-content-end mb-0">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" href="#" (click)="onPageChange(pageNumber - 1); $event.preventDefault()">

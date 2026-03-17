@@ -26,8 +26,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
   plan: any = null;
   baseUrl = environment.baseUrl;
-  showActionPanel = false;
-  reviewAction: 'approve' | 'sendback' | 'reject' | null = null;
   reviewRemark: string = '';
   submitAttempted = false;
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
@@ -43,11 +41,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
   // Filtered test methods and standards for dependent dropdowns
   filteredTestMethods: { [key: string]: any[] } = {};
   filteredStandards: any[] = [];
-
-  // Drag position for review panel
-  dragPosition = { x: window.innerWidth - 140, y: 100 };
-  private isDragging = false;
-  private dragOffset = { x: 0, y: 0 };
 
   actions: any[] = [];
   selectedAction: any = null;
@@ -327,13 +320,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
     }
   }
 
-  // Review action handlers
-  onReviewActionChange() {
-    if (this.reviewAction !== 'sendback') {
-      this.reviewRemark = '';
-    }
-  }
-
   submitReview() {
     this.submitAttempted = true;
     if (!this.selectedAction) return;
@@ -357,41 +343,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
       }
     });
   }
-
-  // Drag and drop handlers
-  startDrag(event: MouseEvent | TouchEvent) {
-    event.preventDefault();
-    this.isDragging = true;
-    let clientX = (event as MouseEvent).clientX ?? (event as TouchEvent).touches[0].clientX;
-    let clientY = (event as MouseEvent).clientY ?? (event as TouchEvent).touches[0].clientY;
-    this.dragOffset = {
-      x: clientX - this.dragPosition.x,
-      y: clientY - this.dragPosition.y
-    };
-    window.addEventListener('mousemove', this.onDragMove);
-    window.addEventListener('mouseup', this.stopDrag);
-    window.addEventListener('touchmove', this.onDragMove, { passive: false });
-    window.addEventListener('touchend', this.stopDrag);
-  }
-
-  onDragMove = (event: MouseEvent | TouchEvent) => {
-    if (!this.isDragging) return;
-    let clientX = (event as MouseEvent).clientX ?? (event as TouchEvent).touches[0].clientX;
-    let clientY = (event as MouseEvent).clientY ?? (event as TouchEvent).touches[0].clientY;
-    this.dragPosition = {
-      x: clientX - this.dragOffset.x,
-      y: clientY - this.dragOffset.y
-    };
-    event.preventDefault();
-  };
-
-  stopDrag = () => {
-    this.isDragging = false;
-    window.removeEventListener('mousemove', this.onDragMove);
-    window.removeEventListener('mouseup', this.stopDrag);
-    window.removeEventListener('touchmove', this.onDragMove);
-    window.removeEventListener('touchend', this.stopDrag);
-  };
 
   // Get badge class based on review status
   getStatusBadgeClass(): string {

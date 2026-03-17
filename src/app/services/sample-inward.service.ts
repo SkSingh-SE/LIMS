@@ -62,4 +62,22 @@ export class SampleInwardService {
     return this.http.get<any>(`${this.apiUrl}/preparation-inward-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
+  // Plan History & Replan endpoints
+  private planApiUrl = environment.apiUrl + '/Plan';
+
+  getPlanHistory(planId: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/history/${planId}`);
+  }
+
+  requestReplan(planId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/request-replan/${planId}`, { reason });
+  }
+
+  approveReplan(requestId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/approve-replan/${requestId}`, { remarks: remarks || '' });
+  }
+
+  rejectReplan(requestId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/reject-replan/${requestId}`, { remarks: remarks || '' });
+  }
 }

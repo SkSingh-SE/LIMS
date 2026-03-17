@@ -102,6 +102,31 @@
           </div>
         </div>
 
+        <!-- Section: Related Forms -->
+        <div class="accordion-section mb-3" *ngIf="relatedFeedback">
+          <div class="section-header" (click)="toggleSection('relatedForms')">
+            <i class="bi" [ngClass]="openSections['relatedForms'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">Related Forms</span>
+          </div>
+          <div *ngIf="openSections['relatedForms']" class="section-body">
+            <div class="card border-start border-primary border-3 mb-2">
+              <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="badge bg-secondary me-2">F-37</span>
+                  <strong>Customer Feedback</strong>
+                  <span class="text-muted ms-2">{{ relatedFeedback.documentNo || 'N/A' }}</span>
+                  <span class="badge ms-2" [ngClass]="'bg-' + (relatedFeedback.status === 'Approved' ? 'success' : relatedFeedback.status === 'Rejected' ? 'danger' : 'info')">
+                    {{ relatedFeedback.status }}
+                  </span>
+                </div>
+                <a [routerLink]="['/customer-feedback/details', relatedFeedback.id]" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>View
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>

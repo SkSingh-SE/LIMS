@@ -1,0 +1,133 @@
+<div class="report-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2 class="page-title">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Outstanding Report
+        </h2>
+        <p class="page-subtitle">Customer-wise outstanding payment summary</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button class="btn btn-outline-primary btn-sm" (click)="loadReport()" [disabled]="isLoading">
+          <i class="bi bi-arrow-clockwise me-1" [class.spin]="isLoading"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4" *ngIf="reportData.length && !isLoading">
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-primary border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Invoiced</h6>
+          <h4 class="text-primary mb-0">{{ getTotalInvoiced() | number:'1.2-2' }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-success border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Paid</h6>
+          <h4 class="text-success mb-0">{{ getTotalPaid() | number:'1.2-2' }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-danger border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Outstanding</h6>
+          <h4 class="text-danger mb-0">{{ getTotalOutstanding() | number:'1.2-2' }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-warning border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Customers</h6>
+          <h4 class="text-warning mb-0">{{ reportData.length }}</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted mt-2">Loading outstanding report...</p>
+  </div>
+
+  <!-- Report Table -->
+  <div class="card shadow-sm" *ngIf="!isLoading">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="sortable" (click)="sortBy('customerName')">
+                Customer
+                <i class="bi ms-1" [ngClass]="getSortIcon('customerName')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('customerType')">
+                Customer Type
+                <i class="bi ms-1" [ngClass]="getSortIcon('customerType')"></i>
+              </th>
+              <th class="text-end sortable" (click)="sortBy('totalInvoiced')">
+                Total Invoiced (&#8377;)
+                <i class="bi ms-1" [ngClass]="getSortIcon('totalInvoiced')"></i>
+              </th>
+              <th class="text-end sortable" (click)="sortBy('totalPaid')">
+                Total Paid (&#8377;)
+                <i class="bi ms-1" [ngClass]="getSortIcon('totalPaid')"></i>
+              </th>
+              <th class="text-end sortable" (click)="sortBy('totalOutstanding')">
+                Outstanding (&#8377;)
+                <i class="bi ms-1" [ngClass]="getSortIcon('totalOutstanding')"></i>
+              </th>
+              <th class="text-end sortable" (click)="sortBy('lastPaymentDate')">
+                Last Payment Date
+                <i class="bi ms-1" [ngClass]="getSortIcon('lastPaymentDate')"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of reportData">
+              <td class="fw-semibold">{{ row.customerName }}</td>
+              <td>
+                <span class="badge bg-info text-dark" *ngIf="row.customerType">{{ row.customerType }}</span>
+                <span *ngIf="!row.customerType">-</span>
+              </td>
+              <td class="text-end">{{ (row.totalInvoiced || 0) | number:'1.2-2' }}</td>
+              <td class="text-end text-success">{{ (row.totalPaid || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">
+                <span class="fw-bold" [class.text-danger]="(row.totalOutstanding || 0) > 0">
+                  {{ (row.totalOutstanding || 0) | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="text-end">{{ formatDate(row.lastPaymentDate) }}</td>
+            </tr>
+            <tr *ngIf="!reportData.length">
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
+                No outstanding amounts found.
+              </td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="reportData.length">
+            <tr class="table-warning fw-bold">
+              <td colspan="2">Grand Total</td>
+              <td class="text-end">{{ getTotalInvoiced() | number:'1.2-2' }}</td>
+              <td class="text-end">{{ getTotalPaid() | number:'1.2-2' }}</td>
+              <td class="text-end">{{ getTotalOutstanding() | number:'1.2-2' }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

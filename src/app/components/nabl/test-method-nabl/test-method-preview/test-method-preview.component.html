@@ -1,15 +1,48 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center" *ngIf="data">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Test Method Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -20,57 +53,58 @@
     </ng-container>
 
     <ng-container body>
-      <div class="record-content">
-        <!-- Main Table -->
-        <div class="table-responsive">
-          <table class="table table-bordered border-dark align-middle">
-            <thead class="bg-light text-center small fw-bold">
-              <tr>
-                <th style="width: 60px">SR. NO.</th>
-                <th style="width: 200px">
-                  {{ data.listType === "Test Method" ? "SPECIFICATION CODE" : "DOCUMENT IDENTIFICATION" }}
-                </th>
-                <th>
-                  {{ data.listType === "Test Method" ? "DETAILS" : "TITLE" }}
-                </th>
-                <th *ngIf="data.listType === 'External Document'">Requirement</th>
-                <th *ngIf="data.listType === 'External Document'" style="width: 120px">Latest Issue No./Rev No.</th>
-                <th *ngIf="data.listType === 'External Document'" style="width: 120px">Month/ Year of Latest Issue</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let entry of data.entries; let i = index">
-                <td class="text-center">{{ entry.srNo }}</td>
-                <td class="ps-2 fw-medium">{{ entry.specificationCode }}</td>
-                <td class="ps-2">{{ entry.details }}</td>
-                <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.requirement }}</td>
-                <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.latestIssueRev }}</td>
-                <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.monthYear }}</td>
-              </tr>
-              <!-- Fill remaining space if data is small -->
-              <ng-container *ngIf="data.entries.length < 10">
-                <tr *ngFor="let item of [].constructor(10 - data.entries.length); let i = index">
-                  <td class="text-center">&nbsp;</td>
-                  <td></td>
-                  <td></td>
-                  <td *ngIf="data.listType === 'External Document'"></td>
-                  <td *ngIf="data.listType === 'External Document'"></td>
-                  <td *ngIf="data.listType === 'External Document'"></td>
-                </tr>
-              </ng-container>
-            </tbody>
-          </table>
+      <!-- Main Table -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          {{ data.listType === "Test Method" ? "TEST METHOD LIST" : "EXTERNAL DOCUMENT LIST" }}
         </div>
+        <table class="table table-bordered inner-table align-middle">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th style="width: 60px">SR. NO.</th>
+              <th style="width: 200px">
+                {{ data.listType === "Test Method" ? "SPECIFICATION CODE" : "DOCUMENT IDENTIFICATION" }}
+              </th>
+              <th>
+                {{ data.listType === "Test Method" ? "DETAILS" : "TITLE" }}
+              </th>
+              <th *ngIf="data.listType === 'External Document'">Requirement</th>
+              <th *ngIf="data.listType === 'External Document'" style="width: 120px">Latest Issue No./Rev No.</th>
+              <th *ngIf="data.listType === 'External Document'" style="width: 120px">Month/ Year of Latest Issue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data.entries; let i = index">
+              <td class="text-center">{{ entry.srNo }}</td>
+              <td class="ps-2 fw-medium">{{ entry.specificationCode }}</td>
+              <td class="ps-2">{{ entry.details }}</td>
+              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.requirement }}</td>
+              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.latestIssueRev }}</td>
+              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.monthYear }}</td>
+            </tr>
+            <!-- Fill remaining space if data is small -->
+            <ng-container *ngIf="data.entries.length < 10">
+              <tr *ngFor="let item of [].constructor(10 - data.entries.length); let i = index">
+                <td class="text-center">&nbsp;</td>
+                <td></td>
+                <td></td>
+                <td *ngIf="data.listType === 'External Document'"></td>
+                <td *ngIf="data.listType === 'External Document'"></td>
+                <td *ngIf="data.listType === 'External Document'"></td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Signature Block -->
-        <div class="mt-4">
-          <app-nabl-signature-block
-            [signatories]="[
-              { name: data.preparedBy, designation: 'Prepared By' },
-              { name: data.reviewedBy, designation: 'Technical Manager' },
-            ]"
-          ></app-nabl-signature-block>
-        </div>
+      <!-- Signature Block -->
+      <div class="mt-4">
+        <app-nabl-signature-block
+          [signatories]="[
+            { name: data.preparedBy, designation: 'Prepared By' },
+            { name: data.reviewedBy, designation: 'Technical Manager' },
+          ]"
+        ></app-nabl-signature-block>
       </div>
     </ng-container>
 

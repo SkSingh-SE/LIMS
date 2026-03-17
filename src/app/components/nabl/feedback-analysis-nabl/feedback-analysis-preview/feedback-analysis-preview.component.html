@@ -1,17 +1,52 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Feedback Analysis Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -24,31 +59,28 @@
     </ng-container>
 
     <ng-container body>
-      <div class="analysis-meta border border-dark p-2 mb-4">
-        <div class="row">
-          <div class="col-8">
-            <strong>Period of Analysis:</strong>
-            {{ data.period }}
-          </div>
-          <div class="col-4">
-            <strong>Total Feedback Received:</strong>
-            {{ data.totalFeedbackReceived }}
-          </div>
-        </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">ANALYSIS DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Period of Analysis</td>
+              <td style="width: 35%">{{ data.period }}</td>
+              <td class="lbl" style="width: 20%">Total Feedback Received</td>
+              <td style="width: 15%">{{ data.totalFeedbackReceived }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="analysis-section mb-4">
-        <div class="fw-bold bg-light border border-dark p-2 mb-0">1. ANALYSIS SUMMARY:</div>
-        <div class="border border-top-0 border-dark p-3">
-          <div class="ql-editor" [innerHTML]="data.analysisSummary"></div>
-        </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">1. ANALYSIS SUMMARY</div>
+        <div class="sec-body" [innerHTML]="data.analysisSummary"></div>
       </div>
 
-      <div class="analysis-section mb-4">
-        <div class="fw-bold bg-light border border-dark p-2 mb-0">2. ACTION TAKEN / PREVENTIVE ACTIONS:</div>
-        <div class="border border-top-0 border-dark p-3">
-          <div class="ql-editor" [innerHTML]="data.actionsTaken"></div>
-        </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">2. ACTION TAKEN / PREVENTIVE ACTIONS</div>
+        <div class="sec-body" [innerHTML]="data.actionsTaken"></div>
       </div>
 
       <div class="mt-5 text-center">
@@ -65,11 +97,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

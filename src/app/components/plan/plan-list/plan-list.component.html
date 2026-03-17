@@ -65,7 +65,7 @@
                                     </a> -->
                                     <a *ngIf="item.actionStatus == 'PENDING' && (item.currentStageStatus == 'INWARD_COMPLETED' || item.currentStageStatus == 'UNDER_PLANNING')" [routerLink]="['/sample/plan/edit', item.id]"
                                     [state]="{ mode: 'plan' }"
-                                    class="btn btn-sm btn-outline-danger-600"
+                                    class="btn btn-sm btn-outline-primary"
                                         title="Plan">
                                         Plan
                                     </a>
@@ -106,6 +106,8 @@
             </div>
 
             <!-- Pagination Controls -->
+            <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
             <ul class="pagination mb-0 d-flex align-items-center">
                 <li class="page-item" [class.disabled]="pageNumber === 1">
                     <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>

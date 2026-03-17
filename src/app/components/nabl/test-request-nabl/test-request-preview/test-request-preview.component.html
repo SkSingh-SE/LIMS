@@ -1,15 +1,48 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center" *ngIf="data">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Test Request Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         formatNo="F-27"
@@ -20,140 +53,122 @@
     </ng-container>
 
     <ng-container body>
-      <div class="record-content">
-        <!-- Basic Case Info -->
-        <div class="row mb-4 border-bottom pb-3">
-          <div class="col-6">
-            <label class="fw-bold text-muted small d-block">Case Number / TRN</label>
-            <span class="fs-5 fw-semibold">{{ data.caseNo }}</span>
-          </div>
-          <div class="col-6 text-end">
-            <label class="fw-bold text-muted small d-block">Date & Time of Receipt</label>
-            <span class="fs-6">{{ data.collectionDate | date: "dd-MM-yyyy" }} at {{ data.collectionTime }}</span>
-          </div>
-        </div>
+      <!-- Basic Case Info -->
+      <div class="doc-section mb-3">
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Case Number / TRN</td>
+              <td class="fs-5 fw-semibold" style="width: 25%">{{ data.caseNo }}</td>
+              <td class="lbl" style="width: 25%">Date & Time of Receipt</td>
+              <td style="width: 25%">{{ data.collectionDate | date: "dd-MM-yyyy" }} at {{ data.collectionTime }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Customer Section -->
-        <div class="section-box border rounded p-3 mb-4">
-          <h6 class="section-title fw-bold text-primary mb-3">
-            <i class="bi bi-person-fill me-2"></i>
-            CUSTOMER INFORMATION
-          </h6>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="fw-bold small d-block">Customer Name</label>
-              <span>{{ data.customerName }}</span>
-            </div>
-            <div class="col-md-6">
-              <label class="fw-bold small d-block">GST Number</label>
-              <span>{{ data.gstNo || "N/A" }}</span>
-            </div>
-            <div class="col-12">
-              <label class="fw-bold small d-block">Address</label>
-              <span class="text-wrap">{{ data.address }}, {{ data.area }}, {{ data.city }}, {{ data.state }} - {{ data.pinCode }}</span>
-            </div>
-          </div>
-        </div>
+      <!-- Customer Section -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CUSTOMER INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Customer Name</td>
+              <td style="width: 25%">{{ data.customerName }}</td>
+              <td class="lbl" style="width: 25%">GST Number</td>
+              <td style="width: 25%">{{ data.gstNo || "N/A" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Address</td>
+              <td colspan="3">{{ data.address }}, {{ data.area }}, {{ data.city }}, {{ data.state }} - {{ data.pinCode }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Sample Details Table -->
-        <div class="section-box mb-4">
-          <h6 class="section-title fw-bold text-primary mb-3">
-            <i class="bi bi-box-seam-fill me-2"></i>
-            SAMPLE DETAILS
-          </h6>
-          <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-              <thead class="bg-light text-center small">
-                <tr>
-                  <th style="width: 50px">S.N.</th>
-                  <th>Sample No.</th>
-                  <th>Sample Description</th>
-                  <th>Qty</th>
-                  <th>Metal Classification</th>
-                  <th>Condition</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let sample of data.sampleDetails; let i = index">
-                  <td class="text-center">{{ i + 1 }}</td>
-                  <td class="fw-medium">{{ sample.sampleNo }}</td>
-                  <td>{{ sample.details }}</td>
-                  <td class="text-center">{{ sample.quantity }}</td>
-                  <td>{{ sample.metalClassificationName || "N/A" }}</td>
-                  <td>{{ sample.productConditionName || "Received in Good Condition" }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <!-- Sample Details Table -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">SAMPLE DETAILS</div>
+        <table class="table table-bordered inner-table align-middle">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th style="width: 50px">S.N.</th>
+              <th>Sample No.</th>
+              <th>Sample Description</th>
+              <th>Qty</th>
+              <th>Metal Classification</th>
+              <th>Condition</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sample of data.sampleDetails; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="fw-medium">{{ sample.sampleNo }}</td>
+              <td>{{ sample.details }}</td>
+              <td class="text-center">{{ sample.quantity }}</td>
+              <td>{{ sample.metalClassificationName || "N/A" }}</td>
+              <td>{{ sample.productConditionName || "Received in Good Condition" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Additional Requirements -->
-        <div class="row g-4 mb-4">
-          <div class="col-md-6">
-            <div class="section-box border rounded p-3 h-100">
-              <h6 class="section-title fw-bold text-primary mb-3">
-                <i class="bi bi-clipboard-check-fill me-2"></i>
-                REQUEST DETAILS
-              </h6>
-              <ul class="list-unstyled mb-0 small">
-                <li class="mb-2">
-                  <strong>Urgent Testing:</strong>
-                  {{ data.urgent ? "Yes" : "No" }}
-                </li>
-                <li class="mb-2">
-                  <strong>Return Sample:</strong>
-                  {{ data.returnSample ? "Yes" : "No" }}
-                </li>
-                <li class="mb-2">
-                  <strong>Hold Testing:</strong>
-                  {{ data.holdTesting ? "Yes" : "No" }}
-                </li>
-                <li>
-                  <strong>PO Number:</strong>
-                  {{ data.poNumber || "N/A" }}
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="section-box border rounded p-3 h-100">
-              <h6 class="section-title fw-bold text-primary mb-3">
-                <i class="bi bi-truck me-2"></i>
-                DISPATCH & BILLING
-              </h6>
-              <ul class="list-unstyled mb-0 small">
-                <li class="mb-2">
-                  <strong>Bill Required:</strong>
-                  {{ data.billRequired ? "Yes" : "No" }}
-                </li>
-                <li class="mb-2">
-                  <strong>PI Required:</strong>
-                  {{ data.advancePIRequired ? "Yes" : "No" }}
-                </li>
-                <li>
-                  <strong>Dispatch Modes:</strong>
-                  <span *ngFor="let mode of data.dispatchModes; let last = last">{{ mode.dispatchModeName }}{{ !last ? ", " : "" }}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+      <!-- Request Details & Dispatch/Billing -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">REQUEST DETAILS</div>
+        <table class="table table-bordered inner-table small">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Urgent Testing</td>
+              <td style="width: 25%">{{ data.urgent ? "Yes" : "No" }}</td>
+              <td class="lbl" style="width: 25%">Return Sample</td>
+              <td style="width: 25%">{{ data.returnSample ? "Yes" : "No" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Hold Testing</td>
+              <td>{{ data.holdTesting ? "Yes" : "No" }}</td>
+              <td class="lbl">PO Number</td>
+              <td>{{ data.poNumber || "N/A" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Notes -->
-        <div class="section-box border rounded p-3 mb-5" *ngIf="data.sampleReceiptNote">
-          <h6 class="section-title fw-bold text-primary mb-2">RECEIPT NOTES / REMARKS</h6>
-          <p class="small mb-0">{{ data.sampleReceiptNote }}</p>
-        </div>
+      <!-- Dispatch & Billing -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">DISPATCH & BILLING</div>
+        <table class="table table-bordered inner-table small">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Bill Required</td>
+              <td style="width: 25%">{{ data.billRequired ? "Yes" : "No" }}</td>
+              <td class="lbl" style="width: 25%">PI Required</td>
+              <td style="width: 25%">{{ data.advancePIRequired ? "Yes" : "No" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Dispatch Modes</td>
+              <td colspan="3">
+                <span *ngFor="let mode of data.dispatchModes; let last = last">{{ mode.dispatchModeName }}{{ !last ? ", " : "" }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Signature Block -->
-        <div class="mt-4">
-          <app-nabl-signature-block
-            [signatories]="[
-              { designation: 'Customer / Representative', name: 'Signatory' },
-              { designation: 'Received By', name: 'Laboratory In-charge' },
-            ]"
-          ></app-nabl-signature-block>
-        </div>
+      <!-- Notes -->
+      <div class="doc-section mb-3" *ngIf="data.sampleReceiptNote">
+        <div class="sec-title">RECEIPT NOTES / REMARKS</div>
+        <div class="sec-body">{{ data.sampleReceiptNote }}</div>
+      </div>
+
+      <!-- Signature Block -->
+      <div class="mt-4">
+        <app-nabl-signature-block
+          [signatories]="[
+            { designation: 'Customer / Representative', name: 'Signatory' },
+            { designation: 'Received By', name: 'Laboratory In-charge' },
+          ]"
+        ></app-nabl-signature-block>
       </div>
     </ng-container>
 

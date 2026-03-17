@@ -145,6 +145,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalRecords }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="currentPage === 1">
             <a class="page-link" (click)="goToPage(currentPage - 1)">Previous</a>

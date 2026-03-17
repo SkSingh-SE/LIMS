@@ -739,16 +739,53 @@
                   <div class="invalid-feedback">Relevant Experience is required.</div>
                 </div>
 
+                <!-- Qualification Summary -->
                 <div class="col">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search Role'"
-                    [labelName]="'Role'"
-                    [fetchDataFn]="getRoles"
-                    (itemSelected)="onRoleSelected($event)"
-                    [isDisabled]="isViewMode"
-                    [required]="true"
-                    [selectedItem]="personalInfoForm.get('roleID')?.value"
-                  ></app-searchable-dropdown>
+                  <label class="form-label">Qualification Summary</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    formControlName="qualificationSummary"
+                    placeholder="e.g. B.Tech Mechanical, M.Sc Chemistry"
+                    maxlength="500"
+                  />
+                </div>
+
+                <!-- Experience -->
+                <div class="col">
+                  <label class="form-label">Experience Description</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    formControlName="experience"
+                    placeholder="e.g. 5 years in metallurgical testing"
+                    maxlength="500"
+                  />
+                </div>
+
+                <!-- Competency Level -->
+                <div class="col">
+                  <label class="form-label">Competency Level</label>
+                  <select class="form-select" formControlName="competencyLevel">
+                    <option value="">Select Level</option>
+                    <option value="Trainee">Trainee</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Expert">Expert</option>
+                  </select>
+                </div>
+
+                <div class="col">
+                  <label class="form-label">Role <small class="text-muted">(from Designation)</small></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="designationRoleName"
+                    readonly
+                    disabled
+                    placeholder="Assigned via Designation"
+                  />
                 </div>
                 <!--Password-->
                 <div class="col">
@@ -768,7 +805,7 @@
                         'is-invalid': personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid
                       }"
                     />
-                    <button type="button" class="btn btn-outline-danger-600" (click)="showPassword.set(!showPassword())" tabindex="-1">
+                    <button type="button" class="btn btn-outline-primary" (click)="showPassword.set(!showPassword())" tabindex="-1">
                       <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                     <div class="invalid-feedback">Password is required.</div>
@@ -907,7 +944,7 @@
             <div class="mb-2">
               <label class="text-danger-600 fw-bold border-bottom border-danger">Qualification Details</label>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2" (click)="addQualification()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary mb-2" (click)="addQualification()">
               <i class="bi bi-plus-circle-dotted"></i>
               Add Row
             </button>
@@ -1079,7 +1116,7 @@
                 <div class="mb-2">
                   <label class="text-danger-600 fw-bold border-bottom border-danger">Additional Documents</label>
                 </div>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger-600 mb-2" (click)="addAdditionalDocument()">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary mb-2" (click)="addAdditionalDocument()">
                   <i class="bi bi-plus-circle-dotted"></i>
                   Add Row
                 </button>

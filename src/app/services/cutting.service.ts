@@ -35,4 +35,8 @@ export class CuttingService {
     getCuttingDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+
+    updatePreparationStatus(sampleId: number, status: string): Observable<any> {
+      return this.http.put<any>(`${this.apiUrl}/update-status/${sampleId}?status=${encodeURIComponent(status)}`, {});
+    }
 }

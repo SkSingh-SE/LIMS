@@ -1,60 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { CustomerFeedback } from '../models/customer-feedback';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class CustomerFeedbackService {
-    private dummyData: CustomerFeedback[] = [
-        {
-            id: 1,
-            customerName: 'Global Metals Corp',
-            contactPerson: 'John Doe',
-            date: '2025-02-15',
-            ratings: [
-                { parameter: 'Quality of Test Results', rating: 5 },
-                { parameter: 'Timely Delivery of Reports', rating: 4 },
-                { parameter: 'Technical Competence of Staff', rating: 5 },
-                { parameter: 'Response to Queries', rating: 4 },
-                { parameter: 'Behavior of Lab Personnel', rating: 5 }
-            ],
-            comments: '<p>Very satisfied with the accuracy of the mechanical test reports.</p>',
-            suggestions: '<p>Placing reports on a cloud drive for faster access would be great.</p>',
-            formatNo: 'F-47',
-            docNo: 'DMSPL / Level-04 / Format / F-47',
-            issueNo: '03',
-            issueDate: '2021-10-01',
-            revNo: '00',
-            revDate: '--'
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/CustomerFeedback';
+
+    constructor(private http: HttpClient) {}
 
     getAll(): Observable<CustomerFeedback[]> {
-        return of(this.dummyData);
+        return this.http.post<CustomerFeedback[]>(this.apiUrl + '/list', {});
     }
 
     getById(id: number): Observable<CustomerFeedback | undefined> {
-        return of(this.dummyData.find(f => f.id === id));
+        return this.http.get<CustomerFeedback>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: CustomerFeedback): Observable<CustomerFeedback> {
-        const newItem = { ...data, id: this.dummyData.length + 1 };
-        this.dummyData.push(newItem);
-        return of(newItem);
+        return this.http.post<CustomerFeedback>(`${this.apiUrl}/save`, data);
     }
 
     update(id: number, data: CustomerFeedback): Observable<CustomerFeedback> {
-        const index = this.dummyData.findIndex(f => f.id === id);
-        if (index !== -1) {
-            this.dummyData[index] = { ...data, id };
-            return of(this.dummyData[index]);
-        }
-        throw new Error('Record not found');
+        data.id = id;
+        return this.http.post<CustomerFeedback>(`${this.apiUrl}/save`, data);
     }
 
     delete(id: number): Observable<boolean> {
-        this.dummyData = this.dummyData.filter(f => f.id !== id);
-        return of(true);
+        return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
 }

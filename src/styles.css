@@ -7,13 +7,14 @@
   --nav-height: 60px;
   --transition-speed: 0.3s;
   --primary-color: #da261c;
-  /* Bootstrap 5 primary color by default */
+  --bs-primary: #da261c;
+  --bs-primary-rgb: 218, 38, 28;
   --primary-hover: #d50a0ace;
   --select2-multiple-height: 35px !important;
   --select2-option-highlighted-background: #d50a0ace;
   --select2-selection-border-radius: 5px;
   --select2-selection-choice-line-height: 23px;
-  /* Default value, will be updated by JavaScript */
+  accent-color: #da261c;
 }
 
 body {
@@ -570,8 +571,24 @@ body {
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #da261c;
-  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1);
+  border-color: #da261c !important;
+  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1) !important;
+}
+
+/* Native select — red dropdown arrow + red selected option */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
+}
+
+/* Native option hover — light red (supported in Firefox/Edge) */
+.form-select option:hover {
+  background-color: #fef2f2 !important;
+  color: #da261c;
 }
 
 /* Flat Card Styling for List items inside forms */
@@ -689,4 +706,1284 @@ body {
     align-items: center;
     overflow-x: auto;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIMS DESIGN SYSTEM — Extended Theme Variables
+   Full color palette aligned with primary red (#DA261C)
+   These variables are also referenced by existing styles above.
+════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Primary (Red) Palette ─────────────────────────────── */
+  --primary-50:  #fdeaea;
+  --primary-100: #fcd5d5;
+  --primary-200: #f9abab;
+  --primary-300: #f68181;
+  --primary-400: #f35757;
+  --primary-500: #f02d2d;
+  --primary-600: #DA261C;
+  --primary-700: #9b1c1c;
+  --primary-800: #c62828;
+  --primary-900: #5c1212;
+
+  /* ── Neutral Palette ───────────────────────────────────── */
+  --neutral-50:  #F5F6FA;
+  --neutral-100: #F3F4F6;
+  --neutral-200: #EBECEF;
+  --neutral-300: #D1D5DB;
+  --neutral-400: #9CA3AF;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563;
+  --neutral-700: #374151;
+  --neutral-800: #1F2937;
+  --neutral-900: #111827;
+
+  /* ── Semantic Color Tokens ─────────────────────────────── */
+  --success-main:    #45B369;
+  --success-surface: #DAF0E1;
+  --success-border:  #B5E1C3;
+
+  --warning-main:    #D97706;
+  --warning-surface: #FFF9E2;
+  --warning-border:  #FFEBA6;
+
+  --info-main:    #1D4ED8;
+  --info-surface: #EFF6FF;
+  --info-border:  #BFDBFE;
+
+  --danger-main:    #DC2626;
+  --danger-surface: #FEF2F2;
+  --danger-border:  #FECACA;
+
+  /* ── Semantic Text / Input Tokens ─────────────────────── */
+  --text-primary-light:   var(--neutral-900);
+  --text-secondary-light: var(--neutral-600);
+  --input-form-light:     var(--neutral-300);
+  --input-bg:             var(--neutral-50);
+  --input-stroke:         var(--neutral-300);
+  --border-color:         #d1d5db80;
+
+  /* ── Misc ───────────────────────────────────────────────── */
+  --red:   #E30A0A;
+  --brand: var(--primary-600);
+
+  /* ── Font size scale ─────────────────────────────────── */
+  --font-xs:  0.75rem;
+  --font-sm:  0.8125rem;
+  --font-md:  0.9375rem;
+  --font-lg:  1.0625rem;
+  --font-xl:  1.25rem;
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.12);
+
+  /* ── Border radius ───────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL BUTTON OVERRIDES — red theme primary button
+   Override Bootstrap 5 CSS variables to force red theme
+════════════════════════════════════════════════════════════════ */
+.btn-primary {
+  --bs-btn-bg: #da261c;
+  --bs-btn-border-color: #da261c;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: #b91c1c;
+  --bs-btn-hover-border-color: #b91c1c;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #a51a1a;
+  --bs-btn-active-border-color: #a51a1a;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-bg: #da261c;
+  --bs-btn-disabled-border-color: #da261c;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-focus-shadow-rgb: 218, 38, 28;
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+  color: #fff !important;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--primary-hover) !important;
+  border-color:     var(--primary-hover) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25) !important;
+}
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-color: var(--primary-300) !important;
+  border-color:     var(--primary-300) !important;
+  opacity: 0.65;
+}
+
+.btn-theme {
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+.btn-theme:hover {
+  opacity: 0.92;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(218, 38, 28, 0.35);
+}
+.btn-theme:focus {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.35);
+  color: #fff;
+}
+
+/* All buttons – tighter default sizing */
+.btn {
+  font-size: var(--font-sm);
+  padding: 0.375rem 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm) !important;
+  transition: all 0.2s ease;
+}
+.btn-sm {
+  padding: 0.22rem 0.55rem !important;
+  font-size: 0.78rem !important;
+}
+.btn-lg {
+  padding: 0.55rem 1.25rem !important;
+  font-size: var(--font-md) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARD IMPROVEMENTS
+════════════════════════════════════════════════════════════════ */
+.card {
+  border: 1px solid #e9ecef !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── BASIC DATA TABLE CARD — list page wrapper ── */
+.basic-data-table {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+
+.basic-data-table > .card-body {
+  padding: 1rem 1.25rem;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BORDERED TABLE — global, replaces duplicated component CSS
+════════════════════════════════════════════════════════════════ */
+.bordered-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: var(--font-sm);
+}
+
+.bordered-table thead {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f3f5 100%);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.bordered-table thead tr th {
+  padding: 9px 10px !important;
+  font-weight: 600;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--neutral-700);
+  border: 1px solid #e9ecef;
+  white-space: nowrap;
+  vertical-align: middle;
+  background: #f8f9fa;
+  user-select: none;
+}
+
+.bordered-table thead tr th:hover {
+  background-color: #eef0f2;
+  cursor: pointer;
+}
+
+.bordered-table tbody tr td {
+  padding: 7px 10px !important;
+  border: 1px solid #e9ecef;
+  font-size: var(--font-sm);
+  color: var(--neutral-800);
+  vertical-align: middle;
+}
+
+.bordered-table tbody tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+.bordered-table tbody tr:hover {
+  background-color: #fff3f3 !important;
+  transition: background-color 0.15s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SORTING ICONS — global, replaces component duplicates
+════════════════════════════════════════════════════════════════ */
+.sorting-icon-up {
+  font-size: 17px;
+  line-height: 11px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -3px;
+  color: var(--neutral-400);
+  transition: color 0.15s;
+  display: block;
+}
+.sorting-icon-up:hover { color: var(--primary-color); }
+
+.sorting-icon-down {
+  font-size: 17px;
+  line-height: 11px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -3px;
+  color: var(--neutral-400);
+  transition: color 0.15s;
+  display: block;
+}
+.sorting-icon-down:hover { color: var(--primary-color); }
+
+/* ════════════════════════════════════════════════════════════════
+   CUSTOM SEARCH INPUT — global
+════════════════════════════════════════════════════════════════ */
+.custom-search {
+  height: 36px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s;
+}
+
+.custom-search:focus-within {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12);
+}
+
+.custom-search input,
+.custom-search .input-group-text {
+  height: 100%;
+  border-color: #dee2e6;
+}
+
+.custom-search input:focus { box-shadow: none; }
+
+.custom-search .input-group-text {
+  background: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.custom-search .input-group-text:hover {
+  background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ICON ACTION LINKS — global, replaces component duplicates
+════════════════════════════════════════════════════════════════ */
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s, transform 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.icon-link:hover {
+  background-color: var(--neutral-100);
+  transform: scale(1.1);
+}
+
+.icon-svg {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  display: block;
+  flex-shrink: 0;
+}
+.icon-svg:hover { transform: scale(1.15); }
+
+/* ════════════════════════════════════════════════════════════════
+   FILTER MODAL — floating column filter popup
+════════════════════════════════════════════════════════════════ */
+.filter-modal {
+  position: absolute;
+  display: none;
+  z-index: 1050;
+  min-width: 220px;
+  animation: fadeInDown 0.15s ease;
+}
+
+.filter-modal .card {
+  border: 1px solid #dee2e6 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-modal) !important;
+  background: #fff;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FORM ENHANCEMENTS
+════════════════════════════════════════════════════════════════ */
+.form-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin-bottom: 0.28rem;
+}
+
+.form-control,
+.form-select {
+  font-size: var(--font-sm);
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-300);
+  color: var(--neutral-900);
+  min-height: 36px;
+}
+
+.form-control::placeholder { color: var(--neutral-400); }
+
+.form-control:disabled,
+.form-select:disabled,
+.form-control[readonly] {
+  background-color: var(--neutral-100);
+  color: var(--neutral-500);
+  cursor: not-allowed;
+}
+
+fieldset {
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1.125rem 0.75rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}
+
+legend {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  background: #fff;
+  padding: 0 6px;
+  float: none;
+  width: auto;
+  margin-bottom: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Required asterisk */
+.form-label .text-danger,
+label .text-danger {
+  font-size: 0.8rem;
+  margin-left: 2px;
+}
+
+/* Validation feedback */
+.invalid-feedback {
+  font-size: 0.77rem;
+  margin-top: 3px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODAL ENHANCEMENTS
+════════════════════════════════════════════════════════════════ */
+.modal-content {
+  border-radius: var(--radius-lg) !important;
+  border: none !important;
+  box-shadow: var(--shadow-modal) !important;
+  overflow: hidden;
+}
+
+.modal-header.card-form-header {
+  padding: 0.75rem 1.1rem;
+}
+
+.modal-footer {
+  padding: 0.65rem 1.1rem;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  gap: 0.5rem;
+}
+
+.modal-body {
+  padding: 1.25rem 1.1rem;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATUS BADGES
+════════════════════════════════════════════════════════════════ */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.25px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.badge-success {
+  background-color: var(--success-surface);
+  color: var(--success-main);
+  border: 1px solid var(--success-border);
+}
+
+.badge-warning {
+  background-color: var(--warning-surface);
+  color: var(--warning-main);
+  border: 1px solid var(--warning-border);
+}
+
+.badge-danger {
+  background-color: var(--danger-surface);
+  color: var(--danger-main);
+  border: 1px solid var(--danger-border);
+}
+
+.badge-info {
+  background-color: var(--info-surface);
+  color: var(--info-main);
+  border: 1px solid var(--info-border);
+}
+
+.badge-neutral {
+  background-color: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 1px solid var(--neutral-300);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NAV TABS — enhanced
+════════════════════════════════════════════════════════════════ */
+.nav-tabs {
+  border-bottom: 2px solid #dee2e6;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.nav-tabs .nav-link {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-600);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 7px 14px;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-50);
+  border-bottom-color: var(--primary-300);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active:focus {
+  color: var(--primary-color) !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  background: transparent !important;
+  font-weight: 600;
+  border-radius: 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EMPTY STATE — "No records found"
+════════════════════════════════════════════════════════════════ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  color: var(--neutral-500);
+  text-align: center;
+  border: 1.5px dashed var(--neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--neutral-50);
+  margin: 0.5rem 0;
+}
+
+.empty-state i.bi {
+  font-size: 2.25rem;
+  margin-bottom: 0.6rem;
+  color: var(--neutral-300);
+}
+
+.empty-state .empty-title {
+  font-weight: 600;
+  font-size: var(--font-md);
+  color: var(--neutral-700);
+  margin-bottom: 0.2rem;
+}
+
+.empty-state .empty-desc {
+  font-size: var(--font-sm);
+  color: var(--neutral-500);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NG-SELECT OVERRIDES — matches Bootstrap form-control height/style
+════════════════════════════════════════════════════════════════ */
+.ng-select .ng-select-container {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-sm) !important;
+  min-height: 36px !important;
+  font-size: var(--font-sm) !important;
+  background-color: #fff !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ng-select.ng-select-focused .ng-select-container {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+}
+
+.ng-select .ng-select-container:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ng-select .ng-placeholder {
+  color: var(--neutral-400) !important;
+  font-size: var(--font-sm) !important;
+}
+
+.ng-dropdown-panel .ng-option {
+  font-size: var(--font-sm) !important;
+  padding: 6px 12px !important;
+  color: var(--neutral-800) !important;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-marked {
+  background-color: var(--primary-50) !important;
+  color: var(--primary-700) !important;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-selected,
+.ng-dropdown-panel .ng-option.ng-option-selected.ng-option-marked {
+  background-color: var(--primary-100) !important;
+  color: var(--primary-700) !important;
+}
+
+.ng-select.ng-invalid.ng-touched .ng-select-container {
+  border-color: #dc3545 !important;
+}
+
+.ng-select.ng-select-disabled .ng-select-container {
+  background-color: var(--neutral-100) !important;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+════════════════════════════════════════════════════════════════ */
+/* Text sizes */
+.text-xs  { font-size: var(--font-xs) !important; }
+.text-sm  { font-size: var(--font-sm) !important; }
+.text-md  { font-size: var(--font-md) !important; }
+.text-lg  { font-size: var(--font-lg) !important; }
+
+/* Cursor */
+.cursor         { cursor: pointer; }
+.cursor-pointer { cursor: pointer; }
+.cursor-default { cursor: default; }
+
+/* Quick theme color utilities */
+.text-theme   { color: var(--primary-color) !important; }
+.bg-theme-50  { background-color: var(--primary-50) !important; }
+.bg-theme-100 { background-color: var(--primary-100) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   SCROLLBAR — thin, themed
+════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--neutral-100); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-300); }
+
+/* ════════════════════════════════════════════════════════════════
+   CHECKBOX & RADIO — red-themed, replaces Bootstrap blue default
+════════════════════════════════════════════════════════════════ */
+
+/* Base state — all form-check inputs */
+.form-check-input {
+  cursor: pointer;
+  border-color: var(--neutral-300);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.form-check-input:hover {
+  border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+  outline: none;
+}
+
+/* Standard checkbox inside .form-check (higher specificity overrides the
+   global "transparent" rule set earlier in this file for .input-group use) */
+.form-check .form-check-input[type="checkbox"]:checked,
+.form-check-inline .form-check-input[type="checkbox"]:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Standard radio inside .form-check */
+.form-check .form-check-input[type="radio"]:checked,
+.form-check-inline .form-check-input[type="radio"]:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Indeterminate checkbox */
+.form-check-input[type="checkbox"]:indeterminate {
+  background-color: var(--primary-200) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Disabled state */
+.form-check-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.form-check-input:disabled ~ .form-check-label {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* form-check-label */
+.form-check-label {
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--neutral-700);
+  user-select: none;
+  line-height: 1.5;
+}
+
+/* Small form-check variant — used as .form-check.form-check-sm */
+.form-check-sm .form-check-input {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: 0.22rem;
+}
+.form-check-sm .form-check-label {
+  font-size: var(--font-xs);
+}
+
+/* Inline checks — even spacing */
+.form-check-inline {
+  margin-right: 1rem;
+  margin-bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TOGGLE SWITCH — form-switch with color variants
+   Usage: <div class="form-switch switch-primary">
+            <input class="form-check-input" type="checkbox" role="switch">
+          </div>
+════════════════════════════════════════════════════════════════ */
+
+/* Base switch track */
+.form-switch .form-check-input {
+  width: 2.5em;
+  height: 1.3em;
+  border-radius: 2em;
+  border-color: var(--neutral-300);
+  background-color: var(--neutral-200);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-switch .form-check-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+}
+
+/* switch-primary (red) — default for the app */
+.form-switch.switch-primary .form-check-input:checked,
+.form-switch .form-check-input:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* switch-success (green) */
+.form-switch.switch-success .form-check-input:checked {
+  background-color: var(--success-main) !important;
+  border-color:     var(--success-main) !important;
+}
+.form-switch.switch-success .form-check-input:focus {
+  border-color: var(--success-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(69, 179, 105, 0.2) !important;
+}
+
+/* switch-danger (danger red) */
+.form-switch.switch-danger .form-check-input:checked {
+  background-color: var(--danger-main) !important;
+  border-color:     var(--danger-main) !important;
+}
+.form-switch.switch-danger .form-check-input:focus {
+  border-color: var(--danger-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.2) !important;
+}
+
+/* switch-warning (amber) */
+.form-switch.switch-warning .form-check-input:checked {
+  background-color: var(--warning-main) !important;
+  border-color:     var(--warning-main) !important;
+}
+.form-switch.switch-warning .form-check-input:focus {
+  border-color: var(--warning-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(217, 119, 6, 0.2) !important;
+}
+
+/* switch-info (blue) */
+.form-switch.switch-info .form-check-input:checked {
+  background-color: var(--info-main) !important;
+  border-color:     var(--info-main) !important;
+}
+.form-switch.switch-info .form-check-input:focus {
+  border-color: var(--info-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.2) !important;
+}
+
+/* Large switch — apply as .form-switch.switch-lg */
+.form-switch.switch-lg .form-check-input {
+  width: 3.25em !important;
+  height: 1.65em !important;
+}
+
+/* Disabled switch */
+.form-switch .form-check-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RANGE SLIDER — red-themed track and thumb
+════════════════════════════════════════════════════════════════ */
+.form-range {
+  cursor: pointer;
+  padding: 0;
+  accent-color: var(--primary-color); /* Modern browser fallback */
+}
+
+/* Webkit thumb */
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--primary-color);
+  border: 2px solid #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6.5px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+}
+.form-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.15);
+}
+.form-range::-webkit-slider-thumb:active {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 8px rgba(218, 38, 28, 0.2);
+}
+
+/* Webkit track */
+.form-range::-webkit-slider-runnable-track {
+  background-color: var(--neutral-200);
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Firefox thumb */
+.form-range::-moz-range-thumb {
+  background-color: var(--primary-color);
+  border: 2px solid #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+}
+
+/* Firefox track */
+.form-range::-moz-range-track {
+  background-color: var(--neutral-200);
+  height: 5px;
+  border-radius: 3px;
+}
+
+/* Firefox filled portion */
+.form-range::-moz-range-progress {
+  background-color: var(--primary-color);
+  height: 5px;
+  border-radius: 3px;
+}
+
+.form-range:focus { outline: none; box-shadow: none; }
+.form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+}
+.form-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TEXTAREA
+════════════════════════════════════════════════════════════════ */
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FILE INPUT
+════════════════════════════════════════════════════════════════ */
+.form-control[type="file"] {
+  padding: 5px 10px;
+  cursor: pointer;
+  line-height: 1.7;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button {
+  background: var(--primary-50);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm);
+  padding: 3px 12px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-right: 12px;
+}
+.form-control[type="file"]::-webkit-file-upload-button:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-300);
+}
+
+/* Firefox / standard */
+.form-control[type="file"]::file-selector-button {
+  background: var(--primary-50);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm);
+  padding: 3px 12px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-right: 12px;
+}
+.form-control[type="file"]::file-selector-button:hover {
+  background: var(--primary-100);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INPUT GROUP ENHANCEMENTS
+════════════════════════════════════════════════════════════════ */
+.input-group-text {
+  background-color: var(--neutral-50);
+  border-color: var(--neutral-300);
+  color: var(--neutral-600);
+  font-size: var(--font-sm);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+/* Red border on all parts when group is focused */
+.input-group:focus-within .input-group-text {
+  border-color: var(--primary-color);
+}
+.input-group:focus-within > .form-control,
+.input-group:focus-within > .form-select {
+  border-color: var(--primary-color);
+  box-shadow: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SELECT2 OVERRIDES — theme alignment for single & multiple
+════════════════════════════════════════════════════════════════ */
+.select2-container--default .select2-selection--single {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-sm) !important;
+  height: 36px !important;
+  display: flex;
+  align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px !important;
+  font-size: var(--font-sm);
+  color: var(--neutral-900) !important;
+  padding-left: 10px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 34px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: var(--neutral-400) !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+  outline: none !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default.select2-container--open .select2-selection--multiple {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+}
+
+.select2-dropdown {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-modal) !important;
+  font-size: var(--font-sm);
+}
+
+.select2-results__option {
+  padding: 6px 12px !important;
+  color: var(--neutral-800) !important;
+}
+
+.select2-results__option--highlighted[aria-selected] {
+  background-color: var(--primary-50) !important;
+  color: var(--primary-700) !important;
+}
+
+.select2-results__option[aria-selected="true"] {
+  background-color: var(--primary-100) !important;
+  color: var(--primary-700) !important;
+}
+
+.select2-container--default .select2-selection--single.select2-selection--disabled,
+.select2-container--default .select2-selection--multiple.select2-selection--disabled {
+  background-color: var(--neutral-100) !important;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BTN-OUTLINE-DANGER-600 — red outlined action button
+   Used heavily for "Add row / Add item" actions across all forms
+════════════════════════════════════════════════════════════════ */
+.btn-outline-primary {
+  --bs-btn-color: #da261c;
+  --bs-btn-border-color: #da261c;
+  --bs-btn-hover-bg: #da261c;
+  --bs-btn-hover-border-color: #da261c;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #b91c1c;
+  --bs-btn-active-border-color: #b91c1c;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-color: #da261c;
+  --bs-btn-disabled-border-color: #da261c;
+  --bs-btn-focus-shadow-rgb: 218, 38, 28;
+  color:        #da261c !important;
+  border-color: #da261c !important;
+  background:   transparent !important;
+  font-weight:  500;
+  transition:   background-color 0.18s ease, color 0.18s ease,
+                box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus-visible {
+  background-color: #da261c !important;
+  border-color:     #da261c !important;
+  color:            #fff !important;
+  box-shadow:       0 2px 8px rgba(218, 38, 28, 0.3);
+}
+.btn-outline-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.22);
+  outline: none;
+}
+.btn-outline-primary:active {
+  background-color: #b91c1c !important;
+  border-color:     #b91c1c !important;
+  color:            #fff !important;
+}
+.btn-outline-primary:disabled,
+.btn-outline-primary.disabled {
+  color:        #da261c !important;
+  border-color: #da261c !important;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ENHANCED TABS — Standard nav-tabs, Wizard tabs, Pills, nav-fill
+════════════════════════════════════════════════════════════════ */
+
+/* ── Standard nav-tabs (override previous basic definition) ── */
+.nav-tabs {
+  border-bottom: 2px solid #e5e7eb;
+  gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0;
+  background: transparent;
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tabs .nav-item { flex-shrink: 0; }
+
+.nav-tabs .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-500);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 9px 18px;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Underline slide-in on hover */
+.nav-tabs .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-300);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+  border-radius: 2px 2px 0 0;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-50);
+  border-bottom-color: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.nav-tabs .nav-link:hover::after { transform: scaleX(1); }
+
+/* Active state */
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active:focus {
+  color:            var(--primary-color) !important;
+  font-weight:      600;
+  background:       #fff !important;
+  border-top:       2px solid var(--primary-color) !important;
+  border-left:      1px solid #e5e7eb !important;
+  border-right:     1px solid #e5e7eb !important;
+  border-bottom:    2px solid #fff !important;
+  border-radius:    var(--radius-sm) var(--radius-sm) 0 0 !important;
+  box-shadow:       0 -2px 0 var(--primary-color), 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom:    -2px;
+  z-index:          1;
+}
+.nav-tabs .nav-link.active::after { display: none; }
+
+/* Tab content */
+.tab-content > .tab-pane { display: none; }
+.tab-content > .active   { display: block; }
+.tab-content > .tab-pane.fade { opacity: 0; transition: opacity 0.2s ease; }
+.tab-content > .tab-pane.fade.show { opacity: 1; }
+
+/* Tab content body spacing */
+.tab-content {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 1.25rem;
+}
+
+/* ── nav-fill equal-width tabs (sample-inward-form) ── */
+.nav-tabs.nav-fill .nav-link { justify-content: center; flex: 1; }
+
+/* ── nav-pills ── */
+.nav-pills {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-pills .nav-link {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+  border: 1.5px solid var(--neutral-200);
+  border-radius: var(--radius-md) !important;
+  padding: 6px 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.nav-pills .nav-link:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+  color: var(--primary-color);
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background:   var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color:        #fff !important;
+  font-weight:  600;
+  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.28);
+}
+
+/* ── Form Wizard Step Tabs (employee-form)
+   Classes: nav-tabs.form-wizard-list.list2
+   Each step is a <li class="nav-item"> with .activated (past) / .active (current)
+── */
+.form-wizard { position: relative; }
+
+.form-wizard-list {
+  display: flex;
+  align-items: center;
+  border-bottom: none !important;
+  padding: 0 0 1rem;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  counter-reset: wizard-step;
+}
+.form-wizard-list::-webkit-scrollbar { display: none; }
+
+.form-wizard-list .nav-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 90px;
+  position: relative;
+}
+
+/* Connector line between steps */
+.form-wizard-list .nav-item::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--neutral-200);
+  transition: background 0.3s ease;
+  margin: 0 4px;
+}
+.form-wizard-list .nav-item:last-child::after { display: none; }
+
+/* Activated steps — past/completed */
+.form-wizard-list .nav-item.activated::after {
+  background: var(--primary-color);
+}
+
+/* Each step tab */
+.form-wizard-list .nav-item .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--neutral-400);
+  background: transparent;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 4px 8px;
+  white-space: nowrap;
+  text-align: center;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Step counter circle via ::before */
+.form-wizard-list .nav-item .nav-link::before {
+  counter-increment: wizard-step;
+  content: counter(wizard-step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--neutral-200);
+  color: var(--neutral-500);
+  border: 2px solid var(--neutral-300);
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  flex-shrink: 0;
+}
+
+/* Completed step */
+.form-wizard-list .nav-item.activated .nav-link {
+  color: var(--primary-color);
+}
+.form-wizard-list .nav-item.activated .nav-link::before {
+  background: var(--primary-100);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  content: '✓';
+}
+
+/* Active / current step */
+.form-wizard-list .nav-item .nav-link.active,
+.form-wizard-list .nav-item .nav-link.active:focus {
+  color:       var(--primary-color) !important;
+  font-weight: 700;
+  background:  transparent !important;
+  border:      none !important;
+  box-shadow:  none !important;
+  border-radius: var(--radius-md) !important;
+}
+.form-wizard-list .nav-item .nav-link.active::before {
+  background:   var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color:        #fff !important;
+  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.35);
+}
+.form-wizard-list .nav-item .nav-link.active::after { display: none; }
+
+/* Wizard tab-content (borderless, blends with card) */
+.form-wizard .tab-content {
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
 }

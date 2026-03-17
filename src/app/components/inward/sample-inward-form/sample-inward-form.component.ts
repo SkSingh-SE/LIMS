@@ -15,7 +15,6 @@ import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
@@ -24,7 +23,7 @@ import { CanDeactivate } from '@angular/router';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -635,7 +634,9 @@ export class SampleInwardFormComponent implements OnInit {
       sampleNo: [sampleNo],
       details: [existingSample?.details || '', Validators.required],
       metalClassificationID: [existingSample?.metalClassificationID || ''],
+      metalClassificationName: [existingSample?.metalClassificationName || ''],
       productConditionID: [existingSample?.productConditionID || ''],
+      productConditionName: [existingSample?.productConditionName || ''],
       remarks: [existingSample?.remarks || ''],
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
@@ -767,6 +768,7 @@ export class SampleInwardFormComponent implements OnInit {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
       metalClassificationID: item.id,
+      metalClassificationName: item.name || '',
     });
   }
 
@@ -774,6 +776,7 @@ export class SampleInwardFormComponent implements OnInit {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
       productConditionID: item.id,
+      productConditionName: item.name || '',
     });
   }
 
@@ -1004,7 +1007,11 @@ export class SampleInwardFormComponent implements OnInit {
 
   onCancel(): void {
     this.sampleInwardForm.reset();
-    this.router.navigate(['/sample/inward']);  // Should be inward list, not plan
+    this.router.navigate(['/sample/inward']);
+  }
+
+  printJobCard(): void {
+    window.print();
   }
 
   // Custom method to check if inward is completed
@@ -1012,15 +1019,6 @@ export class SampleInwardFormComponent implements OnInit {
     return inward.status === InwardStatus.COMPLETED;
   }
 
-  // Check if Plan tab should be visible
-  shouldShowPlanTab(): boolean {
-    return this.currentInwardStatus !== InwardStatus.INWARD_REGISTERED;
-  }
-
-  // Check if Plan form should be editable
-  isPlanEditable(): boolean {
-    return this.currentInwardStatus === InwardStatus.INWARD_COMPLETED;
-  }
 
   private generateSampleNumber(counter: number): string {
     return `${this.yearCode}-${counter.toString().padStart(6, '0')}`;

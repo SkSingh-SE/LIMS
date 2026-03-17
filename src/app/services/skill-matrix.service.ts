@@ -1,216 +1,76 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import {
     SkillMatrix,
     SkillMatrixResponse,
     SkillMatrixDecision,
     SkillMatrixDecisionResponse,
-    DecisionRow
 } from '../models/skillMatrixModel';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class SkillMatrixService {
-    private matrices: SkillMatrix[] = [
-        {
-            id: 1,
-            designationId: 1,
-            designationName: 'Chemist',
-            formatNo: 'F-6',
-            issueNo: '01',
-            date: '2025-02-23',
-            revNo: '00',
-            title: 'Technical Skill Matrix - 2025',
-            decision: 'Approved',
-            lastUpdated: '2025-02-23',
-            preparedBy: 'General Manager',
-            issuedBy: 'Quality Manager',
-            reviewedApprovedBy: 'Managing Director',
-            skills: [
-                'Tensile Testing',
-                'Hardness Testing',
-                'Impact Testing',
-                'Chemical Analysis (Wet)',
-                'Spectro Analysis',
-                'Microscopy',
-                'Calibration',
-                'Internal Audit'
-            ],
-            employeeSkills: [
-                {
-                    employeeId: 1,
-                    employeeName: 'Bunty Khattik',
-                    designationName: 'Chemist',
-                    skills: {
-                        'Tensile Testing': 'P',
-                        'Hardness Testing': 'P',
-                        'Chemical Analysis (Wet)': 'P',
-                        'Spectro Analysis': 'P',
-                        'Internal Audit': 'D'
-                    }
-                },
-                {
-                    employeeId: 2,
-                    employeeName: 'Mr. Pratik Thorat',
-                    designationName: 'Mech. Engineer',
-                    skills: {
-                        'Tensile Testing': 'P',
-                        'Hardness Testing': 'D',
-                        'Impact Testing': 'D'
-                    }
-                }
-            ]
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/SkillMatrix';
+    private decisionApiUrl = environment.apiUrl + '/Nabl/SkillMatrixDecision';
 
-    private decisions: SkillMatrixDecision[] = [
-        {
-            id: 1,
-            designationId: 1,
-            designationName: 'Chemist',
-            formatNo: 'F-6A',
-            issueNo: '01',
-            date: '2025-02-23',
-            revNo: '00',
-            title: 'Skill Matrix Decision - Chemist',
-            rows: [
-                {
-                    skillArea: 'Technical Decision Making',
-                    competencyRequirement: 'Approval of methods, deviations',
-                    evaluationMethod: 'Review of approvals',
-                    authorized: true
-                },
-                {
-                    skillArea: 'Method Validation',
-                    competencyRequirement: 'Oversight & approval',
-                    evaluationMethod: 'Validation reports',
-                    authorized: true
-                },
-                {
-                    skillArea: 'Measurement Uncertainty',
-                    competencyRequirement: 'Approval & review',
-                    evaluationMethod: 'MU calculations',
-                    authorized: true
-                },
-                {
-                    skillArea: 'PT / ILC evaluation',
-                    competencyRequirement: 'Technical review',
-                    evaluationMethod: 'PT analysis checks',
-                    authorized: true
-                },
-                {
-                    skillArea: 'Risk based thinking',
-                    competencyRequirement: 'Identification & mitigation',
-                    evaluationMethod: 'Risk register',
-                    authorized: true
-                }
-            ],
-            preparedBy: 'General Manager',
-            issuedBy: 'Quality Manager',
-            reviewedApprovedBy: 'Managing Director',
-            lastUpdated: '2025-02-23'
-        }
-    ];
-
-    constructor() { }
+    constructor(private http: HttpClient) {}
 
     // ============ Skill Matrix Methods ============
 
     getAll(): Observable<SkillMatrixResponse> {
-        return of({
-            items: this.matrices,
-            totalRecords: this.matrices.length
-        });
+        return this.http.post<SkillMatrixResponse>(this.apiUrl + '/list', {});
     }
 
     getById(id: number): Observable<SkillMatrix | undefined> {
-        return of(this.matrices.find(m => m.id === id));
+        return this.http.get<SkillMatrix>(`${this.apiUrl}/details/${id}`);
     }
 
     getByDesignation(designationName: string): Observable<SkillMatrix | undefined> {
-        return of(this.matrices.find(m => m.designationName === designationName));
+        return this.http.get<SkillMatrix>(`${this.apiUrl}/details-by-designation/${designationName}`);
     }
 
     create(matrix: SkillMatrix): Observable<any> {
-        const newMatrix = {
-            ...matrix,
-            id: this.matrices.length ? Math.max(...this.matrices.map(m => m.id)) + 1 : 1,
-            lastUpdated: new Date().toISOString().split('T')[0]
-        };
-        this.matrices.push(newMatrix);
-        return of({ message: 'Skill matrix created', id: newMatrix.id });
+        return this.http.post(`${this.apiUrl}/save`, matrix);
     }
 
     update(matrix: SkillMatrix): Observable<any> {
-        const idx = this.matrices.findIndex(m => m.id === matrix.id);
-        if (idx > -1) {
-            matrix.lastUpdated = new Date().toISOString().split('T')[0];
-            this.matrices[idx] = matrix;
-            return of({ message: 'Skill matrix updated' });
-        }
-        return of({ message: 'Skill matrix not found' });
+        return this.http.post(`${this.apiUrl}/save`, matrix);
     }
 
     delete(id: number): Observable<any> {
-        const idx = this.matrices.findIndex(m => m.id === id);
-        if (idx > -1) {
-            this.matrices.splice(idx, 1);
-            return of({ message: 'Skill matrix deleted' });
-        }
-        return of({ message: 'Skill matrix not found' });
+        return this.http.delete(`${this.apiUrl}/delete/${id}`);
     }
 
     // ============ Skill Matrix Decision Methods (F-6A) ============
 
     getDecisions(): Observable<SkillMatrixDecisionResponse> {
-        return of({
-            items: this.decisions,
-            totalRecords: this.decisions.length
-        });
+        return this.http.post<SkillMatrixDecisionResponse>(this.decisionApiUrl + '/list', {});
     }
 
     getDecisionById(id: number): Observable<SkillMatrixDecision | undefined> {
-        return of(this.decisions.find(d => d.id === id));
+        return this.http.get<SkillMatrixDecision>(`${this.decisionApiUrl}/details/${id}`);
     }
 
     getDecisionByDesignation(designationName: string): Observable<SkillMatrixDecision | undefined> {
-        return of(this.decisions.find(d => d.designationName === designationName));
+        return this.http.get<SkillMatrixDecision>(`${this.decisionApiUrl}/details-by-designation/${designationName}`);
     }
 
     getDecisionByDesignationId(designationId: number): Observable<SkillMatrixDecision | undefined> {
-        return of(this.decisions.find(d => d.designationId === designationId));
+        return this.http.get<SkillMatrixDecision>(`${this.decisionApiUrl}/details-by-designation/${designationId}`);
     }
 
     createDecision(decision: SkillMatrixDecision): Observable<any> {
-        const newId = this.decisions.length
-            ? Math.max(...this.decisions.map(d => d.id)) + 1
-            : 1;
-        const newDecision: SkillMatrixDecision = {
-            ...decision,
-            id: newId,
-            lastUpdated: new Date().toISOString().split('T')[0]
-        };
-        this.decisions.push(newDecision);
-        return of({ message: 'Decision created', id: newId });
+        return this.http.post(`${this.decisionApiUrl}/save`, decision);
     }
 
     updateDecision(decision: SkillMatrixDecision): Observable<any> {
-        const idx = this.decisions.findIndex(d => d.id === decision.id);
-        if (idx > -1) {
-            decision.lastUpdated = new Date().toISOString().split('T')[0];
-            this.decisions[idx] = decision;
-            return of({ message: 'Decision updated' });
-        }
-        return of({ message: 'Decision not found' });
+        return this.http.post(`${this.decisionApiUrl}/save`, decision);
     }
 
     deleteDecision(id: number): Observable<any> {
-        const idx = this.decisions.findIndex(d => d.id === id);
-        if (idx > -1) {
-            this.decisions.splice(idx, 1);
-            return of({ message: 'Decision deleted' });
-        }
-        return of({ message: 'Decision not found' });
+        return this.http.delete(`${this.decisionApiUrl}/delete/${id}`);
     }
 }

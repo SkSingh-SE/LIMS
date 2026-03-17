@@ -4,15 +4,33 @@
 }
 
 .nabl-header-container {
-    /* explicit width ensures the header always matches the print frame width */
-    width: var(--print-content-width);
+    /* 100% fills the parent td on both screen and print */
+    width: 100%;
     max-width: 100%;
     background: white;
     font-family: 'Times New Roman', Times, serif;
     color: #000;
-    height: var(--print-header-height, 170px);
+    /* height: var(--print-header-height) is ONLY needed in print (to reserve thead space).
+       On screen it creates a ResizeObserver feedback loop:
+       height var → element resizes → observer fires → updates var → repeat. */
     overflow: hidden;
     margin-bottom: 0px;
+}
+
+/* Screen: let the header grow to its natural content height */
+@media screen {
+    .nabl-header-container {
+        height: auto !important;
+        overflow: visible;
+    }
+}
+
+/* Print: apply fixed height so thead space reservation works correctly */
+@media print {
+    .nabl-header-container {
+        height: var(--print-header-height, 170px);
+        overflow: hidden;
+    }
 }
 
 .header-main {

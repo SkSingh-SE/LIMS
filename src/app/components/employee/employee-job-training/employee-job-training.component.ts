@@ -39,7 +39,7 @@ export class EmployeeJobTrainingComponent implements OnInit {
     // Search and Filter
     searchTerm: string = '';
     sortByColumn: string = 'id';
-    sortOrder: string = 'asc';
+    sortOrder: string = 'desc';
     filters: { column: string; type: string; value: any; value2?: any }[] = [];
     filterColumn: string = '';
     filterColumnTitle: string = '';
@@ -324,6 +324,14 @@ export class EmployeeJobTrainingComponent implements OnInit {
     get totalPages(): number {
         return Math.ceil(this.totalRecords / this.pageSize);
     }
+  getStartRecord(): number {
+    return this.totalRecords === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.currentPage * this.pageSize, this.totalRecords);
+  }
+
 
     getPaginationArray(): number[] {
         return Array.from({ length: this.totalPages }, (_, i) => i + 1);

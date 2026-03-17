@@ -1,407 +1,352 @@
-<div class="container-fluid py-2">
-  <!-- Review Status Section -->
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body">
-      <div class="row align-items-center">
-        <div class="col-12 col-md-6">
-          <h5 class="mb-0 fw-semibold">
-            <i class="bi bi-clipboard-check me-2"></i>
-            Review Status
-          </h5>
-        </div>
-        <div class="col-12 col-md-6 text-md-end mt-2 mt-md-0">
-          <span class="badge fs-6 px-3 py-2" [ngClass]="getStatusBadgeClass()">
-            {{ reviewStatus }}
+<div class="review-page">
+  <!-- Page Header -->
+  <div class="review-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h5 class="mb-1 fw-bold">
+          <i class="bi bi-clipboard-check me-2 text-muted"></i>
+          Review of Request
+          <span class="text-muted fw-normal ms-2" *ngIf="plan?.caseNo">{{ plan.caseNo }}</span>
+        </h5>
+        <div class="text-muted small" *ngIf="plan?.customerName">{{ plan.customerName }}</div>
+      </div>
+      <span class="badge fs-6 px-3 py-2" [ngClass]="getStatusBadgeClass()">
+        {{ reviewStatus }}
+      </span>
+    </div>
+  </div>
 
-          </span>
+  <!-- Customer & Case Info -->
+  <div class="row g-3 mb-3">
+    <!-- Customer Info -->
+    <div class="col-md-6">
+      <div class="review-section">
+        <div class="review-section-title">
+          <i class="bi bi-person me-2"></i>Customer Information
+        </div>
+        <div class="row g-2 p-3">
+          <div class="col-12">
+            <div class="review-field">
+              <label class="review-label">Customer</label>
+              <div class="review-value">{{ plan?.customerName || '-' }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="review-field">
+              <label class="review-label">Contact Person</label>
+              <div class="review-value">{{ plan?.customerContact || '-' }}</div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="review-field">
+              <label class="review-label">Address</label>
+              <div class="review-value">{{ plan?.customerAddress || '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Info -->
+    <div class="col-md-6">
+      <div class="review-section">
+        <div class="review-section-title">
+          <i class="bi bi-folder me-2"></i>Case Information
+        </div>
+        <div class="row g-2 p-3">
+          <div class="col-6">
+            <div class="review-field">
+              <label class="review-label">Case No</label>
+              <div class="review-value">{{ plan?.caseNo || '-' }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="review-field">
+              <label class="review-label">Receipt Note</label>
+              <div class="review-value">{{ plan?.sampleReceiptNote || '-' }}</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="review-field">
+              <label class="review-label">Urgent</label>
+              <div>
+                <span class="badge" [ngClass]="plan?.urgent ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'">
+                  {{ plan?.urgent ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="review-field">
+              <label class="review-label">Return Sample</label>
+              <div>
+                <span class="badge" [ngClass]="plan?.returnSample ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary'">
+                  {{ plan?.returnSample ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="review-field">
+              <label class="review-label">Not Destroyed</label>
+              <div>
+                <span class="badge" [ngClass]="plan?.notDestroyed ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary'">
+                  {{ plan?.notDestroyed ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="review-field">
+              <label class="review-label">Conformity</label>
+              <div class="review-value">{{ plan?.statementOfConformity || '-' }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="review-field">
+              <label class="review-label">Decision Rule</label>
+              <div class="review-value">{{ plan?.decisionRule || '-' }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 1. Customer & Inward Header -->
-  <div class="card border shadow-sm mb-3">
-    <div class="card-header bg-light">
-      <h6 class="mb-0 fw-semibold theme-color">Customer & Inward Details</h6>
+  <!-- Samples Section -->
+  <div class="mb-3">
+    <div class="d-flex align-items-center mb-2">
+      <h6 class="fw-semibold mb-0">
+        <i class="bi bi-box-seam me-1 text-muted"></i> Samples
+      </h6>
+      <span class="badge bg-secondary-subtle text-secondary ms-2">{{ samples.length }}</span>
     </div>
-    <div class="card-body small">
-      <div class="row g-3">
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Customer:</strong>
-            <span class="ms-2">{{ plan?.customerName || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Case No:</strong>
-            <span class="ms-2">{{ plan?.caseNo || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Contact:</strong>
-            <span class="ms-2">{{ plan?.customerContact || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Address:</strong>
-            <span class="ms-2">{{ plan?.customerAddress || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Sample Receipt Note:</strong>
-            <span class="ms-2">{{ plan?.sampleReceiptNote || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Urgent:</strong>
-            <span class="ms-2">{{ plan?.urgent ? "Yes" : "No" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Return Sample:</strong>
-            <span class="ms-2">{{ plan?.returnSample ? "Yes" : "No" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Not Destroyed:</strong>
-            <span class="ms-2">{{ plan?.notDestroyed ? "Yes" : "No" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Statement of Conformity:</strong>
-            <span class="ms-2">{{ plan?.statementOfConformity || "-" }}</span>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="mb-2">
-            <strong class="text-danger">Decision Rule:</strong>
-            <span class="ms-2">{{ plan?.decisionRule || "-" }}</span>
-          </div>
-        </div>
+
+    <div *ngFor="let sample of samples; let sampleIdx = index" class="sample-card mb-3">
+      <!-- Sample Header -->
+      <div class="sample-card-header">
+        <span class="sample-badge">#{{ sampleIdx + 1 }}</span>
+        <span class="fw-semibold">{{ sample.sampleNo }}</span>
+        <span class="text-muted ms-2 small" *ngIf="sample.details">- {{ sample.details }}</span>
       </div>
-    </div>
-  </div>
 
-  <!-- 2. Samples with All Details -->
-  <div class="row g-2">
-    <div class="col-12" *ngFor="let sample of samples; let sampleIdx = index">
-      <div class="card border-0 shadow-sm mb-2">
-        <div class="card-header py-2 d-flex justify-content-between align-items-center bg-danger-600">
-          <span class="fw-semibold text-white">
-            <i class="bi bi-box"></i>
-            Sample {{ sample.sampleNo }}
-          </span>
+      <div class="sample-card-body">
+        <div class="row g-2">
+          <!-- Sample Details Grid -->
+          <div [class]="sample.sampleFilePath ? 'col-md-10' : 'col-12'">
+            <div class="row g-2">
+              <div class="col-md-3">
+                <div class="review-field">
+                  <label class="review-label">Details</label>
+                  <div class="review-value">{{ sample.details || '-' }}</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="review-field">
+                  <label class="review-label">Category</label>
+                  <div class="review-value">{{ sample.category || '-' }}</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="review-field">
+                  <label class="review-label">Quantity</label>
+                  <div class="review-value">{{ sample.quantity || '0' }}</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="review-field">
+                  <label class="review-label">Nature</label>
+                  <div class="review-value">{{ sample.nature || '-' }}</div>
+                </div>
+              </div>
+              <div class="col-md-3" *ngIf="sample.remarks">
+                <div class="review-field">
+                  <label class="review-label">Remarks</label>
+                  <div class="review-value">{{ sample.remarks }}</div>
+                </div>
+              </div>
+              <div class="col-md-3" *ngIf="sample.testInstructions">
+                <div class="review-field">
+                  <label class="review-label">Test Instructions</label>
+                  <div class="review-value">{{ sample.testInstructions }}</div>
+                </div>
+              </div>
+
+              <!-- Additional Details -->
+              <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
+                <div class="col-md-3">
+                  <div class="review-field">
+                    <label class="review-label">{{ row.label }}</label>
+                    <div class="review-value">{{ row.value }}</div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+
+            <!-- Preparation Flags -->
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <span *ngIf="sample.preparationRequired" class="prep-chip prep-chip--cutting">
+                <i class="bi bi-scissors me-1"></i>Cutting Required
+              </span>
+              <span *ngIf="sample.machiningRequired" class="prep-chip prep-chip--machining">
+                <i class="bi bi-gear me-1"></i>Machining Required
+                <small *ngIf="sample.machiningAmount" class="ms-1">({{ sample.machiningAmount | currency:'INR':'symbol':'1.0-0' }})</small>
+              </span>
+              <span *ngIf="sample.otherPreparation" class="prep-chip prep-chip--other">
+                <i class="bi bi-tools me-1"></i>Other Preparation
+                <small *ngIf="sample.otherPreparationCharge" class="ms-1">({{ sample.otherPreparationCharge | currency:'INR':'symbol':'1.0-0' }})</small>
+              </span>
+              <span *ngIf="sample.tpiRequired" class="prep-chip prep-chip--tpi">
+                <i class="bi bi-eye me-1"></i>TPI Required
+              </span>
+            </div>
+          </div>
+
+          <!-- Image Preview -->
+          <div class="col-md-2 d-flex align-items-start justify-content-center" *ngIf="sample.sampleFilePath">
+            <div class="preview-box cursor-pointer" (click)="openFileInNewTab(sample.sampleFilePath)">
+              <img [src]="baseUrl + sample.sampleFilePath" [alt]="sample.fileName" class="img-fluid rounded" />
+            </div>
+          </div>
         </div>
-        <div class="card-body small">
-          <div class="row g-3">
-            <!-- LEFT: Sample Details -->
-            <div class="col-md-10">
-              <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Details:</strong>
-                    <span class="ms-2">{{ sample.details || "-" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Category:</strong>
-                    <span class="ms-2">{{ sample.category || "-" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Nature:</strong>
-                    <span class="ms-2">{{ sample.nature || "-" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Quantity:</strong>
-                    <span class="ms-2">{{ sample.quantity || "0" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Remarks:</strong>
-                    <span class="ms-2">{{ sample.remarks || "-" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>TPI Required:</strong>
-                    <span class="ms-2" [class.text-danger]="sample.tpiRequired">{{ sample.tpiRequired ? "Yes" : "No" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Cutting Required:</strong>
-                    <span class="ms-2" [class.text-danger]="sample.preparationRequired">{{ sample.preparationRequired ? "Yes" : "No" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Machining Required:</strong>
-                    <span class="ms-2" [class.text-danger]="sample.machiningRequired">{{ sample.machiningRequired ? "Yes" : "No" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4" *ngIf="sample.machiningRequired">
-                  <div class="mb-2">
-                    <strong>Machining Amount:</strong>
-                    <span class="ms-2">{{ sample.machiningAmount }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4" *ngIf="sample.machiningRequired">
-                  <div class="mb-2">
-                    <strong>Specimen:</strong>
-                    <span class="ms-2">{{ sample.specimen }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Other Preparation:</strong>
-                    <span class="ms-2" [class.text-danger]="sample.otherPreparation">{{ sample.otherPreparation ? "Yes" : "No" }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4" *ngIf="sample.otherPreparation">
-                  <div class="mb-2">
-                    <strong>Other Preparation Charge:</strong>
-                    <span class="ms-2">{{ sample.otherPreparationCharge }}</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-2">
-                    <strong>Test Instructions:</strong>
-                    <span class="ms-2">{{ sample.testInstructions || "-" }}</span>
-                  </div>
-                </div>
-                <!-- Additional Details -->
-                <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
-                  <div class="col-md-4">
-                    <div class="mb-2">
-                      <strong>{{ row.label }}:</strong>
-                      <span class="ms-2">{{ row.value }}</span>
-                    </div>
-                  </div>
-                </ng-container>
-              </div>
-            </div>
-            <!-- RIGHT: Image Preview -->
-            <div class="col-md-2 d-flex align-items-center justify-content-center">
-              <div
-                *ngIf="sample.sampleFilePath"
-                class="preview-box w-100 h-100 cursor-pointer"
-                (click)="openFileInNewTab(sample.sampleFilePath)"
-              >
-                <img
-                  [src]="baseUrl + sample.sampleFilePath"
-                  [alt]="sample.fileName"
-                  class="img-fluid rounded border w-100 h-100 preview-image"
-                />
-              </div>
-              <div *ngIf="!sample.sampleFilePath" class="text-muted small">No Image</div>
-            </div>
-          </div>
 
-          <!-- General Test Table -->
-          <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="card border shadow-sm mt-3 mb-2">
-            <div class="card-header bg-light">
-              <h6 class="mb-0 fw-semibold theme-color">General Tests</h6>
-            </div>
-            <div class="table-responsive p-3">
-              <table class="table table-compact align-middle">
-                <thead class="table-light text-center">
-                  <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center">Sr No.</th>
-                    <th class="fw-medium text-center">Specification 1</th>
-                    <th class="fw-medium text-center">Specification 2</th>
-                    <th class="fw-medium text-center">Standard</th>
-                    <th class="fw-medium text-center">Lab Test</th>
-                    <th class="fw-medium text-center">Qty</th>
-                    <th class="fw-medium text-center">Report No</th>
-                    <th class="fw-medium text-center">ULR No</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let test of getFlatTests(sample, 'generalTests'); let i = index">
-                    <td class="text-center">{{ i + 1 }}</td>
-                    <td>{{ getSpecificationName(test.specification1) }}</td>
-                    <td>{{ getSpecificationName(test.specification2) }}</td>
-                    <td>{{ getStandardName(test.standardID) }}</td>
-                    <td>
-                      <ng-container *ngIf="getTestMethodName(test.testMethodID) as testMethodName">
-                        {{ testMethodName }}
-                      </ng-container>
-                    </td>
-                    <td class="text-center">{{ test.quantity }}</td>
-                    <td>{{ test.reportNo }}</td>
-                    <td>{{ test.ulrNo }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- General Tests -->
+        <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="test-section mt-3">
+          <div class="test-section-title">
+            General Tests
+            <span class="badge bg-primary-subtle text-primary ms-1">{{ getFlatTests(sample, 'generalTests').length }}</span>
           </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover mb-0">
+              <thead>
+                <tr class="small text-muted text-uppercase">
+                  <th>#</th>
+                  <th>Specification 1</th>
+                  <th>Specification 2</th>
+                  <th>Lab Test</th>
+                  <th class="text-center">Qty</th>
+                  <th>Report No</th>
+                  <th>ULR No</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let test of getFlatTests(sample, 'generalTests'); let i = index">
+                  <td class="text-muted">{{ i + 1 }}</td>
+                  <td>{{ getSpecificationName(test.specification1) }}</td>
+                  <td>{{ getSpecificationName(test.specification2) }}</td>
+                  <td>
+                    <ng-container *ngIf="getTestMethodName(test.testMethodID) as testMethodName">
+                      {{ testMethodName }}
+                    </ng-container>
+                  </td>
+                  <td class="text-center">{{ test.quantity }}</td>
+                  <td>{{ test.reportNo || '-' }}</td>
+                  <td>{{ test.ulrNo || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-          <!-- Chemical Test Table -->
-          <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="card border shadow-sm mt-3 mb-2">
-            <div class="card-header bg-light">
-              <h6 class="mb-0 fw-semibold theme-color">Chemical Tests</h6>
-            </div>
-            <div class="table-responsive p-3">
-              <table class="table table-compact align-middle">
-                <thead class="table-light text-center">
-                  <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center">Report No</th>
-                    <th class="fw-medium text-center">ULR</th>
-                    <th class="fw-medium text-center">Test Types</th>
-                    <th class="fw-medium text-center">Metal Classification</th>
-                    <th class="fw-medium text-center">Spec 1</th>
-                    <th class="fw-medium text-center">Spec 2</th>
-                    <th class="fw-medium text-center">Standard</th>
-                    <th class="fw-medium text-center">Elements</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let test of getFlatTests(sample, 'chemicalTests')">
-                    <td>{{ test.reportNo }}</td>
-                    <td>{{ test.ulrNo }}</td>
-                    <td>
-                      <ng-container *ngIf="test.testTypes">
-                        <span *ngFor="let type of testTypeList">
-                          <span *ngIf="test.testTypes[type]" class="badge bg-primary-subtle text-danger me-1">
-                            {{ type }}
-                          </span>
+        <!-- Chemical Tests -->
+        <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="test-section mt-3">
+          <div class="test-section-title">
+            Chemical Tests
+            <span class="badge bg-success-subtle text-success ms-1">{{ getFlatTests(sample, 'chemicalTests').length }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover mb-0">
+              <thead>
+                <tr class="small text-muted text-uppercase">
+                  <th>Report No</th>
+                  <th>ULR</th>
+                  <th>Test Types</th>
+                  <th>Metal Classification</th>
+                  <th>Spec 1</th>
+                  <th>Spec 2</th>
+                  <th>Elements</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let test of getFlatTests(sample, 'chemicalTests')">
+                  <td>{{ test.reportNo || '-' }}</td>
+                  <td>{{ test.ulrNo || '-' }}</td>
+                  <td>
+                    <ng-container *ngIf="test.testTypes">
+                      <span *ngFor="let type of testTypeList">
+                        <span *ngIf="test.testTypes[type]" class="badge bg-primary-subtle text-primary me-1 small">
+                          {{ type }}
                         </span>
-                      </ng-container>
-                    </td>
-                    <td>{{ getMetalClassificationName(test.metalClassificationID) }}</td>
-                    <td>{{ getSpecificationName(test.specification1) }}</td>
-                    <td>{{ getSpecificationName(test.specification2) }}</td>
-                    <td>{{ getStandardName(test.standardID) }}</td>
-                    <td>
-                      <div *ngIf="(getElementsArray(test)).length > 0">
-                        <ul class="mb-0 ps-3 list-disc">
-                          <li *ngFor="let element of getElementsArray(test)">
-                            {{ getParameterName(element.parameterID) }}
-                          </li>
-                        </ul>
-                      </div>
-                      <span *ngIf="!(getElementsArray(test)).length" class="text-muted">-</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      </span>
+                    </ng-container>
+                  </td>
+                  <td>{{ getMetalClassificationName(test.metalClassificationID) }}</td>
+                  <td>{{ getSpecificationName(test.specification1) }}</td>
+                  <td>{{ getSpecificationName(test.specification2) }}</td>
+                  <td>
+                    <div *ngIf="(getElementsArray(test)).length > 0" class="d-flex flex-wrap gap-1">
+                      <span *ngFor="let element of getElementsArray(test)" class="badge bg-light text-dark border">
+                        {{ getParameterName(element.parameterID) }}
+                      </span>
+                    </div>
+                    <span *ngIf="!(getElementsArray(test)).length" class="text-muted">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 3. Reviewer Action Floating Button & Panel -->
-  <!-- Floating Action Button (FAB) -->
-  <button
-    #reviewBtn
-    class="btn btn-danger shadow-lg position-fixed d-flex align-items-center justify-content-center review-fab-btn"
-    [style.left.px]="dragPosition.x"
-    [style.top.px]="dragPosition.y"
-    (mousedown)="startDrag($event)"
-    (touchstart)="startDrag($event)"
-    (click)="showActionPanel = true"
-    *ngIf="!showActionPanel && showReviewButton()"
-    aria-label="Open Review Action"
-  >
-    <span class="fw-bold review-fab-text">Review Action</span>
-  </button>
-
-  <!-- Slide-up Action Panel -->
-  <div
-    class="position-fixed start-0 end-0 bottom-0 review-action-panel"
-    [ngClass]="{ 'd-block': showActionPanel, 'd-none': !showActionPanel }"
-  >
-    <!-- Overlay (now before the card and with lower z-index) -->
-    <div class="position-fixed top-0 start-0 w-100 h-100 review-action-overlay"></div>
-    <div class="card shadow-lg mx-auto mb-0 position-relative review-action-card">
-      <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div class="btn-group" role="group">
-          <!-- <input type="radio" class="btn-check" name="reviewAction" id="approveRadio" value="approve" [(ngModel)]="reviewAction" />
-          <label class="btn btn-outline-success fw-semibold" for="approveRadio">
-            <i class="bi bi-check2-circle"></i>
-            Approve
+  <!-- Sticky Action Bar -->
+  <div class="review-action-bar" *ngIf="showReviewButton()">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="btn-group" role="group">
+        <ng-container *ngFor="let act of actions">
+          <input
+            type="radio"
+            class="btn-check"
+            name="reviewAction"
+            [id]="'action_' + act.action"
+            [value]="act"
+            [(ngModel)]="selectedAction"
+          />
+          <label
+            class="btn btn-sm fw-semibold"
+            [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
+            [class.btn-outline-warning]="act.name.toLowerCase().includes('back')"
+            [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
+            [class.btn-outline-primary]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
+            [for]="'action_' + act.action"
+          >
+            <i class="bi me-1"
+              [class.bi-check2-circle]="act.name.toLowerCase().includes('approve')"
+              [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
+              [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
+              [class.bi-arrow-right]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
+            ></i>{{ act.name }}
           </label>
-
-          <input type="radio" class="btn-check" name="reviewAction" id="sendbackRadio" value="sendback" [(ngModel)]="reviewAction" />
-          <label class="btn btn-outline-warning fw-semibold" for="sendbackRadio">
-            <i class="bi bi-arrow-return-left"></i>
-            Send Back
-          </label>
-
-          <input type="radio" class="btn-check" name="reviewAction" id="rejectRadio" value="reject" [(ngModel)]="reviewAction" />
-          <label class="btn btn-outline-danger fw-semibold" for="rejectRadio">
-            <i class="bi bi-x-circle"></i>
-            Reject
-          </label> -->
-
-           <ng-container *ngFor="let act of actions">
-
-        <input
-          type="radio"
-          class="btn-check"
-          name="reviewAction"
-          [id]="'action_' + act.action"
-          [value]="act"
-          [(ngModel)]="selectedAction"
-        />
-
-        <label
-          class="btn fw-semibold"
-          [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
-          [class.btn-outline-warning]="act.name.toLowerCase().includes('back')"
-          [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
-          [for]="'action_' + act.action"
-        >
-          <i
-            class="bi"
-            [class.bi-check2-circle]="act.name.toLowerCase().includes('approve')"
-            [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
-            [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
-          ></i>
-
-          {{ act.name }}
-        </label>
-
-      </ng-container>
-        </div>
-
-        <textarea
-          *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
-          class="form-control border-danger flex-grow-1"
-          [(ngModel)]="reviewRemark"
-          rows="2"
-          placeholder="Enter reason..."
-          required
-        ></textarea>
-
-        <button
-          class="btn btn-danger px-4"
-          [disabled]="!selectedAction || (selectedAction?.action?.toLowerCase() !== 'next' && !reviewRemark)"
-          (click)="submitReview()"
-        >
-          <i class="bi bi-send-check"></i>
-          Submit Review
-        </button>
-        <button class="btn btn-link text-danger ms-2" (click)="showActionPanel = false" aria-label="Close">
-          <i class="bi bi-x-lg fs-5"></i>
-        </button>
+        </ng-container>
       </div>
+
+      <textarea
+        *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
+        class="form-control form-control-sm flex-grow-1"
+        [(ngModel)]="reviewRemark"
+        rows="1"
+        placeholder="Enter remarks..."
+        style="max-width: 400px;"
+      ></textarea>
+
+      <button
+        class="btn btn-primary px-4"
+        [disabled]="!selectedAction || (selectedAction?.action?.toLowerCase() !== 'next' && !reviewRemark)"
+        (click)="submitReview()"
+      >
+        <i class="bi bi-send-check me-1"></i>Submit
+      </button>
     </div>
   </div>
 </div>

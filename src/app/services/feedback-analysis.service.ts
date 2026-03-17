@@ -1,52 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { FeedbackAnalysis } from '../models/feedback-analysis';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class FeedbackAnalysisService {
-    private dummyData: FeedbackAnalysis[] = [
-        {
-            id: 1,
-            period: 'April 2024 to March 2025',
-            totalFeedbackReceived: 15,
-            analysisSummary: '<p>Most customers are satisfied with the quality and technical competence. timly delivery has improved by 20% compared to previous year.</p>',
-            actionsTaken: '<p>Implemented automated email notifications for report readiness to further improve delivery speed.</p>',
-            formatNo: 'F-48',
-            docNo: 'DMSPL / Level-04 / Format / F-48',
-            issueNo: '03',
-            issueDate: '2021-10-01',
-            revNo: '00',
-            revDate: '--'
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/FeedbackAnalysis';
+
+    constructor(private http: HttpClient) {}
 
     getAll(): Observable<FeedbackAnalysis[]> {
-        return of(this.dummyData);
+        return this.http.post<FeedbackAnalysis[]>(this.apiUrl + '/list', {});
     }
 
     getById(id: number): Observable<FeedbackAnalysis | undefined> {
-        return of(this.dummyData.find(a => a.id === id));
+        return this.http.get<FeedbackAnalysis>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: FeedbackAnalysis): Observable<FeedbackAnalysis> {
-        const newItem = { ...data, id: this.dummyData.length + 1 };
-        this.dummyData.push(newItem);
-        return of(newItem);
+        return this.http.post<FeedbackAnalysis>(`${this.apiUrl}/save`, data);
     }
 
     update(id: number, data: FeedbackAnalysis): Observable<FeedbackAnalysis> {
-        const index = this.dummyData.findIndex(a => a.id === id);
-        if (index !== -1) {
-            this.dummyData[index] = { ...data, id };
-            return of(this.dummyData[index]);
-        }
-        throw new Error('Record not found');
+        data.id = id;
+        return this.http.post<FeedbackAnalysis>(`${this.apiUrl}/save`, data);
     }
 
     delete(id: number): Observable<boolean> {
-        this.dummyData = this.dummyData.filter(a => a.id !== id);
-        return of(true);
+        return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
 }

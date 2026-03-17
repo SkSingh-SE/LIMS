@@ -49,7 +49,7 @@ export class CaseAccountListComponent implements OnInit {
   pageSizes = [5, 10, 20, 50];
 
   sortByColumn: string = 'caseNo';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
 
   payload = {

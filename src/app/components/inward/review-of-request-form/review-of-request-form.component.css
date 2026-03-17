@@ -1,50 +1,210 @@
-/* Review Floating Action Button */
-.review-fab-btn {
-  width: 100px;
-  height: 56px;
-  border-radius: 12px;
-  padding: 0;
-  z-index: 1050;
-  user-select: none;
-  cursor: grab;
+/* ═══════ Review of Request — Clean Design ═══════ */
+
+.review-page {
+  padding: 1rem;
+  padding-bottom: 80px; /* space for sticky bar */
 }
 
-.review-fab-text {
+/* ─── Page Header ─── */
+.review-header {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid var(--primary-color, #da261c);
+}
+
+/* ─── Sections ─── */
+.review-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  height: 100%;
+  overflow: hidden;
+}
+
+.review-section-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #495057;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  border-left: 3px solid var(--primary-color, #da261c);
+}
+
+/* ─── Field Label / Value ─── */
+.review-field {
+  margin-bottom: 0.5rem;
+}
+
+.review-label {
+  display: block;
+  font-size: 0.7rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.125rem;
+  font-weight: 500;
+}
+
+.review-value {
+  font-weight: 600;
+  color: #212529;
+  font-size: 0.85rem;
+}
+
+/* ─── Sample Cards ─── */
+.sample-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid var(--primary-color, #da261c);
+  overflow: hidden;
+}
+
+.sample-card-header {
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.sample-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-color, #da261c);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sample-card-body {
+  padding: 1rem;
+}
+
+/* ─── Preparation Chips ─── */
+.prep-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.prep-chip--cutting {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.prep-chip--machining {
+  background: rgba(253, 126, 20, 0.1);
+  color: #e8590c;
+}
+
+.prep-chip--other {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+}
+
+.prep-chip--tpi {
+  background: rgba(111, 66, 193, 0.1);
+  color: #6f42c1;
+}
+
+/* ─── Test Section ─── */
+.test-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+}
+
+.test-section-title {
   font-size: 0.8rem;
-  white-space: normal;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-/* Review Action Panel */
-.review-action-panel {
-  bottom: 0;
-  z-index: 1060;
+/* ─── Tables ─── */
+.table thead th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 2px solid #dee2e6;
+  background: #f8f9fa;
+  white-space: nowrap;
 }
 
-.review-action-overlay {
-  background: rgba(0, 0, 0, 0.15);
-  z-index: 1059;
+.table tbody td {
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  vertical-align: middle;
 }
 
-.review-action-card {
-  max-width: 700px;
-  border-top: 4px solid #b71c1c;
-  z-index: 1060;
+/* ─── Image Preview ─── */
+.preview-box {
+  max-width: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+  transition: transform 0.2s;
 }
 
-/* Preview Image */
-.preview-image {
+.preview-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.preview-box img {
   object-fit: contain;
-  min-height: 150px;
-  min-width: 100px;
+  max-height: 120px;
 }
 
-/* Cursor pointer utility */
 .cursor-pointer {
   cursor: pointer;
 }
 
-/* List style disc */
-.list-disc {
-  list-style-type: disc;
+/* ─── Sticky Action Bar ─── */
+.review-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
 }
 
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .review-page {
+    padding: 0.5rem;
+    padding-bottom: 100px;
+  }
+
+  .review-action-bar {
+    padding: 0.5rem 1rem;
+  }
+
+  .sample-card-body .row .col-md-3 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}

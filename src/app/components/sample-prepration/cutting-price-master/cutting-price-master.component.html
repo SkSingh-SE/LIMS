@@ -52,6 +52,7 @@
           <tbody>
             <tr *ngFor="let customerType of listData; let i = index" class="text-sm">
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="wide-input">{{ customerType.specimenTypeName || '-' }}</td>
               <td class="wide-input">{{ customerType.cuttingType }}</td>
               <td class="wide-input">{{ customerType.unitType }}</td>
               <td class="wide-input">{{ customerType.ratePerUnit }}</td>
@@ -89,6 +90,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
@@ -174,6 +177,19 @@
       </div>
       <form [formGroup]="cuttingPriceForm" (ngSubmit)="onSubmit()">
         <div class="modal-body row row-cols-2 row-gap-2 position-relative">
+          <!-- Specimen Type -->
+          <div>
+            <app-searchable-dropdown
+              [labelName]="'Specimen Type'"
+              [fetchDataFn]="fetchSpecimenTypeDropdown"
+              placeholder="Search Specimen Type"
+              [required]="false"
+              [isDisabled]="isViewMode"
+              (itemSelected)="onSpecimenTypeSelected($event)"
+              [selectedItem]="selectedSpecimenTypeId"
+            ></app-searchable-dropdown>
+          </div>
+
           <!--Cutting Type-->
           <div>
             <label for="cuttingType" class="form-label">

@@ -1,15 +1,48 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Supplier Registration Form
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && record()" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="record()?.formatNo || 'F-19'"
@@ -23,151 +56,149 @@
     </ng-container>
 
     <ng-container body>
-      <div class="p-4">
-        <!-- I. Basic Information -->
-        <div class="mb-4">
-          <h6 class="fw-bold border-bottom pb-1 text-primary">I. SUPPLIER BASIC INFORMATION</h6>
-          <table class="table table-bordered sm-table mt-2">
+      <!-- I. Supplier Basic Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. SUPPLIER BASIC INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
-              <th style="width: 25%">Supplier Name</th>
+              <td class="lbl" style="width: 25%;">Supplier Name</td>
               <td colspan="3" class="fw-bold">{{ record()?.supplierName }}</td>
             </tr>
             <tr>
-              <th style="width: 25%">Address</th>
+              <td class="lbl" style="width: 25%;">Address</td>
               <td colspan="3">{{ record()?.address }}</td>
             </tr>
             <tr>
-              <th style="width: 25%">Contact Person</th>
-              <td style="width: 25%">{{ record()?.contactPerson }}</td>
-              <th style="width: 25%">Designation</th>
-              <td style="width: 25%">{{ record()?.designation }}</td>
+              <td class="lbl" style="width: 25%;">Contact Person</td>
+              <td style="width: 25%;">{{ record()?.contactPerson }}</td>
+              <td class="lbl" style="width: 25%;">Designation</td>
+              <td style="width: 25%;">{{ record()?.designation }}</td>
             </tr>
             <tr>
-              <th>Mobile No.</th>
+              <td class="lbl">Mobile No.</td>
               <td>{{ record()?.mobileNo }}</td>
-              <th>Email ID</th>
+              <td class="lbl">Email ID</td>
               <td>{{ record()?.email }}</td>
             </tr>
             <tr>
-              <th>Website</th>
+              <td class="lbl">Website</td>
               <td colspan="3">{{ record()?.website || "-" }}</td>
             </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- II. Business Details -->
-        <div class="mb-4">
-          <h6 class="fw-bold border-bottom pb-1 text-primary">II. NATURE OF BUSINESS & REGISTRATION</h6>
-          <table class="table table-bordered sm-table mt-2">
+      <!-- II. Nature of Business & Registration -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. NATURE OF BUSINESS &amp; REGISTRATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
-              <th style="width: 25%">Nature of Business</th>
-              <td style="width: 25%">{{ record()?.natureOfBusiness }}</td>
-              <th style="width: 25%">GST No.</th>
-              <td style="width: 25%">{{ record()?.gstNo }}</td>
+              <td class="lbl" style="width: 25%;">Nature of Business</td>
+              <td style="width: 25%;">{{ record()?.natureOfBusiness }}</td>
+              <td class="lbl" style="width: 25%;">GST No.</td>
+              <td style="width: 25%;">{{ record()?.gstNo }}</td>
             </tr>
             <tr>
-              <th>PAN No.</th>
+              <td class="lbl">PAN No.</td>
               <td>{{ record()?.panNo }}</td>
-              <th>ISO Certified?</th>
+              <td class="lbl">ISO Certified?</td>
               <td>{{ record()?.isoCertified ? "Yes (" + record()?.isoDetails + ")" : "No" }}</td>
             </tr>
             <tr>
-              <th>Products/Services Offered</th>
+              <td class="lbl">Products/Services Offered</td>
               <td colspan="3">{{ record()?.productsServicesOffered }}</td>
             </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- III. Bank Details -->
-        <div class="mb-4">
-          <h6 class="fw-bold border-bottom pb-1 text-primary">III. BANK DETAILS</h6>
-          <table class="table table-bordered sm-table mt-2">
+      <!-- III. Bank Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. BANK DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
-              <th style="width: 25%">Bank Name</th>
-              <td style="width: 25%">{{ record()?.bankDetails?.bankName }}</td>
-              <th style="width: 25%">Account No.</th>
-              <td style="width: 25%">{{ record()?.bankDetails?.accountNo }}</td>
+              <td class="lbl" style="width: 25%;">Bank Name</td>
+              <td style="width: 25%;">{{ record()?.bankDetails?.bankName }}</td>
+              <td class="lbl" style="width: 25%;">Account No.</td>
+              <td style="width: 25%;">{{ record()?.bankDetails?.accountNo }}</td>
             </tr>
             <tr>
-              <th>IFSC Code</th>
+              <td class="lbl">IFSC Code</td>
               <td>{{ record()?.bankDetails?.ifscCode }}</td>
-              <th>Branch</th>
+              <td class="lbl">Branch</td>
               <td>{{ record()?.bankDetails?.branch }}</td>
             </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- IV. Documents Submitted -->
-        <div class="mb-4">
-          <h6 class="fw-bold border-bottom pb-1 text-primary">IV. DOCUMENT CHECKLIST</h6>
-          <div class="row row-cols-3 g-2 mt-2">
-            <div class="col d-flex align-items-center">
-              <i
-                class="bi"
-                [ngClass]="record()?.documentsSubmitted?.gstCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
-              ></i>
-              <span class="ms-2 small">GST Certificate</span>
-            </div>
-            <div class="col d-flex align-items-center">
-              <i class="bi" [ngClass]="record()?.documentsSubmitted?.panCard ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-              <span class="ms-2 small">PAN Card</span>
-            </div>
-            <div class="col d-flex align-items-center">
-              <i
-                class="bi"
-                [ngClass]="record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
-              ></i>
-              <span class="ms-2 small">ISO Certificate</span>
-            </div>
-            <div class="col d-flex align-items-center">
-              <i
-                class="bi"
-                [ngClass]="record()?.documentsSubmitted?.cancelledCheque ? 'bi-check-square-fill text-success' : 'bi-square'"
-              ></i>
-              <span class="ms-2 small">Cancelled Cheque</span>
-            </div>
-            <div class="col d-flex align-items-center">
-              <i
-                class="bi"
-                [ngClass]="record()?.documentsSubmitted?.msmeCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"
-              ></i>
-              <span class="ms-2 small">MSME Certificate</span>
-            </div>
-          </div>
-          <div class="mt-2 small text-muted" *ngIf="record()?.documentsSubmitted?.otherDocs">
-            <strong>Other Docs:</strong>
-            {{ record()?.documentsSubmitted?.otherDocs }}
-          </div>
-        </div>
+      <!-- IV. Document Checklist -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. DOCUMENT CHECKLIST</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td style="width: 33%;">
+                <i class="bi" [ngClass]="record()?.documentsSubmitted?.gstCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                <span class="ms-2">GST Certificate</span>
+              </td>
+              <td style="width: 33%;">
+                <i class="bi" [ngClass]="record()?.documentsSubmitted?.panCard ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                <span class="ms-2">PAN Card</span>
+              </td>
+              <td style="width: 34%;">
+                <i class="bi" [ngClass]="record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                <span class="ms-2">ISO Certificate</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <i class="bi" [ngClass]="record()?.documentsSubmitted?.cancelledCheque ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                <span class="ms-2">Cancelled Cheque</span>
+              </td>
+              <td>
+                <i class="bi" [ngClass]="record()?.documentsSubmitted?.msmeCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                <span class="ms-2">MSME Certificate</span>
+              </td>
+              <td></td>
+            </tr>
+            <tr *ngIf="record()?.documentsSubmitted?.otherDocs">
+              <td class="lbl">Other Docs</td>
+              <td colspan="2">{{ record()?.documentsSubmitted?.otherDocs }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- V. Status & Remarks -->
-        <div class="mb-4">
-          <h6 class="fw-bold border-bottom pb-1 text-primary">V. EVALUATION STATUS</h6>
-          <div class="p-3 border rounded bg-light">
-            <div class="row">
-              <div class="col-md-4">
-                <strong>Status:</strong>
-                <span
-                  class="badge"
-                  [ngClass]="{
+      <!-- V. Evaluation Status -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. EVALUATION STATUS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%;">Registration Status</td>
+              <td colspan="3">
+                <span class="badge" [ngClass]="{
                     'bg-warning': record()?.registrationStatus === 'Pending',
                     'bg-success': record()?.registrationStatus === 'Approved',
-                    'bg-danger': record()?.registrationStatus === 'Rejected',
-                  }"
-                >
+                    'bg-danger': record()?.registrationStatus === 'Rejected'
+                  }">
                   {{ record()?.registrationStatus }}
                 </span>
-              </div>
-              <div class="col-12 mt-3">
-                <div class="p-3 border rounded bg-light">
-                  <h6 class="fw-bold border-bottom pb-1 mb-2">Verification Remarks</h6>
-                  <div [innerHTML]="record()?.remarks"></div>
-                  <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Verification Remarks</td>
+              <td colspan="3">
+                <div [innerHTML]="record()?.remarks"></div>
+                <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ng-container>
 
@@ -179,10 +210,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SkillMatrixService } from '../../../services/skill-matrix.service';
@@ -19,14 +19,17 @@ export class SkillMatrixPreviewComponent implements OnInit {
     matrix: SkillMatrix | null = null;
     isLoading: boolean = true;
     matrixId: number = 0;
-
     designations: any[] = [];
+    orientation: 'portrait' | 'landscape' = 'landscape';
+    orientationManual = false;
+    private orientationDetected = false;
 
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private skillMatrixService: SkillMatrixService,
-        private designationService: DesignationService
+        private designationService: DesignationService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -57,6 +60,7 @@ export class SkillMatrixPreviewComponent implements OnInit {
                     this.resolveTitle();
                 }
                 this.isLoading = false;
+                setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading skill matrix:', err);
@@ -74,6 +78,7 @@ export class SkillMatrixPreviewComponent implements OnInit {
                     this.resolveTitle();
                 }
                 this.isLoading = false;
+                setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading skill matrices:', err);
@@ -82,8 +87,48 @@ export class SkillMatrixPreviewComponent implements OnInit {
         });
     }
 
+    private autoDetectOrientation(): void {
+        if (this.orientationManual || this.orientationDetected) return;
+        this.orientationDetected = true;
+        const bodyBlock = document.querySelector('.body-block') as HTMLElement | null;
+        if (!bodyBlock) return;
+        let needsLandscape = false;
+        bodyBlock.querySelectorAll<HTMLElement>('table').forEach(table => {
+            if (table.scrollWidth > table.clientWidth + 8) needsLandscape = true;
+        });
+        bodyBlock.querySelectorAll<HTMLElement>('tr').forEach(row => {
+            if (row.children.length > 5) needsLandscape = true;
+        });
+        const detected: 'portrait' | 'landscape' = needsLandscape ? 'landscape' : 'portrait';
+        if (detected !== this.orientation) {
+            this.orientation = detected;
+            this.cdr.detectChanges();
+        }
+    }
+
+    setOrientation(o: 'portrait' | 'landscape'): void {
+        this.orientation = o;
+        this.orientationManual = true;
+    }
+
+    resetToAuto(): void {
+        this.orientationManual = false;
+        this.orientationDetected = false;
+        this.orientation = 'landscape';
+        setTimeout(() => this.autoDetectOrientation(), 100);
+    }
+
     printPage(): void {
+        document.getElementById('sm-print-size')?.remove();
+        const styleEl = document.createElement('style');
+        styleEl.id = 'sm-print-size';
+        styleEl.textContent = `@page { size: A4 ${this.orientation}; }`;
+        document.head.appendChild(styleEl);
+        const originalTitle = document.title;
+        document.title = '';
         window.print();
+        document.title = originalTitle;
+        document.head.removeChild(styleEl);
     }
 
     resolveTitle() {

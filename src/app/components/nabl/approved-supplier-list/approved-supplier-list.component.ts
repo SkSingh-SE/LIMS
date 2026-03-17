@@ -32,7 +32,7 @@ export class ApprovedSupplierListComponent implements OnInit {
             PageSize: 10,
             searchTerm: '',
             sortByColumn: 'id',
-            sortOrder: 'asc',
+            sortOrder: 'desc',
             filter: []
         });
     }

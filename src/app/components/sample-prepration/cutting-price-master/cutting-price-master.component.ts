@@ -6,10 +6,13 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../../services/toast.service';
 import { CuttingPriceMasterService } from '../../../services/cutting-price-master.service';
+import { SpecimenTypeService } from '../../../services/specimen-type.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-cutting-price-master',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective, SearchableDropdownComponent],
   templateUrl: './cutting-price-master.component.html',
   styleUrl: './cutting-price-master.component.css'
 })
@@ -20,12 +23,14 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'specimenTypeName', type: 'string', label: 'Specimen Type', filter: true },
     { key: 'cuttingType', type: 'string', label: 'Cutting Type', filter: true },
     { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
     { key: 'ratePerUnit', type: 'string', label: 'Rate Per Unit', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
+    specimenTypeName: 'string',
     cuttingType: 'string',
     unitType: 'string',
     ratePerUnit: 'string'
@@ -47,7 +52,7 @@ export class CuttingPriceMasterComponent implements OnInit {
   pageSizes = [5, 10, 20];
 
   sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
   isLoading = signal(false);
 
@@ -70,7 +75,9 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private cuttingPriceService: CuttingPriceMasterService, private toastService: ToastService) {
+  selectedSpecimenTypeId: number = 0;
+
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private cuttingPriceService: CuttingPriceMasterService, private toastService: ToastService, private specimenTypeService: SpecimenTypeService) {
     this.route.params.subscribe(params => {
       this.cuttingPriceId = params['id'] || 0;
       if (this.cuttingPriceId > 0) {
@@ -88,11 +95,13 @@ export class CuttingPriceMasterComponent implements OnInit {
   initForm() {
     this.cuttingPriceForm = this.fb.group({
       id: [0],
+      specimenTypeId: [null],
       cuttingType: ['', Validators.required],
       unitType: ['', Validators.required],
       ratePerUnit: [0, [Validators.required, Validators.min(0)]],
       remark: ['']
     });
+    this.selectedSpecimenTypeId = 0;
   }
 
   fetchData() {
@@ -118,6 +127,7 @@ export class CuttingPriceMasterComponent implements OnInit {
       next: (response) => {
         this.customerTypeObject = response;
         this.cuttingPriceForm.patchValue(response);
+        this.selectedSpecimenTypeId = response.specimenTypeId || 0;
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -226,6 +236,14 @@ export class CuttingPriceMasterComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -313,6 +331,15 @@ export class CuttingPriceMasterComponent implements OnInit {
         });
       }
     }
+  }
+
+  fetchSpecimenTypeDropdown = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.specimenTypeService.getSpecimenTypeDropdown(searchTerm, pageNumber, pageSize);
+  };
+
+  onSpecimenTypeSelected(item: any): void {
+    this.cuttingPriceForm.patchValue({ specimenTypeId: item?.id || null });
+    this.selectedSpecimenTypeId = item?.id || 0;
   }
 
 }

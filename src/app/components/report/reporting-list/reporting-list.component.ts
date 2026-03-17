@@ -53,7 +53,7 @@ export class ReportingListComponent implements OnInit {
 
   // Sorting
   sortByColumn: string = 'sampleNo';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
 
   // Pagination
   pageNumber: number = 1;

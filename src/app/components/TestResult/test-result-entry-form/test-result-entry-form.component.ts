@@ -3,6 +3,8 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
 import { ParameterService } from '../../../services/parameter.service';
+import { EquipmentService } from '../../../services/equipment.service';
+import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
@@ -10,12 +12,13 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-test-result-entry-form',
   templateUrl: './test-result-entry-form.component.html',
   styleUrls: ['./test-result-entry-form.component.css'],
-  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent,DecimalOnlyDirective,TestStatusBadgeComponent],
+  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent, DecimalOnlyDirective, TestStatusBadgeComponent, FormsModule],
 })
 export class TestResultEntryFormComponent implements OnInit {
 
@@ -26,6 +29,27 @@ export class TestResultEntryFormComponent implements OnInit {
   plans: any[] = [];
   resultForm!: FormGroup;
   isViewMode: boolean = false;
+
+  // Top-level tabs: Test Results vs Preparation & Pricing
+  activeMainTab: 'results' | 'preparation' = 'results';
+
+  // Dismissed alert IDs
+  dismissedAlerts: Set<string> = new Set();
+
+  // Plan tabs - active tab index
+  activePlanIndex: number = 0;
+
+  // Formula Builder Modal
+  showFormulaBuilderModal = false;
+  formulaBuilderTargetRow: { planIndex: number; testIndex: number; paramIndex: number } | null = null;
+  formulaExpression = '';
+  formulaCursorPos = 0;
+  formulaAvailableParams: { parameterID: number; parameterName: string; unit: string; ref: string }[] = [];
+  formulaOperators = ['+', '-', '*', '/', '(', ')'];
+  formulaFunctions = ['MEAN', 'MAX', 'MIN', 'SUM', 'COUNT', 'STDEV'];
+
+  // Environment info panel visibility per headerId
+  envInfoVisible: { [key: string]: boolean } = {};
 
   // Store API metadata for save/complete
   apiMetadata: any = {
@@ -40,10 +64,81 @@ export class TestResultEntryFormComponent implements OnInit {
   moveToLongTermForm!: FormGroup;
   selectedTestForLongTerm: { planIndex: number; testIndex: number } | null = null;
 
+  // ================================================================
+  // Phase 2A: Enhanced Test Execution
+  // ================================================================
+  // Environment info per headerId
+  environmentMap: Record<number, { roomTemperature?: number; roomHumidity?: number; labRoomName?: string }> = {};
+  // Equipment selection per headerId
+  selectedEquipmentMap: Record<number, any[]> = {};
+  // Test timing info per headerId (from API response)
+  testTimingMap: Record<number, { testStartTime?: string; testEndTime?: string; performedByName?: string }> = {};
+
+  // Add Standalone Parameter Modal
+  showStandaloneParamModal = false;
+  standaloneParamForm!: FormGroup;
+  standaloneParamHeaderId: number = 0;
+  standaloneParamPlanIndex: number = 0;
+  standaloneParamTestIndex: number = 0;
+
+  // Phase 2B: Price Calculation
+  priceSummaryMap: Record<number, any> = {};
+  priceBreakdownMap: Record<number, any[]> = {};
+  priceLoadingMap: Record<number, boolean> = {};
+  showPriceOverrideModal = false;
+  priceOverrideHeaderId: number = 0;
+  priceOverrideAmount: number | null = null;
+  priceOverrideReason: string = '';
+
+  // ================================================================
+  // Phase 1-2: NABL Scope + Uncertainty
+  // ================================================================
+  nablScopeMap: Record<number, any[]> = {};
+  uncertaintyMap: Record<number, any[]> = {};
+
+  // ================================================================
+  // Phase 4: Machine Data Integration
+  // ================================================================
+  machineDataLoading: Record<number, boolean> = {};
+
+  // ================================================================
+  // Phase 5: Preparation Status + Verification
+  // ================================================================
+  preparationStatus: any = null;
+  isPreparationRequired = false;
+  isPreparationRecorded = false;
+  isVerificationMode = false;
+
+  // ================================================================
+  // Phase 6: Unified Price Summary
+  // ================================================================
+  unifiedPriceSummary: any = null;
+  unifiedPriceLoading = false;
+
+  // ================================================================
+  // Machining Charge Line Items
+  // ================================================================
+  machiningItems: any[] = [];
+  machiningLoading = false;
+  newMachiningDesc = '';
+  newMachiningAmount: number | null = null;
+  newMachiningRemark = '';
+
+  // Add Parameter From Method Modal
+  showFromMethodModal = false;
+  fromMethodForm!: FormGroup;
+  fromMethodHeaderId: number = 0;
+  fromMethodPlanIndex: number = 0;
+  fromMethodTestIndex: number = 0;
+  methodParameters: any[] = [];
+  loadingMethodParams = false;
+
   constructor(
     private fb: FormBuilder,
     private testResultService: TestResultService,
     private parameterService: ParameterService,
+    private equipmentService: EquipmentService,
+    private testMethodService: TestMethodSpecificationService,
     private toastService: ToastService,
     private route: ActivatedRoute,
     private router: Router
@@ -62,6 +157,8 @@ export class TestResultEntryFormComponent implements OnInit {
     this.loadDummyData();
     this.buildForm();
     this.buildMoveToLongTermForm();
+    this.buildStandaloneParamForm();
+    this.buildFromMethodForm();
     if(this.sampleId)
       this.loadFullResultPayload(this.sampleId); // Sample ID
   }
@@ -164,10 +261,19 @@ export class TestResultEntryFormComponent implements OnInit {
               if (t && (t.headerId || t.headerId === 0)) headerSet.add(t.headerId);
             });
           });
-          headerSet.forEach(hId => this.fetchTestImages(hId));
+          headerSet.forEach(hId => {
+            this.fetchTestImages(hId);
+            this.fetchPriceSummary(hId);
+            this.loadNablScopeCheck(hId);
+            this.loadUncertainty(hId);
+          });
         } catch (e) {
           console.warn('Failed to fetch initial test images', e);
         }
+        // Load preparation status + unified price + machining items
+        this.loadPreparationStatus(sampleId);
+        this.loadUnifiedPriceSummary(sampleId);
+        this.loadMachiningItems(sampleId);
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
@@ -267,7 +373,14 @@ export class TestResultEntryFormComponent implements OnInit {
                 remarks: param.remarks ?? '',
                 minValue: param.minValue ?? null,
                 maxValue: param.maxValue ?? null,
-                isWithinLimit: param.isWithinLimit ?? null
+                isWithinLimit: param.isWithinLimit ?? null,
+                formulaExpression: param.formulaExpression || '',
+                specMinValue: param.specMinValue ?? null,
+                specMaxValue: param.specMaxValue ?? null,
+                acceptanceCriteria: param.acceptanceCriteria || '',
+                isStandalone: param.isStandalone || false,
+                sourceTestMethodId: param.sourceTestMethodId ?? null,
+                resultStatus: param.resultStatus || null
               }))
             }
           ]
@@ -305,13 +418,44 @@ export class TestResultEntryFormComponent implements OnInit {
                 minValue: param.minValue ?? null,
                 maxValue: param.maxValue ?? null,
                 isWithinLimit: param.isWithinLimit ?? null,
-                altered: param.altered || false
+                altered: param.altered || false,
+                formulaExpression: param.formulaExpression || '',
+                specMinValue: param.specMinValue ?? null,
+                specMaxValue: param.specMaxValue ?? null,
+                acceptanceCriteria: param.acceptanceCriteria || '',
+                isStandalone: param.isStandalone || false,
+                sourceTestMethodId: param.sourceTestMethodId ?? null,
+                resultStatus: param.resultStatus || null
               }))
             }
           ]
         };
 
         this.plans.push(chemPlan);
+      });
+    });
+
+    // Store timing/environment info per header and fetch environment data
+    (apiData.plans || []).forEach((plan: any) => {
+      const allTests = [...(plan.generalTests || []), ...(plan.chemicalTests || [])];
+      allTests.forEach((test: any) => {
+        if (test.headerId) {
+          this.testTimingMap[test.headerId] = {
+            testStartTime: test.testStartTime || '',
+            testEndTime: test.testEndTime || '',
+            performedByName: test.performedByName || ''
+          };
+          // Parse equipment IDs if available
+          if (test.equipmentIdsJson) {
+            try {
+              this.selectedEquipmentMap[test.headerId] = JSON.parse(test.equipmentIdsJson);
+            } catch (e) {
+              this.selectedEquipmentMap[test.headerId] = [];
+            }
+          }
+          // Fetch environment data
+          this.fetchEnvironmentData(test.headerId);
+        }
       });
     });
 
@@ -516,7 +660,14 @@ export class TestResultEntryFormComponent implements OnInit {
       minValue: [planType === 'Chemical' ? (p.minValue ?? 0) : (p.minValue ?? null), minValidators],
       maxValue: [planType === 'Chemical' ? (p.maxValue ?? 0) : (p.maxValue ?? null), maxValidators],
       isWithinLimit: [p.isWithinLimit ?? null],
-      altered: [p.altered || false]
+      altered: [p.altered || false],
+      formulaExpression: [p.formulaExpression || ''],
+      specMinValue: [p.specMinValue ?? null],
+      specMaxValue: [p.specMaxValue ?? null],
+      acceptanceCriteria: [p.acceptanceCriteria || ''],
+      isStandalone: [p.isStandalone || false],
+      sourceTestMethodId: [p.sourceTestMethodId ?? null],
+      resultStatus: [p.resultStatus || null]
     });
   }
 
@@ -706,7 +857,8 @@ export class TestResultEntryFormComponent implements OnInit {
               minValue: param.minValue,
               maxValue: param.maxValue,
               isWithinLimit: param.isWithinLimit,
-              altered: param.altered || false
+              altered: param.altered || false,
+              formula: param.formulaExpression || ''
             }))
           });
         } else if (apiChemical) {
@@ -724,7 +876,8 @@ export class TestResultEntryFormComponent implements OnInit {
               minValue: param.minValue,
               maxValue: param.maxValue,
               isWithinLimit: param.isWithinLimit,
-              altered: param.altered || false
+              altered: param.altered || false,
+              formula: param.formulaExpression || ''
             }))
           });
         }
@@ -753,14 +906,46 @@ export class TestResultEntryFormComponent implements OnInit {
     const min = row.get('minValue')?.value;
     const max = row.get('maxValue')?.value;
 
-    if (min == null && max == null) return; // Mechanical test → skip
+    if (min != null || max != null) {
+      let pass = true;
+      if (min != null && value < min) pass = false;
+      if (max != null && value > max) pass = false;
+      row.patchValue({ isWithinLimit: pass });
+    }
 
-    let pass = true;
+    // Auto-recalculate all formula-based parameters in this test
+    this.recalculateFormulas(planIndex, testIndex);
+  }
 
-    if (min != null && value < min) pass = false;
-    if (max != null && value > max) pass = false;
+  /**
+   * Re-evaluate all formula-based parameters in a test when any value changes.
+   * This provides on-the-fly calculation without needing a backend call.
+   */
+  recalculateFormulas(planIndex: number, testIndex: number): void {
+    const params = this.getParameters(planIndex, testIndex);
+    params.controls.forEach((row, idx) => {
+      const formulaExpr = row.get('formulaExpression')?.value;
+      if (!formulaExpr) return;
 
-    row.patchValue({ isWithinLimit: pass });
+      const calculatedValue = this.evaluateFormula(formulaExpr, planIndex, testIndex, idx);
+      if (calculatedValue !== null) {
+        const currentValue = row.get('value')?.value;
+        // Only update if the calculated value is different (avoid infinite loops)
+        if (Number(currentValue) !== calculatedValue) {
+          row.patchValue({ value: calculatedValue }, { emitEvent: false });
+
+          // Update isWithinLimit for the formula-calculated parameter
+          const min = row.get('minValue')?.value;
+          const max = row.get('maxValue')?.value;
+          if (min != null || max != null) {
+            let pass = true;
+            if (min != null && calculatedValue < min) pass = false;
+            if (max != null && calculatedValue > max) pass = false;
+            row.patchValue({ isWithinLimit: pass }, { emitEvent: false });
+          }
+        }
+      }
+    });
   }
 
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> =>
@@ -816,6 +1001,24 @@ export class TestResultEntryFormComponent implements OnInit {
       next: (response) => {
         test.status = 'Started';
         this.toastService.show('Test started successfully', 'success');
+        // Capture timing from response or refresh from API
+        if (response?.testStartTime) {
+          this.testTimingMap[headerId] = {
+            ...this.testTimingMap[headerId],
+            testStartTime: response.testStartTime,
+            performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
+          };
+        } else {
+          // Refresh timing from environment endpoint
+          this.fetchEnvironmentData(headerId);
+        }
+        // Show preparation warning if returned by backend
+        if (response?.preparationWarning) {
+          this.toastService.show(
+            response.warningMessage || 'Sample preparation data is not yet entered in the system.',
+            'warning'
+          );
+        }
       },
       error: (error) => {
         console.error('Error starting test:', error);
@@ -833,6 +1036,17 @@ export class TestResultEntryFormComponent implements OnInit {
         next: (response) => {
           test.status = 'Completed';
           this.toastService.show('Test completed successfully', 'success');
+          // Capture timing from response or refresh from API
+          if (response?.testEndTime) {
+            this.testTimingMap[headerId] = {
+              ...this.testTimingMap[headerId],
+              testEndTime: response.testEndTime,
+              performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
+            };
+          } else {
+            // Refresh timing from environment endpoint
+            this.fetchEnvironmentData(headerId);
+          }
         },
         error: (error) => {
           console.error('Error completing test:', error);
@@ -914,7 +1128,6 @@ export class TestResultEntryFormComponent implements OnInit {
    * Inline update parameter via API
    */
   updateParameterInline(planIndex: number, testIndex: number, paramIndex: number): void {
-    debugger;
     const param = this.getParameters(planIndex, testIndex).at(paramIndex).value;
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
@@ -1036,6 +1249,681 @@ export class TestResultEntryFormComponent implements OnInit {
   }
   cancel(): void {
     this.router.navigate(['/testing/dashboard']);
+  }
+
+  // ================================================================
+  // Phase 2A: Environment Data
+  // ================================================================
+  fetchEnvironmentData(headerId: number): void {
+    if (!headerId) return;
+    this.testResultService.getEnvironmentAtTime(headerId).subscribe({
+      next: (env) => {
+        this.environmentMap[headerId] = {
+          roomTemperature: env.roomTemperature ?? env.temperature,
+          roomHumidity: env.roomHumidity ?? env.humidity,
+          labRoomName: env.labRoomName || env.roomName || ''
+        };
+      },
+      error: () => {
+        this.environmentMap[headerId] = {};
+      }
+    });
+  }
+
+  // ================================================================
+  // Phase 2A: Auto-Calculate Parameters
+  // ================================================================
+  calculateParameters(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+
+    if (!headerId) {
+      this.toastService.show('No header ID available for calculation', 'warning');
+      return;
+    }
+
+    this.testResultService.calculateParameters(headerId).subscribe({
+      next: (response) => {
+        this.toastService.show('Parameters calculated successfully', 'success');
+        // Refresh the full payload to get updated calculated values
+        this.loadFullResultPayload(this.sampleId);
+      },
+      error: (error) => {
+        console.error('Error calculating parameters:', error);
+        this.toastService.show(error?.error?.message || 'Error calculating parameters', 'error');
+      }
+    });
+  }
+
+  // ================================================================
+  // Phase 2A: Equipment Dropdown
+  // ================================================================
+  getEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.equipmentService.getEquipmentDropdown(term, page, pageSize);
+
+  onEquipmentSelected(headerId: number, selectedItem: any): void {
+    if (!this.selectedEquipmentMap[headerId]) {
+      this.selectedEquipmentMap[headerId] = [];
+    }
+    // Avoid duplicates
+    if (!this.selectedEquipmentMap[headerId].find((e: any) => e.id === selectedItem.id)) {
+      this.selectedEquipmentMap[headerId].push({ id: selectedItem.id, name: selectedItem.name });
+    }
+  }
+
+  removeEquipment(headerId: number, equipmentId: number): void {
+    if (this.selectedEquipmentMap[headerId]) {
+      this.selectedEquipmentMap[headerId] = this.selectedEquipmentMap[headerId].filter((e: any) => e.id !== equipmentId);
+    }
+  }
+
+  // ================================================================
+  // Phase 2A: Standalone Parameter Modal
+  // ================================================================
+  private buildStandaloneParamForm(): void {
+    this.standaloneParamForm = this.fb.group({
+      parameterName: ['', Validators.required],
+      unit: ['', Validators.required],
+      formulaExpression: [''],
+      specMinValue: [null],
+      specMaxValue: [null]
+    });
+  }
+
+  openStandaloneParamModal(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    this.standaloneParamHeaderId = test.headerId;
+    this.standaloneParamPlanIndex = planIndex;
+    this.standaloneParamTestIndex = testIndex;
+    this.standaloneParamForm.reset();
+    this.showStandaloneParamModal = true;
+  }
+
+  closeStandaloneParamModal(): void {
+    this.showStandaloneParamModal = false;
+    this.standaloneParamForm.reset();
+  }
+
+  submitStandaloneParam(): void {
+    if (!this.standaloneParamForm.valid) {
+      this.toastService.show('Please fill required fields', 'warning');
+      return;
+    }
+
+    const dto = this.standaloneParamForm.value;
+    this.testResultService.addStandaloneParameter(this.standaloneParamHeaderId, dto).subscribe({
+      next: (response) => {
+        this.toastService.show('Standalone parameter added successfully', 'success');
+        this.closeStandaloneParamModal();
+        // Refresh to get the new parameter
+        this.loadFullResultPayload(this.sampleId);
+      },
+      error: (error) => {
+        console.error('Error adding standalone parameter:', error);
+        this.toastService.show(error?.error?.message || 'Error adding standalone parameter', 'error');
+      }
+    });
+  }
+
+  // ================================================================
+  // Phase 2A: Add Parameter From Method Modal
+  // ================================================================
+  private buildFromMethodForm(): void {
+    this.fromMethodForm = this.fb.group({
+      testMethodId: [null, Validators.required],
+      parameterID: [null, Validators.required]
+    });
+  }
+
+  getTestMethodDropdown = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.testMethodService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+  openFromMethodModal(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    this.fromMethodHeaderId = test.headerId;
+    this.fromMethodPlanIndex = planIndex;
+    this.fromMethodTestIndex = testIndex;
+    this.fromMethodForm.reset();
+    this.methodParameters = [];
+    this.showFromMethodModal = true;
+  }
+
+  closeFromMethodModal(): void {
+    this.showFromMethodModal = false;
+    this.fromMethodForm.reset();
+    this.methodParameters = [];
+  }
+
+  onTestMethodSelected(selectedItem: any): void {
+    this.fromMethodForm.patchValue({ testMethodId: selectedItem.id, parameterID: null });
+    this.methodParameters = [];
+    this.loadingMethodParams = true;
+
+    // Load parameters for the selected test method
+    this.testMethodService.getTestMethodSpecificationById(selectedItem.id).subscribe({
+      next: (method) => {
+        this.methodParameters = method.parameters || method.testParameters || [];
+        this.loadingMethodParams = false;
+      },
+      error: () => {
+        this.methodParameters = [];
+        this.loadingMethodParams = false;
+        this.toastService.show('Failed to load method parameters', 'error');
+      }
+    });
+  }
+
+  selectMethodParameter(param: any): void {
+    this.fromMethodForm.patchValue({ parameterID: param.id || param.parameterId });
+  }
+
+  submitFromMethod(): void {
+    if (!this.fromMethodForm.valid) {
+      this.toastService.show('Please select a test method and parameter', 'warning');
+      return;
+    }
+
+    const dto = this.fromMethodForm.value;
+    this.testResultService.addParameterFromMethod(this.fromMethodHeaderId, dto).subscribe({
+      next: (response) => {
+        this.toastService.show('Parameter added from test method successfully', 'success');
+        this.closeFromMethodModal();
+        // Refresh to get the new parameter
+        this.loadFullResultPayload(this.sampleId);
+      },
+      error: (error) => {
+        console.error('Error adding parameter from method:', error);
+        this.toastService.show(error?.error?.message || 'Error adding parameter from method', 'error');
+      }
+    });
+  }
+
+  // ================================================================
+  // Phase 2A: Result Status Helpers
+  // ================================================================
+  getResultStatusClass(status: string | null): string {
+    switch (status) {
+      case 'Pass': return 'badge-pass';
+      case 'Fail': return 'badge-fail';
+      case 'Marginal': return 'badge-warn';
+      default: return 'badge-pending';
+    }
+  }
+
+  getResultStatusIcon(status: string | null): string {
+    switch (status) {
+      case 'Pass': return 'bi-check-circle';
+      case 'Fail': return 'bi-x-circle';
+      case 'Marginal': return 'bi-exclamation-triangle';
+      default: return 'bi-dash-circle';
+    }
+  }
+
+  formatDateTime(dateStr: string | null | undefined): string {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString();
+    } catch {
+      return dateStr;
+    }
+  }
+
+  // ================================================================
+  // Environment Info Panel Toggle
+  // ================================================================
+  toggleEnvInfo(headerId: number | string): void {
+    const key = String(headerId);
+    this.envInfoVisible[key] = !this.envInfoVisible[key];
+  }
+
+  // ================================================================
+  // Test Card Status CSS Class
+  // ================================================================
+  getTestCardClass(status: string): string {
+    switch (status) {
+      case 'Pending': return 'test-card--pending';
+      case 'Started':
+      case 'In Progress': return 'test-card--started';
+      case 'Completed': return 'test-card--completed';
+      case 'Long-Term': return 'test-card--longterm';
+      case 'Verified': return 'test-card--verified';
+      default: return 'test-card--pending';
+    }
+  }
+
+  // ================================================================
+  // Phase 2B: Price Calculation
+  // ================================================================
+  calculateTestPrice(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+
+    if (headerId == null || headerId <= 0) {
+      this.toastService.show('No header ID available for price calculation', 'warning');
+      return;
+    }
+
+    this.priceLoadingMap[headerId] = true;
+
+    this.testResultService.calculatePrice(headerId).subscribe({
+      next: (summary) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show('Price calculated successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error calculating price:', error);
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show(error?.error?.message || 'Error calculating price', 'error');
+      }
+    });
+  }
+
+  fetchPriceSummary(headerId: number): void {
+    if (headerId == null || headerId <= 0) return;
+    this.testResultService.getPriceSummary(headerId).subscribe({
+      next: (summary) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+      },
+      error: () => {
+        // No price data yet — that's fine
+      }
+    });
+  }
+
+  openPriceOverrideModal(headerId: number): void {
+    this.priceOverrideHeaderId = headerId;
+    this.priceOverrideAmount = null;
+    this.priceOverrideReason = '';
+    this.showPriceOverrideModal = true;
+  }
+
+  closePriceOverrideModal(): void {
+    this.showPriceOverrideModal = false;
+    this.priceOverrideHeaderId = 0;
+    this.priceOverrideAmount = null;
+    this.priceOverrideReason = '';
+  }
+
+  submitPriceOverride(): void {
+    if (!this.priceOverrideAmount || this.priceOverrideAmount <= 0) {
+      this.toastService.show('Please enter a valid override amount', 'warning');
+      return;
+    }
+    if (!this.priceOverrideReason.trim()) {
+      this.toastService.show('Please provide a reason for overriding', 'warning');
+      return;
+    }
+
+    const headerId = this.priceOverrideHeaderId;
+    this.testResultService.overridePrice(headerId, {
+      amount: this.priceOverrideAmount,
+      reason: this.priceOverrideReason.trim()
+    }).subscribe({
+      next: (summary) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        this.closePriceOverrideModal();
+        this.toastService.show('Price overridden successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error overriding price:', error);
+        this.toastService.show(error?.error?.message || 'Error overriding price', 'error');
+      }
+    });
+  }
+
+  // ================================================================
+  // Phase 1: NABL Scope Check
+  // ================================================================
+  loadNablScopeCheck(headerId: number): void {
+    this.testResultService.getNablScopeCheck(headerId).subscribe({
+      next: (results) => {
+        this.nablScopeMap[headerId] = results;
+      },
+      error: (err) => console.error('NABL scope check error:', err),
+    });
+  }
+
+  getNablStatus(headerId: number, parameterId: number): any {
+    const results = this.nablScopeMap[headerId];
+    if (!results) return null;
+    return results.find((r: any) => r.parameterId === parameterId);
+  }
+
+  // ================================================================
+  // Phase 2: Uncertainty
+  // ================================================================
+  loadUncertainty(headerId: number): void {
+    this.testResultService.getUncertainty(headerId).subscribe({
+      next: (results) => {
+        this.uncertaintyMap[headerId] = results;
+      },
+      error: (err) => console.error('Uncertainty load error:', err),
+    });
+  }
+
+  getUncertainty(headerId: number, parameterId: number): any {
+    const results = this.uncertaintyMap[headerId];
+    if (!results) return null;
+    return results.find((r: any) => r.parameterId === parameterId);
+  }
+
+  // ================================================================
+  // Phase 4: Machine Data Fetch
+  // ================================================================
+  fetchMachineData(headerId: number, equipmentId: number): void {
+    this.machineDataLoading[headerId] = true;
+    const dto = { testResultHeaderId: headerId, equipmentId };
+    this.testResultService.fetchMachineData(dto).subscribe({
+      next: (result) => {
+        this.machineDataLoading[headerId] = false;
+        this.toastService.show(
+          `Machine data: ${result.matchedCount} matched, ${result.unmatchedCount} unmatched`,
+          result.unmatchedCount > 0 ? 'warning' : 'success'
+        );
+        // Reload the test data to reflect updated values
+        this.loadFullResultPayload(this.sampleId);
+        this.loadNablScopeCheck(headerId);
+      },
+      error: (err) => {
+        this.machineDataLoading[headerId] = false;
+        console.error('Machine data fetch error:', err);
+        this.toastService.show(err?.error?.message || 'Failed to fetch machine data', 'error');
+      },
+    });
+  }
+
+  // ================================================================
+  // Phase 5: Preparation Status
+  // ================================================================
+  loadPreparationStatus(sampleId: number): void {
+    this.testResultService.getPreparationStatus(sampleId).subscribe({
+      next: (data) => {
+        this.preparationStatus = data;
+        this.isPreparationRequired = data.preparationRequired;
+        this.isPreparationRecorded = data.preparationRecorded;
+      },
+      error: (err) => console.error('Preparation status error:', err),
+    });
+  }
+
+  openPreparationForm(): void {
+    const url = this.preparationStatus?.cuttingEditUrl || '/sample/cutting';
+    window.open(url, '_blank');
+  }
+
+  refreshPreparationData(): void {
+    if (this.sampleId) {
+      this.loadPreparationStatus(this.sampleId);
+      this.loadUnifiedPriceSummary(this.sampleId);
+    }
+  }
+
+  // ================================================================
+  // Phase 6: Unified Price Summary
+  // ================================================================
+  loadUnifiedPriceSummary(sampleId: number): void {
+    this.unifiedPriceLoading = true;
+    this.testResultService.getUnifiedPriceSummary(sampleId).subscribe({
+      next: (data) => {
+        this.unifiedPriceSummary = data;
+        this.unifiedPriceLoading = false;
+      },
+      error: (err) => {
+        this.unifiedPriceLoading = false;
+        console.error('Unified price summary error:', err);
+      },
+    });
+  }
+
+  // ================================================================
+  // Machining Charge Line Items
+  // ================================================================
+  loadMachiningItems(sampleId: number): void {
+    this.machiningLoading = true;
+    this.testResultService.getMachiningItems(sampleId).subscribe({
+      next: (data) => {
+        this.machiningItems = data;
+        this.machiningLoading = false;
+      },
+      error: (err) => {
+        this.machiningLoading = false;
+        console.error('Machining items error:', err);
+      },
+    });
+  }
+
+  addMachiningLine(): void {
+    if (!this.newMachiningDesc?.trim() || !this.newMachiningAmount) return;
+    this.testResultService.addMachiningItem(this.sampleId, {
+      description: this.newMachiningDesc.trim(),
+      amount: this.newMachiningAmount,
+      remark: this.newMachiningRemark?.trim() || undefined,
+    }).subscribe({
+      next: () => {
+        this.newMachiningDesc = '';
+        this.newMachiningAmount = null;
+        this.newMachiningRemark = '';
+        this.loadMachiningItems(this.sampleId);
+        this.loadUnifiedPriceSummary(this.sampleId);
+        this.loadPreparationStatus(this.sampleId);
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to add machining item', 'error'),
+    });
+  }
+
+  deleteMachiningItem(itemId: number): void {
+    if (!confirm('Delete this machining charge?')) return;
+    this.testResultService.deleteMachiningItem(itemId).subscribe({
+      next: () => {
+        this.loadMachiningItems(this.sampleId);
+        this.loadUnifiedPriceSummary(this.sampleId);
+        this.loadPreparationStatus(this.sampleId);
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to delete machining item', 'error'),
+    });
+  }
+
+  get machiningSubtotal(): number {
+    return this.machiningItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+  }
+
+  // ================================================================
+  // Alert Banners — Failed / Marginal Parameters
+  // ================================================================
+  get parameterAlerts(): { id: string; type: 'fail' | 'warn'; title: string; message: string }[] {
+    const alerts: { id: string; type: 'fail' | 'warn'; title: string; message: string }[] = [];
+    this.plans.forEach((plan, pIdx) => {
+      (plan.tests || []).forEach((test: any, tIdx: number) => {
+        (test.parameters || []).forEach((param: any) => {
+          const alertId = `${pIdx}-${tIdx}-${param.parameterID || param.id}`;
+          if (this.dismissedAlerts.has(alertId)) return;
+          if (param.resultStatus === 'Fail' || (param.isWithinLimit === false && param.value != null)) {
+            alerts.push({
+              id: alertId,
+              type: 'fail',
+              title: `${param.parameterName} — FAILED`,
+              message: `Value ${param.value} ${param.unit || ''} is outside specification range`
+            });
+          } else if (param.resultStatus === 'Marginal') {
+            alerts.push({
+              id: alertId,
+              type: 'warn',
+              title: `${param.parameterName} — MARGINAL`,
+              message: `Value ${param.value} ${param.unit || ''} is near specification limit`
+            });
+          }
+        });
+      });
+    });
+    return alerts;
+  }
+
+  dismissAlert(alertId: string): void {
+    this.dismissedAlerts.add(alertId);
+  }
+
+  getOverallStatus(): string {
+    const allTests = this.plans.flatMap(p => p.tests || []);
+    if (allTests.every((t: any) => t.status === 'Completed')) return 'Completed';
+    if (allTests.some((t: any) => t.status === 'Started' || t.status === 'In Progress')) return 'In Progress';
+    return 'Pending';
+  }
+
+  // ================================================================
+  // Formula Builder Modal
+  // ================================================================
+  openFormulaBuilder(planIndex: number, testIndex: number, paramIndex: number): void {
+    this.formulaBuilderTargetRow = { planIndex, testIndex, paramIndex };
+    const paramRow = this.getParameters(planIndex, testIndex).at(paramIndex);
+    this.formulaExpression = paramRow?.get('formulaExpression')?.value || '';
+    this.formulaCursorPos = this.formulaExpression.length;
+
+    // Build available params list (excluding current row)
+    const params = this.getParameters(planIndex, testIndex);
+    this.formulaAvailableParams = [];
+    params.controls.forEach((row, idx) => {
+      if (idx === paramIndex) return;
+      const v = row.value;
+      if (v.parameterID) {
+        this.formulaAvailableParams.push({
+          parameterID: v.parameterID,
+          parameterName: v.parameterName || `Param ${v.parameterID}`,
+          unit: v.unit || '',
+          ref: `P${v.parameterID}`
+        });
+      }
+    });
+    this.showFormulaBuilderModal = true;
+  }
+
+  insertFormulaToken(token: string): void {
+    const before = this.formulaExpression.slice(0, this.formulaCursorPos);
+    const after = this.formulaExpression.slice(this.formulaCursorPos);
+    const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith('(');
+    this.formulaExpression = before + (needsSpace ? ' ' : '') + token + after;
+    this.formulaCursorPos = this.formulaExpression.length - after.length;
+  }
+
+  insertFormulaFunction(fn: string): void {
+    this.insertFormulaToken(fn + '(');
+  }
+
+  clearFormula(): void {
+    this.formulaExpression = '';
+    this.formulaCursorPos = 0;
+  }
+
+  applyFormula(): void {
+    if (!this.formulaBuilderTargetRow) return;
+    const { planIndex, testIndex, paramIndex } = this.formulaBuilderTargetRow;
+    const paramRow = this.getParameters(planIndex, testIndex).at(paramIndex);
+    paramRow?.patchValue({ formulaExpression: this.formulaExpression });
+    this.showFormulaBuilderModal = false;
+
+    // Evaluate formula on UI side immediately
+    const calculatedValue = this.evaluateFormula(this.formulaExpression, planIndex, testIndex, paramIndex);
+    if (calculatedValue !== null) {
+      paramRow?.patchValue({ value: calculatedValue });
+      // Also update isWithinLimit based on new value
+      this.onValueChanged(planIndex, testIndex, paramIndex);
+      this.toastService.show(`Formula applied — calculated value: ${calculatedValue}`, 'success');
+    } else {
+      this.toastService.show('Formula applied but could not evaluate — missing parameter values', 'warning');
+    }
+  }
+
+  /**
+   * Evaluate a formula expression on the client side using current parameter values.
+   * Supports P{ID} references, basic math (+,-,*,/,(,)), and functions (MEAN, MAX, MIN, SUM, COUNT, STDEV).
+   * Returns the calculated numeric value, or null if evaluation fails.
+   */
+  evaluateFormula(expression: string, planIndex: number, testIndex: number, excludeParamIndex: number): number | null {
+    if (!expression || !expression.trim()) return null;
+
+    try {
+      const params = this.getParameters(planIndex, testIndex);
+      // Build a map of P{ID} -> numeric value from all parameters in this test
+      const paramValueMap: Record<string, number> = {};
+      params.controls.forEach((row, idx) => {
+        const v = row.value;
+        if (v.parameterID && v.value != null && v.value !== '') {
+          paramValueMap[`P${v.parameterID}`] = Number(v.value);
+        }
+      });
+
+      let expr = expression.trim();
+
+      // Replace aggregate functions: MEAN(...), MAX(...), MIN(...), SUM(...), COUNT(...), STDEV(...)
+      expr = expr.replace(/(MEAN|MAX|MIN|SUM|COUNT|STDEV)\(([^)]+)\)/gi, (match, fn, args) => {
+        const argTokens = args.split(',').map((a: string) => a.trim());
+        const values: number[] = [];
+        for (const token of argTokens) {
+          if (paramValueMap[token] !== undefined) {
+            values.push(paramValueMap[token]);
+          } else if (!isNaN(Number(token))) {
+            values.push(Number(token));
+          } else {
+            return 'NaN'; // unresolved reference
+          }
+        }
+        if (values.length === 0) return 'NaN';
+
+        const fnUpper = fn.toUpperCase();
+        switch (fnUpper) {
+          case 'MEAN': return String(values.reduce((a, b) => a + b, 0) / values.length);
+          case 'MAX': return String(Math.max(...values));
+          case 'MIN': return String(Math.min(...values));
+          case 'SUM': return String(values.reduce((a, b) => a + b, 0));
+          case 'COUNT': return String(values.length);
+          case 'STDEV': {
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+            return String(Math.sqrt(variance));
+          }
+          default: return 'NaN';
+        }
+      });
+
+      // Replace P{ID} references with their numeric values
+      expr = expr.replace(/P(\d+)/g, (match, id) => {
+        const key = `P${id}`;
+        if (paramValueMap[key] !== undefined) {
+          return String(paramValueMap[key]);
+        }
+        return 'NaN'; // unresolved reference
+      });
+
+      // Check for any unresolved references
+      if (expr.includes('NaN')) return null;
+
+      // Validate expression contains only safe characters: digits, operators, parentheses, dots, spaces
+      if (!/^[\d\s+\-*/().]+$/.test(expr)) return null;
+
+      // Evaluate the math expression
+      const result = new Function('return (' + expr + ')')();
+      if (typeof result === 'number' && isFinite(result)) {
+        return Math.round(result * 10000) / 10000; // round to 4 decimal places
+      }
+      return null;
+    } catch (e) {
+      console.warn('Formula evaluation error:', e);
+      return null;
+    }
+  }
+
+  closeFormulaBuilder(): void {
+    this.showFormulaBuilderModal = false;
+    this.formulaBuilderTargetRow = null;
+  }
+
+  onFormulaInputChange(event: Event): void {
+    const input = event.target as HTMLTextAreaElement;
+    this.formulaCursorPos = input.selectionStart || 0;
   }
 
 }

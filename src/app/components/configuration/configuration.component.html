@@ -89,6 +89,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
@@ -204,7 +206,7 @@
           <div class="col-12" *ngIf="isDropdown">
             <div class="d-flex justify-content-between m-2">
               <label class="form-label">Dropdown Values</label>
-              <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addValue()">
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addValue()">
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Option
               </button>

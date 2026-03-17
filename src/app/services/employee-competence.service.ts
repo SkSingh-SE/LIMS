@@ -1,87 +1,39 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { EmployeeCompetenceReport, EmployeeCompetenceReportResponse } from '../models/employeeCompetenceModel';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { EmployeeCompetenceReport, EmployeeCompetenceReportResponse, CompetenceEvaluationParameter } from '../models/employeeCompetenceModel';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class EmployeeCompetenceService {
-    private reports: EmployeeCompetenceReport[] = [
-        {
-            id: 1,
-            employeeId: 1,
-            employeeName: 'Bunty Khattik',
-            designationName: 'Chemist',
-            evaluationPeriodFrom: '2024-09-26',
-            evaluationPeriodTo: '2025-09-26',
-            parameters: [
-                { name: 'Behavior of the person', rating: 'Excellent' },
-                { name: 'Willingness to take responsibility', rating: 'Excellent' },
-                { name: 'Speed & Quality of work', rating: 'Excellent' },
-                { name: 'Maintaining Integrity and confidentiality', rating: 'Very Good' },
-                { name: 'Accuracy of work done', rating: 'Excellent' },
-                { name: 'Implementation of QMS as per ISO 17025', rating: 'Very Good' },
-                { name: 'NABL Compliance management', rating: 'Excellent' },
-                { name: 'Technical Competency for testing activities as per skill Requirement matrix', rating: 'Excellent' },
-                { name: 'Working with equipment\'s & maintenance', rating: 'Excellent' }
-            ],
-            overallRating: 9,
-            specificTrainingRequired: 'Internal Lab training.',
-            evaluationDoneBy: 'Technical Director',
-            evaluationDate: '2025-09-26'
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/EmployeeCompetence';
 
-    private nextId = 2;
-
-    constructor() { }
+    constructor(private http: HttpClient) {}
 
     getAll(filter: any): Observable<EmployeeCompetenceReportResponse> {
-        let filtered = [...this.reports];
-        if (filter.employeeId) {
-            filtered = filtered.filter(r => r.employeeId === filter.employeeId);
-        }
-        if (filter.searchTerm) {
-            filtered = filtered.filter(r => r.employeeName.toLowerCase().includes(filter.searchTerm.toLowerCase()));
-        }
-        const totalRecords = filtered.length;
-        return of({
-            items: filtered,
-            totalRecords,
-            pageNumber: filter.PageNumber || 1,
-            pageSize: filter.PageSize || 10
-        });
+        return this.http.post<EmployeeCompetenceReportResponse>(this.apiUrl + '/list', filter);
     }
 
     getById(id: number): Observable<EmployeeCompetenceReport | undefined> {
-        return of(this.reports.find(r => r.id === id));
+        return this.http.get<EmployeeCompetenceReport>(`${this.apiUrl}/details/${id}`);
     }
 
     create(report: EmployeeCompetenceReport): Observable<any> {
-        const newReport = { ...report, id: this.nextId++ };
-        this.reports.push(newReport);
-        return of({ success: true, message: 'Competence report created successfully', id: newReport.id });
+        return this.http.post(`${this.apiUrl}/save`, report);
     }
 
     update(id: number, report: EmployeeCompetenceReport): Observable<any> {
-        const index = this.reports.findIndex(r => r.id === id);
-        if (index !== -1) {
-            this.reports[index] = { ...report, id };
-            return of({ success: true, message: 'Competence report updated successfully' });
-        }
-        return of({ success: false, message: 'Report not found' });
+        report.id = id;
+        return this.http.post(`${this.apiUrl}/save`, report);
     }
 
     delete(id: number): Observable<any> {
-        const index = this.reports.findIndex(r => r.id === id);
-        if (index !== -1) {
-            this.reports.splice(index, 1);
-            return of({ success: true, message: 'Competence report deleted successfully' });
-        }
-        return of({ success: false, message: 'Report not found' });
+        return this.http.delete(`${this.apiUrl}/delete/${id}`);
     }
 
-    getDefaultParameters(): any[] {
+    getDefaultParameters(): CompetenceEvaluationParameter[] {
         return [
             { name: 'Behavior of the person', rating: '' },
             { name: 'Willingness to take responsibility', rating: '' },
@@ -91,7 +43,7 @@ export class EmployeeCompetenceService {
             { name: 'Implementation of QMS as per ISO 17025', rating: '' },
             { name: 'NABL Compliance management', rating: '' },
             { name: 'Technical Competency for testing activities as per skill Requirement matrix', rating: '' },
-            { name: 'Working with equipment\'s & maintenance', rating: '' }
+            { name: "Working with equipment's & maintenance", rating: '' },
         ];
     }
 }

@@ -1,53 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { NonConformingWork } from '../models/non-conforming-work';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class NonConformingWorkService {
-    private dummyData: NonConformingWork[] = [
-        {
-            id: 1,
-            dateMonthYear: '13/09/25',
-            ncDetail: '<p>In PTEF of tool steel score of 0.2" is 4.6 which is outside the acceptable performance</p>',
-            rootCauseAnalysis: '<p>Surface contamination during grinding of PT sample</p>',
-            correctiveAction: '<p>1. Polishing paper must not used for different material types</p>',
-            closerDate: '2025-09-20',
-            formatNo: 'F-41',
-            docNo: 'DMSPL / Level-04 / Format / F-41',
-            issueNo: '03',
-            issueDate: '2021-10-01',
-            revNo: '00',
-            revDate: '--'
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/NonConformingWork';
+
+    constructor(private http: HttpClient) {}
 
     getAll(): Observable<NonConformingWork[]> {
-        return of(this.dummyData);
+        return this.http.post<NonConformingWork[]>(this.apiUrl + '/list', {});
     }
 
     getById(id: number): Observable<NonConformingWork | undefined> {
-        return of(this.dummyData.find(d => d.id === id));
+        return this.http.get<NonConformingWork>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: NonConformingWork): Observable<NonConformingWork> {
-        const newItem = { ...data, id: this.dummyData.length + 1 };
-        this.dummyData.push(newItem);
-        return of(newItem);
+        return this.http.post<NonConformingWork>(`${this.apiUrl}/save`, data);
     }
 
     update(id: number, data: NonConformingWork): Observable<NonConformingWork> {
-        const index = this.dummyData.findIndex(d => d.id === id);
-        if (index !== -1) {
-            this.dummyData[index] = { ...data, id };
-            return of(this.dummyData[index]);
-        }
-        throw new Error('Record not found');
+        data.id = id;
+        return this.http.post<NonConformingWork>(`${this.apiUrl}/save`, data);
     }
 
     delete(id: number): Observable<boolean> {
-        this.dummyData = this.dummyData.filter(d => d.id !== id);
-        return of(true);
+        return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
 }

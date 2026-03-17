@@ -1,15 +1,52 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Incoming Material Inspection
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && record()" [title]="'Incoming Material Inspection Record (F-24)'" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && record()" [title]="'Incoming Material Inspection Record (F-24)'" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         mainTitle="Incoming Material Inspection Record"
@@ -21,55 +58,45 @@
     </ng-container>
 
     <ng-container body>
-      <div class="preview-body p-1">
-        <!-- Section I: Material & Receipt Info -->
-        <table class="table table-bordered border-dark mb-3">
-          <thead>
-            <tr class="bg-light text-primary">
-              <th colspan="4" class="py-2 px-3 fw-bold">
-                <i class="bi bi-box-seam me-2"></i>
-                I. MATERIAL & RECEIPT DETAILS
-              </th>
-            </tr>
-          </thead>
+      <!-- Section I: Material & Receipt Info -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. MATERIAL & RECEIPT DETAILS</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="bg-light fw-bold small" style="width: 25%">Material Name</td>
+              <td class="lbl" style="width: 25%">Material Name</td>
               <td style="width: 25%">{{ record()?.materialName }}</td>
-              <td class="bg-light fw-bold small" style="width: 25%">Material Code</td>
+              <td class="lbl" style="width: 25%">Material Code</td>
               <td style="width: 25%">{{ record()?.materialCode }}</td>
             </tr>
             <tr>
-              <td class="bg-light fw-bold small">Supplier Name</td>
+              <td class="lbl">Supplier Name</td>
               <td>{{ record()?.supplierName }}</td>
-              <td class="bg-light fw-bold small">Invoice No.</td>
+              <td class="lbl">Invoice No.</td>
               <td>{{ record()?.invoiceNo }}</td>
             </tr>
             <tr>
-              <td class="bg-light fw-bold small">Batch / Lot No.</td>
+              <td class="lbl">Batch / Lot No.</td>
               <td>{{ record()?.batchNo }} {{ record()?.lotNo ? "/ " + record()?.lotNo : "" }}</td>
-              <td class="bg-light fw-bold small">Quantity Received</td>
+              <td class="lbl">Quantity Received</td>
               <td>{{ record()?.quantityReceived }} {{ record()?.unitOfMeasure }}</td>
             </tr>
             <tr>
-              <td class="bg-light fw-bold small">Record Number</td>
+              <td class="lbl">Record Number</td>
               <td>{{ record()?.documentNo }}</td>
-              <td class="bg-light fw-bold small">GRN No.</td>
+              <td class="lbl">GRN No.</td>
               <td>{{ record()?.grnNo || "--" }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
 
-        <!-- Section II: Inspection Results -->
-        <table class="table table-bordered border-dark mb-3">
+      <!-- Section II: Inspection Results -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. INSPECTION PARAMETERS & OBSERVATIONS</div>
+        <table class="table table-bordered inner-table">
           <thead>
-            <tr class="bg-light text-primary">
-              <th colspan="5" class="py-2 px-3 fw-bold">
-                <i class="bi bi-list-check me-2"></i>
-                II. INSPECTION PARAMETERS & OBSERVATIONS
-              </th>
-            </tr>
-            <tr class="bg-light text-center small fw-bold">
+            <tr class="tbl-head">
               <th style="width: 40px">SN</th>
               <th>Parameter Name</th>
               <th>Standard Requirement</th>
@@ -89,20 +116,15 @@
             </tr>
           </tbody>
         </table>
+      </div>
 
-        <!-- Section III: Outcome -->
-        <table class="table table-bordered border-dark mb-3">
-          <thead>
-            <tr class="bg-light text-primary">
-              <th colspan="2" class="py-2 px-3 fw-bold">
-                <i class="bi bi-check2-circle me-2"></i>
-                III. INSPECTION OUTCOME
-              </th>
-            </tr>
-          </thead>
+      <!-- Section III: Outcome -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. INSPECTION OUTCOME</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="bg-light fw-bold small" style="width: 25%">Final Status</td>
+              <td class="lbl" style="width: 25%">Final Status</td>
               <td
                 style="width: 75%"
                 class="fw-bold fs-6"
@@ -117,24 +139,25 @@
             </tr>
           </tbody>
         </table>
+      </div>
 
-        <!-- Section IV: Deviations & Corrective Actions -->
-        <div class="row g-0 border border-dark mb-0">
-          <div class="col-md-6 border-end border-dark">
-            <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark small">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              DEVIATIONS OBSERVED
-            </div>
-            <div class="p-3 ql-editor small" [innerHTML]="record()?.deviations || 'None.'"></div>
-          </div>
-          <div class="col-md-6">
-            <div class="bg-light text-primary py-2 px-3 fw-bold border-bottom border-dark small">
-              <i class="bi bi-tools me-2"></i>
-              CORRECTIVE ACTIONS
-            </div>
-            <div class="p-3 ql-editor small" [innerHTML]="record()?.correctiveActions || 'No actions required.'"></div>
-          </div>
-        </div>
+      <!-- Section IV: Deviations & Corrective Actions -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. DEVIATIONS & CORRECTIVE ACTIONS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 50%">DEVIATIONS OBSERVED</th>
+              <th style="width: 50%">CORRECTIVE ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="small" [innerHTML]="record()?.deviations || 'None.'"></td>
+              <td class="small" [innerHTML]="record()?.correctiveActions || 'No actions required.'"></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ng-container>
 
@@ -146,11 +169,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

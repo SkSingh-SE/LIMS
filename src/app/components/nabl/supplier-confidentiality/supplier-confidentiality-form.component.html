@@ -24,6 +24,10 @@
           </div>
           <div *ngIf="openSections['header']" class="section-body">
             <div class="row g-3">
+              <div class="col-md-3" *ngIf="agreementForm.get('documentNo')?.value">
+                <label class="form-label">Document No</label>
+                <input type="text" class="form-control bg-light" formControlName="documentNo" readonly>
+              </div>
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-2">

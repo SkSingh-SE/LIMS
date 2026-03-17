@@ -1,55 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { RiskAssessment } from '../models/risk-assessment';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class RiskAssessmentService {
-    private dummyData: RiskAssessment[] = [
-        {
-            id: 1,
-            date: '2025-01-10',
-            activityProcess: 'Sample Collection & Handling',
-            riskIdentified: '<p>Contamination of samples during transport.</p>',
-            opportunity: '<p>Use of specialized refrigerated transport containers.</p>',
-            mitigationPlan: '<p>Standardize transport protocols and train staff on handling.</p>',
-            responsibility: 'Lab Technician / Quality Manager',
-            effectiveness: '<p>No contamination reported in last 3 months.</p>',
-            formatNo: 'F-46',
-            docNo: 'DMSPL / Level-04 / Format / F-46',
-            issueNo: '03',
-            issueDate: '2021-10-01',
-            revNo: '00',
-            revDate: '--'
-        }
-    ];
+    private apiUrl = environment.apiUrl + '/Nabl/RiskAssessment';
+
+    constructor(private http: HttpClient) {}
 
     getAll(): Observable<RiskAssessment[]> {
-        return of(this.dummyData);
+        return this.http.post<RiskAssessment[]>(this.apiUrl + '/list', {});
     }
 
     getById(id: number): Observable<RiskAssessment | undefined> {
-        return of(this.dummyData.find(r => r.id === id));
+        return this.http.get<RiskAssessment>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: RiskAssessment): Observable<RiskAssessment> {
-        const newItem = { ...data, id: this.dummyData.length + 1 };
-        this.dummyData.push(newItem);
-        return of(newItem);
+        return this.http.post<RiskAssessment>(`${this.apiUrl}/save`, data);
     }
 
     update(id: number, data: RiskAssessment): Observable<RiskAssessment> {
-        const index = this.dummyData.findIndex(r => r.id === id);
-        if (index !== -1) {
-            this.dummyData[index] = { ...data, id };
-            return of(this.dummyData[index]);
-        }
-        throw new Error('Record not found');
+        data.id = id;
+        return this.http.post<RiskAssessment>(`${this.apiUrl}/save`, data);
     }
 
     delete(id: number): Observable<boolean> {
-        this.dummyData = this.dummyData.filter(r => r.id !== id);
-        return of(true);
+        return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
 }

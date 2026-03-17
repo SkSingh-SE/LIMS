@@ -91,6 +91,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
@@ -265,7 +267,7 @@
             <label class="form-label">Formula</label>
             <div class="input-group">
               <input type="text" class="form-control" formControlName="formula" placeholder="{P12} + {P15}" readonly />
-              <button type="button" class="btn btn-outline-danger-600" (click)="openFormulaBuilder()">Build Formula</button>
+              <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder()">Build Formula</button>
             </div>
           </div>
         </div>

@@ -1,0 +1,164 @@
+<div class="ledger-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <h2 class="page-title">
+          <i class="bi bi-journal-text me-2"></i>
+          Customer Ledger
+        </h2>
+        <p class="page-subtitle">View customer transaction history and balances</p>
+      </div>
+      <div class="col-md-6 text-end" *ngIf="selectedCustomerId">
+        <button class="btn btn-outline-success btn-sm me-2" (click)="exportToExcel()" [disabled]="!ledgerEntries.length">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+        </button>
+        <button class="btn btn-outline-primary btn-sm" (click)="printStatement()">
+          <i class="bi bi-printer me-1"></i> Print Statement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <app-searchable-dropdown
+            [placeholder]="'Type & Search Customer'"
+            [labelName]="'Select Customer'"
+            [fetchDataFn]="getCustomers"
+            (itemSelected)="onCustomerSelect($event)"
+            [required]="true"
+            [selectedItem]="selectedCustomerId"
+          ></app-searchable-dropdown>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">From Date</label>
+          <input type="date" class="form-control" [(ngModel)]="fromDate" (change)="onDateChange()" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">To Date</label>
+          <input type="date" class="form-control" [(ngModel)]="toDate" (change)="onDateChange()" />
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" (click)="loadLedger()" [disabled]="!selectedCustomerId">
+            <i class="bi bi-search me-1"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opening Balance -->
+  <div class="opening-balance-bar mb-3" *ngIf="selectedCustomerId && !isLoading && ledgerEntries.length">
+    <span class="fw-semibold">Opening Balance:</span>
+    <span class="ms-2 fw-bold" [class.text-danger]="openingBalance > 0" [class.text-success]="openingBalance <= 0">
+      {{ openingBalance | number:'1.2-2' }}
+    </span>
+  </div>
+
+  <!-- Balance Summary -->
+  <div class="row mb-4" *ngIf="balance">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-start border-danger border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Debit</h6>
+          <h4 class="text-danger mb-0">{{ getDebitTotal() | number:'1.2-2' }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm border-start border-success border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Total Credit</h6>
+          <h4 class="text-success mb-0">{{ getCreditTotal() | number:'1.2-2' }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm border-start border-warning border-4">
+        <div class="card-body text-center">
+          <h6 class="text-muted mb-1">Outstanding Balance</h6>
+          <h4 class="mb-0" [class.text-danger]="balance?.outstandingBalance > 0"
+              [class.text-success]="balance?.outstandingBalance <= 0">
+            {{ (balance?.outstandingBalance || 0) | number:'1.2-2' }}
+          </h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted mt-2">Loading ledger entries...</p>
+  </div>
+
+  <!-- Ledger Table -->
+  <div class="card shadow-sm" *ngIf="!isLoading && selectedCustomerId">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Reference</th>
+              <th>Description</th>
+              <th class="text-end">Debit (&#8377;)</th>
+              <th class="text-end">Credit (&#8377;)</th>
+              <th class="text-end">Balance (&#8377;)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of ledgerEntries" [ngClass]="getEntryRowClass(entry)">
+              <td>{{ formatDisplayDate(entry.date) }}</td>
+              <td>
+                <span class="badge"
+                      [class.bg-danger]="entry.transactionType === 'Invoice' || entry.debit > 0"
+                      [class.bg-success]="entry.transactionType === 'Payment' || entry.credit > 0">
+                  {{ entry.transactionType }}
+                </span>
+              </td>
+              <td>{{ entry.referenceNo || '-' }}</td>
+              <td>{{ entry.description || '-' }}</td>
+              <td class="text-end">{{ entry.debit ? (entry.debit | number:'1.2-2') : '-' }}</td>
+              <td class="text-end">{{ entry.credit ? (entry.credit | number:'1.2-2') : '-' }}</td>
+              <td class="text-end fw-bold">{{ (entry.runningBalance || entry.balance || 0) | number:'1.2-2' }}</td>
+            </tr>
+            <tr *ngIf="!ledgerEntries.length">
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No ledger entries found for the selected period.
+              </td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="ledgerEntries.length">
+            <tr class="table-secondary fw-bold">
+              <td colspan="4" class="text-end">Total</td>
+              <td class="text-end">{{ getDebitTotal() | number:'1.2-2' }}</td>
+              <td class="text-end">{{ getCreditTotal() | number:'1.2-2' }}</td>
+              <td class="text-end">-</td>
+            </tr>
+            <tr class="table-warning fw-bold">
+              <td colspan="6" class="text-end">Closing Balance</td>
+              <td class="text-end" [class.text-danger]="closingBalance > 0" [class.text-success]="closingBalance <= 0">
+                {{ closingBalance | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Customer Selected -->
+  <div *ngIf="!selectedCustomerId && !isLoading" class="text-center py-5">
+    <i class="bi bi-person-lines-fill empty-icon"></i>
+    <h5 class="text-muted mt-3">Select a customer to view their ledger</h5>
+  </div>
+</div>

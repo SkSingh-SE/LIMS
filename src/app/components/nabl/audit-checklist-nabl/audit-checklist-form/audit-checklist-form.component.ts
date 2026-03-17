@@ -21,11 +21,13 @@ export class AuditChecklistFormComponent implements OnInit {
     isLoading = false;
     formTitle = 'Audit Checklist & Observation';
     formNumbers = NablFormsHelper.getFormNumbers();
+    relatedAuditPlan: any = null;
 
     openSections: { [key: string]: boolean } = {
         header: true,
         auditDetails: true,
-        checklistItems: true
+        checklistItems: true,
+        relatedForms: true
     };
 
     quillModules = {
@@ -110,6 +112,16 @@ export class AuditChecklistFormComponent implements OnInit {
 
                 this.checklistForm.patchValue(data);
                 if (this.isViewMode) this.checklistForm.disable();
+
+                // Load related Audit Plan if linked
+                const record = data as any;
+                if (record.auditPlanId) {
+                    this.relatedAuditPlan = {
+                        id: record.auditPlanId,
+                        documentNo: record.auditPlan?.documentNo || 'N/A',
+                        status: record.auditPlan?.status || 'Draft'
+                    };
+                }
             }
             this.isLoading = false;
         });

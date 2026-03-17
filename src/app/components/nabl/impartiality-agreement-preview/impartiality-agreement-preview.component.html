@@ -1,15 +1,52 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)='goBack()'>
-      <i class="bi bi-arrow-left"></i> Back to Employee
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Impartiality Agreement Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading && employee" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading && employee" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
           [formatNo]="'F-1'"
@@ -21,14 +58,14 @@
     </ng-container>
 
     <ng-container body>
-      <div class="agreement-content">
-        <p class="mb-4">
-          I, <strong>{{ employee.name }}</strong>, holding the position of <strong>{{ employee.designationName }}</strong>
-          at <strong>Divine Metallurgical Services Pvt. Ltd.</strong>, do hereby solemnly declare and agree to the following:
-        </p>
+      <p class="mb-4">
+        I, <strong>{{ employee.name }}</strong>, holding the position of <strong>{{ employee.designationName }}</strong>
+        at <strong>Divine Metallurgical Services Pvt. Ltd.</strong>, do hereby solemnly declare and agree to the following:
+      </p>
 
-        <div class="section mb-4">
-          <h6 class="fw-bold">1. Impartiality Commitment</h6>
+      <div class="doc-section mb-3">
+        <div class="sec-title">1. IMPARTIALITY COMMITMENT</div>
+        <div class="sec-body">
           <p>
             I am aware that Divine Metallurgical Services Pvt. Ltd. (DMSPL) is committed to ensure impartiality in its laboratory activities.
             DMSPL laboratory activities are structured and managed so as to safeguard impartiality.
@@ -42,9 +79,11 @@
             If a risk to impartiality is identified, I shall immediately inform the Quality Manager/Director to enable the laboratory to demonstrate how it eliminates or minimizes such risk.
           </p>
         </div>
+      </div>
 
-        <div class="section mb-4">
-          <h6 class="fw-bold">2. Confidentiality Commitment</h6>
+      <div class="doc-section mb-3">
+        <div class="sec-title">2. CONFIDENTIALITY COMMITMENT</div>
+        <div class="sec-body">
           <p>
             I am responsible, through legally enforceable commitments, for the management of all information obtained or created during the performance of laboratory activities.
             I shall inform the customer in advance, of the information it intends to place in the public domain. Except for information that the customer makes publicly available,
@@ -59,17 +98,22 @@
             The provider (source) of this information shall be confidential to the laboratory and shall not be shared with the customer, unless agreed by the source.
           </p>
         </div>
+      </div>
 
-        <div class="section mb-4">
-          <h6 class="fw-bold">3. Conflict of Interest</h6>
+      <div class="doc-section mb-3">
+        <div class="sec-title">3. CONFLICT OF INTEREST</div>
+        <div class="sec-body">
           <p>
             I declare that I have no personal, financial or other interest which might influence my judgment in performing laboratory activities.
             I will not engage in any activity that may conflict with the interests of DMSPL or its customers.
           </p>
         </div>
+      </div>
 
-        <div class="acceptance-block mt-5 pt-5">
-          <table class="table table-borderless">
+      <div class="doc-section mt-5">
+        <div class="sec-title">ACCEPTANCE</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
               <td style="width: 50%;">
                 <div class="signature-line"></div>
@@ -79,8 +123,8 @@
                 <div>Date: <strong>{{ currentDate | date: 'dd/MM/yyyy' }}</strong></div>
               </td>
             </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
     </ng-container>
 
@@ -92,11 +136,4 @@
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

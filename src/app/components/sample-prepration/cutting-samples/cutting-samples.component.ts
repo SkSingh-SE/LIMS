@@ -51,7 +51,7 @@ export class CuttingSamplesComponent implements OnInit {
   pageSizes = [5, 10, 20];
 
   sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
   isLoading = signal(false);
 
@@ -194,6 +194,14 @@ export class CuttingSamplesComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;

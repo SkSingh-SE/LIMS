@@ -26,6 +26,16 @@
             <input type="text" id="description" class="form-control" formControlName="description"
               placeholder="Enter Designation Description" required [attr.disabled]="isViewMode ? true : null" />
           </div>
+          <div class="mb-3">
+            <app-searchable-dropdown
+              [placeholder]="'Search Role'"
+              [labelName]="'Role'"
+              [fetchDataFn]="getRoles"
+              (itemSelected)="onRoleSelected($event)"
+              [isDisabled]="isViewMode"
+              [selectedItem]="designationForm.get('roleID')?.value"
+            ></app-searchable-dropdown>
+          </div>
         </div>
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>

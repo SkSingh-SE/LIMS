@@ -51,7 +51,6 @@ export class AuthService {
   isLoggedIn(): boolean {
     const expiration = localStorage.getItem('tokenExpiration');
     const userData = this.getUserData();
-  alert('isLoggedIn called');
     if (!userData || !expiration) {
       return false;
     }

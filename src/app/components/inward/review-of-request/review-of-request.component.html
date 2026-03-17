@@ -72,7 +72,7 @@
                     *ngIf="!item.reviewStatus"
                     [routerLink]="['/sample/plan/edit', item.id]"
                     [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-danger-600"
+                    class="btn btn-sm btn-outline-primary"
                     title="Plan"
                   >
                     Plan
@@ -80,7 +80,7 @@
                   <a
                     [routerLink]="['/sample/review', item.id]"
                     [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-danger-600"
+                    class="btn btn-sm btn-outline-primary"
                     title="Review"
                   >
                     Review
@@ -93,7 +93,7 @@
                       <button
                         *ngFor="let action of item.actions"
                         type="button"
-                        class="btn btn-sm btn-outline-danger-600 me-2"
+                        class="btn btn-sm btn-outline-primary me-2"
                         (click)="onActionClick(action)"
                       >
                         {{ action.name }}
@@ -149,6 +149,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>

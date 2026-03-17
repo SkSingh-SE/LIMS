@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
@@ -22,7 +22,7 @@ import { TPIService } from '../../../services/tpi.service';
   selector: 'app-plan-form',
   templateUrl: './plan-form.component.html',
   styleUrls: ['./plan-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, SearchableDropdownComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent]
 })
 export class PlanFormComponent implements OnInit {
   @Input() inwardID?: number;
@@ -34,13 +34,17 @@ export class PlanFormComponent implements OnInit {
   isEditMode = false;
   sampleId!: number;
   currentStatus: SampleStatus | string = '';
+  planHistoryData: any[] = [];
+  showHistoryPanel = false;
+  activeHistoryPlanId: number | null = null;
+  replanReason = '';
+  showReplanModal = false;
+  replanPlanId: number | null = null;
 
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList: { id: number, name: string }[] = [];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   filteredTestMethods: { [key: string]: any[] } = {};
-  filteredStandardsMap: { [key: string]: any[] } = {};
-  filteredTestCases: { [key: string]: any[] } = {};
   // Track IDs of existing general tests removed from form so backend can delete them
   deletedGeneralTestIds: number[] = [];
   deletedPlanIds: number[] = [];
@@ -185,7 +189,6 @@ export class PlanFormComponent implements OnInit {
       testTypes: this.fb.group(testTypesGroup),
       specification1: [null],
       specification2: [null],
-      testMethod: [''],
       elements: this.fb.array([])
     });
   }
@@ -193,10 +196,6 @@ export class PlanFormComponent implements OnInit {
   createTestMethodRow(reportNo: string, ulrNo: string): FormGroup {
     return this.fb.group({
       testMethodID: [null, Validators.required],
-      testCaseID: [null, Validators.required],
-      selectionType: [''],
-      value: [''],
-      standardID: [''],
       quantity: ['1'],
       reportNo: [reportNo],
       ulrNo: [ulrNo],
@@ -454,6 +453,12 @@ export class PlanFormComponent implements OnInit {
             sampleID: tp.sampleID,
             sampleNo: tp.sampleNo,
             id: tp.id,
+            version: tp.version ?? 1,
+            replanCount: tp.replanCount ?? 0,
+            planStatus: tp.planStatus ?? 'Draft',
+            approvedById: tp.approvedById,
+            approvedByName: tp.approvedByName,
+            approvedAt: tp.approvedAt,
             generalTests: (tp.generalTests || []).map((gt: any) => ({
               id: gt.id,
               sampleNo: gt.sampleNo,
@@ -462,10 +467,6 @@ export class PlanFormComponent implements OnInit {
               parameter: gt.parameter,
               methods: (gt.methods || []).map((m: any) => ({
                 testMethodID: m.testMethodID,
-                testCaseID: m.testCaseID,
-                selectionType: m.selectionType,
-                value: m.value || null,
-                standardID: m.standardID,
                 quantity: m.quantity,
                 reportNo: m.reportNo,
                 ulrNo: m.ulrNo,
@@ -480,7 +481,6 @@ export class PlanFormComponent implements OnInit {
               testTypes: ct.testTypes,
               specification1: ct.specification1,
               specification2: ct.specification2,
-              testMethod: ct.testMethod,
               elements: (ct.elements || []).map((el: any) => ({
                 parameterID: el.parameterID || 0,
                 specificationLineID: el.specificationLineID || 0,
@@ -574,9 +574,6 @@ export class PlanFormComponent implements OnInit {
   getTPIAgencies = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.tpiService.getTPIDropdown(term, page, pageSize);
 
-  getLaboratoryTestCases = (testMethodId: number): Observable<any[]> =>
-    this.laboratoryTestService.getTestCasesByTestMethodId(testMethodId);
-
   // ────────────── Event Handlers ──────────────
   onProductConditionSelected(item: any, sampleIndex: number) {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
@@ -631,22 +628,6 @@ export class PlanFormComponent implements OnInit {
 
     // General Test Logic
     if (testType === 'generalTests') {
-      if (newId) {
-        this.materialSpecificationService.getDefaultStandardBySpecificationId(+newId).subscribe({
-          next: (standard: any[]) => {
-            if (!standard || standard.length === 0) {
-              this.toastService.show('No default standard found for the selected specification.', 'info');
-              return;
-            }
-
-            const existingStandards = this.filteredStandardsMap[key] || [];
-            const map = new Map<number, any>(existingStandards.map(s => [s.id, s]));
-            (standard || []).forEach((s: any) => map.set(s.id, s));
-            this.filteredStandardsMap[key] = Array.from(map.values());
-          },
-          error: (err) => console.warn('[PlanForm] Error fetching default standard', err)
-        });
-      }
       if (specsToUse.length > 0) {
         this.testMappingService.getAutoSuggestedTests(metalId, productConditionId, specsToUse.join(','))
           .subscribe({
@@ -686,10 +667,6 @@ export class PlanFormComponent implements OnInit {
                   (t: any, i: number, self: any[]) => i === self.findIndex((x: any) => x.id === t.id)
                 );
                 this.filteredTestMethods[key] = unique;
-
-                if (unique[0]?.id) {
-                  section.patchValue({ testMethod: unique[0].id });
-                }
               } else {
                 this.filteredTestMethods[key] = [];
                 this.toastService.show('No suggested chemical test methods found for selected specifications.', 'info');
@@ -791,69 +768,7 @@ export class PlanFormComponent implements OnInit {
 
     methodCtrl.patchValue({
       testMethodID: item?.id ?? null,
-      testCaseID: null,
-      selectionType: '',
-      value: '',
     });
-
-    // Load test cases for selected test method
-    if (item?.id) {
-      const key = `${sampleIndex}_${planIndex}_${methodIndex}`;
-      this.getLaboratoryTestCases(item.id).subscribe({
-        next: (testCases: any[]) => {
-          this.filteredTestCases[key] = testCases || [];
-          if (testCases && testCases.length === 0) {
-            this.toastService.show('No test cases found for the selected test method.', 'info');
-          }
-        },
-        error: (err) => {
-          console.error('[PlanForm] Error fetching test cases:', err);
-          this.toastService.show('Error loading test cases.', 'error');
-          this.filteredTestCases[key] = [];
-        }
-      });
-    }
-  }
-
-  onTestCaseSelected(value: any, sampleIndex: number, planIndex: number, methodIndex: number) {
-    const methodsArray = this.getMethodRows(sampleIndex, planIndex);
-    if (!methodsArray) return;
-
-    const methodCtrl = methodsArray.at(methodIndex);
-    if (!methodCtrl) return;
-
-    const key = `${sampleIndex}_${planIndex}_${methodIndex}`;
-    const item = this.filteredTestCases[key] || [];
-    const selectedItem = item.find((tc: any) => tc.id == value?.id) || null;
-    // Update test case ID and populate derived fields
-    if (selectedItem?.id) {
-      methodCtrl.patchValue({
-        testCaseID: selectedItem.id,
-        selectionType: selectedItem.selectionType || '',
-        value: selectedItem.value || ''
-      });
-    } else {
-      methodCtrl.patchValue({
-        testCaseID: null,
-        selectionType: '',
-        value: ''
-      });
-    }
-  }
-
-  onGeneralTestStandardSelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
-    const methods = this.getMethodRows(sampleIndex, planIndex);
-    if (!methods) return;
-    debugger;
-    const methodCtrl = methods.at(methodIndex);
-    if (!methodCtrl) return;
-    methodCtrl.patchValue({ standardID: item?.id ?? null });
-  }
-
-  onChemicalStandardSelected(item: any, sampleIndex: number, planIndex: number) {
-    debugger;
-    const chemicalTestGroup = this.getChemicalTestSection(sampleIndex, planIndex);
-    chemicalTestGroup.patchValue({ standardID: item.id });
   }
 
   onParameterSelected(item: any, sampleIndex: number, planIndex: number, testIndex: number, index: number) {
@@ -907,10 +822,6 @@ export class PlanFormComponent implements OnInit {
               methods: this.fb.array((gt.methods || []).map((m: any) => this.fb.group({
                 id: [m.id || 0],
                 testMethodID: [m.testMethodID, Validators.required],
-                testCaseID: [m.testCaseID, Validators.required],
-                selectionType: [m.selectionType || ''],
-                value: [m.value || ''],
-                standardID: [m.standardID || 0],
                 quantity: [m.quantity || 1],
                 reportNo: [m.reportNo || ''],
                 ulrNo: [m.ulrNo || ''],
@@ -944,7 +855,6 @@ export class PlanFormComponent implements OnInit {
               specification2: [
                 ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null
               ],
-              testMethod: [ct.testMethod],
               elements: this.fb.array((ct.elements || []).map((el: any) =>
                 this.fb.group({
                   id: [el.id || 0],
@@ -967,6 +877,12 @@ export class PlanFormComponent implements OnInit {
             id: [tp.id || 0],
             sampleNo: [tp.sampleNo],
             sampleID: [sample.id || 0],
+            version: [tp.version ?? 1],
+            replanCount: [tp.replanCount ?? 0],
+            planStatus: [tp.planStatus ?? 'Draft'],
+            approvedById: [tp.approvedById ?? null],
+            approvedByName: [tp.approvedByName ?? ''],
+            approvedAt: [tp.approvedAt ?? null],
             generalTests: this.fb.array(generalTestsArr),
             chemicalTests: this.fb.array(chemicalTestsArr)
           });
@@ -997,47 +913,8 @@ export class PlanFormComponent implements OnInit {
         testPlans: this.fb.array(testPlansArr)
       }));
 
-      setTimeout(() => {
-        this.samples.controls.forEach((sample, sampleIdx) => {
-          const plans = sample.get('testPlans') as FormArray;
-
-          plans.controls.forEach((plan, planIdx) => {
-            const generalTests = plan.get('generalTests') as FormArray;
-
-            generalTests.controls.forEach((gt) => {
-              const methods = gt.get('methods') as FormArray;
-
-              methods.controls.forEach((method, methodIdx) => {
-                const testMethodID = method.get('testMethodID')?.value;
-                this.loadTestCasesForRow(sampleIdx, planIdx, methodIdx, testMethodID);
-              });
-            });
-          });
-        });
-      });
     });
   }
-  private loadTestCasesForRow(
-    sampleIdx: number,
-    planIdx: number,
-    methodIdx: number,
-    testMethodID: number
-  ): void {
-    if (!testMethodID) return;
-
-    const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
-
-    this.getLaboratoryTestCases(testMethodID).subscribe({
-      next: (cases) => {
-        this.filteredTestCases[key] = cases || [];
-      },
-      error: () => {
-        this.filteredTestCases[key] = [];
-      }
-    });
-  }
-
-
   // ────────────── Submission ──────────────
   onSave(): void {
     // Mark form as touched to show validation errors
@@ -1162,10 +1039,6 @@ export class PlanFormComponent implements OnInit {
             methods: (g.methods || []).map((m: any) => ({
               id: m.id || 0,
               testMethodID: m.testMethodID || 0,
-              testCaseID: m.testCaseID || null,
-              selectionType: m.selectionType || '',
-              value: m.value || null,
-              standardID: m.standardID || 0,
               quantity: m.quantity || 0,
               reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
               ulrNo: m.ulrNo === 'Auto Generate' ? '' : m.ulrNo || '',
@@ -1181,7 +1054,6 @@ export class PlanFormComponent implements OnInit {
             testTypes: c.testTypes || {},
             specification1: c.specification1 || 0,
             specification2: c.specification2 || null,
-            testMethod: c.testMethod || 0,
             elements: (c.elements || []).map((e: any) => ({
               id: e.id || 0,
               parameterID: e.parameterID || 0,
@@ -1197,6 +1069,89 @@ export class PlanFormComponent implements OnInit {
         }))
       }))
     };
+  }
+
+  // ────────────── Plan History ──────────────
+  togglePlanHistory(planId: number): void {
+    if (this.activeHistoryPlanId === planId && this.showHistoryPanel) {
+      this.showHistoryPanel = false;
+      this.activeHistoryPlanId = null;
+      return;
+    }
+    this.activeHistoryPlanId = planId;
+    this.showHistoryPanel = true;
+    this.loadPlanHistory(planId);
+  }
+
+  loadPlanHistory(planId: number): void {
+    this.inwardService.getPlanHistory(planId).subscribe({
+      next: (data) => {
+        this.planHistoryData = data || [];
+      },
+      error: (err) => {
+        console.error('[PlanForm] Error loading plan history:', err);
+        this.planHistoryData = [];
+      },
+    });
+  }
+
+  // ────────────── Replan ──────────────
+  openReplanModal(planId: number): void {
+    this.replanPlanId = planId;
+    this.replanReason = '';
+    this.showReplanModal = true;
+  }
+
+  closeReplanModal(): void {
+    this.showReplanModal = false;
+    this.replanPlanId = null;
+    this.replanReason = '';
+  }
+
+  submitReplanRequest(): void {
+    if (!this.replanPlanId || !this.replanReason.trim()) {
+      this.toastService.show('Please provide a reason for replanning.', 'warning');
+      return;
+    }
+    this.inwardService.requestReplan(this.replanPlanId, this.replanReason).subscribe({
+      next: () => {
+        this.toastService.show('Replan request submitted successfully!', 'success');
+        this.closeReplanModal();
+        if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
+      },
+      error: (err) => {
+        console.error('[PlanForm] Replan request error:', err);
+        this.toastService.show('Failed to submit replan request.', 'error');
+      },
+    });
+  }
+
+  isPlanApproved(testPlan: any): boolean {
+    return testPlan?.get('planStatus')?.value === 'Approved';
+  }
+
+  getPlanStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      Draft: 'Draft',
+      Submitted: 'Submitted',
+      UnderReview: 'Under Review',
+      Approved: 'Approved',
+      ReplanRequested: 'Replan Requested',
+      ReplanApproved: 'Replan Approved',
+    };
+    return labels[status] || status;
+  }
+
+  getPlanStatusClass(status: string): string {
+    const classes: Record<string, string> = {
+      Draft: 'bg-secondary',
+      Submitted: 'bg-info',
+      UnderReview: 'bg-warning',
+      Approved: 'bg-success',
+      ReplanRequested: 'bg-danger',
+      ReplanApproved: 'bg-primary',
+    };
+    return classes[status] || 'bg-secondary';
   }
 
   onCancel(): void {

@@ -21,6 +21,7 @@ export class NcCorrectiveActionFormComponent implements OnInit {
     isLoading = false;
     formTitle = 'Add New NC & Corrective Action Report';
     formNumbers = NablFormsHelper.getFormNumbers();
+    relatedNcWork: any = null;
 
     openSections: { [key: string]: boolean } = {
         header: true,
@@ -29,7 +30,8 @@ export class NcCorrectiveActionFormComponent implements OnInit {
         proposed: true,
         taken: true,
         preventive: true,
-        effectiveness: true
+        effectiveness: true,
+        relatedForms: true
     };
 
     quillModules = {
@@ -97,6 +99,15 @@ export class NcCorrectiveActionFormComponent implements OnInit {
             if (data) {
                 this.ncForm.patchValue(data);
                 if (this.isViewMode) this.ncForm.disable();
+                // Load related Non-Conforming Work if linked
+                const record = data as any;
+                if (record.ncId || record.nCId) {
+                    this.relatedNcWork = {
+                        id: record.ncId || record.nCId,
+                        documentNo: record.nc?.documentNo || record.ncRef || 'N/A',
+                        status: record.nc?.status || 'Draft'
+                    };
+                }
             }
             this.isLoading = false;
         });

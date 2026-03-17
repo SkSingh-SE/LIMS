@@ -1,73 +1,122 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <!-- Action Bar (hidden on print) -->
-    <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-        <button class="btn btn-dark btn-sm" (click)="goBack()">
-            <i class="bi bi-arrow-left"></i> Back to List
-        </button>
-        <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-            <i class="bi bi-printer"></i> Print
-        </button>
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Competence Requirement Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
     </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-    <app-print-frame *ngIf="!isLoading && requirement" orientation="portrait">
-      <ng-container header>
-        <!-- Reusable Document Header -->
-        <app-nabl-print-header
-            formatNo="F-7C"
-            mainTitle="COMPETENCE REQUIREMENT DOCUMENT"
-            [docNo]="'DMSPL / Level-04 / Format / F-7C'"
-            [issueNo]="'01'"
-            [revNo]="'00'">
-        </app-nabl-print-header>
-      </ng-container>
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
 
-      <ng-container body>
-        <!-- Content Table -->
-        <table class="table table-bordered mb-3 info-table border-2 border-dark">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && requirement" [orientation]="orientation">
+    <ng-container header>
+      <!-- Reusable Document Header -->
+      <app-nabl-print-header
+          formatNo="F-7C"
+          mainTitle="COMPETENCE REQUIREMENT DOCUMENT"
+          [docNo]="'DMSPL / Level-04 / Format / F-7C'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- Position / Activity Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">POSITION DETAILS</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-2 border-dark" style="width: 25%;">Position / Activity</td>
-              <td class="fw-bold fs-5 border-2 border-dark text-black">{{ getDisplayText() }}</td>
+              <td class="lbl" style="width: 25%">Position / Activity</td>
+              <td>{{ getDisplayText() }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-2 border-dark">Requirement Type</td>
-              <td class="border-2 border-dark text-black">{{ requirement.isExternal ? 'External Activity Provider' : 'Internal Staff' }}</td>
+              <td class="lbl">Requirement Type</td>
+              <td>{{ requirement.isExternal ? 'External Activity Provider' : 'Internal Staff' }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
 
-        <div class="section mb-3 border-2 border-dark">
-          <div class="section-title border-bottom-2">Educational / Technical Requirements</div>
-          <div class="section-content ql-editor p-3 text-black" [innerHTML]="requirement.minimumEducation"></div>
-        </div>
+      <!-- Educational / Technical Requirements -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EDUCATIONAL / TECHNICAL REQUIREMENTS</div>
+        <div class="sec-body" [innerHTML]="requirement.minimumEducation"></div>
+      </div>
 
-        <div class="section mb-3 border-2 border-dark">
-          <div class="section-title border-bottom-2">Experience Requirements</div>
-          <div class="section-content p-3 text-black" style="white-space: pre-wrap;">{{ requirement.minimumExperience }}</div>
-        </div>
+      <!-- Experience Requirements -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EXPERIENCE REQUIREMENTS</div>
+        <div class="sec-body" style="white-space: pre-wrap;">{{ requirement.minimumExperience }}</div>
+      </div>
 
-        <!-- Acceptance/Approval specifically for F-7C -->
-        <table class="table table-bordered mb-4 border-2 border-dark">
+      <!-- Acceptance / Approval -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">ACCEPTANCE / APPROVAL</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-2 border-dark" style="width: 25%;">Approved By</td>
-              <td class="border-2 border-dark text-black">{{ requirement.approvedBy }}</td>
-              <td class="label-cell border-2 border-dark" style="width: 20%;">Signature</td>
-              <td class="signature-cell border-2 border-dark" style="width: 20%;"></td>
+              <td class="lbl" style="width: 25%">Approved By</td>
+              <td>{{ requirement.approvedBy }}</td>
+              <td class="lbl" style="width: 20%">Signature</td>
+              <td style="width: 20%;"></td>
             </tr>
           </tbody>
         </table>
-      </ng-container>
+      </div>
 
-      <ng-container footer>
-        <app-nabl-print-footer></app-nabl-print-footer>
-      </ng-container>
-    </app-print-frame>
+    </ng-container>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
 </div>

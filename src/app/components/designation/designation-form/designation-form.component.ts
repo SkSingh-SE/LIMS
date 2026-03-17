@@ -2,13 +2,16 @@ import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angula
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DesignationService } from '../../../services/designation.service';
+import { RoleService } from '../../../services/role.service';
 import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { Modal } from 'bootstrap';
+import { Observable } from 'rxjs';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-designation-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
   templateUrl: './designation-form.component.html',
   styleUrl: './designation-form.component.css'
 })
@@ -21,14 +24,15 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
   designationObjet: any = null;
   designationId: number = 0;
   formTitle = 'Designation Form';
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private designationService: DesignationService, private toastService: ToastService) { }
- 
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private designationService: DesignationService, private roleService: RoleService, private toastService: ToastService) { }
+
 
   ngOnInit(): void {
     this.designationForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
       description: ['', Validators.required],
+      roleID: [null],
     });
     this.route.paramMap.subscribe(params => {
       this.designationId = Number(params.get('id'));
@@ -61,7 +65,8 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
         this.designationObjet = response;
         this.designationForm.patchValue({
           name: this.designationObjet.name,
-          description: this.designationObjet.description
+          description: this.designationObjet.description,
+          roleID: this.designationObjet.roleID
         });
       },
       error: (error) => {
@@ -110,6 +115,14 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
         });
       }
     }
+  }
+
+  getRoles = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.roleService.getRoleDropdown(term, page, pageSize);
+  };
+
+  onRoleSelected(item: any) {
+    this.designationForm.patchValue({ roleID: item.id });
   }
 
 }

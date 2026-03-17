@@ -1,15 +1,60 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      CRM Consumption Record
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading() && record()" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
           [formatNo]="record()?.formatNo || 'F-18'"
@@ -22,79 +67,78 @@
     </ng-container>
 
     <ng-container body>
-      <div class="p-4">
-        <!-- Top Details Section -->
-        <div class="row g-3 mb-4">
-          <div class="col-8">
-            <table class="table table-bordered sm-table">
-              <tr>
-                <th style="width: 25%;">Material Name</th>
-                <td colspan="3" class="fw-bold">{{ record()?.materialName }}</td>
-              </tr>
-              <tr>
-                <th style="width: 25%;">Material Code</th>
-                <td style="width: 25%;">{{ record()?.materialCode }}</td>
-                <th style="width: 25%;">Batch No.</th>
-                <td style="width: 25%;">{{ record()?.batchNo }}</td>
-              </tr>
-              <tr>
-                <th>Purpose of Use</th>
-                <td colspan="3">{{ record()?.purposeOfUse }}</td>
-              </tr>
-            </table>
-          </div>
-          <div class="col-4 text-end">
-            <h6 class="mb-1"><strong>Period:</strong> {{ getMonthName(record()?.consumptionMonth || 1) }} {{ record()?.consumptionYear }}</h6>
-            <p class="mb-0 small text-muted">Doc No: {{ record()?.documentNo }}</p>
-            <p class="mb-0 small text-muted">Unit: {{ record()?.unitOfMeasure }}</p>
-          </div>
-        </div>
 
-        <!-- Stock Summary Row -->
-        <div class="row g-2 mb-4 text-center">
-          <div class="col">
-            <div class="p-2 border rounded bg-light font-sm">
-              <div class="text-muted small">Opening Stock</div>
-              <div class="fw-bold">{{ record()?.openingStock }}</div>
-            </div>
-          </div>
-          <div class="col-12">
-          <div class="p-3 border rounded bg-light">
-            <h6 class="fw-bold border-bottom pb-1 mb-2">General Remarks</h6>
-            <div [innerHTML]="record()?.remarks"></div>
-            <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
-          </div>
-        </div>
-          <div class="col">
-            <div class="p-2 border rounded bg-light font-sm">
-              <div class="text-muted small">Received</div>
-              <div class="fw-bold">{{ record()?.received }}</div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="p-2 border rounded bg-primary text-white font-sm">
-              <div class="small">Consumed</div>
-              <div class="fw-bold">{{ record()?.consumed }}</div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="p-2 border rounded bg-danger text-white font-sm">
-              <div class="small">Wastage</div>
-              <div class="fw-bold">{{ record()?.wastage }}</div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="p-2 border rounded bg-success text-white font-sm">
-              <div class="small">Closing Stock</div>
-              <div class="fw-bold">{{ record()?.closingStock }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Daily Consumption Table -->
-        <table class="table table-bordered compact-table text-center mb-4">
-          <thead class="table-light align-middle font-xs">
+      <!-- Material Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">MATERIAL DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
+              <td class="lbl" style="width: 25%">Material Name</td>
+              <td colspan="3">{{ record()?.materialName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Material Code</td>
+              <td style="width: 25%">{{ record()?.materialCode }}</td>
+              <td class="lbl" style="width: 25%">Batch No.</td>
+              <td style="width: 25%">{{ record()?.batchNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Purpose of Use</td>
+              <td colspan="3">{{ record()?.purposeOfUse }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Period</td>
+              <td>{{ getMonthName(record()?.consumptionMonth || 1) }} {{ record()?.consumptionYear }}</td>
+              <td class="lbl">Document No.</td>
+              <td>{{ record()?.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Unit of Measure</td>
+              <td colspan="3">{{ record()?.unitOfMeasure }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Stock Summary -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">STOCK SUMMARY</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th>Opening Stock</th>
+              <th>Received</th>
+              <th>Consumed</th>
+              <th>Wastage</th>
+              <th>Closing Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ record()?.openingStock }}</td>
+              <td>{{ record()?.received }}</td>
+              <td>{{ record()?.consumed }}</td>
+              <td>{{ record()?.wastage }}</td>
+              <td>{{ record()?.closingStock }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- General Remarks -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">GENERAL REMARKS</div>
+        <div class="sec-body" [innerHTML]="record()?.remarks"></div>
+        <div *ngIf="!record()?.remarks" class="sec-body fst-italic">No remarks recorded.</div>
+      </div>
+
+      <!-- Daily Consumption Table -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">DAILY CONSUMPTION LOG</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
               <th style="width: 40px;">Date</th>
               <th style="width: 80px;">Consumed</th>
               <th style="width: 80px;">Wastage</th>
@@ -102,9 +146,9 @@
               <th style="width: 120px;">Analysis By</th>
             </tr>
           </thead>
-          <tbody class="font-xs">
+          <tbody>
             <tr *ngFor="let row of record()?.dailyConsumption">
-              <td class="fw-bold">{{ row.date | date: 'dd/MM' }}</td>
+              <td>{{ row.date | date: 'dd/MM' }}</td>
               <td>{{ row.quantityConsumed }}</td>
               <td>{{ row.quantityWasted || '-' }}</td>
               <td class="text-start ps-2">{{ row.purpose }}</td>
@@ -112,8 +156,8 @@
             </tr>
           </tbody>
         </table>
-
       </div>
+
     </ng-container>
 
     <ng-container footer>
@@ -125,9 +169,4 @@
     </ng-container>
   </app-print-frame>
 
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

@@ -1,47 +1,86 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Supplier Confidentiality Agreement
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && record()" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && record()" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
           [formatNo]="record()?.formatNo || 'F-2'"
           [mainTitle]="'SUPPLIER CONFIDENTIALITY AGREEMENT'"
-          [docNo]="'DMSPL / Level-04 / Format / F-2'"
+          [docNo]="record()?.documentNo || ''"
           [issueNo]="record()?.issueNo || '01'"
           [revNo]="record()?.revNo || '00'">
       </app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
-      <div class="agreement-content p-4">
-        <div class="supplier-info mb-4">
-          <table class="table table-bordered sm-table">
+      <!-- Supplier Info -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">SUPPLIER INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
             <tr>
-              <th style="width: 25%;">Supplier Name</th>
+              <td class="lbl" style="width: 25%;">Supplier Name</td>
               <td>{{ record()?.supplierName }}</td>
             </tr>
             <tr>
-              <th>Contact Person</th>
+              <td class="lbl">Contact Person</td>
               <td>{{ record()?.contactPerson }}</td>
             </tr>
             <tr>
-              <th>Address</th>
+              <td class="lbl">Address</td>
               <td>{{ record()?.address }}</td>
             </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        <div class="agreement-text mt-4">
+      <!-- Agreement Text -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">AGREEMENT</div>
+        <div class="sec-body">
           <p class="mb-4">
-            This Confidentiality Agreement (the "Agreement") is entered into on <strong>{{ record()?.agreementDate | date: 'dd/MM/yyyy' }}</strong> 
+            This Confidentiality Agreement (the "Agreement") is entered into on <strong>{{ record()?.agreementDate | date: 'dd/MM/yyyy' }}</strong>
             between <strong>Divine Metallurgical Services Pvt. Ltd. (DMSPL)</strong> and the Supplier named above.
           </p>
 
@@ -68,21 +107,25 @@
             This agreement remains valid until <strong>{{ record()?.validUntil | date: 'dd/MM/yyyy' }}</strong>. The obligations of confidentiality shall survive the termination or expiration of this agreement.
           </p>
         </div>
+      </div>
 
-        <div class="signature-section mt-5 pt-5">
-          <div class="row">
-            <div class="col-6">
-              <div class="signature-line mb-2"></div>
-              <p class="mb-0 fw-bold">Authorized Signatory</p>
-              <p class="text-muted small">(For Supplier)</p>
-            </div>
-            <div class="col-6 text-end">
-              <div class="signature-line mb-2 ms-auto" style="width: 200px;"></div>
-              <p class="mb-0 fw-bold">Authorized Signatory</p>
-              <p class="text-muted small">(For DMSPL)</p>
-            </div>
-          </div>
-        </div>
+      <!-- Signatures -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">SIGNATURES</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td style="width: 50%; padding-top: 3rem; padding-bottom: 1rem;">
+                <div class="fw-bold">Authorized Signatory</div>
+                <div class="text-muted small">(For Supplier)</div>
+              </td>
+              <td style="width: 50%; padding-top: 3rem; padding-bottom: 1rem; text-align: right;">
+                <div class="fw-bold">Authorized Signatory</div>
+                <div class="text-muted small">(For DMSPL)</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ng-container>
 
@@ -94,10 +137,4 @@
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

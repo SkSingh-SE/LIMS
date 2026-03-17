@@ -2,6 +2,7 @@
 export interface SupplierConfidentiality {
     id?: number;
     formatNo: string; // F-2
+    documentNo?: string;
     issueNo: string;
     revNo: string;
     date: Date | string;

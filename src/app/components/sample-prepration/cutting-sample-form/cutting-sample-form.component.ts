@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
+import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
 import { Observable } from 'rxjs';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ToastService } from '../../../services/toast.service';
@@ -10,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { CuttingPriceMasterService } from '../../../services/cutting-price-master.service';
 import { CuttingService } from '../../../services/cutting.service';
+import { SpecimenTypeService } from '../../../services/specimen-type.service';
 
 // ──────── Typed DTOs ────────
 export interface PriceDto {
@@ -34,12 +36,21 @@ export interface CuttingChargePayload {
   inwardId: number;
   samples: Array<{
     id: string;
-    cuttingChargeHeaderID: number
+    cuttingChargeHeaderID: number;
     sampleNo: string;
     sampleID: number;
     details: string;
     quantity: number;
     metalClassificationID: string;
+    specimenTypeId: number | null;
+    length: number | null;
+    width: number | null;
+    thickness: number | null;
+    diameter: number | null;
+    orientation: string | null;
+    preparationInstructions: string | null;
+    preparationStatus: string;
+    photoUrl: string | null;
     cuttingChargeDetails: Array<{
       id: number;
       cuttingChargeSampleID: number;
@@ -64,6 +75,15 @@ export interface CuttingChargeResponse {
     sampleID: number;
     sampleNo: string;
     metalClassificationID: number;
+    specimenTypeId: number | null;
+    length: number | null;
+    width: number | null;
+    thickness: number | null;
+    diameter: number | null;
+    orientation: string | null;
+    preparationInstructions: string | null;
+    preparationStatus: string;
+    photoUrl: string | null;
     sampleTotal: number;
     cuttingChargeDetails: Array<{
       id: number;
@@ -80,7 +100,7 @@ export interface CuttingChargeResponse {
 
 @Component({
   selector: 'app-cutting-sample-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, DecimalOnlyDirective, SearchableDropdownComponent],
   templateUrl: './cutting-sample-form.component.html',
   styleUrl: './cutting-sample-form.component.css'
 })
@@ -101,6 +121,9 @@ export class CuttingSampleFormComponent implements OnInit {
   // Reactive Form
   cuttingForm!: FormGroup;
 
+  orientationOptions = ['Longitudinal', 'Transverse'];
+  preparationStatusOptions = ['Pending', 'InProgress', 'Completed', 'QCVerified'];
+
   constructor(
     private fb: FormBuilder,
     private inwardService: SampleInwardService,
@@ -109,7 +132,8 @@ export class CuttingSampleFormComponent implements OnInit {
     private route: ActivatedRoute,
     private metalService: MetalClassificationService,
     private cuttingPriceService: CuttingPriceMasterService,
-    private cuttingService: CuttingService
+    private cuttingService: CuttingService,
+    private specimenTypeService: SpecimenTypeService
   ) { }
 
   ngOnInit(): void {
@@ -171,7 +195,16 @@ export class CuttingSampleFormComponent implements OnInit {
         sampleNo: [sampleData.sampleNo],
         details: [sampleData.id],
         quantity: [sampleData.id],
-        metalClassificationID: [sampleData.metalClassificationID, Validators.required],
+        metalClassificationID: [sampleData.metalClassificationID],
+        specimenTypeId: [sampleData.specimenTypeId || null],
+        length: [sampleData.length || null],
+        width: [sampleData.width || null],
+        thickness: [sampleData.thickness || null],
+        diameter: [sampleData.diameter || null],
+        orientation: [sampleData.orientation || null],
+        preparationInstructions: [sampleData.preparationInstructions || ''],
+        preparationStatus: [sampleData.preparationStatus || 'Pending'],
+        photoUrl: [sampleData.photoUrl || ''],
         cuttingChargeDetails: this.fb.array([])
       });
 
@@ -257,9 +290,7 @@ export class CuttingSampleFormComponent implements OnInit {
       const cuttings = sampleCtrl.get('cuttingChargeDetails') as FormArray;
 
       if (!metalClassificationID) {
-        this.toastService.show(`Sample ${idx + 1}: Material Type is required.`, 'warning');
-        isValid = false;
-        return;
+        this.toastService.show(`Sample ${idx + 1}: Material Type not selected. You can set it later.`, 'info');
       }
 
       if (cuttings.length === 0) {
@@ -394,6 +425,15 @@ export class CuttingSampleFormComponent implements OnInit {
       details: [sample.details],
       quantity: [sample.quantity],
       metalClassificationID: [sample.metalClassificationID, Validators.required],
+      specimenTypeId: [null],
+      length: [null],
+      width: [null],
+      thickness: [null],
+      diameter: [null],
+      orientation: [null],
+      preparationInstructions: [''],
+      preparationStatus: ['Pending'],
+      photoUrl: [''],
       cuttingChargeDetails: this.fb.array([])
     });
   }
@@ -498,6 +538,15 @@ export class CuttingSampleFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/sample/cutting']);
+  }
+
+  fetchSpecimenTypeDropdown = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.specimenTypeService.getSpecimenTypeDropdown(searchTerm, pageNumber, pageSize);
+  };
+
+  onSpecimenTypeSelected(item: any, sampleIndex: number): void {
+    const sampleGroup = this.samplesFA.at(sampleIndex) as FormGroup;
+    sampleGroup.patchValue({ specimenTypeId: item?.id || null });
   }
 
   printSampleCuttingRaw(): void {

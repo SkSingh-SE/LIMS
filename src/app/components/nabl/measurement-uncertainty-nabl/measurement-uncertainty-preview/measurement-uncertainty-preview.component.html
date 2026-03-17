@@ -1,17 +1,52 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
       <i class="bi bi-arrow-left"></i>
-      Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i>
-      Print
+      <span>Back</span>
     </button>
   </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Measurement Uncertainty Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
 
-  <app-print-frame *ngIf="!isLoading() && data" orientation="portrait">
+<div class="nabl-preview-page">
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"
@@ -24,133 +59,131 @@
     </ng-container>
 
     <ng-container body>
-      <!-- Basic Information -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">I. Basic Information</div>
-        <table class="table table-bordered mb-0">
+      <!-- I. Basic Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. BASIC INFORMATION</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Document No.</td>
-              <td class="border-0 fw-bold">{{ data.documentNo }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 20%">Date</td>
-              <td class="border-0">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 30%">Document No.</td>
+              <td class="fw-bold" style="width: 20%">{{ data.documentNo }}</td>
+              <td class="lbl" style="width: 20%">Date</td>
+              <td>{{ data.date | date: "dd.MM.yyyy" }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Test Information -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">II. Test Information</div>
-        <table class="table table-bordered mb-0">
+      <!-- II. Test Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. TEST INFORMATION</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Test Parameter</td>
-              <td class="border-0">{{ data.testParameter }}</td>
+              <td class="lbl" style="width: 30%">Test Parameter</td>
+              <td>{{ data.testParameter }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Test Method</td>
-              <td class="border-0 border-top-2">{{ data.testMethod }}</td>
+              <td class="lbl">Test Method</td>
+              <td>{{ data.testMethod }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Equipment Used</td>
-              <td class="border-0 border-top-2">{{ data.equipmentUsed }}</td>
+              <td class="lbl">Equipment Used</td>
+              <td>{{ data.equipmentUsed }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Sample Description</td>
-              <td class="border-0 border-top-2">{{ data.sampleDescription }}</td>
+              <td class="lbl">Sample Description</td>
+              <td>{{ data.sampleDescription }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Measurement Readings -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">III. Measurement Readings</div>
-        <table class="table table-bordered mb-0">
-          <thead class="table-light text-center">
-            <tr>
-              <th class="border-dark" style="width: 80px">Sr. No.</th>
-              <th class="border-dark">Measured Value</th>
-              <th class="border-dark">Unit</th>
+      <!-- III. Measurement Readings -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. MEASUREMENT READINGS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 80px">Sr. No.</th>
+              <th>Measured Value</th>
+              <th>Unit</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let reading of data.readings; let i = index" class="text-center">
-              <td class="border-dark">{{ i + 1 }}</td>
-              <td class="border-dark">{{ reading.measuredValue }}</td>
-              <td class="border-dark">{{ reading.unit }}</td>
+              <td>{{ i + 1 }}</td>
+              <td>{{ reading.measuredValue }}</td>
+              <td>{{ reading.unit }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Uncertainty Budget -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">IV. Uncertainty Budget</div>
-        <table class="table table-bordered mb-0">
-          <thead class="table-light text-center small">
-            <tr>
-              <th class="border-dark">Source of Uncertainty</th>
-              <th class="border-dark">Type</th>
-              <th class="border-dark">Distribution</th>
-              <th class="border-dark">Std. Uncertainty (u)</th>
-              <th class="border-dark">Sensitivity (c)</th>
-              <th class="border-dark">Contribution (u×c)²</th>
+      <!-- IV. Uncertainty Budget -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. UNCERTAINTY BUDGET</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th>Source of Uncertainty</th>
+              <th>Type</th>
+              <th>Distribution</th>
+              <th>Std. Uncertainty (u)</th>
+              <th>Sensitivity (c)</th>
+              <th>Contribution (u×c)²</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let src of data.uncertaintySources" class="text-center small">
-              <td class="border-dark text-start">{{ src.source }}</td>
-              <td class="border-dark">{{ src.type }}</td>
-              <td class="border-dark">{{ src.distribution }}</td>
-              <td class="border-dark">{{ src.standardUncertainty }}</td>
-              <td class="border-dark">{{ src.sensitivityCoefficient }}</td>
-              <td class="border-dark">{{ src.contribution }}</td>
+              <td class="text-start">{{ src.source }}</td>
+              <td>{{ src.type }}</td>
+              <td>{{ src.distribution }}</td>
+              <td>{{ src.standardUncertainty }}</td>
+              <td>{{ src.sensitivityCoefficient }}</td>
+              <td>{{ src.contribution }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Statistical Results -->
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">V. Statistical Analysis Results</div>
-        <table class="table table-bordered mb-0">
+      <!-- V. Statistical Analysis Results -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. STATISTICAL ANALYSIS RESULTS</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2" style="width: 30%">Mean (x̄)</td>
-              <td class="border-0">{{ data.mean }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2" style="width: 30%">Combined Uncertainty (uc)</td>
-              <td class="border-0 fw-bold">{{ data.combinedUncertainty }}</td>
+              <td class="lbl" style="width: 30%">Mean (x̄)</td>
+              <td>{{ data.mean }}</td>
+              <td class="lbl" style="width: 30%">Combined Uncertainty (uc)</td>
+              <td class="fw-bold">{{ data.combinedUncertainty }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Standard Deviation (s)</td>
-              <td class="border-0 border-top-2">{{ data.standardDeviation }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Coverage Factor (k)</td>
-              <td class="border-0 border-top-2">{{ data.coverageFactor }}</td>
+              <td class="lbl">Standard Deviation (s)</td>
+              <td>{{ data.standardDeviation }}</td>
+              <td class="lbl">Coverage Factor (k)</td>
+              <td>{{ data.coverageFactor }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Type A Uncertainty</td>
-              <td class="border-0 border-top-2">{{ data.typeAUncertainty }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2">Confidence Level</td>
-              <td class="border-0 border-top-2">{{ data.confidenceLevel }}</td>
+              <td class="lbl">Type A Uncertainty</td>
+              <td>{{ data.typeAUncertainty }}</td>
+              <td class="lbl">Confidence Level</td>
+              <td>{{ data.confidenceLevel }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-top-2">Type B Uncertainty</td>
-              <td class="border-0 border-top-2">{{ data.typeBUncertainty }}</td>
-              <td class="label-cell border-0 border-start-2 border-end-2 border-top-2 font-weight-bold text-success">
-                Expanded Uncertainty (U)
-              </td>
-              <td class="border-0 border-top-2 fw-bold text-success fs-5">± {{ data.expandedUncertainty }}</td>
+              <td class="lbl">Type B Uncertainty</td>
+              <td>{{ data.typeBUncertainty }}</td>
+              <td class="lbl fw-bold">Expanded Uncertainty (U)</td>
+              <td class="fw-bold text-success fs-5">± {{ data.expandedUncertainty }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Remarks -->
-      <div class="section mb-3 border-2 border-dark" *ngIf="data.remarks">
-        <div class="section-title border-bottom-2">VI. Remarks</div>
-        <div class="section-content p-3">{{ data.remarks }}</div>
+      <!-- VI. Remarks -->
+      <div class="doc-section mb-3" *ngIf="data.remarks">
+        <div class="sec-title">VI. REMARKS</div>
+        <div class="sec-body">{{ data.remarks }}</div>
       </div>
     </ng-container>
 
@@ -162,11 +195,4 @@
       ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

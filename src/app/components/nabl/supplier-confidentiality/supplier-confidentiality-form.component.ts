@@ -75,6 +75,7 @@ export class SupplierConfidentialityFormComponent implements OnInit {
         this.agreementForm = this.fb.group({
             id: [0],
             formatNo: ['F-2', Validators.required],
+            documentNo: [{ value: '', disabled: true }],
             issueNo: ['01', Validators.required],
             revNo: ['00', Validators.required],
             date: [today, Validators.required],

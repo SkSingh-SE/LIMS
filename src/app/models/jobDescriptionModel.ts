@@ -36,6 +36,9 @@ export interface JobDescription {
     approvedByName: string;
     employeeAccepted: boolean;
 
+    // Workflow
+    status?: string;
+
     // Audit fields
     createdBy?: string;
     createdOn?: string;

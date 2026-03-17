@@ -37,7 +37,7 @@ export class EmployeeAuthorizationListComponent implements OnInit {
             PageSize: 10,
             searchTerm: '',
             sortByColumn: 'id',
-            sortOrder: 'asc',
+            sortOrder: 'desc',
             filter: []
         });
     }
@@ -73,7 +73,7 @@ export class EmployeeAuthorizationListComponent implements OnInit {
                         PageSize: 10,
                         searchTerm: '',
                         sortByColumn: 'id',
-                        sortOrder: 'asc',
+                        sortOrder: 'desc',
                         filter: []
                     });
                 },

@@ -1,15 +1,60 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to Employee List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="!isLoading && matrix" orientation="landscape">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Skill Matrix Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && matrix" [orientation]="orientation">
     <!-- header slot -->
     <ng-container header>
       <app-nabl-print-header
@@ -23,53 +68,60 @@
 
     <!-- body slot -->
     <ng-container body>
-      <div class="matrix-overview mb-2 px-2">
-          <strong>Title:</strong> {{ matrix.title }}
-          <span *ngIf="matrix.decision">| <strong>Decision:</strong> {{ matrix.decision }}</span>
-          | <strong>Last Updated:</strong> {{ matrix.lastUpdated | date:'dd/MM/yyyy' }}
+      <div class="doc-section mb-3">
+        <div class="sec-title">MATRIX OVERVIEW</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width:25%">Title</td>
+              <td style="width:25%">{{ matrix.title }}</td>
+              <td class="lbl" style="width:25%">Decision</td>
+              <td style="width:25%">{{ matrix.decision }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Last Updated</td>
+              <td colspan="3">{{ matrix.lastUpdated | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Skill Matrix Table -->
-      <table class="table table-bordered border-2 border-dark skill-matrix-table">
-        <thead class="table-light">
-          <tr class="text-center border-2 border-dark">
-            <th class="border-2 border-dark align-middle" rowspan="2" style="width: 50px;">Sr. No.</th>
-            <th class="border-2 border-dark align-middle" rowspan="2">Employee Name</th>
-            <th class="border-2 border-dark align-middle" rowspan="2">Designation</th>
-            <th class="border-2 border-dark py-1" [attr.colspan]="matrix.skills.length">Skills / Competencies</th>
-          </tr>
-          <tr class="text-center border-2 border-dark">
-              <th *ngFor="let skill of matrix.skills" class="border-2 border-dark vertical-text py-3">
-                  <div class="vertical-text-content">{{ skill }}</div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">SKILL MATRIX</div>
+        <table class="table table-bordered inner-table skill-matrix-table">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th class="align-middle" rowspan="2" style="width:50px;">Sr. No.</th>
+              <th class="align-middle" rowspan="2">Employee Name</th>
+              <th class="align-middle" rowspan="2">Designation</th>
+              <th class="py-1" [attr.colspan]="matrix.skills.length">Skills / Competencies</th>
+            </tr>
+            <tr class="tbl-head text-center">
+              <th *ngFor="let skill of matrix.skills" class="vertical-text py-3">
+                <div class="vertical-text-content">{{ skill }}</div>
               </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let emp of matrix.employeeSkills; let i = index" class="border-2 border-dark">
-            <td class="border-2 border-dark text-center">{{ i + 1 }}</td>
-            <td class="border-2 border-dark px-2"><strong>{{ emp.employeeName }}</strong></td>
-            <td class="border-2 border-dark px-2">{{ emp.designationName }}</td>
-            <td *ngFor="let skill of matrix.skills" class="border-2 border-dark text-center fw-bold">
-              {{ emp.skills[skill] || '-' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let emp of matrix.employeeSkills; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="px-2"><strong>{{ emp.employeeName }}</strong></td>
+              <td class="px-2">{{ emp.designationName }}</td>
+              <td *ngFor="let skill of matrix.skills" class="text-center fw-bold">
+                {{ emp.skills[skill] || '-' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <!-- Legend Section -->
-      <div class="legend-section mt-4 px-2">
-          <h6 class="fw-bold mb-2">Legend / Codes:</h6>
-          <div class="d-flex gap-4">
-              <div class="legend-item">
-                  <span class="fw-bold me-2">T:</span> Trained (Under training)
-              </div>
-              <div class="legend-item">
-                  <span class="fw-bold me-2">A:</span> Authorized / Competent to perform
-              </div>
-              <div class="legend-item">
-                  <span class="fw-bold me-2">✓:</span> Applicable / Performed
-              </div>
-          </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">LEGEND / CODES</div>
+        <div class="sec-body">
+          <strong>T:</strong> Trained (Under training) &nbsp;&nbsp;
+          <strong>A:</strong> Authorized / Competent to perform &nbsp;&nbsp;
+          <strong>&#10003;:</strong> Applicable / Performed
+        </div>
       </div>
     </ng-container>
 
@@ -83,10 +135,4 @@
     </ng-container>
   </app-print-frame>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

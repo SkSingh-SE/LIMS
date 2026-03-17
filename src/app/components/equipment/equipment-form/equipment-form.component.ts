@@ -98,6 +98,9 @@ export class EquipmentFormComponent implements OnInit {
       internalExternal: ['', Validators.required],
       intermediateCheckRequired: [true, Validators.required],
       intermediateCheckInterval: [''],
+      lastCalibrationDate: [null],
+      calibrationFrequencyDays: [null],
+      maintenanceSchedule: [''],
       calibrations: this.fb.array([]),
       maintenances: this.fb.array([]),
       sops: this.fb.array([]),
@@ -186,6 +189,9 @@ export class EquipmentFormComponent implements OnInit {
           internalExternal: data.internalExternal,
           intermediateCheckRequired: data.intermediateCheckRequired,
           intermediateCheckInterval: data.intermediateCheckInterval,
+          lastCalibrationDate: data.lastCalibrationDate ? data.lastCalibrationDate.split('T')[0] : '',
+          calibrationFrequencyDays: data.calibrationFrequencyDays,
+          maintenanceSchedule: data.maintenanceSchedule || '',
         });
         if (data.calibrations && data.calibrations.length > 0) {
           data.calibrations.forEach((calibration: any) => {

@@ -1,15 +1,60 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-dark btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn navbar-background text-white btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="!isLoading && record" orientation="portrait">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Employee Training Record Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="!isLoading && record" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
           [formatNo]="'F-11'"
@@ -21,121 +66,122 @@
     </ng-container>
 
     <ng-container body>
-      <!-- Basic Info Table -->
-      <table class="table table-bordered mb-3 border-2 border-dark info-table">
-        <tbody>
-          <tr>
-            <td class="label-cell border-2 border-dark" style="width: 25%;">Name of the Employee:-</td>
-            <td class="border-2 border-dark" colspan="3"><strong>{{ record.employeeName }}</strong></td>
-          </tr>
-          <tr>
-            <td class="label-cell border-2 border-dark">Qualification:-</td>
-            <td class="border-2 border-dark" colspan="3">{{ record.qualification }}</td>
-          </tr>
-          <tr>
-            <td class="label-cell border-2 border-dark">Date of Joining:-</td>
-            <td class="border-2 border-dark" style="width: 25%;">{{ record.dateOfJoining | date:'dd/MM/yyyy' }}</td>
-            <td class="label-cell border-2 border-dark" style="width: 25%;">Position in Organization:-</td>
-            <td class="border-2 border-dark">{{ record.position }}</td>
-          </tr>
-        </tbody>
-      </table>
 
-      <!-- Section: ON JOB TRAINING -->
-      <div class="section-container mb-3 border-2 border-dark">
-        <div class="section-header text-center fw-bold border-bottom-2 py-1 bg-light">ON JOB TRAINING</div>
-        <table class="table table-bordered mb-0 border-0 compact-table">
+      <!-- Employee Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EMPLOYEE INFORMATION</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Date of Training</td>
-              <td class="border-0 border-end-2 border-bottom-2" style="width: 25%;">{{ record.trainingDate | date:'dd/MM/yyyy' }}</td>
-              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Name of Trainer</td>
-              <td class="border-0 border-bottom-2">{{ record.trainerName }}</td>
+              <td class="lbl" style="width: 25%">Name of the Employee</td>
+              <td colspan="3"><strong>{{ record.employeeName }}</strong></td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Sample Name</td>
-              <td class="border-0 border-end-2 border-bottom-2">{{ record.sampleName }}</td>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Trainer Designation</td>
-              <td class="border-0 border-bottom-2">{{ record.trainerDesignation }}</td>
+              <td class="lbl">Qualification</td>
+              <td colspan="3">{{ record.qualification }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Sample Ref No</td>
-              <td class="border-0 border-end-2 border-bottom-2">{{ record.sampleRefNo }}</td>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Parameter</td>
-              <td class="border-0 border-bottom-2">{{ record.parameter }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell border-0 border-end-2">Test Method / SOP</td>
-              <td class="border-0 border-end-2">{{ record.testMethod }}</td>
-              <td class="border-0" colspan="2"></td>
-            </tr>
-            <tr class="signature-row">
-              <td class="label-cell border-0 border-end-2 border-top-2">Signature Trainee:-</td>
-              <td class="border-0 border-end-2 border-top-2 signature-cell"></td>
-              <td class="label-cell border-0 border-end-2 border-top-2">Signature Trainer:-</td>
-              <td class="border-0 border-top-2 signature-cell"></td>
+              <td class="lbl">Date of Joining</td>
+              <td style="width: 25%">{{ record.dateOfJoining | date:'dd/MM/yyyy' }}</td>
+              <td class="lbl" style="width: 25%">Position in Organization</td>
+              <td>{{ record.position }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Section: TRAINING EVALUATION -->
-      <div class="section-container mb-3 border-2 border-dark">
-        <div class="section-header text-center fw-bold border-bottom-2 py-1 bg-light">TRAINING EVALUATION</div>
-        <table class="table table-bordered mb-0 border-0 compact-table">
+      <!-- On Job Training -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">ON JOB TRAINING</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Date of Evaluation</td>
-              <td class="border-0 border-end-2 border-bottom-2" style="width: 25%;">{{ record.evaluationDate | date:'dd/MM/yyyy' }}</td>
-              <td class="label-cell border-0 border-end-2 border-bottom-2" style="width: 25%;">Mode of Evaluation</td>
-              <td class="border-0 border-bottom-2">{{ record.evaluationMode }}</td>
+              <td class="lbl" style="width: 25%">Date of Training</td>
+              <td style="width: 25%">{{ record.trainingDate | date:'dd/MM/yyyy' }}</td>
+              <td class="lbl" style="width: 25%">Name of Trainer</td>
+              <td>{{ record.trainerName }}</td>
             </tr>
             <tr>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Parameter</td>
-              <td class="border-0 border-end-2 border-bottom-2">{{ record.evalParameter }}</td>
-              <td class="label-cell border-0 border-end-2 border-bottom-2">Test Method / SOP</td>
-              <td class="border-0 border-bottom-2">{{ record.evalTestMethod }}</td>
+              <td class="lbl">Sample Name</td>
+              <td>{{ record.sampleName }}</td>
+              <td class="lbl">Trainer Designation</td>
+              <td>{{ record.trainerDesignation }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Sample Ref No</td>
+              <td>{{ record.sampleRefNo }}</td>
+              <td class="lbl">Parameter</td>
+              <td>{{ record.parameter }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Test Method / SOP</td>
+              <td>{{ record.testMethod }}</td>
+              <td colspan="2"></td>
+            </tr>
+            <tr>
+              <td class="lbl">Signature Trainee</td>
+              <td style="min-height: 40px;"></td>
+              <td class="lbl">Signature Trainer</td>
+              <td style="min-height: 40px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Training Evaluation -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">TRAINING EVALUATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Date of Evaluation</td>
+              <td style="width: 25%">{{ record.evaluationDate | date:'dd/MM/yyyy' }}</td>
+              <td class="lbl" style="width: 25%">Mode of Evaluation</td>
+              <td>{{ record.evaluationMode }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Parameter</td>
+              <td>{{ record.evalParameter }}</td>
+              <td class="lbl">Test Method / SOP</td>
+              <td>{{ record.evalTestMethod }}</td>
             </tr>
           </tbody>
         </table>
 
-        <div class="p-2 border-bottom-2 fw-bold bg-light-gray">
-          Mode of Evaluation: Retesting or Replicate testing,
-        </div>
-
-        <table class="table table-bordered mb-0 border-0 text-center eval-results-table">
+        <table class="table table-bordered inner-table text-center mt-0">
           <thead>
-            <tr class="border-bottom-2">
-              <th class="border-0 border-end-2 py-1">Observed Value-1</th>
-              <th class="border-0 border-end-2 py-1">Observed Value-2</th>
-              <th class="border-0 border-end-2 py-1">Observed Value-Average</th>
-              <th class="border-0 border-end-2 py-1">Original Value</th>
-              <th class="border-0 py-1">Remarks</th>
+            <tr class="tbl-head">
+              <th>Observed Value-1</th>
+              <th>Observed Value-2</th>
+              <th>Observed Value-Average</th>
+              <th>Original Value</th>
+              <th>Remarks</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.observedValue1 }}</td>
-              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.observedValue2 }}</td>
-              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.averageValue }}</td>
-              <td class="border-0 border-end-2 py-2">{{ record.evaluationResult.originalValue }}</td>
-              <td class="border-0 py-2">{{ record.evaluationResult.remarks }}</td>
+              <td>{{ record.evaluationResult.observedValue1 }}</td>
+              <td>{{ record.evaluationResult.observedValue2 }}</td>
+              <td>{{ record.evaluationResult.averageValue }}</td>
+              <td>{{ record.evaluationResult.originalValue }}</td>
+              <td>{{ record.evaluationResult.remarks }}</td>
             </tr>
           </tbody>
         </table>
 
-        <div class="p-2 border-top-2 min-h-60">
-          <strong>Trainer Comments/Remarks:</strong>
-          <p class="mt-1 mb-0">{{ record.trainerComments || 'None' }}</p>
-        </div>
-
-        <table class="table table-bordered mb-0 border-0 signature-row">
+        <table class="table table-bordered inner-table mt-0">
           <tbody>
-            <tr class="border-top-2">
-              <td class="label-cell border-0 border-end-2" style="width: 25%;">Signature of Trainer:</td>
-              <td class="border-0 border-end-2 signature-cell" style="width: 25%;"></td>
-              <td class="label-cell border-0 border-end-2" style="width: 25%;">Signature of Trainee:</td>
-              <td class="border-0 signature-cell" style="width: 25%;"></td>
+            <tr>
+              <td class="lbl" style="width: 30%">Trainer Comments / Remarks</td>
+              <td>{{ record.trainerComments || 'None' }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Signature of Trainer</td>
+              <td style="min-height: 40px;"></td>
+            </tr>
+            <tr>
+              <td class="lbl">Signature of Trainee</td>
+              <td style="min-height: 40px;"></td>
             </tr>
           </tbody>
         </table>
@@ -152,10 +198,4 @@
     </ng-container>
   </app-print-frame>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

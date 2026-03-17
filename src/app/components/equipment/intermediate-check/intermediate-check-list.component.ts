@@ -23,7 +23,7 @@ export class IntermediateCheckListComponent implements OnInit {
 
   searchTerm = '';
   sortByColumn = 'checkYear';
-  sortOrder: 'asc' | 'desc' = 'desc';
+  sortOrder: 'desc' | 'desc' = 'desc';
   isLoading = signal(false);
 
   payload = {
@@ -99,6 +99,14 @@ export class IntermediateCheckListComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   editRecord(id: number): void {
     this.router.navigate(['/intermediate-check/edit', id]);

@@ -89,6 +89,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
@@ -235,7 +237,7 @@
           <div class="mb-1 col-12">
             <div class="d-flex justify-content-between m-2">
               <label class="form-label">Alias Names</label>
-              <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAlias()">
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addAlias()">
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Alias
               </button>

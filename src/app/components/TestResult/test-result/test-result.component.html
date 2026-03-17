@@ -60,7 +60,7 @@
                   <!-- Perform Testing Button -->
                   <button
                   *ngIf="item.sampleStatus !== 'Completed'"
-                    class="btn btn-sm btn-outline-danger-600"
+                    class="btn btn-sm btn-outline-primary"
                     [routerLink]="['/testing/perform', item.sampleId]"
                     title="Perform Testing"
                     [disabled]="item.sampleStatus === 'Completed'"
@@ -130,6 +130,8 @@
         </div>
 
         <!-- Pagination Controls -->
+        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
+
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>

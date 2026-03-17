@@ -21,10 +21,12 @@ export class FeedbackAnalysisFormComponent implements OnInit {
     isLoading = false;
     formTitle = 'Customer Feedback Analysis';
     formNumbers = NablFormsHelper.getFormNumbers();
+    relatedFeedback: any = null;
 
     openSections: { [key: string]: boolean } = {
         header: true,
-        analysisDetails: true
+        analysisDetails: true,
+        relatedForms: true
     };
 
     quillModules = {
@@ -81,6 +83,15 @@ export class FeedbackAnalysisFormComponent implements OnInit {
             if (data) {
                 this.analysisForm.patchValue(data);
                 if (this.isViewMode) this.analysisForm.disable();
+                // Load related Customer Feedback if linked
+                const record = data as any;
+                if (record.customerFeedbackId) {
+                    this.relatedFeedback = {
+                        id: record.customerFeedbackId,
+                        documentNo: record.customerFeedback?.documentNo || 'N/A',
+                        status: record.customerFeedback?.status || 'Draft'
+                    };
+                }
             }
             this.isLoading = false;
         });

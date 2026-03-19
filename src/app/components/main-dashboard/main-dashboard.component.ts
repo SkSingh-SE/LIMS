@@ -30,7 +30,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   // State signals
-  isLoading = signal(false);
   error = signal<string | null>(null);
   lastRefresh = signal<Date>(new Date());
   autoRefreshStatus = signal<any>({
@@ -96,7 +95,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     const startTime = performance.now();
 
     // Show loading state immediately
-    this.isLoading.set(true);
     this.error.set(null);
 
     // Check if we should optimize for slow network
@@ -160,7 +158,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
           console.error(`Dashboard failed to load after ${loadTime.toFixed(2)}ms:`, error);
 
           this.error.set('Failed to load dashboard data');
-          this.isLoading.set(false);
           this.toastService.show('Failed to load dashboard data', 'error');
         }
       });
@@ -269,7 +266,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     this.dashboardService.dashboardState$
       .pipe(takeUntil(this.destroy$))
       .subscribe((state: DashboardState) => {
-        this.isLoading.set(state.isLoading);
         this.error.set(state.error);
         this.cards.set(state.cards);
         this.charts.set(state.charts);
@@ -311,7 +307,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
    * Load dashboard data
    */
   private loadDashboardData(): void {
-    this.isLoading.set(true);
     this.error.set(null);
 
     this.dashboardService.getDashboard()
@@ -327,7 +322,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error loading dashboard:', error);
           this.error.set('Failed to load dashboard data');
-          this.isLoading.set(false);
           this.toastService.show('Failed to load dashboard data', 'error');
         }
       });

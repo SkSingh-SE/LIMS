@@ -19,7 +19,6 @@ export class SampleInwardRegisterNablListComponent implements OnInit {
 
     listData: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(private service: SampleInwardRegisterNablService) { }
 
@@ -35,18 +34,15 @@ export class SampleInwardRegisterNablListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.service.getAll(payload).subscribe({
             next: (response) => {
                 this.listData = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error) => {
                 console.error('Error fetching records:', error);
                 this.listData = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

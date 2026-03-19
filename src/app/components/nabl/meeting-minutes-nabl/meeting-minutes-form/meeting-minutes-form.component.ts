@@ -18,7 +18,6 @@ export class MeetingMinutesFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Minutes of Management Review Meeting';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -116,7 +115,6 @@ export class MeetingMinutesFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 while (this.discussions.length) this.discussions.removeAt(0);
@@ -128,7 +126,6 @@ export class MeetingMinutesFormComponent implements OnInit {
                 this.minutesForm.patchValue(data);
                 if (this.isViewMode) this.minutesForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

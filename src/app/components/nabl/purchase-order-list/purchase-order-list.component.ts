@@ -22,7 +22,6 @@ export class PurchaseOrderListComponent implements OnInit {
 
     orders: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(private service: PurchaseOrderService) { }
 
@@ -38,18 +37,15 @@ export class PurchaseOrderListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.service.getAll(payload).subscribe({
             next: (response) => {
                 this.orders = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error: any) => {
                 console.error('Error fetching purchase orders:', error);
                 this.orders = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

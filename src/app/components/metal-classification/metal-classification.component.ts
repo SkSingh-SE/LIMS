@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
@@ -8,10 +8,11 @@ import { ToastService } from '../../services/toast.service';
 import { ParameterService } from '../../services/parameter.service';
 import { Observable } from 'rxjs';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-metal-classification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent],
   templateUrl: './metal-classification.component.html',
   styleUrl: './metal-classification.component.css'
 })
@@ -22,12 +23,18 @@ export class MetalClassificationComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'hasChemicalParams', type: 'string', label: 'Chemical', filter: false },
+    { key: 'hasMechanicalParams', type: 'string', label: 'Mechanical', filter: false },
+    { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
+    code: 'string',
     name: 'string',
+    sortOrder: 'number',
     createdOn: 'date'
   };
 
@@ -49,7 +56,6 @@ export class MetalClassificationComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -81,6 +87,11 @@ export class MetalClassificationComponent implements OnInit {
     this.MetalClassificationForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
+      code: ['', Validators.required],
+      parentID: [null],
+      hasChemicalParams: [false],
+      hasMechanicalParams: [false],
+      sortOrder: [0],
       parameterIds: [[]],
       parameters: this.fb.array([]),
     });
@@ -92,12 +103,10 @@ export class MetalClassificationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.MetalClassificationList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -252,6 +261,8 @@ export class MetalClassificationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.MetalClassificationForm.reset();
+    this.MetalClassificationForm.enable();
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -284,11 +295,31 @@ export class MetalClassificationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.MetalClassificationForm.reset();
+    this.MetalClassificationForm.enable();
+    this.metalClassificationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
+  parameterReloadKey = 0;
+
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const hasChem = this.MetalClassificationForm?.get('hasChemicalParams')?.value;
+    const hasMech = this.MetalClassificationForm?.get('hasMechanicalParams')?.value;
+    if (hasChem && hasMech) {
+      return this.parameterService.getParameterDropdown(term, page, pageSize);
+    } else if (hasChem) {
+      return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+    } else if (hasMech) {
+      return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+    }
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
+
+  onCheckboxChange(): void {
+    this.parameterReloadKey++;
+  }
 
   onParameterSelected(item: any[]) {
     console.log("selected item", item);
@@ -306,6 +337,17 @@ export class MetalClassificationComponent implements OnInit {
     })
     this.MetalClassificationForm.patchValue({ parameterIDs: selectIds });
   }
+
+  getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.metalclassificationService.getMetalClassificationDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 
   onSubmit(): void {
     if (this.MetalClassificationForm.valid) {

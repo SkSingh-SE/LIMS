@@ -18,7 +18,6 @@ export class NonConformingWorkFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Non-Conforming Work Record';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -80,13 +79,11 @@ export class NonConformingWorkFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.ncForm.patchValue(data);
                 if (this.isViewMode) this.ncForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

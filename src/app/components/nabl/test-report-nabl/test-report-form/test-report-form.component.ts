@@ -20,7 +20,6 @@ export class TestReportFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Test Report (F-39)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -119,7 +118,6 @@ export class TestReportFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -127,20 +125,18 @@ export class TestReportFormComponent implements OnInit {
                     this.reportForm.patchValue(data);
                     if (this.isViewMode) this.reportForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
     onSubmit(): void {
         if (this.reportForm.invalid) { this.reportForm.markAllAsTouched(); return; }
-        this.isLoading.set(true);
         const formData = this.reportForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
             next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/test-report']); },
-            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error'); this.isLoading.set(false); }
+            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 

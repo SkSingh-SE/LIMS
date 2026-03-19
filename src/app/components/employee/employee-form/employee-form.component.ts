@@ -28,7 +28,6 @@ export class EmployeeFormComponent {
   isAdminUser: boolean = false;
   uploadedFiles: File[] = [];
   currentStep = signal(1);
-  isLoading = signal(false);
   showPassword = signal(false);
   employeeId!: number;
   isViewMode: boolean = false;
@@ -186,7 +185,6 @@ export class EmployeeFormComponent {
     }
   }
   loadEmployee() {
-    this.isLoading.set(true);
     this.employeeService.getEmployeeById(this.employeeId).subscribe({
       next: (data) => {
         this.personalInfoForm.patchValue(data);
@@ -217,12 +215,10 @@ export class EmployeeFormComponent {
         }
 
         this.loadEmployeeDocuments(data.documents || []);
-        this.isLoading.set(false);
       },
       error: (err) => {
         this.router.navigate(['/employee']);
         console.error('Error loading designation:', err);
-        this.isLoading.set(false);
         this.toastService.show("Something went wrong", 'error');
       }
 

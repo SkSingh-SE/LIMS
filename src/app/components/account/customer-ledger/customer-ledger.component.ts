@@ -22,7 +22,6 @@ export class CustomerLedgerComponent implements OnInit {
   balance: any = null;
   openingBalance = 0;
   closingBalance = 0;
-  isLoading = false;
 
   periodStart = '';
   periodEnd = '';
@@ -58,7 +57,6 @@ export class CustomerLedgerComponent implements OnInit {
 
   loadLedger(): void {
     if (!this.selectedCustomerId) return;
-    this.isLoading = true;
     this.customerLedgerService
       .getStatement(this.selectedCustomerId, this.fromDate, this.toDate)
       .subscribe({
@@ -66,12 +64,10 @@ export class CustomerLedgerComponent implements OnInit {
           this.ledgerEntries = data?.entries || data || [];
           this.openingBalance = data?.openingBalance || 0;
           this.closingBalance = data?.closingBalance || 0;
-          this.isLoading = false;
         },
         error: (err) => {
           console.error('Error loading ledger:', err);
           this.toastService.show('Failed to load ledger entries', 'error');
-          this.isLoading = false;
         },
       });
   }

@@ -18,7 +18,6 @@ import { ToastService } from '../../../../services/toast.service';
 export class PtIlcPlanPreviewComponent implements OnInit {
     recordId: number = 0;
     data: any = null;
-    isLoading = signal(true);
 
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
@@ -40,17 +39,14 @@ export class PtIlcPlanPreviewComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
                 this.data = resp;
-                this.isLoading.set(false);
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error:', err);
                 this.toastService.show('Error loading preview', 'error');
-                this.isLoading.set(false);
             }
         });
     }

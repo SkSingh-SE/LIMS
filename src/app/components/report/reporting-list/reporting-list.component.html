@@ -7,7 +7,7 @@
       </label>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-3">
         <div class="w-25 input-group custom-search">
@@ -105,7 +105,7 @@
                       class="btn btn-sm btn-outline-warning-700 fw-semibold"
                       title="Generate PDF"
                       (click)="generatePdf(item, $event)"
-                      [disabled]="pdfGeneratingId === item.reportHeaderId || isLoading() || !canGeneratePdf(item.status)"
+                      [disabled]="pdfGeneratingId === item.reportHeaderId || false || !canGeneratePdf(item.status)"
                     >
                     <span
                       *ngIf="pdfGeneratingId === item.reportHeaderId"
@@ -211,7 +211,7 @@
     </div>
 
     <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-4">
+    <div *ngIf="false" class="card-body text-center py-4">
       <div class="spinner-border text-danger" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>

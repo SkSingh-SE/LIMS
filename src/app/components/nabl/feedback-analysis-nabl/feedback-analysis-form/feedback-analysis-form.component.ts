@@ -18,7 +18,6 @@ export class FeedbackAnalysisFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Customer Feedback Analysis';
     formNumbers = NablFormsHelper.getFormNumbers();
     relatedFeedback: any = null;
@@ -78,7 +77,6 @@ export class FeedbackAnalysisFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.analysisForm.patchValue(data);
@@ -93,7 +91,6 @@ export class FeedbackAnalysisFormComponent implements OnInit {
                     };
                 }
             }
-            this.isLoading = false;
         });
     }
 

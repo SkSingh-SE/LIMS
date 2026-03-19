@@ -18,7 +18,6 @@ export class AuditChecklistFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Audit Checklist & Observation';
     formNumbers = NablFormsHelper.getFormNumbers();
     relatedAuditPlan: any = null;
@@ -101,7 +100,6 @@ export class AuditChecklistFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 // Clear items first
@@ -123,7 +121,6 @@ export class AuditChecklistFormComponent implements OnInit {
                     };
                 }
             }
-            this.isLoading = false;
         });
     }
 

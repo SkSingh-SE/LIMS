@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 export class ImpartialityAgreementPreviewComponent implements OnInit {
     employeeId: number = 0;
     employee: any = null;
-    isLoading: boolean = true;
     currentDate: Date = new Date();
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
@@ -35,22 +34,18 @@ export class ImpartialityAgreementPreviewComponent implements OnInit {
             if (this.employeeId > 0) {
                 this.loadEmployee();
             } else {
-                this.isLoading = false;
             }
         });
     }
 
     loadEmployee(): void {
-        this.isLoading = true;
         this.employeeService.getEmployeeById(this.employeeId).subscribe({
             next: (data) => {
                 this.employee = data;
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading employee:', err);
-                this.isLoading = false;
             }
         });
     }

@@ -16,7 +16,6 @@ import { ToastService } from '../../../services/toast.service';
 export class EmployeeCompetenceListComponent implements OnInit {
     records: EmployeeCompetenceReport[] = [];
     totalItems = 0;
-    isLoading = signal(false);
     searchTerm = '';
     pageNumber = 1;
     pageSize = 10;
@@ -169,7 +168,6 @@ export class EmployeeCompetenceListComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading.set(true);
         this.competenceService.getAll(this.payload).subscribe({
             next: (res) => {
                 this.records = res.items || [];
@@ -179,13 +177,11 @@ export class EmployeeCompetenceListComponent implements OnInit {
                 this.pageNumber = res.pageNumber || 1;
                 this.pageSize = res.pageSize || 10;
                 this.calculateTotalPages();
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error('Error fetching records:', err);
                 this.toastService.show('Error loading competence records', 'error');
                 this.records = [];
-                this.isLoading.set(false);
             }
         });
     }

@@ -17,7 +17,6 @@ export class MasterDocumentFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Master Document Entry';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -66,13 +65,11 @@ export class MasterDocumentFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.docForm.patchValue(data);
                 if (this.isViewMode) this.docForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

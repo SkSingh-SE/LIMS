@@ -495,6 +495,10 @@ export class EquipmentFormComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.equipmentForm.reset();
+    this.equipmentForm.enable();
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   openCalibrationModal(): void {

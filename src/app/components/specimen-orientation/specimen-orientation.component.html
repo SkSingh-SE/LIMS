@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -51,6 +51,7 @@
                     <tbody>
                         <tr *ngFor="let customerType of SpecimenOrientationList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td><span class="text-primary fw-medium">{{ customerType.code }}</span></td>
                             <td>{{ customerType.name }}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
@@ -74,7 +75,7 @@
 
 
             </div>
-            <div *ngIf="SpecimenOrientationList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="SpecimenOrientationList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -147,10 +148,10 @@
     </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
+<!-- Modal for Add/Edit/Update Specimen Orientation -->
 <div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
                 <label class="modal-title fw-medium" id="customerTypeModalLabel">
@@ -161,17 +162,102 @@
             </div>
             <form [formGroup]="SpecimentOrientationForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': SpecimentOrientationForm.get('name')?.touched && SpecimentOrientationForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="SpecimentOrientationForm.get('name')?.invalid && SpecimentOrientationForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <div class="row">
+                        <!-- Code Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code"
+                                [ngClass]="{'is-invalid': SpecimentOrientationForm.get('code')?.touched && SpecimentOrientationForm.get('code')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="SpecimentOrientationForm.get('code')?.invalid && SpecimentOrientationForm.get('code')?.touched"
+                                class="text-danger text-sm">
+                                Code is required.
+                            </span>
+                        </div>
+                        <!-- Name Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" required
+                                [ngClass]="{'is-invalid': SpecimentOrientationForm.get('name')?.touched && SpecimentOrientationForm.get('name')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="SpecimentOrientationForm.get('name')?.invalid && SpecimentOrientationForm.get('name')?.touched"
+                                class="text-danger text-sm">
+                                Name is required.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Category Dropdown -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getCategoryDropdown"
+                                        [selectedItem]="SpecimentOrientationForm.get('specimenOrientationCategoryID')?.value"
+                                        (itemSelected)="SpecimentOrientationForm.get('specimenOrientationCategoryID')?.setValue($event?.id)"
+                                        [placeholder]="'Select Category'"
+                                        [labelName]="'Category'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/specimen-orientation-category')"
+                                    title="Open Category" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Description -->
+                        <div class="col-md-6 mb-1">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" class="form-control" formControlName="description"
+                                placeholder="Enter Description" rows="2"
+                                [attr.disabled]="isViewMode ? true : null"></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Applicable Forms Multi-Select -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [placeholder]="'Select Forms...'"
+                                        [labelName]="'Applicable Forms'"
+                                        [fetchDataFn]="getProductFormDropdown"
+                                        [selectedValues]="SpecimentOrientationForm.get('applicableFormIds')?.value"
+                                        (itemsSelected)="onFormSelected($event)"
+                                        [isDisabled]="isViewMode">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/product-form')"
+                                    title="Open Product Form" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Applicable Classifications Multi-Select -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [placeholder]="'Select Classifications...'"
+                                        [labelName]="'Applicable Classifications'"
+                                        [fetchDataFn]="getClassificationDropdown"
+                                        [selectedValues]="SpecimentOrientationForm.get('applicableClassificationIds')?.value"
+                                        (itemsSelected)="onClassificationSelected($event)"
+                                        [isDisabled]="isViewMode">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/metal-classification')"
+                                    title="Open Metal Classification" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

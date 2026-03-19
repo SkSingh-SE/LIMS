@@ -47,7 +47,6 @@ export class UniversalCodeTypeComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -87,12 +86,10 @@ export class UniversalCodeTypeComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.UniversalList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -244,6 +241,8 @@ export class UniversalCodeTypeComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.UniversalForm.reset();
+    this.UniversalForm.enable();
     if (id > 0) {
       this.universalId = id;
       this.getDetails();
@@ -276,6 +275,11 @@ export class UniversalCodeTypeComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.UniversalForm.reset();
+    this.UniversalForm.enable();
+    this.universalId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

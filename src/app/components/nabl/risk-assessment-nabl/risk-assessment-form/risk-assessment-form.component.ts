@@ -18,7 +18,6 @@ export class RiskAssessmentFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Risk Assessment';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -79,13 +78,11 @@ export class RiskAssessmentFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.riskForm.patchValue(data);
                 if (this.isViewMode) this.riskForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

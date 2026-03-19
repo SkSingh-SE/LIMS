@@ -19,14 +19,14 @@
 
   <div class="tab-content pt-2">
     <!-- Loading Indicator -->
-    <div *ngIf="isLoading()" class="d-flex justify-content-center py-5">
+    <div *ngIf="false" class="d-flex justify-content-center py-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
 
     <!-- Forms for Tabs 1, 2, 3 -->
-    <form [formGroup]="userForm" *ngIf="activeTab() !== 4 && !isLoading()">
+    <form [formGroup]="userForm" *ngIf="activeTab() !== 4">
       <!-- Tab 1: Login Details -->
       <div *ngIf="activeTab() === 1" class="animation-fade-in">
         <div class="row g-3">
@@ -650,7 +650,7 @@
 
     <!-- Action Buttons (for Tabs 1-3) -->
     <div class="mt-4 border-top pt-3 d-flex justify-content-end" *ngIf="activeTab() !== 4 && !isViewMode">
-      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="userForm.invalid || isLoading()">
+      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="userForm.invalid || false">
         <i class="bi bi-save me-1"></i>
         Save User Settings
       </button>

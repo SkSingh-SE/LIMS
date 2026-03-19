@@ -1,14 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ProductConditionService } from '../../services/product-condition.service';
+import { ProductConditionCategoryService } from '../../services/product-condition-category.service';
+import { HeatTreatmentService } from '../../services/heat-treatment.service';
+import { PropertyTypeService } from '../../services/property-type.service';
 import { ToastService } from '../../services/toast.service';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-product-condition',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
   templateUrl: './product-condition.component.html',
   styleUrl: './product-condition.component.css'
 })
@@ -19,11 +24,13 @@ export class ProductConditionComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
+    code: 'string',
     name: 'string',
     createdOn: 'date'
   };
@@ -46,7 +53,6 @@ export class ProductConditionComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -65,9 +71,16 @@ export class ProductConditionComponent implements OnInit {
   productConditionId: number = 0;
   formTitle = 'Product Condition Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productConditionService: ProductConditionService, private toastService: ToastService) {
-
-  }
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private productConditionService: ProductConditionService,
+    private productConditionCategoryService: ProductConditionCategoryService,
+    private heatTreatmentService: HeatTreatmentService,
+    private propertyTypeService: PropertyTypeService,
+    private toastService: ToastService,
+  ) {}
 
 
   ngOnInit() {
@@ -77,7 +90,14 @@ export class ProductConditionComponent implements OnInit {
   initForm() {
     this.ProductConditionForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      code: ['', Validators.required],
+      name: ['', Validators.required],
+      productConditionCategoryID: [null],
+      linkedHeatTreatmentID: [null],
+      calibrationRequired: [false],
+      isDestructive: [false],
+      propertiesCapturedIds: [[]],
+      propertiesCaptured: this.fb.array([]),
     });
   }
 
@@ -88,12 +108,10 @@ export class ProductConditionComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.ProductConditionList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -104,6 +122,9 @@ export class ProductConditionComponent implements OnInit {
       next: (response) => {
         this.customerTypeObject = response;
         this.ProductConditionForm.patchValue(response);
+        this.ProductConditionForm.patchValue({
+          propertiesCapturedIds: response?.propertiesCaptured?.map((x: any) => x.propertyTypeID ?? x.id) ?? [],
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -245,6 +266,8 @@ export class ProductConditionComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.ProductConditionForm.reset();
+    this.ProductConditionForm.enable();
     if (id > 0) {
       this.productConditionId = id;
       this.getDetails();
@@ -260,7 +283,7 @@ export class ProductConditionComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Product Condition Form';
       this.ProductConditionForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -277,7 +300,48 @@ export class ProductConditionComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.ProductConditionForm.reset();
+    this.ProductConditionForm.enable();
+    this.productConditionId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
+
+  // Dropdown functions
+  getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.productConditionCategoryService.getProductConditionCategoryDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getHeatTreatmentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.heatTreatmentService.getHeatTreatmentDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getPropertyTypeDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.propertyTypeService.getPropertyTypeDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onPropertySelected(items: any[]) {
+    const selectIds: number[] = [];
+    const propArray = this.ProductConditionForm.get('propertiesCaptured') as FormArray;
+    propArray.clear();
+    items.forEach((x) => {
+      const id = x.id || x;
+      selectIds.push(id);
+      propArray.push(
+        this.fb.group({
+          PropertyTypeID: [id],
+        })
+      );
+    });
+    this.ProductConditionForm.patchValue({ propertiesCapturedIds: selectIds });
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 
   onSubmit(): void {
     if (this.ProductConditionForm.valid) {
@@ -310,5 +374,3 @@ export class ProductConditionComponent implements OnInit {
   }
 
 }
-
-

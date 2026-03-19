@@ -23,7 +23,6 @@ export class SkillMatrixFormComponent implements OnInit {
     matrixId: number = 0;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
-    isLoading = signal(false);
     formTitle = 'Create Skill Matrix';
 
     designations: any[] = [];
@@ -163,7 +162,6 @@ export class SkillMatrixFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.skillMatrixService.getById(this.matrixId).subscribe({
             next: (data) => {
                 if (data) {
@@ -173,13 +171,11 @@ export class SkillMatrixFormComponent implements OnInit {
                     this.employeeSkills.clear();
                     data.employeeSkills.forEach(e => this.addEmployeeSkill(e));
                 }
-                this.isLoading.set(false);
             },
             error: (error: any) => {
                 console.error('Error fetching matrix:', error);
                 this.toastService.show('Error loading skill matrix', 'error');
                 this.router.navigate(['/skill-matrix']);
-                this.isLoading.set(false);
             }
         });
     }

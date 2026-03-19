@@ -21,7 +21,6 @@ export class TrainingPlanListComponent implements OnInit {
 
   trainingPlans: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   constructor(
     private trainingPlanService: TrainingPlanService,
@@ -40,16 +39,13 @@ export class TrainingPlanListComponent implements OnInit {
   }
 
   fetchData(payload: any): void {
-    this.isLoading.set(true);
     this.trainingPlanService.getAll(payload).subscribe({
       next: (response) => {
         this.trainingPlans = response.items || [];
         this.totalItems = response.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching training plans:', error);
-        this.isLoading.set(false);
       }
     });
   }

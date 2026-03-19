@@ -19,7 +19,6 @@ export class CrmConsumptionFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add CRM Consumption Record';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     materials: any[] = [];
@@ -187,7 +186,6 @@ export class CrmConsumptionFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -215,9 +213,8 @@ export class CrmConsumptionFormComponent implements OnInit {
 
                     this.consumptionForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -227,18 +224,17 @@ export class CrmConsumptionFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.consumptionForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/reference-material-consumption']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/reference-material-consumption']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

@@ -16,7 +16,6 @@ import { EmployeeAuthorization } from '../../../models/employeeAuthorizationMode
 })
 export class EmployeeAuthorizationPreviewComponent implements OnInit {
     authorizations: EmployeeAuthorization[] = [];
-    isLoading: boolean = true;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
@@ -33,16 +32,13 @@ export class EmployeeAuthorizationPreviewComponent implements OnInit {
     }
 
     loadAuthorizations(): void {
-        this.isLoading = true;
         this.authService.getAll({}).subscribe({
             next: (data) => {
                 this.authorizations = data.items;
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading authorizations:', err);
-                this.isLoading = false;
             }
         });
     }

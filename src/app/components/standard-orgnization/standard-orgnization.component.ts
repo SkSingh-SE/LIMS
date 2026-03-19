@@ -49,7 +49,6 @@ export class StandardOrgnizationComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -92,12 +91,10 @@ export class StandardOrgnizationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.StandardOrganizationList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -249,6 +246,8 @@ export class StandardOrgnizationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.StandardOrganizationForm.reset();
+    this.StandardOrganizationForm.enable();
     if (id > 0) {
       this.standardOrganizationId = id;
       this.getDetails();
@@ -281,6 +280,11 @@ export class StandardOrgnizationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.StandardOrganizationForm.reset();
+    this.StandardOrganizationForm.enable();
+    this.standardOrganizationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

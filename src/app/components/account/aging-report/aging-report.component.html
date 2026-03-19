@@ -10,8 +10,8 @@
         <p class="page-subtitle">Overview of outstanding receivables by aging buckets</p>
       </div>
       <div class="col-md-4 text-end">
-        <button class="btn btn-add btn-sm" (click)="loadReport()" [disabled]="isLoading">
-          <i class="bi bi-arrow-clockwise me-1" [class.spin]="isLoading"></i> Refresh
+        <button class="btn btn-add btn-sm" (click)="loadReport()" [disabled]="false">
+          <i class="bi bi-arrow-clockwise me-1" [class.spin]="false"></i> Refresh
         </button>
       </div>
     </div>
@@ -37,7 +37,7 @@
   </div>
 
   <!-- Loading -->
-  <div *ngIf="isLoading" class="text-center py-5">
+  <div *ngIf="false" class="text-center py-5">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
@@ -45,7 +45,7 @@
   </div>
 
   <!-- Report Table -->
-  <div class="card shadow-sm" *ngIf="!isLoading">
+  <div class="card shadow-sm" >
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover mb-0">

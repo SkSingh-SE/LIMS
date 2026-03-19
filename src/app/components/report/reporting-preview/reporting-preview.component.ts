@@ -19,7 +19,6 @@ import { HasPermissionDirective } from '../../../utility/directives/has-permissi
 export class ReportingPreviewComponent implements OnInit {
   baseUrl = environment.baseUrl;
   reportData: ReportingPreview | null = null;
-  isLoading = signal(false);
   sampleId: string = '';
 
   // Collapsible sections
@@ -58,18 +57,15 @@ export class ReportingPreviewComponent implements OnInit {
   }
 
   loadReportPreview(sampleId: string): void {
-    this.isLoading.set(true);
     this.reportingService.getReportPreview(sampleId).subscribe({
       next: (data) => {
         this.reportData = this.normalizeReportPreview(data);
         // Extract pricing data if available (read-only after approval)
         this.pricingData = (data as any)?.pricing || (data as any)?.priceSnapshot || null;
         this.hasPriceSnapshot = !!this.pricingData || !!(data as any)?.hasPriceSnapshot || false;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading report preview:', error);
-        this.isLoading.set(false);
       }
     });
   }
@@ -240,7 +236,6 @@ export class ReportingPreviewComponent implements OnInit {
     if (actionKey !== 'next' && !this.actionRemark) return;
 
     this.submitting = true;
-    this.isLoading.set(true);
 
      const payload = {
       id: this.reportData.workflowInstanceId,
@@ -250,7 +245,6 @@ export class ReportingPreviewComponent implements OnInit {
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.isLoading.set(false);
         this.showActionPanel = false;
         // keep UX consistent with other screens
         alert('Action completed successfully.');
@@ -259,7 +253,6 @@ export class ReportingPreviewComponent implements OnInit {
       error: (err) => {
         this.submitting = false;
         console.error('Action failed:', err);
-        this.isLoading.set(false);
         alert('Action failed. See console for details.');
       }
     });

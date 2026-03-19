@@ -19,7 +19,6 @@ export class TrainingEffectivenessFormComponent implements OnInit {
   recordId: number = 0;
   isEditMode = false;
   isViewMode = false;
-  isLoading = signal(false);
   formTitle = 'Create Training Effectiveness Record';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -127,7 +126,6 @@ export class TrainingEffectivenessFormComponent implements OnInit {
   }
 
   loadData(): void {
-    this.isLoading.set(true);
     this.trainingEffectivenessService.getById(this.recordId).subscribe({
       next: (data: any) => {
         if (data) {
@@ -164,11 +162,9 @@ export class TrainingEffectivenessFormComponent implements OnInit {
 
           this.effectivenessForm.patchValue(formValues);
         }
-        this.isLoading.set(false);
       },
       error: (err: any) => {
         console.error(err);
-        this.isLoading.set(false);
       }
     });
   }
@@ -187,7 +183,6 @@ export class TrainingEffectivenessFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading.set(true);
     const formData = this.effectivenessForm.getRawValue();
 
     if (this.isEditMode) {
@@ -196,11 +191,9 @@ export class TrainingEffectivenessFormComponent implements OnInit {
           if (res.success) {
             this.router.navigate(['/training-effectiveness']);
           }
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     } else {
@@ -209,11 +202,9 @@ export class TrainingEffectivenessFormComponent implements OnInit {
           if (res.success) {
             this.router.navigate(['/training-effectiveness']);
           }
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     }

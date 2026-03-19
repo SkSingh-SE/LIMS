@@ -23,7 +23,6 @@ export class EnvironmentMonitoringListComponent implements OnInit {
 
   records: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   constructor(
     private environmentService: EnvironmentMonitoringService,
@@ -42,16 +41,13 @@ export class EnvironmentMonitoringListComponent implements OnInit {
   }
 
   fetchData(payload: any): void {
-    this.isLoading.set(true);
     this.environmentService.getAll(payload).subscribe({
       next: (response: any) => {
         this.records = response.items || [];
         this.totalItems = response.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching environment monitoring records:', error);
-        this.isLoading.set(false);
       }
     });
   }

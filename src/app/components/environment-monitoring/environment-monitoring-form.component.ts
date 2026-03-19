@@ -19,7 +19,6 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
   recordId: number = 0;
   isEditMode = false;
   isViewMode = false;
-  isLoading = signal(false);
   formTitle = 'Create Environment Monitoring Record';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -136,7 +135,6 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
   }
 
   loadData(): void {
-    this.isLoading.set(true);
     this.environmentService.getById(this.recordId).subscribe({
       next: (data: any) => {
         if (data) {
@@ -164,11 +162,9 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
           });
           this.monitorForm.patchValue(formValues);
         }
-        this.isLoading.set(false);
       },
       error: (err: any) => {
         console.error(err);
-        this.isLoading.set(false);
       }
     });
   }
@@ -183,29 +179,24 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading.set(true);
     const formData = this.monitorForm.getRawValue();
 
     if (this.isEditMode) {
       this.environmentService.update(this.recordId, formData).subscribe({
         next: (res: any) => {
           if (res.success) this.router.navigate(['/environment-monitoring']);
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     } else {
       this.environmentService.create(formData).subscribe({
         next: (res: any) => {
           if (res.success) this.router.navigate(['/environment-monitoring']);
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     }

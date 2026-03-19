@@ -17,7 +17,6 @@ export class MeetingAgendaFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Meeting Notice / Agenda for MRM';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -106,7 +105,6 @@ export class MeetingAgendaFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 // Clear arrays first
@@ -120,7 +118,6 @@ export class MeetingAgendaFormComponent implements OnInit {
                 this.agendaForm.patchValue(data);
                 if (this.isViewMode) this.agendaForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

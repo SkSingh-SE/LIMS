@@ -18,7 +18,6 @@ export class MethodValidationNablFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Method Validation Record (F-30)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     quillModules = { toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] };
@@ -109,7 +108,6 @@ export class MethodValidationNablFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -120,9 +118,8 @@ export class MethodValidationNablFormComponent implements OnInit {
                     this.requestForm.patchValue(data);
                     if (this.isViewMode) this.requestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -132,7 +129,6 @@ export class MethodValidationNablFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.requestForm.getRawValue();
 
         const obs = this.isEditMode
@@ -146,7 +142,6 @@ export class MethodValidationNablFormComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show(err.message || 'Operation failed', 'error');
-                this.isLoading.set(false);
             }
         });
     }

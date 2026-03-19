@@ -18,7 +18,6 @@ export class CustomerFeedbackFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Customer Feedback Form';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -96,14 +95,12 @@ export class CustomerFeedbackFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 // Clear and rebuild ratings array if number of parameters differs (unlikely here but safe)
                 this.feedbackForm.patchValue(data);
                 if (this.isViewMode) this.feedbackForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

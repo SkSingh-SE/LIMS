@@ -17,7 +17,6 @@ import { EmployeeCompetenceReport } from '../../../models/employeeCompetenceMode
 export class EmployeeCompetencePreviewComponent implements OnInit {
     reportId: number = 0;
     report: EmployeeCompetenceReport | null = null;
-    isLoading: boolean = true;
     ratingOptions = ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'];
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
@@ -36,24 +35,20 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
             if (this.reportId > 0) {
                 this.loadReport();
             } else {
-                this.isLoading = false;
             }
         });
     }
 
     loadReport(): void {
-        this.isLoading = true;
         this.competenceService.getById(this.reportId).subscribe({
             next: (data) => {
                 if (data) {
                     this.report = data;
                 }
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading competence report:', err);
-                this.isLoading = false;
             }
         });
     }

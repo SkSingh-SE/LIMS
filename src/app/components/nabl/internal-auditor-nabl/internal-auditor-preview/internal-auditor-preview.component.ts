@@ -15,7 +15,6 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 })
 export class InternalAuditorPreviewComponent implements OnInit {
     data: any[] = [];
-    isLoading = signal(true);
     headerInfo: any = {
         formatNo: 'F-49',
         docNo: 'DMSPL / Level-04 / Format / F-49',
@@ -39,14 +38,12 @@ export class InternalAuditorPreviewComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading.set(true);
         this.service.getAll().subscribe(resp => {
             this.data = resp;
             if (resp.length > 0) {
                 this.headerInfo.formatNo = resp[0].formatNo;
                 this.headerInfo.docNo = resp[0].docNo;
             }
-            this.isLoading.set(false);
             setTimeout(() => this.autoDetectOrientation(), 300);
         });
     }

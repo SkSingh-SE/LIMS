@@ -1,11 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, AfterViewChecked, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { NotificationBellComponent } from './notification-bell/notification-bell.component';
 import { UserService } from '../../services/user.service';
 import { getAllMenuItems, MenuItem } from '../../models/MenuItem';
 import { PermissionService } from '../../utility/permission/permission.service';
+
+export interface FlatMenuItem {
+  title: string;
+  route: string;
+  breadcrumb: string;
+}
 
 /*
   Unified MenuItem structure to match API payload:
@@ -32,7 +39,7 @@ import { PermissionService } from '../../utility/permission/permission.service';
 @Component({
   selector: 'app-navbar',
 
-  imports: [CommonModule, RouterModule, NotificationBellComponent],
+  imports: [CommonModule, RouterModule, NotificationBellComponent, FormsModule],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })
@@ -42,18 +49,30 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   @ViewChild('menuContainer', { static: false }) menuContainer!: ElementRef;
   @ViewChild('navRight', { static: false }) navRight!: ElementRef;
   @ViewChildren('menuItem', { read: ElementRef }) menuItemEls!: QueryList<ElementRef>;
+  @ViewChild('searchInput') searchInput!: ElementRef;
+  @ViewChild('menu2Scroll') menu2Scroll!: ElementRef;
 
   navbarHeight: number = 64;
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
+
+  // Search properties
+  searchQuery = '';
+  searchResults: FlatMenuItem[] = [];
+  isSearchOpen = signal(false);
+  isSearchExpanded = signal(false);
+  allFlatMenuItems: FlatMenuItem[] = [];
 
   constructor(
     private renderer: Renderer2,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private userService: UserService,
-    private permissionService: PermissionService
-  ) { }
+    private permissionService: PermissionService,
+    private router: Router
+  ) {
+    this.allFlatMenuItems = this.flattenMenuItems(this.menuItems);
+  }
 
   ngOnInit(): void {
     const userData = this.authService.getUserData();
@@ -177,6 +196,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           // 3. Update visible/overflow
           this.visibleMenuItems = [...this.menuItems];
           this.menu2Items = [];
+          this.allFlatMenuItems = this.flattenMenuItems(this.menuItems);
           setTimeout(() => this.distributeMenuItems(), 50);
 
           // 4. Set active menu
@@ -233,14 +253,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (!this.menuContainer || !this.menuItemEls) return;
 
     requestAnimationFrame(() => {
-      const containerWidth =
-        this.menuContainer.nativeElement.getBoundingClientRect().width;
-
-      const rightWidth =
-        this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
-
-      const buffer = 32; // safe padding
-      const availableWidth = containerWidth - rightWidth - buffer;
+      const parentWidth = this.menuContainer.nativeElement.parentElement?.getBoundingClientRect().width || 0;
+      const rightWidth = this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
+      const availableWidth = parentWidth - rightWidth - 24;
 
       const menuEls = this.menuItemEls.toArray();
 
@@ -359,6 +374,80 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   logout() {
     this.authService.logout();
   }
+
+  // ── Search methods ──────────────────────────────────────
+  flattenMenuItems(items: MenuItem[], breadcrumb: string = ''): FlatMenuItem[] {
+    const result: FlatMenuItem[] = [];
+    for (const item of items) {
+      const crumb = breadcrumb ? `${breadcrumb} > ${item.title}` : item.title;
+      if (item.route) {
+        result.push({ title: item.title, route: item.route, breadcrumb: crumb });
+      }
+      if (item.children?.length) {
+        result.push(...this.flattenMenuItems(item.children, crumb));
+      }
+    }
+    return result;
+  }
+
+  toggleSearch() {
+    if (this.isSearchExpanded()) {
+      this.collapseSearch();
+    } else {
+      this.isSearchExpanded.set(true);
+      this.isSearchOpen.set(true);
+      setTimeout(() => this.searchInput?.nativeElement?.focus(), 150);
+    }
+  }
+
+  collapseSearch() {
+    this.isSearchExpanded.set(false);
+    this.isSearchOpen.set(false);
+    this.searchQuery = '';
+    this.searchResults = [];
+  }
+
+  onSearchInput() {
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q.length < 2) {
+      this.searchResults = [];
+      this.isSearchOpen.set(false);
+      return;
+    }
+    this.searchResults = this.allFlatMenuItems.filter(
+      (m) => m.title.toLowerCase().includes(q) || m.breadcrumb.toLowerCase().includes(q)
+    );
+    this.isSearchOpen.set(this.searchResults.length > 0);
+  }
+
+  navigateToSearch(item: FlatMenuItem) {
+    this.router.navigate([item.route]);
+    this.collapseSearch();
+  }
+
+  closeSearch() {
+    setTimeout(() => this.collapseSearch(), 200);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    if (event.ctrlKey && event.key === 'k') {
+      event.preventDefault();
+      this.toggleSearch();
+    }
+    if (event.key === 'Escape') {
+      this.collapseSearch();
+    }
+  }
+
+  scrollMenu2(direction: 'left' | 'right') {
+    const el = this.menu2Scroll?.nativeElement;
+    if (el) {
+      const scrollAmount = 200;
+      el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  }
+
   ngOnDestroy() {
     if (this.resizeObserver) { this.resizeObserver.disconnect(); }
     if (this.submenuTimer)   { clearTimeout(this.submenuTimer); }

@@ -22,7 +22,6 @@ export class ApprovedSupplierListComponent implements OnInit {
 
     suppliers: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(private service: ApprovedSupplierService) { }
 
@@ -38,18 +37,15 @@ export class ApprovedSupplierListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.service.getAll(payload).subscribe({
             next: (response) => {
                 this.suppliers = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error: any) => {
                 console.error('Error fetching approved suppliers:', error);
                 this.suppliers = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

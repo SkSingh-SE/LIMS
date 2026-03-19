@@ -24,7 +24,6 @@ export class EmployeeAuthorizationListComponent implements OnInit {
 
     records: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(
         private authService: EmployeeAuthorizationService,
@@ -43,18 +42,15 @@ export class EmployeeAuthorizationListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.authService.getAll(payload).subscribe({
             next: (res) => {
                 this.records = res.items || [];
                 this.totalItems = res.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error('Error fetching authorizations:', err);
                 this.toastService.show('Error loading authorizations', 'error');
                 this.records = [];
-                this.isLoading.set(false);
             }
         });
     }

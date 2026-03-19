@@ -18,7 +18,6 @@ export class TestRequestNablFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Test Request & Sample Receipt Record (F-27)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -119,7 +118,6 @@ export class TestRequestNablFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -130,9 +128,8 @@ export class TestRequestNablFormComponent implements OnInit {
                     this.requestForm.patchValue(data);
                     if (this.isViewMode) this.requestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -156,7 +153,6 @@ export class TestRequestNablFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.requestForm.getRawValue();
 
         const obs = this.isEditMode
@@ -170,7 +166,6 @@ export class TestRequestNablFormComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show(err.message || 'Operation failed', 'error');
-                this.isLoading.set(false);
             }
         });
     }

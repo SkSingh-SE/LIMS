@@ -50,7 +50,6 @@ export class TaxComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -99,12 +98,10 @@ export class TaxComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.taxList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -264,6 +261,8 @@ export class TaxComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.taxForm.reset();
+    this.taxForm.enable();
     if (id > 0) {
       debugger;
       this.taxId = id;
@@ -297,6 +296,11 @@ export class TaxComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.taxForm.reset();
+    this.taxForm.enable();
+    this.taxId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

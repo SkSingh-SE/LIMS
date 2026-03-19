@@ -22,7 +22,6 @@ export class PurchaseIndentListComponent implements OnInit {
 
     indents: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(private service: PurchaseIndentService) { }
 
@@ -38,18 +37,15 @@ export class PurchaseIndentListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.service.getAll(payload).subscribe({
             next: (response) => {
                 this.indents = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error: any) => {
                 console.error('Error fetching purchase indents:', error);
                 this.indents = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

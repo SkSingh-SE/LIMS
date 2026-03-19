@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -50,7 +50,17 @@
                     <tbody>
                         <tr *ngFor="let customerType of MetalClassificationList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ customerType.code }}</td>
                             <td>{{ customerType.name }}</td>
+                            <td class="text-center">
+                                <span *ngIf="customerType.hasChemicalParams" class="badge bg-success">Yes</span>
+                                <span *ngIf="!customerType.hasChemicalParams" class="badge bg-secondary">No</span>
+                            </td>
+                            <td class="text-center">
+                                <span *ngIf="customerType.hasMechanicalParams" class="badge bg-success">Yes</span>
+                                <span *ngIf="!customerType.hasMechanicalParams" class="badge bg-secondary">No</span>
+                            </td>
+                            <td>{{ customerType.sortOrder }}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
@@ -73,7 +83,7 @@
 
 
             </div>
-            <div *ngIf="MetalClassificationList.length == 0 && !isLoading()"
+            <div *ngIf="MetalClassificationList.length == 0"
                 class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
@@ -150,7 +160,7 @@
 <!-- Modal for Add/Edit/Update Customer -->
 <div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
                 <label class="modal-title fw-medium" id="customerTypeModalLabel">
@@ -161,27 +171,92 @@
             </div>
             <form [formGroup]="MetalClassificationForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': MetalClassificationForm.get('name')?.touched && MetalClassificationForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span
-                            *ngIf="MetalClassificationForm.get('name')?.invalid && MetalClassificationForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <div class="row">
+                        <!-- Code Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code"
+                                [ngClass]="{'is-invalid': MetalClassificationForm.get('code')?.touched && MetalClassificationForm.get('code')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="MetalClassificationForm.get('code')?.invalid && MetalClassificationForm.get('code')?.touched"
+                                class="text-danger text-sm">
+                                Code is required.
+                            </span>
+                        </div>
+                        <!-- Name Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" required
+                                [ngClass]="{'is-invalid': MetalClassificationForm.get('name')?.touched && MetalClassificationForm.get('name')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span
+                                *ngIf="MetalClassificationForm.get('name')?.invalid && MetalClassificationForm.get('name')?.touched"
+                                class="text-danger text-sm">
+                                Name is required.
+                            </span>
+                        </div>
                     </div>
-                    <div>
+                    <div class="row">
+                        <!-- Parent Classification -->
+                        <div class="col-md-6 mb-1">
+                            <label class="form-label">Parent Classification</label>
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getParentDropdown"
+                                        [selectedItem]="MetalClassificationForm.get('parentID')?.value"
+                                        (itemSelected)="MetalClassificationForm.get('parentID')?.setValue($event?.id)"
+                                        [placeholder]="'Select Parent Classification'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/metal-classification')"
+                                    title="Open Metal Classification" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Sort Order -->
+                        <div class="col-md-6 mb-1">
+                            <label for="sortOrder" class="form-label">Sort Order</label>
+                            <input type="number" id="sortOrder" class="form-control" formControlName="sortOrder"
+                                placeholder="Enter Sort Order"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Has Chemical Params -->
+                        <div class="col-md-6 mb-1">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="hasChemicalParams"
+                                    formControlName="hasChemicalParams"
+                                    (change)="onCheckboxChange()"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <label class="form-check-label" for="hasChemicalParams">Has Chemical Parameters</label>
+                            </div>
+                        </div>
+                        <!-- Has Mechanical Params -->
+                        <div class="col-md-6 mb-1">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="hasMechanicalParams"
+                                    formControlName="hasMechanicalParams"
+                                    (change)="onCheckboxChange()"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <label class="form-check-label" for="hasMechanicalParams">Has Mechanical Parameters</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="MetalClassificationForm.get('hasChemicalParams')?.value || MetalClassificationForm.get('hasMechanicalParams')?.value">
                         <app-multi-select-dropdown [placeholder]="'Select multiple items...'" [required]="true"
-                            [isDisabled]="false" [labelName]="'Parameter'" [fetchDataFn]="getParameter"
+                            [isDisabled]="isViewMode" [labelName]="'Parameter'" [fetchDataFn]="getParameter"
+                            [reloadKey]="parameterReloadKey"
                             [selectedValues]="MetalClassificationForm.get('parameterIds')?.value"
                             (itemsSelected)="onParameterSelected($event)">
                         </app-multi-select-dropdown>
                     </div>
-
                 </div>
 
                 <!-- Modal Footer -->

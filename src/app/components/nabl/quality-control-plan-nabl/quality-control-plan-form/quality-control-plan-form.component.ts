@@ -20,7 +20,6 @@ export class QualityControlPlanFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Quality Control Plan (F-37)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -112,7 +111,6 @@ export class QualityControlPlanFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -120,20 +118,18 @@ export class QualityControlPlanFormComponent implements OnInit {
                     this.qcpForm.patchValue(data);
                     if (this.isViewMode) this.qcpForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
     onSubmit(): void {
         if (this.qcpForm.invalid) { this.qcpForm.markAllAsTouched(); return; }
-        this.isLoading.set(true);
         const formData = this.qcpForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
             next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/quality-control-plan']); },
-            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error'); this.isLoading.set(false); }
+            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 

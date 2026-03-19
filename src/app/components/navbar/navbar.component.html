@@ -25,6 +25,32 @@
     </div>
     <!-- Right Section -->
     <div #navRight class="d-flex align-items-center gap-2 me-2">
+      <!-- Menu Search -->
+      <div class="menu-search-wrapper" [class.expanded]="isSearchExpanded()">
+        <input
+          #searchInput
+          type="text"
+          class="menu-search-input"
+          placeholder="Search menu... (Ctrl+K)"
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+          (blur)="closeSearch()"
+          [class.visible]="isSearchExpanded()"
+        />
+        <button class="btn btn-light rounded-circle h-auto menu-search-btn" (click)="toggleSearch()">
+          <i class="bi bi-search"></i>
+        </button>
+        <div class="menu-search-results" *ngIf="isSearchOpen() && searchResults.length > 0">
+          <div
+            *ngFor="let item of searchResults"
+            class="menu-search-result-item"
+            (mousedown)="navigateToSearch(item)"
+          >
+            <div class="result-title">{{ item.title }}</div>
+            <div class="result-breadcrumb">{{ item.breadcrumb }}</div>
+          </div>
+        </div>
+      </div>
       <!-- Down Arrow Icon -->
       <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
         <i class="bi" [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
@@ -56,18 +82,26 @@
 
   <!-- menu2: rendered when overflow available -->
   <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2" *ngIf="menu2Items && menu2Items.length > 0">
-    <div class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
-      <div
-        *ngFor="let menu of menu2Items"
-        class="menu2-item header-font"
-        (click)="openSubMenu(menu)"
-        [ngClass]="{ active: activeMenu() === menu.title }"
-      >
-        <div class="d-flex gap-2 align-items-center">
-          <i class="bi" [class]="menu.icon"></i>
-          <span class="">{{ menu.title }}</span>
+    <div class="menu2-outer d-flex align-items-center bg-theme">
+      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('left')">
+        <i class="bi bi-chevron-left text-white"></i>
+      </button>
+      <div #menu2Scroll class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
+        <div
+          *ngFor="let menu of menu2Items"
+          class="menu2-item header-font"
+          (click)="openSubMenu(menu)"
+          [ngClass]="{ active: activeMenu() === menu.title }"
+        >
+          <div class="d-flex gap-2 align-items-center">
+            <i class="bi" [class]="menu.icon"></i>
+            <span class="">{{ menu.title }}</span>
+          </div>
         </div>
       </div>
+      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('right')">
+        <i class="bi bi-chevron-right text-white"></i>
+      </button>
     </div>
   </div>
 

@@ -11,7 +11,6 @@ import { ToastService } from '../../../services/toast.service';
   styleUrl: './account-dashboard.component.css'
 })
 export class AccountDashboardComponent implements OnInit {
-  isLoading = signal(false);
   lastUpdated: Date | null = null;
   dashboardData: any = {
     piPending: 0,
@@ -31,7 +30,6 @@ export class AccountDashboardComponent implements OnInit {
   }
 
   loadDashboard(): void {
-    this.isLoading.set(true);
     this.accountService.getDashboard().subscribe({
       next: (response) => {
         this.dashboardData = {
@@ -41,12 +39,10 @@ export class AccountDashboardComponent implements OnInit {
           fullySettled: response?.fullySettledCount || 0
         };
         this.lastUpdated = new Date();
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading dashboard:', error);
         this.toastService.show('Failed to load dashboard data', 'error');
-        this.isLoading.set(false);
       }
     });
   }
@@ -89,8 +85,7 @@ export class AccountDashboardComponent implements OnInit {
   }
 
   isEmpty(): boolean {
-    return !this.isLoading() && 
-           this.dashboardData.piPending === 0 && 
+    return this.dashboardData.piPending === 0 && 
            this.dashboardData.invoicePending === 0 && 
            this.dashboardData.paymentPending === 0 && 
            this.dashboardData.fullySettled === 0;

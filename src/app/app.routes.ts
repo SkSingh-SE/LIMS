@@ -20,6 +20,13 @@ import { CourierComponent } from './components/courier/courier.component';
 import { TPIComponent } from './components/tpi/tpi.component';
 import { DimensionalFactorComponent } from './components/dimensional-factor/dimensional-factor.component';
 import { HeatTreatmentComponent } from './components/heat-treatment/heat-treatment.component';
+import { HeatTreatmentCategoryComponent } from './components/heat-treatment-category/heat-treatment-category.component';
+import { CoolingMediumComponent } from './components/cooling-medium/cooling-medium.component';
+import { ParameterCategoryComponent } from './components/parameter-category/parameter-category.component';
+import { ProductFormComponent } from './components/product-form/product-form.component';
+import { SpecimenOrientationCategoryComponent } from './components/specimen-orientation-category/specimen-orientation-category.component';
+import { ProductConditionCategoryComponent } from './components/product-condition-category/product-condition-category.component';
+import { PropertyTypeComponent } from './components/property-type/property-type.component';
 import { ProductConditionComponent } from './components/product-condition/product-condition.component';
 import { SpecimenOrientationComponent } from './components/specimen-orientation/specimen-orientation.component';
 import { ChemicalParameterComponent } from './components/parameter/chemical-parameter/chemical-parameter.component';
@@ -176,6 +183,13 @@ export const routes: Routes = [
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'dimesional-factor', component: DimensionalFactorComponent },
             { path: 'heat-treatment', component: HeatTreatmentComponent },
+            { path: 'heat-treatment-category', component: HeatTreatmentCategoryComponent },
+            { path: 'cooling-medium', component: CoolingMediumComponent },
+            { path: 'parameter-category', component: ParameterCategoryComponent },
+            { path: 'product-form', component: ProductFormComponent },
+            { path: 'specimen-orientation-category', component: SpecimenOrientationCategoryComponent },
+            { path: 'product-condition-category', component: ProductConditionCategoryComponent },
+            { path: 'property-type', component: PropertyTypeComponent },
             { path: 'product-condition', component: ProductConditionComponent },
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },

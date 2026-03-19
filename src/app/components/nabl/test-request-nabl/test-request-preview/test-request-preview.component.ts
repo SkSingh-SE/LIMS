@@ -17,7 +17,6 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 export class TestRequestNablPreviewComponent implements OnInit {
     sampleId: number = 0;
     data: any = null;
-    isLoading = false;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -39,16 +38,13 @@ export class TestRequestNablPreviewComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading = true;
         this.service.getById(this.sampleId).subscribe({
             next: (resp) => {
                 this.data = resp;
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error fetching preview data:', err);
-                this.isLoading = false;
             }
         });
     }

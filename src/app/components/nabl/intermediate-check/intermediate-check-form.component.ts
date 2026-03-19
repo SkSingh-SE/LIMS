@@ -19,7 +19,6 @@ export class IntermediateCheckFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Create Intermediate Check Record';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     equipments: any[] = [];
@@ -150,7 +149,6 @@ export class IntermediateCheckFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -178,9 +176,8 @@ export class IntermediateCheckFormComponent implements OnInit {
 
                     this.checkForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -190,18 +187,17 @@ export class IntermediateCheckFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.checkForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/intermediate-check-records']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/intermediate-check-records']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

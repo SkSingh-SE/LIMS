@@ -20,7 +20,6 @@ export class RetestingOfRetainedSampleFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Retesting of Retained Sample (F-38)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -112,7 +111,6 @@ export class RetestingOfRetainedSampleFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -120,20 +118,18 @@ export class RetestingOfRetainedSampleFormComponent implements OnInit {
                     this.retestForm.patchValue(data);
                     if (this.isViewMode) this.retestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
     onSubmit(): void {
         if (this.retestForm.invalid) { this.retestForm.markAllAsTouched(); return; }
-        this.isLoading.set(true);
         const formData = this.retestForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
             next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/retesting-retained-sample']); },
-            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error'); this.isLoading.set(false); }
+            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 

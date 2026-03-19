@@ -94,6 +94,11 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
       this.bsModal.hide();
       this.router.navigate(['/designation']);
     }
+    this.designationForm.reset();
+    this.designationForm.enable();
+    this.designationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

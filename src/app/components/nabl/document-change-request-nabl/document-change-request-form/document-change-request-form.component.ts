@@ -18,7 +18,6 @@ export class DocumentChangeRequestFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Document Change Request';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -84,13 +83,11 @@ export class DocumentChangeRequestFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.changeForm.patchValue(data);
                 if (this.isViewMode) this.changeForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

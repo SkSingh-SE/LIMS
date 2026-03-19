@@ -13,8 +13,8 @@
         <button 
           class="btn btn-add btn-sm" 
           (click)="loadDashboard()"
-          [disabled]="isLoading()">
-          <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+          [disabled]="false">
+          <i class="bi bi-arrow-clockwise" [class.spin]="false"></i>
           Refresh
         </button>
         <div class="refresh-status" *ngIf="lastUpdated">
@@ -27,7 +27,7 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="isLoading()" class="loading-container">
+  <div *ngIf="false" class="loading-container">
     <div class="dashboard-section">
       <h4 class="section-title">Account Overview</h4>
       <div class="row">
@@ -46,7 +46,7 @@
   </div>
 
   <!-- Dashboard Content -->
-  <div *ngIf="!isLoading()" class="dashboard-content">
+  <div class="dashboard-content">
     <div class="dashboard-section">
       <h4 class="section-title">Account Overview</h4>
       <div class="row">

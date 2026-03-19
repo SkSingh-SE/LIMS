@@ -18,7 +18,6 @@ export class AuditSummaryFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Audit Summary Report';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -78,13 +77,11 @@ export class AuditSummaryFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.summaryForm.patchValue(data);
                 if (this.isViewMode) this.summaryForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

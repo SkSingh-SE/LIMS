@@ -26,7 +26,6 @@ export class EmployeeJobTrainingComponent implements OnInit {
     @Input() isViewMode: boolean = false;
     @ViewChild('filterModal') filterModal!: ElementRef;
 
-    isLoading = signal<boolean>(false);
     showTrainingModal = signal<boolean>(false);
     trainingForm!: FormGroup;
 

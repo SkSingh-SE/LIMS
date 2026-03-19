@@ -17,7 +17,6 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Sample Muster Register (F-32)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -106,7 +105,6 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -117,9 +115,8 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
                     this.requestForm.patchValue(data);
                     if (this.isViewMode) this.requestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -129,7 +126,6 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.requestForm.getRawValue();
 
         const obs = this.isEditMode
@@ -143,7 +139,6 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show(err.message || 'Operation failed', 'error');
-                this.isLoading.set(false);
             }
         });
     }

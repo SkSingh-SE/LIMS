@@ -63,7 +63,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="isLoading">
+          <tr *ngIf="false">
             <td [colSpan]="columns.length + (showActions ? 1 : 0) + (showSerialNumber ? 1 : 0)" class="text-center py-4">
               <div class="spinner-border spinner-border-sm text-primary"></div>
               Loading...
@@ -117,7 +117,7 @@
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="!isLoading && data.length === 0 && filters.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+    <div *ngIf="data.length === 0 && filters.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
       <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
         <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
         <div class="fw-semibold">No records found</div>

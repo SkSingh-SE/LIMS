@@ -17,7 +17,6 @@ import { PrintFrameComponent } from '../../nabl/print-frame/print-frame.componen
 export class TrainingPlanPreviewComponent implements OnInit {
   planId: number = 0;
   plan: TrainingPlan | null = null;
-  isLoading = true;
 
   constructor(
     private route: ActivatedRoute,
@@ -31,21 +30,17 @@ export class TrainingPlanPreviewComponent implements OnInit {
       if (this.planId > 0) {
         this.loadPlan();
       } else {
-        this.isLoading = false;
       }
     });
   }
 
   loadPlan(): void {
-    this.isLoading = true;
     this.trainingPlanService.getById(this.planId).subscribe({
       next: (data) => {
         this.plan = data;
-        this.isLoading = false;
       },
       error: (err: any) => {
         console.error('Error loading training plan:', err);
-        this.isLoading = false;
       }
     });
   }

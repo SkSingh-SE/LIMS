@@ -14,7 +14,6 @@ import { NablRegisterTableComponent, RegisterColumn } from '../../nabl/nabl-regi
 export class CalibrationReviewListComponent implements OnInit {
   records: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   columns: RegisterColumn[] = [
     { key: 'calibrationDate', type: 'date', label: 'Calibration Date', filter: true },
@@ -43,16 +42,13 @@ export class CalibrationReviewListComponent implements OnInit {
   }
 
   fetchData(payload: any): void {
-    this.isLoading.set(true);
     this.calibrationReviewService.getAll(payload).subscribe({
       next: (response: any) => {
         this.records = response.items || [];
         this.totalItems = response.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching calibration review records:', error);
-        this.isLoading.set(false);
       }
     });
   }

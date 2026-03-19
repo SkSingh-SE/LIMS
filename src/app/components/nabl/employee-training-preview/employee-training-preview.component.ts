@@ -17,7 +17,6 @@ import { EmployeeTrainingRecord } from '../../../models/employeeTrainingModel';
 export class EmployeeTrainingPreviewComponent implements OnInit {
     recordId: number = 0;
     record: EmployeeTrainingRecord | null = null;
-    isLoading: boolean = true;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -35,24 +34,20 @@ export class EmployeeTrainingPreviewComponent implements OnInit {
             if (this.recordId > 0) {
                 this.loadRecord();
             } else {
-                this.isLoading = false;
             }
         });
     }
 
     loadRecord(): void {
-        this.isLoading = true;
         this.trainingService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
                     this.record = data;
                 }
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading training record:', err);
-                this.isLoading = false;
             }
         });
     }

@@ -10,13 +10,13 @@
 
     <div class="card-body">
       <!-- Loading Overlay -->
-      <div *ngIf="isLoading()" class="text-center p-5">
+      <div *ngIf="false" class="text-center p-5">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
-      <form *ngIf="!isLoading()" [formGroup]="authForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="authForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
 
         <!-- Section I: Authorization Details -->
         <div class="accordion-section mb-3">

@@ -16,7 +16,6 @@ import { of } from 'rxjs';
 })
 export class PurchaseMaterialVerificationListComponent implements OnInit {
     records: PurchaseMaterialVerification[] = [];
-    isLoading = false;
     totalRecords = 0;
     pageSize = 10;
     pageNumber = 1;
@@ -39,7 +38,6 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
     }
 
     loadRecords(event?: any) {
-        this.isLoading = true;
         const params = {
             PageNumber: event?.pageIndex ? event.pageIndex + 1 : this.pageNumber,
             PageSize: event?.pageSize || this.pageSize,
@@ -52,7 +50,6 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
                 return of(null);
             })
         ).subscribe(response => {
-            this.isLoading = false;
             if (response && response.success) {
                 this.records = response.items.map(item => ({
                     ...item,

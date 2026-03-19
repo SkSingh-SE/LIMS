@@ -18,7 +18,6 @@ import { DesignationService } from '../../../../services/designation.service';
 })
 export class SkillMatrixPreviewComponent implements OnInit {
     matrix: SkillMatrix | null = null;
-    isLoading: boolean = true;
     matrixId: number = 0;
 
     designations: any[] = [];
@@ -55,35 +54,29 @@ export class SkillMatrixPreviewComponent implements OnInit {
     }
 
     loadMatrix(): void {
-        this.isLoading = true;
         this.skillMatrixService.getById(this.matrixId).subscribe({
             next: (data: any) => {
                 if (data) {
                     this.matrix = data;
                     this.resolveTitle();
                 }
-                this.isLoading = false;
             },
             error: (err: any) => {
                 console.error('Error loading skill matrix:', err);
-                this.isLoading = false;
             }
         });
     }
 
     loadFirstMatrix(): void {
-        this.isLoading = true;
         this.skillMatrixService.getAll().subscribe({
             next: (data: any) => {
                 if (data && data.items.length > 0) {
                     this.matrix = data.items[0];
                     this.resolveTitle();
                 }
-                this.isLoading = false;
             },
             error: (err: any) => {
                 console.error('Error loading skill matrices:', err);
-                this.isLoading = false;
             }
         });
     }

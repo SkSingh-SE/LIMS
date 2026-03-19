@@ -18,7 +18,6 @@ export class TrainingPlanFormComponent implements OnInit {
   planId: number = 0;
   isEditMode = false;
   isViewMode = false;
-  isLoading = signal(false);
   formTitle = 'Create Training Plan';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -85,7 +84,6 @@ export class TrainingPlanFormComponent implements OnInit {
   }
 
   loadData(): void {
-    this.isLoading.set(true);
     this.trainingPlanService.getById(this.planId).subscribe({
       next: (data) => {
         if (data) {
@@ -118,11 +116,9 @@ export class TrainingPlanFormComponent implements OnInit {
 
           this.planForm.patchValue(formValues);
         }
-        this.isLoading.set(false);
       },
       error: (err: any) => {
         console.error(err);
-        this.isLoading.set(false);
       }
     });
   }
@@ -158,7 +154,6 @@ export class TrainingPlanFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading.set(true);
     const formData = this.planForm.getRawValue();
 
     if (this.isEditMode) {
@@ -167,11 +162,9 @@ export class TrainingPlanFormComponent implements OnInit {
           if (res.success) {
             this.router.navigate(['/training-plan']);
           }
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     } else {
@@ -180,11 +173,9 @@ export class TrainingPlanFormComponent implements OnInit {
           if (res.success) {
             this.router.navigate(['/training-plan']);
           }
-          this.isLoading.set(false);
         },
         error: (err: any) => {
           console.error(err);
-          this.isLoading.set(false);
         }
       });
     }

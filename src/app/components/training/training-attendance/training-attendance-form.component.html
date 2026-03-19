@@ -15,13 +15,13 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="isLoading()" class="text-center py-5">
+      <div *ngIf="false" class="text-center py-5">
         <div class="spinner-border " role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
-      <form *ngIf="!isLoading()" [formGroup]="attendanceForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="attendanceForm.disabled">
+      <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="attendanceForm.disabled">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-4">
           <div

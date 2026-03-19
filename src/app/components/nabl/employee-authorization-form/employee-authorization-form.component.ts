@@ -19,7 +19,6 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
-    isLoading = signal(false);
     formTitle = 'Create Equipment Authorization';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -82,7 +81,6 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.authService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -91,12 +89,10 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
                     this.toastService.show('Authorization not found', 'error');
                     this.router.navigate(['/employee/equipment-authorization/list']);
                 }
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error(err);
                 this.toastService.show('Error loading authorization', 'error');
-                this.isLoading.set(false);
             }
         });
     }
@@ -112,7 +108,6 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.authForm.getRawValue();
 
         if (this.isEditMode) {
@@ -124,12 +119,10 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error updating authorization', 'error');
-                    this.isLoading.set(false);
                 }
             });
         } else {
@@ -141,12 +134,10 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error creating authorization', 'error');
-                    this.isLoading.set(false);
                 }
             });
         }

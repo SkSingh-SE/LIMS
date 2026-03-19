@@ -461,6 +461,10 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.MaterialSpecificationForm.reset();
+    this.MaterialSpecificationForm.enable();
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onLaboratoryTestChange(selectedItems: any[], tab: 'chemical' | 'mechanical' | 'other') {

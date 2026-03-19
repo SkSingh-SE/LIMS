@@ -18,7 +18,6 @@ export class NcCorrectiveActionFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New NC & Corrective Action Report';
     formNumbers = NablFormsHelper.getFormNumbers();
     relatedNcWork: any = null;
@@ -94,7 +93,6 @@ export class NcCorrectiveActionFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.ncForm.patchValue(data);
@@ -109,7 +107,6 @@ export class NcCorrectiveActionFormComponent implements OnInit {
                     };
                 }
             }
-            this.isLoading = false;
         });
     }
 

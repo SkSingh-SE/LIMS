@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 export class AuditChecklistPreviewComponent implements OnInit {
     recordId: number = 0;
     data: any = null;
-    isLoading = signal(true);
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
@@ -36,10 +35,8 @@ export class AuditChecklistPreviewComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe(resp => {
             this.data = resp;
-            this.isLoading.set(false);
             setTimeout(() => this.autoDetectOrientation(), 300);
         });
     }

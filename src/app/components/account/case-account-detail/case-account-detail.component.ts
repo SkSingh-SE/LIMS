@@ -18,7 +18,6 @@ import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.e
 export class CaseAccountDetailComponent implements OnInit {
   inwardId!: number;
   isReadOnly = false;
-  isLoading = signal(false);
   isLoadingPayments = signal(false);
   isGeneratingInvoice = signal(false);
   isSendingInvoice = signal(false);
@@ -62,20 +61,17 @@ export class CaseAccountDetailComponent implements OnInit {
   }
 
   loadCaseSummary(): void {
-    this.isLoading.set(true);
     this.accountService.getCaseSummary(this.inwardId).subscribe({
       next: (response) => {
         this.caseSummary = response;
         this.invoice = response?.finalInvoice || response?.invoice || null;
         this.proformaInvoice = response?.proformaInvoice || response?.pi || null;
         this.advancePayments = response?.advancePayments || [];
-        this.isLoading.set(false);
         this.loadLineItems();
       },
       error: (error) => {
         console.error('Error loading case summary:', error);
         this.toastService.show('Failed to load case summary', 'error');
-        this.isLoading.set(false);
       }
     });
   }

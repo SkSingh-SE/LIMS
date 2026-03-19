@@ -22,7 +22,6 @@ export class CompetenceRequirementListComponent implements OnInit {
 
   requirements: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   constructor(
     private competenceRequirementService: CompetenceRequirementService,
@@ -41,18 +40,15 @@ export class CompetenceRequirementListComponent implements OnInit {
   }
 
   fetchData(payload: any) {
-    this.isLoading.set(true);
     this.competenceRequirementService.getAll(payload).subscribe({
       next: (response) => {
         this.requirements = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching competence requirements:', error);
         this.requirements = [];
         this.totalItems = 0;
-        this.isLoading.set(false);
       }
     });
   }

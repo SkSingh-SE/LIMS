@@ -12,7 +12,6 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class OutstandingReportComponent implements OnInit {
   reportData: any[] = [];
-  isLoading = false;
   sortField = 'totalOutstanding';
   sortDir: 'asc' | 'desc' = 'desc';
 
@@ -26,17 +25,14 @@ export class OutstandingReportComponent implements OnInit {
   }
 
   loadReport(): void {
-    this.isLoading = true;
     this.customerLedgerService.getOutstandingReport().subscribe({
       next: (data) => {
         this.reportData = data || [];
         this.sortData();
-        this.isLoading = false;
       },
       error: (err) => {
         console.error('Error loading outstanding report:', err);
         this.toastService.show('Failed to load outstanding report', 'error');
-        this.isLoading = false;
       },
     });
   }

@@ -22,7 +22,6 @@ export class IncomingMaterialListComponent implements OnInit {
 
     records: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(private service: IncomingMaterialService) { }
 
@@ -38,18 +37,15 @@ export class IncomingMaterialListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.service.getAll(payload).subscribe({
             next: (response) => {
                 this.records = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error: any) => {
                 console.error('Error fetching incoming material records:', error);
                 this.records = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

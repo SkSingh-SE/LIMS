@@ -23,7 +23,6 @@ export class NonConformingWorkListComponent implements OnInit {
 
     data = signal<any[]>([]);
     totalItems = signal(0);
-    isLoading = signal(false);
 
     constructor(private service: NonConformingWorkService) { }
 
@@ -32,16 +31,13 @@ export class NonConformingWorkListComponent implements OnInit {
     }
 
     fetchData(params: any = {}) {
-        this.isLoading.set(true);
         this.service.getAll().subscribe({
             next: (resp) => {
                 this.data.set(resp);
                 this.totalItems.set(resp.length);
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error('Error fetching NC records:', err);
-                this.isLoading.set(false);
             }
         });
     }

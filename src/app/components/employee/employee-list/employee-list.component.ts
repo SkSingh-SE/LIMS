@@ -54,7 +54,6 @@ export class EmployeeListComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -91,12 +90,10 @@ export class EmployeeListComponent implements OnInit {
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.filteredEmployeeList = this.employeeList;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.employeeList = this.filteredEmployeeList = [];
-        this.isLoading.set(false);
       }
 
     });

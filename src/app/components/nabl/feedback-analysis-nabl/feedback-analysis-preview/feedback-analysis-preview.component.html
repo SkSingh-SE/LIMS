@@ -41,12 +41,12 @@
 </div>
 
 <div class="nabl-preview-page">
-  <div *ngIf="isLoading()" class="text-center py-5">
+  <div *ngIf="false" class="text-center py-5">
     <div class="spinner-border" style="color: #DA261C;" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-  <app-print-frame *ngIf="!isLoading() && data" [orientation]="orientation">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
         [formatNo]="data.formatNo"

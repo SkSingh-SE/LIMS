@@ -17,7 +17,6 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number | null = null;
-    isLoading = false;
     formNumbers: string[] = [];
 
     openSections: { [key: string]: boolean } = {
@@ -125,9 +124,7 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
     loadRecordData(): void {
         if (!this.recordId) return;
 
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(record => {
-            this.isLoading = false;
             if (record) {
                 // Clear empty default array
                 while (this.items.length !== 0) {
@@ -160,13 +157,11 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
 
         const formData = this.verificationForm.getRawValue();
 
-        this.isLoading = true;
         const request = this.isEditMode && this.recordId
             ? this.service.update(this.recordId, formData)
             : this.service.create(formData);
 
         request.subscribe(res => {
-            this.isLoading = false;
             if (res.success) {
                 alert(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`);
                 this.router.navigate(['/purchase-material-verification']);

@@ -50,7 +50,6 @@ export class TestMethodSpecificationListComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -62,7 +61,6 @@ export class TestMethodSpecificationListComponent implements OnInit {
   };
 
   constructor(private fb: FormBuilder, private testMethodService: TestMethodSpecificationService, private toastService: ToastService) {
-    this.isLoading.set(true);
 
   }
 
@@ -78,11 +76,9 @@ export class TestMethodSpecificationListComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.testMethodSpecificationList = [];
-        this.isLoading.set(false);
       }
 
     });

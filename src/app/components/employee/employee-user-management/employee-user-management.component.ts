@@ -26,7 +26,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   @Input() isViewMode: boolean = false;
 
   activeTab = signal<number>(1);
-  isLoading = signal<boolean>(false);
   userForm!: FormGroup;
 
   tabs = [
@@ -102,7 +101,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
 
   loadUserDetails() {
-    this.isLoading.set(true);
     // Load real user data from backend endpoint
     this.userService.getUserByEmployeeId(this.employeeId).subscribe({
       next: (data) => {
@@ -134,12 +132,10 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
         if (this.isViewMode) this.userForm.disable();
 
-        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Error loading user details:', err);
         this.toastService.show('Failed to load user details', 'error');
-        this.isLoading.set(false);
       }
     });
   }

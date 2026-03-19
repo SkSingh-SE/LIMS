@@ -13,7 +13,6 @@ import { NablRegisterTableComponent, RegisterColumn } from '../../nabl/nabl-regi
 })
 export class TrainingAttendanceListComponent implements OnInit {
     records = signal<TrainingAttendance[]>([]);
-    isLoading = signal(false);
     searchTerm = '';
     columns: RegisterColumn[] = [
         { key: 'formatNo', label: 'Format No', type: 'string' },
@@ -31,7 +30,6 @@ export class TrainingAttendanceListComponent implements OnInit {
     }
 
     loadRecords(params: any = {}): void {
-        this.isLoading.set(true);
         const queryParams = {
             searchTerm: this.searchTerm,
             ...params
@@ -40,9 +38,8 @@ export class TrainingAttendanceListComponent implements OnInit {
             next: (res) => {
                 this.records.set(res.items);
                 this.totalItems = res.totalRecords || res.items.length;
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 

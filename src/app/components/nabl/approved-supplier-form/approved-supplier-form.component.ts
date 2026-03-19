@@ -17,7 +17,6 @@ export class ApprovedSupplierFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Approved Supplier';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -94,7 +93,6 @@ export class ApprovedSupplierFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -108,9 +106,8 @@ export class ApprovedSupplierFormComponent implements OnInit {
                     }
                     this.supplierForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -120,18 +117,17 @@ export class ApprovedSupplierFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.supplierForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/approved-supplier']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/approved-supplier']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

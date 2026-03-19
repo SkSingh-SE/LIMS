@@ -1,14 +1,19 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { DimensionalFactorService } from '../../services/dimensional-factor.service';
+import { ProductFormService } from '../../services/product-form.service';
+import { ParameterUnitService } from '../../services/parameter-unit.service';
+import { TestMethodStandardService } from '../../services/test-method-standard.service';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-dimensional-factor',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
   templateUrl: './dimensional-factor.component.html',
   styleUrl: './dimensional-factor.component.css'
 })
@@ -19,13 +24,19 @@ export class DimensionalFactorComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: false },
+    { key: 'unit', type: 'string', label: 'Unit', filter: false },
+    { key: 'instrument', type: 'string', label: 'Instrument', filter: true },
+    { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
+    code: 'string',
     name: 'string',
-    createdOn: 'date'
+    instrument: 'string',
+    toleranceType: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -46,7 +57,6 @@ export class DimensionalFactorComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -65,16 +75,34 @@ export class DimensionalFactorComponent implements OnInit {
   dimensionalFactorId: number = 0;
   formTitle = 'Dimensional Factor Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private dimensionalService: DimensionalFactorService, private toastService: ToastService) {
-
-  }
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private dimensionalService: DimensionalFactorService,
+    private productFormService: ProductFormService,
+    private parameterUnitService: ParameterUnitService,
+    private testMethodStandardService: TestMethodStandardService,
+    private toastService: ToastService,
+  ) {}
 
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
+
+  initForm() {
     this.DimensionalFactorForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      code: ['', Validators.required],
+      name: ['', Validators.required],
+      parameterUnitID: [null],
+      instrument: [''],
+      toleranceType: [''],
+      defaultTestMethodID: [null],
+      applicableFormIds: [[]],
+      applicableForms: this.fb.array([]),
     });
   }
 
@@ -85,12 +113,10 @@ export class DimensionalFactorComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.DimensionalFactorList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -101,6 +127,9 @@ export class DimensionalFactorComponent implements OnInit {
       next: (response) => {
         this.customerTypeObject = response;
         this.DimensionalFactorForm.patchValue(response);
+        this.DimensionalFactorForm.patchValue({
+          applicableFormIds: response?.applicableForms?.map((x: any) => x.productFormID ?? x.id) ?? [],
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -242,6 +271,8 @@ export class DimensionalFactorComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.DimensionalFactorForm.reset();
+    this.DimensionalFactorForm.enable();
     if (id > 0) {
       this.dimensionalFactorId = id;
       this.getDetails();
@@ -249,7 +280,7 @@ export class DimensionalFactorComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.DimensionalFactorForm.reset();
+      this.initForm();
       this.formTitle = 'Dimensional Factor Form';
       this.DimensionalFactorForm.enable();
     } else if (type === 'edit') {
@@ -257,7 +288,7 @@ export class DimensionalFactorComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Dimensional Factor Form';
       this.DimensionalFactorForm.enable();
-      
+
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -274,7 +305,48 @@ export class DimensionalFactorComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.DimensionalFactorForm.reset();
+    this.DimensionalFactorForm.enable();
+    this.dimensionalFactorId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
+
+  // Dropdown functions
+  getUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getProductFormDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getTestMethodDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.testMethodStandardService.getTestMethodStandardDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onFormSelected(items: any[]) {
+    const selectIds: number[] = [];
+    const formArray = this.DimensionalFactorForm.get('applicableForms') as FormArray;
+    formArray.clear();
+    items.forEach((x) => {
+      const id = x.id || x;
+      selectIds.push(id);
+      formArray.push(
+        this.fb.group({
+          ProductFormID: [id],
+        })
+      );
+    });
+    this.DimensionalFactorForm.patchValue({ applicableFormIds: selectIds });
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 
   onSubmit(): void {
     if (this.DimensionalFactorForm.valid) {
@@ -307,5 +379,3 @@ export class DimensionalFactorComponent implements OnInit {
   }
 
 }
-
-

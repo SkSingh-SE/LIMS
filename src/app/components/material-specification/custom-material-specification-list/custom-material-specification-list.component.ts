@@ -48,7 +48,6 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -74,11 +73,9 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.materialSpeficationList = [];
-        this.isLoading.set(false);
       }
 
     });

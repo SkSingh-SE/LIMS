@@ -34,10 +34,10 @@
             <button
               class="btn btn-primary btn-sm"
               (click)="onRefresh()"
-              [disabled]="isLoading()"
+              [disabled]="false"
               aria-label="Refresh dashboard data"
               title="Refresh dashboard">
-              <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()" aria-hidden="true"></i>
+              <i class="bi bi-arrow-clockwise" [class.spin]="false" aria-hidden="true"></i>
               <span class="btn-text">Refresh</span>
             </button>
             <button
@@ -83,7 +83,7 @@
   </div>
 
   <!-- Enhanced Loading State -->
-  <div *ngIf="isLoading()" class="loading-container" aria-label="Loading dashboard data">
+  <div *ngIf="false" class="loading-container" aria-label="Loading dashboard data">
     <div class="loading-content">
       <div class="loading-spinner">
         <div class="spinner-border text-primary" role="status">
@@ -118,7 +118,7 @@
   </div>
 
   <!-- Dashboard Content: Modern Grid Layout -->
-  <div *ngIf="!isLoading()" class="dashboard-content">
+  <div class="dashboard-content">
 
     <!-- Stats Area: Overview Cards -->
     <div class="dashboard-stats-area" *ngIf="displayCards().length > 0">
@@ -158,7 +158,7 @@
 
             <app-dashboard-card
               [card]="card"
-              [isLoading]="isLoading()"
+              [isLoading]="false"
               [isCustomizationMode]="isCustomizationMode()"
               (cardClick)="onCardClick($event)">
             </app-dashboard-card>
@@ -204,7 +204,7 @@
           <div class="notifications-wrapper">
             <app-dashboard-notification-panel
               [notifications]="notifications()"
-              [isLoading]="isLoading()"
+              [isLoading]="false"
               [maxDisplayCount]="10"
               (notificationClick)="onNotificationClick($event)"
               (viewAllClick)="onViewAllNotifications()">

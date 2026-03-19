@@ -3,6 +3,11 @@
 
 /* You can add global styles to this file, and also import other style files */
 
+/* CDK overlay must sit above Bootstrap modals (z-index 1055) */
+.cdk-overlay-container {
+  z-index: 1060 !important;
+}
+
 :root {
   --nav-height: 60px;
   --transition-speed: 0.3s;
@@ -1421,19 +1426,39 @@ label .text-danger {
 
 .ng-dropdown-panel .ng-option {
   font-size: var(--font-sm) !important;
-  padding: 6px 12px !important;
+  padding: 8px 12px !important;
   color: var(--neutral-800) !important;
+  background-color: #fff !important;
+  transition: background-color 0.15s ease;
 }
 
 .ng-dropdown-panel .ng-option.ng-option-marked {
-  background-color: var(--primary-50) !important;
-  color: var(--primary-700) !important;
+  background-color: var(--neutral-100) !important;
+  color: var(--neutral-800) !important;
 }
 
-.ng-dropdown-panel .ng-option.ng-option-selected,
+.ng-dropdown-panel .ng-option.ng-option-selected {
+  background-color: #fff !important;
+  color: var(--primary-color) !important;
+  font-weight: 500 !important;
+  position: relative;
+  padding-right: 32px !important;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-selected::after {
+  content: '\2713';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 13px;
+}
+
 .ng-dropdown-panel .ng-option.ng-option-selected.ng-option-marked {
-  background-color: var(--primary-100) !important;
-  color: var(--primary-700) !important;
+  background-color: var(--neutral-100) !important;
+  color: var(--primary-color) !important;
 }
 
 .ng-select.ng-invalid.ng-touched .ng-select-container {
@@ -1830,13 +1855,14 @@ textarea.form-control {
 }
 
 .select2-results__option--highlighted[aria-selected] {
-  background-color: var(--primary-50) !important;
-  color: var(--primary-700) !important;
+  background-color: var(--neutral-100) !important;
+  color: var(--neutral-800) !important;
 }
 
 .select2-results__option[aria-selected="true"] {
-  background-color: var(--primary-100) !important;
-  color: var(--primary-700) !important;
+  background-color: #fff !important;
+  color: var(--primary-color) !important;
+  font-weight: 500 !important;
 }
 
 .select2-container--default .select2-selection--single.select2-selection--disabled,

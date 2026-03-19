@@ -17,7 +17,6 @@ export class IncomingMaterialFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Log Incoming Material Inspection';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -122,7 +121,6 @@ export class IncomingMaterialFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -147,9 +145,8 @@ export class IncomingMaterialFormComponent implements OnInit {
 
                     this.materialForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -159,18 +156,17 @@ export class IncomingMaterialFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.materialForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/incoming-material']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/incoming-material']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

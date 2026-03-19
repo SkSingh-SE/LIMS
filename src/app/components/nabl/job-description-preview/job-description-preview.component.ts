@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 })
 export class JobDescriptionPreviewComponent implements OnInit {
     jobDesc: JobDescription | null = null;
-    isLoading = true;
 
     /** Current orientation — set by auto-detect or manual toggle */
     orientation: 'portrait' | 'landscape' = 'portrait';
@@ -41,7 +40,6 @@ export class JobDescriptionPreviewComponent implements OnInit {
                 next: (data) => {
                     if (data) {
                         this.jobDesc = data;
-                        this.isLoading = false;
                         // Auto-detect orientation after Angular renders the content
                         setTimeout(() => this.autoDetectOrientation(), 300);
                     } else {
@@ -52,7 +50,6 @@ export class JobDescriptionPreviewComponent implements OnInit {
                 error: () => {
                     this.toastService.show('Error loading preview', 'error');
                     this.router.navigate(['/job-description']);
-                    this.isLoading = false;
                 }
             });
         }

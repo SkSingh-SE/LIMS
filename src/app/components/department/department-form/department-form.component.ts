@@ -79,6 +79,11 @@ export class DepartmentFormComponent implements OnInit, AfterViewInit {
       this.bsModal.hide();
       this.router.navigate(['/department']);
     }
+    this.departmentForm.reset();
+    this.departmentForm.enable();
+    this.departmentId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

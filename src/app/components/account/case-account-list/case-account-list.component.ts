@@ -41,7 +41,6 @@ export class CaseAccountListComponent implements OnInit {
   isFilterOpen = false;
 
   dataList: any[] = [];
-  isLoading = signal(false);
 
   pageNumber = 1;
   pageSize = 10;
@@ -96,7 +95,6 @@ export class CaseAccountListComponent implements OnInit {
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.payload.searchTerm = this.searchTerm;
@@ -110,13 +108,11 @@ export class CaseAccountListComponent implements OnInit {
         this.totalItems = response?.totalRecords || response?.totalItems || 0;
         this.pageSize = response?.pageSize || this.pageSize;
         this.pageNumber = response?.pageNumber || this.pageNumber;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching case accounts:', error);
         this.toastService.show('Failed to load case accounts', 'error');
         this.dataList = [];
-        this.isLoading.set(false);
       }
     });
   }

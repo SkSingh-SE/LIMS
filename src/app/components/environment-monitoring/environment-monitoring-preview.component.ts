@@ -17,7 +17,6 @@ import { NablPrintFooterComponent } from '../nabl/nabl-print-footer/nabl-print-f
 export class EnvironmentMonitoringPreviewComponent implements OnInit {
   recordId: number = 0;
   record: EnvironmentMonitoring | null = null;
-  isLoading = true;
   months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   constructor(
@@ -32,21 +31,17 @@ export class EnvironmentMonitoringPreviewComponent implements OnInit {
       if (this.recordId > 0) {
         this.loadRecord();
       } else {
-        this.isLoading = false;
       }
     });
   }
 
   loadRecord(): void {
-    this.isLoading = true;
     this.environmentService.getById(this.recordId).subscribe({
       next: (data: any) => {
         this.record = data;
-        this.isLoading = false;
       },
       error: (err: any) => {
         console.error('Error loading environment monitoring record:', err);
-        this.isLoading = false;
       }
     });
   }

@@ -17,7 +17,6 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     @Input() isViewMode: boolean = false;
     @ViewChild('filterModal') filterModal!: ElementRef;
 
-    isLoading = signal<boolean>(false);
     showPerformanceModal = signal<boolean>(false);
     performanceForm!: FormGroup;
     editingId: number = 0;
@@ -131,7 +130,6 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     }
 
     fetchData(): void {
-        this.isLoading.set(true);
         this.payload.PageNumber = this.pageNumber;
         this.payload.PageSize = this.pageSize;
         this.payload.searchTerm = this.searchTerm;
@@ -149,12 +147,10 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
                 this.pageSize = response?.pageSize || this.pageSize;
                 this.pageNumber = response?.pageNumber || this.pageNumber;
                 this.calculateSummary();
-                this.isLoading.set(false);
             },
             error: (error) => {
                 console.error('Error fetching performance records:', error);
                 this.performanceRecords = [];
-                this.isLoading.set(false);
             },
         });
     }

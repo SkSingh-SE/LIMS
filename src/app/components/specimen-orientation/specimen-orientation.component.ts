@@ -1,14 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { SpecimenOrientationService } from '../../services/specimen-orientation.service';
+import { SpecimenOrientationCategoryService } from '../../services/specimen-orientation-category.service';
+import { ProductFormService } from '../../services/product-form.service';
+import { MetalClassificationService } from '../../services/metal-classification.service';
 import { ToastService } from '../../services/toast.service';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-specimen-orientation',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
   templateUrl: './specimen-orientation.component.html',
   styleUrl: './specimen-orientation.component.css'
 })
@@ -19,11 +24,13 @@ export class SpecimenOrientationComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
+    code: 'string',
     name: 'string',
     createdOn: 'date'
   };
@@ -46,7 +53,6 @@ export class SpecimenOrientationComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -65,9 +71,16 @@ export class SpecimenOrientationComponent implements OnInit {
   specimenOrientationId: number = 0;
   formTitle = 'Specimen Orientation Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private specimenOrientationService: SpecimenOrientationService, private toastService: ToastService) {
-
-  }
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private specimenOrientationService: SpecimenOrientationService,
+    private specimenOrientationCategoryService: SpecimenOrientationCategoryService,
+    private productFormService: ProductFormService,
+    private metalClassificationService: MetalClassificationService,
+    private toastService: ToastService,
+  ) {}
 
 
   ngOnInit() {
@@ -77,7 +90,14 @@ export class SpecimenOrientationComponent implements OnInit {
   initForm() {
     this.SpecimentOrientationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      code: ['', Validators.required],
+      name: ['', Validators.required],
+      specimenOrientationCategoryID: [null],
+      description: [''],
+      applicableFormIds: [[]],
+      applicableForms: this.fb.array([]),
+      applicableClassificationIds: [[]],
+      applicableClassifications: this.fb.array([]),
     });
   }
   fetchData() {
@@ -87,12 +107,10 @@ export class SpecimenOrientationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.SpecimenOrientationList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -103,6 +121,10 @@ export class SpecimenOrientationComponent implements OnInit {
       next: (response) => {
         this.customerTypeObject = response;
         this.SpecimentOrientationForm.patchValue(response);
+        this.SpecimentOrientationForm.patchValue({
+          applicableFormIds: response?.applicableForms?.map((x: any) => x.productFormID ?? x.id) ?? [],
+          applicableClassificationIds: response?.applicableClassifications?.map((x: any) => x.metalClassificationID ?? x.id) ?? [],
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -244,6 +266,8 @@ export class SpecimenOrientationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.SpecimentOrientationForm.reset();
+    this.SpecimentOrientationForm.enable();
     if (id > 0) {
       this.specimenOrientationId = id;
       this.getDetails();
@@ -276,7 +300,64 @@ export class SpecimenOrientationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.SpecimentOrientationForm.reset();
+    this.SpecimentOrientationForm.enable();
+    this.specimenOrientationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
+
+  // Dropdown functions
+  getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.specimenOrientationCategoryService.getSpecimenOrientationCategoryDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getProductFormDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getClassificationDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.metalClassificationService.getMetalClassificationDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onFormSelected(items: any[]) {
+    const selectIds: number[] = [];
+    const formArray = this.SpecimentOrientationForm.get('applicableForms') as FormArray;
+    formArray.clear();
+    items.forEach((x) => {
+      const id = x.id || x;
+      selectIds.push(id);
+      formArray.push(
+        this.fb.group({
+          ProductFormID: [id],
+        })
+      );
+    });
+    this.SpecimentOrientationForm.patchValue({ applicableFormIds: selectIds });
+  }
+
+  onClassificationSelected(items: any[]) {
+    const selectIds: number[] = [];
+    const classArray = this.SpecimentOrientationForm.get('applicableClassifications') as FormArray;
+    classArray.clear();
+    items.forEach((x) => {
+      const id = x.id || x;
+      selectIds.push(id);
+      classArray.push(
+        this.fb.group({
+          MetalClassificationID: [id],
+        })
+      );
+    });
+    this.SpecimentOrientationForm.patchValue({ applicableClassificationIds: selectIds });
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 
   onSubmit(): void {
     if (this.SpecimentOrientationForm.valid) {
@@ -309,6 +390,3 @@ export class SpecimenOrientationComponent implements OnInit {
   }
 
 }
-
-
-

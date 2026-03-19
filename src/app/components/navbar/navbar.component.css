@@ -369,3 +369,121 @@
     text-overflow: ellipsis;
     overflow: hidden;
 }
+
+/* ── Menu2 outer wrapper with scroll arrows ────────────── */
+.menu2-outer {
+    width: 100%;
+    padding: 0;
+}
+
+.menu2-scroll-btn {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    padding: 4px 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.menu2-scroll-btn:hover {
+    opacity: 1;
+}
+
+.menu2-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap !important;
+}
+
+.menu2-container::-webkit-scrollbar {
+    display: none;
+}
+
+.menu2-container .menu2-item {
+    flex-shrink: 0;
+}
+
+/* ── Menu Search ───────────────────────────────────────── */
+.menu-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.menu-search-input {
+    width: 0;
+    opacity: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+.menu-search-input.visible {
+    width: 220px;
+    opacity: 1;
+    padding: 6px 14px;
+    border: 1px solid #ddd;
+}
+
+.menu-search-input::placeholder {
+    color: #999;
+    font-size: 12px;
+}
+
+.menu-search-btn {
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.menu-search-results {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+    margin-top: 8px;
+    z-index: 9999;
+    padding: 6px;
+}
+
+.menu-search-result-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.menu-search-result-item:hover {
+    background-color: #fef2f2;
+}
+
+.menu-search-result-item .result-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.menu-search-result-item .result-breadcrumb {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.menu-search-result-item + .menu-search-result-item {
+    border-top: 1px solid #f3f3f3;
+}

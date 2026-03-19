@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../../nabl/print-frame/print-frame.componen
 export class TrainingEffectivenessPreviewComponent implements OnInit {
   recordId: number = 0;
   record: TrainingEffectiveness | null = null;
-  isLoading = true;
 
   constructor(
     private route: ActivatedRoute,
@@ -30,21 +29,17 @@ export class TrainingEffectivenessPreviewComponent implements OnInit {
       if (this.recordId > 0) {
         this.loadRecord();
       } else {
-        this.isLoading = false;
       }
     });
   }
 
   loadRecord(): void {
-    this.isLoading = true;
     this.trainingEffectivenessService.getById(this.recordId).subscribe({
       next: (data: any) => {
         this.record = data;
-        this.isLoading = false;
       },
       error: (err: any) => {
         console.error('Error loading training effectiveness record:', err);
-        this.isLoading = false;
       }
     });
   }

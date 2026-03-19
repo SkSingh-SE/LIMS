@@ -17,7 +17,6 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 })
 export class TechnicalRawDataPreviewComponent implements OnInit {
     record: TechnicalRawDataNabl | null = null;
-    isLoading = true;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
@@ -41,13 +40,11 @@ export class TechnicalRawDataPreviewComponent implements OnInit {
                         this.toastService.show('Record not found', 'error');
                         this.router.navigate(['/nabl/technical-raw-data']);
                     }
-                    this.isLoading = false;
                     setTimeout(() => this.autoDetectOrientation(), 300);
                 },
                 error: () => {
                     this.toastService.show('Error loading preview', 'error');
                     this.router.navigate(['/nabl/technical-raw-data']);
-                    this.isLoading = false;
                 }
             });
         }

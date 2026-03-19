@@ -57,7 +57,6 @@ export class SamplePreparationMasterComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -99,19 +98,16 @@ export class SamplePreparationMasterComponent implements OnInit {
   }
 
   fetchData() {
-    this.isLoading.set(true);
     this.service.getAll(this.payload).subscribe({
       next: (response) => {
         this.dataList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.dataList = [];
-        this.isLoading.set(false);
       },
     });
   }
@@ -261,6 +257,8 @@ export class SamplePreparationMasterComponent implements OnInit {
   }
 
   openModal(type: string, id: number): void {
+    this.formGroup.reset();
+    this.formGroup.enable();
     if (id > 0) {
       this.recordId = id;
       this.getDetails();
@@ -291,6 +289,11 @@ export class SamplePreparationMasterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.formGroup.reset();
+    this.formGroup.enable();
+    this.recordId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

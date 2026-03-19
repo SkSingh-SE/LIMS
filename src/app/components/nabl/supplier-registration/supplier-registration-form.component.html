@@ -15,15 +15,13 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="isLoading()" class="text-center py-5">
+      <div *ngIf="false" class="text-center py-5">
         <div class="spinner-border " role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
-      <form
-        *ngIf="!isLoading()"
-        [formGroup]="registrationForm"
+      <form [formGroup]="registrationForm"
         (ngSubmit)="onSubmit()"
         [class.ra-form-disabled]="registrationForm.disabled"
       >

@@ -24,7 +24,6 @@ export class IntermediateCheckListComponent implements OnInit {
   searchTerm = '';
   sortByColumn = 'checkYear';
   sortOrder: 'desc' | 'asc' = 'desc';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -44,7 +43,6 @@ export class IntermediateCheckListComponent implements OnInit {
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
     this.intermediateCheckService.getAll(this.payload).subscribe({
       next: (response: any) => {
         this.records = response.items || [];
@@ -52,11 +50,9 @@ export class IntermediateCheckListComponent implements OnInit {
         this.totalItems = response.totalRecords || 0;
         this.pageSize = response.pageSize || 10;
         this.pageNumber = response.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching intermediate check records:', error);
-        this.isLoading.set(false);
       }
     });
   }

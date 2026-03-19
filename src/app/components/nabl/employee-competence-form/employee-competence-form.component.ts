@@ -19,7 +19,6 @@ export class EmployeeCompetenceFormComponent implements OnInit {
     reportId: number = 0;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
-    isLoading = signal(false);
     formTitle = 'Create Employee Competence Report';
 
     ratingOptions = ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'];
@@ -89,7 +88,6 @@ export class EmployeeCompetenceFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.competenceService.getById(this.reportId).subscribe({
             next: (data) => {
                 if (data) {
@@ -112,12 +110,10 @@ export class EmployeeCompetenceFormComponent implements OnInit {
                     this.toastService.show('Report not found', 'error');
                     this.router.navigate(['/employee/competence']);
                 }
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error(err);
                 this.toastService.show('Error loading report', 'error');
-                this.isLoading.set(false);
             }
         });
     }
@@ -138,7 +134,6 @@ export class EmployeeCompetenceFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.reportForm.getRawValue();
 
         if (this.isEditMode) {
@@ -150,12 +145,10 @@ export class EmployeeCompetenceFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error updating report', 'error');
-                    this.isLoading.set(false);
                 }
             });
         } else {
@@ -167,12 +160,10 @@ export class EmployeeCompetenceFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error creating report', 'error');
-                    this.isLoading.set(false);
                 }
             });
         }

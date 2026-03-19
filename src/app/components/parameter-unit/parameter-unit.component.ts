@@ -18,21 +18,14 @@ export class ParameterUnitComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
-    { key: 'symbol', type: 'string', label: 'Symbol', filter: true },
-    { key: 'similarUnit1', type: 'string', label: 'Similar Unit 1', filter: true },
-    { key: 'conversionFactor1', type: 'number', label: 'Factor 1', filter: true },
-    { key: 'similarUnit2', type: 'string', label: 'Similar Unit 2', filter: true },
-    { key: 'conversionFactor2', type: 'number', label: 'Factor 2', filter: true },
+    { key: 'name', type: 'string', label: 'Unit Name', filter: true },
+    { key: 'conversaionFactor', type: 'string', label: 'Base Factor', filter: true },
+    { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    unitName: 'string',
-    symbol: 'string',
-    similarUnit1: 'string',
-    conversionFactor1: 'number',
-    similarUnit2: 'string',
-    conversionFactor2: 'number',
+    name: 'string',
+    conversaionFactor: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -70,6 +63,10 @@ export class ParameterUnitComponent implements OnInit {
   parameterUnitId: number = 0;
   formTitle = 'Parameter Unit Form';
 
+  // Intelligence features
+  similarUnitCount = 0;
+  testValue: number | null = null;
+
   constructor(
     private fb: FormBuilder,
     private parameterUnitService: ParameterUnitService,
@@ -84,8 +81,8 @@ export class ParameterUnitComponent implements OnInit {
   initForm() {
     this.parameterUnitForm = this.fb.group({
       id: [0],
-      unitName: ['', Validators.required],
-      symbol: [''],
+      name: ['', Validators.required],
+      conversaionFactor: [''],
       similarUnit1: [''],
       conversionFactor1: [null],
       similarUnit2: [''],
@@ -93,6 +90,49 @@ export class ParameterUnitComponent implements OnInit {
       similarUnit3: [''],
       conversionFactor3: [null],
     });
+  }
+
+  detectSimilarUnitCount(): void {
+    let count = 0;
+    if (this.parameterUnitForm.get('similarUnit1')?.value || this.parameterUnitForm.get('conversionFactor1')?.value) count = 1;
+    if (this.parameterUnitForm.get('similarUnit2')?.value || this.parameterUnitForm.get('conversionFactor2')?.value) count = 2;
+    if (this.parameterUnitForm.get('similarUnit3')?.value || this.parameterUnitForm.get('conversionFactor3')?.value) count = 3;
+    this.similarUnitCount = count;
+  }
+
+  addSimilarUnit(): void {
+    if (this.similarUnitCount < 3) this.similarUnitCount++;
+  }
+
+  removeSimilarUnit(index: number): void {
+    if (index === 1) {
+      this.parameterUnitForm.patchValue({
+        similarUnit1: this.parameterUnitForm.get('similarUnit2')?.value || '',
+        conversionFactor1: this.parameterUnitForm.get('conversionFactor2')?.value,
+        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
+        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
+        similarUnit3: '', conversionFactor3: null,
+      });
+    } else if (index === 2) {
+      this.parameterUnitForm.patchValue({
+        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
+        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
+        similarUnit3: '', conversionFactor3: null,
+      });
+    } else if (index === 3) {
+      this.parameterUnitForm.patchValue({ similarUnit3: '', conversionFactor3: null });
+    }
+    this.similarUnitCount--;
+  }
+
+  calculateConversions(): void {}
+
+  getConvertedValue(index: number): string {
+    if (this.testValue === null || this.testValue === undefined) return '—';
+    const factor = this.parameterUnitForm.get(`conversionFactor${index}`)?.value;
+    if (!factor) return '—';
+    const result = this.testValue * factor;
+    return Number.isInteger(result) ? result.toString() : result.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
   }
 
   fetchData() {
@@ -116,6 +156,7 @@ export class ParameterUnitComponent implements OnInit {
     this.parameterUnitService.getParameterUnitById(this.parameterUnitId).subscribe({
       next: (response) => {
         this.parameterUnitForm.patchValue(response);
+        this.detectSimilarUnitCount();
       },
       error: (error) => {
         console.error('Error fetching parameter unit data:', error);
@@ -137,33 +178,19 @@ export class ParameterUnitComponent implements OnInit {
 
   openFilterModal(column: string, event: MouseEvent) {
     this.filterColumn = column;
-    this.columns.forEach((col) => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    });
+    this.columns.forEach((col) => { if (col.key === column) this.filterColumnTitle = col.label; });
     this.filterValue = '';
     this.filterValue2 = '';
-
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
+      case 'string': this.filterType = 'Contains'; break;
+      case 'number': this.filterType = 'Equal'; break;
+      case 'date': this.filterType = 'Between'; break;
+      default: this.filterType = 'Contains';
     }
-
     this.isFilterOpen = true;
     const target = event.target as HTMLElement;
     const rect = target.getBoundingClientRect();
-
     if (this.filterModal) {
       const modal = this.filterModal.nativeElement;
       modal.style.display = 'block';
@@ -174,16 +201,10 @@ export class ParameterUnitComponent implements OnInit {
 
   applyFilter() {
     if (!this.filterColumn || this.filterValue === '') return;
-
     const existingFilterIndex = this.filters.findIndex((f) => f.column === this.filterColumn);
     const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
+    if (existingFilterIndex > -1) this.filters[existingFilterIndex] = filterData;
+    else this.filters.push(filterData);
     this.fetchData();
     this.closeFilterModal();
   }
@@ -195,9 +216,7 @@ export class ParameterUnitComponent implements OnInit {
   }
 
   closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
+    if (this.filterModal) this.filterModal.nativeElement.style.display = 'none';
   }
 
   onPageChange(page: number) {
@@ -247,18 +266,16 @@ export class ParameterUnitComponent implements OnInit {
     const confirmed = window.confirm('Are you sure you want to delete this item?');
     if (confirmed) {
       this.parameterUnitService.deleteParameterUnit(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        },
+        next: (response) => { this.fetchData(); this.toastService.show(response.message, 'success'); },
+        error: (error) => { this.toastService.show(error.message, 'error'); },
       });
     }
   }
 
   openModal(type: string, id: number): void {
+    this.testValue = null;
+    this.parameterUnitForm.reset();
+    this.parameterUnitForm.enable();
     if (id > 0) {
       this.parameterUnitId = id;
       this.getDetails();
@@ -267,12 +284,13 @@ export class ParameterUnitComponent implements OnInit {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.formTitle = 'Parameter Unit Form';
+      this.similarUnitCount = 0;
+      this.formTitle = 'Create Parameter Unit';
       this.parameterUnitForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Unit Form';
+      this.formTitle = 'Edit Parameter Unit';
       this.parameterUnitForm.enable();
     } else if (type === 'view') {
       this.isViewMode = true;
@@ -280,15 +298,17 @@ export class ParameterUnitComponent implements OnInit {
       this.formTitle = 'View Parameter Unit';
       this.parameterUnitForm.disable();
     }
-
     this.bsModal = new Modal(this.modalElement.nativeElement);
     this.bsModal.show();
   }
 
   closeModal(): void {
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
+    if (this.bsModal) this.bsModal.hide();
+    this.parameterUnitForm.reset();
+    this.parameterUnitForm.enable();
+    this.parameterUnitId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
@@ -296,26 +316,14 @@ export class ParameterUnitComponent implements OnInit {
       let formData = this.parameterUnitForm.value;
       if (this.isEditMode) {
         this.parameterUnitService.updateParameterUnit(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          },
+          next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
+          error: (error) => { this.toastService.show(error.message, 'error'); },
         });
       } else {
         formData.id = 0;
         this.parameterUnitService.createParameterUnit(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          },
+          next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
+          error: (error) => { this.toastService.show(error.message, 'error'); },
         });
       }
     }

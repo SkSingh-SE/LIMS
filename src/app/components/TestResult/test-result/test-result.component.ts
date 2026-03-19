@@ -54,7 +54,6 @@ export class TestResultComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -74,7 +73,6 @@ export class TestResultComponent implements OnInit {
   }
 
   fetchData() {
-    this.isLoading.set(true);
     // Prefer dashboard-specific API; fall back to list if needed
     this.testresultService.getAllTestResults(this.payload).subscribe({
       next: (resp) => {
@@ -82,12 +80,10 @@ export class TestResultComponent implements OnInit {
         this.totalItems = resp?.totalRecords || 0;
         this.pageSize = resp?.pageSize || 10;
         this.pageNumber = resp?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Fallback list API failed:', err);
         this.listData = [];
-        this.isLoading.set(false);
       }
     });
 

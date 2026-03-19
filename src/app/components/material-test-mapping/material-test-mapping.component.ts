@@ -59,7 +59,6 @@ export class MaterialTestMappingComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -105,19 +104,16 @@ export class MaterialTestMappingComponent implements OnInit {
     return this.MappingForm.get('laboratoryTests') as FormArray;
   }
   fetchData() {
-    this.isLoading.set(true);
     this.materialTestMappingService.getAllMaterialTestMappings(this.payload).subscribe({
       next: (response) => {
         this.mappingList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message ?? 'Error', 'error');
         this.mappingList = [];
-        this.isLoading.set(false);
       }
     });
   }

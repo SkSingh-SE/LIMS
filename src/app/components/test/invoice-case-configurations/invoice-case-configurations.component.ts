@@ -52,7 +52,6 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -307,12 +306,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.invoiceList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -488,6 +485,8 @@ debugger;
     }
   }
   openModal(type: string, id: number): void {
+    this.invoiceForm.reset();
+    this.invoiceForm.enable();
     if (id > 0) {
       this.invoiceId = id;
       this.getDetails();
@@ -523,6 +522,11 @@ debugger;
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.invoiceForm.reset();
+    this.invoiceForm.enable();
+    this.invoiceId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

@@ -57,7 +57,6 @@ export class ToleranceMasterComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -110,12 +109,10 @@ export class ToleranceMasterComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.toleranceMasterList = [];
-        this.isLoading.set(false);
       },
     });
   }
@@ -267,6 +264,8 @@ export class ToleranceMasterComponent implements OnInit {
   }
 
   openModal(type: string, id: number): void {
+    this.toleranceMasterForm.reset();
+    this.toleranceMasterForm.enable();
     if (id > 0) {
       this.toleranceMasterId = id;
       this.getDetails();
@@ -297,6 +296,11 @@ export class ToleranceMasterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.toleranceMasterForm.reset();
+    this.toleranceMasterForm.enable();
+    this.toleranceMasterId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

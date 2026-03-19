@@ -17,7 +17,6 @@ export class CalibrationReviewFormComponent implements OnInit {
   reviewForm!: FormGroup;
   isEditMode = false;
   recordId: number | null = null;
-  isLoading = false;
   submitted = false;
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -115,7 +114,6 @@ export class CalibrationReviewFormComponent implements OnInit {
   }
 
   private loadRecord(id: number): void {
-    this.isLoading = true;
     this.calibrationReviewService.getById(id).subscribe({
       next: (record) => {
         if (record) {
@@ -154,11 +152,9 @@ export class CalibrationReviewFormComponent implements OnInit {
 
           this.reviewForm.patchValue(formValues);
         }
-        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading record:', error);
-        this.isLoading = false;
       }
     });
   }
@@ -216,7 +212,6 @@ export class CalibrationReviewFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
     const formData = this.reviewForm.value;
 
     if (this.isEditMode && this.recordId) {
@@ -225,11 +220,9 @@ export class CalibrationReviewFormComponent implements OnInit {
           if (response.success) {
             this.router.navigate(['/calibration-review']);
           }
-          this.isLoading = false;
         },
         error: (error) => {
           console.error('Error updating record:', error);
-          this.isLoading = false;
         }
       });
     } else {
@@ -238,11 +231,9 @@ export class CalibrationReviewFormComponent implements OnInit {
           if (response.success) {
             this.router.navigate(['/calibration-review']);
           }
-          this.isLoading = false;
         },
         error: (error) => {
           console.error('Error creating record:', error);
-          this.isLoading = false;
         }
       });
     }

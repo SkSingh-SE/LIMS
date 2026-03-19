@@ -17,7 +17,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 })
 export class CompetenceRequirementPreviewComponent implements OnInit {
   requirement: CompetenceRequirement | null = null;
-  isLoading = true;
   orientation: 'portrait' | 'landscape' = 'portrait';
   orientationManual = false;
   private orientationDetected = false;
@@ -41,13 +40,11 @@ export class CompetenceRequirementPreviewComponent implements OnInit {
             this.toastService.show('Competence Requirement not found', 'error');
             this.router.navigate(['/competence-requirement']);
           }
-          this.isLoading = false;
           setTimeout(() => this.autoDetectOrientation(), 300);
         },
         error: () => {
           this.toastService.show('Error loading preview', 'error');
           this.router.navigate(['/competence-requirement']);
-          this.isLoading = false;
         }
       });
     }

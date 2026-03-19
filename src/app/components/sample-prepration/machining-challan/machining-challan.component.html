@@ -1,88 +1,125 @@
-<div class="card shadow-lg m-2">
-  <div class="card-header card-form-header text-white text-center">
-    <h6 class="mb-0">Machining Charges</h6>
-  </div>
-  <div class="card-body">
-
-    <!-- Sample ID Lookup -->
-    <div class="row mb-3 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label fw-bold">Sample ID</label>
-        <input type="number" class="form-control" [(ngModel)]="sampleId" placeholder="Enter Sample ID" />
-      </div>
-      <div class="col-md-2">
-        <button class="btn btn-primary" (click)="loadItems()" [disabled]="!sampleId || loading">
-          <i class="bi bi-search me-1"></i>Load
-        </button>
-      </div>
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Machining Charges</label>
     </div>
 
-    <div *ngIf="loading" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-      <span class="ms-2">Loading...</span>
-    </div>
+    <div class="card-body">
 
-    <!-- Machining Items Table -->
-    <div *ngIf="!loading && sampleId">
-      <table class="table table-bordered table-sm align-middle mb-3">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Description</th>
-            <th class="text-end" style="width: 140px;">Amount (&#8377;)</th>
-            <th>Remark</th>
-            <th style="width: 70px;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of machiningItems; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ item.description }}</td>
-            <td class="text-end">{{ item.amount | number:'1.2-2' }}</td>
-            <td class="text-muted small">{{ item.remark || '-' }}</td>
-            <td class="text-center">
-              <button class="btn btn-sm btn-remove" (click)="deleteItem(item.id)" title="Delete">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="!machiningItems.length">
-            <td colspan="5" class="text-center text-muted py-3">No machining charges recorded for this sample.</td>
-          </tr>
-        </tbody>
-        <tfoot *ngIf="machiningItems.length">
-          <tr class="table-light fw-bold">
-            <td colspan="2" class="text-end">Total</td>
-            <td class="text-end">&#8377;{{ totalAmount | number:'1.2-2' }}</td>
-            <td colspan="2"></td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <!-- Add New Item -->
-      <div class="card border-dashed p-3">
-        <h6 class="fw-bold mb-2"><i class="bi bi-plus-circle me-1"></i>Add Machining Charge</h6>
-        <div class="row g-2 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label small">Description</label>
-            <input type="text" class="form-control form-control-sm" [(ngModel)]="newDesc" placeholder="e.g. Surface Grinding" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Amount (&#8377;)</label>
-            <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="newAmount" placeholder="0.00" />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small">Remark</label>
-            <input type="text" class="form-control form-control-sm" [(ngModel)]="newRemark" placeholder="Optional" />
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-sm btn-save w-100" (click)="addItem()" [disabled]="!newDesc || !newAmount">
-              <i class="bi bi-plus-lg me-1"></i>Add
-            </button>
-          </div>
+      <!-- Selection Row: Case & Sample Dropdowns -->
+      <div class="row gy-3 mb-4">
+        <div class="col-md-5">
+          <app-searchable-dropdown
+            [labelName]="'Collection No.'"
+            [fetchDataFn]="fetchSampleInwardDropdown"
+            placeholder="Search Collection No."
+            [required]="true"
+            [isDisabled]="false"
+            (itemSelected)="onInwardSelected($event)"
+            [selectedItem]="selectedInwardId"
+          ></app-searchable-dropdown>
+        </div>
+        <div class="col-md-5">
+          <app-searchable-dropdown
+            [labelName]="'Sample'"
+            [fetchDataFn]="fetchSampleDropdown"
+            placeholder="Search Sample..."
+            [required]="true"
+            [isDisabled]="!selectedInwardId || !availableSamples.length"
+            (itemSelected)="onSampleSelected($event)"
+            [selectedItem]="selectedSampleId"
+          ></app-searchable-dropdown>
         </div>
       </div>
-    </div>
 
+      <!-- No samples alert -->
+      <div *ngIf="selectedInwardId && !availableSamples.length" class="alert alert-warning py-2 mb-3">
+        <i class="bi bi-exclamation-triangle me-1"></i> No samples found for this case.
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 text-muted small">Loading machining charges...</div>
+      </div>
+
+      <!-- Machining Charges Content -->
+      <div *ngIf="!loading && selectedSampleId">
+
+        <!-- Charges Table -->
+        <div class="table-responsive">
+          <table class="table bordered-table align-middle w-100 mb-3">
+            <thead class="table-light">
+              <tr class="text-center align-middle">
+                <th style="width: 50px">#</th>
+                <th class="text-start">Description</th>
+                <th class="text-end" style="width: 150px">Amount (&#8377;)</th>
+                <th class="text-start">Remark</th>
+                <th style="width: 80px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of machiningItems; let i = index" class="text-sm">
+                <td class="text-center">{{ i + 1 }}</td>
+                <td>{{ item.description }}</td>
+                <td class="text-end fw-medium">{{ item.amount | number:'1.2-2' }}</td>
+                <td class="text-muted">{{ item.remark || '-' }}</td>
+                <td class="text-center">
+                  <button class="btn btn-sm btn-remove" (click)="deleteItem(item.id)" title="Delete">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!machiningItems.length">
+                <td colspan="5" class="text-center py-4">
+                  <div class="d-flex flex-column align-items-center text-muted">
+                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                    <div class="fw-semibold">No machining charges recorded for this sample.</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot *ngIf="machiningItems.length">
+              <tr class="table-light">
+                <td colspan="2" class="text-end fw-bold">Grand Total</td>
+                <td class="text-end fw-bold text-danger">&#8377; {{ totalAmount | number:'1.2-2' }}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Add New Charge Section -->
+        <div class="card border shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-plus-circle-dotted fs-5 me-2 text-primary"></i>
+              <label class="fw-bold mb-0">Add Machining Charge</label>
+            </div>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Description <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" [(ngModel)]="newDesc" placeholder="e.g. Surface Grinding" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Amount (&#8377;) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control text-end" [(ngModel)]="newAmount" placeholder="0.00" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Remark</label>
+                <input type="text" class="form-control" [(ngModel)]="newRemark" placeholder="Optional" />
+              </div>
+              <div class="col-md-2">
+                <button class="btn btn-save w-100" (click)="addItem()" [disabled]="!newDesc || !newAmount">
+                  <i class="bi bi-plus-lg me-1"></i>Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
   </div>
 </div>

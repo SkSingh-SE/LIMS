@@ -12,7 +12,6 @@ import { NablAuditService, NablDashboardDto } from '../../../services/nabl-audit
 })
 export class NablDashboardComponent implements OnInit {
     dashboard: NablDashboardDto | null = null;
-    isLoading = true;
     errorMessage = '';
 
     constructor(private nablAuditService: NablAuditService) {}
@@ -22,17 +21,14 @@ export class NablDashboardComponent implements OnInit {
     }
 
     loadDashboard() {
-        this.isLoading = true;
         this.errorMessage = '';
         this.nablAuditService.getDashboard().subscribe({
             next: (data) => {
                 this.dashboard = data;
-                this.isLoading = false;
             },
             error: (err) => {
                 console.error('Error loading NABL dashboard:', err);
                 this.errorMessage = 'Failed to load dashboard data.';
-                this.isLoading = false;
             },
         });
     }

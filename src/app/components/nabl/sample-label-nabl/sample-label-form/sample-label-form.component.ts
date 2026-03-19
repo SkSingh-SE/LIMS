@@ -17,7 +17,6 @@ export class SampleLabelNablFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Sample Label (F-33)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     openSections: { [key: string]: boolean } = { header: true, sample: true, analysis: true };
@@ -71,16 +70,14 @@ export class SampleLabelNablFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
                     this.requestForm.patchValue(data);
                     if (this.isViewMode) this.requestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -90,7 +87,6 @@ export class SampleLabelNablFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.requestForm.getRawValue();
 
         const obs = this.isEditMode
@@ -104,7 +100,6 @@ export class SampleLabelNablFormComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show(err.message || 'Operation failed', 'error');
-                this.isLoading.set(false);
             }
         });
     }

@@ -18,7 +18,6 @@ export class SupplierRegistrationFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Supplier Registration (F-19)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -115,7 +114,6 @@ export class SupplierRegistrationFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -129,9 +127,8 @@ export class SupplierRegistrationFormComponent implements OnInit {
 
                     this.registrationForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -141,18 +138,17 @@ export class SupplierRegistrationFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.registrationForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/supplier-registration']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/supplier-registration']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

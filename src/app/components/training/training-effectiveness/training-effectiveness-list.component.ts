@@ -23,7 +23,6 @@ export class TrainingEffectivenessListComponent implements OnInit {
 
   records: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   constructor(
     private trainingEffectivenessService: TrainingEffectivenessService,
@@ -42,16 +41,13 @@ export class TrainingEffectivenessListComponent implements OnInit {
   }
 
   fetchData(payload: any): void {
-    this.isLoading.set(true);
     this.trainingEffectivenessService.getAll(payload).subscribe({
       next: (response: any) => {
         this.records = response.items || [];
         this.totalItems = response.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching training effectiveness records:', error);
-        this.isLoading.set(false);
       }
     });
   }

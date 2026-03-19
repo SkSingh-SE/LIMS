@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -51,6 +51,7 @@
                     <tbody>
                         <tr *ngFor="let customerType of ProductConditionList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td><span class="text-primary fw-medium">{{ customerType.code }}</span></td>
                             <td>{{ customerType.name }}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
@@ -74,7 +75,7 @@
 
 
             </div>
-            <div *ngIf="ProductConditionList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="ProductConditionList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -147,10 +148,10 @@
     </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
+<!-- Modal for Add/Edit/Update Product Condition -->
 <div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
                 <label class="modal-title fw-medium" id="customerTypeModalLabel">
@@ -161,17 +162,115 @@
             </div>
             <form [formGroup]="ProductConditionForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': ProductConditionForm.get('name')?.touched && ProductConditionForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="ProductConditionForm.get('name')?.invalid && ProductConditionForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <div class="row">
+                        <!-- Code Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code"
+                                [ngClass]="{'is-invalid': ProductConditionForm.get('code')?.touched && ProductConditionForm.get('code')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="ProductConditionForm.get('code')?.invalid && ProductConditionForm.get('code')?.touched"
+                                class="text-danger text-sm">
+                                Code is required.
+                            </span>
+                        </div>
+                        <!-- Name Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" required
+                                [ngClass]="{'is-invalid': ProductConditionForm.get('name')?.touched && ProductConditionForm.get('name')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="ProductConditionForm.get('name')?.invalid && ProductConditionForm.get('name')?.touched"
+                                class="text-danger text-sm">
+                                Name is required.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Category Dropdown -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getCategoryDropdown"
+                                        [selectedItem]="ProductConditionForm.get('productConditionCategoryID')?.value"
+                                        (itemSelected)="ProductConditionForm.get('productConditionCategoryID')?.setValue($event?.id)"
+                                        [placeholder]="'Select Category'"
+                                        [labelName]="'Category'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/product-condition-category')"
+                                    title="Open Category" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Linked Heat Treatment Dropdown -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getHeatTreatmentDropdown"
+                                        [selectedItem]="ProductConditionForm.get('linkedHeatTreatmentID')?.value"
+                                        (itemSelected)="ProductConditionForm.get('linkedHeatTreatmentID')?.setValue($event?.id)"
+                                        [placeholder]="'Select Heat Treatment'"
+                                        [labelName]="'Linked Heat Treatment'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/heat-treatment')"
+                                    title="Open Heat Treatment" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Calibration Required Checkbox -->
+                        <div class="col-md-6 mb-1">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="calibrationRequired"
+                                    formControlName="calibrationRequired"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <label class="form-check-label" for="calibrationRequired">Calibration Required</label>
+                            </div>
+                        </div>
+                        <!-- Is Destructive Checkbox -->
+                        <div class="col-md-6 mb-1">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="isDestructive"
+                                    formControlName="isDestructive"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <label class="form-check-label" for="isDestructive">Is Destructive</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Properties Captured Multi-Select -->
+                        <div class="col-md-12 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [placeholder]="'Select Properties...'"
+                                        [labelName]="'Properties Captured'"
+                                        [fetchDataFn]="getPropertyTypeDropdown"
+                                        [selectedValues]="ProductConditionForm.get('propertiesCapturedIds')?.value"
+                                        (itemsSelected)="onPropertySelected($event)"
+                                        [isDisabled]="isViewMode">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/property-type')"
+                                    title="Open Property Type" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

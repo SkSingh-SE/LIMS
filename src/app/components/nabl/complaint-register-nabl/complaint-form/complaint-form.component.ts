@@ -18,7 +18,6 @@ export class ComplaintFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Complaint Entry';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -85,13 +84,11 @@ export class ComplaintFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.complaintForm.patchValue(data);
                 if (this.isViewMode) this.complaintForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

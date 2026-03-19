@@ -20,7 +20,6 @@ export class PtIlcPlanFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add PT/ILC Plan (F-36)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -113,7 +112,6 @@ export class PtIlcPlanFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -121,20 +119,18 @@ export class PtIlcPlanFormComponent implements OnInit {
                     this.planForm.patchValue(data);
                     if (this.isViewMode) this.planForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
     onSubmit(): void {
         if (this.planForm.invalid) { this.planForm.markAllAsTouched(); return; }
-        this.isLoading.set(true);
         const formData = this.planForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
             next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/pt-ilc-plan']); },
-            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error'); this.isLoading.set(false); }
+            error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 

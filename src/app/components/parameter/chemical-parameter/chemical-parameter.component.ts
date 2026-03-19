@@ -1,15 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
+import { ParameterCategoryService } from '../../../services/parameter-category.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-chemical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
   templateUrl: './chemical-parameter.component.html',
   styleUrl: './chemical-parameter.component.css'
 })
@@ -22,6 +24,10 @@ export class ChemicalParameterComponent implements OnInit {
 
   allParameters: any[] = [];
   tempFormula: string = '';
+  numericInput: string = '';
+  formulaTokens: { type: string; value: string; display: string }[] = [];
+  formulaPreview: string = '';
+  isFormulaValid = true;
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
@@ -58,7 +64,6 @@ export class ChemicalParameterComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -77,7 +82,7 @@ export class ChemicalParameterComponent implements OnInit {
   parameterId: number = 0;
   formTitle = 'Parameter Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService, private parameterCategoryService: ParameterCategoryService) {
     this.route.params.subscribe(params => {
       this.parameterId = params['id'] || 0;
       if (this.parameterId > 0) {
@@ -100,6 +105,11 @@ export class ChemicalParameterComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       aliasName: [''],
+      code: ['', Validators.required],
+      decimalPrecision: [3],
+      minReportableLimit: [null],
+      defaultTestMethodID: [null],
+      parameterCategoryID: [null],
       parameterUnitID: [0, Validators.required],
       note: [''],
       elementType: ['normal', Validators.required],
@@ -115,12 +125,10 @@ export class ChemicalParameterComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.ParameterList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -282,6 +290,8 @@ export class ChemicalParameterComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.ParameterForm.reset();
+    this.ParameterForm.enable();
     if (id > 0) {
       this.parameterId = id;
       this.getDetails();
@@ -314,6 +324,11 @@ export class ChemicalParameterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.ParameterForm.reset();
+    this.ParameterForm.enable();
+    this.parameterId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
@@ -395,36 +410,134 @@ export class ChemicalParameterComponent implements OnInit {
   }
   openFormulaBuilder() {
     this.tempFormula = this.ParameterForm.value.formula || '';
+    this.parseFormulaToTokens(this.tempFormula);
+    this.updateFormulaPreview();
+    this.validateParentheses();
     this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
     this.formulaBsModal.show();
   }
-  addParameterToFormula(event: any) {
-    const paramId = event.target.value;
-    if (!paramId) return;
 
-    this.tempFormula += `{P${paramId}}`;
+  addParamToken(paramId: number, paramName: string): void {
+    this.formulaTokens.push({ type: 'param', value: `{P${paramId}}`, display: paramName });
+    this.rebuildFormula();
   }
-  addOperator(op: string) {
-    this.tempFormula += ` ${op} `;
+
+  addOperatorToken(op: string): void {
+    const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
+    this.formulaTokens.push({ type: 'operator', value: ` ${op} `, display: displayMap[op] || op });
+    this.rebuildFormula();
   }
+
+  addParenToken(paren: string): void {
+    this.formulaTokens.push({ type: 'paren', value: paren, display: paren });
+    this.rebuildFormula();
+  }
+
+  addNumberToken(): void {
+    if (!this.numericInput || this.numericInput === '') return;
+    const numValue = parseFloat(this.numericInput);
+    if (isNaN(numValue)) {
+      this.toastService.show('Please enter a valid number', 'warning');
+      return;
+    }
+    this.formulaTokens.push({ type: 'number', value: ` ${this.numericInput}`, display: this.numericInput });
+    this.numericInput = '';
+    this.rebuildFormula();
+  }
+
+  removeToken(index: number): void {
+    this.formulaTokens.splice(index, 1);
+    this.rebuildFormula();
+  }
+
+  undoLastToken(): void {
+    this.formulaTokens.pop();
+    this.rebuildFormula();
+  }
+
+  private rebuildFormula(): void {
+    this.tempFormula = this.formulaTokens.map((t) => t.value).join('');
+    this.updateFormulaPreview();
+    this.validateParentheses();
+  }
+
+  private validateParentheses(): void {
+    let count = 0;
+    for (const token of this.formulaTokens) {
+      if (token.value === '(') count++;
+      if (token.value === ')') count--;
+      if (count < 0) {
+        this.isFormulaValid = false;
+        return;
+      }
+    }
+    this.isFormulaValid = count === 0;
+  }
+
+  private updateFormulaPreview(): void {
+    let preview = this.tempFormula;
+    this.allParameters.forEach((param) => {
+      const regex = new RegExp(`\\{P${param.id}\\}`, 'g');
+      preview = preview.replace(regex, param.name);
+    });
+    this.formulaPreview = preview;
+  }
+
+  private parseFormulaToTokens(formula: string): void {
+    this.formulaTokens = [];
+    if (!formula) return;
+    const regex = /(\{P\d+\})|([+\-*/])|([()])|(\d+\.?\d*)/g;
+    let match;
+    while ((match = regex.exec(formula)) !== null) {
+      if (match[1]) {
+        const paramId = parseInt(match[1].replace(/[{}P]/g, ''));
+        const param = this.allParameters.find((p: any) => p.id === paramId);
+        this.formulaTokens.push({ type: 'param', value: match[1], display: param ? param.name : `P${paramId}` });
+      } else if (match[2]) {
+        const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
+        this.formulaTokens.push({ type: 'operator', value: ` ${match[2]} `, display: displayMap[match[2]] || match[2] });
+      } else if (match[3]) {
+        this.formulaTokens.push({ type: 'paren', value: match[3], display: match[3] });
+      } else if (match[4]) {
+        this.formulaTokens.push({ type: 'number', value: ` ${match[4]}`, display: match[4] });
+      }
+    }
+  }
+
   saveFormula() {
     this.ParameterForm.patchValue({
-      formula: this.tempFormula
+      formula: this.tempFormula,
     });
 
     this.closeFormulaModal();
   }
+
   closeFormulaModal() {
     if (this.formulaBsModal) {
       this.formulaBsModal.hide();
     }
   }
+
   clearFormula() {
     this.tempFormula = '';
+    this.formulaTokens = [];
+    this.isFormulaValid = true;
+    this.numericInput = '';
     this.ParameterForm.patchValue({
-      formula: ''
+      formula: '',
     });
   }
+
+  getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterCategoryService.getParameterCategoryDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 }
 
 

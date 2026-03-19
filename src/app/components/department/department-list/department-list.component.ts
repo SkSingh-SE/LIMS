@@ -49,7 +49,6 @@ export class DepartmentListComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -86,12 +85,10 @@ export class DepartmentListComponent implements OnInit {
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.filteredDepartmentList = this.departmentList;
-        this.isLoading.set(false);
       },
       (error) => {
         console.error('Error fetching designations:', error);
         this.departmentList = this.filteredDepartmentList = [];
-        this.isLoading.set(false);
       }
 
     );

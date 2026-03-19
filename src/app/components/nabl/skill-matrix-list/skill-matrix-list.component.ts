@@ -53,7 +53,6 @@ export class SkillMatrixListComponent implements OnInit {
     sortByColumn: string = 'id';
     sortOrder: string = 'desc';
     searchTerm: string = '';
-    isLoading = signal(false);
 
     constructor(
         private skillMatrixService: SkillMatrixService,
@@ -66,18 +65,15 @@ export class SkillMatrixListComponent implements OnInit {
     }
 
     loadList() {
-        this.isLoading.set(true);
         this.skillMatrixService.getAll().subscribe(
             res => {
                 this.matrices = res.items || [];
                 this.totalItems = this.matrices.length;
                 this.applyFiltersAndSort();
-                this.isLoading.set(false);
             },
             error => {
                 console.error('Error loading skill matrices:', error);
                 this.matrices = [];
-                this.isLoading.set(false);
             }
         );
     }

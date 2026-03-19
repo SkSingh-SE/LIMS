@@ -60,7 +60,6 @@ export class ProductSpecificationComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -130,12 +129,10 @@ export class ProductSpecificationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.ProductSpecificationList = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -287,6 +284,8 @@ export class ProductSpecificationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.ProductSpecificationForm.reset();
+    this.ProductSpecificationForm.enable();
     this.activeTab = 'details';
     if (id > 0) {
       this.productSpecificationId = id;
@@ -323,6 +322,11 @@ export class ProductSpecificationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.ProductSpecificationForm.reset();
+    this.ProductSpecificationForm.enable();
+    this.productSpecificationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

@@ -52,7 +52,6 @@ export class ListDesignationComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -89,12 +88,10 @@ export class ListDesignationComponent implements OnInit {
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
         this.filteredDesignations = this.designations;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.designations = this.filteredDesignations = [];
-        this.isLoading.set(false);
       }
 
     });

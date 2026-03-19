@@ -13,7 +13,6 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class TestResultVerificationComponent implements OnInit {
   listData: any[] = [];
-  isLoading = signal(false);
 
   // Pagination
   pageNumber = 1;
@@ -60,7 +59,6 @@ export class TestResultVerificationComponent implements OnInit {
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.payload.searchTerm = this.searchTerm;
@@ -73,12 +71,10 @@ export class TestResultVerificationComponent implements OnInit {
         this.totalItems = resp?.totalRecords || this.listData.length;
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
-        this.isLoading.set(false);
       },
       error: (err: any) => {
         console.error('Failed to load verification list:', err);
         this.listData = [];
-        this.isLoading.set(false);
       },
     });
   }

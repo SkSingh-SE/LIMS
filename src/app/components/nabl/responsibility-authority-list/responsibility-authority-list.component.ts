@@ -24,7 +24,6 @@ export class ResponsibilityAuthorityListComponent implements OnInit {
 
   matrixList: any[] = [];
   totalItems = 0;
-  isLoading = signal(false);
 
   constructor(
     private raService: ResponsibilityAuthorityService,
@@ -44,18 +43,15 @@ export class ResponsibilityAuthorityListComponent implements OnInit {
   }
 
   fetchData(payload: any) {
-    this.isLoading.set(true);
     this.raService.getAll(payload).subscribe({
       next: (response) => {
         this.matrixList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
-        this.isLoading.set(false);
       },
       error: (error: any) => {
         console.error('Error fetching RA matrix:', error);
         this.matrixList = [];
         this.totalItems = 0;
-        this.isLoading.set(false);
       }
     });
   }

@@ -14,7 +14,6 @@ import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-tab
 export class CrmConsumptionListComponent implements OnInit {
     items: CrmConsumptionRecord[] = [];
     totalItems = 0;
-    isLoading = signal(false);
     searchTerm = '';
 
     columns: RegisterColumn[] = [
@@ -38,7 +37,6 @@ export class CrmConsumptionListComponent implements OnInit {
     }
 
     loadRecords(params: any = {}): void {
-        this.isLoading.set(true);
         const queryParams = {
             searchTerm: this.searchTerm,
             ...params
@@ -47,12 +45,10 @@ export class CrmConsumptionListComponent implements OnInit {
             next: (res) => {
                 this.items = res.items || [];
                 this.totalItems = res.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: () => {
                 this.items = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

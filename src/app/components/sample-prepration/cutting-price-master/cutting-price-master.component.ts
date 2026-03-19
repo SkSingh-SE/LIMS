@@ -54,7 +54,6 @@ export class CuttingPriceMasterComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -111,12 +110,10 @@ export class CuttingPriceMasterComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.listData = [];
-        this.isLoading.set(false);
       }
     }
 
@@ -269,6 +266,8 @@ export class CuttingPriceMasterComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.cuttingPriceForm.reset();
+    this.cuttingPriceForm.enable();
     if (id > 0) {
       this.cuttingPriceId = id;
       this.getDetails();
@@ -301,6 +300,11 @@ export class CuttingPriceMasterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.cuttingPriceForm.reset();
+    this.cuttingPriceForm.enable();
+    this.cuttingPriceId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {

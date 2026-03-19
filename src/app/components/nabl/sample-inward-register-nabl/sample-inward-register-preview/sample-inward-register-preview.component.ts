@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 export class SampleInwardRegisterNablPreviewComponent implements OnInit {
     recordId: number = 0;
     data: any = null;
-    isLoading: boolean = true;
     protected readonly Math = Math;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
@@ -39,16 +38,13 @@ export class SampleInwardRegisterNablPreviewComponent implements OnInit {
     }
 
     fetchData() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
                 this.data = resp;
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error fetching preview data:', err);
-                this.isLoading = false;
             }
         });
     }

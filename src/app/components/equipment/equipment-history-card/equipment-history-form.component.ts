@@ -17,7 +17,6 @@ export class EquipmentHistoryFormComponent implements OnInit {
   historyForm!: FormGroup;
   isEditMode = false;
   recordId: number | null = null;
-  isLoading = false;
   submitted = false;
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -103,7 +102,6 @@ export class EquipmentHistoryFormComponent implements OnInit {
   }
 
   private loadRecord(id: number): void {
-    this.isLoading = true;
     this.equipmentHistoryService.getById(id).subscribe({
       next: (record) => {
         if (record) {
@@ -124,11 +122,9 @@ export class EquipmentHistoryFormComponent implements OnInit {
 
           this.historyForm.patchValue(formValues);
         }
-        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading record:', error);
-        this.isLoading = false;
       }
     });
   }
@@ -146,7 +142,6 @@ export class EquipmentHistoryFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
     const formData = this.historyForm.value;
 
     if (this.isEditMode && this.recordId) {
@@ -155,11 +150,9 @@ export class EquipmentHistoryFormComponent implements OnInit {
           if (response.success) {
             this.router.navigate(['/equipment-history-card']);
           }
-          this.isLoading = false;
         },
         error: (error) => {
           console.error('Error updating record:', error);
-          this.isLoading = false;
         }
       });
     } else {
@@ -168,11 +161,9 @@ export class EquipmentHistoryFormComponent implements OnInit {
           if (response.success) {
             this.router.navigate(['/equipment-history-card']);
           }
-          this.isLoading = false;
         },
         error: (error) => {
           console.error('Error creating record:', error);
-          this.isLoading = false;
         }
       });
     }

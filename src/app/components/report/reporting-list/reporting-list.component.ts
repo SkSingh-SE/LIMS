@@ -46,7 +46,6 @@ export class ReportingListComponent implements OnInit {
 
   reportingData: ReportingListItem[] = [];
   filteredData: ReportingListItem[] = [];
-  isLoading = signal(false);
 
   // Search and Filter
   searchTerm: string = '';
@@ -88,7 +87,6 @@ export class ReportingListComponent implements OnInit {
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
     // Prefer dashboard API which supports paging/filtering. Fall back to local list when not available.
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
@@ -107,7 +105,6 @@ export class ReportingListComponent implements OnInit {
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
         this.applyFiltersAndSort();
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading reporting data (dashboard API):', error);
@@ -116,11 +113,9 @@ export class ReportingListComponent implements OnInit {
           next: (data) => {
             this.reportingData = data || [];
             this.applyFiltersAndSort();
-            this.isLoading.set(false);
           },
           error: (err) => {
             console.error('Fallback error loading reporting data:', err);
-            this.isLoading.set(false);
           }
         });
       }

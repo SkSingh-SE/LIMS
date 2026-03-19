@@ -17,7 +17,6 @@ export class AuditPlanFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Audit Schedule & Plan';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -69,13 +68,11 @@ export class AuditPlanFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.auditForm.patchValue(data);
                 if (this.isViewMode) this.auditForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

@@ -17,7 +17,6 @@ export class DocumentReviewFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add New Document Review Entry';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -68,13 +67,11 @@ export class DocumentReviewFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.reviewForm.patchValue(data);
                 if (this.isViewMode) this.reviewForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

@@ -17,7 +17,6 @@ import { NablPrintFooterComponent } from '../nabl-print-footer/nabl-print-footer
 export class ApprovedSupplierPreviewComponent implements OnInit {
     recordId: number = 0;
     record = signal<ApprovedSupplier | null>(null);
-    isLoading = signal(false);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -37,14 +36,12 @@ export class ApprovedSupplierPreviewComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 this.record.set(data);
-                this.isLoading.set(false);
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 

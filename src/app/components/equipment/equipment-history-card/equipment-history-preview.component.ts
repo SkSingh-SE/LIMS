@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../../nabl/print-frame/print-frame.componen
 })
 export class EquipmentHistoryPreviewComponent implements OnInit {
   record: any = null;
-  isLoading = false;
   recordId: number | null = null;
 
   constructor(
@@ -33,15 +32,12 @@ export class EquipmentHistoryPreviewComponent implements OnInit {
   }
 
   private loadRecord(): void {
-    this.isLoading = true;
     this.equipmentHistoryService.getById(this.recordId!).subscribe({
       next: (record) => {
         this.record = record;
-        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading record:', error);
-        this.isLoading = false;
       }
     });
   }

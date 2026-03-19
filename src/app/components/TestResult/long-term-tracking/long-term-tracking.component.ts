@@ -19,7 +19,6 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
   // Data
   longTermTests: LongTermTestDto[] = [];
   isSaving = signal(false);
-  isLoading = signal(false);
 
   // Search & Filter
   searchTerm: string = '';
@@ -116,7 +115,6 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
   // LOAD & FETCH
   // ================================================================
   loadLongTermTests(): void {
-    this.isLoading.set(true);
     const filter = {
       pageNumber: this.pageNumber,
       pageSize: this.pageSize,
@@ -156,12 +154,10 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
         });
 
         console.log('Loaded long-term tests:', this.longTermTests.length);
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading long-term tests:', error);
         this.toastService.show('Failed to load long-term tests', 'error');
-        this.isLoading.set(false);
       }
     });
   }

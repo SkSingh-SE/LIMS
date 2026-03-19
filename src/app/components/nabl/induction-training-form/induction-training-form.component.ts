@@ -21,7 +21,6 @@ export class InductionTrainingFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
-    isLoading = signal(false);
     formTitle = 'Create Induction Training Record';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -106,7 +105,6 @@ export class InductionTrainingFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.trainingService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -130,12 +128,10 @@ export class InductionTrainingFormComponent implements OnInit {
                     this.toastService.show('Record not found', 'error');
                     this.router.navigate(['/induction-training']);
                 }
-                this.isLoading.set(false);
             },
             error: (err) => {
                 console.error(err);
                 this.toastService.show('Error loading record', 'error');
-                this.isLoading.set(false);
             }
         });
     }
@@ -155,7 +151,6 @@ export class InductionTrainingFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.trainingForm.getRawValue();
 
         if (this.isEditMode) {
@@ -167,12 +162,10 @@ export class InductionTrainingFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error updating record', 'error');
-                    this.isLoading.set(false);
                 }
             });
         } else {
@@ -184,12 +177,10 @@ export class InductionTrainingFormComponent implements OnInit {
                     } else {
                         this.toastService.show(res.message, 'error');
                     }
-                    this.isLoading.set(false);
                 },
                 error: (err) => {
                     console.error(err);
                     this.toastService.show('Error creating record', 'error');
-                    this.isLoading.set(false);
                 }
             });
         }

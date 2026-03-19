@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -51,6 +51,7 @@
                     <tbody>
                         <tr *ngFor="let customerType of HeatTreatmentList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ customerType.code }}</td>
                             <td>{{ customerType.name }}</td>
                             <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td class="text-center">
@@ -74,7 +75,7 @@
 
 
             </div>
-            <div *ngIf="HeatTreatmentList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="HeatTreatmentList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -150,7 +151,7 @@
 <!-- Modal for Add/Edit/Update Customer -->
 <div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
                 <label class="modal-title fw-medium" id="customerTypeModalLabel">
@@ -161,17 +162,111 @@
             </div>
             <form [formGroup]="HeatTreatmentForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': HeatTreatmentForm.get('name')?.touched && HeatTreatmentForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="HeatTreatmentForm.get('name')?.invalid && HeatTreatmentForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <!-- Row 1: Code + Name -->
+                    <div class="row mb-1">
+                        <div class="col-md-4">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code"
+                                [ngClass]="{'is-invalid': HeatTreatmentForm.get('code')?.touched && HeatTreatmentForm.get('code')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="HeatTreatmentForm.get('code')?.invalid && HeatTreatmentForm.get('code')?.touched"
+                                class="text-danger text-sm">
+                                Code is required.
+                            </span>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" required
+                                [ngClass]="{'is-invalid': HeatTreatmentForm.get('name')?.touched && HeatTreatmentForm.get('name')?.invalid}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <span *ngIf="HeatTreatmentForm.get('name')?.invalid && HeatTreatmentForm.get('name')?.touched"
+                                class="text-danger text-sm">
+                                Name is required.
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Category + Cooling Medium -->
+                    <div class="row mb-1">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [labelName]="'Category'"
+                                        [fetchDataFn]="getCategoryDropdown"
+                                        [selectedItem]="customerTypeObject?.heatTreatmentCategoryID"
+                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="HeatTreatmentForm.get('heatTreatmentCategoryID')?.setValue($event?.id)">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/heat-treatment-category')" title="Add Category">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [labelName]="'Cooling Medium'"
+                                        [fetchDataFn]="getCoolingMediumDropdown"
+                                        [selectedItem]="customerTypeObject?.coolingMediumID"
+                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="HeatTreatmentForm.get('coolingMediumID')?.setValue($event?.id)">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/cooling-medium')" title="Add Cooling Medium">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Temp Min + Temp Max + Temp Description -->
+                    <div class="row mb-1">
+                        <div class="col-md-4">
+                            <label for="tempRangeMin" class="form-label">Temp Min (&deg;C)</label>
+                            <input type="number" id="tempRangeMin" class="form-control" formControlName="tempRangeMin"
+                                placeholder="Min"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tempRangeMax" class="form-label">Temp Max (&deg;C)</label>
+                            <input type="number" id="tempRangeMax" class="form-control" formControlName="tempRangeMax"
+                                placeholder="Max"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tempRangeDescription" class="form-label">Temp Description</label>
+                            <input type="text" id="tempRangeDescription" class="form-control" formControlName="tempRangeDescription"
+                                placeholder="e.g. 850-950"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Applicable Classifications -->
+                    <div class="row mb-1">
+                        <div class="col-md-12">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [labelName]="'Applicable Classifications'"
+                                        [fetchDataFn]="getMetalClassificationDropdown"
+                                        [selectedValues]="HeatTreatmentForm.get('applicableClassificationIds')?.value"
+                                        [isDisabled]="isViewMode"
+                                        (itemsSelected)="onClassificationSelected($event)">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/metal-classification')" title="Add Classification">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

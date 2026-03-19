@@ -17,7 +17,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 export class InductionTrainingPreviewComponent implements OnInit {
     recordId: number = 0;
     record: InductionTrainingRecord | null = null;
-    isLoading: boolean = true;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -35,24 +34,20 @@ export class InductionTrainingPreviewComponent implements OnInit {
             if (this.recordId > 0) {
                 this.loadRecord();
             } else {
-                this.isLoading = false;
             }
         });
     }
 
     loadRecord(): void {
-        this.isLoading = true;
         this.trainingService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
                     this.record = data;
                 }
-                this.isLoading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading induction record:', err);
-                this.isLoading = false;
             }
         });
     }

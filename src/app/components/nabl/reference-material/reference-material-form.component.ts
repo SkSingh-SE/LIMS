@@ -18,7 +18,6 @@ export class ReferenceMaterialFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add Reference Material (CRM)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -117,7 +116,6 @@ export class ReferenceMaterialFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data: any) => {
                 if (data) {
@@ -138,9 +136,8 @@ export class ReferenceMaterialFormComponent implements OnInit {
 
                     this.materialForm.patchValue(formValues);
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -150,18 +147,17 @@ export class ReferenceMaterialFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.materialForm.getRawValue();
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => this.router.navigate(['/reference-material']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         } else {
             this.service.create(formData).subscribe({
                 next: () => this.router.navigate(['/reference-material']),
-                error: () => this.isLoading.set(false)
+                error: () => {}
             });
         }
     }

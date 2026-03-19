@@ -17,7 +17,6 @@ export class InternalAuditorFormComponent implements OnInit {
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
-    isLoading = false;
     formTitle = 'Add Trained Internal Auditor';
     formNumbers = NablFormsHelper.getFormNumbers();
 
@@ -68,13 +67,11 @@ export class InternalAuditorFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.auditorForm.patchValue(data);
                 if (this.isViewMode) this.auditorForm.disable();
             }
-            this.isLoading = false;
         });
     }
 

@@ -15,7 +15,6 @@ import { NablPrintFooterComponent } from '../../nabl/nabl-print-footer/nabl-prin
 })
 export class TrainingAttendancePreviewComponent implements OnInit {
     record = signal<TrainingAttendance | null>(null);
-    isLoading = signal(false);
 
     constructor(
         private service: TrainingAttendanceService,
@@ -31,13 +30,11 @@ export class TrainingAttendancePreviewComponent implements OnInit {
     }
 
     loadRecord(id: number): void {
-        this.isLoading.set(true);
         this.service.getById(id).subscribe({
             next: (data) => {
                 this.record.set(data);
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 

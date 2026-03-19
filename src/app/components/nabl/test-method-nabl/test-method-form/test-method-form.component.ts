@@ -17,7 +17,6 @@ export class TestMethodNablFormComponent implements OnInit {
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
-    isLoading = signal(false);
     formTitle = 'Add List of Test Methods / Ext Documents (F-28)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
 
@@ -118,7 +117,6 @@ export class TestMethodNablFormComponent implements OnInit {
     }
 
     loadData(): void {
-        this.isLoading.set(true);
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
@@ -129,9 +127,8 @@ export class TestMethodNablFormComponent implements OnInit {
                     this.requestForm.patchValue(data);
                     if (this.isViewMode) this.requestForm.disable();
                 }
-                this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: () => {}
         });
     }
 
@@ -141,7 +138,6 @@ export class TestMethodNablFormComponent implements OnInit {
             return;
         }
 
-        this.isLoading.set(true);
         const formData = this.requestForm.getRawValue();
 
         const obs = this.isEditMode
@@ -155,7 +151,6 @@ export class TestMethodNablFormComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show(err.message || 'Operation failed', 'error');
-                this.isLoading.set(false);
             }
         });
     }

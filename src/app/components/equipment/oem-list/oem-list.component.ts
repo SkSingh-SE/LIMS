@@ -51,7 +51,6 @@ export class OemListComponent implements OnInit {
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -78,12 +77,10 @@ export class OemListComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.dataList = [];
-        this.isLoading.set(false);
       }
 
     });

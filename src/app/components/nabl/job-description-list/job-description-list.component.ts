@@ -22,7 +22,6 @@ export class JobDescriptionListComponent implements OnInit {
 
     jobDescriptions: any[] = [];
     totalItems = 0;
-    isLoading = signal(false);
 
     constructor(
         private jobDescriptionService: JobDescriptionService,
@@ -41,18 +40,15 @@ export class JobDescriptionListComponent implements OnInit {
     }
 
     fetchData(payload: any) {
-        this.isLoading.set(true);
         this.jobDescriptionService.getAll(payload).subscribe({
             next: (response) => {
                 this.jobDescriptions = response?.items || [];
                 this.totalItems = response?.totalRecords || 0;
-                this.isLoading.set(false);
             },
             error: (error) => {
                 console.error('Error fetching job descriptions:', error);
                 this.jobDescriptions = [];
                 this.totalItems = 0;
-                this.isLoading.set(false);
             }
         });
     }

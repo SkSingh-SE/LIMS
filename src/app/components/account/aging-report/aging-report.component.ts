@@ -13,7 +13,6 @@ import { ToastService } from '../../../services/toast.service';
 export class AgingReportComponent implements OnInit {
   reportData: any[] = [];
   filteredData: any[] = [];
-  isLoading = false;
   customerFilter = '';
 
   constructor(
@@ -26,17 +25,14 @@ export class AgingReportComponent implements OnInit {
   }
 
   loadReport(): void {
-    this.isLoading = true;
     this.customerLedgerService.getAgingReport().subscribe({
       next: (data) => {
         this.reportData = data || [];
         this.applyFilter();
-        this.isLoading = false;
       },
       error: (err) => {
         console.error('Error loading aging report:', err);
         this.toastService.show('Failed to load aging report', 'error');
-        this.isLoading = false;
       },
     });
   }

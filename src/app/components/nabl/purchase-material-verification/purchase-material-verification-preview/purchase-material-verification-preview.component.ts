@@ -14,7 +14,6 @@ import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-foo
 })
 export class PurchaseMaterialVerificationPreviewComponent implements OnInit {
     record: PurchaseMaterialVerification | null = null;
-    isLoading = true;
     recordId: number | null = null;
     currentDate = new Date();
     orientation: 'portrait' | 'landscape' = 'portrait';
@@ -43,10 +42,8 @@ export class PurchaseMaterialVerificationPreviewComponent implements OnInit {
     loadRecord(): void {
         if (!this.recordId) return;
 
-        this.isLoading = true;
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
-                this.isLoading = false;
                 if (data) {
                     this.record = data;
                 } else {
@@ -56,7 +53,6 @@ export class PurchaseMaterialVerificationPreviewComponent implements OnInit {
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: () => {
-                this.isLoading = false;
                 alert('Error loading record details');
             }
         });

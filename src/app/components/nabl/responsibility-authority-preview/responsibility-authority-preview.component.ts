@@ -16,7 +16,6 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 })
 export class ResponsibilityAuthorityPreviewComponent implements OnInit {
   matrix: ResponsibilityAuthorityMatrix | null = null;
-  isLoading = true;
 
   orientation: 'portrait' | 'landscape' = 'portrait';
   orientationManual = false;
@@ -39,12 +38,10 @@ export class ResponsibilityAuthorityPreviewComponent implements OnInit {
             this.toastService.show('RA Matrix not found', 'error');
             this.router.navigate(['/responsibility-authority']);
           }
-          this.isLoading = false;
         },
         error: () => {
           this.toastService.show('Error loading preview', 'error');
           this.router.navigate(['/responsibility-authority']);
-          this.isLoading = false;
         }
       });
     }

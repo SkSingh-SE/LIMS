@@ -367,6 +367,12 @@
 
 hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
 
+/* ─── Smart Suggest badge: purple for Trending ─── */
+.bg-purple {
+  background-color: #6f42c1 !important;
+  color: #fff !important;
+}
+
 @media (max-width: 768px) {
   .nav-tabs .nav-link { padding: 0.3rem 0.55rem; font-size: 0.72rem; }
   .tab-content { padding: 0.35rem; }

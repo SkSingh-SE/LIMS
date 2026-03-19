@@ -128,7 +128,7 @@
                       </div>
                     </td>
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-outline-danger btn-sm border-0" (click)="removeItem(i)" [disabled]="items.length <= 1">
+                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeItem(i)" [disabled]="items.length <= 1">
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -137,7 +137,7 @@
               </table>
             </div>
             <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
-              <button type="button" class="btn btn-outline-primary btn-sm px-3" (click)="addItem()">
+              <button type="button" class="btn btn-add btn-sm px-3" (click)="addItem()">
                 <i class="bi bi-plus-circle me-1"></i> Add More Item
               </button>
             </div>
@@ -168,7 +168,7 @@
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
           <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white px-4 fw-semibold shadow-sm" [disabled]="indentForm.invalid">
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm" [disabled]="indentForm.invalid">
             <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Indent
           </button>
         </div>

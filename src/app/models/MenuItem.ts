@@ -43,19 +43,32 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-box',
       color: '',
       children: [
-        { id: 22, title: 'Dimensional Factors Master', route: '/dimesional-factor', parentMenuID: 2, permissions: ['CanReadDimensionalFactors'], children: [], color: getRandomColor() },
-        { id: 23, title: 'Heat Treatment Master', route: '/heat-treatment', parentMenuID: 2, permissions: ['CanReadHeatTreatment'], children: [], color: getRandomColor() },
-        { id: 24, title: 'Chemical Parameter Master', route: '/chemical-parameter', parentMenuID: 2, permissions: ['CanReadChemicalParameter'], children: [], color: getRandomColor() },
-        { id: 25, title: 'Mechanical Parameter Master', route: '/mechanical-parameter', parentMenuID: 2, permissions: ['CanReadMechanicalParameter'], children: [], color: getRandomColor() },
-        { id: 26, title: 'Product Condition Master', route: '/product-condition', parentMenuID: 2, permissions: ['CanReadProductCondition'], children: [], color: getRandomColor() },
-        { id: 27, title: 'Specimen Orientation Master', route: '/specimen-orientation', parentMenuID: 2, permissions: ['CanReadSpecimenOrientation'], children: [], color: getRandomColor() },
-        { id: 28, title: 'Standard Organization Master', route: '/standard-organization', parentMenuID: 2, permissions: ['CanReadStandardOrganization'], children: [], color: getRandomColor() },
-        { id: 29, title: 'Universal Code Type Master', route: '/universal-code-type', parentMenuID: 2, permissions: ['CanReadUniversalCode'], children: [], color: getRandomColor() },
-        { id: 30, title: 'Metal Classification', route: '/metal-classification', parentMenuID: 2, permissions: ['CanReadMetalClassification'], children: [], color: getRandomColor() },
-        { id: 31, title: 'Material Specification', route: '/material-specification', parentMenuID: 2, permissions: ['CanReadMaterialSpecification'], children: [], color: getRandomColor() },
-        { id: 32, title: 'Custom Material Specification', route: '/custom-material-specification', parentMenuID: 2, permissions: ['CanReadCustomMaterialSpecification'], children: [], color: getRandomColor() },
-        { id: 33, title: 'Product Specification', route: '/product-specification', parentMenuID: 2, permissions: ['CanReadProductSpecification'], children: [], color: getRandomColor() },
-        { id: 34, title: 'Custom Product Specification', route: '/custom-product-specification', parentMenuID: 2, permissions: ['CanReadCustomProductSpecification'], children: [], color: getRandomColor() }
+        {
+          id: 200, title: 'Material Specification', route: '', parentMenuID: 2, permissions: [], children: [
+            { id: 31, title: 'Material Specification', route: '/material-specification', parentMenuID: 200, permissions: ['CanReadMaterialSpecification'], children: [], color: getRandomColor() },
+            { id: 32, title: 'Custom Material Specification', route: '/custom-material-specification', parentMenuID: 200, permissions: ['CanReadCustomMaterialSpecification'], children: [], color: getRandomColor() },
+            {
+              id: 201, title: 'Linked Masters', route: '', parentMenuID: 200, permissions: [], children: [
+                { id: 28, title: 'Standard Organization', route: '/standard-organization', parentMenuID: 201, permissions: ['CanReadStandardOrganization'], children: [], color: getRandomColor() },
+                { id: 30, title: 'Metal Classification', route: '/metal-classification', parentMenuID: 201, permissions: ['CanReadMetalClassification'], children: [], color: getRandomColor() },
+                { id: 24, title: 'Chemical Parameter', route: '/chemical-parameter', parentMenuID: 201, permissions: ['CanReadChemicalParameter'], children: [], color: getRandomColor() },
+                { id: 25, title: 'Mechanical Parameter', route: '/mechanical-parameter', parentMenuID: 201, permissions: ['CanReadMechanicalParameter'], children: [], color: getRandomColor() },
+                { id: 210, title: 'Parameter Unit', route: '/parameter-unit', parentMenuID: 201, permissions: ['CanReadParameterUnit'], children: [], color: getRandomColor() },
+                { id: 23, title: 'Heat Treatment', route: '/heat-treatment', parentMenuID: 201, permissions: ['CanReadHeatTreatment'], children: [], color: getRandomColor() },
+                { id: 26, title: 'Product Condition', route: '/product-condition', parentMenuID: 201, permissions: ['CanReadProductCondition'], children: [], color: getRandomColor() },
+                { id: 27, title: 'Specimen Orientation', route: '/specimen-orientation', parentMenuID: 201, permissions: ['CanReadSpecimenOrientation'], children: [], color: getRandomColor() },
+                { id: 22, title: 'Dimensional Factor', route: '/dimesional-factor', parentMenuID: 201, permissions: ['CanReadDimensionalFactors'], children: [], color: getRandomColor() },
+                { id: 29, title: 'Universal Code Type', route: '/universal-code-type', parentMenuID: 201, permissions: ['CanReadUniversalCode'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            }
+          ], color: getRandomColor()
+        },
+        {
+          id: 202, title: 'Product Specification', route: '', parentMenuID: 2, permissions: [], children: [
+            { id: 33, title: 'Product Specification', route: '/product-specification', parentMenuID: 202, permissions: ['CanReadProductSpecification'], children: [], color: getRandomColor() },
+            { id: 34, title: 'Custom Product Specification', route: '/custom-product-specification', parentMenuID: 202, permissions: ['CanReadCustomProductSpecification'], children: [], color: getRandomColor() },
+          ], color: getRandomColor()
+        }
       ]
     },
     {

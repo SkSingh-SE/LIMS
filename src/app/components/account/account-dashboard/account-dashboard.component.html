@@ -11,7 +11,7 @@
       </div>
       <div class="col-md-4 text-end">
         <button 
-          class="btn btn-outline-primary btn-sm" 
+          class="btn btn-add btn-sm" 
           (click)="loadDashboard()"
           [disabled]="isLoading()">
           <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
@@ -152,7 +152,7 @@
           <div class="quick-actions-card">
             <div class="row g-3">
               <div class="col-md-3 col-sm-6">
-                <button class="btn btn-outline-primary w-100" (click)="navigateToCaseList()">
+                <button class="btn btn-add w-100" (click)="navigateToCaseList()">
                   <i class="bi bi-list-ul me-2"></i>
                   View All Cases
                 </button>
@@ -170,7 +170,7 @@
                 </button>
               </div>
               <div class="col-md-3 col-sm-6">
-                <button class="btn btn-outline-danger w-100" (click)="navigateToCaseList('payment-pending')">
+                <button class="btn btn-remove w-100" (click)="navigateToCaseList('payment-pending')">
                   <i class="bi bi-credit-card me-2"></i>
                   Pending Payments
                 </button>

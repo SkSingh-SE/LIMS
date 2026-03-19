@@ -12,7 +12,7 @@
   <div *ngIf="!isLoading() && reportData" class="card border-1 border-danger-600 mb-2 position-relative">
     <legend
       class="w-auto px-2 fw-semibold theme-color"
-      style="font-size: 0.95rem; position: absolute; top: -0.85em; left: 1.25rem; background: white"
+      
     >
       Report Preview - {{ reportData.reportNo }}
     </legend>
@@ -403,8 +403,8 @@
               <label
                 class="btn fw-semibold"
               [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
-              [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
-              [class.btn-outline-secondary]="act.name.toLowerCase().includes('back')"
+              [class.btn-remove]="act.name.toLowerCase().includes('reject')"
+              [class.btn-cancel]="act.name.toLowerCase().includes('back')"
               [for]="'action_' + act.action"
             >
               <i
@@ -523,7 +523,7 @@
   <div *ngIf="reportData && !showActionPanel" class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow-sm z-3">
     <div class="container-fluid">
       <div class="d-flex gap-2 justify-content-end py-3 px-3">
-        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" (click)="goBack()">
+        <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
           <i class="bi bi-arrow-left"></i>
           Back
         </button>
@@ -534,8 +534,8 @@
             class="btn btn-sm fw-semibold"
             [ngClass]="{
               'btn-outline-success': action.action.toLowerCase().includes('next'),
-              'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
-              'btn-outline-secondary': action.action.toLowerCase().includes('back')
+              'btn-remove': action.action.toLowerCase().includes('cancel'),
+              'btn-cancel': action.action.toLowerCase().includes('back')
             }"
             (click)="selectedAction = action; showActionPanel = true"
             [disabled]="isLoading()"

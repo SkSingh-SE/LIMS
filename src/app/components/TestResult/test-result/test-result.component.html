@@ -60,7 +60,7 @@
                   <!-- Perform Testing Button -->
                   <button
                   *ngIf="item.sampleStatus !== 'Completed'"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-add"
                     [routerLink]="['/testing/perform', item.sampleId]"
                     title="Perform Testing"
                     [disabled]="item.sampleStatus === 'Completed'"

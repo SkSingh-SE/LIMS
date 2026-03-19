@@ -19,7 +19,7 @@
     <!-- Error Message -->
     <div *ngIf="errorMessage" class="alert alert-danger">
         {{ errorMessage }}
-        <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadDashboard()">Retry</button>
+        <button class="btn btn-sm btn-remove ms-2" (click)="loadDashboard()">Retry</button>
     </div>
 
     <div *ngIf="dashboard && !isLoading">
@@ -102,7 +102,7 @@
                                         <td>{{ item.preparedBy || '-' }}</td>
                                         <td>
                                             <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
-                                               class="btn btn-sm btn-outline-primary">
+                                               class="btn btn-sm btn-add">
                                                 View
                                             </a>
                                         </td>
@@ -152,7 +152,7 @@
                                         </td>
                                         <td>
                                             <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
-                                               class="btn btn-sm btn-outline-primary">
+                                               class="btn btn-sm btn-add">
                                                 View
                                             </a>
                                         </td>
@@ -205,7 +205,7 @@
                                         </td>
                                         <td>
                                             <a [routerLink]="[getFormRouteBase(item.formType), 'details', item.id]"
-                                               class="btn btn-sm btn-outline-primary">
+                                               class="btn btn-sm btn-add">
                                                 View
                                             </a>
                                         </td>
@@ -271,7 +271,7 @@
                                         </td>
                                         <td>
                                             <a [routerLink]="[getFormRouteBase(item.formType)]"
-                                               class="btn btn-sm btn-outline-primary">
+                                               class="btn btn-sm btn-add">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>

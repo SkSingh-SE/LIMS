@@ -16,7 +16,7 @@
                         <option *ngFor="let type of fileTypes" [value]="type.value">{{ type.label }}</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-success" [disabled]="!selectedFile">
+                <button type="submit" class="btn btn-save" [disabled]="!selectedFile">
                     Upload File
                 </button>
             </form>

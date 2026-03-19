@@ -12,12 +12,12 @@ import { GroupService } from '../../../services/group.service';
 import { SubGroupService } from '../../../services/sub-group.service';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { ToastService } from '../../../services/toast.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { EquipmentService } from '../../../services/equipment.service';
-import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 @Component({
   selector: 'app-scope',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterModule, SearchableDropdownModalComponent],
   templateUrl: './scope.component.html',
   styleUrl: './scope.component.css'
 })
@@ -33,6 +33,10 @@ export class ScopeComponent implements OnInit {
   subGroupData: any[] = [];
   groupOptionsPerParam: { [key: string]: any[] } = {};
   subGroupOptionsPerParam: { [key: string]: any[] } = {};
+
+  // Accordion open/close state
+  openSections: { [key: string]: boolean } = { header: true };
+  openSpecs: { [key: number]: boolean } = { 0: true };
 
   lowerLimitOptions = [
     { label: '>', value: '>' },
@@ -155,6 +159,28 @@ export class ScopeComponent implements OnInit {
     });
   }
 
+  toggleSection(section: string) {
+    this.openSections[section] = !this.openSections[section];
+  }
+
+  toggleSpec(index: number) {
+    this.openSpecs[index] = !this.openSpecs[index];
+  }
+
+  scrollToEnd(specIndex: number) {
+    const container = document.getElementById(`scroll-params-${specIndex}`);
+    if (container) {
+      container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+    }
+  }
+
+  scrollToStart(specIndex: number) {
+    const container = document.getElementById(`scroll-params-${specIndex}`);
+    if (container) {
+      container.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }
+
   getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
   };
@@ -174,7 +200,8 @@ export class ScopeComponent implements OnInit {
   };
   onParameterSelected(item: any, specIndex: number, paramIndex: number) {
     const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    spec.patchValue({ parameterID: item.id });
+    const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
+    spec.patchValue({ parameterID: item.id, parameterUnitID: unitID });
   };
   getDiscipline = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.disciplineService.getDisciplineDropdown(term, page, pageSize);
@@ -239,11 +266,12 @@ export class ScopeComponent implements OnInit {
   getEquipment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
   }
-  onEquipmentSelect(item: any, specIndex: number, paramIndex: number) {
+  onEquipmentSelect(items: any[], specIndex: number, paramIndex: number) {
     const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
+    spec.patchValue({ equipmentIDs: items.map(e => e.id) });
     const equipmentsArray = this.equipments(specIndex, paramIndex);
-    equipmentsArray.clear(); // Clear existing equipments
-    item.forEach((equipment: any) => {
+    equipmentsArray.clear();
+    items.forEach((equipment: any) => {
       const equipmentGroup = this.fb.group({
         ID: [0],
         labScopeSpecificationParameterID: [spec.get('ID')?.value || 0],

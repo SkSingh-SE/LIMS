@@ -149,7 +149,7 @@
                     <button
                       *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId) && (plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'In Progress' || plans[p].tests[t].status === 'Long-Term')"
                       type="button"
-                      class="btn btn-success btn-sm"
+                      class="btn btn-save btn-sm"
                       (click)="completeTest(p, t)"
                       [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' && plans[p].tests[t].status !== 'Long-Term'"
                       title="Complete Test">
@@ -244,6 +244,7 @@
                     <thead class="result-table-head text-center">
                       <tr>
                         <th>Parameter</th>
+                        <th style="width: 70px">Type</th>
                         <th style="width: 70px">Unit</th>
                         <th style="width: 130px">Spec Range</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Min</th>
@@ -251,6 +252,7 @@
                         <th style="width: 140px">Value</th>
                         <th style="width: 90px">Status</th>
                         <th style="width: 90px">NABL</th>
+                        <th style="width: 150px">Method Used</th>
                         <th style="width: 180px">Remarks</th>
                         <th style="width: 120px">Actions</th>
                       </tr>
@@ -277,6 +279,13 @@
                               [isDisabled]="isParameterCalculated(row.value)"
                             ></app-searchable-dropdown>
                           </div>
+                        </td>
+
+                        <!-- Type Badge -->
+                        <td class="text-center">
+                          <span *ngIf="row.value.parameterType === 'Qualitative'" class="badge bg-primary">Qualitative</span>
+                          <span *ngIf="row.value.parameterType === 'Quantitative'" class="badge bg-success">Quantitative</span>
+                          <span *ngIf="!row.value.parameterType" class="badge bg-secondary">-</span>
                         </td>
 
                         <!-- Unit -->
@@ -315,18 +324,31 @@
 
                         <!-- Value Input -->
                         <td [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input type="text" class="form-control form-control-sm"
-                            [ngClass]="{ 'bg-primary-subtle': row.value.formulaExpression }"
-                            [attr.data-param-input]="p + '-' + t + '-' + r"
-                            formControlName="value" placeholder="Enter Value"
-                            (input)="onValueChanged(p, t, r)"
-                            (keydown)="onParameterKeyDown($event, p, t, r)"
-                            [readOnly]="isParameterCalculated(row.value)"
-                            [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
-                            appDecimalOnly />
-                          <small *ngIf="row.value.formulaExpression" class="text-info d-block" style="font-size: 10px;">
-                            <i class="bi bi-calculator me-1"></i>{{ row.value.formulaExpression }}
-                          </small>
+                          <ng-container *ngIf="row.value.parameterType === 'Qualitative'; else quantitativeInput">
+                            <select class="form-select form-select-sm" formControlName="value"
+                              (change)="onValueChanged(p, t, r)"
+                              [disabled]="isParameterCalculated(row.value)">
+                              <option value="">-- Select --</option>
+                              <option value="Pass">Pass</option>
+                              <option value="Fail">Fail</option>
+                              <option value="Satisfactory">Satisfactory</option>
+                              <option value="Not Satisfactory">Not Satisfactory</option>
+                            </select>
+                          </ng-container>
+                          <ng-template #quantitativeInput>
+                            <input type="text" class="form-control form-control-sm"
+                              [ngClass]="{ 'bg-primary-subtle': row.value.formulaExpression }"
+                              [attr.data-param-input]="p + '-' + t + '-' + r"
+                              formControlName="value" placeholder="Enter Value"
+                              (input)="onValueChanged(p, t, r)"
+                              (keydown)="onParameterKeyDown($event, p, t, r)"
+                              [readOnly]="isParameterCalculated(row.value)"
+                              [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
+                              appDecimalOnly />
+                            <small *ngIf="row.value.formulaExpression" class="text-info d-block" style="font-size: 10px;">
+                              <i class="bi bi-calculator me-1"></i>{{ row.value.formulaExpression }}
+                            </small>
+                          </ng-template>
                         </td>
 
                         <!-- Status Badge -->
@@ -374,6 +396,12 @@
                           </ng-container>
                         </td>
 
+                        <!-- Method Used -->
+                        <td>
+                          <input type="text" class="form-control form-control-sm" formControlName="testMethodUsed"
+                            placeholder="Test method" maxlength="200" />
+                        </td>
+
                         <!-- Remarks -->
                         <td>
                           <input type="text" class="form-control form-control-sm" formControlName="remarks"
@@ -389,12 +417,12 @@
                               title="Save parameter">
                               <i class="bi bi-cloud-upload"></i>
                             </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                            <button type="button" class="btn btn-cancel btn-sm"
                               (click)="openFormulaBuilder(p, t, r)"
                               title="Edit formula">
                               <i class="bi bi-calculator"></i>
                             </button>
-                            <button type="button" class="btn btn-outline-danger btn-sm"
+                            <button type="button" class="btn btn-remove btn-sm"
                               (click)="removeParameter(p, t, r)"
                               [disabled]="isParameterCalculated(row.value)"
                               title="Remove parameter">
@@ -408,7 +436,7 @@
 
                   <!-- Parameter action buttons (removed duplicate standalone param button) -->
                   <div class="d-flex flex-wrap gap-2 mb-2">
-                    <button class="btn btn-sm btn-outline-primary" type="button" (click)="addParameter(p, t)">
+                    <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)">
                       <i class="bi bi-plus-circle-dotted"></i> Add Parameter
                     </button>
                     <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)"
@@ -426,7 +454,7 @@
                     <div class="price-card-header d-flex justify-content-between align-items-center">
                       <span><i class="bi bi-currency-rupee me-1"></i>Price Calculation</span>
                       <div class="btn-group btn-group-sm" *ngIf="!isViewMode">
-                        <button type="button" class="btn btn-outline-primary btn-sm"
+                        <button type="button" class="btn btn-add btn-sm"
                           (click)="calculateTestPrice(p, t)"
                           [disabled]="priceLoadingMap[plans[p].tests[t].headerId]"
                           title="Calculate Price">
@@ -599,7 +627,7 @@
                       </td>
                       <td class="small text-end">&#8377;{{ item.amount | number:'1.2-2' }}</td>
                       <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger p-0 px-1" (click)="deleteMachiningItem(item.id)" title="Delete">
+                        <button type="button" class="btn btn-sm btn-remove p-0 px-1" (click)="deleteMachiningItem(item.id)" title="Delete">
                           <i class="bi bi-trash" style="font-size: 12px;"></i>
                         </button>
                       </td>
@@ -629,10 +657,10 @@
             </div>
 
             <div class="mt-3" *ngIf="isPreparationRequired">
-              <button type="button" class="btn btn-sm btn-outline-primary me-2" (click)="openPreparationForm()">
+              <button type="button" class="btn btn-sm btn-add me-2" (click)="openPreparationForm()">
                 <i class="bi bi-pencil-square me-1"></i>Open Preparation Form
               </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refreshPreparationData()">
+              <button type="button" class="btn btn-sm btn-cancel" (click)="refreshPreparationData()">
                 <i class="bi bi-arrow-clockwise me-1"></i>Refresh
               </button>
             </div>
@@ -768,7 +796,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeMoveToLongTermModal()">Cancel</button>
-          <button type="submit" class="btn btn-warning" [disabled]="moveToLongTermForm.invalid">
+          <button type="submit" class="btn btn-cancel" [disabled]="moveToLongTermForm.invalid">
             <i class="bi bi-hourglass"></i> Move to Long-Term
           </button>
         </div>
@@ -862,7 +890,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closePriceOverrideModal()">Cancel</button>
-        <button type="button" class="btn btn-warning" (click)="submitPriceOverride()"
+        <button type="button" class="btn btn-cancel" (click)="submitPriceOverride()"
           [disabled]="!priceOverrideAmount || priceOverrideAmount <= 0 || !priceOverrideReason.trim()">
           <i class="bi bi-check-circle me-1"></i> Override Price
         </button>
@@ -925,7 +953,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeFromMethodModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" [disabled]="fromMethodForm.invalid" (click)="submitFromMethod()">
+        <button type="button" class="btn btn-save" [disabled]="fromMethodForm.invalid" (click)="submitFromMethod()">
           <i class="bi bi-box-arrow-in-down"></i> Add Parameter
         </button>
       </div>
@@ -993,7 +1021,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="clearFormula()">Clear</button>
+        <button type="button" class="btn btn-cancel" (click)="clearFormula()">Clear</button>
         <button type="button" class="btn btn-secondary" (click)="closeFormulaBuilder()">Cancel</button>
         <button type="button" class="btn btn-primary" (click)="applyFormula()" [disabled]="!formulaExpression.trim()">
           <i class="bi bi-check-circle me-1"></i>Apply Formula

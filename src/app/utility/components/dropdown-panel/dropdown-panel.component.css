@@ -29,7 +29,7 @@ ul.list-group {
   border: none;
   border-bottom: none;
   padding: 7px 12px;
-  font-size: 0.82rem;
+  font-size: var(--font-sm);
   color: #334155;
   cursor: pointer;
   user-select: none;

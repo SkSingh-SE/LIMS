@@ -1,5 +1,13 @@
 :host ::ng-deep .ng-select .ng-placeholder {
   font-weight: 400;
-  font-size: 0.9rem;
-  color: #000000;
+  font-size: var(--font-sm);
+  color: #94a3b8;
+}
+
+:host ::ng-deep .ng-select .ng-value {
+  font-size: var(--font-sm);
+}
+
+:host ::ng-deep .ng-select .ng-input > input {
+  font-size: var(--font-sm) !important;
 }

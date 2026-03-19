@@ -64,6 +64,7 @@ export class SupplierFormComponent implements OnInit {
       supplierApproved: [false],
       isBlacklisted: [false],
       reasonForBlacklisting: [''],
+      blacklistDate: [null],
       file: [File]
     });
   }
@@ -117,6 +118,7 @@ export class SupplierFormComponent implements OnInit {
       formData.append('supplierApproved', raw.supplierApproved.toString());
       formData.append('isBlacklisted', raw.isBlacklisted.toString());
       formData.append('reasonForBlacklisting', raw.reasonForBlacklisting || '');
+      formData.append('blacklistDate', raw.blacklistDate || '');
 
       if (raw.file) {
         formData.append('file', raw.file, raw.file.name);

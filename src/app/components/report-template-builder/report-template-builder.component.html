@@ -5,7 +5,7 @@
       <div *ngFor="let g of palette" class="mb-2">
         <div class="small text-muted">{{g.group}}</div>
         <div class="d-flex flex-column">
-          <div *ngFor="let p of g.items" class="palette-item btn btn-sm btn-outline-secondary mb-1" cdkDrag [cdkDragData]="p">{{p.label}}</div>
+          <div *ngFor="let p of g.items" class="palette-item btn btn-sm btn-cancel mb-1" cdkDrag [cdkDragData]="p">{{p.label}}</div>
         </div>
       </div>
       <hr />
@@ -24,12 +24,12 @@
         </div>
         <div class="btn-group">
           <div class="btn-group me-2">
-            <button class="btn btn-sm btn-outline-secondary" [class.active]="!livePreview" (click)="livePreview=false">Builder Mode</button>
-            <button class="btn btn-sm btn-outline-secondary" [class.active]="livePreview" (click)="livePreview=true">Preview Mode</button>
+            <button class="btn btn-sm btn-cancel" [class.active]="!livePreview" (click)="livePreview=false">Builder Mode</button>
+            <button class="btn btn-sm btn-cancel" [class.active]="livePreview" (click)="livePreview=true">Preview Mode</button>
           </div>
-          <button class="btn btn-sm btn-danger" (click)="saveTemplate()">Save</button>
+          <button class="btn btn-sm btn-save" (click)="saveTemplate()">Save</button>
           <button class="btn btn-sm btn-danger" (click)="exportJson()">Export</button>
-          <label class="btn btn-sm btn-outline-secondary mb-0">
+          <label class="btn btn-sm btn-cancel mb-0">
             Import <input type="file" hidden (change)="handleImport($event)" />
           </label>
         </div>

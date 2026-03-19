@@ -1,22 +1,10 @@
 <div class="card shadow-lg m-5">
   <div class="card-header card-form-header text-white text-center">
-    <h6 class="text-center">Laboratory Test Form</h6>
+    <label class="fw-medium">Laboratory Test Form</label>
   </div>
   <div class="card-body">
     <form [formGroup]="labTestForm" (ngSubmit)="onSubmit()">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-2 row-gap-lg-1 mb-2">
-        <div>
-          <app-searchable-dropdown
-            [placeholder]="'Search department'"
-            [labelName]="'Department'"
-            [fetchDataFn]="getDepartments"
-            (itemSelected)="onDepartmentSelected($event)"
-            [isDisabled]="isViewMode"
-            [required]="true"
-            [selectedItem]="labTestForm.get('labDepartmentID')?.value"
-          ></app-searchable-dropdown>
-        </div>
-
         <div>
           <label for="name" class="form-label">
             Test Name
@@ -27,13 +15,30 @@
             class="form-control"
             id="name"
             formControlName="name"
-            placeholder="Enter Test Name"
+            placeholder="Type to search or add new test name"
             maxlength="100"
+            list="testNameSuggestions"
+            (input)="onTestNameInput($event)"
             [ngClass]="{ 'is-invalid': labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid }"
           />
-          <span *ngIf="labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid" class="text-danger text-sm">
+          <datalist id="testNameSuggestions">
+            <option *ngFor="let name of testNameSuggestions" [value]="name"></option>
+          </datalist>
+          <small class="text-muted">Type existing name to auto-select, or enter new name</small>
+          <span *ngIf="labTestForm.get('name')?.touched && labTestForm.get('name')?.invalid" class="text-danger text-sm d-block">
             Name is required.
           </span>
+        </div>
+        <div>
+          <app-searchable-dropdown
+            [placeholder]="'Search department'"
+            [labelName]="'Department'"
+            [fetchDataFn]="getDepartments"
+            (itemSelected)="onDepartmentSelected($event)"
+            [isDisabled]="isViewMode"
+            [required]="true"
+            [selectedItem]="labTestForm.get('labDepartmentID')?.value"
+          ></app-searchable-dropdown>
         </div>
         <div>
           <label for="subGroup" class="form-label">
@@ -54,6 +59,43 @@
           </span>
         </div>
 
+        <!-- Test Caption - hidden for now -->
+        <div class="d-none">
+          <label for="testCaption" class="form-label">Test Caption</label>
+          <input
+            type="text"
+            class="form-control"
+            id="testCaption"
+            formControlName="testCaption"
+            placeholder="Enter Test Caption"
+            maxlength="500"
+          />
+        </div>
+        <!-- Invoice Caption - hidden for now -->
+        <div class="d-none">
+          <label for="invoiceCaption" class="form-label">Invoice Caption</label>
+          <input
+            type="text"
+            class="form-control"
+            id="invoiceCaption"
+            formControlName="invoiceCaption"
+            placeholder="Enter Invoice Caption"
+            maxlength="500"
+          />
+        </div>
+        <div>
+          <label for="testDuration" class="form-label">Test Duration (days)</label>
+          <input
+            type="number"
+            class="form-control"
+            id="testDuration"
+            formControlName="testDuration"
+            placeholder="Enter duration in days"
+            min="1"
+            max="365"
+          />
+        </div>
+
         <div>
           <app-multi-select-dropdown
             [placeholder]="'Select multiple items...'"
@@ -65,28 +107,11 @@
             (itemsSelected)="onInvoiceCaseChange($event)"
           ></app-multi-select-dropdown>
         </div>
-        <div>
-          <app-multi-select-dropdown
-            [placeholder]="'Select parameters...'"
-            [reloadKey]="parameterReloadKey"
-            [required]="true"
-            [isDisabled]="isViewMode"
-            [labelName]="'Parameters'"
-            [fetchDataFn]="getParameters"
-            [selectedValues]="labTestForm.get('parameterIDs')?.value"
-            (itemsSelected)="onParameterChange($event)"
-          ></app-multi-select-dropdown>
-        </div>
-
-        <!-- <div>
-          <label for="equation" class="form-label">Equation</label>
-          <input type="text" id="equation" class="form-control" formControlName="equation" placeholder="Enter Equation" />
-        </div> -->
       </div>
 
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/test']" class="btn btn-warning">Cancel</a>
-        <button [disabled]="labTestForm.invalid" type="submit" class="btn btn-success px-3">Save</button>
+        <a [routerLink]="['/test']" class="btn btn-cancel">Cancel</a>
+        <button [disabled]="labTestForm.invalid" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>

@@ -127,7 +127,7 @@
                   <button
                     *ngIf="!isViewMode && attendees.length > 1"
                     type="button"
-                    class="btn btn-outline-danger btn-sm mb-1"
+                    class="btn btn-remove btn-sm mb-1"
                     (click)="removeAttendee(i)"
                   >
                     <i class="bi bi-trash"></i>
@@ -135,7 +135,7 @@
                 </div>
               </div>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-dark btn-sm mt-2" (click)="addAttendee()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAttendee()">
               <i class="bi bi-plus"></i>
               Add Attendee
             </button>
@@ -162,7 +162,7 @@
                   <button
                     *ngIf="!isViewMode && agendaItems.length > 1"
                     type="button"
-                    class="btn btn-outline-danger btn-sm mb-1"
+                    class="btn btn-remove btn-sm mb-1"
                     (click)="removeAgendaItem(i)"
                   >
                     <i class="bi bi-trash"></i>
@@ -170,7 +170,7 @@
                 </div>
               </div>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-dark btn-sm mt-2" (click)="addAgendaItem()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAgendaItem()">
               <i class="bi bi-plus"></i>
               Add Item
             </button>
@@ -179,8 +179,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="agendaForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="agendaForm.invalid">
             {{ isEditMode ? "Update Notice" : "Save Notice" }}
           </button>
         </div>

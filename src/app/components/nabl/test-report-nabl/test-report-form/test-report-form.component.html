@@ -255,8 +255,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="reportForm.invalid || isLoading()">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="reportForm.invalid || isLoading()">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

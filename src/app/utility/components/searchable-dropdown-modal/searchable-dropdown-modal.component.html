@@ -22,50 +22,43 @@
       autocomplete="off"
     />
 
-    <!-- Fake input for displaying selected labels in multi-select -->
-    <input
-      *ngIf="isMultiSelect"
-      type="text"
-      class="form-control position-absolute bg-white"
-      [value]="getSelectedLabels()"
-      [placeholder]="placeholder"
-      [disabled]="true"
-      style="top: 0; left: 0; pointer-events: none"
-    />
+    <!-- Compact display for multi-select with hover tooltip -->
+    <div *ngIf="isMultiSelect" class="multi-select-display" [class.has-items]="selectedItems.length > 0" (mouseenter)="updateTooltipPosition()" (click)="openDropdown()">
+      <span class="compact-label">{{ getCompactLabel() || placeholder }}</span>
+      <!-- Hover tooltip showing all selected names (fixed position to escape overflow) -->
+      <div *ngIf="selectedItems.length > 1" class="hover-tooltip" [ngStyle]="tooltipStyle">
+        <div *ngFor="let item of selectedItems" class="tooltip-item">{{ item.name }}</div>
+      </div>
+    </div>
 
     <!-- Dropdown Icon -->
-    <span class="input-group-text dropdown-toggle-icon" role="button" (click)="showDropdown = !showDropdown" *ngIf="!isDisabled">
+    <span class="input-group-text dropdown-toggle-icon" role="button" (click)="showDropdown ? showDropdown = false : openDropdown()" *ngIf="!isDisabled">
       <i class="bi bi-chevron-down"></i>
     </span>
   </div>
   <!-- Validation feedback -->
-  <div *ngIf="required && inputRef.invalid && inputRef.touched" class="invalid-feedback">This field is required.</div>
+  <div *ngIf="required && inputRef.invalid && inputRef.touched" class="invalid-feedback">{{ labelName }} is required.</div>
 
+  <!-- Dropdown list -->
   <ul
     *ngIf="showDropdown && dropdownData.length > 0"
-    class="list-group position-absolute w-100 z-3 mt-1"
-    style="
-      max-height: 200px;
-      overflow-y: auto;
-      top: 100%;
-      left: 0;
-      background-color: white;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-      z-index: 1050;
-    "
+    class="dropdown-panel"
+    [ngStyle]="dropdownStyle"
     (scroll)="onScroll($event)"
   >
     <li
-      class="list-group-item cursor-pointer"
+      class="dropdown-item"
       *ngFor="let item of dropdownData; let i = index"
       [id]="randomId + '-item-' + i"
-      [class.active]="highlightedIndex === i"
+      [class.active]="!isMultiSelect && highlightedIndex === i"
+      [class.multi-selected]="isMultiSelect && isSelected(item)"
       (mouseenter)="highlightedIndex = i"
       (mousedown)="isMultiSelect ? toggleItem(item) : selectItem(item)"
     >
+      <i *ngIf="isMultiSelect" class="bi me-2" [ngClass]="isSelected(item) ? 'bi-check-square-fill check-selected' : 'bi-square check-unselected'"></i>
       {{ item.name }}
     </li>
 
-    <li *ngIf="loading" class="list-group-item">Loading...</li>
+    <li *ngIf="loading" class="dropdown-item loading-item">Loading...</li>
   </ul>
 </div>

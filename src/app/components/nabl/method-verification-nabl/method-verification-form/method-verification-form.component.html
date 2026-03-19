@@ -81,7 +81,7 @@
               <i class="bi" [ngClass]="openSections['performance'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">III. Performance Parameters (Verification Criteria)</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addPerformanceParameter(); $event.stopPropagation()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addPerformanceParameter(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i> Add Parameter
             </button>
           </div>
@@ -129,7 +129,7 @@
               <i class="bi" [ngClass]="openSections['rawData'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">IV. Raw Data / Test Results (Replicates)</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addRawDataRow(); $event.stopPropagation()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addRawDataRow(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i> Add Row
             </button>
           </div>
@@ -207,8 +207,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="requestForm.invalid || isLoading()">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="requestForm.invalid || isLoading()">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

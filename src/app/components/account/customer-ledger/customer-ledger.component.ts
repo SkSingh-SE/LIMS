@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CustomerLedgerService } from '../../../services/customer-ledger.service';
 import { CustomerService } from '../../../services/customer.service';
+import { AccountService } from '../../../services/account.service';
 import { ToastService } from '../../../services/toast.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
@@ -23,6 +24,11 @@ export class CustomerLedgerComponent implements OnInit {
   closingBalance = 0;
   isLoading = false;
 
+  periodStart = '';
+  periodEnd = '';
+  periodSummary: any = null;
+  isLoadingPeriodSummary = false;
+
   getCustomers = (term: string, page: number, pageSize: number) => {
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
@@ -30,6 +36,7 @@ export class CustomerLedgerComponent implements OnInit {
   constructor(
     private customerLedgerService: CustomerLedgerService,
     private customerService: CustomerService,
+    private accountService: AccountService,
     private toastService: ToastService
   ) {}
 
@@ -38,6 +45,8 @@ export class CustomerLedgerComponent implements OnInit {
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     this.fromDate = this.formatDate(firstDay);
     this.toDate = this.formatDate(today);
+    this.periodStart = this.fromDate;
+    this.periodEnd = this.toDate;
   }
 
   onCustomerSelect(item: any): void {
@@ -76,6 +85,25 @@ export class CustomerLedgerComponent implements OnInit {
       error: (err) => {
         console.error('Error loading balance:', err);
       },
+    });
+  }
+
+  loadPeriodSummary(): void {
+    if (!this.selectedCustomerId || !this.periodStart || !this.periodEnd) {
+      this.toastService.show('Please select a customer and date range', 'warning');
+      return;
+    }
+    this.isLoadingPeriodSummary = true;
+    this.accountService.getLedgerPeriodSummary(this.selectedCustomerId, this.periodStart, this.periodEnd).subscribe({
+      next: (data) => {
+        this.periodSummary = data;
+        this.isLoadingPeriodSummary = false;
+      },
+      error: (err) => {
+        console.error('Error loading period summary:', err);
+        this.toastService.show('Failed to load period summary', 'error');
+        this.isLoadingPeriodSummary = false;
+      }
     });
   }
 

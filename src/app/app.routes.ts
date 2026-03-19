@@ -34,6 +34,9 @@ import { CustomMaterialSpecificationListComponent } from './components/material-
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
 import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
 import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
+import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
+import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
+import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
 import { SupplierListComponent } from './components/supplier/supplier-list/supplier-list.component';
 import { SupplierFormComponent } from './components/supplier/supplier-form/supplier-form.component';
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
@@ -170,6 +173,7 @@ export const routes: Routes = [
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'tpi', component: TPIComponent },
+            { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'dimesional-factor', component: DimensionalFactorComponent },
             { path: 'heat-treatment', component: HeatTreatmentComponent },
             { path: 'product-condition', component: ProductConditionComponent },
@@ -310,6 +314,9 @@ export const routes: Routes = [
             { path: 'product-specification', component: ProductSpecificationComponent },
             { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
+            { path: 'tolerance-master', component: ToleranceMasterComponent },
+            { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },
+            { path: 'parameter-unit', component: ParameterUnitComponent },
             { path: 'supplier', component: SupplierListComponent },
             { path: 'supplier/create', component: SupplierFormComponent },
             { path: 'supplier/edit/:id', component: SupplierFormComponent },
@@ -567,6 +574,7 @@ export const routes: Routes = [
 
             // Training Effectiveness Routes (F-10)
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'sample-preparation-master', loadComponent: () => import('./components/sample-prepration/sample-preparation-master/sample-preparation-master.component').then(m => m.SamplePreparationMasterComponent) },
             { path: 'sample/prepration', component: CuttingSamplesComponent },
             { path: 'sample/cutting', component: CuttingSamplesComponent },
             { path: 'sample/cutting/raw-format', loadComponent: () => import('./components/sample-prepration/sample-cutting-raw-format/sample-cutting-raw-format.component').then(m => m.SampleCuttingRawFormatComponent) },

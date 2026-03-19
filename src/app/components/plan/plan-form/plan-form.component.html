@@ -242,7 +242,7 @@
                 <button
                   *ngIf="testPlan.get('id')?.value > 0"
                   type="button"
-                  class="btn btn-sm btn-outline-secondary"
+                  class="btn btn-sm btn-cancel"
                   (click)="togglePlanHistory(testPlan.get('id')?.value)"
                   title="View History"
                 >
@@ -351,7 +351,7 @@
                           [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(sampleIdx)"
                           (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'generalTests')"
                           [hideLabel]="false"
-                          [required]="true"
+                          [required]="false"
                           [isDisabled]="isViewMode"
                           [selectedItem]="getGeneralTestSection(sampleIdx, planIdx).get('specification1')?.value"
                         ></app-searchable-dropdown>
@@ -400,17 +400,15 @@
                         >
                           <td>{{ methodIdx + 1 }}</td>
                           <td>
-                            <select
-                              class="form-select"
-                              formControlName="testMethodID"
-                              [disabled]="isViewMode"
-                              (change)="onLaboratorySelected({ id: $any($event.target).value }, sampleIdx, planIdx, methodIdx)"
-                            >
-                              <option value="">-- Select Laboratory Test --</option>
-                              <option *ngFor="let test of filteredTestMethods[`${sampleIdx}_${planIdx}`]" [value]="test.id">
-                                {{ test.name }}
-                              </option>
-                            </select>
+                            <app-searchable-dropdown
+                              [fetchDataFn]="getLabTestDropdown"
+                              [placeholder]="'Search Lab Test'"
+                              [labelName]="'Laboratory Test'"
+                              [hideLabel]="true"
+                              (itemSelected)="onLaboratoryTestSelected($event, sampleIdx, planIdx, methodIdx)"
+                              [selectedItem]="method.get('testMethodID')?.value"
+                              [isDisabled]="isViewMode"
+                            ></app-searchable-dropdown>
                             <div
                               *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched"
                               class="text-danger small mt-1"
@@ -432,7 +430,7 @@
                           </td>
                           <td>
                             <div *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length > 0 && !isViewMode">
-                              <button type="button" class="btn btn-sm btn-outline-danger" (click)="getMethodRows(sampleIdx, planIdx).removeAt(methodIdx)">
+                              <button type="button" class="btn btn-sm btn-remove" (click)="getMethodRows(sampleIdx, planIdx).removeAt(methodIdx)">
                                 <i class="bi bi-trash"></i>
                               </button>
                             </div>
@@ -441,19 +439,86 @@
                       </tbody>
                     </table>
                     <div class="d-flex gap-2 mt-1">
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addMethodRow(sampleIdx, planIdx)">
+                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addMethodRow(sampleIdx, planIdx)">
                         <i class="bi bi-plus-circle-dotted me-1"></i>Add Row
                       </button>
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-secondary" (click)="removeGeneralTest(sampleIdx, planIdx, 0)">
+                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-info" (click)="loadSuggestedTests(sampleIdx, planIdx)"
+                        [disabled]="suggestLoading[sampleIdx + '_' + planIdx]">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <span *ngIf="suggestLoading[sampleIdx + '_' + planIdx]" class="spinner-border spinner-border-sm me-1"></span>
+                        Auto-Suggest Tests
+                      </button>
+                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel" (click)="removeGeneralTest(sampleIdx, planIdx, 0)">
                         <i class="bi bi-trash me-1"></i>Remove General Test
                       </button>
+                    </div>
+
+                    <!-- Auto-Suggest Panel -->
+                    <div *ngIf="showSuggestPanel[sampleIdx + '_' + planIdx]" class="card mt-2 border-info">
+                      <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-semibold small"><i class="bi bi-lightbulb me-1"></i>Smart Suggested Tests</span>
+                        <button type="button" class="btn-close btn-sm" (click)="closeSuggestPanel(sampleIdx, planIdx)"></button>
+                      </div>
+                      <div class="card-body p-2">
+                        <div *ngIf="suggestedTests.length === 0 && !suggestLoading[sampleIdx + '_' + planIdx]" class="text-muted small text-center py-2">
+                          No suggestions available.
+                        </div>
+                        <table *ngIf="suggestedTests.length > 0" class="table table-sm table-compact mb-2">
+                          <thead class="table-light">
+                            <tr class="text-nowrap text-muted small">
+                              <th class="fw-medium text-center" style="width: 40px;">
+                                <input type="checkbox" (change)="toggleAllSuggestions($event)" />
+                              </th>
+                              <th class="fw-medium">Test Name</th>
+                              <th class="fw-medium text-center">Source</th>
+                              <th class="fw-medium text-center">Tags</th>
+                              <th class="fw-medium text-center">Per Batch</th>
+                              <th class="fw-medium text-center">Score</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let suggestion of suggestedTests" class="small" style="cursor: pointer;"
+                              (click)="suggestion.selected = !suggestion.selected">
+                              <td class="text-center">
+                                <input type="checkbox" [(ngModel)]="suggestion.selected" [ngModelOptions]="{ standalone: true }"
+                                  (click)="$event.stopPropagation()" />
+                              </td>
+                              <td>
+                                <span class="fw-semibold">{{ suggestion.laboratoryTestName || suggestion.testName || suggestion.name }}</span>
+                                <span *ngIf="suggestion.subGroup" class="text-muted ms-1 small">({{ suggestion.subGroup }})</span>
+                              </td>
+                              <td class="text-center">
+                                <span class="badge" [ngClass]="getSuggestBadgeClass(suggestion.source)">
+                                  {{ suggestion.source || 'Auto' }}
+                                </span>
+                              </td>
+                              <td class="text-center">
+                                <span *ngFor="let tag of suggestion.tags" class="badge bg-light text-dark border me-1">{{ tag }}</span>
+                              </td>
+                              <td class="text-center">
+                                <span *ngIf="suggestion.isPerBatch" class="badge bg-warning text-dark">Yes</span>
+                                <span *ngIf="!suggestion.isPerBatch" class="text-muted">No</span>
+                              </td>
+                              <td class="text-center">
+                                <span class="badge bg-dark">{{ suggestion.score }}</span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <div *ngIf="suggestedTests.length > 0" class="text-end">
+                          <button type="button" class="btn btn-sm btn-primary" (click)="addSelectedSuggestedTests(sampleIdx, planIdx)"
+                            [disabled]="!hasSelectedSuggestions()">
+                            <i class="bi bi-plus-circle me-1"></i>Add Selected
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </ng-container>
                 <button
                   *ngIf="getTestArray(sampleIdx, planIdx, 'generalTests').length < 1 && !isViewMode"
                   type="button"
-                  class="btn btn-sm btn-outline-primary mt-1"
+                  class="btn btn-sm btn-add mt-1"
                   (click)="addTestBlock(sampleIdx, planIdx, 'generalTests')"
                 >
                   <i class="bi bi-plus-circle-dotted me-1"></i>Add General Test
@@ -559,7 +624,7 @@
                       </div>
                     </div>
                   </ng-container>
-                  <button *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addTestBlock(sampleIdx, planIdx, 'chemicalTests')">
+                  <button *ngIf="getTestArray(sampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode" type="button" class="btn btn-sm btn-add" (click)="addTestBlock(sampleIdx, planIdx, 'chemicalTests')">
                     <i class="bi bi-plus-circle-dotted me-1"></i>Add Chemical Test
                   </button>
                 </div>
@@ -569,7 +634,7 @@
         </ng-container>
 
         <ng-template #addPlanBlock>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addPlanToSample(sampleIdx)">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addPlanToSample(sampleIdx)">
             <i class="bi bi-plus-circle-dotted me-1"></i>Add Plan
           </button>
         </ng-template>
@@ -579,10 +644,10 @@
 
   <!-- Save/Cancel -->
   <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-2">
-    <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <button type="button" class="btn btn-cancel" (click)="onCancel()">
       <i class="bi bi-x-circle me-1"></i> Cancel
     </button>
-    <button type="button" class="btn btn-success px-4" (click)="onSave()" [disabled]="!planForm.valid">
+    <button type="button" class="btn btn-save px-4" (click)="onSave()" [disabled]="!planForm.valid">
       <i class="bi bi-check-circle me-1"></i> Save Plan
     </button>
     <button *ngIf="canSendForReview()" type="button" class="btn btn-info" (click)="onSendForReview()">
@@ -606,10 +671,10 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="closeReplanModal()">
+        <button type="button" class="btn btn-cancel" (click)="closeReplanModal()">
           <i class="bi bi-x-circle me-1"></i> Cancel
         </button>
-        <button type="button" class="btn btn-warning" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
+        <button type="button" class="btn btn-cancel" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
           <i class="bi bi-send me-1"></i> Submit Request
         </button>
       </div>

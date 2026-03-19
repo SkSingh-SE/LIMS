@@ -109,7 +109,7 @@
                 <button
                   *ngIf="!isViewMode && discussions.length > 1"
                   type="button"
-                  class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                  class="btn btn-remove btn-sm position-absolute top-0 end-0 m-2"
                   (click)="removeDiscussion(i)"
                 >
                   <i class="bi bi-trash"></i>
@@ -139,7 +139,7 @@
                 </div>
               </div>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-dark btn-sm" (click)="addDiscussion()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm" (click)="addDiscussion()">
               <i class="bi bi-plus"></i>
               Add Discussion
             </button>
@@ -184,7 +184,7 @@
                   <button
                     *ngIf="!isViewMode && actionItems.length > 1"
                     type="button"
-                    class="btn btn-outline-danger btn-sm mb-1"
+                    class="btn btn-remove btn-sm mb-1"
                     (click)="removeActionItem(i)"
                   >
                     <i class="bi bi-trash"></i>
@@ -192,7 +192,7 @@
                 </div>
               </div>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-dark btn-sm" (click)="addActionItem()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm" (click)="addActionItem()">
               <i class="bi bi-plus"></i>
               Add Action Item
             </button>
@@ -201,8 +201,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="minutesForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="minutesForm.invalid">
             {{ isEditMode ? "Update Minutes" : "Save Minutes" }}
           </button>
         </div>

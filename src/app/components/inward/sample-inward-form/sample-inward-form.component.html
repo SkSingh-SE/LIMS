@@ -1,7 +1,7 @@
 <div class="m-2">
   <!-- Top Toolbar -->
   <div *ngIf="isViewMode && sampleId > 0" class="d-flex justify-content-end mb-2">
-    <button type="button" class="btn btn-outline-primary btn-sm" (click)="printJobCard()">
+    <button type="button" class="btn btn-add btn-sm" (click)="printJobCard()">
       <i class="bi bi-printer me-1"></i> Print Job Card
     </button>
   </div>
@@ -18,6 +18,11 @@
         <i class="bi bi-box-seam me-1"></i> Sample Details
       </button>
     </li>
+    <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">
+        <i class="bi bi-clipboard-check me-1"></i> Plan
+      </button>
+    </li>
   </ul>
 
   <!-- removed global ngSubmit to avoid accidental nested submissions -->
@@ -28,7 +33,7 @@
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Customer Details
           </legend>
@@ -147,7 +152,7 @@
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Contacts
           </legend>
@@ -315,7 +320,7 @@
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Payment Info
           </legend>
@@ -381,7 +386,7 @@
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Document
           </legend>
@@ -415,14 +420,14 @@
                 />
               </ng-template>
               <!-- <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
-              <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
+              <button type="button" class="btn btn-remove btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
             </div>
           </div>
         </fieldset>
 
         <!-- Add Go To Sample Details button -->
         <div class="d-flex justify-content-end mt-3">
-          <button type="button" class="btn btn-outline-primary" (click)="goToSampleTab()">
+          <button type="button" class="btn btn-add" (click)="goToSampleTab()">
             <i class="bi bi-arrow-right me-1"></i> Sample Details
           </button>
         </div>
@@ -433,7 +438,7 @@
         <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Sample Details
           </legend>
@@ -507,14 +512,14 @@
                     </ng-template>
                   </td>
                   <td class="text-center">
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="removeSample(i)">
                       <i class="bi bi-trash"></i>
                     </button>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addSample()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addSample()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Sample
           </button>
@@ -523,7 +528,7 @@
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Case & Sample Identification
           </legend>
@@ -556,7 +561,7 @@
                     </td>
                   </ng-container>
                   <td>
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
@@ -564,7 +569,7 @@
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addAdditionalSampleRow()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addAdditionalSampleRow()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Additional Info
           </button>
@@ -573,7 +578,7 @@
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+            
           >
             Additional Information
           </legend>
@@ -612,15 +617,20 @@
           </div>
         </fieldset>
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-3">
-          <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
             <i class="bi bi-x-circle me-1"></i> Cancel
           </button>
-          <button type="button" class="btn btn-success px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
+          <button type="button" class="btn btn-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
             <i class="bi bi-check-circle me-1"></i> Save
           </button>
         </div>
       </div>
 
+
+      <!-- TAB 3: PLAN (visible only after save) -->
+      <div *ngIf="sampleId > 0" class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
+        <app-plan-form [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
+      </div>
 
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>

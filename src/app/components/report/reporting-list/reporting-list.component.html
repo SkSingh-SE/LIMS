@@ -90,7 +90,7 @@
                 <div class="d-flex gap-1 justify-content-center flex-wrap">
                   <!-- Preview Button -->
                   <button
-                    class="btn btn-sm btn-outline-secondary fw-semibold"
+                    class="btn btn-sm btn-cancel fw-semibold"
                     [routerLink]="['/reporting/preview', item.reportHeaderId || item.sampleNo]"
                     title="Preview Report"
                   >
@@ -137,8 +137,8 @@
                         class="btn btn-sm fw-semibold"
                         [ngClass]="{
                           'btn-danger': action.action.toLowerCase().includes('next'),
-                          'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
-                          'btn-outline-secondary': action.action.toLowerCase().includes('back')
+                          'btn-remove': action.action.toLowerCase().includes('cancel'),
+                          'btn-cancel': action.action.toLowerCase().includes('back')
                         }"
                         [title]="action.name"
                         [disabled]="!statusHelperService.canApproveReport(item.status) && action.action.toLowerCase().includes('next')"

@@ -13,41 +13,187 @@
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: #999;
+  background-color: #bbb;
+  border-radius: 10px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
   border-radius: 10px;
 }
 
 .custom-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #999 #f1f1f1;
+  scrollbar-color: #bbb #f1f1f1;
 }
 
-/* rotate the setting icon */
-.rotate-once {
-  display: inline-block;
-  animation: rotateOnce 1s linear;
-}
-
-@keyframes rotateOnce {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(90deg);
-  }
-}
+/* Tab Styling */
 .nav-tabs .nav-link {
-    color: #1A1A80;
-    /* Custom color */
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
 }
-.nav-tabs .nav-link.active {
-    color: #fff !important;
-    /* Active tab color */
-    border-color: #FF2C1F;
-    background: #FF2C1F;
-    border-bottom: 0;
 
+.nav-tabs .nav-link:hover {
+  color: #DA261C;
+  border-bottom: 2px solid #DA261C;
 }
-.accordion .accordion-item{
-    padding: 10px !important;
+
+.nav-tabs .nav-link.active {
+  color: #fff;
+  background: linear-gradient(135deg, #FF2C1F, #DA261C);
+  border-radius: 6px 6px 0 0;
+  border: none;
+}
+
+/* Premium Table Styling */
+.spec-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.825rem;
+}
+
+.spec-th {
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #495057;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 10px 12px;
+  border-bottom: 2px solid #dee2e6;
+  border-top: 1px solid #dee2e6;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.spec-th:first-child {
+  border-left: 1px solid #dee2e6;
+  border-top-left-radius: 6px;
+}
+
+.spec-th:last-child {
+  border-right: 1px solid #dee2e6;
+  border-top-right-radius: 6px;
+}
+
+.spec-row {
+  transition: background-color 0.15s ease;
+}
+
+.spec-row:hover {
+  background-color: #f8f9fa;
+}
+
+.spec-row td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.spec-row:last-child td {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.spec-row:last-child td:first-child {
+  border-bottom-left-radius: 6px;
+}
+
+.spec-row:last-child td:last-child {
+  border-bottom-right-radius: 6px;
+}
+
+/* Compact form controls inside table */
+.spec-table .form-control,
+.spec-table .form-select {
+  font-size: 0.825rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.spec-table .form-control:focus,
+.spec-table .form-select:focus {
+  border-color: #DA261C;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
+}
+
+/* Delete Button */
+.spec-delete-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.spec-row:hover .spec-delete-btn {
+  opacity: 1;
+}
+
+.spec-delete-btn:hover {
+  background-color: #dc3545;
+  color: #fff;
+  border-color: #dc3545;
+}
+
+/* Header Styling */
+.card-form-header {
+  background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
+  border-bottom: none;
+  padding: 0.75rem 1.25rem;
+}
+
+.navbar-background {
+  background-color: #DA261C !important;
+}
+
+/* ─── Compact dropdowns inside spec table ─── */
+.spec-table app-searchable-dropdown-modal .input-group .form-control,
+.spec-table app-searchable-dropdown .input-group .form-control {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.spec-table app-searchable-dropdown-modal .input-group,
+.spec-table app-searchable-dropdown .input-group {
+  min-height: 30px;
+}
+
+.spec-table app-searchable-dropdown-modal .input-group .input-group-text,
+.spec-table app-searchable-dropdown .input-group .input-group-text {
+  padding: 0 0.35rem;
+}
+
+.spec-table app-searchable-dropdown-modal .input-group .input-group-text i,
+.spec-table app-searchable-dropdown .input-group .input-group-text i {
+  font-size: 0.6rem;
+}
+
+/* ─── Scroll Navigation Buttons ─── */
+.btn-scroll-nav {
+  background-color: #495057;
+  border-color: #495057;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-scroll-nav:hover {
+  background-color: #343a40;
+  border-color: #343a40;
+  color: #fff;
 }

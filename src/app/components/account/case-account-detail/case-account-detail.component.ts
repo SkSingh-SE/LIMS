@@ -31,6 +31,12 @@ export class CaseAccountDetailComponent implements OnInit {
   advancePayments: any[] = [];
   isGeneratingPI = signal(false);
 
+  lineItems: any[] = [];
+  showAddLineItem = false;
+  newLineItem = { description: '', amount: 0, taxPercent: 18 };
+  editingLineItemId: number | null = null;
+  editLineItemData: any = {};
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -46,6 +52,7 @@ export class CaseAccountDetailComponent implements OnInit {
       if (this.inwardId) {
         this.loadCaseSummary();
         this.loadPayments();
+        this.loadLineItems();
       }
     });
 
@@ -63,6 +70,7 @@ export class CaseAccountDetailComponent implements OnInit {
         this.proformaInvoice = response?.proformaInvoice || response?.pi || null;
         this.advancePayments = response?.advancePayments || [];
         this.isLoading.set(false);
+        this.loadLineItems();
       },
       error: (error) => {
         console.error('Error loading case summary:', error);
@@ -246,6 +254,104 @@ export class CaseAccountDetailComponent implements OnInit {
     console.log('Payment details:', payment);
     // Could navigate to a payment detail page if it exists
     // this.router.navigate(['/accounts/payments', payment.id]);
+  }
+
+  loadLineItems(): void {
+    const invoiceHeaderId = this.invoice?.invoiceId || this.invoice?.invoice_id || this.caseSummary?.invoiceHeaderId;
+    if (!invoiceHeaderId) return;
+    this.accountService.getInvoiceLineItems(invoiceHeaderId).subscribe({
+      next: (items) => {
+        this.lineItems = items || [];
+      },
+      error: (err) => {
+        console.error('Error loading line items:', err);
+      }
+    });
+  }
+
+  saveLineItem(): void {
+    if (!this.newLineItem.description || this.newLineItem.amount <= 0) {
+      this.toastService.show('Please enter description and a valid amount', 'warning');
+      return;
+    }
+    const invoiceHeaderId = this.invoice?.invoiceId || this.invoice?.invoice_id || this.caseSummary?.invoiceHeaderId;
+    if (!invoiceHeaderId) {
+      this.toastService.show('No invoice found to add line items', 'error');
+      return;
+    }
+    const payload = {
+      invoiceHeaderId,
+      description: this.newLineItem.description,
+      amount: this.newLineItem.amount,
+      taxPercent: this.newLineItem.taxPercent
+    };
+    this.accountService.addInvoiceLineItem(payload).subscribe({
+      next: () => {
+        this.toastService.show('Line item added successfully', 'success');
+        this.showAddLineItem = false;
+        this.newLineItem = { description: '', amount: 0, taxPercent: 18 };
+        this.loadLineItems();
+        this.loadCaseSummary();
+      },
+      error: (err) => {
+        console.error('Error adding line item:', err);
+        this.toastService.show(err?.error?.message || 'Failed to add line item', 'error');
+      }
+    });
+  }
+
+  editLineItem(item: any): void {
+    this.editingLineItemId = item.id;
+    this.editLineItemData = {
+      description: item.description,
+      amount: item.amount,
+      taxPercent: item.taxPercent
+    };
+  }
+
+  cancelEditLineItem(): void {
+    this.editingLineItemId = null;
+    this.editLineItemData = {};
+  }
+
+  updateLineItem(): void {
+    if (!this.editingLineItemId) return;
+    this.accountService.updateInvoiceLineItem(this.editingLineItemId, this.editLineItemData).subscribe({
+      next: () => {
+        this.toastService.show('Line item updated successfully', 'success');
+        this.editingLineItemId = null;
+        this.editLineItemData = {};
+        this.loadLineItems();
+        this.loadCaseSummary();
+      },
+      error: (err) => {
+        console.error('Error updating line item:', err);
+        this.toastService.show(err?.error?.message || 'Failed to update line item', 'error');
+      }
+    });
+  }
+
+  deleteLineItem(item: any): void {
+    if (!confirm(`Are you sure you want to delete "${item.description}"?`)) return;
+    this.accountService.deleteInvoiceLineItem(item.id).subscribe({
+      next: () => {
+        this.toastService.show('Line item deleted successfully', 'success');
+        this.loadLineItems();
+        this.loadCaseSummary();
+      },
+      error: (err) => {
+        console.error('Error deleting line item:', err);
+        this.toastService.show(err?.error?.message || 'Failed to delete line item', 'error');
+      }
+    });
+  }
+
+  getLineItemTaxAmount(item: any): number {
+    return (item.amount || 0) * (item.taxPercent || 0) / 100;
+  }
+
+  getLineItemTotal(item: any): number {
+    return (item.amount || 0) + this.getLineItemTaxAmount(item);
   }
 
   goBack(): void {

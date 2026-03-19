@@ -91,7 +91,7 @@
               <i class="bi" [ngClass]="openSections['evaluation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">III. Evaluation Criteria</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addCriteria(); $event.stopPropagation()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addCriteria(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i> Add Criteria
             </button>
           </div>
@@ -187,8 +187,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="evaluationForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="evaluationForm.invalid">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

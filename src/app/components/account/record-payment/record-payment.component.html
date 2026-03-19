@@ -119,12 +119,12 @@
 
             <!-- Submit -->
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || !selectedCustomerId">
+              <button type="submit" class="btn btn-save" [disabled]="isSubmitting || !selectedCustomerId">
                 <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
                 <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i>
                 {{ isSubmitting ? 'Recording...' : 'Record Payment' }}
               </button>
-              <button type="button" class="btn btn-outline-secondary" (click)="resetForm()">
+              <button type="button" class="btn btn-cancel" (click)="resetForm()">
                 <i class="bi bi-x-circle me-1"></i> Reset
               </button>
             </div>
@@ -140,7 +140,7 @@
           <h5 class="card-title mb-0">
             <i class="bi bi-receipt me-2"></i> Outstanding Invoices
           </h5>
-          <button *ngIf="outstandingInvoices.length" class="btn btn-sm btn-outline-primary"
+          <button *ngIf="outstandingInvoices.length" class="btn btn-sm btn-add"
                   (click)="selectAllInvoices()">
             {{ selectedInvoiceIds.length === outstandingInvoices.length ? 'Deselect All' : 'Select All' }}
           </button>

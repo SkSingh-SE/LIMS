@@ -171,7 +171,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+        <label class="modal-title fw-medium" id="customerTypeModalLabel">
           {{ formTitle }}
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
@@ -309,15 +309,15 @@
             <label class="form-label">Formula</label>
             <div class="input-group">
               <input type="text" class="form-control" formControlName="formula" placeholder="{P12} + {P15}" readonly />
-              <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder()">Build Formula</button>
+              <button type="button" class="btn btn-add" (click)="openFormulaBuilder()">Build Formula</button>
             </div>
           </div>
         </div>
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="ParameterForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="ParameterForm.invalid">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>
@@ -361,15 +361,15 @@
         <div>
           <label class="form-label d-flex justify-content-between">
             <span>Formula Preview</span>
-            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearFormula()">Clear</button>
+            <button type="button" class="btn btn-sm btn-remove" (click)="clearFormula()">Clear</button>
           </label>
           <input type="text" class="form-control" [value]="tempFormula" readonly />
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-dark" (click)="closeFormulaModal()">Cancel</button>
-        <button class="btn btn-success" (click)="saveFormula()">Apply</button>
+        <button class="btn btn-cancel" (click)="closeFormulaModal()">Cancel</button>
+        <button class="btn btn-save" (click)="saveFormula()">Apply</button>
       </div>
     </div>
   </div>

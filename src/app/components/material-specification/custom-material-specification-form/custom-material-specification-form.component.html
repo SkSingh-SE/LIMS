@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
   <div class="card-header card-form-header text-white text-center">
-    <h6 class="text-center">Custome Material Specification Form</h6>
+    <label class="fw-medium">Custome Material Specification Form</label>
   </div>
   <div class="card-body">
     <form [formGroup]="MaterialSpecificationForm" (ngSubmit)="onSubmit()">
@@ -70,7 +70,7 @@
               [attr.aria-expanded]="gi === 0 ? 'true' : 'false'"
               [attr.aria-controls]="'collapse' + gi"
             >
-              <span class="btn btn-sm btn-outline-danger" (click)="addGrade()">
+              <span class="btn btn-sm btn-remove" (click)="addGrade()">
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Grade
               </span>
@@ -161,7 +161,7 @@
                     <button
                       *ngIf="!isViewMode"
                       type="button"
-                      class="btn btn-sm btn-outline-danger mt-1"
+                      class="btn btn-sm btn-remove mt-1"
                       (click)="addSpecificationLine(gi, 'chemical')"
                     >
                       <i class="bi bi-plus-circle-dotted"></i>
@@ -217,13 +217,13 @@
                                 </button>
                                 <button
                                   type="button"
-                                  class="btn btn-sm btn-warning"
+                                  class="btn btn-sm btn-cancel"
                                   (click)="rotateOnce(gi, i, 'chemical')"
                                   [disabled]="isViewMode"
                                 >
                                   <i class="bi bi-gear" [ngClass]="{ 'rotate-once': spinningIndex === i }"></i>
                                 </button>
-                                <!-- <button type="button" class="btn btn-sm btn-success"
+                                <!-- <button type="button" class="btn btn-sm btn-save"
                               (click)="copySpecificationLine(gi,i,'chemical')" [disabled]="isViewMode">
                               <i class="bi-copy"></i>
                             </button> -->
@@ -405,7 +405,7 @@
                     <button
                       *ngIf="!isViewMode"
                       type="button"
-                      class="btn btn-sm btn-outline-danger mt-1"
+                      class="btn btn-sm btn-remove mt-1"
                       (click)="addSpecificationLine(gi, 'mechanical')"
                     >
                       <i class="bi bi-plus-circle-dotted"></i>
@@ -460,7 +460,7 @@
                                 </button>
                                 <button
                                   type="button"
-                                  class="btn btn-sm btn-warning"
+                                  class="btn btn-sm btn-cancel"
                                   (click)="rotateOnce(gi, i, 'mechanical')"
                                   [disabled]="isViewMode"
                                 >
@@ -638,7 +638,7 @@
                     <button
                       *ngIf="!isViewMode"
                       type="button"
-                      class="btn btn-sm btn-outline-danger mt-1"
+                      class="btn btn-sm btn-remove mt-1"
                       (click)="addSpecificationLine(gi, 'other')"
                     >
                       <i class="bi bi-plus-circle-dotted"></i>
@@ -693,7 +693,7 @@
                                 </button>
                                 <button
                                   type="button"
-                                  class="btn btn-sm btn-warning"
+                                  class="btn btn-sm btn-cancel"
                                   (click)="rotateOnce(gi, i, 'other')"
                                   [disabled]="isViewMode"
                                 >
@@ -870,18 +870,18 @@
         </div>
       </div>
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/material-specification']" class="btn btn-warning">Cancel</a>
+        <a [routerLink]="['/material-specification']" class="btn btn-cancel">Cancel</a>
         <!--Copy and Save -->
         <button
           type="button"
           class="btn"
-          [ngClass]="{ 'btn-danger': !isCopyMode, 'btn-success': isCopyMode }"
+          [ngClass]="{ 'btn-save': true }"
           (click)="copyMaterialSpecification()"
         >
           <i class="bi bi-files"></i>
           {{ !isCopyMode ? "Copy & Save" : "Save" }}
         </button>
-        <button *ngIf="!isCopyMode" type="submit" class="btn btn-success px-3">Save</button>
+        <button *ngIf="!isCopyMode" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>
@@ -902,7 +902,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header card-form-header text-white">
-          <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">Add Laboratory Test & Product Condition</label>
+          <label class="modal-title fw-medium" id="customerTypeModalLabel">Add Laboratory Test & Product Condition</label>
           <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
         </div>
 
@@ -927,8 +927,8 @@
             </div>
 
             <div *ngIf="!isViewMode" class="modal-footer">
-              <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-              <button type="button" class="btn navbar-background text-white" (click)="closeModal()">
+              <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+              <button type="button" class="btn btn-save" (click)="closeModal()">
                 {{ isEditMode ? "Update" : "Save" }}
               </button>
             </div>

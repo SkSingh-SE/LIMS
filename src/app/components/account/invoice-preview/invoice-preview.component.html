@@ -23,7 +23,7 @@
 
       <div class="d-flex justify-content-center gap-3 mt-4">
         <button
-          class="btn btn-success btn-lg"
+          class="btn btn-save btn-lg"
           (click)="sendInvoice('email')"
           [disabled]="isSendingInvoice()"
         >
@@ -32,7 +32,7 @@
           {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
         </button>
         <button
-          class="btn btn-success btn-lg"
+          class="btn btn-save btn-lg"
           (click)="sendInvoice('whatsapp')"
           [disabled]="isSendingInvoice()"
         >

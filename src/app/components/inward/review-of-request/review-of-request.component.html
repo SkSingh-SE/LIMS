@@ -72,7 +72,7 @@
                     *ngIf="!item.reviewStatus"
                     [routerLink]="['/sample/plan/edit', item.id]"
                     [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-add"
                     title="Plan"
                   >
                     Plan
@@ -80,7 +80,7 @@
                   <a
                     [routerLink]="['/sample/review', item.id]"
                     [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-add"
                     title="Review"
                   >
                     Review
@@ -93,7 +93,7 @@
                       <button
                         *ngFor="let action of item.actions"
                         type="button"
-                        class="btn btn-sm btn-outline-primary me-2"
+                        class="btn btn-sm btn-add me-2"
                         (click)="onActionClick(action)"
                       >
                         {{ action.name }}

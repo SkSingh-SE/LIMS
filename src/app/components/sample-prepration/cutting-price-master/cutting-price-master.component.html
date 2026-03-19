@@ -170,7 +170,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+        <label class="modal-title fw-medium" id="customerTypeModalLabel">
           {{ formTitle }}
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
@@ -263,10 +263,10 @@
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark me-2" (click)="closeModal()">
+          <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">
             Cancel
           </button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="cuttingPriceForm.invalid">
+          <button type="submit" class="btn btn-save" [disabled]="cuttingPriceForm.invalid">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>

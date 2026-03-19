@@ -1,0 +1,54 @@
+.table thead th {
+    cursor: pointer;
+  }
+
+  .table thead th:hover {
+    background-color: #f8f9fa;
+  }
+
+  .card .card-header {
+    padding: 0.5rem 0.5rem !important;
+    height: 47px !important;
+  }
+
+
+  .filter-modal {
+    position: absolute;
+    display: none;
+    z-index: 1000;
+  }
+  .sorting-icon-up {
+    font-size: 18px;
+    line-height: 12px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: -3px;
+  }
+  .sorting-icon-down {
+    font-size: 18px;
+    line-height: 12px;
+    cursor: pointer;
+    padding: 0;
+    margin-top: -3px;
+  }
+  .bordered-table thead tr th{
+    padding: 6px 8px !important;
+  }
+  .bordered-table tbody tr td{
+    padding: 6px 8px !important;
+  }
+  .btn.btn-sm {
+    padding: 0.2rem 0.5rem !important;
+  }
+  .custom-search {
+    height: 36px;
+  }
+
+  .custom-search input,
+  .custom-search .input-group-text {
+    height: 100%;
+  }
+  .table-responsive {
+    overflow-x: auto;
+    max-width: 100%;
+  }

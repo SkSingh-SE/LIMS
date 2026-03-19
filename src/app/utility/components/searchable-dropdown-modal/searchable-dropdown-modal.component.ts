@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, SimpleChanges } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs';
 
@@ -21,8 +21,8 @@ export class SearchableDropdownModalComponent {
   @Input() isMultiSelect: boolean = false;
   @Output() itemsSelected = new EventEmitter<any[]>();
   selectedItems: any[] = [];
-
-
+  dropdownStyle: { [key: string]: string } = {};
+  tooltipStyle: { [key: string]: string } = {};
 
   searchTerm: string = '';
   dropdownData: any[] = [];
@@ -38,6 +38,18 @@ export class SearchableDropdownModalComponent {
 
   private searchSubject = new Subject<string>();
   private subscription = new Subscription();
+
+  constructor(private elRef: ElementRef) {}
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.showDropdown) return;
+    const target = event.target as HTMLElement;
+    // Check if click is inside component or inside the fixed-position dropdown panel
+    if (!this.elRef.nativeElement.contains(target) && !target.closest('.dropdown-panel')) {
+      this.showDropdown = false;
+    }
+  }
 
   ngOnInit(): void {
     const sub = this.searchSubject.pipe(
@@ -60,12 +72,31 @@ export class SearchableDropdownModalComponent {
     this.loadMore();
   }
 
+  updateDropdownPosition(): void {
+    const inputGroup = this.elRef.nativeElement.querySelector('.input-group');
+    if (inputGroup) {
+      const rect = inputGroup.getBoundingClientRect();
+      const dropdownWidth = Math.max(rect.width, 280);
+      this.dropdownStyle = {
+        position: 'fixed',
+        top: rect.bottom + 2 + 'px',
+        left: rect.left + 'px',
+        width: dropdownWidth + 'px'
+      };
+    }
+  }
+
+  openDropdown(): void {
+    this.showDropdown = true;
+    this.updateDropdownPosition();
+  }
+
   handleInput(event: any): void {
     const input = event.target as HTMLInputElement;
     this.searchTerm = input.value;
     this.searchSubject.next(this.searchTerm);
     if (this.searchTerm.length > 0) {
-      this.showDropdown = true;
+      this.openDropdown();
     }
   }
 
@@ -135,7 +166,7 @@ export class SearchableDropdownModalComponent {
   }
   onFocus(): void {
     if (this.searchTerm.length > 0) {
-      this.showDropdown = true;
+      this.openDropdown();
     }
   }
 
@@ -216,6 +247,25 @@ export class SearchableDropdownModalComponent {
 
   getSelectedLabels(): string {
     return this.selectedItems.map(i => i.name).join(', ');
+  }
+
+  updateTooltipPosition(): void {
+    const inputGroup = this.elRef.nativeElement.querySelector('.input-group');
+    if (inputGroup) {
+      const rect = inputGroup.getBoundingClientRect();
+      this.tooltipStyle = {
+        position: 'fixed',
+        top: rect.bottom + 4 + 'px',
+        left: rect.left + 'px',
+        'z-index': '99999'
+      };
+    }
+  }
+
+  getCompactLabel(): string {
+    if (this.selectedItems.length === 0) return '';
+    if (this.selectedItems.length === 1) return this.selectedItems[0].name;
+    return `${this.selectedItems[0].name} +${this.selectedItems.length - 1}`;
   }
 
 }

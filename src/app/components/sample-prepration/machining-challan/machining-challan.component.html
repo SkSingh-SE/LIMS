@@ -41,7 +41,7 @@
             <td class="text-end">{{ item.amount | number:'1.2-2' }}</td>
             <td class="text-muted small">{{ item.remark || '-' }}</td>
             <td class="text-center">
-              <button class="btn btn-sm btn-outline-danger" (click)="deleteItem(item.id)" title="Delete">
+              <button class="btn btn-sm btn-remove" (click)="deleteItem(item.id)" title="Delete">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
@@ -76,7 +76,7 @@
             <input type="text" class="form-control form-control-sm" [(ngModel)]="newRemark" placeholder="Optional" />
           </div>
           <div class="col-md-2">
-            <button class="btn btn-sm btn-success w-100" (click)="addItem()" [disabled]="!newDesc || !newAmount">
+            <button class="btn btn-sm btn-save w-100" (click)="addItem()" [disabled]="!newDesc || !newAmount">
               <i class="bi bi-plus-lg me-1"></i>Add
             </button>
           </div>

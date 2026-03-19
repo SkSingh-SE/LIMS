@@ -164,7 +164,7 @@
 
                   <!-- Record Reading -->
                   <button
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-add"
                     (click)="recordReading(test)"
                     [disabled]="!canRecordReading(test) || isSaving()"
                     title="Record Reading"
@@ -226,7 +226,7 @@
             <span *ngIf="totalRecords">({{ totalRecords }} total)</span>
           </span>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="onPageChange(pageNumber - 1)"
             [disabled]="pageNumber <= 1"
             title="Previous page"
@@ -234,7 +234,7 @@
             <i class="bi bi-chevron-left"></i>
           </button>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="onPageChange(pageNumber + 1)"
             [disabled]="pageNumber >= totalPages"
             title="Next page"
@@ -242,7 +242,7 @@
             <i class="bi bi-chevron-right"></i>
           </button>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="loadLongTermTests()"
             title="Refresh data"
           >
@@ -340,7 +340,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-success"
+          class="btn btn-save"
           (click)="completeTest(selectedTest!)"
           [disabled]="!canCompleteTest(selectedTest!) || isSaving()"
         >

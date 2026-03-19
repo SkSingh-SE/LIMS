@@ -11,12 +11,12 @@ import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
-import { MaterialTestMappingService } from '../../../services/material-test-mapping.service';
 import { CommonModule } from '@angular/common';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { TPIService } from '../../../services/tpi.service';
+import { TestAutoSuggestService, SmartSuggestRequest, SuggestedTestDto } from '../../../services/test-auto-suggest.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -44,10 +44,14 @@ export class PlanFormComponent implements OnInit {
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList: { id: number, name: string }[] = [];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
-  filteredTestMethods: { [key: string]: any[] } = {};
   // Track IDs of existing general tests removed from form so backend can delete them
   deletedGeneralTestIds: number[] = [];
   deletedPlanIds: number[] = [];
+
+  // Auto-Suggest
+  suggestedTests: any[] = [];
+  showSuggestPanel: { [key: string]: boolean } = {};
+  suggestLoading: { [key: string]: boolean } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -61,8 +65,8 @@ export class PlanFormComponent implements OnInit {
     private activeroute: ActivatedRoute,
     private router: Router,
     private productService: ProductConditionService,
-    private testMappingService: MaterialTestMappingService,
     private tpiService: TPIService,
+    private testAutoSuggestService: TestAutoSuggestService,
   ) { }
 
   ngOnInit(): void {
@@ -170,7 +174,7 @@ export class PlanFormComponent implements OnInit {
   createGeneralTestGroup(): FormGroup {
     return this.fb.group({
       sampleNo: [''],
-      specification1: [null, Validators.required],
+      specification1: [null],
       specification2: [null],
       parameter: [''],
       methods: this.fb.array([])
@@ -339,7 +343,6 @@ export class PlanFormComponent implements OnInit {
    */
   removeGeneralTest(sampleIndex: number, planIndex: number, generalIndex = 0): void {
     // Block when not editable
-    debugger;
     if (this.isViewMode) return;
 
     const genArray = this.getTestArray(sampleIndex, planIndex, 'generalTests');
@@ -626,59 +629,11 @@ export class PlanFormComponent implements OnInit {
     const metalId = sampleGroup.get('metalClassificationID')?.value || null;
     const productConditionId = sampleGroup.get('productConditionID')?.value || null;
 
-    // General Test Logic
-    if (testType === 'generalTests') {
-      if (specsToUse.length > 0) {
-        this.testMappingService.getAutoSuggestedTests(metalId, productConditionId, specsToUse.join(','))
-          .subscribe({
-            next: (tests: any[]) => {
-              const methods = section.get('methods') as FormArray;
-
-              if (tests && tests.length > 0) {
-                const unique = tests.filter(
-                  (t: any, i: number, self: any[]) => i === self.findIndex((x: any) => x.id === t.id)
-                );
-                this.filteredTestMethods[key] = unique;
-
-                // if (methods && methods.length > 0 && unique[0]?.id) {
-                //   methods.at(0).patchValue({ testMethodID: unique[0].id });
-                // }
-              } else {
-                this.filteredTestMethods[key] = [];
-                this.toastService.show('No suggested test methods found for selected specifications.', 'info');
-              }
-            },
-            error: (err) => {
-              console.warn('[PlanForm] Error in getAutoSuggestedTests', err);
-              this.filteredTestMethods[key] = [];
-            }
-          });
-      }
-    }
+    // General Test Logic — no longer depends on MaterialTestMapping;
+    // tests are selected independently via searchable dropdown.
 
     // Chemical Test Logic
     if (testType === 'chemicalTests') {
-      if (specsToUse.length > 0) {
-        this.testMappingService.getAutoSuggestedTests(metalId, productConditionId, specsToUse.join(','))
-          .subscribe({
-            next: (tests: any[]) => {
-              if (tests && tests.length > 0) {
-                const unique = tests.filter(
-                  (t: any, i: number, self: any[]) => i === self.findIndex((x: any) => x.id === t.id)
-                );
-                this.filteredTestMethods[key] = unique;
-              } else {
-                this.filteredTestMethods[key] = [];
-                this.toastService.show('No suggested chemical test methods found for selected specifications.', 'info');
-              }
-            },
-            error: (err) => {
-              console.warn('[PlanForm] Error in chemical getAutoSuggestedTests', err);
-              this.filteredTestMethods[key] = [];
-            }
-          });
-      }
-
       // Fetch chemical elements
       this.materialSpecificationService
         .getChemicalElementsBySpecifications(spec1 || 0, spec2 || 0)
@@ -759,7 +714,18 @@ export class PlanFormComponent implements OnInit {
   }
 
   onLaboratorySelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
-    debugger;
+    const methodsArray = this.getMethodRows(sampleIndex, planIndex);
+    if (!methodsArray) return;
+
+    const methodCtrl = methodsArray.at(methodIndex);
+    if (!methodCtrl) return;
+
+    methodCtrl.patchValue({
+      testMethodID: item?.id ?? null,
+    });
+  }
+
+  onLaboratoryTestSelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
     const methodsArray = this.getMethodRows(sampleIndex, planIndex);
     if (!methodsArray) return;
 
@@ -1033,7 +999,7 @@ export class PlanFormComponent implements OnInit {
             // include id if present so backend can reconcile additions/deletions
             id: g.id || 0,
             sampleNo: g.sampleNo || '',
-            specification1: g.specification1 || 0,
+            specification1: g.specification1 || null,
             specification2: g.specification2 || null,
             parameter: g.parameter || '',
             methods: (g.methods || []).map((m: any) => ({
@@ -1154,6 +1120,139 @@ export class PlanFormComponent implements OnInit {
     return classes[status] || 'bg-secondary';
   }
 
+  // ────────────── Auto-Suggest Tests ──────────────
+  loadSuggestedTests(sampleIdx: number, planIdx: number): void {
+    const key = `${sampleIdx}_${planIdx}`;
+    this.suggestLoading[key] = true;
+    this.showSuggestPanel[key] = true;
+
+    const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sampleGroup) {
+      this.suggestLoading[key] = false;
+      return;
+    }
+
+    const testPlans = this.getTestPlans(sampleIdx);
+    if (planIdx >= testPlans.length) {
+      this.suggestLoading[key] = false;
+      return;
+    }
+
+    const plan = testPlans.at(planIdx) as FormGroup;
+    const generalTests = plan.get('generalTests') as FormArray;
+    const chemicalTests = plan.get('chemicalTests') as FormArray;
+
+    let specificationGradeId: number | undefined;
+
+    if (generalTests && generalTests.length > 0) {
+      const spec1 = generalTests.at(0).get('specification1')?.value;
+      if (spec1) specificationGradeId = +spec1;
+    }
+    if (!specificationGradeId && chemicalTests && chemicalTests.length > 0) {
+      const spec1 = chemicalTests.at(0).get('specification1')?.value;
+      if (spec1) specificationGradeId = +spec1;
+    }
+
+    const metalClassificationId = sampleGroup.get('metalClassificationID')?.value
+      ? +sampleGroup.get('metalClassificationID')!.value : undefined;
+    const productConditionId = sampleGroup.get('productConditionID')?.value
+      ? +sampleGroup.get('productConditionID')!.value : undefined;
+    const customerId = this.planForm.get('customerID')?.value
+      ? +this.planForm.get('customerID')!.value : undefined;
+
+    const request: SmartSuggestRequest = {
+      specificationGradeId,
+      metalClassificationId,
+      productConditionId,
+      customerId,
+    };
+
+    this.testAutoSuggestService.getSmartSuggestions(request).subscribe({
+      next: (result) => {
+        this.suggestedTests = (result?.suggestedTests || []).map((item: SuggestedTestDto) => ({
+          ...item,
+          selected: false
+        }));
+        this.suggestLoading[key] = false;
+        if (this.suggestedTests.length === 0) {
+          this.toastService.show('No test suggestions found for current context.', 'info');
+        }
+      },
+      error: (err) => {
+        console.error('[PlanForm] Error loading smart suggestions:', err);
+        this.suggestedTests = [];
+        this.suggestLoading[key] = false;
+        this.toastService.show('Failed to load test suggestions.', 'error');
+      }
+    });
+  }
+
+  toggleAllSuggestions(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.suggestedTests.forEach(t => t.selected = checked);
+  }
+
+  hasSelectedSuggestions(): boolean {
+    return this.suggestedTests.some(t => t.selected);
+  }
+
+  closeSuggestPanel(sampleIdx: number, planIdx: number): void {
+    const key = `${sampleIdx}_${planIdx}`;
+    this.showSuggestPanel[key] = false;
+    this.suggestedTests = [];
+  }
+
+  addSelectedSuggestedTests(sampleIdx: number, planIdx: number): void {
+    const selected = this.suggestedTests.filter(t => t.selected);
+    if (selected.length === 0) {
+      this.toastService.show('Please select at least one test to add.', 'warning');
+      return;
+    }
+
+    const methodsArray = this.getMethodRows(sampleIdx, planIdx);
+    if (!methodsArray) {
+      this.toastService.show('Please add a General Test block first.', 'warning');
+      return;
+    }
+
+    const existingIds = new Set<number>();
+    methodsArray.controls.forEach(ctrl => {
+      const id = ctrl.get('testMethodID')?.value;
+      if (id) existingIds.add(+id);
+    });
+
+    let addedCount = 0;
+    selected.forEach(test => {
+      const testId = test.laboratoryTestID || test.testMethodId || test.laboratoryTestId || test.id;
+      if (testId && !existingIds.has(+testId)) {
+        const row = this.createTestMethodRow('Auto Generate', 'Auto Generate');
+        row.patchValue({ testMethodID: +testId, quantity: test.isPerBatch ? 1 : 1 });
+        methodsArray.push(row);
+        existingIds.add(+testId);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      this.toastService.show(`${addedCount} suggested test(s) added to plan.`, 'success');
+    } else {
+      this.toastService.show('Selected tests are already in the plan.', 'info');
+    }
+
+    this.closeSuggestPanel(sampleIdx, planIdx);
+  }
+
+  getSuggestBadgeClass(source: string): string {
+    const map: Record<string, string> = {
+      'Spec Required': 'bg-primary',
+      'Lab Scope': 'bg-success',
+      'Customer Favorite': 'bg-warning text-dark',
+      'Most Popular': 'bg-info',
+      'Trending': 'bg-purple',
+    };
+    return map[source] || 'bg-secondary';
+  }
+
   onCancel(): void {
     this.planForm.reset();
     this.router.navigate(['/sample/inward']);
@@ -1184,6 +1283,10 @@ export class PlanFormComponent implements OnInit {
   getMetalDrop = this.getMetalClassification;
   getProductConditionDrop = this.getProductConditions;
   getParameterDrop = this.getChemicalParameter;
+
+  getLabTestDropdown = (term: string, page: number, pageSize: number) => {
+    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+  };
 
   loadChemicalTestTypes() {
     this.laboratoryTestService.getLaboratoryTestDropdownForChemicals('', 0, 100).subscribe({

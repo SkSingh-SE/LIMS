@@ -380,7 +380,9 @@ export class TestResultEntryFormComponent implements OnInit {
                 acceptanceCriteria: param.acceptanceCriteria || '',
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
-                resultStatus: param.resultStatus || null
+                resultStatus: param.resultStatus || null,
+                parameterType: param.parameterType || '',
+                testMethodUsed: param.testMethodUsed || ''
               }))
             }
           ]
@@ -425,7 +427,9 @@ export class TestResultEntryFormComponent implements OnInit {
                 acceptanceCriteria: param.acceptanceCriteria || '',
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
-                resultStatus: param.resultStatus || null
+                resultStatus: param.resultStatus || null,
+                parameterType: param.parameterType || '',
+                testMethodUsed: param.testMethodUsed || ''
               }))
             }
           ]
@@ -667,7 +671,9 @@ export class TestResultEntryFormComponent implements OnInit {
       acceptanceCriteria: [p.acceptanceCriteria || ''],
       isStandalone: [p.isStandalone || false],
       sourceTestMethodId: [p.sourceTestMethodId ?? null],
-      resultStatus: [p.resultStatus || null]
+      resultStatus: [p.resultStatus || null],
+      parameterType: [p.parameterType || ''],
+      testMethodUsed: [p.testMethodUsed || '']
     });
   }
 
@@ -858,7 +864,8 @@ export class TestResultEntryFormComponent implements OnInit {
               maxValue: param.maxValue,
               isWithinLimit: param.isWithinLimit,
               altered: param.altered || false,
-              formula: param.formulaExpression || ''
+              formula: param.formulaExpression || '',
+              testMethodUsed: param.testMethodUsed || ''
             }))
           });
         } else if (apiChemical) {
@@ -877,7 +884,8 @@ export class TestResultEntryFormComponent implements OnInit {
               maxValue: param.maxValue,
               isWithinLimit: param.isWithinLimit,
               altered: param.altered || false,
-              formula: param.formulaExpression || ''
+              formula: param.formulaExpression || '',
+              testMethodUsed: param.testMethodUsed || ''
             }))
           });
         }

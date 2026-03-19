@@ -29,6 +29,11 @@ export class CustomerPOComponent implements OnInit {
   // Search
   searchTerm = '';
 
+  // PO Items Detail
+  selectedPO: any = null;
+  poItems: any[] = [];
+  isLoadingItems = false;
+
   getCustomers = (term: string, page: number, pageSize: number) => {
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
@@ -183,6 +188,33 @@ export class CustomerPOComponent implements OnInit {
         this.toastService.show('Failed to delete purchase order', 'error');
       },
     });
+  }
+
+  viewPOItems(po: any): void {
+    if (this.selectedPO?.id === po.id) {
+      this.selectedPO = null;
+      this.poItems = [];
+      return;
+    }
+    this.selectedPO = po;
+    this.isLoadingItems = true;
+    this.customerPOService.getById(po.id).subscribe({
+      next: (res) => {
+        this.poItems = res?.items || [];
+        this.isLoadingItems = false;
+      },
+      error: (err) => {
+        console.error('Error loading PO items:', err);
+        this.toastService.show('Failed to load PO items', 'error');
+        this.poItems = [];
+        this.isLoadingItems = false;
+      }
+    });
+  }
+
+  closePOItems(): void {
+    this.selectedPO = null;
+    this.poItems = [];
   }
 
   getStatusBadgeClass(status: string): string {

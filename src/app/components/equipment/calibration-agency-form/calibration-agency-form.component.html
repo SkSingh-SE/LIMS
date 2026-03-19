@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
     <div class="card-header card-form-header text-white text-center">
-        <h6 class="text-center">Calibration Agency Form</h6>
+        <label class="fw-medium">Calibration Agency Form</label>
     </div>
     <div class="card-body ">
         <form [formGroup]="calibrationForm" (ngSubmit)="onSubmit()">
@@ -125,8 +125,8 @@
             </div>
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
 
-                <a [routerLink]="['/oem']" class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
+                <a [routerLink]="['/oem']" class="btn btn-cancel">Cancel</a>
+                <button type="submit" class="btn btn-save px-3">Save</button>
             </div>
 
         </form>

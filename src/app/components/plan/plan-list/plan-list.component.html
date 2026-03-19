@@ -65,7 +65,7 @@
                                     </a> -->
                                     <a *ngIf="item.actionStatus == 'PENDING' && (item.currentStageStatus == 'INWARD_COMPLETED' || item.currentStageStatus == 'UNDER_PLANNING')" [routerLink]="['/sample/plan/edit', item.id]"
                                     [state]="{ mode: 'plan' }"
-                                    class="btn btn-sm btn-outline-primary"
+                                    class="btn btn-sm btn-add"
                                         title="Plan">
                                         Plan
                                     </a>

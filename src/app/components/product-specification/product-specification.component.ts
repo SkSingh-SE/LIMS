@@ -13,6 +13,8 @@ import { Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select
 import { LaboratoryTestService } from '../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
+import { ProductTestGroupService } from '../../services/product-test-group.service';
+import { ProductSpecificationGradeService } from '../../services/product-specification-grade.service';
 
 @Component({
   selector: 'app-product-specification',
@@ -77,6 +79,12 @@ export class ProductSpecificationComponent implements OnInit {
   productSpecificationId: number = 0;
   formTitle = 'Product Specfication Form';
 
+  activeTab = 'details';
+  testGroups: any[] = [];
+  specGrades: any[] = [];
+  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+  newSpecGrade: any = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
+
   testMethods: any[] = [
     { value: 1, label: 'Test Method 1' },
     { value: 2, label: 'Test Method 2' },
@@ -85,7 +93,7 @@ export class ProductSpecificationComponent implements OnInit {
     { value: 5, label: 'Test Method 5' },
   ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService:TestMethodSpecificationService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
       if (this.productSpecificationId > 0) {
@@ -279,9 +287,15 @@ export class ProductSpecificationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.activeTab = 'details';
     if (id > 0) {
       this.productSpecificationId = id;
       this.getDetails();
+      this.loadTestGroups(id);
+      this.loadSpecGrades(id);
+    } else {
+      this.testGroups = [];
+      this.specGrades = [];
     }
     if (type === 'create') {
       this.isEditMode = false;
@@ -294,9 +308,7 @@ export class ProductSpecificationComponent implements OnInit {
       this.isViewMode = false;
       this.formTitle = 'Product Specification Form';
       this.ProductSpecificationForm.enable();
-
-    }
-    else if (type === 'view') {
+    } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
       this.formTitle = 'View Product Specification';
@@ -369,7 +381,6 @@ export class ProductSpecificationComponent implements OnInit {
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const line = this.ProductSpecificationForm.get('testMethods') as FormArray;
-    // Reset and rebuild array
     line.clear();
     selectedIds?.options?.forEach(item => {
       const selectedOption = this.testMethods.find((x: any) => x.value === item.value) as Select2Option;
@@ -381,6 +392,101 @@ export class ProductSpecificationComponent implements OnInit {
           laboratoryTestName: [selectedOption?.label || '']
         }));
       }
+    });
+  }
+
+  loadTestGroups(productSpecId: number) {
+    this.productTestGroupService.getByProductSpec(productSpecId).subscribe({
+      next: (data) => this.testGroups = data || [],
+      error: () => this.testGroups = []
+    });
+  }
+
+  loadSpecGrades(productSpecId: number) {
+    this.productSpecGradeService.getByProductSpec(productSpecId).subscribe({
+      next: (data) => this.specGrades = data || [],
+      error: () => this.specGrades = []
+    });
+  }
+
+  onTestGroupLabTestSelected(item: any) {
+    this.newTestGroup.laboratoryTestID = item.id;
+    this.newTestGroup.laboratoryTestName = item.name;
+  }
+
+  onTestGroupMethodSelected(item: any) {
+    this.newTestGroup.testMethodSpecificationID = item.id;
+    this.newTestGroup.testMethodSpecificationName = item.name;
+  }
+
+  addTestGroup() {
+    if (!this.newTestGroup.laboratoryTestID || !this.newTestGroup.testMethodSpecificationID) {
+      this.toastService.show('Please select Laboratory Test and Test Method Specification', 'error');
+      return;
+    }
+    const payload = {
+      id: 0,
+      productSpecificationID: this.productSpecificationId,
+      laboratoryTestID: this.newTestGroup.laboratoryTestID,
+      testMethodSpecificationID: this.newTestGroup.testMethodSpecificationID,
+      isPerBatch: this.newTestGroup.isPerBatch,
+      year: this.newTestGroup.year
+    };
+    this.productTestGroupService.create(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Test Group added', 'success');
+        this.loadTestGroups(this.productSpecificationId);
+        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+      },
+      error: (error) => this.toastService.show(error?.error?.message || 'Error adding test group', 'error')
+    });
+  }
+
+  removeTestGroup(id: number) {
+    if (!confirm('Are you sure you want to remove this test group?')) return;
+    this.productTestGroupService.delete(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Test Group removed', 'success');
+        this.loadTestGroups(this.productSpecificationId);
+      },
+      error: (error) => this.toastService.show(error?.error?.message || 'Error removing test group', 'error')
+    });
+  }
+
+  onSpecGradeSelected(item: any) {
+    this.newSpecGrade.specificationGradeID = item.id;
+    this.newSpecGrade.specificationGradeName = item.name;
+  }
+
+  addSpecGrade() {
+    if (!this.newSpecGrade.specificationGradeID) {
+      this.toastService.show('Please select a Specification Grade', 'error');
+      return;
+    }
+    const payload = {
+      id: 0,
+      productSpecificationID: this.productSpecificationId,
+      specificationGradeID: this.newSpecGrade.specificationGradeID,
+      aliasName: this.newSpecGrade.aliasName
+    };
+    this.productSpecGradeService.create(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Grade added', 'success');
+        this.loadSpecGrades(this.productSpecificationId);
+        this.newSpecGrade = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
+      },
+      error: (error) => this.toastService.show(error?.error?.message || 'Error adding grade', 'error')
+    });
+  }
+
+  removeSpecGrade(id: number) {
+    if (!confirm('Are you sure you want to remove this grade?')) return;
+    this.productSpecGradeService.delete(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Grade removed', 'success');
+        this.loadSpecGrades(this.productSpecificationId);
+      },
+      error: (error) => this.toastService.show(error?.error?.message || 'Error removing grade', 'error')
     });
   }
 }

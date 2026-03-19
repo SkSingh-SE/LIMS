@@ -169,7 +169,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+        <label class="modal-title fw-medium" id="customerTypeModalLabel">
           {{ formTitle }}
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
@@ -206,7 +206,7 @@
           <div class="col-12" *ngIf="isDropdown">
             <div class="d-flex justify-content-between m-2">
               <label class="form-label">Dropdown Values</label>
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addValue()">
+              <button type="button" class="btn btn-sm btn-add" (click)="addValue()">
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Option
               </button>
@@ -228,8 +228,8 @@
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-          <button type="button" class="btn navbar-background text-white" [disabled]="configForm.invalid" (click)="onSubmit()">
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-save" [disabled]="configForm.invalid" (click)="onSubmit()">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>

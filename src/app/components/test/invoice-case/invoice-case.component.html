@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
   <div class="card-header card-form-header text-white text-center">
-    <h6 class="text-center">Invoice Case Form</h6>
+    <label class="fw-medium">Invoice Case Form</label>
   </div>
   <div class="card-body">
     <form [formGroup]="invoiceCaseForm" (ngSubmit)="submit()" novalidate>
@@ -23,7 +23,7 @@
             [selectedItem]="invoiceCaseForm.get('laboratoryTestID')?.value"></app-searchable-dropdown>
         </div>
         <!-- <div class="col d-flex align-items-center justify-content-end">
-          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addCase()">
+          <button type="button" class="btn btn-sm btn-add" (click)="addCase()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Invoice Case
           </button>
@@ -107,8 +107,8 @@
       <!-- Submit Button -->
 
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/invoice-case']" class="btn btn-warning">Cancel</a>
-        <button type="submit" class="btn btn-success px-3">Save</button>
+        <a [routerLink]="['/invoice-case']" class="btn btn-cancel">Cancel</a>
+        <button type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>

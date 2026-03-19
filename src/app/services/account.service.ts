@@ -74,5 +74,35 @@ export class AccountService {
   sendInvoice(invoiceId: number, method?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/invoices/${invoiceId}/send`, { method: method || 'email' });
   }
+
+  getInvoiceLineItems(invoiceHeaderId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/invoice-line-items/${invoiceHeaderId}`);
+  }
+
+  addInvoiceLineItem(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/invoice-line-items`, payload);
+  }
+
+  updateInvoiceLineItem(id: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/invoice-line-items/${id}`, payload);
+  }
+
+  deleteInvoiceLineItem(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/invoice-line-items/${id}`);
+  }
+
+  getLedgerPeriodSummary(customerId: number, periodStart: string, periodEnd: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/ledger-summary/${customerId}`, {
+      params: { periodStart, periodEnd }
+    });
+  }
+
+  checkPaymentGate(sampleInwardId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/payment-gate/${sampleInwardId}`);
+  }
+
+  checkCreditLimit(customerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/credit-check/${customerId}`);
+  }
 }
 

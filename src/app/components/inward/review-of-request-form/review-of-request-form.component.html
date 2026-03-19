@@ -317,8 +317,8 @@
             class="btn btn-sm fw-semibold"
             [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
             [class.btn-outline-warning]="act.name.toLowerCase().includes('back')"
-            [class.btn-outline-danger]="act.name.toLowerCase().includes('reject')"
-            [class.btn-outline-primary]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
+            [class.btn-remove]="act.name.toLowerCase().includes('reject')"
+            [class.btn-add]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
             [for]="'action_' + act.action"
           >
             <i class="bi me-1"

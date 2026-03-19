@@ -158,15 +158,15 @@
               </td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-1">
-                  <button class="btn btn-sm btn-outline-primary" title="View" (click)="viewPerformance(record)">
+                  <button class="btn btn-sm btn-add" title="View" (click)="viewPerformance(record)">
                     <i class="bi bi-eye"></i>
                   </button>
                   <button *ngIf="!isViewMode && record.status === 'Draft'"
-                    class="btn btn-sm btn-outline-secondary" title="Edit" (click)="editPerformance(record)">
+                    class="btn btn-sm btn-cancel" title="Edit" (click)="editPerformance(record)">
                     <i class="bi bi-pencil"></i>
                   </button>
                   <button *ngIf="!isViewMode && record.status === 'Draft'"
-                    class="btn btn-sm btn-outline-danger" title="Delete" (click)="deletePerformance(record.id)">
+                    class="btn btn-sm btn-remove" title="Delete" (click)="deletePerformance(record.id)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>

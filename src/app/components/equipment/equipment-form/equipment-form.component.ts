@@ -12,6 +12,7 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Modal } from 'bootstrap';
 import { EquipmentTypeService } from '../../../services/equipment-type.service';
 import { EquipmentService } from '../../../services/equipment.service';
+import { EquipmentReferenceMaterialService } from '../../../services/equipment-reference-material.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -42,6 +43,10 @@ export class EquipmentFormComponent implements OnInit {
   sopAttachments: Array<{ id: number, name: string; type: string; url: string }> = [];
   sopVideos: Array<{ id: number, name: string; type: string; url: string }> = [];
 
+  referenceMaterials: any[] = [];
+  refMaterialForm!: FormGroup;
+  materialTypeOptions: string[] = ['CRM', 'SUS'];
+
   constructor(
     private fb: FormBuilder,
     private toastService: ToastService,
@@ -50,6 +55,7 @@ export class EquipmentFormComponent implements OnInit {
     private agencyService: CalibrationAgencyService,
     private equipmentTypeService: EquipmentTypeService,
     private equipmentService: EquipmentService,
+    private refMaterialService: EquipmentReferenceMaterialService,
     private route: ActivatedRoute,
     private router: Router
   ) { }
@@ -72,11 +78,13 @@ export class EquipmentFormComponent implements OnInit {
     this.initCalibrationForm();
     this.initMaintenanceForm();
     this.initSOPForms();
+    this.initRefMaterialForm();
     this.setupAutoDueDateCalculation();
     this.checkDueDates();
     this.listenToDueDateChanges();
     if (this.equipmentId > 0) {
       this.loadEquipment(this.equipmentId);
+      this.loadReferenceMaterials();
     }
   }
 
@@ -668,6 +676,74 @@ export class EquipmentFormComponent implements OnInit {
       if (!video.url.startsWith('http')) {
         video.url = `${baseUrl}/${video.url}`;
       }
+    });
+  }
+
+  initRefMaterialForm(): void {
+    this.refMaterialForm = this.fb.group({
+      id: [0],
+      equipmentMasterID: [this.equipmentId],
+      materialName: ['', Validators.required],
+      materialType: ['CRM', Validators.required],
+      lotNumber: [''],
+      certificateNumber: [''],
+      manufactureDate: [null],
+      expiryDate: [null],
+      supplierName: [''],
+      status: ['Active'],
+    });
+  }
+
+  loadReferenceMaterials(): void {
+    this.refMaterialService.getByEquipment(this.equipmentId).subscribe({
+      next: (data) => {
+        this.referenceMaterials = data || [];
+      },
+      error: () => {
+        this.referenceMaterials = [];
+      },
+    });
+  }
+
+  openRefMaterialModal(): void {
+    this.initRefMaterialForm();
+    this.refMaterialForm.patchValue({ equipmentMasterID: this.equipmentId });
+    const modalElement = document.getElementById('refMaterialModal');
+    if (modalElement) {
+      const modal = new Modal(modalElement);
+      modal.show();
+    }
+  }
+
+  submitRefMaterialForm(): void {
+    if (this.refMaterialForm.valid) {
+      const payload = this.refMaterialForm.value;
+      payload.equipmentMasterID = this.equipmentId;
+      this.refMaterialService.create(payload).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.loadReferenceMaterials();
+        },
+        error: (error) => {
+          this.toastService.show(error.error?.message || 'Error saving reference material', 'error');
+        },
+      });
+    } else {
+      this.refMaterialForm.markAllAsTouched();
+    }
+  }
+
+  deleteRefMaterial(id: number): void {
+    const confirmed = confirm('Are you sure you want to delete this reference material?');
+    if (!confirmed) return;
+    this.refMaterialService.delete(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message, 'success');
+        this.loadReferenceMaterials();
+      },
+      error: (error) => {
+        this.toastService.show(error.error?.message || 'Error deleting reference material', 'error');
+      },
     });
   }
 }

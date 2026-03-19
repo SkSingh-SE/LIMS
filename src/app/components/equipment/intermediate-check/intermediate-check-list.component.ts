@@ -23,7 +23,7 @@ export class IntermediateCheckListComponent implements OnInit {
 
   searchTerm = '';
   sortByColumn = 'checkYear';
-  sortOrder: 'desc' | 'desc' = 'desc';
+  sortOrder: 'desc' | 'asc' = 'desc';
   isLoading = signal(false);
 
   payload = {

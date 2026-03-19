@@ -119,7 +119,7 @@
                     {{ relatedFeedback.status }}
                   </span>
                 </div>
-                <a [routerLink]="['/customer-feedback/details', relatedFeedback.id]" class="btn btn-sm btn-outline-primary">
+                <a [routerLink]="['/customer-feedback/details', relatedFeedback.id]" class="btn btn-sm btn-add">
                   <i class="bi bi-box-arrow-up-right me-1"></i>View
                 </a>
               </div>
@@ -129,8 +129,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="analysisForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="analysisForm.invalid">
             {{ isEditMode ? "Update Analysis" : "Save Analysis" }}
           </button>
         </div>

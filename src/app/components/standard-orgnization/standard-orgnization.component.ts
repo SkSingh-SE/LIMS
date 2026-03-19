@@ -20,11 +20,13 @@ export class StandardOrgnizationComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'numberType', type: 'string', label: 'Number Type', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
+    numberType: 'string',
     createdOn: 'date'
   };
 
@@ -74,10 +76,13 @@ export class StandardOrgnizationComponent implements OnInit {
     this.fetchData();
     this.initForm();
   }
+  numberTypeOptions = ['UNS', 'SteelNumber', 'None'];
+
   initForm() {
     this.StandardOrganizationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', Validators.required],
+      numberType: ['None', Validators.required]
     });
   }
   fetchData() {

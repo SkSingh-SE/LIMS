@@ -94,12 +94,12 @@
 
         <!-- Actions -->
         <div class="d-flex gap-2 mt-3">
-          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <button type="submit" class="btn btn-save" [disabled]="isSubmitting">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
             <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i>
             {{ isSubmitting ? 'Saving...' : (editingId ? 'Update PO' : 'Create PO') }}
           </button>
-          <button type="button" class="btn btn-outline-secondary" (click)="cancelForm()">
+          <button type="button" class="btn btn-cancel" (click)="cancelForm()">
             <i class="bi bi-x-circle me-1"></i> Cancel
           </button>
         </div>
@@ -165,11 +165,15 @@
                 </span>
               </td>
               <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary me-1" (click)="openEditForm(po)"
+                <button class="btn btn-sm btn-outline-info me-1" (click)="viewPOItems(po)"
+                        [title]="selectedPO?.id === po.id ? 'Hide Items' : 'View Items'">
+                  <i class="bi" [ngClass]="selectedPO?.id === po.id ? 'bi-chevron-up' : 'bi-list-ul'"></i>
+                </button>
+                <button class="btn btn-sm btn-add me-1" (click)="openEditForm(po)"
                         title="Edit">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" (click)="deletePO(po)"
+                <button class="btn btn-sm btn-remove" (click)="deletePO(po)"
                         title="Delete">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -183,6 +187,55 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- PO Items Detail -->
+    <div *ngIf="selectedPO" class="border-top">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">
+            <i class="bi bi-box-seam me-1"></i>
+            Items for PO: <strong>{{ selectedPO.poNumber }}</strong>
+          </h6>
+          <button class="btn btn-sm btn-cancel" (click)="closePOItems()">
+            <i class="bi bi-x"></i> Close
+          </button>
+        </div>
+        <div *ngIf="isLoadingItems" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <div *ngIf="!isLoadingItems && poItems.length > 0" class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Item Code</th>
+                <th>Description</th>
+                <th class="text-end">Quantity</th>
+                <th class="text-end">Unit Price (&#8377;)</th>
+                <th class="text-end">Total (&#8377;)</th>
+                <th class="text-end">Billed (&#8377;)</th>
+                <th class="text-end">Remaining (&#8377;)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of poItems">
+                <td>{{ item.itemCode || '-' }}</td>
+                <td>{{ item.description || '-' }}</td>
+                <td class="text-end">{{ item.quantity || 0 }}</td>
+                <td class="text-end">{{ (item.unitPrice || 0) | number:'1.2-2' }}</td>
+                <td class="text-end">{{ (item.totalAmount || 0) | number:'1.2-2' }}</td>
+                <td class="text-end">{{ (item.billedAmount || 0) | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold">{{ (item.remainingAmount || 0) | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="!isLoadingItems && poItems.length === 0" class="text-center text-muted py-3">
+          <i class="bi bi-inbox"></i> No items found for this purchase order.
+        </div>
       </div>
     </div>
 

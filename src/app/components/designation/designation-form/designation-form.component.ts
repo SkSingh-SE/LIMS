@@ -33,6 +33,10 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
       name: ['', Validators.required],
       description: ['', Validators.required],
       roleID: [null],
+      qualification: [''],
+      minExperience: [null],
+      personalityTraits: [''],
+      rolesAndResponsibilities: [''],
     });
     this.route.paramMap.subscribe(params => {
       this.designationId = Number(params.get('id'));
@@ -66,7 +70,11 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
         this.designationForm.patchValue({
           name: this.designationObjet.name,
           description: this.designationObjet.description,
-          roleID: this.designationObjet.roleID
+          roleID: this.designationObjet.roleID,
+          qualification: this.designationObjet.qualification,
+          minExperience: this.designationObjet.minExperience,
+          personalityTraits: this.designationObjet.personalityTraits,
+          rolesAndResponsibilities: this.designationObjet.rolesAndResponsibilities
         });
       },
       error: (error) => {

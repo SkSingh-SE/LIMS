@@ -18,11 +18,11 @@
         <form [formGroup]="personalInfoForm" (ngSubmit)="submitForm()">
           <!-- Basic Information -->
           <div class="card-header card-form-header text-white text-center">
-            <h6 class="text-center">Basic Information</h6>
+            <label class="fw-medium">Basic Information</label>
           </div>
           <div class="card-body">
             <div class="mb-2">
-              <label class="text-danger fw-bold border-bottom border-danger">General info</label>
+              <label class="section-divider">General info</label>
             </div>
             <div class="row gy-1">
               <!-- Name -->
@@ -219,7 +219,7 @@
             <!-- Residential Address -->
             <div class="mt-2">
               <div class="mb-2">
-                <label class="text-danger fw-bold border-bottom border-danger">Residential Address</label>
+                <label class="section-divider">Residential Address</label>
               </div>
               <div class="row gy-1">
                 <!-- Address Line 1 -->
@@ -417,7 +417,7 @@
             <!-- Permanent Address -->
             <div>
               <div class="mb-2">
-                <label class="text-danger fw-bold border-bottom border-danger">Permanent Address</label>
+                <label class="section-divider">Permanent Address</label>
               </div>
               <div class="row gy-1">
                 <!-- Address Line 1 -->
@@ -614,7 +614,7 @@
             <!-- Family Details -->
             <div class="mt-2">
               <div class="mb-2">
-                <label class="text-danger fw-bold border-bottom border-danger">Family Details</label>
+                <label class="section-divider">Family Details</label>
               </div>
               <div class="row gy-1">
                 <!-- Father Name -->
@@ -660,7 +660,7 @@
             <!-- Employment Details -->
             <div class="mt-2">
               <div class="mb-2">
-                <label class="text-danger fw-bold border-bottom border-danger">Employee Details</label>
+                <label class="section-divider">Employee Details</label>
               </div>
               <div class="row row-cols-2 row-cols-md-4 gy-1">
                 <!-- Designation -->
@@ -805,7 +805,7 @@
                         'is-invalid': personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid
                       }"
                     />
-                    <button type="button" class="btn btn-outline-primary" (click)="showPassword.set(!showPassword())" tabindex="-1">
+                    <button type="button" class="btn btn-add" (click)="showPassword.set(!showPassword())" tabindex="-1">
                       <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                     <div class="invalid-feedback">Password is required.</div>
@@ -817,7 +817,7 @@
             <!-- Bank Details -->
             <div class="mt-2">
               <div class="mb-2">
-                <label class="text-danger fw-bold border-bottom border-danger">Bank & Other Details</label>
+                <label class="section-divider">Bank & Other Details</label>
               </div>
               <div class="row gy-1">
                 <!-- PAN Number -->
@@ -926,8 +926,8 @@
 
             <!-- Submit Button -->
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
-              <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-              <button type="submit" class="btn btn-success px-3">Save</button>
+              <a [routerLink]="['/employee']" class="btn btn-cancel">Cancel</a>
+              <button type="submit" class="btn btn-save px-3">Save</button>
             </div>
           </div>
         </form>
@@ -936,7 +936,7 @@
       <!-- Qualification tab -->
       <fieldset *ngIf="activeFormKey === 2" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">
-          <h6 class="text-center">Qualification</h6>
+          <label class="fw-medium">Qualification</label>
         </div>
 
         <div class="card-body">
@@ -944,7 +944,7 @@
             <div class="mb-2">
               <label class="text-danger-600 fw-bold border-bottom border-danger">Qualification Details</label>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary mb-2" (click)="addQualification()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-add mb-2" (click)="addQualification()">
               <i class="bi bi-plus-circle-dotted"></i>
               Add Row
             </button>
@@ -1034,11 +1034,11 @@
             </div>
           </div>
           <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-            <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
+            <a [routerLink]="['/employee']" class="btn btn-cancel">Cancel</a>
             <button
               *ngIf="qualificationArray.length > 0"
               type="button"
-              class="btn btn-success"
+              class="btn btn-save"
               (click)="saveQualification()"
               [disabled]="isViewMode"
             >
@@ -1050,7 +1050,7 @@
       <!-- Document tab -->
       <fieldset *ngIf="activeFormKey === 3" class="wizard-fieldset show tab-pane fade">
         <div class="card-header card-form-header text-white text-center">
-          <h6 class="text-center">Document</h6>
+          <label class="fw-medium">Document</label>
         </div>
         <div class="card-body">
           <form [formGroup]="documentsForm" (ngSubmit)="saveDocuments()">
@@ -1116,7 +1116,7 @@
                 <div class="mb-2">
                   <label class="text-danger-600 fw-bold border-bottom border-danger">Additional Documents</label>
                 </div>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary mb-2" (click)="addAdditionalDocument()">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-add mb-2" (click)="addAdditionalDocument()">
                   <i class="bi bi-plus-circle-dotted"></i>
                   Add Row
                 </button>
@@ -1210,8 +1210,8 @@
 
             <!-- Buttons -->
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
-              <a [routerLink]="['/employee']" class="btn btn-warning">Cancel</a>
-              <button type="submit" class="btn btn-success">Save</button>
+              <a [routerLink]="['/employee']" class="btn btn-cancel">Cancel</a>
+              <button type="submit" class="btn btn-save">Save</button>
             </div>
           </form>
         </div>
@@ -1231,7 +1231,7 @@
       </fieldset>
       <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">
-          <h6 class="text-center">Job Training & Evaluation</h6>
+          <label class="fw-medium">Job Training & Evaluation</label>
         </div>
         <div class="card-body">
           <app-employee-job-training [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-job-training>
@@ -1239,7 +1239,7 @@
       </fieldset>
       <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">
-          <h6 class="text-center">Performance Record</h6>
+          <label class="fw-medium">Performance Record</label>
         </div>
         <div class="card-body">
           <app-employee-performance-record [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-performance-record>
@@ -1247,7 +1247,7 @@
       </fieldset>
       <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">
-            <h6 class="text-center">User Management</h6>
+            <label class="fw-medium">User Management</label>
         </div>
         <div class="card-body">
             <app-employee-user-management [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-user-management>
@@ -1255,7 +1255,7 @@
       </fieldset>
       <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">
-          <h6 class="text-center">User Permissions</h6>
+          <label class="fw-medium">User Permissions</label>
         </div>
 
         <div class="card-body">

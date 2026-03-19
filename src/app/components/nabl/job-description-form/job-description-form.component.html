@@ -234,8 +234,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="goBack()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="jobDescForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="jobDescForm.invalid">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

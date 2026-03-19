@@ -125,8 +125,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-          <button type="button" class="btn btn-dark" routerLink="/environment-monitoring">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="monitorForm.invalid">
+          <button type="button" class="btn btn-cancel" routerLink="/environment-monitoring">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="monitorForm.invalid">
             <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
           </button>
         </div>

@@ -49,7 +49,7 @@
               <i class="bi" [ngClass]="openSections['entries'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">II. Sample Inward Entries</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addEntry(); $event.stopPropagation()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addEntry(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i> Add Entry
             </button>
           </div>
@@ -113,8 +113,8 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-dark" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="requestForm.invalid || isLoading()">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="requestForm.invalid || isLoading()">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

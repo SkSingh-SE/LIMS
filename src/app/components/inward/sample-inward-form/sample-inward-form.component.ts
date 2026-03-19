@@ -20,10 +20,11 @@ import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.e
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { Injectable } from '@angular/core';
 import { CanDeactivate } from '@angular/router';
+import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -977,14 +978,23 @@ export class SampleInwardFormComponent implements OnInit {
       return; // Prevent save
     }
 
-    const request$ = (value.id && value.id > 0)
-      ? this.inwardService.updateSampleInward(formData)
-      : this.inwardService.createSampleInward(formData);
+    const isNew = !(value.id && value.id > 0);
+    const request$ = isNew
+      ? this.inwardService.createSampleInward(formData)
+      : this.inwardService.updateSampleInward(formData);
 
     request$.subscribe({
-      next: () => {
+      next: (response: any) => {
         this.toastService.show('Sample Inward saved successfully!', 'success');
-        this.router.navigate(['/sample/inward']);
+        if (isNew && response?.id) {
+          // Navigate to edit mode so Plan tab becomes visible
+          this.router.navigate(['/sample/inward/edit', response.id], { state: { mode: 'edit' } });
+        } else {
+          // Already in edit mode, reload to refresh data
+          this.sampleId = value.id;
+          this.fetchSampleInwardDetails(this.sampleId);
+          this.sampleInwardForm.markAsPristine();
+        }
       },
       error: (err) => {
         console.error('Error saving sample inward:', err);

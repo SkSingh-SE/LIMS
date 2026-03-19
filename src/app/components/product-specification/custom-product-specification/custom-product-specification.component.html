@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
     <div class="card-header card-form-header text-white text-center">
-        <h6 class="text-center">Custom Product Specification Form</h6>
+        <label class="fw-medium">Custom Product Specification Form</label>
     </div>
     <div class="card-body ">
         <form [formGroup]="specificationForm" (ngSubmit)="onSubmit()">
@@ -54,7 +54,7 @@
             <div class="">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold fs-6 mb-0">Product Specification Grade</label>
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger" (click)="addMaterial()">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-remove" (click)="addMaterial()">
                         <i class="bi bi-plus-circle-dotted"></i> Add Line
                     </button>
                 </div>
@@ -103,7 +103,7 @@
             <div class="">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="fw-bold fs-6 mb-0">Product Test Group</label>
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger" (click)="addTest()">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-remove" (click)="addTest()">
                         <i class="bi bi-plus-circle-dotted"></i> Add Group
                     </button>
                 </div>
@@ -176,8 +176,8 @@
             </div>
 
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-                <a class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
+                <a class="btn btn-cancel">Cancel</a>
+                <button type="submit" class="btn btn-save px-3">Save</button>
             </div>
 
         </form>

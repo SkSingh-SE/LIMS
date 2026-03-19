@@ -80,7 +80,7 @@
       </button>
 
       <button type="button"
-        class="btn btn-outline-danger shadow-sm rounded-circle action-btn transition-transform"
+        class="btn btn-remove shadow-sm rounded-circle action-btn transition-transform"
         [disabled]="assignedSelection.size === 0 || isViewMode"
         (click)="moveToAvailable()"
         title="Remove selected permissions">
@@ -171,10 +171,10 @@
       <button type="button" (click)="clearUserSelection()" class="btn btn-light border shadow-sm px-4 fw-medium">
         <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
       </button>
-      <button type="button" routerLink="/employee" class="btn btn-warning shadow-sm px-4 fw-medium text-white">
+      <button type="button" routerLink="/employee" class="btn btn-cancel shadow-sm px-4 fw-medium text-white">
         <i class="bi bi-x-lg me-2"></i>Cancel
       </button>
-      <button type="button" class="btn btn-success shadow-sm px-5 fw-bold" (click)="savePermissions()">
+      <button type="button" class="btn btn-save shadow-sm px-5 fw-bold" (click)="savePermissions()">
         <i class="bi bi-check-lg me-2"></i>Save Permissions
       </button>
     </div>

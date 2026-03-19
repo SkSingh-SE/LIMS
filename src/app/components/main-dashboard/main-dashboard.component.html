@@ -42,7 +42,7 @@
             </button>
             <button
               *ngIf="hasCustomLayout()"
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-cancel btn-sm"
               (click)="resetLayout()"
               title="Reset to default layout">
               <i class="bi bi-arrow-counterclockwise"></i>
@@ -132,7 +132,7 @@
           </div>
           <div class="layout-controls">
             <button
-              class="btn btn-outline-primary btn-sm"
+              class="btn btn-add btn-sm"
               (click)="toggleCustomizationMode()"
               [class.active]="isCustomizationMode()"
               title="Rearrange cards">
@@ -232,7 +232,7 @@
             <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
             Refresh Dashboard
           </button>
-          <button class="btn btn-outline-secondary" (click)="optimizeForNetwork()" aria-label="Optimize network settings">
+          <button class="btn btn-cancel" (click)="optimizeForNetwork()" aria-label="Optimize network settings">
             <i class="bi bi-gear me-2" aria-hidden="true"></i>
             Check Network
           </button>

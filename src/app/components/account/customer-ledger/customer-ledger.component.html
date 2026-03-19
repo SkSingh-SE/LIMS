@@ -13,7 +13,7 @@
         <button class="btn btn-outline-success btn-sm me-2" (click)="exportToExcel()" [disabled]="!ledgerEntries.length">
           <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
         </button>
-        <button class="btn btn-outline-primary btn-sm" (click)="printStatement()">
+        <button class="btn btn-add btn-sm" (click)="printStatement()">
           <i class="bi bi-printer me-1"></i> Print Statement
         </button>
       </div>
@@ -85,6 +85,68 @@
               [class.text-success]="balance?.outstandingBalance <= 0">
             {{ (balance?.outstandingBalance || 0) | number:'1.2-2' }}
           </h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Period Summary -->
+  <div class="card mb-4 shadow-sm" *ngIf="selectedCustomerId">
+    <div class="card-header bg-white">
+      <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i>Period Summary</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Period Start</label>
+          <input type="date" class="form-control" [(ngModel)]="periodStart" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Period End</label>
+          <input type="date" class="form-control" [(ngModel)]="periodEnd" />
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-add w-100" (click)="loadPeriodSummary()" [disabled]="isLoadingPeriodSummary">
+            <span *ngIf="isLoadingPeriodSummary" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isLoadingPeriodSummary" class="bi bi-graph-up me-1"></i>
+            {{ isLoadingPeriodSummary ? 'Loading...' : 'View Period Summary' }}
+          </button>
+        </div>
+      </div>
+      <div class="row" *ngIf="periodSummary">
+        <div class="col-md-3">
+          <div class="card border-start border-secondary border-4">
+            <div class="card-body text-center py-2">
+              <h6 class="text-muted mb-1">Opening Balance</h6>
+              <h5 class="mb-0">{{ (periodSummary.openingBalance || 0) | number:'1.2-2' }}</h5>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-start border-danger border-4">
+            <div class="card-body text-center py-2">
+              <h6 class="text-muted mb-1">Total Debits</h6>
+              <h5 class="text-danger mb-0">{{ (periodSummary.totalDebits || 0) | number:'1.2-2' }}</h5>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-start border-success border-4">
+            <div class="card-body text-center py-2">
+              <h6 class="text-muted mb-1">Total Credits</h6>
+              <h5 class="text-success mb-0">{{ (periodSummary.totalCredits || 0) | number:'1.2-2' }}</h5>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-start border-warning border-4">
+            <div class="card-body text-center py-2">
+              <h6 class="text-muted mb-1">Closing Balance</h6>
+              <h5 class="mb-0" [class.text-danger]="periodSummary.closingBalance > 0" [class.text-success]="periodSummary.closingBalance <= 0">
+                {{ (periodSummary.closingBalance || 0) | number:'1.2-2' }}
+              </h5>
+            </div>
+          </div>
         </div>
       </div>
     </div>

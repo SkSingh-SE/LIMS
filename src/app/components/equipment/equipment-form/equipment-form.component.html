@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
   <div class="card-header card-form-header text-white text-center">
-    <h6 class="text-center">Equipment Form</h6>
+    <label class="fw-medium">Equipment Form</label>
   </div>
 
   <div class="card-body">
@@ -243,110 +243,133 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="sop-tab" data-bs-toggle="tab" data-bs-target="#sop" type="button" role="tab">SOP</button>
           </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ref-material-tab" data-bs-toggle="tab" data-bs-target="#refMaterial" type="button" role="tab">Reference Materials</button>
+          </li>
         </ul>
 
         <div class="tab-content" id="equipmentTabContent">
           <!-- CALIBRATION TAB -->
           <div class="tab-pane fade show active" id="calibration" role="tabpanel" aria-labelledby="calibration-tab">
-            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
-              <label class="fw-bold fs-6 p-2">Calibration History</label>
+            <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+              <label class="section-divider">Calibration History</label>
               <button
                 *ngIf="isEditMode && calibrationDue"
                 type="button"
-                class="btn btn-outline-primary btn-sm"
+                class="btn btn-add btn-sm"
                 (click)="openCalibrationModal()"
               >
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Calibration
               </button>
             </div>
-            <table class="table align-middle">
-              <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium px-2">Date</th>
-                  <th class="fw-medium px-2">Certificate</th>
-                  <th class="fw-medium px-2">Agency</th>
-                  <th class="fw-medium px-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let record of calibrationRecords.controls; let i = index">
-                  <td>{{ record.get("calibrationDate")?.value }}</td>
-                  <td>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="openFileInNewTab(record.get('certificatePath')?.value)"
-                    >
-                      <i class="bi bi-file-earmark-fill"></i>
-                      {{ record.get("certificate")?.value }}
-                    </button>
-                  </td>
-                  <td>{{ record.get("agency")?.value || "-" }}</td>
-                  <td>
-                    <button
-                      *ngIf="!record.get('isReviewed')?.value"
-                      type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="review(i)"
-                    >
-                      Review
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle w-100">
+                <thead class="table-light">
+                  <tr class="text-nowrap">
+                    <th class="spec-th text-center">#</th>
+                    <th class="spec-th">Date</th>
+                    <th class="spec-th">Certificate</th>
+                    <th class="spec-th">Agency</th>
+                    <th class="spec-th text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let record of calibrationRecords.controls; let i = index" class="text-sm">
+                    <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                    <td>{{ record.get("calibrationDate")?.value }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-add"
+                        (click)="openFileInNewTab(record.get('certificatePath')?.value)"
+                      >
+                        <i class="bi bi-file-earmark-fill"></i>
+                        {{ record.get("certificate")?.value }}
+                      </button>
+                    </td>
+                    <td>{{ record.get("agency")?.value || "-" }}</td>
+                    <td class="text-center">
+                      <button
+                        *ngIf="!record.get('isReviewed')?.value"
+                        type="button"
+                        class="btn btn-sm btn-add"
+                        (click)="review(i)"
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="calibrationRecords.length === 0">
+                    <td colspan="5" class="text-center text-muted py-3">
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
+                      No calibration records found
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- MAINTENANCE TAB -->
           <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
-            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
-              <label class="fw-bold fs-6 p-2">Maintenance History</label>
+            <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+              <label class="section-divider">Maintenance History</label>
               <button
                 *ngIf="isEditMode && calibrationDue"
                 type="button"
-                class="btn btn-outline-primary btn-sm"
+                class="btn btn-add btn-sm"
                 (click)="openMaintenanceModal()"
               >
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Maintenance
               </button>
             </div>
-            <table class="table align-middle">
-              <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium px-2">Date</th>
-                  <th class="fw-medium px-2">Certificate</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let record of maintenanceRecords.controls">
-                  <td>{{ record.get("maintenanceDate")?.value | date: "MMM dd, yyyy" }}</td>
-                  <td>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="openFileInNewTab(record.get('certificatePath')?.value)"
-                    >
-                      <i class="bi bi-file-earmark-fill"></i>
-                      {{ record.get("certificate")?.value }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle w-100">
+                <thead class="table-light">
+                  <tr class="text-nowrap">
+                    <th class="spec-th text-center">#</th>
+                    <th class="spec-th">Date</th>
+                    <th class="spec-th">Certificate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let record of maintenanceRecords.controls; let i = index" class="text-sm">
+                    <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                    <td>{{ record.get("maintenanceDate")?.value | date: "MMM dd, yyyy" }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-add"
+                        (click)="openFileInNewTab(record.get('certificatePath')?.value)"
+                      >
+                        <i class="bi bi-file-earmark-fill"></i>
+                        {{ record.get("certificate")?.value }}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="maintenanceRecords.length === 0">
+                    <td colspan="3" class="text-center text-muted py-3">
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
+                      No maintenance records found
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- SOP TAB -->
           <div class="tab-pane fade" id="sop" role="tabpanel" aria-labelledby="sop-tab">
-            <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
-              <label class="fw-bold fs-6 p-2">SOP Attachments</label>
-              <div class="d-flex justify-content-end gap-2 mb-2">
-                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" (click)="openAttachmentModal()">
+            <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+              <label class="section-divider">SOP Attachments</label>
+              <div class="d-flex gap-2">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm" (click)="openAttachmentModal()">
                   <i class="bi bi-plus-circle-dotted"></i>
                   Add Attachment
                 </button>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" (click)="openVideoModal()">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm" (click)="openVideoModal()">
                   <i class="bi bi-plus-circle-dotted"></i>
                   Add Video
                 </button>
@@ -373,43 +396,125 @@
 
             <div class="tab-content" id="sopTabContent">
               <div class="tab-pane fade show active" id="attachment" role="tabpanel" aria-labelledby="attachment-tab">
-                <div *ngIf="sopAttachments.length > 0">
-                  <div class="d-flex flex-wrap gap-2 m-2">
-                    <div *ngFor="let attachment of sopAttachments" class="border p-2 rounded">
-                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="openFileInNewTab(attachment.url)">
-                        <i class="bi bi-file-earmark-fill"></i>
-                        {{ attachment.name }}
-                      </button>
-                      <button *ngIf="!isViewMode" type="button" class="btn text-danger btn-sm ms-2" (click)="deleteAttachment(attachment)">
-                        <i class="bi bi-trash-fill fs-5"></i>
-                      </button>
-                    </div>
-                  </div>
+                <div class="table-responsive mt-2">
+                  <table class="table bordered-table align-middle w-100">
+                    <thead class="table-light">
+                      <tr class="text-nowrap">
+                        <th class="spec-th text-center">#</th>
+                        <th class="spec-th">Attachment</th>
+                        <th *ngIf="!isViewMode" class="spec-th text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let attachment of sopAttachments; let i = index" class="text-sm">
+                        <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                        <td>
+                          <button type="button" class="btn btn-sm btn-add" (click)="openFileInNewTab(attachment.url)">
+                            <i class="bi bi-file-earmark-fill"></i>
+                            {{ attachment.name }}
+                          </button>
+                        </td>
+                        <td *ngIf="!isViewMode" class="text-center">
+                          <button type="button" class="btn btn-sm btn-remove" (click)="deleteAttachment(attachment)">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="sopAttachments.length === 0">
+                        <td [attr.colspan]="isViewMode ? 2 : 3" class="text-center text-muted py-3">
+                          <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
+                          No attachments found
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               <div class="tab-pane fade" id="video" role="tabpanel" aria-labelledby="video-tab">
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mt-2">
                   <div class="p-2" *ngFor="let video of sopVideos">
                     <div class="border p-2 rounded text-center">
                       <video controls width="100%" height="250" style="object-fit: cover">
                         <source [src]="video.url" type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-danger btn-sm mt-2" (click)="deleteVideo(video)">
-                        Delete
+                      <button *ngIf="!isViewMode" type="button" class="btn btn-remove btn-sm mt-2" (click)="deleteVideo(video)">
+                        <i class="bi bi-trash3"></i> Delete
                       </button>
                     </div>
                   </div>
                 </div>
+                <div *ngIf="sopVideos.length === 0" class="text-center text-muted py-3">
+                  <i class="bi bi-camera-video fs-4 d-block mb-1"></i>
+                  No videos found
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- REFERENCE MATERIALS TAB -->
+          <div class="tab-pane fade" id="refMaterial" role="tabpanel" aria-labelledby="ref-material-tab">
+            <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+              <label class="section-divider">Reference Materials</label>
+              <button
+                *ngIf="isEditMode"
+                type="button"
+                class="btn btn-add btn-sm"
+                (click)="openRefMaterialModal()"
+              >
+                <i class="bi bi-plus-circle-dotted"></i>
+                Add Reference Material
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table bordered-table align-middle w-100">
+                <thead class="table-light">
+                  <tr class="text-nowrap">
+                    <th class="spec-th text-center">#</th>
+                    <th class="spec-th">Material Name</th>
+                    <th class="spec-th">Type</th>
+                    <th class="spec-th">Lot Number</th>
+                    <th class="spec-th">Certificate No</th>
+                    <th class="spec-th">Expiry Date</th>
+                    <th class="spec-th">Status</th>
+                    <th *ngIf="isEditMode" class="spec-th text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let rm of referenceMaterials; let i = index" class="text-sm">
+                    <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                    <td>{{ rm.materialName }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="rm.materialType === 'CRM' ? 'bg-primary' : 'bg-info'">
+                        {{ rm.materialType }}
+                      </span>
+                    </td>
+                    <td>{{ rm.lotNumber || '-' }}</td>
+                    <td>{{ rm.certificateNumber || '-' }}</td>
+                    <td>{{ rm.expiryDate ? (rm.expiryDate | date:'dd MMM, yyyy') : '-' }}</td>
+                    <td>{{ rm.status }}</td>
+                    <td *ngIf="isEditMode" class="text-center">
+                      <button type="button" class="btn btn-sm btn-remove" (click)="deleteRefMaterial(rm.id)">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="referenceMaterials.length === 0">
+                    <td [attr.colspan]="isEditMode ? 8 : 7" class="text-center text-muted py-3">
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
+                      No reference materials found
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </ng-container>
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/equipment']" class="btn btn-warning">Cancel</a>
-        <button type="submit" [disabled]="equipmentForm.invalid" class="btn btn-success px-3">Save</button>
+        <a [routerLink]="['/equipment']" class="btn btn-cancel">Cancel</a>
+        <button type="submit" [disabled]="equipmentForm.invalid" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>
@@ -427,7 +532,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="calibrationModalLabel">Add Calibration</label>
+        <label class="modal-title fw-medium" id="calibrationModalLabel">Add Calibration</label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -488,8 +593,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" (click)="submitCalibrationForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save" (click)="submitCalibrationForm()" data-bs-dismiss="modal">Save</button>
       </div>
     </div>
   </div>
@@ -507,7 +612,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="maintenanceModalLabel">Add Maintenance</label>
+        <label class="modal-title fw-medium" id="maintenanceModalLabel">Add Maintenance</label>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -551,8 +656,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" (click)="submitMaintenanceForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()" data-bs-dismiss="modal">Save</button>
       </div>
     </div>
   </div>
@@ -570,7 +675,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="attachmentModalLabel">Add Attachment</label>
+        <label class="modal-title fw-medium" id="attachmentModalLabel">Add Attachment</label>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -586,8 +691,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" (click)="submitSOPAttachmentForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()" data-bs-dismiss="modal">Save</button>
       </div>
     </div>
   </div>
@@ -598,7 +703,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="videoModalLabel">Add Video</label>
+        <label class="modal-title fw-medium" id="videoModalLabel">Add Video</label>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -614,8 +719,79 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" (click)="submitSOPVideoForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()" data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reference Material Modal -->
+<div
+  class="modal fade modal-lg"
+  id="refMaterialModal"
+  tabindex="-1"
+  aria-labelledby="refMaterialModalLabel"
+  data-bs-backdrop="static"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fw-medium" id="refMaterialModalLabel">Add Reference Material</label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="refMaterialForm">
+          <div class="row row-cols-2 g-2">
+            <div>
+              <label class="form-label">Material Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="materialName" placeholder="Enter material name"
+                [class.is-invalid]="refMaterialForm.get('materialName')?.invalid && refMaterialForm.get('materialName')?.touched" />
+              <div *ngIf="refMaterialForm.get('materialName')?.invalid && refMaterialForm.get('materialName')?.touched" class="invalid-feedback">
+                Material Name is required.
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Material Type <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="materialType">
+                <option *ngFor="let type of materialTypeOptions" [value]="type">{{ type }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Lot Number</label>
+              <input type="text" class="form-control" formControlName="lotNumber" placeholder="Enter lot number" />
+            </div>
+            <div>
+              <label class="form-label">Certificate Number</label>
+              <input type="text" class="form-control" formControlName="certificateNumber" placeholder="Enter certificate number" />
+            </div>
+            <div>
+              <label class="form-label">Manufacture Date</label>
+              <input type="date" class="form-control" formControlName="manufactureDate" />
+            </div>
+            <div>
+              <label class="form-label">Expiry Date</label>
+              <input type="date" class="form-control" formControlName="expiryDate" />
+            </div>
+            <div>
+              <label class="form-label">Supplier Name</label>
+              <input type="text" class="form-control" formControlName="supplierName" placeholder="Enter supplier name" />
+            </div>
+            <div>
+              <label class="form-label">Status</label>
+              <select class="form-select" formControlName="status">
+                <option value="Active">Active</option>
+                <option value="Expired">Expired</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()" data-bs-dismiss="modal">Save</button>
       </div>
     </div>
   </div>

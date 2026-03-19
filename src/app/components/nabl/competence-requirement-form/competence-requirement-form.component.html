@@ -118,8 +118,8 @@
 
                 <!-- Footer Actions -->
                 <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                    <button type="button" class="btn btn-dark" (click)="goBack()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white" [disabled]="requirementForm.invalid">
+                    <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
+                    <button type="submit" class="btn btn-save" [disabled]="requirementForm.invalid">
                         {{ isEditMode ? 'Update' : 'Save' }} Requirement
                     </button>
                 </div>

@@ -108,10 +108,18 @@ export class TpiInspectionListComponent implements OnInit {
     });
   }
 
+  statusNames: Record<number, string> = {
+    1: 'Scheduled',
+    2: 'InProgress',
+    3: 'Approved',
+    4: 'Rejected',
+    5: 'Waived',
+  };
+
   updateStatus(id: number, newStatus: number, statusLabel: string): void {
     const remarks = prompt(`Enter remarks for ${statusLabel}:`);
     if (remarks === null) return;
-    this.tpiInspectionService.updateStatus({ id, newStatus, remarks }).subscribe({
+    this.tpiInspectionService.updateStatus(id, { status: this.statusNames[newStatus], inspectorComments: remarks }).subscribe({
       next: (response) => {
         this.toastService.show(response.message, 'success');
         this.fetchData();
@@ -237,5 +245,26 @@ export class TpiInspectionListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find((col) => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  exportingId: number | null = null;
+
+  exportReleaseNote(id: number): void {
+    this.exportingId = id;
+    this.tpiInspectionService.exportReleaseNote(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `IRN-TPI-${String(id).padStart(6, '0')}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.exportingId = null;
+      },
+      error: (err) => {
+        this.toastService.show('Failed to export release note.', 'error');
+        this.exportingId = null;
+      },
+    });
   }
 }

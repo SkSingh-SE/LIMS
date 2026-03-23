@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,6 +6,9 @@ import { TestRequestNablService } from '../../../../services/test-request-nabl.s
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { ToastService } from '../../../../services/toast.service';
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-test-request-nabl-form',
@@ -13,7 +16,8 @@ import { QuillModule } from 'ngx-quill';
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './test-request-form.component.html'
 })
-export class TestRequestNablFormComponent implements OnInit {
+export class TestRequestNablFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     requestForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -38,7 +42,7 @@ export class TestRequestNablFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -161,6 +165,7 @@ export class TestRequestNablFormComponent implements OnInit {
 
         obs.subscribe({
             next: (res) => {
+              this.saved = true;
                 this.toastService.show(res.message, 'success');
                 this.router.navigate(['/nabl/test-request']);
             },
@@ -177,4 +182,17 @@ export class TestRequestNablFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.requestForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.requestForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

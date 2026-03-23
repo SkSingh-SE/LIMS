@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
     selector: 'app-purchase-order-form',
@@ -12,7 +16,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './purchase-order-form.component.html'
 })
-export class PurchaseOrderFormComponent implements OnInit {
+export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     poForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -42,8 +47,9 @@ export class PurchaseOrderFormComponent implements OnInit {
         private fb: FormBuilder,
         private service: PurchaseOrderService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private unsavedChangesService: UnsavedChangesService,
+        private toastService: ToastService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -173,7 +179,9 @@ export class PurchaseOrderFormComponent implements OnInit {
                     this.poForm.patchValue(formValues);
                 }
             },
-            error: () => {}
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Failed to load record', 'error');
+            }
         });
     }
 
@@ -187,13 +195,13 @@ export class PurchaseOrderFormComponent implements OnInit {
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => this.router.navigate(['/purchase-order']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/purchase-order']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => this.router.navigate(['/purchase-order']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/purchase-order']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         }
     }
@@ -205,4 +213,17 @@ export class PurchaseOrderFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.poForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.poForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

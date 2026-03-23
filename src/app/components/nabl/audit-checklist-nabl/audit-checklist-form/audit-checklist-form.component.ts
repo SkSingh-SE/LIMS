@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { AuditChecklistService } from '../../../../services/audit-checklist.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-audit-checklist-form',
@@ -13,7 +16,9 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './audit-checklist-form.component.html',
     styleUrl: './audit-checklist-form.component.css'
 })
-export class AuditChecklistFormComponent implements OnInit {
+export class AuditChecklistFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     checklistForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -42,7 +47,7 @@ export class AuditChecklistFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditChecklistService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -130,10 +135,17 @@ export class AuditChecklistFormComponent implements OnInit {
 
     onSubmit() {
         if (this.checklistForm.valid) {
+            this.isSubmitting = true;
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.checklistForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.checklistForm.value).subscribe({
+                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
+                    error: () => { this.isSubmitting = false; }
+                });
             } else {
-                this.service.create(this.checklistForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.checklistForm.value).subscribe({
+                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
+                    error: () => { this.isSubmitting = false; }
+                });
             }
         }
     }
@@ -141,4 +153,17 @@ export class AuditChecklistFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/audit-checklist']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.checklistForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.checklistForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

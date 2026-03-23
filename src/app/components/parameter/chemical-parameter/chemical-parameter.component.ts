@@ -284,14 +284,13 @@ export class ChemicalParameterComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
-    this.ParameterForm.reset();
-    this.ParameterForm.enable();
+    this.initForm();
     if (id > 0) {
       this.parameterId = id;
       this.getDetails();
@@ -299,15 +298,11 @@ export class ChemicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -324,8 +319,7 @@ export class ChemicalParameterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.ParameterForm.reset();
-    this.ParameterForm.enable();
+    this.initForm();
     this.parameterId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
@@ -367,30 +361,6 @@ export class ChemicalParameterComponent implements OnInit {
     }
   }
 
-  onChangeElement(event: Event) {
-    const target = event.target as HTMLInputElement;
-    const controlName = target.name;
-
-    if (controlName === 'isSpecial' && target.checked) {
-      this.ParameterForm.patchValue({
-        isSpecial: true,
-        isSuperSpecial: false
-      });
-    }
-
-    if (controlName === 'isSuperSpecial' && target.checked) {
-      this.ParameterForm.patchValue({
-        isSpecial: false,
-        isSuperSpecial: true
-      });
-    }
-
-    // Optional: If unchecked both, it's considered Normal
-    if (!this.ParameterForm.get('isSpecial')?.value && !this.ParameterForm.get('isSuperSpecial')?.value) {
-      // it's 'Normal' by logic, no flag needed
-      console.log('Element is Normal');
-    }
-  }
 
   fetchParameterDropdown() {
     this.parameterService.getChemicalParameterDropdown("", 0, 1000).subscribe({

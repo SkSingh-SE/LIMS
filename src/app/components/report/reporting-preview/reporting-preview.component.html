@@ -59,6 +59,17 @@
                 <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
                 <span>{{ pdfGenerating ? "Generating…" : "PDF" }}</span>
               </button>
+
+              <!-- Multi-Format PDF Download -->
+              <div *ngIf="reportFormats.length > 0" class="d-flex align-items-center gap-1 ms-2">
+                <select class="form-select form-select-sm" [(ngModel)]="selectedFormatType" style="width: 200px; font-size: 12px;">
+                  <option *ngFor="let fmt of reportFormats" [ngValue]="fmt.formatType">{{ fmt.displayName }}</option>
+                </select>
+                <button class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1"
+                  (click)="downloadByFormat()" [disabled]="formatPdfGenerating" title="Download in selected format">
+                  <i class="bi" [class.bi-download]="!formatPdfGenerating" [class.bi-hourglass-split]="formatPdfGenerating"></i>
+                </button>
+              </div>
             </ng-container>
           </div>
         </div>

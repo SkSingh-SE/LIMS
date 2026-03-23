@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,6 +10,8 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Observable } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 
 @Component({
@@ -20,7 +22,9 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
     styleUrl: './job-description-form.component.css'
 })
 
-export class JobDescriptionFormComponent implements OnInit {
+export class JobDescriptionFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     jobDescForm!: FormGroup;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
@@ -67,7 +71,7 @@ export class JobDescriptionFormComponent implements OnInit {
         private designationService: DesignationService,
         private departmentService: DepartmentService,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -192,15 +196,19 @@ export class JobDescriptionFormComponent implements OnInit {
     onSubmit(): void {
         if (this.jobDescForm.valid) {
             const formData = this.jobDescForm.getRawValue();
+            this.isSubmitting = true;
 
             if (this.isEditMode) {
                 formData.id = this.jobDescId;
                 this.jobDescriptionService.update(formData).subscribe({
                     next: (response) => {
+                      this.isSubmitting = false;
+                      this.saved = true;
                         this.toastService.show(response.message || 'Job Description updated successfully', 'success');
                         this.router.navigate(['/job-description']);
                     },
                     error: (error) => {
+                        this.isSubmitting = false;
                         console.error('Error updating job description:', error);
                         this.toastService.show('Error updating job description', 'error');
                     }
@@ -208,10 +216,13 @@ export class JobDescriptionFormComponent implements OnInit {
             } else {
                 this.jobDescriptionService.create(formData).subscribe({
                     next: (response) => {
+                      this.isSubmitting = false;
+                      this.saved = true;
                         this.toastService.show(response.message || 'Job Description created successfully', 'success');
                         this.router.navigate(['/job-description']);
                     },
                     error: (error) => {
+                        this.isSubmitting = false;
                         console.error('Error creating job description:', error);
                         this.toastService.show('Error creating job description', 'error');
                     }
@@ -226,4 +237,17 @@ export class JobDescriptionFormComponent implements OnInit {
     goBack(): void {
         this.router.navigate(['/job-description']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.jobDescForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.jobDescForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

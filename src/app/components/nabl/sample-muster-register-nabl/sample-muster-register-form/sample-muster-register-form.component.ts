@@ -1,10 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SampleMusterRegisterNablService } from '../../../../services/sample-muster-register-nabl.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { ToastService } from '../../../../services/toast.service';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-sample-muster-register-nabl-form',
@@ -12,7 +15,8 @@ import { ToastService } from '../../../../services/toast.service';
     imports: [CommonModule, ReactiveFormsModule, RouterModule],
     templateUrl: './sample-muster-register-form.component.html'
 })
-export class SampleMusterRegisterNablFormComponent implements OnInit {
+export class SampleMusterRegisterNablFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     requestForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -32,7 +36,7 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -116,7 +120,9 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
                     if (this.isViewMode) this.requestForm.disable();
                 }
             },
-            error: () => {}
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Operation failed', 'error');
+            }
         });
     }
 
@@ -134,6 +140,7 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
 
         obs.subscribe({
             next: (res) => {
+              this.saved = true;
                 this.toastService.show(res.message, 'success');
                 this.router.navigate(['/nabl/sample-muster-register']);
             },
@@ -150,4 +157,17 @@ export class SampleMusterRegisterNablFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.requestForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.requestForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

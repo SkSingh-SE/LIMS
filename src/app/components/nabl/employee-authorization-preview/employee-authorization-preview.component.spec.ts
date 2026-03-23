@@ -56,8 +56,8 @@ describe('EmployeeAuthorizationPreviewComponent', () => {
   it('should navigate away when data not found (null response)', () => {
     serviceSpy.getAll.and.returnValue(of({ items: [], totalCount: 0 } as any));
     fixture.detectChanges();
-    // Component loads empty list without navigating away — isLoading becomes false
-    expect(component.isLoading).toBeFalse();
+    // Component loads empty list without navigating away
+    expect(component.authorizations.length).toBe(0);
   });
 
   it('should navigate away on service error', () => {

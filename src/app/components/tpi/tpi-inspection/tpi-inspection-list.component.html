@@ -2,6 +2,9 @@
     <div class="card basic-data-table w-100">
         <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
             <label class="text-center text-md fw-medium ms-3">TPI Inspections</label>
+            <a routerLink="/tpi-inspection/create" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-plus-lg me-1"></i> Create
+            </a>
         </div>
 
         <div class="card-body">
@@ -58,6 +61,8 @@
                             <td>{{ item.inspectorName }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                    <a [routerLink]="['/tpi-inspection/details', item.id]" class="btn btn-sm btn-outline-secondary"
+                                        title="View Details"><i class="bi bi-eye"></i></a>
                                     <button *ngIf="item.tpiStatus === 0" class="btn btn-sm btn-outline-info"
                                         (click)="updateStatus(item.id, 1, 'Schedule')">Schedule</button>
                                     <button *ngIf="item.tpiStatus === 1" class="btn btn-sm btn-add"
@@ -68,6 +73,11 @@
                                         (click)="updateStatus(item.id, 4, 'Reject')">Reject</button>
                                     <button *ngIf="item.tpiStatus === 0 || item.tpiStatus === 1" class="btn btn-sm btn-cancel"
                                         (click)="updateStatus(item.id, 5, 'Waive')">Waive</button>
+                                    <button *ngIf="item.tpiStatus === 3 || item.tpiStatus === 4 || item.tpiStatus === 5"
+                                        class="btn btn-sm btn-outline-dark" (click)="exportReleaseNote(item.id)"
+                                        [disabled]="exportingId === item.id" title="Export Release Note">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>

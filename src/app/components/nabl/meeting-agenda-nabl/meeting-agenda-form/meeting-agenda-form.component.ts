@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MeetingAgendaService } from '../../../../services/meeting-agenda.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-meeting-agenda-form',
@@ -12,7 +15,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './meeting-agenda-form.component.html',
     styleUrl: './meeting-agenda-form.component.css'
 })
-export class MeetingAgendaFormComponent implements OnInit {
+export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     agendaForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -32,7 +36,7 @@ export class MeetingAgendaFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: MeetingAgendaService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -128,9 +132,9 @@ export class MeetingAgendaFormComponent implements OnInit {
     onSubmit() {
         if (this.agendaForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.agendaForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.agendaForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.agendaForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.agendaForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -138,4 +142,17 @@ export class MeetingAgendaFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/meeting-agenda']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.agendaForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.agendaForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { NonConformingWorkService } from '../../../../services/non-conforming-work.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-non-conforming-work-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './non-conforming-work-form.component.html',
     styleUrl: './non-conforming-work-form.component.css'
 })
-export class NonConformingWorkFormComponent implements OnInit {
+export class NonConformingWorkFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     ncForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -41,7 +45,7 @@ export class NonConformingWorkFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: NonConformingWorkService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -94,9 +98,9 @@ export class NonConformingWorkFormComponent implements OnInit {
     onSubmit() {
         if (this.ncForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.ncForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -104,4 +108,17 @@ export class NonConformingWorkFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/non-conforming-work']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.ncForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.ncForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

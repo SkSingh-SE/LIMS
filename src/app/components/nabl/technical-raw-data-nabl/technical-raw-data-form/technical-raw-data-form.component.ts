@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TechnicalRawDataNablService } from '../../../../services/technical-raw-data-nabl.service';
 import { ToastService } from '../../../../services/toast.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-technical-raw-data-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './technical-raw-data-form.component.html',
     styleUrl: './technical-raw-data-form.component.css'
 })
-export class TechnicalRawDataFormComponent implements OnInit {
+export class TechnicalRawDataFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     dataForm!: FormGroup;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
@@ -35,7 +39,7 @@ export class TechnicalRawDataFormComponent implements OnInit {
         private route: ActivatedRoute,
         private service: TechnicalRawDataNablService,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -149,6 +153,7 @@ export class TechnicalRawDataFormComponent implements OnInit {
                 formData.id = this.recordId;
                 this.service.update(this.recordId, formData).subscribe({
                     next: (response) => {
+                      this.saved = true;
                         this.toastService.show(response.message, 'success');
                         this.router.navigate(['/nabl/technical-raw-data']);
                     },
@@ -159,6 +164,7 @@ export class TechnicalRawDataFormComponent implements OnInit {
             } else {
                 this.service.create(formData).subscribe({
                     next: (response) => {
+                      this.saved = true;
                         this.toastService.show(response.message, 'success');
                         this.router.navigate(['/nabl/technical-raw-data']);
                     },
@@ -176,4 +182,17 @@ export class TechnicalRawDataFormComponent implements OnInit {
     goBack(): void {
         this.router.navigate(['/nabl/technical-raw-data']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.dataForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.dataForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

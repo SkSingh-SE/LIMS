@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TrainingEffectivenessService } from '../../../services/training-effectiveness.service';
+import { ToastService } from '../../../services/toast.service';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-training-effectiveness-form',
@@ -14,7 +18,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
   styleUrl: './training-effectiveness-form.component.css',
   providers: [DatePipe]
 })
-export class TrainingEffectivenessFormComponent implements OnInit {
+export class TrainingEffectivenessFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   effectivenessForm!: FormGroup;
   recordId: number = 0;
   isEditMode = false;
@@ -53,8 +58,9 @@ export class TrainingEffectivenessFormComponent implements OnInit {
     private trainingEffectivenessService: TrainingEffectivenessService,
     private router: Router,
     private route: ActivatedRoute,
-    private datePipe: DatePipe
-  ) { }
+    private datePipe: DatePipe,
+    private toastService: ToastService,
+    private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -164,7 +170,7 @@ export class TrainingEffectivenessFormComponent implements OnInit {
         }
       },
       error: (err: any) => {
-        console.error(err);
+        this.toastService.show(err?.error?.message || 'Failed to load training effectiveness record', 'error');
       }
     });
   }
@@ -188,23 +194,25 @@ export class TrainingEffectivenessFormComponent implements OnInit {
     if (this.isEditMode) {
       this.trainingEffectivenessService.update(this.recordId, formData).subscribe({
         next: (res: any) => {
+          this.saved = true;
           if (res.success) {
             this.router.navigate(['/training-effectiveness']);
           }
         },
         error: (err: any) => {
-          console.error(err);
+          this.toastService.show(err?.error?.message || 'Failed to update training effectiveness record', 'error');
         }
       });
     } else {
       this.trainingEffectivenessService.create(formData).subscribe({
         next: (res: any) => {
+          this.saved = true;
           if (res.success) {
             this.router.navigate(['/training-effectiveness']);
           }
         },
         error: (err: any) => {
-          console.error(err);
+          this.toastService.show(err?.error?.message || 'Failed to create training effectiveness record', 'error');
         }
       });
     }
@@ -212,5 +220,18 @@ export class TrainingEffectivenessFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/training-effectiveness']);
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.effectivenessForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.effectivenessForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

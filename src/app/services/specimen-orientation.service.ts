@@ -35,4 +35,8 @@ export class SpecimenOrientationService {
     getSpecimenOrientationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+
+    getByClassification(metalClassificationId: number, searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/by-classification/${metalClassificationId}?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
 }

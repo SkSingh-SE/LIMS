@@ -1,11 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupplierRegistrationService } from '../../../services/supplier-registration.service';
+import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-supplier-registration-form',
@@ -13,7 +17,8 @@ import { QuillModule } from 'ngx-quill';
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './supplier-registration-form.component.html'
 })
-export class SupplierRegistrationFormComponent implements OnInit {
+export class SupplierRegistrationFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     registrationForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -42,8 +47,9 @@ export class SupplierRegistrationFormComponent implements OnInit {
         private fb: FormBuilder,
         private service: SupplierRegistrationService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -128,7 +134,7 @@ export class SupplierRegistrationFormComponent implements OnInit {
                     this.registrationForm.patchValue(formValues);
                 }
             },
-            error: () => {}
+            error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
         });
     }
 
@@ -142,13 +148,13 @@ export class SupplierRegistrationFormComponent implements OnInit {
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => this.router.navigate(['/supplier-registration']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/supplier-registration']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => this.router.navigate(['/supplier-registration']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/supplier-registration']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         }
     }
@@ -160,4 +166,17 @@ export class SupplierRegistrationFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.registrationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.registrationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

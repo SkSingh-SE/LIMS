@@ -164,6 +164,8 @@ describe('PurchaseOrderFormComponent', () => {
   it('should call create on submit in add mode', () => {
     component.isEditMode = false;
     component.poForm.patchValue(validData);
+    const arr = component.poForm.get('items') as FormArray;
+    while (arr.length > 0) arr.removeAt(0);
     component.onSubmit();
     expect(mockService.create).toHaveBeenCalled();
   });
@@ -172,6 +174,8 @@ describe('PurchaseOrderFormComponent', () => {
     component.isEditMode = true;
     component.recordId = 1;
     component.poForm.patchValue(validData);
+    const arr = component.poForm.get('items') as FormArray;
+    while (arr.length > 0) arr.removeAt(0);
     component.onSubmit();
     expect(mockService.update).toHaveBeenCalledWith(1, jasmine.any(Object));
   });

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
@@ -14,6 +14,8 @@ import { EquipmentTypeService } from '../../../services/equipment-type.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { EquipmentReferenceMaterialService } from '../../../services/equipment-reference-material.service';
 import { environment } from '../../../../environments/environment';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-equipment-form',
@@ -21,7 +23,8 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './equipment-form.component.html',
   styleUrl: './equipment-form.component.css',
 })
-export class EquipmentFormComponent implements OnInit {
+export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
+  saved = false;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
@@ -57,7 +60,8 @@ export class EquipmentFormComponent implements OnInit {
     private equipmentService: EquipmentService,
     private refMaterialService: EquipmentReferenceMaterialService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private unsavedChangesService: UnsavedChangesService
   ) { }
 
   ngOnInit(): void {
@@ -265,6 +269,7 @@ export class EquipmentFormComponent implements OnInit {
       },
       error: err => {
         console.error('Error loading equipment:', err);
+        this.toastService.show(err.error?.message || 'Error loading equipment', 'error');
       },
     });
   }
@@ -379,6 +384,7 @@ export class EquipmentFormComponent implements OnInit {
       if (this.equipmentId > 0) {
         this.equipmentService.updateEquipment(this.equipmentForm.value).subscribe({
           next: response => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.closeModal();
           },
@@ -389,6 +395,7 @@ export class EquipmentFormComponent implements OnInit {
       } else {
         this.equipmentService.createEquipment(this.equipmentForm.value).subscribe({
           next: response => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.closeModal();
           },
@@ -497,6 +504,18 @@ export class EquipmentFormComponent implements OnInit {
     }
     this.equipmentForm.reset();
     this.equipmentForm.enable();
+    if (this.calibrationForm) {
+      this.calibrationForm.reset();
+    }
+    if (this.maintenanceForm) {
+      this.maintenanceForm.reset();
+    }
+    if (this.sopAttachmentForm) {
+      this.sopAttachmentForm.reset();
+    }
+    if (this.sopVideoForm) {
+      this.sopVideoForm.reset();
+    }
     this.isEditMode = false;
     this.isViewMode = false;
   }
@@ -725,6 +744,7 @@ export class EquipmentFormComponent implements OnInit {
       payload.equipmentMasterID = this.equipmentId;
       this.refMaterialService.create(payload).subscribe({
         next: (response) => {
+          this.saved = true;
           this.toastService.show(response.message, 'success');
           this.loadReferenceMaterials();
         },
@@ -749,5 +769,18 @@ export class EquipmentFormComponent implements OnInit {
         this.toastService.show(error.error?.message || 'Error deleting reference material', 'error');
       },
     });
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.equipmentForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.equipmentForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

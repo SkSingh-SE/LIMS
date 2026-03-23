@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { CalibrationReviewService } from '../../../services/calibration-review.service';
+import { ToastService } from '../../../services/toast.service';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-calibration-review-form',
@@ -13,7 +17,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
   templateUrl: './calibration-review-form.component.html',
   styleUrl: './calibration-review-form.component.css'
 })
-export class CalibrationReviewFormComponent implements OnInit {
+export class CalibrationReviewFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   reviewForm!: FormGroup;
   isEditMode = false;
   recordId: number | null = null;
@@ -47,8 +52,9 @@ export class CalibrationReviewFormComponent implements OnInit {
     private fb: FormBuilder,
     private calibrationReviewService: CalibrationReviewService,
     private route: ActivatedRoute,
-    private router: Router
-  ) { }
+    private router: Router,
+    private toastService: ToastService,
+    private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initializeForm();
@@ -217,23 +223,27 @@ export class CalibrationReviewFormComponent implements OnInit {
     if (this.isEditMode && this.recordId) {
       this.calibrationReviewService.update(this.recordId, formData).subscribe({
         next: (response) => {
+          this.saved = true;
           if (response.success) {
             this.router.navigate(['/calibration-review']);
           }
         },
         error: (error) => {
           console.error('Error updating record:', error);
+          this.toastService.show(error.error?.message || 'Error updating record', 'error');
         }
       });
     } else {
       this.calibrationReviewService.create(formData).subscribe({
         next: (response) => {
+          this.saved = true;
           if (response.success) {
             this.router.navigate(['/calibration-review']);
           }
         },
         error: (error) => {
           console.error('Error creating record:', error);
+          this.toastService.show(error.error?.message || 'Error creating record', 'error');
         }
       });
     }
@@ -259,6 +269,19 @@ export class CalibrationReviewFormComponent implements OnInit {
       case 'edit': return 'Edit Calibration Review';
       case 'details': return 'Calibration Review Details';
       default: return 'Calibration Review';
+    }
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.reviewForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.reviewForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
     }
   }
 }

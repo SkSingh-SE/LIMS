@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,6 +9,8 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Observable } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-competence-requirement-form',
@@ -17,7 +19,9 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
   templateUrl: './competence-requirement-form.component.html',
   styleUrl: './competence-requirement-form.component.css'
 })
-export class CompetenceRequirementFormComponent implements OnInit {
+export class CompetenceRequirementFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+  isSubmitting = false;
   requirementForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = false;
@@ -55,7 +59,7 @@ export class CompetenceRequirementFormComponent implements OnInit {
     private competenceRequirementService: CompetenceRequirementService,
     private designationService: DesignationService,
     private toastService: ToastService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -156,14 +160,18 @@ export class CompetenceRequirementFormComponent implements OnInit {
     if (this.requirementForm.valid) {
       const formData = this.requirementForm.getRawValue();
 
+      this.isSubmitting = true;
       if (this.isEditMode) {
         formData.id = this.requirementId;
         this.competenceRequirementService.update(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
+            this.saved = true;
             this.toastService.show(response.message || 'Updated successfully', 'success');
             this.router.navigate(['/competence-requirement']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             console.error('Error updating requirement:', error);
             this.toastService.show('Error updating competence requirement', 'error');
           }
@@ -171,10 +179,13 @@ export class CompetenceRequirementFormComponent implements OnInit {
       } else {
         this.competenceRequirementService.create(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
+            this.saved = true;
             this.toastService.show(response.message || 'Created successfully', 'success');
             this.router.navigate(['/competence-requirement']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             console.error('Error creating requirement:', error);
             this.toastService.show('Error creating competence requirement', 'error');
           }
@@ -188,5 +199,18 @@ export class CompetenceRequirementFormComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/competence-requirement']);
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.requirementForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.requirementForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

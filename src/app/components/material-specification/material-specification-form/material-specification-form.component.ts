@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -24,7 +24,9 @@ import { MaterialSpecificationService } from '../../../services/material-specifi
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { Observable } from 'rxjs';
-import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-material-specification-form',
@@ -35,12 +37,13 @@ import { SearchableDropdownModalComponent } from '../../../utility/components/se
     ReactiveFormsModule,
     NumberOnlyDirective,
     SearchableDropdownComponent,
-    SearchableDropdownModalComponent
+    MultiSelectDropdownComponent
   ],
   templateUrl: './material-specification-form.component.html',
   styleUrl: './material-specification-form.component.css',
 })
-export class MaterialSpecificationFormComponent implements OnInit {
+export class MaterialSpecificationFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   materialSpecificationId: number = 0;
   materialSpecifications: any = null;
   MaterialSpecificationForm!: FormGroup;
@@ -98,7 +101,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
     private materialSpecificationService: MaterialSpecificationService,
     private testMethodSpecificationService: TestMethodSpecificationService,
     private toastService: ToastService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -146,11 +149,20 @@ export class MaterialSpecificationFormComponent implements OnInit {
   get grades() {
     return this.MaterialSpecificationForm.get('grades') as FormArray;
   }
+  /** Validator: at least one specification line in chemical or mechanical */
+  private atLeastOneSpecLineValidator(group: AbstractControl): { [key: string]: boolean } | null {
+    const lines = group.get('specificationLines') as FormGroup;
+    if (!lines) return null;
+    const chemCount = (lines.get('chemical') as FormArray)?.length || 0;
+    const mechCount = (lines.get('mechanical') as FormArray)?.length || 0;
+    return (chemCount + mechCount) > 0 ? null : { noSpecLine: true };
+  }
+
   addGrade() {
     const gradeGroup = this.fb.group({
       id: [0],
       specificationHeaderID: [this.MaterialSpecificationForm.get('id')?.value || 0],
-      grade: [''],
+      grade: ['', Validators.required],
       isUNS: [false],
       unsSteelNumber: [''],
       metalClassificationID: [''],
@@ -159,9 +171,29 @@ export class MaterialSpecificationFormComponent implements OnInit {
         mechanical: this.fb.array([]),
         other: this.fb.array([]),
       }),
-    });
+    }, { validators: this.atLeastOneSpecLineValidator });
     this.grades.push(gradeGroup);
     this.selectedMetalByGrade.push(null);
+    // Apply UNS/Steel validation if numberType is set
+    if (this.selectedNumberType !== 'None') {
+      const ctrl = gradeGroup.get('unsSteelNumber');
+      ctrl?.setValidators(Validators.required);
+      ctrl?.updateValueAndValidity();
+    }
+  }
+
+  /** Toggle required validator on unsSteelNumber for all grades */
+  private updateUnsSteelValidation(): void {
+    this.grades.controls.forEach(grade => {
+      const ctrl = grade.get('unsSteelNumber');
+      if (this.selectedNumberType !== 'None') {
+        ctrl?.setValidators(Validators.required);
+      } else {
+        ctrl?.clearValidators();
+        ctrl?.setValue('');
+      }
+      ctrl?.updateValueAndValidity();
+    });
   }
 
   removeGrade(index: number) {
@@ -179,9 +211,9 @@ export class MaterialSpecificationFormComponent implements OnInit {
       id: [0],
       gradeID: [0],
       manualSelection: [false],
-      parameterID: [''],
-      minValue: [null],
-      maxValue: [null],
+      parameterID: ['', Validators.required],
+      minValue: [null, Validators.required],
+      maxValue: [null, Validators.required],
       notes: [''],
       parameterUnitID: [''],
       minValueEquation: [0],
@@ -195,7 +227,6 @@ export class MaterialSpecificationFormComponent implements OnInit {
       heatTreatmentID: [null],
       productConditionID1: [null],
       productConditionID2: [null],
-      laboratoryTests: this.fb.array([]),
       laboratoryTestIDs: this.fb.control([]),
       type: [tab],
       IsCustom: [false]
@@ -271,8 +302,10 @@ export class MaterialSpecificationFormComponent implements OnInit {
                 productConditionID2: line.productConditionID2,
                 laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || []
               });
-              const labTestsArray = lineGroup.get('laboratoryTests') as FormArray;
-              labTestsArray.push(this.fb.group({ laboratoryTests: this.fb.array([line.laboratoryTests]) }));
+              // Disable unit if parameter is set (auto-filled, read-only)
+              if (line.parameterID) {
+                lineGroup.get('parameterUnitID')?.disable();
+              }
               formArray.push(lineGroup);
             });
           });
@@ -283,6 +316,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
             this.standardOrganizationService.getStandardOrganizationById(data.standardOrganizationID).subscribe({
               next: (org) => {
                 this.selectedNumberType = org?.numberType || 'None';
+                this.updateUnsSteelValidation();
               }
             });
           }
@@ -318,11 +352,13 @@ export class MaterialSpecificationFormComponent implements OnInit {
   onSubmit() {
     const formValue = this.MaterialSpecificationForm.getRawValue();
     const formattedData = this.formatedPayload(formValue);
-    console.log("formated Data", formattedData);
-    if (this.MaterialSpecificationForm.valid) this.saveData(formattedData);
-    else {
+    if (this.MaterialSpecificationForm.valid) {
+      this.saveData(formattedData);
+    } else {
       this.toastService.show('Please fill all required fields.', 'warning');
       this.MaterialSpecificationForm.markAllAsTouched();
+      // Mark all grades as touched to trigger spec line validation
+      this.grades.controls.forEach(g => g.markAsTouched());
     }
   }
   formatedPayload(formValue: any): any {
@@ -330,7 +366,16 @@ export class MaterialSpecificationFormComponent implements OnInit {
 
     formattedData.grades = formValue?.grades?.map((grade: any) => {
       const { chemical = [], mechanical = [], other = [] } = grade.specificationLines || {};
-      const combinedSpecificationLines = [...chemical, ...mechanical, ...other];
+      const combinedSpecificationLines = [...chemical, ...mechanical, ...other].map((line: any) => {
+        const { laboratoryTestIDs, laboratoryTests, ...rest } = line;
+        return {
+          ...rest,
+          laboratoryTests: (laboratoryTestIDs || []).map((id: number) => ({
+            specificationLineID: line.id || 0,
+            laboratoryTestID: id
+          }))
+        };
+      });
       return {
         ...grade,
         specificationLines: combinedSpecificationLines
@@ -345,6 +390,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
         .updateMaterialSpecification(formValue)
         .subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/material-specification']);
           },
@@ -358,6 +404,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
         .createMaterialSpecification(formValue)
         .subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/material-specification']);
           },
@@ -379,6 +426,7 @@ export class MaterialSpecificationFormComponent implements OnInit {
     this.selectedStandardOrganization = item;
     // Set numberType from the dropdown's additionalValues
     this.selectedNumberType = item?.additionalValues?.numberType || 'None';
+    this.updateUnsSteelValidation();
     this.generateSpecificationName();
   }
   asFormGroup(control: AbstractControl): FormGroup {
@@ -400,6 +448,13 @@ export class MaterialSpecificationFormComponent implements OnInit {
       parameterID: item.id,
       parameterUnitID: unitID
     });
+    // Disable unit dropdown after parameter auto-fills it
+    const unitControl = specificationLine.get('parameterUnitID');
+    if (unitID) {
+      unitControl?.disable();
+    } else {
+      unitControl?.enable();
+    }
   }
   getHeatTreatment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
@@ -494,5 +549,22 @@ export class MaterialSpecificationFormComponent implements OnInit {
     specLine.patchValue({
       laboratoryTestIDs: items.map((i: any) => i.id)
     });
+  }
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.MaterialSpecificationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.MaterialSpecificationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DepartmentService } from '../../../services/department.service';
 import { ToastService } from '../../../services/toast.service';
 import { Modal } from 'bootstrap';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-department-form',
@@ -12,7 +15,8 @@ import { Modal } from 'bootstrap';
   templateUrl: './department-form.component.html',
   styleUrl: './department-form.component.css'
 })
-export class DepartmentFormComponent implements OnInit, AfterViewInit {
+export class DepartmentFormComponent implements CanComponentDeactivate, OnInit, AfterViewInit {
+  saved = false;
   private bsModal!: Modal;
   @ViewChild('modalRef', {static:false}) modalElement!: ElementRef;
 
@@ -22,7 +26,7 @@ export class DepartmentFormComponent implements OnInit, AfterViewInit {
   departmentObject: any = null;
   departmentId: number = 0;
   formTitle = 'Department Form';
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private departmentService: DepartmentService, private toastService: ToastService) { }
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private departmentService: DepartmentService, private toastService: ToastService, private unsavedChangesService: UnsavedChangesService) { }
   ngOnInit(): void {
     this.departmentForm = this.fb.group({
       id: [0],
@@ -92,6 +96,7 @@ export class DepartmentFormComponent implements OnInit, AfterViewInit {
       if (this.isEditMode) {
         this.departmentService.updateDepartment(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show('Department updated successfully', 'success');
             this.closeModal();
           },
@@ -115,4 +120,17 @@ export class DepartmentFormComponent implements OnInit, AfterViewInit {
     }
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.departmentForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.departmentForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

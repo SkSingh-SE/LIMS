@@ -1,10 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EnvironmentMonitoringService } from '../../services/environment-monitoring.service';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-environment-monitoring-form',
@@ -14,7 +17,8 @@ import { NablFormsHelper } from '../../utility/nabl-helpers/nabl-forms.helper';
   styleUrl: './environment-monitoring-form.component.css',
   providers: [DatePipe]
 })
-export class EnvironmentMonitoringFormComponent implements OnInit {
+export class EnvironmentMonitoringFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   monitorForm!: FormGroup;
   recordId: number = 0;
   isEditMode = false;
@@ -57,7 +61,7 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private datePipe: DatePipe
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -184,6 +188,7 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
     if (this.isEditMode) {
       this.environmentService.update(this.recordId, formData).subscribe({
         next: (res: any) => {
+          this.saved = true;
           if (res.success) this.router.navigate(['/environment-monitoring']);
         },
         error: (err: any) => {
@@ -193,12 +198,26 @@ export class EnvironmentMonitoringFormComponent implements OnInit {
     } else {
       this.environmentService.create(formData).subscribe({
         next: (res: any) => {
+          this.saved = true;
           if (res.success) this.router.navigate(['/environment-monitoring']);
         },
         error: (err: any) => {
           console.error(err);
         }
       });
+    }
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.monitorForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.monitorForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
     }
   }
 }

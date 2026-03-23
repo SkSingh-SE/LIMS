@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
@@ -12,6 +12,8 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { CuttingPriceMasterService } from '../../../services/cutting-price-master.service';
 import { CuttingService } from '../../../services/cutting.service';
 import { SpecimenTypeService } from '../../../services/specimen-type.service';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 // ──────── Typed DTOs ────────
 export interface PriceDto {
@@ -104,7 +106,8 @@ export interface CuttingChargeResponse {
   templateUrl: './cutting-sample-form.component.html',
   styleUrl: './cutting-sample-form.component.css'
 })
-export class CuttingSampleFormComponent implements OnInit {
+export class CuttingSampleFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   // State Management
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -134,7 +137,7 @@ export class CuttingSampleFormComponent implements OnInit {
     private cuttingPriceService: CuttingPriceMasterService,
     private cuttingService: CuttingService,
     private specimenTypeService: SpecimenTypeService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -511,6 +514,7 @@ export class CuttingSampleFormComponent implements OnInit {
   private createCuttingCharge(payload: CuttingChargePayload): void {
     this.cuttingService.createCutting(payload).subscribe({
       next: () => {
+        this.saved = true;
         this.toastService.show('Cutting charges saved successfully!', 'success');
         this.router.navigate(['/sample/cutting']);
       },
@@ -526,6 +530,7 @@ export class CuttingSampleFormComponent implements OnInit {
 
     this.cuttingService.updateCutting(payload).subscribe({
       next: () => {
+        this.saved = true;
         this.toastService.show('Cutting charges updated successfully!', 'success');
         this.router.navigate(['/sample/cutting']);
       },
@@ -554,5 +559,18 @@ export class CuttingSampleFormComponent implements OnInit {
       this.router.createUrlTree(['/sample/cutting/raw-format'])
     );
     window.open(url, '_blank');
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.cuttingForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.cuttingForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

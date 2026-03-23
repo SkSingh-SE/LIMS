@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from "../../../utility/components/searchable-dropdown/searchable-dropdown.component";
 import { Observable } from 'rxjs';
@@ -16,11 +16,12 @@ import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
-import { Injectable } from '@angular/core';
-import { CanDeactivate } from '@angular/router';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-sample-inward-form',
@@ -28,7 +29,8 @@ import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
-export class SampleInwardFormComponent implements OnInit {
+export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   // Constants
   caseNumber: string = 'DMSPL-000001';
   yearCode: string = new Date().getFullYear().toString().slice(-2);
@@ -73,8 +75,9 @@ export class SampleInwardFormComponent implements OnInit {
     private inwardService: SampleInwardService,
     private route: ActivatedRoute,
     private router: Router,
-    private prodCondService: ProductConditionService
-  ) { }
+    private prodCondService: ProductConditionService,
+    private specimenOrientationService: SpecimenOrientationService,
+    private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -418,6 +421,10 @@ export class SampleInwardFormComponent implements OnInit {
 
               const normalizedSample = {
                 ...sd,
+                // Map navigation property names for dropdown rebinding
+                metalClassificationName: sd.metalClassificationName || sd.metalClassification?.name || '',
+                productConditionName: sd.productConditionName || sd.productCondition?.name || '',
+                specimenOrientationName: sd.specimenOrientationName || sd.specimenOrientation?.name || '',
                 additionalDetails: additionalSampleDetail
               };
               this.addSample(normalizedSample);
@@ -638,6 +645,8 @@ export class SampleInwardFormComponent implements OnInit {
       metalClassificationName: [existingSample?.metalClassificationName || ''],
       productConditionID: [existingSample?.productConditionID || ''],
       productConditionName: [existingSample?.productConditionName || ''],
+      specimenOrientationID: [existingSample?.specimenOrientationID || ''],
+      specimenOrientationName: [existingSample?.specimenOrientationName || ''],
       remarks: [existingSample?.remarks || ''],
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
@@ -770,6 +779,8 @@ export class SampleInwardFormComponent implements OnInit {
     sampleDetailGroup.patchValue({
       metalClassificationID: item.id,
       metalClassificationName: item.name || '',
+      specimenOrientationID: '',
+      specimenOrientationName: '',
     });
   }
 
@@ -778,6 +789,25 @@ export class SampleInwardFormComponent implements OnInit {
     sampleDetailGroup.patchValue({
       productConditionID: item.id,
       productConditionName: item.name || '',
+    });
+  }
+
+  getSpecimenOrientationDrop = (sampleIndex: number) => {
+    return (term: string, page: number, pageSize: number): Observable<any[]> => {
+      const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+      const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+      if (metalClassificationID) {
+        return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+      }
+      return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+    };
+  };
+
+  onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
+    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({
+      specimenOrientationID: item.id,
+      specimenOrientationName: item.name || '',
     });
   }
 
@@ -945,6 +975,7 @@ export class SampleInwardFormComponent implements OnInit {
       formData.append(`sampleDetails[${i}].details`, s.details || '');
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
+      formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
       formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
       formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
@@ -985,6 +1016,7 @@ export class SampleInwardFormComponent implements OnInit {
 
     request$.subscribe({
       next: (response: any) => {
+        this.saved = true;
         this.toastService.show('Sample Inward saved successfully!', 'success');
         if (isNew && response?.id) {
           // Navigate to edit mode so Plan tab becomes visible
@@ -1102,14 +1134,18 @@ export class SampleInwardFormComponent implements OnInit {
     return index;
   }
 
-}
 
-@Injectable()
-export class UnsavedChangesGuard implements CanDeactivate<SampleInwardFormComponent> {
-  canDeactivate(component: SampleInwardFormComponent): boolean {
-    if (component.sampleInwardForm.dirty) {
-      return confirm('You have unsaved changes. Are you sure?');
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.sampleInwardForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.sampleInwardForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
     }
-    return true;
   }
 }
+

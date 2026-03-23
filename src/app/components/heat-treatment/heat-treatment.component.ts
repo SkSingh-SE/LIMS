@@ -85,18 +85,7 @@ export class HeatTreatmentComponent implements OnInit {
 
   ngOnInit() {
     this.fetchData();
-    this.HeatTreatmentForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required],
-      code: ['', Validators.required],
-      heatTreatmentCategoryID: [null],
-      tempRangeMin: [null],
-      tempRangeMax: [null],
-      tempRangeDescription: [''],
-      coolingMediumID: [null],
-      applicableClassificationIds: [[]],
-      applicableClassifications: this.fb.array([]),
-    });
+    this.initForm();
   }
 
   fetchData() {
@@ -259,14 +248,28 @@ export class HeatTreatmentComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }
   }
+  initForm() {
+    this.HeatTreatmentForm = this.fb.group({
+      id: [0],
+      name: ['', Validators.required],
+      code: ['', Validators.required],
+      heatTreatmentCategoryID: [null],
+      tempRangeMin: [null],
+      tempRangeMax: [null],
+      tempRangeDescription: [''],
+      coolingMediumID: [null],
+      applicableClassificationIds: [[]],
+      applicableClassifications: this.fb.array([]),
+    });
+  }
+
   openModal(type: string, id: number): void {
-    this.HeatTreatmentForm.reset();
-    this.HeatTreatmentForm.enable();
+    this.initForm();
     if (id > 0) {
       this.heatTreatmentId = id;
       this.getDetails();
@@ -274,15 +277,11 @@ export class HeatTreatmentComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.HeatTreatmentForm.reset();
       this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
-      
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -299,8 +298,7 @@ export class HeatTreatmentComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.HeatTreatmentForm.reset();
-    this.HeatTreatmentForm.enable();
+    this.initForm();
     this.heatTreatmentId = 0;
     this.isEditMode = false;
     this.isViewMode = false;

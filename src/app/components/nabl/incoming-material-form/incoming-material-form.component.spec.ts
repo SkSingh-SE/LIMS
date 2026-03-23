@@ -143,6 +143,9 @@ describe('IncomingMaterialFormComponent', () => {
   it('should call create on submit in add mode', () => {
     component.isEditMode = false;
     component.materialForm.patchValue(validData);
+    // Clear results array to avoid invalid required fields in array items
+    const arr = component.materialForm.get('results') as FormArray;
+    while (arr.length > 0) arr.removeAt(0);
     component.onSubmit();
     expect(mockService.create).toHaveBeenCalled();
   });
@@ -151,6 +154,8 @@ describe('IncomingMaterialFormComponent', () => {
     component.isEditMode = true;
     component.recordId = 1;
     component.materialForm.patchValue(validData);
+    const arr = component.materialForm.get('results') as FormArray;
+    while (arr.length > 0) arr.removeAt(0);
     component.onSubmit();
     expect(mockService.update).toHaveBeenCalledWith(1, jasmine.any(Object));
   });

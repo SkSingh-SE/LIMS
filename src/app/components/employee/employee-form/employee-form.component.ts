@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal , HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
@@ -17,13 +17,16 @@ import { AuthService } from '../../../services/auth.service';
 import { EmployeeUserManagementComponent } from '../employee-user-management/employee-user-management.component';
 import { EmployeeJobTrainingComponent } from '../employee-job-training/employee-job-training.component';
 import { EmployeePerformanceRecordComponent } from '../employee-performance-record/employee-performance-record.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 @Component({
   selector: 'app-employee-form',
   imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
-export class EmployeeFormComponent {
+export class EmployeeFormComponent implements CanComponentDeactivate {
+  saved = false;
 
   isAdminUser: boolean = false;
   uploadedFiles: File[] = [];
@@ -86,7 +89,7 @@ export class EmployeeFormComponent {
   documentList: any[] = [];
 
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService) {
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService, private unsavedChangesService: UnsavedChangesService) {
     this.isAdminUser = this.authService.getUserData()?.isAdmin || false;
   }
 
@@ -280,6 +283,7 @@ export class EmployeeFormComponent {
         // Update employee
         this.employeeService.updateEmployee(this.employeeId, this.personalInfoForm.value).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
             // Optional: refresh or redirect
           },
@@ -292,6 +296,7 @@ export class EmployeeFormComponent {
         // Create new employee
         this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
           next: (response) => {
+            this.saved = true;
             this.employeeId = response.id;
             this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
           },
@@ -679,4 +684,17 @@ export class EmployeeFormComponent {
     });
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!(this.personalInfoForm?.dirty || this.qualificationForm?.dirty || this.documentsForm?.dirty) || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if ((this.personalInfoForm?.dirty || this.qualificationForm?.dirty || this.documentsForm?.dirty) && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

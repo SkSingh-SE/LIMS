@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, signal, ViewChild , HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { RoleService } from '../../../services/role.service';
@@ -7,6 +7,8 @@ import { CommonModule } from '@angular/common';
 import { MenuService } from '../../../services/menu.service';
 import { Observable } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-role-form',
@@ -14,7 +16,8 @@ import { NgSelectModule } from '@ng-select/ng-select';
   templateUrl: './role-form.component.html',
   styleUrl: './role-form.component.css'
 })
-export class RoleFormComponent implements OnInit {
+export class RoleFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
@@ -79,7 +82,7 @@ export class RoleFormComponent implements OnInit {
   ];
   groupedMenuItems: any[] = [];
 
-  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService) {
+  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService, private unsavedChangesService: UnsavedChangesService) {
 
   }
 
@@ -277,6 +280,9 @@ export class RoleFormComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.roleForm.reset();
+    this.roleForm.enable();
+    this.roleId = 0;
     if (id > 0) {
       this.roleId = id;
       this.getDetails();
@@ -333,6 +339,7 @@ export class RoleFormComponent implements OnInit {
 
       saveFn.call(this.roleService, payload).subscribe({
         next: (res: any) => {
+          this.saved = true;
           this.toastService.show(res.message, 'success');
           this.closeModal();
           this.initForm();
@@ -372,6 +379,19 @@ export class RoleFormComponent implements OnInit {
   }
 
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.roleForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.roleForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }
 
 

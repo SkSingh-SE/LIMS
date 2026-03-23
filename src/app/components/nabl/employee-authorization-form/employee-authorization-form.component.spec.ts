@@ -33,7 +33,7 @@ describe('EmployeeAuthorizationFormComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({})),
-            snapshot: { paramMap: convertToParamMap({}) },
+            snapshot: { paramMap: convertToParamMap({}), url: [], params: {} },
             params: of({}),
             url: of([]),
           },

@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { ComplaintService } from '../../../../services/complaint.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-complaint-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './complaint-form.component.html',
     styleUrl: './complaint-form.component.css'
 })
-export class ComplaintFormComponent implements OnInit {
+export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     complaintForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -42,7 +46,7 @@ export class ComplaintFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: ComplaintService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -99,9 +103,9 @@ export class ComplaintFormComponent implements OnInit {
     onSubmit() {
         if (this.complaintForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.complaintForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.complaintForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.complaintForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.complaintForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -109,4 +113,17 @@ export class ComplaintFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/complaint-register']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.complaintForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.complaintForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

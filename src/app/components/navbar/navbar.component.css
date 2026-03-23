@@ -466,8 +466,13 @@
     transition: background 0.15s;
 }
 
-.menu-search-result-item:hover {
+.menu-search-result-item:hover,
+.menu-search-result-item.highlighted {
     background-color: #fef2f2;
+}
+
+.menu-search-result-item.highlighted .result-title {
+    color: #da261c;
 }
 
 .menu-search-result-item .result-title {

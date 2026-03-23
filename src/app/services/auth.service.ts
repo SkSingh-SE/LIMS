@@ -39,7 +39,11 @@ export class AuthService {
 
   saveUserData(userData: any): void {
     localStorage.setItem('userData', JSON.stringify(userData));
-    const expirationTime = Date.now() + userData.expiresInSecond * 1000; // Convert seconds to milliseconds
+    const seconds = userData.expiresInSeconds ?? userData.expiresInSecond ?? 0;
+    let expirationTime = Date.now() + seconds * 1000;
+    if (isNaN(expirationTime) || seconds <= 0) {
+      expirationTime = Date.now() + 8 * 60 * 60 * 1000; // fallback: 8 hours
+    }
     localStorage.setItem('tokenExpiration', expirationTime.toString());
   }
 

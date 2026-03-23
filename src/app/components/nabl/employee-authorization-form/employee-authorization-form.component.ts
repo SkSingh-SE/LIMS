@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,6 +6,9 @@ import { EmployeeAuthorizationService } from '../../../services/employee-authori
 import { ToastService } from '../../../services/toast.service';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-employee-authorization-form',
@@ -14,7 +17,9 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
     templateUrl: './employee-authorization-form.component.html',
     styleUrl: './employee-authorization-form.component.css'
 })
-export class EmployeeAuthorizationFormComponent implements OnInit {
+export class EmployeeAuthorizationFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     authForm!: FormGroup;
     recordId: number = 0;
     isEditMode: boolean = false;
@@ -43,7 +48,7 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -109,10 +114,13 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
         }
 
         const formData = this.authForm.getRawValue();
+        this.isSubmitting = true;
 
         if (this.isEditMode) {
             this.authService.update(this.recordId, formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/equipment-authorization/list']);
@@ -121,6 +129,7 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error updating authorization', 'error');
                 }
@@ -128,6 +137,8 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
         } else {
             this.authService.create(formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/equipment-authorization/list']);
@@ -136,10 +147,24 @@ export class EmployeeAuthorizationFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error creating authorization', 'error');
                 }
             });
         }
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.authForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.authForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

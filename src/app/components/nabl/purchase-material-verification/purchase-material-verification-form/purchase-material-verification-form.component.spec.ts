@@ -54,7 +54,8 @@ describe('PurchaseMaterialVerificationFormComponent', () => {
             params: of({}),
             snapshot: {
               paramMap: convertToParamMap({}),
-              url: []
+              url: [],
+              params: {}
             }
           }
         }
@@ -138,6 +139,11 @@ describe('PurchaseMaterialVerificationFormComponent', () => {
   it('should call create on submit in add mode', () => {
     component.isEditMode = false;
     component.verificationForm.patchValue(validData);
+    // Fill in the required item fields so the form becomes valid
+    const arr = component.verificationForm.get('items') as FormArray;
+    if (arr.length > 0) {
+      arr.at(0).patchValue({ materialName: 'Test Mat', poNumber: 'PO-1', verifiedQuantity: 5, observation: 'OK', verificationStatus: 'Pass' });
+    }
     component.onSubmit();
     expect(mockService.create).toHaveBeenCalled();
   });
@@ -146,6 +152,10 @@ describe('PurchaseMaterialVerificationFormComponent', () => {
     component.isEditMode = true;
     component.recordId = 1;
     component.verificationForm.patchValue(validData);
+    const arr = component.verificationForm.get('items') as FormArray;
+    if (arr.length > 0) {
+      arr.at(0).patchValue({ materialName: 'Test Mat', poNumber: 'PO-1', verifiedQuantity: 5, observation: 'OK', verificationStatus: 'Pass' });
+    }
     component.onSubmit();
     expect(mockService.update).toHaveBeenCalledWith(1, jasmine.any(Object));
   });

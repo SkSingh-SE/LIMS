@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,6 +6,9 @@ import { MethodVerificationNablService } from '../../../../services/method-verif
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { ToastService } from '../../../../services/toast.service';
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-method-verification-nabl-form',
@@ -13,7 +16,9 @@ import { QuillModule } from 'ngx-quill';
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './method-verification-form.component.html'
 })
-export class MethodVerificationNablFormComponent implements OnInit {
+export class MethodVerificationNablFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     requestForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -37,7 +42,7 @@ export class MethodVerificationNablFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -187,12 +192,16 @@ export class MethodVerificationNablFormComponent implements OnInit {
             ? this.service.update(this.recordId, formData)
             : this.service.create(formData);
 
+        this.isSubmitting = true;
         obs.subscribe({
             next: (res) => {
+              this.isSubmitting = false;
+              this.saved = true;
                 this.toastService.show(res.message, 'success');
                 this.router.navigate(['/nabl/method-verification']);
             },
             error: (err) => {
+                this.isSubmitting = false;
                 this.toastService.show(err.message || 'Operation failed', 'error');
             }
         });
@@ -205,4 +214,17 @@ export class MethodVerificationNablFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.requestForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.requestForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

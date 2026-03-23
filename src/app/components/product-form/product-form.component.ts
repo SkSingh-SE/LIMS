@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, signal, ViewChild , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ProductFormService } from '../../services/product-form.service';
 import { ToastService } from '../../services/toast.service';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-product-form',
@@ -12,7 +15,8 @@ import { ToastService } from '../../services/toast.service';
   templateUrl: './product-form.component.html',
   styleUrl: './product-form.component.css'
 })
-export class ProductFormComponent implements OnInit {
+export class ProductFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
@@ -63,7 +67,7 @@ export class ProductFormComponent implements OnInit {
   entityId: number = 0;
   formTitle = 'Product Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private service: ProductFormService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private service: ProductFormService, private toastService: ToastService, private unsavedChangesService: UnsavedChangesService) {
 
   }
 
@@ -290,6 +294,7 @@ export class ProductFormComponent implements OnInit {
       if (this.isEditMode) {
         this.service.updateProductForm(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.closeModal();
             this.fetchData();
@@ -311,7 +316,22 @@ export class ProductFormComponent implements OnInit {
           }
         });
       }
+    } else {
+      this.ProductFormForm.markAllAsTouched();
     }
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.ProductFormForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.ProductFormForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

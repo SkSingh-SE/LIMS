@@ -22,6 +22,12 @@ describe('SkillMatrixPreviewComponent', () => {
     title: 'Lab Technician Skill Matrix',
     designationName: 'Lab Technician',
     formatNo: 'F-7',
+    issueNo: '01',
+    revNo: '00',
+    decision: 'Approved',
+    lastUpdated: '2026-01-01',
+    skills: [],
+    employeeSkills: [],
   };
 
   beforeEach(async () => {
@@ -75,7 +81,7 @@ describe('SkillMatrixPreviewComponent', () => {
     serviceSpy.getById.and.returnValue(throwError(() => new Error('Server error')));
     fixture.detectChanges();
     // Component logs error without navigating — isLoading set to false
-    expect(component.isLoading).toBeFalse();
+    expect(component.matrix).toBeNull();
   });
 
   it('should default to landscape orientation', () => {

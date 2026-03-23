@@ -255,14 +255,14 @@ export class MetalClassificationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
-    this.MetalClassificationForm.reset();
-    this.MetalClassificationForm.enable();
+    this.initForm();
+    this.parameterReloadKey++;
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -270,15 +270,11 @@ export class MetalClassificationComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.MetalClassificationForm.reset();
       this.formTitle = 'Metal Classification Form';
-      this.MetalClassificationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Metal Classification Form';
-      this.MetalClassificationForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -295,8 +291,7 @@ export class MetalClassificationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.MetalClassificationForm.reset();
-    this.MetalClassificationForm.enable();
+    this.initForm();
     this.metalClassificationId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
@@ -352,7 +347,12 @@ export class MetalClassificationComponent implements OnInit {
   onSubmit(): void {
     if (this.MetalClassificationForm.valid) {
       let formData = this.MetalClassificationForm.value;
-      console.log("submit values", formData);
+      const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
+      const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+      if (hasParams && parameterArray.length === 0) {
+        this.toastService.show('Please select at least one parameter.', 'warning');
+        return;
+      }
       if (this.isEditMode) {
         this.metalclassificationService.updateMetalClassification(formData).subscribe({
           next: (response) => {

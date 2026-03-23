@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { PurchaseMaterialVerificationService } from '../../../../services/purchase-material-verification.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-purchase-material-verification-form',
 
@@ -12,7 +16,8 @@ import { QuillModule } from 'ngx-quill';
     templateUrl: './purchase-material-verification-form.component.html',
     styleUrls: ['./purchase-material-verification-form.component.css']
 })
-export class PurchaseMaterialVerificationFormComponent implements OnInit {
+export class PurchaseMaterialVerificationFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     verificationForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -50,8 +55,9 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
         private fb: FormBuilder,
         private service: PurchaseMaterialVerificationService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private unsavedChangesService: UnsavedChangesService,
+        private toastService: ToastService) { }
 
     ngOnInit(): void {
         this.formNumbers = NablFormsHelper.getFormNumbers();
@@ -124,26 +130,31 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
     loadRecordData(): void {
         if (!this.recordId) return;
 
-        this.service.getById(this.recordId).subscribe(record => {
-            if (record) {
-                // Clear empty default array
-                while (this.items.length !== 0) {
-                    this.items.removeAt(0);
+        this.service.getById(this.recordId).subscribe({
+            next: (record) => {
+                if (record) {
+                    // Clear empty default array
+                    while (this.items.length !== 0) {
+                        this.items.removeAt(0);
+                    }
+
+                    // Add item groups for each item in record
+                    record.items.forEach(() => {
+                        this.addItem();
+                    });
+
+                    this.verificationForm.patchValue(record);
+
+                    if (this.isViewMode) {
+                        this.verificationForm.disable();
+                    }
+                } else {
+                    this.toastService.show('Record not found', 'error');
+                    this.router.navigate(['/purchase/material-verification/list']);
                 }
-
-                // Add item groups for each item in record
-                record.items.forEach(() => {
-                    this.addItem();
-                });
-
-                this.verificationForm.patchValue(record);
-
-                if (this.isViewMode) {
-                    this.verificationForm.disable();
-                }
-            } else {
-                alert('Record not found');
-                this.router.navigate(['/purchase/material-verification/list']);
+            },
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Failed to load record', 'error');
             }
         });
     }
@@ -151,7 +162,7 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
     onSubmit(): void {
         if (this.verificationForm.invalid) {
             this.verificationForm.markAllAsTouched();
-            alert('Please fill all required fields');
+            this.toastService.show('Please fill all required fields', 'error');
             return;
         }
 
@@ -161,12 +172,18 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
             ? this.service.update(this.recordId, formData)
             : this.service.create(formData);
 
-        request.subscribe(res => {
-            if (res.success) {
-                alert(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`);
-                this.router.navigate(['/purchase-material-verification']);
-            } else {
-                alert('Failed to save record');
+        request.subscribe({
+            next: (res) => {
+                this.saved = true;
+                if (res.success) {
+                    this.toastService.show(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`, 'success');
+                    this.router.navigate(['/purchase-material-verification']);
+                } else {
+                    this.toastService.show('Failed to save record', 'error');
+                }
+            },
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Operation failed', 'error');
             }
         });
     }
@@ -174,4 +191,17 @@ export class PurchaseMaterialVerificationFormComponent implements OnInit {
     onCancel(): void {
         this.router.navigate(['/purchase-material-verification']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.verificationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.verificationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -209,6 +209,7 @@
                                         [selectedItem]="MetalClassificationForm.get('parentID')?.value"
                                         (itemSelected)="MetalClassificationForm.get('parentID')?.setValue($event?.id)"
                                         [placeholder]="'Select Parent Classification'"
+                                        [hideLabel]="true"
                                         [isDisabled]="isViewMode">
                                     </app-searchable-dropdown>
                                 </div>

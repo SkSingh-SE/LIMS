@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { ProductInspectionService } from '../../../services/product-inspection.service';
+import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-product-inspection-form',
@@ -12,7 +16,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './product-inspection-form.component.html'
 })
-export class ProductInspectionFormComponent implements OnInit {
+export class ProductInspectionFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     inspectionForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -42,8 +47,9 @@ export class ProductInspectionFormComponent implements OnInit {
         private fb: FormBuilder,
         private service: ProductInspectionService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -141,7 +147,7 @@ export class ProductInspectionFormComponent implements OnInit {
                     this.inspectionForm.patchValue(formValues);
                 }
             },
-            error: () => {}
+            error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }
         });
     }
 
@@ -155,13 +161,13 @@ export class ProductInspectionFormComponent implements OnInit {
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => this.router.navigate(['/product-inspection']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/product-inspection']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => this.router.navigate(['/product-inspection']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/product-inspection']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
             });
         }
     }
@@ -173,4 +179,17 @@ export class ProductInspectionFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.inspectionForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.inspectionForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

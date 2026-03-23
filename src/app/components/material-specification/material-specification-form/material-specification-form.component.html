@@ -24,18 +24,30 @@
             </div>
             <!--Standard Organisation Dropdown -->
             <div class="col-md-3">
-              <app-searchable-dropdown
-                class="w-100"
-                [placeholder]="'Search Organisation'"
-                [labelName]="'Standard Organization'"
-                [fetchDataFn]="getStandardOrganization"
-                (itemSelected)="onOrganizationSelected($event)"
-                [hideLabel]="false"
-                [required]="true"
-                [isDisabled]="isViewMode"
-                [selectedItem]="MaterialSpecificationForm.get('standardOrganizationID')?.value"
-              ></app-searchable-dropdown>
-
+              <div class="d-flex align-items-center gap-1">
+                <div class="flex-grow-1">
+                  <app-searchable-dropdown
+                    class="w-100"
+                    [placeholder]="'Search Organisation'"
+                    [labelName]="'Standard Organization'"
+                    [fetchDataFn]="getStandardOrganization"
+                    (itemSelected)="onOrganizationSelected($event)"
+                    [hideLabel]="false"
+                    [required]="true"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="MaterialSpecificationForm.get('standardOrganizationID')?.value"
+                  ></app-searchable-dropdown>
+                </div>
+                <button
+                  *ngIf="!isViewMode"
+                  type="button"
+                  class="btn btn-outline-primary btn-sm mt-4"
+                  title="Add New Standard Organization"
+                  (click)="openLinkedMaster('/standard-organization')"
+                >
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+              </div>
               <div
                 *ngIf="
                   MaterialSpecificationForm.get('standardOrganizationID')?.touched &&
@@ -90,10 +102,10 @@
               {{ grade.get("grade")?.value || "New Grade" }}
             </span>
             <div class="ms-auto d-flex gap-2 align-items-center">
-              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="addGrade(); $event.stopPropagation()">
+              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addGrade(); $event.stopPropagation()">
                 <i class="bi bi-plus-circle-dotted"></i> Add Grade
               </button>
-              <button *ngIf="!isViewMode && grades.length > 1" type="button" class="btn btn-sm btn-outline-dark" (click)="removeGrade(gi); $event.stopPropagation()">
+              <button *ngIf="!isViewMode && grades.length > 1" type="button" class="btn btn-sm btn-remove" (click)="removeGrade(gi); $event.stopPropagation()">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -113,28 +125,42 @@
                     (blur)="generateSpecificationName()"
                     [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
                   />
-                  <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger" style="font-size: 0.75rem;">Grade is required</span>
+                  <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger" class="small">Grade is required</span>
                 </div>
 
                 <!-- Metal Classification per-grade -->
                 <div class="col-md-3">
-                  <app-searchable-dropdown
-                    class="w-100"
-                    [placeholder]="'Search Metal Classification'"
-                    [labelName]="'Metal Classification'"
-                    [fetchDataFn]="getMetalClassification"
-                    (itemSelected)="onMetalClassificationSelected($event, gi)"
-                    [hideLabel]="false"
-                    [required]="false"
-                    [isDisabled]="isViewMode"
-                    [selectedItem]="grade.get('metalClassificationID')?.value"
-                  ></app-searchable-dropdown>
+                  <div class="d-flex align-items-center gap-1">
+                    <div class="flex-grow-1">
+                      <app-searchable-dropdown
+                        class="w-100"
+                        [placeholder]="'Search Metal Classification'"
+                        [labelName]="'Metal Classification'"
+                        [fetchDataFn]="getMetalClassification"
+                        (itemSelected)="onMetalClassificationSelected($event, gi)"
+                        [hideLabel]="false"
+                        [required]="false"
+                        [isDisabled]="isViewMode"
+                        [selectedItem]="grade.get('metalClassificationID')?.value"
+                      ></app-searchable-dropdown>
+                    </div>
+                    <button
+                      *ngIf="!isViewMode"
+                      type="button"
+                      class="btn btn-outline-primary btn-sm mt-4"
+                      title="Add New Metal Classification"
+                      (click)="openLinkedMaster('/metal-classification')"
+                    >
+                      <i class="bi bi-plus-lg"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <!-- UNS / Steel Number - driven by Standard Organization's NumberType -->
                 <div *ngIf="selectedNumberType !== 'None'" class="col-md-3">
                   <label class="form-label" for="UNSSteel-{{gi}}">
                     {{ selectedNumberType === 'UNS' ? 'UNS Number' : 'Steel Number' }}
+                    <span class="text-danger">*</span>
                   </label>
                   <input
                     class="form-control"
@@ -143,7 +169,11 @@
                     [placeholder]="selectedNumberType === 'UNS' ? 'Enter UNS number' : 'Enter steel number'"
                     maxlength="100"
                     (blur)="generateSpecificationName()"
+                    [ngClass]="{ 'is-invalid': grade.get('unsSteelNumber')?.touched && grade.get('unsSteelNumber')?.invalid }"
                   />
+                  <span *ngIf="grade.get('unsSteelNumber')?.touched && grade.get('unsSteelNumber')?.invalid" class="text-danger small">
+                    {{ selectedNumberType === 'UNS' ? 'UNS Number' : 'Steel Number' }} is required
+                  </span>
                 </div>
               </div>
               <ul class="nav nav-tabs">
@@ -161,6 +191,9 @@
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'other'" (click)="selectSpecTab(gi, 'other')">Other</a>
                 </li> -->
               </ul>
+              <span *ngIf="grade.hasError('noSpecLine') && grade.touched" class="text-danger" class="small">
+                At least one specification line is required in Chemical or Mechanical tab.
+              </span>
               <div [formGroupName]="'specificationLines'">
                 <!-- Chemical Tab -->
                 <div class="p-2" *ngIf="selectedSpecTab[gi] === 'chemical'">
@@ -241,29 +274,46 @@
                               </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Parameter'"
-                                [labelName]="'Parameter'"
-                                [fetchDataFn]="getChemicalParameter"
-                                (itemSelected)="onParameterSelected($event, gi, i, 'chemical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('parameterID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [ngClass]="{'border border-danger rounded': group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')}"
+                                    [placeholder]="'Search Parameter'"
+                                    [labelName]="'Parameter'"
+                                    [fetchDataFn]="getChemicalParameter"
+                                    (itemSelected)="onParameterSelected($event, gi, i, 'chemical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('parameterID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Parameter" (click)="openLinkedMaster('/chemical-parameter')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
+                              <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
+                                Parameter is required
+                              </small>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown-modal
-                                class="w-100"
-                                [placeholder]="'Search Test Method'"
-                                [labelName]="'Test Method'"
-                                [fetchDataFn]="getTestMethodSpecification"
-                                [isMultiSelect]="true"
-                                [hideLabel]="true"
-                                [isDisabled]="isViewMode"
-                                [selectedItem]="group.get('laboratoryTestIDs')?.value"
-                                (itemsSelected)="onTestMethodsSelected($event, gi, i, 'chemical')"
-                              ></app-searchable-dropdown-modal>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-multi-select-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Test Method'"
+                                    [labelName]="'Test Method'"
+                                    [fetchDataFn]="getTestMethodSpecification"
+                                    [hideLabel]="true"
+                                    [isDisabled]="isViewMode"
+                                    [selectedValues]="group.get('laboratoryTestIDs')?.value"
+                                    (itemsSelected)="onTestMethodsSelected($event, gi, i, 'chemical')"
+                                  ></app-multi-select-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Test Method" (click)="openLinkedMaster('/test-specification/create')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <input
@@ -272,8 +322,11 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                [ngClass]="{'is-invalid': (group.get('minValue')?.touched && group.get('minValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
                               />
+                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
+                                Min value is required
+                              </small>
                             </td>
                             <td>
                               <input
@@ -282,8 +335,11 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                [ngClass]="{'is-invalid': (group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
                               />
+                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
+                                Max value is required
+                              </small>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -292,8 +348,8 @@
                               <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
                             </td>
                             <td>
-                              <!-- Unit Dropdown - auto-selected, readonly -->
-                              <select class="form-select wide-input" formControlName="parameterUnitID" [attr.disabled]="true">
+                              <!-- Unit Dropdown - disabled after parameter selection -->
+                              <select class="form-select wide-input" formControlName="parameterUnitID">
                                 <option value="" disabled selected>Select Unit</option>
                                 <option *ngFor="let unit of parameterUnits" [value]="unit.id">
                                   {{ unit.name }}
@@ -346,16 +402,23 @@
                               </select>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Dimentional Factor'"
-                                [labelName]="'Dimentional Factor'"
-                                [fetchDataFn]="getDimensionalFactor"
-                                (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'chemical')"
-                                [hideLabel]="true"
-                                [isDisabled]="isViewMode"
-                                [selectedItem]="group.get('dimensionalFactorID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Dimensional Factor'"
+                                    [labelName]="'Dimensional Factor'"
+                                    [fetchDataFn]="getDimensionalFactor"
+                                    (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'chemical')"
+                                    [hideLabel]="true"
+                                    [isDisabled]="isViewMode"
+                                    [selectedItem]="group.get('dimensionalFactorID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimensional-factor')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
@@ -375,40 +438,61 @@
                             </td>
 
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Heat Treatment'"
-                                [labelName]="'Heat Treatment'"
-                                [fetchDataFn]="getHeatTreatment"
-                                (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'chemical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('heatTreatmentID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Heat Treatment'"
+                                    [labelName]="'Heat Treatment'"
+                                    [fetchDataFn]="getHeatTreatment"
+                                    (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'chemical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('heatTreatmentID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Product Condition'"
-                                [labelName]="'Product Condition 1'"
-                                [fetchDataFn]="getProductCondition"
-                                (itemSelected)="onProductCondition1Selected($event, gi, i, 'chemical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('productConditionID1')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Product Condition'"
+                                    [labelName]="'Product Condition 1'"
+                                    [fetchDataFn]="getProductCondition"
+                                    (itemSelected)="onProductCondition1Selected($event, gi, i, 'chemical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('productConditionID1')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Product Condition'"
-                                [labelName]="'Product Condition 2'"
-                                [fetchDataFn]="getProductCondition"
-                                (itemSelected)="onProductCondition2Selected($event, gi, i, 'chemical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('productConditionID2')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Product Condition'"
+                                    [labelName]="'Product Condition 2'"
+                                    [fetchDataFn]="getProductCondition"
+                                    (itemSelected)="onProductCondition2Selected($event, gi, i, 'chemical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('productConditionID2')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td *ngIf="!isViewMode" class="text-center">
                               <button
@@ -505,29 +589,46 @@
                               </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Parameter'"
-                                [labelName]="'Parameter'"
-                                [fetchDataFn]="getMechanicalParameter"
-                                (itemSelected)="onParameterSelected($event, gi, i, 'mechanical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('parameterID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [ngClass]="{'border border-danger rounded': group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')}"
+                                    [placeholder]="'Search Parameter'"
+                                    [labelName]="'Parameter'"
+                                    [fetchDataFn]="getMechanicalParameter"
+                                    (itemSelected)="onParameterSelected($event, gi, i, 'mechanical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('parameterID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Parameter" (click)="openLinkedMaster('/mechanical-parameter')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
+                              <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
+                                Parameter is required
+                              </small>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown-modal
-                                class="w-100"
-                                [placeholder]="'Search Test Method'"
-                                [labelName]="'Test Method'"
-                                [fetchDataFn]="getTestMethodSpecification"
-                                [isMultiSelect]="true"
-                                [hideLabel]="true"
-                                [isDisabled]="isViewMode"
-                                [selectedItem]="group.get('laboratoryTestIDs')?.value"
-                                (itemsSelected)="onTestMethodsSelected($event, gi, i, 'mechanical')"
-                              ></app-searchable-dropdown-modal>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-multi-select-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Test Method'"
+                                    [labelName]="'Test Method'"
+                                    [fetchDataFn]="getTestMethodSpecification"
+                                    [hideLabel]="true"
+                                    [isDisabled]="isViewMode"
+                                    [selectedValues]="group.get('laboratoryTestIDs')?.value"
+                                    (itemsSelected)="onTestMethodsSelected($event, gi, i, 'mechanical')"
+                                  ></app-multi-select-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Test Method" (click)="openLinkedMaster('/test-specification/create')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <input
@@ -536,8 +637,11 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                [ngClass]="{'is-invalid': (group.get('minValue')?.touched && group.get('minValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
                               />
+                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
+                                Min value is required
+                              </small>
                             </td>
                             <td>
                               <input
@@ -546,8 +650,11 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                [ngClass]="{'is-invalid': (group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
                               />
+                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
+                                Max value is required
+                              </small>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -556,8 +663,8 @@
                               <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
                             </td>
                             <td>
-                              <!-- Unit Dropdown - auto-selected, readonly -->
-                              <select class="form-select wide-input" formControlName="parameterUnitID" [attr.disabled]="true">
+                              <!-- Unit Dropdown - disabled after parameter selection -->
+                              <select class="form-select wide-input" formControlName="parameterUnitID">
                                 <option value="" disabled selected>Select Unit</option>
                                 <option *ngFor="let unit of parameterUnits" [value]="unit.id">
                                   {{ unit.name }}
@@ -610,16 +717,23 @@
                               </select>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Dimentional Factor'"
-                                [labelName]="'Dimentional Factor'"
-                                [fetchDataFn]="getDimensionalFactor"
-                                (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'mechanical')"
-                                [hideLabel]="true"
-                                [isDisabled]="isViewMode"
-                                [selectedItem]="group.get('dimensionalFactorID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Dimensional Factor'"
+                                    [labelName]="'Dimensional Factor'"
+                                    [fetchDataFn]="getDimensionalFactor"
+                                    (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'mechanical')"
+                                    [hideLabel]="true"
+                                    [isDisabled]="isViewMode"
+                                    [selectedItem]="group.get('dimensionalFactorID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimensional-factor')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <select class="form-control form-select wide-input" formControlName="lowerLimitValue">
@@ -639,40 +753,61 @@
                             </td>
 
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Heat Treatment'"
-                                [labelName]="'Heat Treatment'"
-                                [fetchDataFn]="getHeatTreatment"
-                                (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'mechanical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('heatTreatmentID')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Heat Treatment'"
+                                    [labelName]="'Heat Treatment'"
+                                    [fetchDataFn]="getHeatTreatment"
+                                    (itemSelected)="onHeatTreatmentSelected($event, gi, i, 'mechanical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('heatTreatmentID')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Product Condition'"
-                                [labelName]="'Product Condition 1'"
-                                [fetchDataFn]="getProductCondition"
-                                (itemSelected)="onProductCondition1Selected($event, gi, i, 'mechanical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('productConditionID1')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Product Condition'"
+                                    [labelName]="'Product Condition 1'"
+                                    [fetchDataFn]="getProductCondition"
+                                    (itemSelected)="onProductCondition1Selected($event, gi, i, 'mechanical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('productConditionID1')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td class="wide-input">
-                              <app-searchable-dropdown
-                                class="w-100"
-                                [placeholder]="'Search Product Condition'"
-                                [labelName]="'Product Condition 2'"
-                                [fetchDataFn]="getProductCondition"
-                                (itemSelected)="onProductCondition2Selected($event, gi, i, 'mechanical')"
-                                [isDisabled]="isViewMode"
-                                [hideLabel]="true"
-                                [selectedItem]="group.get('productConditionID2')?.value"
-                              ></app-searchable-dropdown>
+                              <div class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                  <app-searchable-dropdown
+                                    class="w-100"
+                                    [placeholder]="'Search Product Condition'"
+                                    [labelName]="'Product Condition 2'"
+                                    [fetchDataFn]="getProductCondition"
+                                    (itemSelected)="onProductCondition2Selected($event, gi, i, 'mechanical')"
+                                    [isDisabled]="isViewMode"
+                                    [hideLabel]="true"
+                                    [selectedItem]="group.get('productConditionID2')?.value"
+                                  ></app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-plus-lg"></i>
+                                </button>
+                              </div>
                             </td>
                             <td *ngIf="!isViewMode" class="text-center">
                               <button
@@ -768,6 +903,7 @@
                             <td class="wide-input">
                               <app-searchable-dropdown
                                 class="w-100"
+                                [ngClass]="{'border border-danger rounded': group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')}"
                                 [placeholder]="'Search Parameter'"
                                 [labelName]="'Parameter'"
                                 [fetchDataFn]="getParameter"
@@ -776,6 +912,9 @@
                                 [hideLabel]="true"
                                 [selectedItem]="group.get('parameterID')?.value"
                               ></app-searchable-dropdown>
+                              <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
+                                Parameter is required
+                              </small>
                             </td>
                             <td>
                               <input
@@ -784,7 +923,11 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.touched && group.get('minValue')?.hasError('required')}"
                               />
+                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
+                                Min value is required
+                              </small>
                             </td>
                             <td>
                               <input
@@ -793,7 +936,11 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [ngClass]="{'is-invalid': group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')}"
                               />
+                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
+                                Max value is required
+                              </small>
                             </td>
                             <td>
                               <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />
@@ -853,8 +1000,8 @@
                             <td class="wide-input">
                               <app-searchable-dropdown
                                 class="w-100"
-                                [placeholder]="'Search Dimentional Factor'"
-                                [labelName]="'Dimentional Factor'"
+                                [placeholder]="'Search Dimensional Factor'"
+                                [labelName]="'Dimensional Factor'"
                                 [fetchDataFn]="getDimensionalFactor"
                                 (itemSelected)="onDimensionalFactorSelected($event, gi, i, 'other')"
                                 [hideLabel]="true"
@@ -925,7 +1072,7 @@
           </div>
         </div>
       </div>
-      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+      <div *ngIf="!isViewMode" class="form-action-bar">
         <a [routerLink]="['/material-specification']" class="btn btn-cancel">Cancel</a>
         <button type="submit" class="btn btn-save">Save</button>
       </div>

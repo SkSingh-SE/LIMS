@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DesignationService } from '../../../services/designation.service';
@@ -8,6 +8,8 @@ import { CommonModule } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-designation-form',
@@ -15,7 +17,8 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
   templateUrl: './designation-form.component.html',
   styleUrl: './designation-form.component.css'
 })
-export class DesignationFormComponent implements OnInit, AfterViewInit {
+export class DesignationFormComponent implements CanComponentDeactivate, OnInit, AfterViewInit {
+  saved = false;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
   designationForm!: FormGroup;
@@ -24,7 +27,7 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
   designationObjet: any = null;
   designationId: number = 0;
   formTitle = 'Designation Form';
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private designationService: DesignationService, private roleService: RoleService, private toastService: ToastService) { }
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private designationService: DesignationService, private roleService: RoleService, private toastService: ToastService, private unsavedChangesService: UnsavedChangesService) { }
 
 
   ngOnInit(): void {
@@ -107,6 +110,7 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
       if (this.isEditMode) {
         this.designationService.updateDesignation(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show('Designation updated successfully', 'success');
             this.closeModal();
           },
@@ -138,5 +142,18 @@ export class DesignationFormComponent implements OnInit, AfterViewInit {
     this.designationForm.patchValue({ roleID: item.id });
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.designationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.designationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }
 

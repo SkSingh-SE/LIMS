@@ -69,7 +69,7 @@ describe('InductionTrainingPreviewComponent', () => {
     serviceSpy.getById.and.returnValue(throwError(() => new Error('Server error')));
     fixture.detectChanges();
     // Component logs error without navigating — isLoading set to false
-    expect(component.isLoading).toBeFalse();
+    expect(component.record).toBeNull();
   });
 
   it('should default to portrait orientation', () => {

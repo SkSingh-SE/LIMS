@@ -53,7 +53,7 @@ describe('TestReportFormComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({})),
-            snapshot: { paramMap: convertToParamMap({}), url: [] },
+            snapshot: { paramMap: convertToParamMap({}), url: [], params: {} },
           },
         },
       ],

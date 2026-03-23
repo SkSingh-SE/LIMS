@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { OEMService } from '../../../services/oem.service';
 import { environment } from '../../../../environments/environment';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-oem-form',
@@ -13,7 +16,9 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './oem-form.component.html',
   styleUrl: './oem-form.component.css'
 })
-export class OEMFormComponent implements OnInit {
+export class OEMFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+  isSubmitting = false;
   OEMForm!: FormGroup
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -21,7 +26,7 @@ export class OEMFormComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private toastService: ToastService, private oemService: OEMService,
     private route: ActivatedRoute, private router: Router,
-  ) {
+   private unsavedChangesService: UnsavedChangesService) {
   }
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -38,6 +43,7 @@ export class OEMFormComponent implements OnInit {
       }
     }
     this.initForm();
+    this.toggleBlacklistingReason();
     if (this.equipmentId > 0) {
       this.loadequipment(this.equipmentId);
     }
@@ -121,23 +127,29 @@ export class OEMFormComponent implements OnInit {
         formData.append('file', raw.file, raw.file.name);
       }
 
+      this.isSubmitting = true;
       if (this.equipmentId > 0) {
         this.oemService.updateOEM(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/oem']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             this.toastService.show(error.message, 'error');
           }
         })
       } else {
         this.oemService.createOEM(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/oem']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             this.toastService.show(error.message, 'error');
           }
         })
@@ -215,5 +227,18 @@ export class OEMFormComponent implements OnInit {
     }
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.OEMForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.OEMForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }
 

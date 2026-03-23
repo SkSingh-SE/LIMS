@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { NcCorrectiveActionService } from '../../../../services/nc-corrective-action.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-nc-corrective-action-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './nc-corrective-action-form.component.html',
     styleUrl: './nc-corrective-action-form.component.css'
 })
-export class NcCorrectiveActionFormComponent implements OnInit {
+export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     ncForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -46,7 +50,7 @@ export class NcCorrectiveActionFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: NcCorrectiveActionService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -117,9 +121,9 @@ export class NcCorrectiveActionFormComponent implements OnInit {
     onSubmit() {
         if (this.ncForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.ncForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -127,4 +131,17 @@ export class NcCorrectiveActionFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/nc-corrective-action']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.ncForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.ncForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

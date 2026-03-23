@@ -260,14 +260,13 @@ export class SpecimenOrientationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
-    this.SpecimentOrientationForm.reset();
-    this.SpecimentOrientationForm.enable();
+    this.initForm();
     if (id > 0) {
       this.specimenOrientationId = id;
       this.getDetails();
@@ -275,15 +274,11 @@ export class SpecimenOrientationComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Specimen Orientation Form';
-      this.SpecimentOrientationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Specimen Orientation Form';
-      this.SpecimentOrientationForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -300,8 +295,7 @@ export class SpecimenOrientationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.SpecimentOrientationForm.reset();
-    this.SpecimentOrientationForm.enable();
+    this.initForm();
     this.specimenOrientationId = 0;
     this.isEditMode = false;
     this.isViewMode = false;

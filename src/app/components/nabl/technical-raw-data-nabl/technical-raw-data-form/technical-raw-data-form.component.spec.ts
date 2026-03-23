@@ -53,7 +53,7 @@ describe('TechnicalRawDataFormComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({})),
-            snapshot: { paramMap: convertToParamMap({}), url: [] },
+            snapshot: { paramMap: convertToParamMap({}), url: [], params: {} },
           },
         },
       ],
@@ -157,7 +157,7 @@ describe('TechnicalRawDataFormComponent', () => {
   it('should navigate to goBack route on goBack()', () => {
     const navigateSpy = spyOn(router, 'navigate');
     component.goBack();
-    expect(navigateSpy).toHaveBeenCalledWith(['/technical-raw-data']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/nabl/technical-raw-data']);
   });
 
   it('should show toast on successful save', () => {

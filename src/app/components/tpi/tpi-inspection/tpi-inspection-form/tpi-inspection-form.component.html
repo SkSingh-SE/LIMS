@@ -1,0 +1,93 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100" style="max-width: 800px;">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">
+        {{ isViewMode ? 'TPI Inspection Details' : 'Create TPI Inspection' }}
+      </label>
+      <button class="btn btn-sm btn-outline-light" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="inspectionForm" (ngSubmit)="onSubmit()">
+        <div class="row g-3">
+          <!-- Sample Inward -->
+          <div class="col-12 col-md-6">
+            <app-searchable-dropdown
+              [placeholder]="'Type & Search Sample Inward (Case No)'"
+              [labelName]="'Sample Inward'"
+              [required]="true"
+              [fetchDataFn]="getSampleInwardDrop"
+              (itemSelected)="onSampleInwardSelected($event)"
+              [selectedItem]="inspectionForm.get('sampleInwardID')?.value"
+              [isDisabled]="isViewMode"
+            ></app-searchable-dropdown>
+          </div>
+
+          <!-- TPI Agency -->
+          <div class="col-12 col-md-6">
+            <app-searchable-dropdown
+              [placeholder]="'Type & Search TPI Agency'"
+              [labelName]="'TPI Agency'"
+              [required]="true"
+              [fetchDataFn]="getTpiAgencyDrop"
+              (itemSelected)="onTpiAgencySelected($event)"
+              [selectedItem]="inspectionForm.get('tpiMasterID')?.value"
+              [isDisabled]="isViewMode"
+            ></app-searchable-dropdown>
+          </div>
+
+          <!-- Stage -->
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-medium">Stage <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="stage" [attr.disabled]="isViewMode ? '' : null">
+              <option *ngFor="let s of stages" [value]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+
+          <!-- Scheduled Date -->
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-medium">Scheduled Date</label>
+            <input type="date" class="form-control" formControlName="scheduledDate"
+              [attr.disabled]="isViewMode ? '' : null" />
+          </div>
+
+          <!-- Remarks -->
+          <div class="col-12">
+            <label class="form-label fw-medium">Remarks</label>
+            <textarea class="form-control" formControlName="remarks" rows="3"
+              placeholder="Enter remarks..." [attr.disabled]="isViewMode ? '' : null"></textarea>
+          </div>
+
+          <!-- View Mode: Additional Details -->
+          <ng-container *ngIf="isViewMode && inspectionData">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-medium">Status</label>
+              <input type="text" class="form-control" [value]="inspectionData.status" disabled />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-medium">Inspection Date</label>
+              <input type="text" class="form-control"
+                [value]="inspectionData.inspectionDate ? (inspectionData.inspectionDate | date:'dd MMM, yyyy') : 'N/A'"
+                disabled />
+            </div>
+            <div class="col-12" *ngIf="inspectionData.inspectorComments">
+              <label class="form-label fw-medium">Inspector Comments</label>
+              <textarea class="form-control" [value]="inspectionData.inspectorComments" disabled rows="2"></textarea>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-end gap-2 mt-4" *ngIf="!isViewMode">
+          <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn btn-add" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+            {{ isSubmitting ? 'Creating...' : 'Create Inspection' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

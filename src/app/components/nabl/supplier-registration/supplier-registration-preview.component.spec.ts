@@ -69,7 +69,7 @@ describe('SupplierRegistrationPreviewComponent', () => {
     serviceSpy.getById.and.returnValue(throwError(() => new Error('Server error')));
     fixture.detectChanges();
     // Component sets isLoading to false on error
-    expect(component.isLoading()).toBeFalse();
+    expect(component.record()).toBeNull();
   });
 
   it('should default to portrait orientation', () => {

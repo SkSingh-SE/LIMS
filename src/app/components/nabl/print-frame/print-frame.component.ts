@@ -23,8 +23,9 @@ export class PrintFrameComponent implements AfterViewInit, OnDestroy {
   constructor(private ngZone: NgZone) { }
 
   ngAfterViewInit() {
-    // Initial one-time measurement
-    this.calculateHeights();
+    // Defer initial measurement to next macrotask to avoid
+    // ExpressionChangedAfterItHasBeenCheckedError on the HostBinding
+    setTimeout(() => this.calculateHeights());
 
     if (typeof ResizeObserver !== 'undefined') {
       // Run outside Angular zone: ResizeObserver fires very frequently

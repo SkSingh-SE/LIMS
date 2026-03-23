@@ -1,10 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EmployeeCompetenceService } from '../../../services/employee-competence.service';
 import { ToastService } from '../../../services/toast.service';
 import { CompetenceEvaluationParameter } from '../../../models/employeeCompetenceModel';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-employee-competence-form',
@@ -14,7 +17,9 @@ import { CompetenceEvaluationParameter } from '../../../models/employeeCompetenc
     styleUrl: './employee-competence-form.component.css',
     providers: [DatePipe]
 })
-export class EmployeeCompetenceFormComponent implements OnInit {
+export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     reportForm!: FormGroup;
     reportId: number = 0;
     isEditMode: boolean = false;
@@ -31,7 +36,7 @@ export class EmployeeCompetenceFormComponent implements OnInit {
         private route: ActivatedRoute,
         private toastService: ToastService,
         private datePipe: DatePipe
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -135,10 +140,13 @@ export class EmployeeCompetenceFormComponent implements OnInit {
         }
 
         const formData = this.reportForm.getRawValue();
+        this.isSubmitting = true;
 
         if (this.isEditMode) {
             this.competenceService.update(this.reportId, formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/competence']);
@@ -147,6 +155,7 @@ export class EmployeeCompetenceFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error updating report', 'error');
                 }
@@ -154,6 +163,8 @@ export class EmployeeCompetenceFormComponent implements OnInit {
         } else {
             this.competenceService.create(formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/competence']);
@@ -162,10 +173,24 @@ export class EmployeeCompetenceFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error creating report', 'error');
                 }
             });
         }
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.reportForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.reportForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

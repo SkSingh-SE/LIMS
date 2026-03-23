@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { SupplierEvaluationRecordService } from '../../../../services/supplier-evaluation-record.service';
+import { ToastService } from '../../../../services/toast.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-supplier-evaluation-record-form',
@@ -13,7 +17,8 @@ import { QuillModule } from 'ngx-quill';
     templateUrl: './supplier-evaluation-record-form.component.html',
     styleUrls: ['./supplier-evaluation-record-form.component.css']
 })
-export class SupplierEvaluationRecordFormComponent implements OnInit {
+export class SupplierEvaluationRecordFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     evaluationForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -52,8 +57,9 @@ export class SupplierEvaluationRecordFormComponent implements OnInit {
         private fb: FormBuilder,
         private service: SupplierEvaluationRecordService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.formNumbers = NablFormsHelper.getFormNumbers();
@@ -181,7 +187,7 @@ export class SupplierEvaluationRecordFormComponent implements OnInit {
                     this.evaluationForm.disable();
                 }
             } else {
-                alert('Record not found');
+                this.toastService.show('Record not found', 'error');
                 this.router.navigate(['/supplier-evaluation']);
             }
         });
@@ -190,7 +196,7 @@ export class SupplierEvaluationRecordFormComponent implements OnInit {
     onSubmit(): void {
         if (this.evaluationForm.invalid) {
             this.evaluationForm.markAllAsTouched();
-            alert('Please fill all required fields');
+            this.toastService.show('Please fill all required fields', 'warning');
             return;
         }
 
@@ -201,11 +207,12 @@ export class SupplierEvaluationRecordFormComponent implements OnInit {
             : this.service.create(formData);
 
         request.subscribe(res => {
+          this.saved = true;
             if (res.success) {
-                alert(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`);
+                this.toastService.show(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`, 'success');
                 this.router.navigate(['/supplier-evaluation']);
             } else {
-                alert('Failed to save record');
+                this.toastService.show('Failed to save record', 'error');
             }
         });
     }
@@ -213,4 +220,17 @@ export class SupplierEvaluationRecordFormComponent implements OnInit {
     onCancel(): void {
         this.router.navigate(['/supplier-evaluation']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.evaluationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.evaluationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

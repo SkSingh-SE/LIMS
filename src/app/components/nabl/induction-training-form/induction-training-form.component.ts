@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -7,6 +7,9 @@ import { ToastService } from '../../../services/toast.service';
 import { DatePipe } from '@angular/common';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-induction-training-form',
@@ -16,7 +19,9 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
     styleUrl: './induction-training-form.component.css',
     providers: [DatePipe]
 })
-export class InductionTrainingFormComponent implements OnInit {
+export class InductionTrainingFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     trainingForm!: FormGroup;
     recordId: number = 0;
     isEditMode: boolean = false;
@@ -45,7 +50,7 @@ export class InductionTrainingFormComponent implements OnInit {
         private route: ActivatedRoute,
         private toastService: ToastService,
         private datePipe: DatePipe
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -152,10 +157,13 @@ export class InductionTrainingFormComponent implements OnInit {
         }
 
         const formData = this.trainingForm.getRawValue();
+        this.isSubmitting = true;
 
         if (this.isEditMode) {
             this.trainingService.update(this.recordId, formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/induction-training']);
@@ -164,6 +172,7 @@ export class InductionTrainingFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error updating record', 'error');
                 }
@@ -171,6 +180,8 @@ export class InductionTrainingFormComponent implements OnInit {
         } else {
             this.trainingService.create(formData).subscribe({
                 next: (res) => {
+                  this.isSubmitting = false;
+                  this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/induction-training']);
@@ -179,10 +190,24 @@ export class InductionTrainingFormComponent implements OnInit {
                     }
                 },
                 error: (err) => {
+                    this.isSubmitting = false;
                     console.error(err);
                     this.toastService.show('Error creating record', 'error');
                 }
             });
         }
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.trainingForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.trainingForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -212,4 +212,14 @@ export class ReportingService {
   submitAmendment(formData: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/request-amendment`, formData);
   }
+
+  getAvailableFormats(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/formats`);
+  }
+
+  generateByFormat(reportHeaderId: number, formatType: number, watermark?: string): Observable<Blob> {
+    let url = `${this.apiUrl}/${reportHeaderId}/generate/${formatType}`;
+    if (watermark) url += `?watermark=${encodeURIComponent(watermark)}`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
 }

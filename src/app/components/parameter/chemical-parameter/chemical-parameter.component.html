@@ -273,6 +273,7 @@
                   [selectedItem]="ParameterForm.get('parameterCategoryID')?.value"
                   (itemSelected)="ParameterForm.get('parameterCategoryID')?.setValue($event?.id)"
                   [isDisabled]="isViewMode"
+                  [hideLabel]="true"
                 ></app-searchable-dropdown>
               </div>
               <button
@@ -327,39 +328,36 @@
             <div class="form-check">
               <input
                 type="radio"
-                id="normal"
+                id="chem-normal"
                 class="form-check-input mt-1"
                 formControlName="elementType"
                 value="normal"
-                [attr.disabled]="isViewMode ? true : null"
               />
-              <label for="normal" class="form-check-label">Normal</label>
+              <label for="chem-normal" class="form-check-label">Normal</label>
             </div>
 
             <!-- Special -->
             <div class="form-check">
               <input
                 type="radio"
-                id="special"
+                id="chem-special"
                 class="form-check-input mt-1"
                 formControlName="elementType"
                 value="special"
-                [attr.disabled]="isViewMode ? true : null"
               />
-              <label for="special" class="form-check-label">Special</label>
+              <label for="chem-special" class="form-check-label">Special</label>
             </div>
 
             <!-- Super Special -->
             <div class="form-check">
               <input
                 type="radio"
-                id="superSpecial"
+                id="chem-superSpecial"
                 class="form-check-input mt-1"
                 formControlName="elementType"
                 value="super"
-                [attr.disabled]="isViewMode ? true : null"
               />
-              <label for="superSpecial" class="form-check-label">Super Special</label>
+              <label for="chem-superSpecial" class="form-check-label">Super Special</label>
             </div>
           </div>
 

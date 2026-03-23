@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -7,6 +7,9 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { ToastService } from '../../../../services/toast.service';
 
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-test-report-form',
@@ -15,7 +18,8 @@ import { QuillModule } from 'ngx-quill';
     templateUrl: './test-report-form.component.html',
     styleUrl: './test-report-form.component.css'
 })
-export class TestReportFormComponent implements OnInit {
+export class TestReportFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     reportForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -55,7 +59,7 @@ export class TestReportFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -126,7 +130,9 @@ export class TestReportFormComponent implements OnInit {
                     if (this.isViewMode) this.reportForm.disable();
                 }
             },
-            error: () => {}
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Operation failed', 'error');
+            }
         });
     }
 
@@ -135,11 +141,25 @@ export class TestReportFormComponent implements OnInit {
         const formData = this.reportForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
-            next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/test-report']); },
+            next: (res) => {
+              this.saved = true; this.toastService.show(res.message, 'success'); this.router.navigate(['/test-report']); },
             error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 
     onCancel(): void { this.router.navigate(['/test-report']); }
     toggleSection(section: string): void { this.openSections[section] = !this.openSections[section]; }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.reportForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.reportForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

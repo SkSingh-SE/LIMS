@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DocumentReviewService } from '../../../../services/document-review.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-document-review-form',
@@ -12,7 +15,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './document-review-form.component.html',
     styleUrl: './document-review-form.component.css'
 })
-export class DocumentReviewFormComponent implements OnInit {
+export class DocumentReviewFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     reviewForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -30,7 +34,7 @@ export class DocumentReviewFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: DocumentReviewService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -82,9 +86,9 @@ export class DocumentReviewFormComponent implements OnInit {
     onSubmit() {
         if (this.reviewForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.reviewForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.reviewForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.reviewForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.reviewForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -92,4 +96,17 @@ export class DocumentReviewFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/document-review']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.reviewForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.reviewForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -1,7 +1,7 @@
 <div class="container-fluid p-0" [formGroup]="planForm">
-  <!-- Inward Details — compact inline strip -->
-  <div class="inward-strip">
-    <div class="inward-strip-header">
+  <!-- Inward Details Strip -->
+  <div class="inward-strip" [class.inward-strip-compact]="mode === 'plan'">
+    <div class="inward-strip-header" *ngIf="mode !== 'plan'">
       <i class="bi bi-file-earmark-text me-1"></i> Inward Details
     </div>
     <div class="inward-strip-body">
@@ -10,21 +10,21 @@
           <i class="bi bi-hash"></i>{{ planForm.get("caseNo")?.value || "-" }}
         </span>
         <div class="info-item">
-          <span class="info-label">Receipt Note</span>
+          <span class="info-label">Receipt Note:</span>
           <span class="info-value">{{ planForm.get("sampleReceiptNote")?.value || "-" }}</span>
         </div>
-        <span class="badge" [ngClass]="planForm.get('urgent')?.value ? 'bg-danger' : 'bg-secondary'">
+        <span class="badge" [ngClass]="planForm.get('urgent')?.value ? 'bg-danger' : 'bg-secondary'" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
           {{ planForm.get("urgent")?.value ? "Urgent" : "Normal" }}
         </span>
         <div class="info-item">
-          <span class="info-label">Return Sample</span>
-          <span [class]="planForm.get('returnSample')?.value ? 'info-value text-success fw-semibold' : 'info-value'">
+          <span class="info-label">Return Sample:</span>
+          <span [class]="planForm.get('returnSample')?.value ? 'info-value text-success' : 'info-value'">
             {{ planForm.get("returnSample")?.value ? "Yes" : "No" }}
           </span>
         </div>
         <div class="info-item">
-          <span class="info-label">Not Destroyed</span>
-          <span [class]="planForm.get('notDestroyed')?.value ? 'info-value text-warning fw-semibold' : 'info-value'">
+          <span class="info-label">Not Destroyed:</span>
+          <span [class]="planForm.get('notDestroyed')?.value ? 'info-value text-warning' : 'info-value'">
             {{ planForm.get("notDestroyed")?.value ? "Yes" : "No" }}
           </span>
         </div>

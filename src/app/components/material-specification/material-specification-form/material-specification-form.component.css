@@ -160,40 +160,51 @@
 }
 
 /* ─── Compact dropdowns inside spec table ─── */
-.spec-table app-searchable-dropdown-modal .input-group .form-control,
+.spec-table app-multi-select-dropdown,
+.spec-table app-searchable-dropdown {
+  font-size: 0.8rem;
+}
+
 .spec-table app-searchable-dropdown .input-group .form-control {
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
   line-height: 1.4;
 }
 
-.spec-table app-searchable-dropdown-modal .input-group,
 .spec-table app-searchable-dropdown .input-group {
   min-height: 30px;
 }
 
-.spec-table app-searchable-dropdown-modal .input-group .input-group-text,
 .spec-table app-searchable-dropdown .input-group .input-group-text {
   padding: 0 0.35rem;
 }
 
-.spec-table app-searchable-dropdown-modal .input-group .input-group-text i,
 .spec-table app-searchable-dropdown .input-group .input-group-text i {
   font-size: 0.6rem;
 }
 
+/* ─── Compact ng-select inside spec table ─── */
+.spec-table ::ng-deep .ng-select .ng-select-container {
+  min-height: 30px;
+  font-size: 0.8rem;
+}
+
+.spec-table ::ng-deep .ng-select .ng-select-container .ng-value-container {
+  padding: 0 0.35rem;
+}
+
 /* ─── Scroll Navigation Buttons ─── */
 .btn-scroll-nav {
-  background-color: #495057;
-  border-color: #495057;
-  color: #fff;
+  color: #6c757d;
+  border: 1px solid #6c757d;
+  background-color: transparent;
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
   transition: all 0.2s ease;
 }
 
 .btn-scroll-nav:hover {
-  background-color: #343a40;
-  border-color: #343a40;
+  background-color: #6c757d;
+  border-color: #6c757d;
   color: #fff;
 }

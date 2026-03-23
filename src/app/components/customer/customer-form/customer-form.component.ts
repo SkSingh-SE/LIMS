@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -21,6 +21,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DispatchModeService } from '../../../services/dispatch-mode.service';
 import { AreaService } from '../../../services/area.service';
 import { ConfigService } from '../../../services/config.service';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 
 @Component({
@@ -29,7 +31,8 @@ import { ConfigService } from '../../../services/config.service';
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
 })
-export class CustomerFormComponent implements OnInit {
+export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   customerForm!: FormGroup;
   areas: any[] = [];
   areaList: any[] = [];
@@ -68,7 +71,7 @@ export class CustomerFormComponent implements OnInit {
     private route: ActivatedRoute, private router: Router,
     private dispatchModeService: DispatchModeService,
     private configService: ConfigService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -242,11 +245,12 @@ export class CustomerFormComponent implements OnInit {
       if (this.customerId > 0) {
         this.customerService.updateCustomer(this.customerForm.value).subscribe({
           next: resp => {
+            this.saved = true;
             this.toastService.show(resp.message, 'success');
             this.router.navigate(['/customer']);
           },
           error: err => {
-            this.toastService.show(err.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to save customer', 'error');
           }
         });
       }
@@ -254,11 +258,12 @@ export class CustomerFormComponent implements OnInit {
         this.customerForm.patchValue({ customerID: 0 });
         this.customerService.createCustomer(this.customerForm.value).subscribe({
           next: resp => {
+            this.saved = true;
             this.toastService.show(resp.message, 'success');
             this.router.navigate(['/customer']);
           },
           error: err => {
-            this.toastService.show(err.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to save customer', 'error');
           }
         });
       }
@@ -561,5 +566,18 @@ export class CustomerFormComponent implements OnInit {
         console.error('Error verifying customer:', err);
       }
     });
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.customerForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.customerForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

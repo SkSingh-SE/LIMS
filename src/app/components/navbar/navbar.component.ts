@@ -59,6 +59,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   // Search properties
   searchQuery = '';
   searchResults: FlatMenuItem[] = [];
+  searchHighlightIndex = -1;
   isSearchOpen = signal(false);
   isSearchExpanded = signal(false);
   allFlatMenuItems: FlatMenuItem[] = [];
@@ -405,6 +406,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     this.isSearchOpen.set(false);
     this.searchQuery = '';
     this.searchResults = [];
+    this.searchHighlightIndex = -1;
   }
 
   onSearchInput() {
@@ -412,12 +414,52 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (q.length < 2) {
       this.searchResults = [];
       this.isSearchOpen.set(false);
+      this.searchHighlightIndex = -1;
       return;
     }
     this.searchResults = this.allFlatMenuItems.filter(
       (m) => m.title.toLowerCase().includes(q) || m.breadcrumb.toLowerCase().includes(q)
     );
+    this.searchHighlightIndex = this.searchResults.length > 0 ? 0 : -1;
     this.isSearchOpen.set(this.searchResults.length > 0);
+  }
+
+  onSearchKeydown(event: KeyboardEvent) {
+    if (!this.isSearchOpen() || this.searchResults.length === 0) return;
+    const len = this.searchResults.length;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.searchHighlightIndex = (this.searchHighlightIndex + 1) % len;
+        this.scrollSearchItemIntoView();
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        this.searchHighlightIndex = (this.searchHighlightIndex - 1 + len) % len;
+        this.scrollSearchItemIntoView();
+        break;
+
+      case 'Enter':
+        event.preventDefault();
+        if (this.searchHighlightIndex >= 0 && this.searchHighlightIndex < len) {
+          this.navigateToSearch(this.searchResults[this.searchHighlightIndex]);
+        }
+        break;
+
+      case 'Escape':
+        event.preventDefault();
+        this.collapseSearch();
+        break;
+    }
+  }
+
+  private scrollSearchItemIntoView(): void {
+    setTimeout(() => {
+      const el = document.getElementById('search-result-' + this.searchHighlightIndex);
+      el?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   navigateToSearch(item: FlatMenuItem) {

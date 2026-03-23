@@ -39,7 +39,7 @@ describe('ResponsibilityAuthorityFormComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({})),
-            snapshot: { paramMap: convertToParamMap({}) },
+            snapshot: { paramMap: convertToParamMap({}), url: [], params: {} },
           },
         },
       ],

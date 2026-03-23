@@ -1,6 +1,6 @@
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
@@ -19,6 +19,8 @@ import { Observable } from 'rxjs';
 import { Modal } from 'bootstrap';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-material-specification-form',
@@ -26,7 +28,8 @@ import { MultiSelectDropdownComponent } from '../../../utility/components/multi-
   templateUrl: './custom-material-specification-form.component.html',
   styleUrl: './custom-material-specification-form.component.css'
 })
-export class CustomMaterialSpecificationFormComponent implements OnInit {
+export class CustomMaterialSpecificationFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollButton') scrollButton!: ElementRef;
 
@@ -81,7 +84,7 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
     private materialSpecificationService: MaterialSpecificationService,
     private toastService: ToastService,
     private labTestService: LaboratoryTestService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -269,8 +272,8 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
             this.MaterialSpecificationForm.enable();
           }
         },
-        error: (error) => {
-          console.error('Error fetching material specification:', error);
+        error: (error: any) => {
+          this.toastService.show(error?.error?.message || 'Failed to load material specification', 'error');
         },
       });
   }
@@ -306,6 +309,8 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
     console.log("formated Data", formattedData);
     if (this.MaterialSpecificationForm.valid) this.saveData(formattedData);
     else {
+      this.saved = true;
+
       this.toastService.show('Please fill all required fields.', 'warning');
       this.MaterialSpecificationForm.markAllAsTouched();
     }
@@ -337,7 +342,7 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
             this.router.navigate(['/custom-material-specification']);
           },
           error: (error) => {
-            this.toastService.show(error.error.message, 'error');
+            this.toastService.show(error?.error?.message || 'Operation failed', 'error');
             console.error('Error updating Material Specification:', error);
           },
         });
@@ -350,7 +355,7 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
             this.router.navigate(['/custom-material-specification']);
           },
           error: (error) => {
-            this.toastService.show(error.error.message, 'error');
+            this.toastService.show(error?.error?.message || 'Operation failed', 'error');
             console.error('Error creating Material Specification:', error);
           },
         });
@@ -428,8 +433,8 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
       next: (data) => {
         this.parameterUnits = data;
       },
-      error: (error) => {
-        console.error('Error fetching parameter units:', error);
+      error: (error: any) => {
+        this.toastService.show(error?.error?.message || 'Failed to load parameter units', 'error');
       },
     });
   }
@@ -438,8 +443,8 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
       next: (data) => {
         this.specimenOriantations = data;
       },
-      error: (error) => {
-        console.error('Error fetching specimen orientation:', error);
+      error: (error: any) => {
+        this.toastService.show(error?.error?.message || 'Failed to load specimen orientations', 'error');
       },
     });
   }
@@ -506,5 +511,18 @@ export class CustomMaterialSpecificationFormComponent implements OnInit {
   }
   selectSpecTab(gradeIndex: number, tab: string) {
     this.selectedSpecTab[gradeIndex] = tab;
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.MaterialSpecificationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.MaterialSpecificationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

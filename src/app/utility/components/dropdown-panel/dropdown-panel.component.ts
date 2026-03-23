@@ -3,19 +3,20 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-dropdown-panel',
-
   imports: [CommonModule],
   templateUrl: './dropdown-panel.component.html',
   styleUrl: './dropdown-panel.component.css'
 })
 export class DropdownPanelComponent {
-
   @Input() items: any[] = [];
+  @Input() selectedItemId: any;
+  @Input() loading = false;
+
   @Output() selectItem = new EventEmitter<any>();
   @Output() onScroll = new EventEmitter<any>();
-  @Input() selectedItemId: any;
 
   highlightedIndex = 0;
+
   ngOnInit(): void {
     this.setInitialHighlight();
   }
@@ -26,11 +27,9 @@ export class DropdownPanelComponent {
 
   private setInitialHighlight(): void {
     if (!this.items?.length || !this.selectedItemId) return;
-
     const index = this.items.findIndex(i => i.id === this.selectedItemId);
     this.highlightedIndex = index >= 0 ? index : 0;
   }
-
 
   onKeyDown(event: KeyboardEvent): void {
     const count = this.items.length;
@@ -40,14 +39,13 @@ export class DropdownPanelComponent {
       case 'ArrowDown':
         event.preventDefault();
         this.highlightedIndex = (this.highlightedIndex + 1) % count;
-        this.scrollToHighlighted();
+        this.scrollToHighlightedItem();
         break;
 
       case 'ArrowUp':
         event.preventDefault();
-        this.highlightedIndex =
-          (this.highlightedIndex - 1 + count) % count;
-        this.scrollToHighlighted();
+        this.highlightedIndex = (this.highlightedIndex - 1 + count) % count;
+        this.scrollToHighlightedItem();
         break;
 
       case 'Enter':
@@ -72,11 +70,10 @@ export class DropdownPanelComponent {
     this.onScroll.emit(event);
   }
 
-  private scrollToHighlighted(): void {
+  /** Public method — called by parent to scroll highlighted item into view */
+  scrollToHighlightedItem(): void {
     setTimeout(() => {
-      const el = document.getElementById(
-        `dropdown-item-${this.highlightedIndex}`
-      );
+      const el = document.getElementById(`dropdown-item-${this.highlightedIndex}`);
       el?.scrollIntoView({ block: 'nearest' });
     });
   }

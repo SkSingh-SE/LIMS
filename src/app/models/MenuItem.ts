@@ -320,6 +320,23 @@ export function getAllMenuItems(): MenuItem[] {
       children: [
         { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
       ]
+    },
+    {
+      id: 12,
+      title: 'Accounts',
+      route: '',
+      parentMenuID: null,
+      permissions: [],
+      icon: 'bi-wallet2',
+      color: '',
+      children: [
+        { id: 121, title: 'Accounts Dashboard', route: '/accounts/dashboard', parentMenuID: 12, permissions: ['CanReadAccountsDashboard'], children: [], color: getRandomColor() },
+        { id: 122, title: 'Case Accounts', route: '/accounts/cases', parentMenuID: 12, permissions: ['CanReadCaseAccounts'], children: [], color: getRandomColor() },
+        { id: 123, title: 'Customer Ledger', route: '/account/ledger', parentMenuID: 12, permissions: ['CanReadCustomerLedger'], children: [], color: getRandomColor() },
+        { id: 124, title: 'Record Payment', route: '/account/record-payment', parentMenuID: 12, permissions: ['CanReadRecordPayment'], children: [], color: getRandomColor() },
+        { id: 125, title: 'Aging Report', route: '/account/aging-report', parentMenuID: 12, permissions: ['CanReadAgingReport'], children: [], color: getRandomColor() },
+        { id: 126, title: 'Outstanding Report', route: '/account/outstanding-report', parentMenuID: 12, permissions: ['CanReadOutstandingReport'], children: [], color: getRandomColor() }
+      ]
     }
   ];
 }

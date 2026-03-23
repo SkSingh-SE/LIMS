@@ -212,16 +212,16 @@ export class DepartmentListComponent implements OnInit {
     return column ? column.type : undefined;
   }
 
-  deleteDepartment() {
+  deleteDepartment(id: number) {
     const confirmed = window.confirm('Are you sure you want to delete this department?');
     if (confirmed) {
-      this.departmentService.deleteDepartment(1).subscribe({
+      this.departmentService.deleteDepartment(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }

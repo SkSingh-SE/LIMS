@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MasterDocumentService } from '../../../../services/master-document.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-master-document-form',
@@ -12,7 +15,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './master-document-form.component.html',
     styleUrl: './master-document-form.component.css'
 })
-export class MasterDocumentFormComponent implements OnInit {
+export class MasterDocumentFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     docForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -30,7 +34,7 @@ export class MasterDocumentFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: MasterDocumentService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -80,9 +84,9 @@ export class MasterDocumentFormComponent implements OnInit {
     onSubmit() {
         if (this.docForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.docForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.docForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.docForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.docForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -90,4 +94,17 @@ export class MasterDocumentFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/master-document']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.docForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.docForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

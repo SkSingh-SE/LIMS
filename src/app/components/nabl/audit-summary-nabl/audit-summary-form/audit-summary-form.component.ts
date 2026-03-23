@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { AuditSummaryService } from '../../../../services/audit-summary.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-audit-summary-form',
@@ -13,7 +16,9 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './audit-summary-form.component.html',
     styleUrl: './audit-summary-form.component.css'
 })
-export class AuditSummaryFormComponent implements OnInit {
+export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    isSubmitting = false;
     summaryForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -39,7 +44,7 @@ export class AuditSummaryFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditSummaryService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -91,10 +96,17 @@ export class AuditSummaryFormComponent implements OnInit {
 
     onSubmit() {
         if (this.summaryForm.valid) {
+            this.isSubmitting = true;
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.summaryForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.summaryForm.value).subscribe({
+                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
+                    error: () => { this.isSubmitting = false; }
+                });
             } else {
-                this.service.create(this.summaryForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.summaryForm.value).subscribe({
+                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
+                    error: () => { this.isSubmitting = false; }
+                });
             }
         }
     }
@@ -102,4 +114,17 @@ export class AuditSummaryFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/audit-summary']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.summaryForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.summaryForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

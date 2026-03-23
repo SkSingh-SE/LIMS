@@ -34,6 +34,7 @@
           placeholder="Search menu... (Ctrl+K)"
           [(ngModel)]="searchQuery"
           (input)="onSearchInput()"
+          (keydown)="onSearchKeydown($event)"
           (blur)="closeSearch()"
           [class.visible]="isSearchExpanded()"
         />
@@ -42,9 +43,12 @@
         </button>
         <div class="menu-search-results" *ngIf="isSearchOpen() && searchResults.length > 0">
           <div
-            *ngFor="let item of searchResults"
+            *ngFor="let item of searchResults; let i = index"
+            [id]="'search-result-' + i"
             class="menu-search-result-item"
+            [class.highlighted]="i === searchHighlightIndex"
             (mousedown)="navigateToSearch(item)"
+            (mouseenter)="searchHighlightIndex = i"
           >
             <div class="result-title">{{ item.title }}</div>
             <div class="result-breadcrumb">{{ item.breadcrumb }}</div>

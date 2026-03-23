@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -17,6 +17,8 @@ import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.e
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { TPIService } from '../../../services/tpi.service';
 import { TestAutoSuggestService, SmartSuggestRequest, SuggestedTestDto } from '../../../services/test-auto-suggest.service';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -24,7 +26,8 @@ import { TestAutoSuggestService, SmartSuggestRequest, SuggestedTestDto } from '.
   styleUrls: ['./plan-form.component.css'],
   imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent]
 })
-export class PlanFormComponent implements OnInit {
+export class PlanFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   @Input() inwardID?: number;
   @Input() mode: 'review' | 'plan' = 'review';
 
@@ -67,7 +70,7 @@ export class PlanFormComponent implements OnInit {
     private productService: ProductConditionService,
     private tpiService: TPIService,
     private testAutoSuggestService: TestAutoSuggestService,
-  ) { }
+   private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     let isRouted = false;
@@ -711,6 +714,11 @@ export class PlanFormComponent implements OnInit {
         });
 
     }
+
+    // Auto-trigger test suggestions when a specification grade is selected
+    if (newId) {
+      this.loadSuggestedTests(sampleIndex, planIndex);
+    }
   }
 
   onLaboratorySelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
@@ -901,6 +909,7 @@ export class PlanFormComponent implements OnInit {
     const payload = this.buildPayload(SampleStatus.UNDER_PLANNING);
     this.inwardService.testPlanSave(payload).subscribe({
       next: () => {
+        this.saved = true;
         this.toastService.show('Test Plan saved successfully!', 'success');
         this.router.navigate(['/sample/inward']);
       },
@@ -935,6 +944,7 @@ export class PlanFormComponent implements OnInit {
     const payload = this.buildPayload(SampleStatus.UNDER_REVIEW_REQUEST);
     this.inwardService.sendTestPlanForReview(payload).subscribe({
       next: () => {
+        this.saved = true;
         this.toastService.show('Plan sent for review successfully!', 'success');
         this.router.navigate(['/sample/review', payload.id]);
       },
@@ -1300,4 +1310,17 @@ export class PlanFormComponent implements OnInit {
     });
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.planForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.planForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -448,9 +448,10 @@
               <thead class="table-light">
                 <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center">Auto-Generated</th>
-                  <th class="fw-medium text-center">Sample Description</th>
+                  <th class="fw-medium text-center">Sample Identification</th>
                   <th class="fw-medium text-center">Metal Classification</th>
                   <th class="fw-medium text-center">Product Condition</th>
+                  <th class="fw-medium text-center">Specimen Orientation</th>
                   <th class="fw-medium text-center">Remarks</th>
                   <th class="fw-medium text-center">Quantity</th>
                   <th class="fw-medium text-center">Image</th>
@@ -478,6 +479,16 @@
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
                       [selectedItem]="sample.get('productConditionID')?.value"
+                      [isDisabled]="isViewMode"
+                    ></app-searchable-dropdown>
+                  </td>
+                  <td>
+                    <app-searchable-dropdown
+                      [placeholder]="'Type & Search Specimen Orientation'"
+                      [hideLabel]="true"
+                      [fetchDataFn]="getSpecimenOrientationDrop(i)"
+                      (itemSelected)="onSpecimenOrientationSelected($event,i)"
+                      [selectedItem]="sample.get('specimenOrientationID')?.value"
                       [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </td>
@@ -672,6 +683,7 @@
             <th>Qty</th>
             <th>Metal Classification</th>
             <th>Product Condition</th>
+            <th>Specimen Orientation</th>
             <th>Remarks</th>
           </tr>
         </thead>
@@ -683,6 +695,7 @@
             <td>{{ sample.get('quantity')?.value }}</td>
             <td>{{ sample.get('metalClassificationName')?.value || '-' }}</td>
             <td>{{ sample.get('productConditionName')?.value || '-' }}</td>
+            <td>{{ sample.get('specimenOrientationName')?.value || '-' }}</td>
             <td>{{ sample.get('remarks')?.value || '-' }}</td>
           </tr>
         </tbody>

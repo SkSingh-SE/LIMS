@@ -19,11 +19,11 @@
     autocomplete="off"
     [required]="required"
     [ngClass]="{ 'is-invalid': required && modelRef.invalid && modelRef.touched }"
-  /><!-- Dropdown Icon -->
+  />
     <span
       class="input-group-text dropdown-toggle-icon"
       role="button"
-      (click)="openDropdownPanel()"
+      (click)="onChevronClick()"
       *ngIf="!isDisabled"
     >
       <i class="bi bi-chevron-down"></i>

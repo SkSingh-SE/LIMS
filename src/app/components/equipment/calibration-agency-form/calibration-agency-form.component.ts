@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 import { environment } from '../../../../environments/environment';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-calibration-agency-form',
@@ -14,7 +17,9 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './calibration-agency-form.component.html',
   styleUrl: './calibration-agency-form.component.css'
 })
-export class CalibrationAgencyFormComponent implements OnInit {
+export class CalibrationAgencyFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+  isSubmitting = false;
   calibrationForm!: FormGroup
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -22,7 +27,7 @@ export class CalibrationAgencyFormComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private toastService: ToastService, private calibrationService: CalibrationAgencyService,
     private route: ActivatedRoute, private router: Router,
-  ) {
+   private unsavedChangesService: UnsavedChangesService) {
   }
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -39,6 +44,7 @@ export class CalibrationAgencyFormComponent implements OnInit {
       }
     }
     this.initForm();
+    this.toggleBlacklistingReason();
     if (this.equipmentId > 0) {
       this.loadCalibration(this.equipmentId);
     }
@@ -122,23 +128,29 @@ export class CalibrationAgencyFormComponent implements OnInit {
         formData.append('file', raw.file, raw.file.name);
       }
 
+      this.isSubmitting = true;
       if (this.equipmentId > 0) {
         this.calibrationService.updateCalibrationAgency(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/calibration-agency']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             this.toastService.show(error.message, 'error');
           }
         })
       } else {
         this.calibrationService.createCalibrationAgency(formData).subscribe({
           next: (response) => {
+            this.isSubmitting = false;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/calibration-agency']);
           },
           error: (error) => {
+            this.isSubmitting = false;
             this.toastService.show(error.message, 'error');
           }
         })
@@ -216,5 +228,18 @@ export class CalibrationAgencyFormComponent implements OnInit {
     }
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.calibrationForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.calibrationForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }
 

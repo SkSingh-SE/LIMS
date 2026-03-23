@@ -1,12 +1,16 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { IntermediateCheckService } from '../../../services/intermediate-check.service';
 import { EquipmentService } from '../../../services/equipment.service';
+import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-intermediate-check-form',
@@ -14,7 +18,8 @@ import { QuillModule } from 'ngx-quill';
     imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
     templateUrl: './intermediate-check-form.component.html'
 })
-export class IntermediateCheckFormComponent implements OnInit {
+export class IntermediateCheckFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     checkForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -50,8 +55,9 @@ export class IntermediateCheckFormComponent implements OnInit {
         private service: IntermediateCheckService,
         private equipmentService: EquipmentService,
         private router: Router,
-        private route: ActivatedRoute
-    ) { }
+        private route: ActivatedRoute,
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -177,7 +183,7 @@ export class IntermediateCheckFormComponent implements OnInit {
                     this.checkForm.patchValue(formValues);
                 }
             },
-            error: () => {}
+            error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }
         });
     }
 
@@ -191,13 +197,13 @@ export class IntermediateCheckFormComponent implements OnInit {
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => this.router.navigate(['/intermediate-check-records']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/intermediate-check-records']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => this.router.navigate(['/intermediate-check-records']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/intermediate-check-records']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
             });
         }
     }
@@ -209,4 +215,17 @@ export class IntermediateCheckFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.checkForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.checkForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

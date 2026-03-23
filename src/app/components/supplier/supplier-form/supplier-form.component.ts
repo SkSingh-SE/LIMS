@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastService } from '../../../services/toast.service';
 import { SupplierService } from '../../../services/supplier.service';
@@ -6,6 +6,9 @@ import { CommonModule } from '@angular/common';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-supplier-form',
@@ -13,7 +16,8 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './supplier-form.component.html',
   styleUrl: './supplier-form.component.css'
 })
-export class SupplierFormComponent implements OnInit {
+export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   supplierForm!: FormGroup
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -21,7 +25,7 @@ export class SupplierFormComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private toastService: ToastService, private supplierService: SupplierService,
     private route: ActivatedRoute, private router: Router,
-  ) {
+   private unsavedChangesService: UnsavedChangesService) {
   }
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -38,6 +42,7 @@ export class SupplierFormComponent implements OnInit {
       }
     }
     this.initForm();
+    this.toggleBlacklistingReason();
     if (this.supplierId > 0) {
       this.loadSupplier(this.supplierId);
     }
@@ -127,6 +132,7 @@ export class SupplierFormComponent implements OnInit {
       if (this.supplierId > 0) {
         this.supplierService.updateSupplier(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/supplier']);
           },
@@ -137,6 +143,7 @@ export class SupplierFormComponent implements OnInit {
       } else {
         this.supplierService.createSupplier(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/supplier']);
           },
@@ -218,4 +225,17 @@ export class SupplierFormComponent implements OnInit {
     }
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.supplierForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.supplierForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

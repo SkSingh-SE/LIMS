@@ -134,6 +134,43 @@
                     </div>
                   </div>
 
+                  <!-- NABL Scope Summary Banner -->
+                  <div *ngIf="hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-danger py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <span>
+                      <strong>NABL Scope:</strong>
+                      {{ getNablScopeSummary(plans[p].tests[t].headerId).outOfScopeCount }} parameter(s) are outside NABL accreditation scope.
+                      Report will NOT carry NABL endorsement for these tests.
+                    </span>
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                      <input type="checkbox" class="form-check-input"
+                        [(ngModel)]="nablScopeAcknowledged[plans[p].tests[t].headerId]"
+                        [ngModelOptions]="{standalone: true}">
+                      I acknowledge
+                    </label>
+                  </div>
+                  <div *ngIf="(nablScopeMap[plans[p].tests[t].headerId] || []).length > 0 && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-success py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    <i class="bi bi-shield-check"></i>
+                    <span>All tests are within NABL accreditation scope</span>
+                  </div>
+
+                  <!-- Orientation Mismatch Warning Banner -->
+                  <div *ngIf="hasOrientationMismatches(plans[p].tests[t].headerId)"
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span><strong>Orientation Mismatch:</strong> Specimen orientation does not match specification requirement for
+                      {{ orientationWarnings[plans[p].tests[t].headerId]?.warnings?.length }} parameter(s).
+                    </span>
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                      <input type="checkbox" class="form-check-input"
+                        [(ngModel)]="orientationDeviationAcknowledged[plans[p].tests[t].headerId]"
+                        [ngModelOptions]="{standalone: true}">
+                      I confirm this deviation is intentional
+                    </label>
+                  </div>
+
                   <!-- Test Toolbar -->
                   <div class="test-toolbar d-flex align-items-center gap-2">
                     <button
@@ -393,6 +430,13 @@
                             <small class="d-block text-muted" style="font-size: 9px;" *ngIf="unc.expandedUncertainty">
                               U={{unc.expandedUncertainty}} (k={{unc.coverageFactor}})
                             </small>
+                          </ng-container>
+                          <!-- Orientation Mismatch Warning -->
+                          <ng-container *ngIf="getOrientationWarning(plans[p].tests[t].headerId, row.value.parameterID) as ow">
+                            <span class="badge bg-warning text-dark d-block mt-1" style="font-size: 9px;"
+                              [title]="'Spec requires: ' + ow.requiredOrientation + ' | Actual: ' + ow.actualOrientation">
+                              Orientation Mismatch
+                            </span>
                           </ng-container>
                         </td>
 

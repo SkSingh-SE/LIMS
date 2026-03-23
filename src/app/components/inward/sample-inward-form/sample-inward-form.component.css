@@ -35,7 +35,7 @@ fieldset.border {
 
 fieldset legend {
   font-size: 0.875rem !important;
-  color: var(--primary-color, #da261c);
+  color: #1a1a2e;
   background: #fff;
   padding: 0 0.5rem;
 }
@@ -57,7 +57,7 @@ fieldset legend {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   background: var(--primary-color, #da261c);
-  color: #fff;
+  /* color: #fff; */
   font-size: 0.85rem;
   padding: 0.5rem 1rem;
 }

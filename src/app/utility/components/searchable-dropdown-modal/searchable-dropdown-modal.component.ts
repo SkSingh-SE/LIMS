@@ -153,7 +153,9 @@ export class SearchableDropdownModalComponent {
 
   selectItem(item: any) {
     this.selectedLabel = item.name;
+    this.searchTerm = '';
     this.itemSelected.emit(item);
+    this.showDropdown = false;
     // reflect selection visually
     const idx = this.dropdownData.findIndex(d => d.id === item.id);
     this.highlightedIndex = idx >= 0 ? idx : -1;
@@ -178,23 +180,44 @@ export class SearchableDropdownModalComponent {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['selectedItem'] && changes['selectedItem'].currentValue) {
-      if (this.isMultiSelect && Array.isArray(this.selectedItem)) {
-        // Handle multiple IDs
+    if (changes['selectedItem']) {
+      const val = changes['selectedItem'].currentValue;
+      // Reset when selectedItem is cleared
+      if (!val || (Array.isArray(val) && val.length === 0)) {
+        this.selectedLabel = '';
+        this.searchTerm = '';
         this.selectedItems = [];
+        return;
+      }
+      if (this.isMultiSelect && Array.isArray(this.selectedItem)) {
+        // Handle multiple IDs — fetch all dropdown data and match by ID
+        this.selectedItems = [];
+        const idsToResolve: any[] = [];
         this.selectedItem.forEach((id: any) => {
           const matchedItem = this.dropdownData.find(item => item.id == id);
           if (matchedItem) {
             this.selectedItems.push(matchedItem);
           } else {
-            this.fetchDataFn(id, 0, 1).subscribe((data) => {
+            idsToResolve.push(id);
+          }
+        });
+        // Fetch with empty search to get items, then match remaining IDs
+        if (idsToResolve.length > 0) {
+          this.fetchDataFn('', 0, 100).subscribe((data) => {
+            idsToResolve.forEach((id: any) => {
               const found = data.find(item => item.id == id);
-              if (found) {
+              if (found && !this.selectedItems.some(si => si.id == found.id)) {
                 this.selectedItems.push(found);
               }
             });
-          }
-        });
+            // Merge fetched data into dropdownData for future lookups
+            data.forEach((item: any) => {
+              if (!this.dropdownData.some(d => d.id === item.id)) {
+                this.dropdownData.push(item);
+              }
+            });
+          });
+        }
       } else if (!this.isMultiSelect) {
         // single select logic
         const matched = this.dropdownData.find(x => x.id === this.selectedItem);
@@ -238,6 +261,7 @@ export class SearchableDropdownModalComponent {
     } else {
       this.selectedItems.push(item);
     }
+    this.searchTerm = '';
     this.itemsSelected.emit(this.selectedItems);
   }
 

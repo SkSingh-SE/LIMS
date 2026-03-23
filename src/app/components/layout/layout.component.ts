@@ -4,10 +4,11 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { GlobalLoaderComponent } from '../global-loader/global-loader.component';
 import { ToastComponent } from '../toast/toast.component';
+import { UnsavedChangesModalComponent } from '../../utility/components/unsaved-changes-modal/unsaved-changes-modal.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [CommonModule,NavbarComponent,GlobalLoaderComponent,ToastComponent,RouterOutlet],
+  imports: [CommonModule,NavbarComponent,GlobalLoaderComponent,ToastComponent,RouterOutlet,UnsavedChangesModalComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

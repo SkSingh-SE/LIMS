@@ -95,6 +95,8 @@ export class TestResultEntryFormComponent implements OnInit {
   // ================================================================
   nablScopeMap: Record<number, any[]> = {};
   uncertaintyMap: Record<number, any[]> = {};
+  orientationWarnings: Record<number, any> = {};
+  orientationDeviationAcknowledged: Record<number, boolean> = {};
 
   // ================================================================
   // Phase 4: Machine Data Integration
@@ -266,6 +268,7 @@ export class TestResultEntryFormComponent implements OnInit {
             this.fetchPriceSummary(hId);
             this.loadNablScopeCheck(hId);
             this.loadUncertainty(hId);
+            this.loadOrientationCheck(hId);
           });
         } catch (e) {
           console.warn('Failed to fetch initial test images', e);
@@ -1519,7 +1522,11 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
-        this.toastService.show('Price calculated successfully', 'success');
+        if (summary.message) {
+          this.toastService.show(summary.message, 'warning');
+        } else {
+          this.toastService.show('Price calculated successfully', 'success');
+        }
       },
       error: (error) => {
         console.error('Error calculating price:', error);
@@ -1600,6 +1607,45 @@ export class TestResultEntryFormComponent implements OnInit {
     const results = this.nablScopeMap[headerId];
     if (!results) return null;
     return results.find((r: any) => r.parameterId === parameterId);
+  }
+
+  nablScopeAcknowledged: Record<number, boolean> = {};
+
+  getNablScopeSummary(headerId: number): { allInScope: boolean; outOfScopeCount: number; totalChecked: number } {
+    const results = this.nablScopeMap[headerId];
+    if (!results || results.length === 0) return { allInScope: true, outOfScopeCount: 0, totalChecked: 0 };
+    const outOfScope = results.filter((r: any) => r.scopeStatus === 'OutsideScope');
+    return {
+      allInScope: outOfScope.length === 0,
+      outOfScopeCount: outOfScope.length,
+      totalChecked: results.length,
+    };
+  }
+
+  hasOutOfScopeParams(headerId: number): boolean {
+    return this.getNablScopeSummary(headerId).outOfScopeCount > 0;
+  }
+
+  // ================================================================
+  // Orientation Mismatch Check
+  // ================================================================
+  loadOrientationCheck(headerId: number): void {
+    this.testResultService.checkOrientationMismatch(headerId).subscribe({
+      next: (result) => {
+        this.orientationWarnings[headerId] = result;
+      },
+      error: (err) => console.error('Orientation check error:', err),
+    });
+  }
+
+  getOrientationWarning(headerId: number, parameterId: number): any {
+    const result = this.orientationWarnings[headerId];
+    if (!result?.warnings) return null;
+    return result.warnings.find((w: any) => w.parameterId === parameterId);
+  }
+
+  hasOrientationMismatches(headerId: number): boolean {
+    return this.orientationWarnings[headerId]?.hasMismatches === true;
   }
 
   // ================================================================

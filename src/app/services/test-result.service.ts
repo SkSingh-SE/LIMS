@@ -268,6 +268,13 @@ export class TestResultService {
   }
 
   // ================================================================
+  // Orientation Mismatch Check
+  // ================================================================
+  checkOrientationMismatch(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/orientation-check/${headerId}`);
+  }
+
+  // ================================================================
   // Phase 4: Machine Data Integration
   // ================================================================
   fetchMachineData(dto: any): Observable<any> {

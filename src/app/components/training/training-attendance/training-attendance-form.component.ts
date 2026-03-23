@@ -1,11 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TrainingAttendanceService } from '../../../services/training-attendance.service';
+import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-training-attendance-form',
@@ -14,7 +18,8 @@ import { QuillModule } from 'ngx-quill';
     templateUrl: './training-attendance-form.component.html',
     providers: [DatePipe]
 })
-export class TrainingAttendanceFormComponent implements OnInit {
+export class TrainingAttendanceFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     attendanceForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -44,8 +49,9 @@ export class TrainingAttendanceFormComponent implements OnInit {
         private service: TrainingAttendanceService,
         private router: Router,
         private route: ActivatedRoute,
-        private datePipe: DatePipe
-    ) { }
+        private datePipe: DatePipe,
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -122,7 +128,7 @@ export class TrainingAttendanceFormComponent implements OnInit {
                     this.attendanceForm.patchValue(formValues);
                 }
             },
-            error: () => {}
+            error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }
         });
     }
 
@@ -155,13 +161,13 @@ export class TrainingAttendanceFormComponent implements OnInit {
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => this.router.navigate(['/training-attendance']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/training-attendance']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => this.router.navigate(['/training-attendance']),
-                error: () => {}
+                next: () => { this.saved = true; this.router.navigate(['/training-attendance']); },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
             });
         }
     }
@@ -173,4 +179,17 @@ export class TrainingAttendanceFormComponent implements OnInit {
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.attendanceForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.attendanceForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

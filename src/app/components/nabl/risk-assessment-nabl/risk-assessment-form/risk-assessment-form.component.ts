@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { RiskAssessmentService } from '../../../../services/risk-assessment.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { ToastService } from '../../../../services/toast.service';
 
 @Component({
     selector: 'app-risk-assessment-form',
@@ -13,7 +17,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './risk-assessment-form.component.html',
     styleUrl: './risk-assessment-form.component.css'
 })
-export class RiskAssessmentFormComponent implements OnInit {
+export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     riskForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -38,8 +43,9 @@ export class RiskAssessmentFormComponent implements OnInit {
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
-        private service: RiskAssessmentService
-    ) {
+        private service: RiskAssessmentService,
+        private unsavedChangesService: UnsavedChangesService,
+        private toastService: ToastService) {
         this.initForm();
     }
 
@@ -78,10 +84,15 @@ export class RiskAssessmentFormComponent implements OnInit {
     }
 
     private loadRecord() {
-        this.service.getById(this.recordId).subscribe(data => {
-            if (data) {
-                this.riskForm.patchValue(data);
-                if (this.isViewMode) this.riskForm.disable();
+        this.service.getById(this.recordId).subscribe({
+            next: (data) => {
+                if (data) {
+                    this.riskForm.patchValue(data);
+                    if (this.isViewMode) this.riskForm.disable();
+                }
+            },
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Failed to load record', 'error');
             }
         });
     }
@@ -93,9 +104,15 @@ export class RiskAssessmentFormComponent implements OnInit {
     onSubmit() {
         if (this.riskForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.riskForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.riskForm.value).subscribe({
+                    next: () => { this.saved = true; this.onCancel(); },
+                    error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
+                });
             } else {
-                this.service.create(this.riskForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.riskForm.value).subscribe({
+                    next: () => { this.saved = true; this.onCancel(); },
+                    error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
+                });
             }
         }
     }
@@ -103,4 +120,17 @@ export class RiskAssessmentFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/risk-assessment']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.riskForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.riskForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

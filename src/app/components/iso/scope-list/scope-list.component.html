@@ -71,7 +71,7 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']" class="icon-link"
+                                    <a *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']" (click)="deleteScope(material.id)" class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>

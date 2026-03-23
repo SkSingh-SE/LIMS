@@ -1,9 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TrainingPlanService } from '../../../services/training-plan.service';
+import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-training-plan-form',
@@ -13,7 +17,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
   styleUrl: './training-plan-form.component.css',
   providers: [DatePipe]
 })
-export class TrainingPlanFormComponent implements OnInit {
+export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   planForm!: FormGroup;
   planId: number = 0;
   isEditMode = false;
@@ -35,8 +40,9 @@ export class TrainingPlanFormComponent implements OnInit {
     private trainingPlanService: TrainingPlanService,
     private router: Router,
     private route: ActivatedRoute,
-    private datePipe: DatePipe
-  ) { }
+    private datePipe: DatePipe,
+    private toastService: ToastService,
+    private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -118,7 +124,7 @@ export class TrainingPlanFormComponent implements OnInit {
         }
       },
       error: (err: any) => {
-        console.error(err);
+        this.toastService.show(err?.error?.message || 'Failed to load training plan', 'error');
       }
     });
   }
@@ -159,23 +165,25 @@ export class TrainingPlanFormComponent implements OnInit {
     if (this.isEditMode) {
       this.trainingPlanService.update(this.planId, formData).subscribe({
         next: (res) => {
+          this.saved = true;
           if (res.success) {
             this.router.navigate(['/training-plan']);
           }
         },
         error: (err: any) => {
-          console.error(err);
+          this.toastService.show(err?.error?.message || 'Failed to update training plan', 'error');
         }
       });
     } else {
       this.trainingPlanService.create(formData).subscribe({
         next: (res) => {
+          this.saved = true;
           if (res.success) {
             this.router.navigate(['/training-plan']);
           }
         },
         error: (err: any) => {
-          console.error(err);
+          this.toastService.show(err?.error?.message || 'Failed to create training plan', 'error');
         }
       });
     }
@@ -187,5 +195,18 @@ export class TrainingPlanFormComponent implements OnInit {
 
   toggleSection(section: string): void {
     this.openSections[section] = !this.openSections[section];
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.planForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.planForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -7,6 +7,9 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { ToastService } from '../../../../services/toast.service';
 
 import { QuillModule } from 'ngx-quill';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-quality-control-plan-form',
@@ -15,7 +18,8 @@ import { QuillModule } from 'ngx-quill';
     templateUrl: './quality-control-plan-form.component.html',
     styleUrl: './quality-control-plan-form.component.css'
 })
-export class QualityControlPlanFormComponent implements OnInit {
+export class QualityControlPlanFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     qcpForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -54,7 +58,7 @@ export class QualityControlPlanFormComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    ) { }
+    , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -128,11 +132,25 @@ export class QualityControlPlanFormComponent implements OnInit {
         const formData = this.qcpForm.getRawValue();
         const obs = this.isEditMode ? this.service.update(this.recordId, formData) : this.service.create(formData);
         obs.subscribe({
-            next: (res) => { this.toastService.show(res.message, 'success'); this.router.navigate(['/quality-control-plan']); },
+            next: (res) => {
+              this.saved = true; this.toastService.show(res.message, 'success'); this.router.navigate(['/quality-control-plan']); },
             error: (err) => { this.toastService.show(err.message || 'Operation failed', 'error');  }
         });
     }
 
     onCancel(): void { this.router.navigate(['/quality-control-plan']); }
     toggleSection(section: string): void { this.openSections[section] = !this.openSections[section]; }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.qcpForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.qcpForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

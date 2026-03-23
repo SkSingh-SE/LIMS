@@ -367,6 +367,26 @@ export class ScopeComponent implements OnInit {
             });
 
             paramsArray.push(paramGroup);
+
+            // Load group and sub-group dropdowns for edit mode
+            const paramIndex = paramsArray.length - 1;
+            const specIndex = this.specifications.length; // will be pushed next
+            const key = `${specIndex}-${paramIndex}`;
+
+            if (param.disciplineID) {
+              this.groupService.getGroupDropdown('', 0, 100, param.disciplineID).subscribe({
+                next: (data) => {
+                  this.groupOptionsPerParam[key] = data;
+                },
+              });
+            }
+            if (param.groupID) {
+              this.groupService.getGroupById(param.groupID).subscribe({
+                next: (data) => {
+                  this.subGroupOptionsPerParam[key] = data;
+                },
+              });
+            }
           });
 
           this.specifications.push(specGroup);

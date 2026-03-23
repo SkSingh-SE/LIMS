@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { RouterModule } from '@angular/router';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-scope-list',
@@ -60,7 +61,7 @@ export class ScopeListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private scopeService: LabScopeService) {
+  constructor(private fb: FormBuilder, private scopeService: LabScopeService, private toastService: ToastService) {
   }
 
 
@@ -203,6 +204,22 @@ export class ScopeListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  deleteScope(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this scope?');
+    if (confirmed) {
+      this.scopeService.deleteLabScope(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+        }
+      });
+    }
   }
 
 }

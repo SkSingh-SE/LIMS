@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { CustomerFeedbackService } from '../../../../services/customer-feedback.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-customer-feedback-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './customer-feedback-form.component.html',
     styleUrl: './customer-feedback-form.component.css'
 })
-export class CustomerFeedbackFormComponent implements OnInit {
+export class CustomerFeedbackFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     feedbackForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -50,7 +54,7 @@ export class CustomerFeedbackFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: CustomerFeedbackService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -111,9 +115,9 @@ export class CustomerFeedbackFormComponent implements OnInit {
     onSubmit() {
         if (this.feedbackForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.feedbackForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.feedbackForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.feedbackForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.feedbackForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -121,4 +125,17 @@ export class CustomerFeedbackFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/customer-feedback']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.feedbackForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.feedbackForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

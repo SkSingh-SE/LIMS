@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { MeetingMinutesService } from '../../../../services/meeting-minutes.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 
 @Component({
     selector: 'app-meeting-minutes-form',
@@ -13,7 +16,8 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
     templateUrl: './meeting-minutes-form.component.html',
     styleUrl: './meeting-minutes-form.component.css'
 })
-export class MeetingMinutesFormComponent implements OnInit {
+export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
     minutesForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -41,7 +45,7 @@ export class MeetingMinutesFormComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: MeetingMinutesService
-    ) {
+    , private unsavedChangesService: UnsavedChangesService) {
         this.initForm();
     }
 
@@ -136,9 +140,9 @@ export class MeetingMinutesFormComponent implements OnInit {
     onSubmit() {
         if (this.minutesForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.minutesForm.value).subscribe(() => this.onCancel());
+                this.service.update(this.recordId, this.minutesForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.minutesForm.value).subscribe(() => this.onCancel());
+                this.service.create(this.minutesForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }
@@ -146,4 +150,17 @@ export class MeetingMinutesFormComponent implements OnInit {
     onCancel() {
         this.router.navigate(['/meeting-minutes']);
     }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.minutesForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.minutesForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

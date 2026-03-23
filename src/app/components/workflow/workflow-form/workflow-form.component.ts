@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import { RoleService } from '../../../services/role.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { UserService } from '../../../services/user.service';
@@ -9,6 +10,8 @@ import { MultiSelectDropdownComponent } from '../../../utility/components/multi-
 import { ConfigService } from '../../../services/config.service';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-workflow-form',
@@ -16,7 +19,8 @@ import { ToastService } from '../../../services/toast.service';
   templateUrl: './workflow-form.component.html',
   styleUrl: './workflow-form.component.css'
 })
-export class WorkflowFormComponent implements OnInit {
+export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
+  saved = false;
   workflowForm!: FormGroup;
   isViewMode = false;
   isEditMode = false;
@@ -39,7 +43,8 @@ export class WorkflowFormComponent implements OnInit {
     private configService: ConfigService,
     private workflowService: WorkflowService,
     private route: ActivatedRoute,
-    private toast: ToastService
+    private toast: ToastService,
+    private unsavedChangesService: UnsavedChangesService
   ) {
 
   }
@@ -161,6 +166,7 @@ export class WorkflowFormComponent implements OnInit {
       if (this.workflowId > 0 && this.isEditMode) {
         this.workflowService.updateWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
+            this.saved = true;
             this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
@@ -172,6 +178,7 @@ export class WorkflowFormComponent implements OnInit {
       } else {
         this.workflowService.createWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
+            this.saved = true;
             this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
@@ -285,6 +292,16 @@ export class WorkflowFormComponent implements OnInit {
     });
   }
 
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.workflowForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
 
-
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.workflowForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-material-specification-list',
@@ -59,7 +60,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService) {
+  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService) {
   }
 
 
@@ -202,6 +203,22 @@ export class MaterialSpecificationListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  deleteMaterialSpecification(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this material specification?');
+    if (confirmed) {
+      this.materialSpecificationService.deleteMaterialSpecification(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+        }
+      });
+    }
   }
 
 }

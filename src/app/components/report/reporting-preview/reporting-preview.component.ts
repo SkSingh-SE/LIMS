@@ -39,6 +39,11 @@ export class ReportingPreviewComponent implements OnInit {
   pricingData: any = null;
   hasPriceSnapshot = false;
 
+  // Multi-format report generation
+  reportFormats: any[] = [];
+  selectedFormatType: number = 0;
+  formatPdfGenerating = false;
+
   constructor(
     private route: ActivatedRoute,
     private reportingService: ReportingService,
@@ -53,6 +58,35 @@ export class ReportingPreviewComponent implements OnInit {
       if (this.sampleId) {
         this.loadReportPreview(this.sampleId);
       }
+    });
+    this.loadReportFormats();
+  }
+
+  loadReportFormats(): void {
+    this.reportingService.getAvailableFormats().subscribe({
+      next: (formats) => this.reportFormats = formats,
+      error: () => this.reportFormats = [],
+    });
+  }
+
+  downloadByFormat(): void {
+    if (!this.reportData?.reportHeaderId || this.formatPdfGenerating) return;
+    this.formatPdfGenerating = true;
+    const headerId = +this.reportData.reportHeaderId;
+    this.reportingService.generateByFormat(headerId, this.selectedFormatType).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Report-${headerId}-${this.selectedFormatType}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.formatPdfGenerating = false;
+      },
+      error: (err) => {
+        console.error('Format PDF generation failed:', err);
+        this.formatPdfGenerating = false;
+      },
     });
   }
 

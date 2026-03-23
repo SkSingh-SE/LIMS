@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,6 +9,8 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Observable } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-responsibility-authority-form',
@@ -17,7 +19,8 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
   templateUrl: './responsibility-authority-form.component.html',
   styleUrl: './responsibility-authority-form.component.css'
 })
-export class ResponsibilityAuthorityFormComponent implements OnInit {
+export class ResponsibilityAuthorityFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   raForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = false;
@@ -56,7 +59,7 @@ export class ResponsibilityAuthorityFormComponent implements OnInit {
     private raService: ResponsibilityAuthorityService,
     private designationService: DesignationService,
     private toastService: ToastService
-  ) { }
+  , private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -139,6 +142,7 @@ export class ResponsibilityAuthorityFormComponent implements OnInit {
         formData.id = this.matrixId;
         this.raService.update(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/responsibility-authority']);
           },
@@ -149,6 +153,7 @@ export class ResponsibilityAuthorityFormComponent implements OnInit {
       } else {
         this.raService.create(formData).subscribe({
           next: (response) => {
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/responsibility-authority']);
           },
@@ -165,5 +170,18 @@ export class ResponsibilityAuthorityFormComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/responsibility-authority']);
+  }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.raForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.raForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 }

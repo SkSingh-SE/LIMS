@@ -260,14 +260,13 @@ export class ProductConditionComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
-    this.ProductConditionForm.reset();
-    this.ProductConditionForm.enable();
+    this.initForm();
     if (id > 0) {
       this.productConditionId = id;
       this.getDetails();
@@ -275,15 +274,11 @@ export class ProductConditionComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Product Condition Form';
-      this.ProductConditionForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Product Condition Form';
-      this.ProductConditionForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -300,8 +295,7 @@ export class ProductConditionComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.ProductConditionForm.reset();
-    this.ProductConditionForm.enable();
+    this.initForm();
     this.productConditionId = 0;
     this.isEditMode = false;
     this.isViewMode = false;

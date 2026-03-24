@@ -4,6 +4,7 @@ import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 import { catchError, switchMap, tap, throwError } from 'rxjs';
 import { LoaderService } from '../services/loader.service';
+import { ToastService } from '../services/toast.service';
 
 let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
@@ -23,6 +24,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const loaderService = inject(LoaderService);
+  const toastService = inject(ToastService);
 
   let token = authService.getUserData()?.token; // Retrieve token from service
   const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
@@ -30,7 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
-  const getErrorMessage = (error: HttpErrorResponse) => {
+  const getErrorMessage = (error: HttpErrorResponse): string => {
     if (error.status === 0) {
       return errorMessages[0];
     }
@@ -38,17 +40,38 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (typeof error.error === 'string') {
         return error.error;
       }
+      // Handle: { message: "..." } or { Message: "..." }
       if (error.error.message) {
         return error.error.message;
       }
-      if (typeof error.error === 'object') {
-        return JSON.stringify(error.error);
+      if (error.error.Message) {
+        return error.error.Message;
       }
+      // Handle: { errors: { field: ["error"] } } (validation errors)
+      if (error.error.errors) {
+        const errors = error.error.errors;
+        const messages = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+        return messages.join('; ');
+      }
+      // Handle: { title: "..." } (ASP.NET problem details)
+      if (error.error.title) {
+        return error.error.title;
+      }
+    }
+    if (error.message) {
+      return error.message;
     }
     if (errorMessages[error.status]) {
       return errorMessages[error.status];
     }
     return 'An unexpected error occurred';
+  };
+
+  // Auto-show toast for all API errors (except 401 which triggers logout)
+  const showErrorToast = (error: HttpErrorResponse, message: string) => {
+    if (error.status === 401) return; // handled by logout flow
+    const type = error.status === 400 ? 'warning' : 'error';
+    toastService.show(message, type);
   };
 
   const handleRequest = (accessToken: any) => {
@@ -71,7 +94,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       catchError((error: HttpErrorResponse) => {
         loaderService.hide();
         if (error.status === 401) {
-          unauthorizedCount++; // Increment on 401 Unauthorized
+          unauthorizedCount++;
           if (unauthorizedCount >= unauthorizedLimit) {
             unauthorizedCount = 0;
             authService.logout();
@@ -79,7 +102,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           }
         }
         const message = getErrorMessage(error);
-        // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
+        showErrorToast(error, message);
         const enhancedError = Object.assign(error, { errorMessage: message });
         return throwError(() => enhancedError);
       })
@@ -102,10 +125,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       switchMap(() => handleRequest(token!)),
       catchError((error: HttpErrorResponse) => {
         loaderService.hide();
-      const message = getErrorMessage(error);
-      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
-      const enhancedError = Object.assign(error, { errorMessage: message });
-      return throwError(() => enhancedError);
+        const message = getErrorMessage(error);
+        showErrorToast(error, message);
+        const enhancedError = Object.assign(error, { errorMessage: message });
+        return throwError(() => enhancedError);
       })
     );
   }
@@ -140,7 +163,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
       const message = getErrorMessage(error);
-      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
+      showErrorToast(error, message);
       const enhancedError = Object.assign(error, { errorMessage: message });
       return throwError(() => enhancedError);
     })

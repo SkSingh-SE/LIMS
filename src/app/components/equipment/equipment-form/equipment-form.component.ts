@@ -102,13 +102,13 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       oemID: ['', Validators.required],
       modelNo: [''],
       purchaseDate: ['', Validators.required],
-      calibrationRequired: [false, Validators.required],
+      calibrationRequired: [false],
       nextCalibrationDueDate: [null],
-      maintenanceRequired: [false, Validators.required],
+      maintenanceRequired: [false],
       maintenanceInterval: [''],
       nextMaintenanceDueDate: [null],
       internalExternal: ['', Validators.required],
-      intermediateCheckRequired: [true, Validators.required],
+      intermediateCheckRequired: [true],
       intermediateCheckInterval: [''],
       lastCalibrationDate: [null],
       calibrationFrequencyDays: [null],
@@ -386,7 +386,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           next: response => {
             this.saved = true;
             this.toastService.show(response.message, 'success');
-            this.closeModal();
+            this.router.navigate(['/equipment']);
           },
           error: error => {
             this.toastService.show(error.error.message, 'error');
@@ -397,7 +397,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           next: response => {
             this.saved = true;
             this.toastService.show(response.message, 'success');
-            this.closeModal();
+            this.router.navigate(['/equipment']);
           },
           error: error => {
             this.toastService.show(error.error.message, 'error');

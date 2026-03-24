@@ -210,10 +210,11 @@ export class ListDesignationComponent implements OnInit {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
   }
-  deleteDesignation() {
+  deleteDesignation(id: number) {
+    if (id <= 0) return;
     const confirmed = window.confirm('Are you sure you want to delete this designation?');
     if (confirmed) {
-      this.designationService.deleteDesignation(1).subscribe({
+      this.designationService.deleteDesignation(id).subscribe({
         next: (response) => {
           this.fetchData();
           this.toastService.show(response.message, 'success');

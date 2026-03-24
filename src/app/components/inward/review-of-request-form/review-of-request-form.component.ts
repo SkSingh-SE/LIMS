@@ -349,7 +349,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
     switch (this.reviewStatus) {
       case SampleStatus.UNDER_REVIEW_REQUEST:
         return 'bg-warning text-dark';
-      case SampleStatus.REVIEW_COMPLETED:
+      case SampleStatus.REQUEST_APPROVED:
         return 'bg-success';
       case SampleStatus.REQUEST_REJECTED:
         return 'bg-danger';

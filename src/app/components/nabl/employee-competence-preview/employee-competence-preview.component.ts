@@ -17,6 +17,9 @@ import { EmployeeCompetenceReport } from '../../../models/employeeCompetenceMode
 export class EmployeeCompetencePreviewComponent implements OnInit {
     reportId: number = 0;
     report: EmployeeCompetenceReport | null = null;
+    reports: any[] = [];
+    isEmployeeMode = false;
+    loading = false;
     ratingOptions = ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'];
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
@@ -30,25 +33,55 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+        this.isEmployeeMode = this.route.snapshot.data['mode'] === 'employee-report';
         this.route.paramMap.subscribe(params => {
             this.reportId = Number(params.get('id'));
             if (this.reportId > 0) {
-                this.loadReport();
-            } else {
+                if (this.isEmployeeMode) {
+                    this.loadEmployeeReports(this.reportId);
+                } else {
+                    this.loadReport();
+                }
             }
         });
     }
 
+    loadEmployeeReports(employeeId: number): void {
+        this.loading = true;
+        this.competenceService.getByEmployeeId(employeeId).subscribe({
+            next: (res: any) => {
+                this.reports = res.items || [];
+                if (this.reports.length > 0) {
+                    this.report = this.reports[0];
+                }
+                this.loading = false;
+            },
+            error: () => {
+                this.reports = [];
+                this.loading = false;
+            }
+        });
+    }
+
+    selectReport(r: any): void {
+        this.report = r;
+        this.orientationDetected = false;
+        setTimeout(() => this.autoDetectOrientation(), 300);
+    }
+
     loadReport(): void {
+        this.loading = true;
         this.competenceService.getById(this.reportId).subscribe({
             next: (data) => {
                 if (data) {
                     this.report = data;
                 }
+                this.loading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading competence report:', err);
+                this.loading = false;
             }
         });
     }

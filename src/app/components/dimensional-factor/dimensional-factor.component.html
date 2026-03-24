@@ -58,8 +58,9 @@
                                     {{ form.productForm?.name || form.name }}
                                 </span>
                             </td>
-                            <td>{{ customerType.parameterUnit?.name }}</td>
-                            <td>{{ customerType.instrument }}</td>
+                            <td>{{ customerType.parameterUnit?.name || '-' }}</td>
+                            <td>{{ customerType.defaultTestMethod?.name || customerType.defaultTestMethod?.standard || '-' }}</td>
+                            <td>{{ customerType.instrument || '-' }}</td>
                             <td>{{ customerType.toleranceType }}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
@@ -156,7 +157,7 @@
 </div>
 
 <!-- Modal for Add/Edit/Update Dimensional Factor -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">

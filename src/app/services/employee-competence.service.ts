@@ -16,6 +16,13 @@ export class EmployeeCompetenceService {
         return this.http.post<EmployeeCompetenceReportResponse>(this.apiUrl + '/list', filter);
     }
 
+    getByEmployeeId(employeeId: number): Observable<EmployeeCompetenceReportResponse> {
+        return this.http.post<EmployeeCompetenceReportResponse>(this.apiUrl + '/list', {
+            PageNumber: 1, PageSize: 100, sortByColumn: 'ID', sortOrder: 'desc',
+            filter: [{ column: 'employeeId', type: 'Equal', value: String(employeeId), value2: null }]
+        });
+    }
+
     getById(id: number): Observable<EmployeeCompetenceReport | undefined> {
         return this.http.get<EmployeeCompetenceReport>(`${this.apiUrl}/details/${id}`);
     }

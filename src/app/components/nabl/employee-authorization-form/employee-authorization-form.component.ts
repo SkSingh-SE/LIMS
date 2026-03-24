@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,16 +9,19 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { DepartmentService } from '../../../services/department.service';
+import { EmployeeService } from '../../../services/employee.service';
 
 @Component({
     selector: 'app-employee-authorization-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, SearchableDropdownComponent],
     templateUrl: './employee-authorization-form.component.html',
     styleUrl: './employee-authorization-form.component.css'
 })
 export class EmployeeAuthorizationFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     authForm!: FormGroup;
     recordId: number = 0;
@@ -40,20 +43,21 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         ]
     };
 
-    departments = ['Chemical', 'Mechanical', 'Metallography', 'Non-Destructive Testing', 'Civil'];
-
     constructor(
         private fb: FormBuilder,
         private authService: EmployeeAuthorizationService,
         private router: Router,
         private route: ActivatedRoute,
-        private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+        private toastService: ToastService,
+        private unsavedChangesService: UnsavedChangesService,
+        private departmentService: DepartmentService,
+        private employeeService: EmployeeService
+    ) { }
 
     ngOnInit(): void {
         this.initForm();
         this.route.url.subscribe(url => {
-            const path = url[url.length - 2]?.path; // check edit/details
+            const path = url[url.length - 2]?.path;
             if (path === 'details') {
                 this.isViewMode = true;
                 this.formTitle = 'View Equipment Authorization';
@@ -76,9 +80,11 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         this.authForm = this.fb.group({
             id: [0],
             formatNo: ['F-7', [Validators.required]],
-            department: ['', [Validators.required]],
+            departmentId: [null, [Validators.required]],
+            departmentName: [''],
+            employeeId: [null, [Validators.required]],
             personnelName: ['', [Validators.required]],
-            uid: ['', [Validators.required]],
+            uid: [''],
             equipment: ['', [Validators.required]],
             testMethodAuthorization: ['', [Validators.required]],
             testAuthorization: ['', [Validators.required]]
@@ -106,6 +112,30 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         this.openSections[section] = !this.openSections[section];
     }
 
+    // ─── Dropdown Data Functions ───
+    getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.departmentService.getDepartmentDropdown(term, page, pageSize);
+    };
+
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.employeeService.getEmployeeDropdown(term, page, pageSize);
+    };
+
+    onDepartmentSelected(item: any): void {
+        this.authForm.patchValue({
+            departmentId: item.id,
+            departmentName: item.name
+        });
+    }
+
+    onEmployeeSelected(item: any): void {
+        this.authForm.patchValue({
+            employeeId: item.id,
+            personnelName: item.name,
+            uid: item.additionalValues?.employeeCode || item.additionalValues?.code || ''
+        });
+    }
+
     onSubmit(): void {
         if (this.authForm.invalid) {
             this.authForm.markAllAsTouched();
@@ -119,8 +149,8 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         if (this.isEditMode) {
             this.authService.update(this.recordId, formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
+                    this.isSubmitting = false;
+                    this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/equipment-authorization/list']);
@@ -137,8 +167,8 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         } else {
             this.authService.create(formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
+                    this.isSubmitting = false;
+                    this.saved = true;
                     if (res.success) {
                         this.toastService.show(res.message, 'success');
                         this.router.navigate(['/employee/equipment-authorization/list']);
@@ -155,16 +185,16 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         }
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.authForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.authForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.authForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.authForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

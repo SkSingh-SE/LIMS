@@ -91,8 +91,8 @@ export class BankComponent implements OnInit {
       accountHolderName: ['', Validators.required],
       accountNumber: ['', Validators.required],
       accountType: ['', Validators.required],
-      branchName: [''],
-      ifscCode: [''],
+      branchName: ['', Validators.required],
+      ifscCode: ['', Validators.required],
     });
   }
 

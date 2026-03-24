@@ -1,4 +1,4 @@
-<div id="designationModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="designationModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
   aria-labelledby="designationModalLabel" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -25,7 +25,8 @@
             <div class="col-md-6 mb-3">
               <label for="description" class="form-label">Description</label>
               <input type="text" id="description" class="form-control" formControlName="description"
-                placeholder="Enter Designation Description" required [attr.disabled]="isViewMode ? true : null" />
+                placeholder="Enter Designation Description"
+                [attr.disabled]="isViewMode ? true : null" />
             </div>
             <div class="col-md-6 mb-3">
               <app-searchable-dropdown

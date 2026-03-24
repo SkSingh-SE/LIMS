@@ -150,7 +150,7 @@
 </div>
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -183,9 +183,13 @@
                             placeholder="Enter Email" required
                             [ngClass]="{'is-invalid': TPIForm.get('emailId')?.touched && TPIForm.get('emailId')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="TPIForm.get('emailId')?.invalid && TPIForm.get('emailId')?.touched"
+                        <span *ngIf="TPIForm.get('emailId')?.hasError('required') && TPIForm.get('emailId')?.touched"
                             class="text-danger text-sm">
                             Email is required.
+                        </span>
+                        <span *ngIf="TPIForm.get('emailId')?.hasError('email') && !TPIForm.get('emailId')?.hasError('required') && TPIForm.get('emailId')?.touched"
+                            class="text-danger text-sm">
+                            Please enter a valid email address.
                         </span>
                     </div>
 
@@ -194,12 +198,16 @@
                         <label for="contactNo" class="form-label">Contact No <span class="text-danger">*</span></label>
                         <input type="text" id="contactNo" class="form-control" formControlName="contactNo"
                             placeholder="Enter Contact No" required
-                            maxlength="12" appNumberOnly
+                            maxlength="13" appNumberOnly
                             [ngClass]="{'is-invalid': TPIForm.get('contactNo')?.touched && TPIForm.get('contactNo')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="TPIForm.get('contactNo')?.invalid && TPIForm.get('contactNo')?.touched"
+                        <span *ngIf="TPIForm.get('contactNo')?.hasError('required') && TPIForm.get('contactNo')?.touched"
                             class="text-danger text-sm">
                             Contact No is required.
+                        </span>
+                        <span *ngIf="TPIForm.get('contactNo')?.hasError('pattern') && !TPIForm.get('contactNo')?.hasError('required') && TPIForm.get('contactNo')?.touched"
+                            class="text-danger text-sm">
+                            Contact No must be 10-13 digits.
                         </span>
                     </div>
                 </div>

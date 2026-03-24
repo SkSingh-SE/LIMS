@@ -1,41 +1,44 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Input, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-
-interface TrainingRecord {
-    id: number;
-    trainingType: string;
-    testMethod: string;
-    trainerName: string;
-    trainingDate: string;
-    validTill: string;
-    evaluationResult: string;
-    status: string;
-    remarks?: string;
-}
+import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { InductionTrainingService } from '../../../services/induction-training.service';
+import { TrainingPlanService } from '../../../services/training-plan.service';
 
 @Component({
     selector: 'app-employee-job-training',
 
-    imports: [CommonModule, ReactiveFormsModule, FormsModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './employee-job-training.component.html',
-    styleUrl: './employee-job-training.component.css'
+    styleUrl: './employee-job-training.component.css',
 })
-export class EmployeeJobTrainingComponent implements OnInit {
+export class EmployeeJobTrainingComponent implements OnInit, OnChanges {
     @Input() employeeId!: number;
     @Input() isViewMode: boolean = false;
     @ViewChild('filterModal') filterModal!: ElementRef;
 
-    showTrainingModal = signal<boolean>(false);
-    trainingForm!: FormGroup;
+    // Active section tab
+    activeSection: 'induction' | 'trainingPlan' = 'induction';
 
-    // Pagination
-    currentPage = 1;
-    pageSize = 10;
-    totalRecords = 0;
+    // Loading states
+    loadingInduction = false;
+    loadingTrainingPlan = false;
+
+    // ---- Induction Training (F-6) ----
+    inductionRecords: any[] = [];
+    inductionPageNumber = 1;
+    inductionPageSize = 10;
+    inductionTotalItems = 0;
+
+    // ---- Training Plan (F-8) ----
+    trainingPlanRecords: any[] = [];
+    trainingPlanPageNumber = 1;
+    trainingPlanPageSize = 10;
+    trainingPlanTotalItems = 0;
+
+    // Shared pagination options
     pageSizes = [5, 10, 20];
 
-    // Search and Filter
+    // Search and Filter (shared for active section)
     searchTerm: string = '';
     sortByColumn: string = 'id';
     sortOrder: string = 'desc';
@@ -45,146 +48,198 @@ export class EmployeeJobTrainingComponent implements OnInit {
     filterType: string = 'Contains';
     filterValue: string = '';
     filterValue2: string = '';
-    isFilterOpen = false;
 
-    // Column definitions
-    columns = [
-        { key: 'id', type: 'number', label: 'SN', filter: false },
-        { key: 'trainingType', type: 'string', label: 'Training Type', filter: true },
-        { key: 'testMethod', type: 'string', label: 'Test Method / Equipment', filter: true },
-        { key: 'trainerName', type: 'string', label: 'Trainer Name', filter: true },
+    // Induction Training Columns
+    inductionColumns = [
+        { key: 'formCode', type: 'string', label: 'Form No', filter: true },
+        { key: 'trainerName', type: 'string', label: 'Trainer', filter: true },
+        { key: 'trainerDesignation', type: 'string', label: 'Trainer Designation', filter: true },
         { key: 'trainingDate', type: 'date', label: 'Training Date', filter: true },
-        { key: 'validTill', type: 'date', label: 'Valid Till', filter: true },
-        { key: 'evaluationResult', type: 'string', label: 'Evaluation', filter: true },
-        { key: 'status', type: 'string', label: 'Status', filter: true }
+        { key: 'parameter', type: 'string', label: 'Parameter', filter: true },
+        { key: 'testMethodSop', type: 'string', label: 'Test Method/SOP', filter: true },
+        { key: 'evaluationMode', type: 'string', label: 'Evaluation Mode', filter: true },
+        { key: 'remarks', type: 'string', label: 'Remarks', filter: true },
     ];
 
-    filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-        trainingType: 'string',
-        testMethod: 'string',
+    inductionFilterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+        formCode: 'string',
         trainerName: 'string',
+        trainerDesignation: 'string',
         trainingDate: 'date',
-        validTill: 'date',
-        evaluationResult: 'string',
-        status: 'string'
+        parameter: 'string',
+        testMethodSop: 'string',
+        evaluationMode: 'string',
+        remarks: 'string',
     };
 
-    // Summary Data (Mock)
-    summaryData = {
-        totalTrainings: 12,
-        activeTrainings: 8,
-        expiredTrainings: 2,
-        upcomingExpiry: 2
-    };
-
-    // Mock Training Data
-    trainingRecords: TrainingRecord[] = [
-        {
-            id: 1,
-            trainingType: 'Initial',
-            testMethod: 'HPLC Operation',
-            trainerName: 'Dr. Sharma',
-            trainingDate: '2024-01-15',
-            validTill: '2025-01-15',
-            evaluationResult: 'Pass',
-            status: 'Active',
-            remarks: 'Excellent performance'
-        },
-        {
-            id: 2,
-            trainingType: 'Refresher',
-            testMethod: 'GC-MS Analysis',
-            trainerName: 'Mr. Kumar',
-            trainingDate: '2024-03-20',
-            validTill: '2025-03-20',
-            evaluationResult: 'Pass',
-            status: 'Active',
-            remarks: ''
-        },
-        {
-            id: 3,
-            trainingType: 'Initial',
-            testMethod: 'UV-Vis Spectroscopy',
-            trainerName: 'Dr. Patel',
-            trainingDate: '2023-06-10',
-            validTill: '2024-06-10',
-            evaluationResult: 'Pass',
-            status: 'Expired',
-            remarks: 'Needs refresher training'
-        },
-        {
-            id: 4,
-            trainingType: 'Refresher',
-            testMethod: 'Karl Fischer Titration',
-            trainerName: 'Ms. Reddy',
-            trainingDate: '2024-02-28',
-            validTill: '2026-02-15',
-            evaluationResult: 'Conditional',
-            status: 'Active',
-            remarks: 'Requires supervision for complex samples'
-        },
-        {
-            id: 5,
-            trainingType: 'Initial',
-            testMethod: 'pH Meter Calibration',
-            trainerName: 'Mr. Singh',
-            trainingDate: '2024-04-05',
-            validTill: '2025-04-05',
-            evaluationResult: 'Pass',
-            status: 'Active',
-            remarks: ''
-        }
+    // Training Plan Columns
+    trainingPlanColumns = [
+        { key: 'formCode', type: 'string', label: 'Form No', filter: true },
+        { key: 'trainingTopic', type: 'string', label: 'Training Topic', filter: true },
+        { key: 'trainingType', type: 'string', label: 'Type', filter: true },
+        { key: 'trainerName', type: 'string', label: 'Trainer', filter: true },
+        { key: 'plannedDate', type: 'date', label: 'Planned Date', filter: true },
+        { key: 'actualDate', type: 'date', label: 'Actual Date', filter: true },
+        { key: 'duration', type: 'string', label: 'Duration', filter: true },
+        { key: 'trainingStatus', type: 'string', label: 'Status', filter: true },
     ];
 
-    paginatedRecords: TrainingRecord[] = [];
-    filteredRecords: TrainingRecord[] = [];
+    trainingPlanFilterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+        formCode: 'string',
+        trainingTopic: 'string',
+        trainingType: 'string',
+        trainerName: 'string',
+        plannedDate: 'date',
+        actualDate: 'date',
+        duration: 'string',
+        trainingStatus: 'string',
+    };
 
-    constructor(private fb: FormBuilder) { }
+    // Summary
+    summaryData = {
+        totalInduction: 0,
+        totalTrainingPlan: 0,
+        completedTrainings: 0,
+        plannedTrainings: 0,
+    };
+
+    constructor(
+        private inductionTrainingService: InductionTrainingService,
+        private trainingPlanService: TrainingPlanService
+    ) {}
 
     ngOnInit(): void {
-        this.initForm();
-        this.filteredRecords = [...this.trainingRecords];
-        this.totalRecords = this.filteredRecords.length;
-        this.applyFiltersAndSort();
-    }
-
-    initForm() {
-        this.trainingForm = this.fb.group({
-            id: [0],
-            trainingType: ['', Validators.required],
-            testMethod: ['', Validators.required],
-            trainerName: ['', Validators.required],
-            trainingDate: ['', Validators.required],
-            validTill: ['', Validators.required],
-            evaluationResult: ['', Validators.required],
-            remarks: ['']
-        });
-
-        if (this.isViewMode) {
-            this.trainingForm.disable();
+        if (this.employeeId) {
+            this.fetchInductionData();
+            this.fetchTrainingPlanData();
         }
     }
 
-    // Search functionality
-    onSearch() {
-        this.applyFiltersAndSort();
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['employeeId'] && !changes['employeeId'].firstChange && this.employeeId) {
+            this.fetchInductionData();
+            this.fetchTrainingPlanData();
+        }
     }
 
-    // Sorting functionality
-    applySorting(column: string) {
+    switchSection(section: 'induction' | 'trainingPlan'): void {
+        this.activeSection = section;
+        this.searchTerm = '';
+        this.filters = [];
+        this.sortByColumn = 'id';
+        this.sortOrder = 'desc';
+    }
+
+    // ---- Induction Training Data ----
+    fetchInductionData(): void {
+        this.loadingInduction = true;
+        const payload = {
+            PageNumber: this.inductionPageNumber,
+            PageSize: this.inductionPageSize,
+            searchTerm: this.activeSection === 'induction' ? this.searchTerm : '',
+            sortByColumn: this.activeSection === 'induction' ? this.sortByColumn : 'id',
+            sortOrder: this.activeSection === 'induction' ? this.sortOrder : 'desc',
+            filter: [
+                ...(this.activeSection === 'induction' ? this.filters : []),
+                { column: 'employeeId', type: 'Equal', value: this.employeeId?.toString() || '0' },
+            ],
+        };
+
+        this.inductionTrainingService.getAll(payload).subscribe({
+            next: (response) => {
+                this.inductionRecords = response?.items || [];
+                this.inductionTotalItems = response?.totalRecords || 0;
+                this.inductionPageSize = response?.pageSize || this.inductionPageSize;
+                this.inductionPageNumber = response?.pageNumber || this.inductionPageNumber;
+                this.summaryData.totalInduction = this.inductionTotalItems;
+                this.loadingInduction = false;
+            },
+            error: (error) => {
+                console.error('Error fetching induction training records:', error);
+                this.inductionRecords = [];
+                this.inductionTotalItems = 0;
+                this.loadingInduction = false;
+            },
+        });
+    }
+
+    // ---- Training Plan Data ----
+    fetchTrainingPlanData(): void {
+        this.loadingTrainingPlan = true;
+        const payload = {
+            PageNumber: this.trainingPlanPageNumber,
+            PageSize: this.trainingPlanPageSize,
+            searchTerm: this.activeSection === 'trainingPlan' ? this.searchTerm : '',
+            sortByColumn: this.activeSection === 'trainingPlan' ? this.sortByColumn : 'id',
+            sortOrder: this.activeSection === 'trainingPlan' ? this.sortOrder : 'desc',
+            filter: [
+                ...(this.activeSection === 'trainingPlan' ? this.filters : []),
+                { column: 'employeeId', type: 'Equal', value: this.employeeId?.toString() || '0' },
+            ],
+        };
+
+        this.trainingPlanService.getAll(payload).subscribe({
+            next: (response) => {
+                this.trainingPlanRecords = response?.items || [];
+                this.trainingPlanTotalItems = response?.totalRecords || 0;
+                this.trainingPlanPageSize = response?.pageSize || this.trainingPlanPageSize;
+                this.trainingPlanPageNumber = response?.pageNumber || this.trainingPlanPageNumber;
+                this.summaryData.totalTrainingPlan = this.trainingPlanTotalItems;
+                this.summaryData.completedTrainings = this.trainingPlanRecords.filter(
+                    (r: any) => (r.trainingStatus || '').toLowerCase() === 'completed'
+                ).length;
+                this.summaryData.plannedTrainings = this.trainingPlanRecords.filter(
+                    (r: any) => (r.trainingStatus || '').toLowerCase() === 'planned'
+                ).length;
+                this.loadingTrainingPlan = false;
+            },
+            error: (error) => {
+                console.error('Error fetching training plan records:', error);
+                this.trainingPlanRecords = [];
+                this.trainingPlanTotalItems = 0;
+                this.loadingTrainingPlan = false;
+            },
+        });
+    }
+
+    // ---- Search ----
+    onSearch(): void {
+        if (this.activeSection === 'induction') {
+            this.inductionPageNumber = 1;
+            this.fetchInductionData();
+        } else {
+            this.trainingPlanPageNumber = 1;
+            this.fetchTrainingPlanData();
+        }
+    }
+
+    // ---- Sorting ----
+    applySorting(column: string): void {
         if (this.sortByColumn === column) {
             this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
         } else {
             this.sortByColumn = column;
             this.sortOrder = 'asc';
         }
-        this.applyFiltersAndSort();
+        if (this.activeSection === 'induction') {
+            this.fetchInductionData();
+        } else {
+            this.fetchTrainingPlanData();
+        }
     }
 
-    // Filter functionality
-    openFilterModal(column: string, event: MouseEvent) {
+    // ---- Filters ----
+    get activeColumns() {
+        return this.activeSection === 'induction' ? this.inductionColumns : this.trainingPlanColumns;
+    }
+
+    get activeFilterColumnTypes() {
+        return this.activeSection === 'induction' ? this.inductionFilterColumnTypes : this.trainingPlanFilterColumnTypes;
+    }
+
+    openFilterModal(column: string, event: MouseEvent): void {
         this.filterColumn = column;
-        this.columns.forEach(col => {
+        this.activeColumns.forEach((col) => {
             if (col.key === column) {
                 this.filterColumnTitle = col.label;
             }
@@ -192,7 +247,7 @@ export class EmployeeJobTrainingComponent implements OnInit {
         this.filterValue = '';
         this.filterValue2 = '';
 
-        const columnType = this.filterColumnTypes[column];
+        const columnType = this.activeFilterColumnTypes[column];
         switch (columnType) {
             case 'string':
                 this.filterType = 'Contains';
@@ -207,7 +262,6 @@ export class EmployeeJobTrainingComponent implements OnInit {
                 this.filterType = 'Contains';
         }
 
-        this.isFilterOpen = true;
         const target = event.target as HTMLElement;
         const rect = target.getBoundingClientRect();
 
@@ -219,11 +273,16 @@ export class EmployeeJobTrainingComponent implements OnInit {
         }
     }
 
-    applyFilter() {
+    applyFilter(): void {
         if (!this.filterColumn || this.filterValue === '') return;
 
-        const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-        const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+        const existingFilterIndex = this.filters.findIndex((f) => f.column === this.filterColumn);
+        const filterData = {
+            column: this.filterColumn,
+            type: this.filterType,
+            value: this.filterValue,
+            value2: this.filterValue2,
+        };
 
         if (existingFilterIndex > -1) {
             this.filters[existingFilterIndex] = filterData;
@@ -231,171 +290,132 @@ export class EmployeeJobTrainingComponent implements OnInit {
             this.filters.push(filterData);
         }
 
-        this.applyFiltersAndSort();
+        if (this.activeSection === 'induction') {
+            this.inductionPageNumber = 1;
+            this.fetchInductionData();
+        } else {
+            this.trainingPlanPageNumber = 1;
+            this.fetchTrainingPlanData();
+        }
         this.closeFilterModal();
     }
 
-    resetFilter(column: string) {
-        this.filters = this.filters.filter(filter => filter.column !== column);
-        this.applyFiltersAndSort();
+    resetFilter(column: string): void {
+        this.filters = this.filters.filter((filter) => filter.column !== column);
+        if (this.activeSection === 'induction') {
+            this.fetchInductionData();
+        } else {
+            this.fetchTrainingPlanData();
+        }
     }
 
-    closeFilterModal() {
+    closeFilterModal(): void {
         if (this.filterModal) {
             this.filterModal.nativeElement.style.display = 'none';
         }
     }
 
     hasFilter(column: string): boolean {
-        return this.filters?.some(f => f.column === column) ?? false;
+        return this.filters?.some((f) => f.column === column) ?? false;
     }
 
     getColumnType(columnKey: string): string | undefined {
-        const column = this.columns.find(col => col.key === columnKey);
+        const column = this.activeColumns.find((col) => col.key === columnKey);
         return column ? column.type : undefined;
     }
 
-    // Apply all filters, search, and sorting
-    applyFiltersAndSort() {
-        let result = [...this.trainingRecords];
-
-        // Apply search
-        if (this.searchTerm) {
-            const term = this.searchTerm.toLowerCase();
-            result = result.filter(record =>
-                record.trainingType.toLowerCase().includes(term) ||
-                record.testMethod.toLowerCase().includes(term) ||
-                record.trainerName.toLowerCase().includes(term) ||
-                record.evaluationResult.toLowerCase().includes(term) ||
-                record.status.toLowerCase().includes(term)
-            );
-        }
-
-        // Apply filters
-        this.filters.forEach(filter => {
-            result = result.filter(record => {
-                const value = (record as any)[filter.column];
-                const filterVal = filter.value;
-
-                switch (filter.type) {
-                    case 'Contains':
-                        return value?.toString().toLowerCase().includes(filterVal.toLowerCase());
-                    case 'Equal':
-                        return value?.toString() === filterVal.toString();
-                    case 'NotEqual':
-                        return value?.toString() !== filterVal.toString();
-                    case 'GreaterThan':
-                        return value > filterVal;
-                    case 'LessThan':
-                        return value < filterVal;
-                    case 'Between':
-                        return value >= filter.value && value <= filter.value2;
-                    default:
-                        return true;
-                }
-            });
-        });
-
-        // Apply sorting
-        if (this.sortByColumn) {
-            result.sort((a, b) => {
-                const aVal = (a as any)[this.sortByColumn];
-                const bVal = (b as any)[this.sortByColumn];
-
-                if (aVal < bVal) return this.sortOrder === 'asc' ? -1 : 1;
-                if (aVal > bVal) return this.sortOrder === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        this.filteredRecords = result;
-        this.totalRecords = result.length;
-        this.currentPage = 1;
-        this.updatePagination();
+    // ---- Pagination: Induction ----
+    get inductionTotalPagesCount(): number {
+        return Math.ceil(this.inductionTotalItems / this.inductionPageSize);
     }
 
-    updatePagination() {
-        const startIndex = (this.currentPage - 1) * this.pageSize;
-        const endIndex = startIndex + this.pageSize;
-        this.paginatedRecords = this.filteredRecords.slice(startIndex, endIndex);
+    get inductionTotalPages(): number[] {
+        return Array.from({ length: this.inductionTotalPagesCount }, (_, i) => i + 1);
     }
 
-    get totalPages(): number {
-        return Math.ceil(this.totalRecords / this.pageSize);
-    }
-  getStartRecord(): number {
-    return this.totalRecords === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.currentPage * this.pageSize, this.totalRecords);
-  }
-
-
-    getPaginationArray(): number[] {
-        return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    getInductionStartRecord(): number {
+        return this.inductionTotalItems === 0 ? 0 : (this.inductionPageNumber - 1) * this.inductionPageSize + 1;
     }
 
-    goToPage(page: number) {
-        if (page >= 1 && page <= this.totalPages) {
-            this.currentPage = page;
-            this.updatePagination();
+    getInductionEndRecord(): number {
+        return Math.min(this.inductionPageNumber * this.inductionPageSize, this.inductionTotalItems);
+    }
+
+    onInductionPageChange(page: number): void {
+        if (page >= 1 && page <= this.inductionTotalPagesCount) {
+            this.inductionPageNumber = page;
+            this.fetchInductionData();
         }
     }
 
-    changePageSize() {
-        this.currentPage = 1;
-        this.updatePagination();
+    changeInductionPageSize(event: Event): void {
+        this.inductionPageSize = Number((event.target as HTMLSelectElement).value);
+        this.inductionPageNumber = 1;
+        this.fetchInductionData();
     }
 
-    openAddTrainingModal() {
-        if (this.isViewMode) return;
-        this.trainingForm.reset({ id: 0 });
-        this.showTrainingModal.set(true);
+    // ---- Pagination: Training Plan ----
+    get trainingPlanTotalPagesCount(): number {
+        return Math.ceil(this.trainingPlanTotalItems / this.trainingPlanPageSize);
     }
 
-    viewTraining(record: TrainingRecord) {
-        this.trainingForm.patchValue(record);
-        this.trainingForm.disable();
-        this.showTrainingModal.set(true);
+    get trainingPlanTotalPages(): number[] {
+        return Array.from({ length: this.trainingPlanTotalPagesCount }, (_, i) => i + 1);
     }
 
-    closeModal() {
-        this.showTrainingModal.set(false);
-        this.trainingForm.reset();
-        if (!this.isViewMode) {
-            this.trainingForm.enable();
+    getTrainingPlanStartRecord(): number {
+        return this.trainingPlanTotalItems === 0 ? 0 : (this.trainingPlanPageNumber - 1) * this.trainingPlanPageSize + 1;
+    }
+
+    getTrainingPlanEndRecord(): number {
+        return Math.min(this.trainingPlanPageNumber * this.trainingPlanPageSize, this.trainingPlanTotalItems);
+    }
+
+    onTrainingPlanPageChange(page: number): void {
+        if (page >= 1 && page <= this.trainingPlanTotalPagesCount) {
+            this.trainingPlanPageNumber = page;
+            this.fetchTrainingPlanData();
         }
     }
 
-    saveTraining() {
-        if (this.trainingForm.invalid) {
-            this.trainingForm.markAllAsTouched();
-            return;
-        }
-
-        console.log('Training saved:', this.trainingForm.value);
-        this.closeModal();
+    changeTrainingPlanPageSize(event: Event): void {
+        this.trainingPlanPageSize = Number((event.target as HTMLSelectElement).value);
+        this.trainingPlanPageNumber = 1;
+        this.fetchTrainingPlanData();
     }
 
-    getStatusClass(status: string): string {
-        switch (status.toLowerCase()) {
-            case 'active':
+    // ---- Status Helpers ----
+    getTrainingStatusClass(status: string): string {
+        switch ((status || '').toLowerCase()) {
+            case 'completed':
                 return 'badge bg-success';
-            case 'expired':
+            case 'planned':
+                return 'badge bg-info';
+            case 'cancelled':
                 return 'badge bg-danger';
+            case 'in progress':
+                return 'badge bg-warning text-dark';
             default:
                 return 'badge bg-secondary';
         }
     }
 
-    getEvaluationClass(result: string): string {
-        switch (result.toLowerCase()) {
-            case 'pass':
-                return 'badge bg-success';
-            case 'fail':
-                return 'badge bg-danger';
-            case 'conditional':
+    getEvaluationModeClass(mode: string): string {
+        switch ((mode || '').toLowerCase()) {
+            case 'retesting':
+                return 'badge bg-primary';
+            case 'replicate testing':
+                return 'badge bg-info';
+            default:
+                return 'badge bg-secondary';
+        }
+    }
+
+    getTrainingTypeClass(type: string): string {
+        switch ((type || '').toLowerCase()) {
+            case 'internal':
+                return 'badge bg-primary';
+            case 'external':
                 return 'badge bg-warning text-dark';
             default:
                 return 'badge bg-secondary';

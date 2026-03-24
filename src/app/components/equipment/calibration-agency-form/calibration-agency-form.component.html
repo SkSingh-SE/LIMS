@@ -23,8 +23,8 @@
                 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File</label>
-                    <ng-container *ngIf="calibrationForm.get('agreementFilePath')?.value; else uploadField">
+                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
+                    <ng-container *ngIf="calibrationForm.get('agreementFilePath')?.value || calibrationForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                             <span class="text-truncate me-2" type="button"
                                 (click)="openFileInNewTab(calibrationForm.get('agreementFilePath')?.value)"
@@ -43,6 +43,8 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
+                    <div *ngIf="calibrationForm.get('fileName')?.touched && calibrationForm.get('fileName')?.invalid"
+                        class="text-danger text-sm">Agreement File is required.</div>
                 </div>
                 <!--Contact Person 1-->
                 <div>

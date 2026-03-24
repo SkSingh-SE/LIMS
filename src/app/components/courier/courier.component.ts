@@ -89,7 +89,7 @@ export class CourierComponent implements OnInit {
     this.courierForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      contactNo: ['', Validators.required],
+      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
     });
   }
 

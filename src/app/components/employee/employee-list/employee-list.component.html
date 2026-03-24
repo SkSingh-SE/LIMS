@@ -89,7 +89,7 @@
                                         title="Training Record">
                                         <i class="bi bi-mortarboard fs-5 text-info"></i>
                                     </a>
-                                    <a [routerLink]="['/employee/delete', employee.id]" class="icon-link"
+                                    <a (click)="deleteEmployee(employee.id)" class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>

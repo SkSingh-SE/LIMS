@@ -34,7 +34,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
     this.designationForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      description: ['', Validators.required],
+      description: [''],
       roleID: [null],
       qualification: [''],
       minExperience: [null],
@@ -71,6 +71,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
       next: (response) => {
         this.designationObjet = response;
         this.designationForm.patchValue({
+          id: this.designationObjet.id,
           name: this.designationObjet.name,
           description: this.designationObjet.description,
           roleID: this.designationObjet.roleID,

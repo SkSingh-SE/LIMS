@@ -3,6 +3,7 @@ import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signal
 import { BehaviorSubject } from 'rxjs';
 import { AuthService } from './auth.service';
 import { NotificationDto } from '../utility/models/notification.model';
+import { environment } from '../../environments/environment';
 
 
 @Injectable({
@@ -12,26 +13,25 @@ export class SignalRService {
   private hubConnection!: HubConnection;
   private notificationsSubject = new BehaviorSubject<NotificationDto[]>([]);
   notifications$ = this.notificationsSubject.asObservable();
-  token: string | null;
 
-  constructor(private authService: AuthService) {
-    this.token = this.authService.getToken();
-  }
+  constructor(private authService: AuthService) {}
 
   startConnection() {
     if (this.hubConnection) return;
 
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('https://localhost:7049/hubs/notifications', {
-        accessTokenFactory: () => this.token ? this.token : '' // change to your token store
+      .withUrl(environment.baseUrl + 'hubs/notifications', {
+        // accessTokenFactory is called on EVERY connection attempt (including reconnects).
+        // This ensures a fresh token is always used — never a stale cached one.
+        accessTokenFactory: () => this.authService.getToken() ?? ''
       })
       .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
+      .configureLogging(environment.production ? LogLevel.Warning : LogLevel.Information)
       .build();
 
     this.hubConnection.start()
       .then(() => console.log('SignalR connected'))
-      .catch(err => console.error('SignalR error:', err));
+      .catch(err => console.error('SignalR connection error:', err));
 
     this.hubConnection.on('ReceiveNotification', (payload: any) => {
       const n: NotificationDto = {

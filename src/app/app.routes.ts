@@ -203,8 +203,8 @@ export const routes: Routes = [
             { path: 'job-description/details/:id', component: JobDescriptionFormComponent },
             { path: 'job-description/preview/:id', component: JobDescriptionPreviewComponent },
             { path: 'employee/impartiality-agreement/:id', component: ImpartialityAgreementPreviewComponent },
-            { path: 'employee/competence-report/:id', component: EmployeeCompetencePreviewComponent },
-            { path: 'employee/training-record/:id', component: EmployeeTrainingPreviewComponent },
+            { path: 'employee/competence-report/:id', component: EmployeeCompetencePreviewComponent, data: { mode: 'employee-report' } },
+            { path: 'employee/training-record/:id', component: EmployeeTrainingPreviewComponent, data: { mode: 'employee-report' } },
             { path: 'employee/equipment-authorization', component: EmployeeAuthorizationPreviewComponent },
             { path: 'employee/equipment-authorization/list', loadComponent: () => import('./components/nabl/employee-authorization-list/employee-authorization-list.component').then(m => m.EmployeeAuthorizationListComponent) },
             { path: 'employee/equipment-authorization/create', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) , canDeactivate: [unsavedChangesGuard]},
@@ -624,9 +624,9 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            { path: 'testing/perform/:id', component: TestResultEntryFormComponent },
+            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
-            { path: 'testing/results/:id', component: TestResultEntryFormComponent },
+            { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
             // Reporting routes

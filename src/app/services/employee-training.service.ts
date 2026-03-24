@@ -16,6 +16,13 @@ export class EmployeeTrainingService {
         return this.http.post<EmployeeTrainingRecordResponse>(this.apiUrl + '/list', filter);
     }
 
+    getByEmployeeId(employeeId: number): Observable<EmployeeTrainingRecordResponse> {
+        return this.http.post<EmployeeTrainingRecordResponse>(this.apiUrl + '/list', {
+            PageNumber: 1, PageSize: 100, sortByColumn: 'ID', sortOrder: 'desc',
+            filter: [{ column: 'employeeId', type: 'Equal', value: String(employeeId), value2: null }]
+        });
+    }
+
     getById(id: number): Observable<EmployeeTrainingRecord | undefined> {
         return this.http.get<EmployeeTrainingRecord>(`${this.apiUrl}/details/${id}`);
     }

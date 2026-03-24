@@ -17,6 +17,7 @@ export default defineConfig({
     video: 'off',
     trace: 'on-first-retry',
     viewport: { width: 1440, height: 900 },
+    ignoreHTTPSErrors: true,
     actionTimeout: 15000,
     navigationTimeout: 30000,
   },
@@ -34,12 +35,11 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-  // Auto-start Angular dev server before tests
   webServer: {
     command: 'npm start',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,   // If already running, reuse it
-    timeout: 120000,             // Wait up to 2 min for server to start
+    reuseExistingServer: true,
+    timeout: 120000,
     stdout: 'ignore',
     stderr: 'pipe',
   },

@@ -47,8 +47,47 @@
 ════════════════════════════════════════════════════════════════ -->
 <div class="nabl-preview-page">
 
+  <!-- Employee Mode: Record List -->
+  <div *ngIf="isEmployeeMode && !loading && records.length > 1" class="mb-3 no-print">
+    <div class="card shadow-sm">
+      <div class="card-header card-form-header text-white">
+        <label class="fw-medium">Training Records ({{ records.length }} records)</label>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Training Date</th>
+              <th>Sample / Topic</th>
+              <th>Parameter</th>
+              <th>Trainer</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of records; let i = index" [class.table-active]="record === r" style="cursor: pointer;" (click)="selectRecord(r)">
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.trainingDate | date: 'dd-MMM-yyyy' }}</td>
+              <td>{{ r.sampleName || '-' }}</td>
+              <td>{{ r.parameter || '-' }}</td>
+              <td>{{ r.trainerName || '-' }}</td>
+              <td class="text-center"><i class="bi bi-eye text-primary"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="isEmployeeMode && !loading && records.length === 0" class="text-center py-5">
+    <i class="bi bi-mortarboard" style="font-size: 48px; color: #ccc;"></i>
+    <p class="text-muted mt-2">No training records found for this employee.</p>
+  </div>
+
   <!-- Loading State -->
-  <div *ngIf="false" class="text-center py-5">
+  <div *ngIf="loading" class="text-center py-5">
     <div class="spinner-border" style="color: #DA261C;" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>

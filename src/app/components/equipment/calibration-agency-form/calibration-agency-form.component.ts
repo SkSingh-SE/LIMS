@@ -54,19 +54,19 @@ export class CalibrationAgencyFormComponent implements CanComponentDeactivate, O
       id: [0],
       name: ['', Validators.required],
       contactPerson1: ['', Validators.required],
-      contactNo1: ['', Validators.required],
+      contactNo1: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
       emailId1: ['', [Validators.required, Validators.email]],
       contactPerson2: [''],
-      contactNo2: [''],
+      contactNo2: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
       emailId2: ['', Validators.email],
       contactPerson3: [''],
-      contactNo3: [''],
+      contactNo3: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
       emailId3: ['', Validators.email],
       address: [''],
       presentStatus: [1, Validators.required], // 1: Enlisted, 2: Delisted
       uploadReferenceID: [null],
       agreementFilePath: [''],
-      fileName: [''],
+      fileName: ['', Validators.required],
       equipmentApproved: [false],
       isBlacklisted: [false],
       reasonForBlacklisting: [''],
@@ -146,6 +146,7 @@ export class CalibrationAgencyFormComponent implements CanComponentDeactivate, O
         this.calibrationService.createCalibrationAgency(formData).subscribe({
           next: (response) => {
             this.isSubmitting = false;
+            this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/calibration-agency']);
           },

@@ -17,6 +17,9 @@ import { EmployeeTrainingRecord } from '../../../models/employeeTrainingModel';
 export class EmployeeTrainingPreviewComponent implements OnInit {
     recordId: number = 0;
     record: EmployeeTrainingRecord | null = null;
+    records: any[] = [];
+    isEmployeeMode = false;
+    loading = false;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -29,25 +32,55 @@ export class EmployeeTrainingPreviewComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+        this.isEmployeeMode = this.route.snapshot.data['mode'] === 'employee-report';
         this.route.paramMap.subscribe(params => {
             this.recordId = Number(params.get('id'));
             if (this.recordId > 0) {
-                this.loadRecord();
-            } else {
+                if (this.isEmployeeMode) {
+                    this.loadEmployeeRecords(this.recordId);
+                } else {
+                    this.loadRecord();
+                }
             }
         });
     }
 
+    loadEmployeeRecords(employeeId: number): void {
+        this.loading = true;
+        this.trainingService.getByEmployeeId(employeeId).subscribe({
+            next: (res: any) => {
+                this.records = res.items || [];
+                if (this.records.length > 0) {
+                    this.record = this.records[0];
+                }
+                this.loading = false;
+            },
+            error: () => {
+                this.records = [];
+                this.loading = false;
+            }
+        });
+    }
+
+    selectRecord(r: any): void {
+        this.record = r;
+        this.orientationDetected = false;
+        setTimeout(() => this.autoDetectOrientation(), 300);
+    }
+
     loadRecord(): void {
+        this.loading = true;
         this.trainingService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
                     this.record = data;
                 }
+                this.loading = false;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
                 console.error('Error loading training record:', err);
+                this.loading = false;
             }
         });
     }

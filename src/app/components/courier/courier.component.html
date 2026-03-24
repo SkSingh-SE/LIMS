@@ -150,7 +150,7 @@
 </div>
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="courierModel" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="courierModel" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
     aria-labelledby="courierModelLabel" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -182,12 +182,16 @@
                                 class="text-danger">*</span></label>
                         <input type="text" id="contactNo" class="form-control" formControlName="contactNo"
                             placeholder="Enter Contact Number" required
-                            maxlength="12" appNumberOnly
+                            maxlength="13" appNumberOnly
                             [ngClass]="{'is-invalid': courierForm.get('contactNo')?.touched && courierForm.get('contactNo')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="courierForm.get('contactNo')?.invalid && courierForm.get('contactNo')?.touched"
+                        <span *ngIf="courierForm.get('contactNo')?.hasError('required') && courierForm.get('contactNo')?.touched"
                             class="text-danger text-sm">
                             Contact Number is required.
+                        </span>
+                        <span *ngIf="courierForm.get('contactNo')?.hasError('pattern') && !courierForm.get('contactNo')?.hasError('required') && courierForm.get('contactNo')?.touched"
+                            class="text-danger text-sm">
+                            Contact Number must be 10-13 digits.
                         </span>
                     </div>
 

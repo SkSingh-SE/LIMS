@@ -34,7 +34,6 @@ export class MechanicalParameterComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
-    { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
@@ -42,7 +41,6 @@ export class MechanicalParameterComponent implements OnInit {
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    aliasName: 'string',
     unitName: 'string',
     factor: 'string',
     createdOn: 'date'
@@ -106,7 +104,6 @@ export class MechanicalParameterComponent implements OnInit {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      aliasName: [''],
       code: ['', Validators.required],
       decimalPrecision: [1],
       defaultTestMethodID: [null],

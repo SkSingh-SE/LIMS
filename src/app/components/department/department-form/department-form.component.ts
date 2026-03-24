@@ -31,7 +31,7 @@ export class DepartmentFormComponent implements CanComponentDeactivate, OnInit, 
     this.departmentForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      description: ['', Validators.required],
+      description: [''],
     });
 
     this.route.paramMap.subscribe(params => {

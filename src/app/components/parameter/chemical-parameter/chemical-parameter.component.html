@@ -53,7 +53,6 @@
             <tr *ngFor="let item of ParameterList; let i = index" class="text-sm">
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
               <td>{{ item.name }}</td>
-              <td>{{ item.aliasName }}</td>
               <td>{{ item.unitName }}</td>
               <td>{{ item.factor }}</td>
               <td>{{ item.createdOn | date : "dd MMM, yyyy hh:mm a" }}</td>
@@ -163,7 +162,7 @@
   class="modal fade modal-fade modal-lg"
   #modalRef
   tabindex="-1"
-  data-bs-backdrop="static"
+  data-bs-backdrop="static" data-bs-keyboard="false"
   aria-labelledby="customerTypeModalLabel"
   aria-modal="true"
   role="dialog"
@@ -198,23 +197,6 @@
               Name is required.
             </span>
           </div>
-          <!--Alias Name-->
-          <div class="mb-1">
-            <label for="aliasName" class="form-label">Alias Name</label>
-            <input
-              type="text"
-              id="aliasName"
-              class="form-control"
-              formControlName="aliasName"
-              placeholder="Enter Alias Name"
-              [ngClass]="{ 'is-invalid': ParameterForm.get('aliasName')?.touched && ParameterForm.get('aliasName')?.invalid }"
-              [attr.disabled]="isViewMode ? true : null"
-            />
-            <span *ngIf="ParameterForm.get('aliasName')?.invalid && ParameterForm.get('aliasName')?.touched" class="text-danger text-sm">
-              Alias Name is required.
-            </span>
-          </div>
-
           <!-- Code -->
           <div class="mb-1">
             <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
@@ -408,7 +390,7 @@
 </div>
 
 <!-- Formula Builder Modal -->
-<div class="modal fade" #formulaModal tabindex="-1" data-bs-backdrop="static">
+<div class="modal fade" #formulaModal tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">

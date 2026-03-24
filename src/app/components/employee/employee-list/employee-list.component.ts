@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-employee-list',
@@ -64,7 +65,7 @@ export class EmployeeListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService) {
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService) {
     this.employeeForm = this.fb.group({
       searchTerm: '',
       sortByColumn: '',
@@ -217,6 +218,22 @@ export class EmployeeListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  deleteEmployee(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this employee?');
+    if (confirmed) {
+      this.employeeService.deleteEmployee(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    }
   }
 
 }

@@ -28,6 +28,7 @@ export class DimensionalFactorComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: false },
     { key: 'unit', type: 'string', label: 'Unit', filter: false },
+    { key: 'testMethod', type: 'string', label: 'Test Method', filter: false },
     { key: 'instrument', type: 'string', label: 'Instrument', filter: true },
     { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
   ];

@@ -776,17 +776,7 @@
                   </select>
                 </div>
 
-                <div class="col">
-                  <label class="form-label">Role <small class="text-muted">(from Designation)</small></label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [value]="designationRoleName"
-                    readonly
-                    disabled
-                    placeholder="Assigned via Designation"
-                  />
-                </div>
+                <!-- Role is auto-derived from Designation → no manual field -->
                 <!--Password-->
                 <div class="col">
                   <label for="password" class="form-label">
@@ -1218,16 +1208,71 @@
       </fieldset>
 
       <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane border-0">
-        <div class="text-center mb-40">
-          <img src="assets/images/gif/success-img3.gif" alt="" class="gif-image mb-24" />
-          <h6 class="text-md text-neutral-600">Coming Soon!</h6>
-          <p class="text-neutral-400 text-sm mb-0">Working in progress...</p>
+        <div class="card-header card-form-header text-white text-center">
+          <label class="fw-medium">Authorization Records (NABL F-5)</label>
         </div>
-        <!-- <div class="form-group d-flex align-items-center justify-content-end gap-8">
-                    <button type="button"
-                        class="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32">Back</button>
-                    <button type="button" class="form-wizard-submit btn btn-primary-600 px-32">Publish</button>
-                </div> -->
+        <div class="card-body">
+          <!-- Loading -->
+          <div *ngIf="authorizationLoading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Loading authorization records...</p>
+          </div>
+
+          <!-- Empty -->
+          <div *ngIf="!authorizationLoading && authorizationRecords.length === 0" class="text-center py-4">
+            <i class="bi bi-shield-check" style="font-size: 48px; color: #ccc;"></i>
+            <p class="text-muted mt-2">No authorization records found for this employee.</p>
+            <a routerLink="/employee/equipment-authorization/create" class="btn btn-save btn-sm">
+              <i class="bi bi-plus-lg"></i> Create Authorization
+            </a>
+          </div>
+
+          <!-- Table -->
+          <div *ngIf="!authorizationLoading && authorizationRecords.length > 0" class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-center" style="width: 50px;">#</th>
+                  <th>Form Code</th>
+                  <th>Document No</th>
+                  <th>Equipment</th>
+                  <th>Test Method</th>
+                  <th>Test Authorization</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th class="text-center" style="width: 80px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of authorizationRecords; let i = index">
+                  <td class="text-center">{{ i + 1 }}</td>
+                  <td>{{ record.formCode }}</td>
+                  <td>{{ record.documentNo || '-' }}</td>
+                  <td>{{ record.equipment || '-' }}</td>
+                  <td>{{ record.testMethodAuthorization || '-' }}</td>
+                  <td>{{ record.testAuthorization || '-' }}</td>
+                  <td>{{ record.date | date: 'dd-MMM-yyyy' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'bg-success': record.status === 'Approved',
+                      'bg-warning text-dark': record.status === 'Draft',
+                      'bg-info': record.status === 'Submitted',
+                      'bg-danger': record.status === 'Rejected'
+                    }">{{ record.status }}</span>
+                  </td>
+                  <td class="text-center">
+                    <a [routerLink]="['/employee/equipment-authorization/details', record.id]"
+                       class="btn btn-outline-primary btn-sm" title="View Details">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </fieldset>
       <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white text-center">

@@ -1,5 +1,5 @@
 <!-- Modal for Add/Edit/Update Department -->
-<div id="departmentModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="departmentModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
   aria-labelledby="departmentModalLabel" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -25,7 +25,8 @@
           <div class="mb-3">
             <label for="description" class="form-label">Description</label>
             <input type="text" id="description" class="form-control" formControlName="description"
-              placeholder="Enter Department Description" required [attr.disabled]="isViewMode ? true : null" />
+              placeholder="Enter Department Description"
+              [attr.disabled]="isViewMode ? true : null" />
           </div>
         </div>
         <div *ngIf="!isViewMode" class="modal-footer">

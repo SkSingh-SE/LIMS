@@ -19,6 +19,7 @@ import { EmployeeJobTrainingComponent } from '../employee-job-training/employee-
 import { EmployeePerformanceRecordComponent } from '../employee-performance-record/employee-performance-record.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { EmployeeAuthorizationService } from '../../../services/employee-authorization.service';
 @Component({
   selector: 'app-employee-form',
   imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent],
@@ -88,8 +89,12 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
 
   documentList: any[] = [];
 
+  // Authorization tab data
+  authorizationRecords: any[] = [];
+  authorizationLoading = false;
+  authorizationLoaded = false;
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService, private unsavedChangesService: UnsavedChangesService) {
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService, private unsavedChangesService: UnsavedChangesService, private employeeAuthorizationService: EmployeeAuthorizationService) {
     this.isAdminUser = this.authService.getUserData()?.isAdmin || false;
   }
 
@@ -155,7 +160,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       reportingManagerID: [null],
       designationID: [null],
       dateOfJoin: [''],
-      roleID: [null],
+      // roleID derived from Designation → Role (not a form field)
       password: ['', [Validators.required, Validators.minLength(6)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
       qualificationSummary: [''],
@@ -183,9 +188,35 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     if (this.employeeId > 0) {
       this.activeFormKey = key;
       this.currentStep.set(key);
+      if (key === 4) {
+        this.loadAuthorizationRecords();
+      }
     } else if (this.activeFormKey !== key) {
       this.toastService.show('Please save the employee first.', 'warning');
     }
+  }
+
+  loadAuthorizationRecords(): void {
+    if (!this.employeeId || this.authorizationLoaded) return;
+    this.authorizationLoading = true;
+    this.employeeAuthorizationService.getAll({
+      PageNumber: 1,
+      PageSize: 50,
+      searchTerm: '',
+      sortByColumn: 'id',
+      sortOrder: 'desc',
+      filter: [{ column: 'employeeId', type: 'equals', value: this.employeeId.toString(), value2: null }]
+    }).subscribe({
+      next: (res: any) => {
+        this.authorizationRecords = res.items || [];
+        this.authorizationLoading = false;
+        this.authorizationLoaded = true;
+      },
+      error: () => {
+        this.authorizationLoading = false;
+        this.authorizationRecords = [];
+      }
+    });
   }
   loadEmployee() {
     this.employeeService.getEmployeeById(this.employeeId).subscribe({
@@ -254,10 +285,8 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       next: (designation) => {
         if (designation?.role?.name) {
           this.designationRoleName = designation.role.name;
-          this.personalInfoForm.patchValue({ roleID: designation.roleID });
         } else {
           this.designationRoleName = '';
-          this.personalInfoForm.patchValue({ roleID: null });
         }
       },
       error: () => {
@@ -271,9 +300,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   onEmployeeSelected(item: any) {
     this.personalInfoForm.patchValue({ reportingManagerID: item.id });
   }
-  onRoleSelected(item: any) {
-    this.personalInfoForm.patchValue({ roleID: item.id });
-  }
+  // Role is derived from Designation — no manual role selection
 
   submitForm() {
     if (this.personalInfoForm.valid) {

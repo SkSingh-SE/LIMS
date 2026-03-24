@@ -82,8 +82,8 @@ export class TPIComponent implements OnInit {
     this.TPIForm = this.fb.group({
       id: [0],
       agencyName: ['', Validators.required],
-      emailId: ['', Validators.required],
-      contactNo: ['', Validators.required]
+      emailId: ['', [Validators.required, Validators.email]],
+      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]]
     });
   }
 

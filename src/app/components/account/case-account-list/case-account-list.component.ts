@@ -238,10 +238,24 @@ export class CaseAccountListComponent implements OnInit {
   }
 
   getStatusBadgeClass(status: string): string {
+    const billingMap: Record<string, string> = {
+      'PRICE_DRAFTED': 'badge bg-secondary',
+      'PI_GENERATED': 'badge bg-info',
+      'PRICE_SNAPSHOT': 'badge bg-info',
+      'INVOICE_GENERATED': 'badge bg-warning text-dark',
+      'PAYMENT_PENDING': 'badge bg-warning text-dark',
+      'PAYMENT_PARTIAL': 'badge bg-warning text-dark',
+      'PAYMENT_COMPLETED': 'badge bg-success',
+    };
+
+    if (billingMap[status]) return billingMap[status];
+
+    // Fallback for generic status keywords
     const statusLower = (status || '').toLowerCase();
     if (statusLower.includes('pending')) return 'badge bg-warning text-dark';
     if (statusLower.includes('paid') || statusLower.includes('completed')) return 'badge bg-success';
-    if (statusLower.includes('failed')) return 'badge bg-danger';
+    if (statusLower.includes('failed') || statusLower.includes('rejected')) return 'badge bg-danger';
+    if (statusLower.includes('generated') || statusLower.includes('draft')) return 'badge bg-info';
     return 'badge bg-secondary';
   }
 }

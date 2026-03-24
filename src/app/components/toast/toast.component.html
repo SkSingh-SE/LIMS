@@ -1,25 +1,30 @@
 <div *ngIf="toastService.toasts.length > 0" aria-live="polite" aria-atomic="true"
-  class="position-fixed top-0 end-0 p-3 me-4" style="z-index: 1050;">
+  class="toast-wrapper">
   <div class="toast-container">
-    <div *ngFor="let toast of toastService.toasts" class="toast show fade slide-in" role="alert" aria-live="assertive"
-      aria-atomic="true" [ngClass]="getToastClass(toast.type)">
-      <div class="toast-header">
-        <strong class="me-auto">
-          <span *ngIf="toast.type === 'success'">✅ Success</span>
-          <span *ngIf="toast.type === 'error'">❌ Error</span>
-          <span *ngIf="toast.type === 'warning'">⚠️ Warning</span>
-          <span *ngIf="toast.type === 'info'">ℹ️ Info</span>
+    <div *ngFor="let toast of toastService.toasts" class="toast show" role="alert" aria-live="assertive"
+      aria-atomic="true" [ngClass]="'toast-' + toast.type" [class.slide-in]="toast.show" [class.fade-out]="!toast.show">
+      <div class="toast-header-custom">
+        <span class="toast-icon">
+          <i *ngIf="toast.type === 'success'" class="bi bi-check-circle-fill"></i>
+          <i *ngIf="toast.type === 'error'" class="bi bi-x-circle-fill"></i>
+          <i *ngIf="toast.type === 'warning'" class="bi bi-exclamation-triangle-fill"></i>
+          <i *ngIf="toast.type === 'info'" class="bi bi-info-circle-fill"></i>
+        </span>
+        <strong class="toast-title">
+          <span *ngIf="toast.type === 'success'">Success</span>
+          <span *ngIf="toast.type === 'error'">Error</span>
+          <span *ngIf="toast.type === 'warning'">Warning</span>
+          <span *ngIf="toast.type === 'info'">Info</span>
         </strong>
-        <small class="text-muted">Just now</small>
-        <button type="button" class="btn-close" (click)="toastService.remove(toast)"></button>
+        <button type="button" class="toast-close" (click)="toastService.remove(toast)" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
-      <div class="toast-body">
+      <div class="toast-body-custom">
         {{ toast.message }}
       </div>
-      <!-- Progress Bar -->
-      <div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="25" aria-valuemin="0"
-        aria-valuemax="100">
-        <div class="progress-bar" [style.width.%]="toast.progress"></div>
+      <div class="toast-progress">
+        <div class="toast-progress-bar" [style.width.%]="toast.progress"></div>
       </div>
     </div>
   </div>

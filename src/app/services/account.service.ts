@@ -91,6 +91,14 @@ export class AccountService {
     return this.http.delete<any>(`${this.apiUrl}/invoice-line-items/${id}`);
   }
 
+  /**
+   * Calculate/Recalculate pricing for a case (creates/refreshes DRAFT ChargeEvents)
+   * POST /api/account/cases/{inwardId}/calculate-pricing
+   */
+  calculatePricing(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/calculate-pricing`, {});
+  }
+
   getLedgerPeriodSummary(customerId: number, periodStart: string, periodEnd: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/ledger-summary/${customerId}`, {
       params: { periodStart, periodEnd }

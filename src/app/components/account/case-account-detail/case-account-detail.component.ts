@@ -29,6 +29,7 @@ export class CaseAccountDetailComponent implements OnInit {
   proformaInvoice: any = null;
   advancePayments: any[] = [];
   isGeneratingPI = signal(false);
+  isRecalculating = signal(false);
 
   lineItems: any[] = [];
   showAddLineItem = false;
@@ -348,6 +349,51 @@ export class CaseAccountDetailComponent implements OnInit {
 
   getLineItemTotal(item: any): number {
     return (item.amount || 0) + this.getLineItemTaxAmount(item);
+  }
+
+  /**
+   * Recalculate pricing — deletes existing DRAFT ChargeEvents and creates fresh ones.
+   * Only available when billing status is PRICE_DRAFTED (not SNAPSHOT/INVOICED).
+   */
+  recalculatePricing(): void {
+    if (!confirm('This will delete existing draft prices and recalculate. Continue?')) return;
+
+    this.isRecalculating.set(true);
+    this.accountService.calculatePricing(this.inwardId).subscribe({
+      next: (response) => {
+        const warnings = response?.warnings || [];
+        const total = response?.totalAmount || 0;
+        const failures = response?.failureCount || 0;
+        let msg = `Pricing calculated: Total ${total}`;
+        if (failures > 0) msg += ` (${failures} failures)`;
+        if (warnings.length > 0) msg += `. ${warnings[0]}`;
+        this.toastService.show(msg, failures > 0 ? 'warning' : 'success');
+        this.loadCaseSummary();
+        this.isRecalculating.set(false);
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to calculate pricing', 'error');
+        this.isRecalculating.set(false);
+      }
+    });
+  }
+
+  /**
+   * Check if recalculation is allowed (PRICE_DRAFTED status, not locked)
+   */
+  canRecalculate(): boolean {
+    if (!this.caseSummary) return false;
+    const status = (this.caseSummary.billingStatus || '').toUpperCase();
+    return status === 'PRICE_DRAFTED' || status === '' || !status;
+  }
+
+  /**
+   * Format charge type for display
+   */
+  formatChargeType(chargeType: string): string {
+    if (chargeType === 'MinimumChargeAdjustment') return 'Minimum Charge Adjustment';
+    if (chargeType === 'CustomPreparation') return 'Custom Preparation';
+    return chargeType;
   }
 
   goBack(): void {

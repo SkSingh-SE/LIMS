@@ -165,7 +165,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       grade: ['', Validators.required],
       isUNS: [false],
       unsSteelNumber: [''],
-      metalClassificationID: [''],
+      metalClassificationID: [null],
       specificationLines: this.fb.group({
         chemical: this.fb.array([]),
         mechanical: this.fb.array([]),
@@ -215,7 +215,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       minValue: [null, Validators.required],
       maxValue: [null, Validators.required],
       notes: [''],
-      parameterUnitID: [''],
+      parameterUnitID: [null],
       minValueEquation: [0],
       maxValueEquation: [0],
       minTolerance: [0],
@@ -442,7 +442,21 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
   };
   onParameterSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
-    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
+    // Check for duplicate parameter in the same tab
+    const isDuplicate = lines.controls.some((ctrl, i) =>
+      i !== index && ctrl.get('parameterID')?.value === item.id
+    );
+    if (isDuplicate) {
+      this.toastService.show(`Parameter "${item.name}" is already added in this section.`, 'warning');
+      const specificationLine = lines.at(index) as FormGroup;
+      // Use sentinel then clear to force dropdown ngOnChanges to detect the reset
+      specificationLine.patchValue({ parameterID: -1, parameterUnitID: null });
+      setTimeout(() => specificationLine.patchValue({ parameterID: '', parameterUnitID: null }), 0);
+      return;
+    }
+
+    const specificationLine = lines.at(index) as FormGroup;
     const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
     specificationLine.patchValue({
       parameterID: item.id,
@@ -490,7 +504,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   onMetalClassificationSelected(item: any, gradeIndex: number) {
     this.selectedMetalByGrade[gradeIndex] = item;
     const grade = this.grades.at(gradeIndex);
-    grade.patchValue({ metalClassificationID: item?.id ?? '' });
+    grade.patchValue({ metalClassificationID: item?.id ?? null });
   }
 
   getParameterUnit() {

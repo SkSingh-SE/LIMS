@@ -7,11 +7,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-audit-plan-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './audit-plan-form.component.html',
     styleUrl: './audit-plan-form.component.css'
 })
@@ -35,8 +37,15 @@ export class AuditPlanFormComponent implements CanComponentDeactivate, OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditPlanService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('AuditPlan').subscribe({
+            next: (defaults) => {
+                this.auditForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -56,11 +65,11 @@ export class AuditPlanFormComponent implements CanComponentDeactivate, OnInit {
 
     private initForm() {
         this.auditForm = this.fb.group({
-            formatNo: ['F-50', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-50', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-50'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             auditType: ['Internal Audit', Validators.required],
@@ -68,15 +77,36 @@ export class AuditPlanFormComponent implements CanComponentDeactivate, OnInit {
             areaDepartment: ['', Validators.required],
             auditorName: ['', Validators.required],
             scheduleDate: ['', Validators.required],
-            scope: ['', Validators.required]
+            scope: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.auditForm.get('docNo')?.disable();
+        this.auditForm.get('issueNo')?.disable();
+        this.auditForm.get('revNo')?.disable();
+        this.auditForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.auditForm.patchValue(data);
-                if (this.isViewMode) this.auditForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.auditForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.auditForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.auditForm.get('docNo')?.disable();
+                this.auditForm.get('issueNo')?.disable();
+                this.auditForm.get('revNo')?.disable();
+                this.auditForm.get('formatNo')?.disable();
             }
         });
     }
@@ -89,12 +119,12 @@ export class AuditPlanFormComponent implements CanComponentDeactivate, OnInit {
         if (this.auditForm.valid) {
             this.isSubmitting = true;
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.auditForm.value).subscribe({
+                this.service.update(this.recordId, this.auditForm.getRawValue()).subscribe({
                     next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
                     error: () => { this.isSubmitting = false; }
                 });
             } else {
-                this.service.create(this.auditForm.value).subscribe({
+                this.service.create(this.auditForm.getRawValue()).subscribe({
                     next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
                     error: () => { this.isSubmitting = false; }
                 });

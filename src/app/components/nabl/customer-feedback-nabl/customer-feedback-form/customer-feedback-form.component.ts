@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-customer-feedback-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './customer-feedback-form.component.html',
     styleUrl: './customer-feedback-form.component.css'
 })
@@ -54,8 +56,15 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
         private route: ActivatedRoute,
         private router: Router,
         private service: CustomerFeedbackService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('CustomerFeedback').subscribe({
+            next: (defaults) => {
+                this.feedbackForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -75,11 +84,11 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
 
     private initForm() {
         this.feedbackForm = this.fb.group({
-            formatNo: ['F-47', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-47', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-47'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             customerName: ['', Validators.required],
@@ -90,8 +99,17 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
                 rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
             }))),
             comments: [''],
-            suggestions: ['']
+            suggestions: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.feedbackForm.get('docNo')?.disable();
+        this.feedbackForm.get('issueNo')?.disable();
+        this.feedbackForm.get('revNo')?.disable();
+        this.feedbackForm.get('formatNo')?.disable();
     }
 
     get ratingsArray() {
@@ -103,7 +121,19 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
             if (data) {
                 // Clear and rebuild ratings array if number of parameters differs (unlikely here but safe)
                 this.feedbackForm.patchValue(data);
-                if (this.isViewMode) this.feedbackForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.feedbackForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.feedbackForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.feedbackForm.get('docNo')?.disable();
+                this.feedbackForm.get('issueNo')?.disable();
+                this.feedbackForm.get('revNo')?.disable();
+                this.feedbackForm.get('formatNo')?.disable();
             }
         });
     }
@@ -115,9 +145,9 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
     onSubmit() {
         if (this.feedbackForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.feedbackForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.feedbackForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

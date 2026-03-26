@@ -26,13 +26,13 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     description: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -50,7 +50,7 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -122,8 +122,10 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
 
 
   getDetails(): void {
-    this.roleService.getRoleById(this.roleId).subscribe({
+    const requestId = this.roleId;
+    this.roleService.getRoleById(requestId).subscribe({
       next: (res: any) => {
+        if (this.roleId !== requestId) return; // discard stale response
         if (res) {
           this.roleForm.patchValue({
             id: res.id,
@@ -292,7 +294,6 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Role Form';
-      this.roleForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

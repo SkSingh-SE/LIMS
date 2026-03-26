@@ -10,6 +10,7 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-pt-ilc-plan-form',
@@ -58,10 +59,17 @@ export class PtIlcPlanFormComponent implements CanComponentDeactivate, OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('PtIlcPlan').subscribe({
+            next: (defaults) => {
+                this.planForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         if (path === 'details') { this.isViewMode = true; this.formTitle = 'View PT/ILC Plan'; this.planForm.disable(); }
@@ -73,22 +81,28 @@ export class PtIlcPlanFormComponent implements CanComponentDeactivate, OnInit {
         const today = new Date().toISOString().split('T')[0];
         this.planForm = this.fb.group({
             id: [0],
-            formatNo: ['F-36', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-36'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
             laboratoryId: ['', Validators.required],
             laboratoryName: ['', Validators.required],
             fieldOfAccreditation: ['', Validators.required],
             periodOfParticipation: ['', Validators.required],
             entries: this.fb.array([]),
             notes: [''],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             issuedBy: [''],
             reviewedApprovedBy: [''],
             status: ['Active']
         });
+
+        // System-managed fields — always readonly
+        this.planForm.get('documentNo')?.disable();
+        this.planForm.get('issueNo')?.disable();
+        this.planForm.get('revNo')?.disable();
+        this.planForm.get('formatNo')?.disable();
     }
 
     get entries(): FormArray { return this.planForm.get('entries') as FormArray; }
@@ -121,7 +135,19 @@ export class PtIlcPlanFormComponent implements CanComponentDeactivate, OnInit {
                 if (data) {
                     if (data.entries) { this.entries.clear(); data.entries.forEach(() => this.addEntry()); }
                     this.planForm.patchValue(data);
-                    if (this.isViewMode) this.planForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.planForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.planForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.planForm.get('documentNo')?.disable();
+                this.planForm.get('issueNo')?.disable();
+                this.planForm.get('revNo')?.disable();
+                this.planForm.get('formatNo')?.disable();
                 }
             },
             error: () => {}

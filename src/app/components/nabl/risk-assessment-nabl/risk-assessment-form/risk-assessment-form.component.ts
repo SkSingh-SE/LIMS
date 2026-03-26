@@ -9,11 +9,13 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { ToastService } from '../../../../services/toast.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-risk-assessment-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './risk-assessment-form.component.html',
     styleUrl: './risk-assessment-form.component.css'
 })
@@ -45,8 +47,15 @@ export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnIn
         private router: Router,
         private service: RiskAssessmentService,
         private unsavedChangesService: UnsavedChangesService,
-        private toastService: ToastService) {
+        private toastService: ToastService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('RiskAssessment').subscribe({
+            next: (defaults) => {
+                this.riskForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -66,11 +75,11 @@ export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnIn
 
     private initForm() {
         this.riskForm = this.fb.group({
-            formatNo: ['F-46', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-46', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-46'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             date: ['', Validators.required],
@@ -79,8 +88,17 @@ export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnIn
             opportunity: ['', Validators.required],
             mitigationPlan: ['', Validators.required],
             responsibility: ['', Validators.required],
-            effectiveness: ['', Validators.required]
+            effectiveness: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.riskForm.get('docNo')?.disable();
+        this.riskForm.get('issueNo')?.disable();
+        this.riskForm.get('revNo')?.disable();
+        this.riskForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
@@ -88,7 +106,19 @@ export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnIn
             next: (data) => {
                 if (data) {
                     this.riskForm.patchValue(data);
-                    if (this.isViewMode) this.riskForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.riskForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.riskForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.riskForm.get('docNo')?.disable();
+                this.riskForm.get('issueNo')?.disable();
+                this.riskForm.get('revNo')?.disable();
+                this.riskForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {
@@ -104,12 +134,12 @@ export class RiskAssessmentFormComponent implements CanComponentDeactivate, OnIn
     onSubmit() {
         if (this.riskForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.riskForm.value).subscribe({
+                this.service.update(this.recordId, this.riskForm.getRawValue()).subscribe({
                     next: () => { this.saved = true; this.onCancel(); },
                     error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
                 });
             } else {
-                this.service.create(this.riskForm.value).subscribe({
+                this.service.create(this.riskForm.getRawValue()).subscribe({
                     next: () => { this.saved = true; this.onCancel(); },
                     error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
                 });

@@ -17,6 +17,7 @@ export class InternalAuditorListComponent implements OnInit {
     baseRoute = '/internal-auditor';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'auditorName', label: 'Auditor Name', type: 'string', filter: true },
         { key: 'qualification', label: 'Qualification', type: 'string', filter: true },
         { key: 'trainingDate', label: 'Training Date', type: 'date', width: '150px', filter: true },

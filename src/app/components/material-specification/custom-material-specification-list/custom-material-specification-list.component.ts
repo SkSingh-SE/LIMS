@@ -20,13 +20,15 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
     { key: 'part', type: 'string', label: 'Part', filter: true },
     { key: 'standardYear', type: 'number', label: 'Year', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     aliasName: 'string',
     part: 'string',
     standardYear: 'number',
-    grade: 'string'
+    grade: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,7 +47,7 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

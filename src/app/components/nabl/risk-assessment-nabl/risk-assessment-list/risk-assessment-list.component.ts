@@ -17,6 +17,7 @@ export class RiskAssessmentListComponent implements OnInit {
     baseRoute = '/risk-assessment';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
         { key: 'activityProcess', label: 'Activity/Process', type: 'string', filter: true },
         { key: 'responsibility', label: 'Responsibility', type: 'string', filter: true }

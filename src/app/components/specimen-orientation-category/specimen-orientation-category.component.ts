@@ -20,12 +20,12 @@ export class SpecimenOrientationCategoryComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -43,7 +43,7 @@ export class SpecimenOrientationCategoryComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   payload = {
@@ -96,8 +96,10 @@ export class SpecimenOrientationCategoryComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.service.getSpecimenOrientationCategoryById(this.entityId).subscribe({
+    const requestId = this.entityId;
+    this.service.getSpecimenOrientationCategoryById(requestId).subscribe({
       next: (response) => {
+        if (this.entityId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.SpecimenOrientationCategoryForm.patchValue(response);
       },
@@ -244,6 +246,7 @@ export class SpecimenOrientationCategoryComponent implements OnInit {
     // Reset form before rendering new data
     this.SpecimenOrientationCategoryForm.reset();
     this.SpecimenOrientationCategoryForm.enable();
+    this.entityId = 0;
 
     if (id > 0) {
       this.entityId = id;
@@ -254,7 +257,6 @@ export class SpecimenOrientationCategoryComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Specimen Orientation Category Form';
-      this.SpecimenOrientationCategoryForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

@@ -8,6 +8,7 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-technical-raw-data-form',
@@ -39,10 +40,17 @@ export class TechnicalRawDataFormComponent implements CanComponentDeactivate, On
         private route: ActivatedRoute,
         private service: TechnicalRawDataNablService,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('TechnicalRawData').subscribe({
+            next: (defaults) => {
+                this.dataForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
         this.route.paramMap.subscribe(params => {
             this.recordId = Number(params.get('id'));
@@ -72,9 +80,9 @@ export class TechnicalRawDataFormComponent implements CanComponentDeactivate, On
         const today = new Date().toISOString().split('T')[0];
         this.dataForm = this.fb.group({
             id: [0],
-            formatNo: ['F-34', Validators.required],
-            issueNo: ['03', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-34'],
+            issueNo: ['03'],
+            revNo: ['00'],
             date: [today, Validators.required],
 
             testMethodName: ['', Validators.required],
@@ -90,6 +98,11 @@ export class TechnicalRawDataFormComponent implements CanComponentDeactivate, On
             issuedBy: [''],
             reviewedApprovedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.dataForm.get('issueNo')?.disable();
+        this.dataForm.get('revNo')?.disable();
+        this.dataForm.get('formatNo')?.disable();
     }
 
     get readings(): FormArray {
@@ -131,6 +144,16 @@ export class TechnicalRawDataFormComponent implements CanComponentDeactivate, On
                         data.readings.forEach(() => this.addReading());
                     }
                     this.dataForm.patchValue(data);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.dataForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.dataForm.get('issueNo')?.disable();
+                this.dataForm.get('revNo')?.disable();
+                this.dataForm.get('formatNo')?.disable();
                 }
             },
             error: (error) => {

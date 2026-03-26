@@ -62,8 +62,10 @@
                         placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
                         (blur)="checkPhoneNumber($event)"
                         [ngClass]="{ 'is-invalid': OEMForm.get('contactNo1')?.touched && OEMForm.get('contactNo1')?.invalid }" />
-                    <div *ngIf="OEMForm.get('contactNo1')?.touched && OEMForm.get('contactNo1')?.invalid"
-                        class="text-danger text-sm">Contact No 1 is required.</div>
+                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('required') && OEMForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact No 1 is required.</span>
+                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('pattern') && !OEMForm.get('contactNo1')?.hasError('required') && OEMForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 1-->
@@ -88,6 +90,8 @@
                     <label class="form-label">Contact No 2</label>
                     <input type="text" class="form-control" formControlName="contactNo2"
                         placeholder="Enter Contact No 2" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="OEMForm.get('contactNo2')?.hasError('pattern') && OEMForm.get('contactNo2')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 2-->
@@ -112,6 +116,8 @@
                     <label class="form-label">Contact No 3</label>
                     <input type="text" class="form-control" formControlName="contactNo3"
                         placeholder="Enter Contact No 3" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="OEMForm.get('contactNo3')?.hasError('pattern') && OEMForm.get('contactNo3')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 3-->

@@ -12,12 +12,14 @@ import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 
 @Component({
     selector: 'app-job-description-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule, NablSignatureSectionComponent],
     templateUrl: './job-description-form.component.html',
     styleUrl: './job-description-form.component.css'
 })
@@ -71,10 +73,17 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         private designationService: DesignationService,
         private departmentService: DepartmentService,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('JobDescription').subscribe({
+            next: (defaults) => {
+                this.jobDescForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
         this.route.paramMap.subscribe(params => {
             this.jobDescId = Number(params.get('id'));
@@ -102,11 +111,11 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         const today = new Date().toISOString().split('T')[0];
         this.jobDescForm = this.fb.group({
             id: [0],
-            formatNo: ['F-3', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-3'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['F-3', Validators.required],
+            documentNo: ['F-3'],
             designationId: [null, Validators.required],
             designationName: [''],
             departmentId: [null, Validators.required],
@@ -138,6 +147,12 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
             approvedByName: [''],
             employeeAccepted: [false]
         });
+
+        // System-managed fields — always readonly
+        this.jobDescForm.get('documentNo')?.disable();
+        this.jobDescForm.get('issueNo')?.disable();
+        this.jobDescForm.get('revNo')?.disable();
+        this.jobDescForm.get('formatNo')?.disable();
     }
 
     loadData(): void {
@@ -149,13 +164,19 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
                     // Set current date for standardization
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    // Versioning Logic
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
 
                     this.jobDescForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.jobDescForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.jobDescForm.get('documentNo')?.disable();
+                this.jobDescForm.get('issueNo')?.disable();
+                this.jobDescForm.get('revNo')?.disable();
+                this.jobDescForm.get('formatNo')?.disable();
                 }
             },
             error: (error) => {

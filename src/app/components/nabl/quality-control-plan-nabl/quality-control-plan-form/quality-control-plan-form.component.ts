@@ -10,11 +10,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-quality-control-plan-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './quality-control-plan-form.component.html',
     styleUrl: './quality-control-plan-form.component.css'
 })
@@ -58,10 +60,17 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('QualityControlPlan').subscribe({
+            next: (defaults) => {
+                this.qcpForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         if (path === 'details') { this.isViewMode = true; this.formTitle = 'View Quality Control Plan'; this.qcpForm.disable(); }
@@ -74,21 +83,27 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
         const currentYear = new Date().getFullYear().toString();
         this.qcpForm = this.fb.group({
             id: [0],
-            formatNo: ['F-37', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-37'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
             planYear: [currentYear, Validators.required],
             discipline: ['', Validators.required],
             materialProductGroup: ['', Validators.required],
             labIncharge: ['', Validators.required],
             activities: this.fb.array([]),
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             reviewedBy: [''],
             approvedBy: [''],
             status: ['Active']
         });
+
+        // System-managed fields — always readonly
+        this.qcpForm.get('documentNo')?.disable();
+        this.qcpForm.get('issueNo')?.disable();
+        this.qcpForm.get('revNo')?.disable();
+        this.qcpForm.get('formatNo')?.disable();
     }
 
     get activities(): FormArray { return this.qcpForm.get('activities') as FormArray; }
@@ -120,7 +135,19 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
                 if (data) {
                     if (data.activities) { this.activities.clear(); data.activities.forEach(() => this.addActivity()); }
                     this.qcpForm.patchValue(data);
-                    if (this.isViewMode) this.qcpForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.qcpForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.qcpForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.qcpForm.get('documentNo')?.disable();
+                this.qcpForm.get('issueNo')?.disable();
+                this.qcpForm.get('revNo')?.disable();
+                this.qcpForm.get('formatNo')?.disable();
                 }
             },
             error: () => {}

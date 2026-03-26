@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-nc-corrective-action-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './nc-corrective-action-form.component.html',
     styleUrl: './nc-corrective-action-form.component.css'
 })
@@ -50,8 +52,15 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
         private route: ActivatedRoute,
         private router: Router,
         private service: NcCorrectiveActionService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('NcCorrectiveAction').subscribe({
+            next: (defaults) => {
+                this.ncForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -71,11 +80,11 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
 
     private initForm() {
         this.ncForm = this.fb.group({
-            formatNo: ['F-42', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-42', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-42'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             date: ['', Validators.required],
@@ -88,19 +97,41 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
             ncObserved: ['', Validators.required],
             correctiveActionProposed: [''],
             timeRequired: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
             proposedBy: [''],
             approvedBy: [''],
             correctiveActionTaken: [''],
             preventiveAction: [''],
             effectivenessOfAction: ['']
         });
+
+        // System-managed fields — always readonly
+        this.ncForm.get('documentNo')?.disable();
+        this.ncForm.get('docNo')?.disable();
+        this.ncForm.get('issueNo')?.disable();
+        this.ncForm.get('revNo')?.disable();
+        this.ncForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.ncForm.patchValue(data);
-                if (this.isViewMode) this.ncForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.ncForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.ncForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.ncForm.get('documentNo')?.disable();
+                this.ncForm.get('docNo')?.disable();
+                this.ncForm.get('issueNo')?.disable();
+                this.ncForm.get('revNo')?.disable();
+                this.ncForm.get('formatNo')?.disable();
                 // Load related Non-Conforming Work if linked
                 const record = data as any;
                 if (record.ncId || record.nCId) {
@@ -121,9 +152,9 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
     onSubmit() {
         if (this.ncForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

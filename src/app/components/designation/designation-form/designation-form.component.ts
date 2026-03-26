@@ -23,7 +23,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   private bsModal!: Modal;
   designationForm!: FormGroup;
   isEditMode: boolean = false;
-  isViewMode: boolean = true;
+  isViewMode: boolean = false;
   designationObjet: any = null;
   designationId: number = 0;
   formTitle = 'Designation Form';
@@ -47,13 +47,15 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
         this.loadDesignationData();
       }
     });
+    // Determine mode from route path (reliable) or fallback to history.state
+    const currentUrl = this.route.snapshot.url.map(seg => seg.path).join('/');
     const state = history.state as { mode?: string };
 
-    if (state && state.mode === 'view') {
+    if (currentUrl.includes('details') || (state && state.mode === 'view')) {
       this.formTitle = 'Designation Details';
       this.isViewMode = true;
       this.designationForm.disable();
-    } else if (state && state.mode === 'edit') {
+    } else if (currentUrl.includes('edit') || (state && state.mode === 'edit')) {
       this.isEditMode = true;
       this.isViewMode = false;
     } else {

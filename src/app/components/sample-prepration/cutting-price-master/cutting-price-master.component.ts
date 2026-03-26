@@ -51,7 +51,7 @@ export class CuttingPriceMasterComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -120,8 +120,10 @@ export class CuttingPriceMasterComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.cuttingPriceService.getCuttingPriceMasterById(this.cuttingPriceId).subscribe({
+    const requestId = this.cuttingPriceId;
+    this.cuttingPriceService.getCuttingPriceMasterById(requestId).subscribe({
       next: (response) => {
+        if (this.cuttingPriceId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.cuttingPriceForm.patchValue(response);
         this.selectedSpecimenTypeId = response.specimenTypeId || 0;
@@ -268,6 +270,7 @@ export class CuttingPriceMasterComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.cuttingPriceForm.reset();
     this.cuttingPriceForm.enable();
+    this.cuttingPriceId = 0;
     if (id > 0) {
       this.cuttingPriceId = id;
       this.getDetails();
@@ -277,7 +280,6 @@ export class CuttingPriceMasterComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Cutting Price Master Form';
-      this.cuttingPriceForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

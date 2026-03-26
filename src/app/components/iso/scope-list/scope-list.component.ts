@@ -22,6 +22,7 @@ export class ScopeListComponent implements OnInit {
     { key: 'parameterName', type: 'string', label: 'Parameter', filter: true },
     { key: 'parameterUnit', type: 'string', label: 'Parameter Unit', filter: true },
     { key: 'isUnderISO', type: 'string', label: 'Under ISO', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -30,6 +31,7 @@ export class ScopeListComponent implements OnInit {
     parameterName: 'string',
     parameterUnit: 'string',
     isUnderISO: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -48,7 +50,7 @@ export class ScopeListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

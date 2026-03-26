@@ -168,8 +168,7 @@
 
 /* ─── History Panel ─── */
 .history-panel {
-  border-bottom: 1px solid #e2e8f0;
-  margin: 0 0.6rem 0;
+  margin: 0 0.6rem;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
@@ -180,18 +179,119 @@
   justify-content: space-between;
   align-items: center;
   background: #f8fafc;
-  padding: 0.3rem 0.7rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .history-panel-body {
-  max-height: 220px;
-  overflow-y: auto;
-  background: #fff;
+  max-height: 180px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #f8fafc;
+  padding: 0.5rem;
 }
 
-.history-panel-body::-webkit-scrollbar { width: 4px; }
-.history-panel-body::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+.history-panel-body::-webkit-scrollbar { height: 4px; }
+.history-panel-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* ─── Horizontal Cards ─── */
+.history-cards {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.history-card {
+  min-width: 180px;
+  max-width: 220px;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  border-left: 3px solid #94a3b8;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+  font-size: 0.78rem;
+}
+.history-card.card-approved  { border-left-color: #16a34a; }
+.history-card.card-rejected  { border-left-color: #dc2626; }
+.history-card.card-replan    { border-left-color: #ea580c; }
+.history-card.card-submitted { border-left-color: #0891b2; }
+.history-card.card-created   { border-left-color: #6366f1; }
+.history-card.card-updated   { border-left-color: #eab308; }
+
+.history-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.3rem;
+}
+
+.history-badge {
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.history-type {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.history-card-meta {
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.history-card-meta i { font-size: 0.68rem; margin-right: 2px; }
+
+.history-card-remark {
+  color: #475569;
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+  font-style: italic;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 0.25rem;
+}
+
+/* ─── Field Changes ─── */
+.history-changes {
+  margin-top: 0.3rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.25rem;
+}
+
+.history-change-row {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  line-height: 1.6;
+  flex-wrap: wrap;
+}
+
+.change-field {
+  font-weight: 600;
+  color: #475569;
+}
+.change-field::after { content: ':'; }
+
+.change-old {
+  color: #dc2626;
+  text-decoration: line-through;
+}
+
+.change-arrow {
+  font-size: 0.6rem;
+  color: #94a3b8;
+}
+
+.change-new {
+  color: #16a34a;
+  font-weight: 500;
+}
 
 /* ─── Approved Bar ─── */
 .approved-bar {

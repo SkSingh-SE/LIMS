@@ -1,7 +1,7 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Skill Matrix Management</label>
+      <label class="text-center text-md fw-medium ms-3">F-6A: Skill Matrix</label>
       <a routerLink="/skill-matrix/create" class="btn btn-outline-light me-3">
         <i class="bi bi-plus-lg"></i> Add Matrix
       </a>
@@ -23,6 +23,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -34,29 +35,23 @@
                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
                       (click)="applySorting(column.key)"></i>
                   </span>
-                  <span *ngIf="!hasFilter(column.key) && column.filter && i != 0" class="cursor ms-2 mt-1"
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && column.filter && i != 0" class="cursor ms-1 mt-1"
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
                     (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of paginatedList; let i = index" class="text-sm">
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ item.designationName }}</td>
-              <td>{{ item.formatNo }}</td>
-              <td>{{ item.issueNo }}</td>
-              <td>{{ item.date | date:"dd MMM, yyyy" }}</td>
-              <td>{{ item.decision }}</td>
+
               <td class="text-center">
-                <div class="d-flex justify-content-center gap-2">
+                <div class="d-flex justify-content-center gap-3">
                   <a [routerLink]="['/skill-matrix', item.id]" [state]="{ mode: 'view' }" class="icon-link"
                     title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg">
@@ -73,6 +68,13 @@
                   </a>
                 </div>
               </td>
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>{{ item.designationName }}</td>
+              <td>{{ item.formatNo }}</td>
+              <td>{{ item.issueNo }}</td>
+              <td>{{ item.date | date:"dd MMM, yyyy" }}</td>
+              <td>{{ item.decision }}</td>
+              <td>{{ item.remarks }}</td>
             </tr>
           </tbody>
         </table>

@@ -161,6 +161,10 @@ export class TestResultService {
     return this.http.get<any>(`${this.apiUrl}/parameters/header/${headerId}`);
   }
 
+  loadParametersFromSpec(headerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/load-parameters/${headerId}`, {});
+  }
+
   // ================================================================
   // Phase 2A: Enhanced Test Execution
   // ================================================================

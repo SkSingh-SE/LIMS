@@ -17,12 +17,14 @@ export class SkillMatrixListComponent implements OnInit {
     @ViewChild('filterModal') filterModal!: ElementRef;
 
     columns = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'id', type: 'number', label: 'SN', filter: false },
         { key: 'designationName', type: 'string', label: 'Designation', filter: true },
         { key: 'formatNo', type: 'string', label: 'Form Number', filter: true },
         { key: 'issueNo', type: 'string', label: 'Issue No', filter: true },
         { key: 'date', type: 'date', label: 'Date', filter: true },
-        { key: 'decision', type: 'string', label: 'Decision', filter: true }
+        { key: 'decision', type: 'string', label: 'Decision', filter: true },
+        { key: 'remarks', type: 'string', label: 'Remarks', filter: true }
     ];
 
     filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
@@ -31,7 +33,8 @@ export class SkillMatrixListComponent implements OnInit {
         formatNo: 'string',
         issueNo: 'string',
         decision: 'string',
-        date: 'date'
+        date: 'date',
+        remarks: 'string'
     };
 
     filters: { column: string; type: string; value: any; value2?: any }[] = [];

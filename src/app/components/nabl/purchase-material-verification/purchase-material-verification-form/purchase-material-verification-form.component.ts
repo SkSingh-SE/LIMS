@@ -9,10 +9,12 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { ToastService } from '../../../../services/toast.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 @Component({
     selector: 'app-purchase-material-verification-form',
 
-    imports: [CommonModule, ReactiveFormsModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './purchase-material-verification-form.component.html',
     styleUrls: ['./purchase-material-verification-form.component.css']
 })
@@ -57,11 +59,18 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
         private router: Router,
         private route: ActivatedRoute,
         private unsavedChangesService: UnsavedChangesService,
-        private toastService: ToastService) { }
+        private toastService: ToastService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.formNumbers = NablFormsHelper.getFormNumbers();
         this.initForm();
+        this.nablHeaderService.getFormDefaults('PurchaseMaterialVerification').subscribe({
+            next: (defaults) => {
+                this.verificationForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
         this.route.params.subscribe(params => {
             if (params['id']) {
@@ -80,10 +89,10 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
 
     initForm(): void {
         this.verificationForm = this.fb.group({
-            formatNo: ['F-25', Validators.required],
-            documentNo: ['', Validators.required],
-            issueNo: [{ value: '01', disabled: true }, Validators.required],
-            revNo: [{ value: '00', disabled: true }, Validators.required],
+            formatNo: ['F-25'],
+            documentNo: [''],
+            issueNo: [{ value: '01', disabled: true }],
+            revNo: [{ value: '00', disabled: true }],
             date: [{ value: new Date().toISOString().split('T')[0], disabled: true }, Validators.required],
 
             supplierName: ['', Validators.required],
@@ -95,9 +104,15 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
 
             overallStatus: ['Accepted', Validators.required],
             remarks: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
             verifiedBy: ['', Validators.required],
-            approvedBy: ['', Validators.required]
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.verificationForm.get('documentNo')?.disable();
+        this.verificationForm.get('formatNo')?.disable();
 
         if (!this.isEditMode) {
             this.addItem();
@@ -144,10 +159,17 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
                     });
 
                     this.verificationForm.patchValue(record);
-
-                    if (this.isViewMode) {
+                    // Lock form if not in editable status
+                    const status = (record as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.verificationForm.disable();
+                        this.isViewMode = true;
+                    } else if (this.isViewMode) {
                         this.verificationForm.disable();
                     }
+                    // Re-disable system fields
+                    this.verificationForm.get('documentNo')?.disable();
+                    this.verificationForm.get('formatNo')?.disable();
                 } else {
                     this.toastService.show('Record not found', 'error');
                     this.router.navigate(['/purchase/material-verification/list']);

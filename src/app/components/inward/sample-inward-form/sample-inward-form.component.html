@@ -1,7 +1,10 @@
 <div class="m-2">
   <!-- Top Toolbar -->
-  <div *ngIf="isViewMode && sampleId > 0" class="d-flex justify-content-end mb-2">
-    <button type="button" class="btn btn-add btn-sm" (click)="printJobCard()">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
+      <i class="bi bi-arrow-left me-1"></i> Back to List
+    </button>
+    <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-add btn-sm" (click)="printJobCard()">
       <i class="bi bi-printer me-1"></i> Print Job Card
     </button>
   </div>
@@ -67,6 +70,9 @@
                   <div>
                     <strong>PIN Code:</strong>
                     {{ sampleInwardForm.get("pinCode")?.value || "-" }}
+                    <span *ngIf="sampleInwardForm.get('pinCode')?.hasError('pattern') && sampleInwardForm.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                      PIN Code must be exactly 6 digits
+                    </span>
                   </div>
                   <div>
                     <strong>Area:</strong>
@@ -87,6 +93,9 @@
                   <div>
                     <strong>GST No.:</strong>
                     {{ sampleInwardForm.get("gstNo")?.value || "-" }}
+                    <span *ngIf="sampleInwardForm.get('gstNo')?.hasError('pattern') && sampleInwardForm.get('gstNo')?.touched" class="text-danger text-sm d-block">
+                      Enter valid GST No (e.g., 22AAAAA0000A1Z5)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -228,6 +237,9 @@
                     <div>
                       <strong>PIN Code:</strong>
                       {{ reportingTo.get("pinCode")?.value }}
+                      <span *ngIf="reportingTo.get('pinCode')?.hasError('pattern') && reportingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                        PIN Code must be exactly 6 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Area:</strong>
@@ -248,10 +260,16 @@
                     <div>
                       <strong>Mobile No:</strong>
                       {{ reportingTo.get("mobileNo")?.value || "-" }}
+                      <span *ngIf="reportingTo.get('mobileNo')?.hasError('pattern') && reportingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
+                        Contact number must be 10-13 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Email ID:</strong>
                       {{ reportingTo.get("emailId")?.value || "-" }}
+                      <span *ngIf="reportingTo.get('emailId')?.hasError('email') && reportingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
+                        Enter a valid email address
+                      </span>
                     </div>
                   </div>
                 </ng-container>
@@ -285,6 +303,9 @@
                     <div>
                       <strong>PIN Code:</strong>
                       {{ billingTo.get("pinCode")?.value }}
+                      <span *ngIf="billingTo.get('pinCode')?.hasError('pattern') && billingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                        PIN Code must be exactly 6 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Area:</strong>
@@ -305,10 +326,16 @@
                     <div>
                       <strong>Mobile No:</strong>
                       {{ billingTo.get("mobileNo")?.value || "-" }}
+                      <span *ngIf="billingTo.get('mobileNo')?.hasError('pattern') && billingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
+                        Contact number must be 10-13 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Email ID:</strong>
                       {{ billingTo.get("emailId")?.value || "-" }}
+                      <span *ngIf="billingTo.get('emailId')?.hasError('email') && billingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
+                        Enter a valid email address
+                      </span>
                     </div>
                   </div>
                 </ng-container>

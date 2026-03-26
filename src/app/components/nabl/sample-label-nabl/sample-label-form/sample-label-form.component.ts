@@ -8,11 +8,13 @@ import { ToastService } from '../../../../services/toast.service';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-sample-label-nabl-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './sample-label-form.component.html'
 })
 export class SampleLabelNablFormComponent implements CanComponentDeactivate, OnInit {
@@ -35,10 +37,17 @@ export class SampleLabelNablFormComponent implements CanComponentDeactivate, OnI
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SampleLabel').subscribe({
+            next: (defaults) => {
+                this.requestForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
 
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -60,17 +69,22 @@ export class SampleLabelNablFormComponent implements CanComponentDeactivate, OnI
         const today = new Date().toISOString().split('T')[0];
         this.requestForm = this.fb.group({
             id: [0],
-            formatNo: ['F-33', Validators.required],
-            issueNo: ['03', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-33'],
+            issueNo: ['03'],
+            revNo: ['00'],
             sampleId: ['', Validators.required],
             receiptDate: [today, Validators.required],
             description: ['', Validators.required],
             quantity: ['', Validators.required],
             testParameters: ['', Validators.required],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             status: ['Active']
         });
+
+        // System-managed fields — always readonly
+        this.requestForm.get('issueNo')?.disable();
+        this.requestForm.get('revNo')?.disable();
+        this.requestForm.get('formatNo')?.disable();
     }
 
     loadData(): void {
@@ -78,7 +92,18 @@ export class SampleLabelNablFormComponent implements CanComponentDeactivate, OnI
             next: (data) => {
                 if (data) {
                     this.requestForm.patchValue(data);
-                    if (this.isViewMode) this.requestForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.requestForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.requestForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.requestForm.get('issueNo')?.disable();
+                this.requestForm.get('revNo')?.disable();
+                this.requestForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {

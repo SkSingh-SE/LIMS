@@ -179,32 +179,7 @@
           </div>
         </div>
 
-        <!-- Section IV: Review & Signatures -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('approval')">
-            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Review & Signatures</span>
-          </div>
-          <div *ngIf="openSections['approval']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Prepared By
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Quality Executive" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed By</label>
-                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Technical Manager" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Approved By</label>
-                <input type="text" class="form-control" formControlName="approvedBy" placeholder="Quality Manager" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-nabl-signature-section [parentForm]="qcpForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

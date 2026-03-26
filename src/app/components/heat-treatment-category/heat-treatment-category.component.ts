@@ -20,12 +20,12 @@ export class HeatTreatmentCategoryComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -43,7 +43,7 @@ export class HeatTreatmentCategoryComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   payload = {
@@ -93,8 +93,10 @@ export class HeatTreatmentCategoryComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.heatTreatmentCategoryService.getHeatTreatmentCategoryById(this.heatTreatmentCategoryId).subscribe({
+    const requestId = this.heatTreatmentCategoryId;
+    this.heatTreatmentCategoryService.getHeatTreatmentCategoryById(requestId).subscribe({
       next: (response) => {
+        if (this.heatTreatmentCategoryId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.HeatTreatmentCategoryForm.patchValue(response);
       },
@@ -238,9 +240,10 @@ export class HeatTreatmentCategoryComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
-    // Reset form before rendering new data
+    // Reset form and ID before rendering new data
     this.HeatTreatmentCategoryForm.reset();
     this.HeatTreatmentCategoryForm.enable();
+    this.heatTreatmentCategoryId = 0;
 
     if (id > 0) {
       this.heatTreatmentCategoryId = id;
@@ -249,9 +252,7 @@ export class HeatTreatmentCategoryComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.HeatTreatmentCategoryForm.reset();
       this.formTitle = 'Heat Treatment Category Form';
-      this.HeatTreatmentCategoryForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

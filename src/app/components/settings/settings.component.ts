@@ -127,7 +127,8 @@ export class SettingsComponent implements OnInit {
         defaultGstRate: [18, Validators.required],
         cgst: [{ value: 9, disabled: true }],
         sgst: [{ value: 9, disabled: true }],
-        igst: [{ value: 18, disabled: true }]
+        igst: [{ value: 18, disabled: true }],
+        piGstApplicable: [true]
       }),
 
       // Financial Year

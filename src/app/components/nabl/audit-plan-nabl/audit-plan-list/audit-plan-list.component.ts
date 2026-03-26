@@ -17,6 +17,7 @@ export class AuditPlanListComponent implements OnInit {
     baseRoute = '/audit-plan';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'period', label: 'Period', type: 'string', width: '120px', filter: true },
         { key: 'areaDepartment', label: 'Area / Department', type: 'string', filter: true },
         { key: 'auditorName', label: 'Auditor Name', type: 'string', filter: true },

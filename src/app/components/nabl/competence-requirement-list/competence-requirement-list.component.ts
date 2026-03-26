@@ -14,6 +14,7 @@ import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-tab
 export class CompetenceRequirementListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
+    { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
     { key: 'positionName', type: 'string', label: 'Position / Activity', filter: true },
     { key: 'minimumEducation', type: 'string', label: 'Minimum Education', filter: true },
     { key: 'minimumExperience', type: 'string', label: 'Minimum Experience', filter: true },

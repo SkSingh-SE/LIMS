@@ -10,12 +10,6 @@
     </div>
 
     <div class="card-body px-4">
-      <div *ngIf="false" class="text-center p-5">
-        <div class="spinner-border text-primary" role="status" style="color: #b71c1c !important;">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="reportForm" (ngSubmit)="onSubmit()">
 
         <h5 class="text-muted border-bottom pb-2 mb-3 mt-2">Employee Details</h5>
@@ -107,6 +101,8 @@
               [ngClass]="{'is-invalid': reportForm.get('evaluationDate')?.invalid && reportForm.get('evaluationDate')?.touched}">
           </div>
         </div>
+
+        <app-nabl-signature-section [parentForm]="reportForm"></app-nabl-signature-section>
 
         <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top" *ngIf="!isViewMode">
           <button type="button" class="btn btn-secondary px-4" routerLink="/employee/competence">Cancel</button>

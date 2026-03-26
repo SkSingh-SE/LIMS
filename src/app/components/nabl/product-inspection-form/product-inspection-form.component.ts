@@ -9,11 +9,13 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-product-inspection-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './product-inspection-form.component.html'
 })
 export class ProductInspectionFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('ProductInspection').subscribe({
+            next: (defaults) => {
+                this.inspectionForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
 
@@ -76,11 +85,11 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         const today = new Date().toISOString().split('T')[0];
         this.inspectionForm = this.fb.group({
             id: [0],
-            formatNo: ['F-23', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-23'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             productName: ['', Validators.required],
             productCode: ['', Validators.required],
@@ -90,13 +99,19 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
             parameters: this.fb.array([]),
             remarks: [''],
 
-            preparedBy: ['', Validators.required],
-            reviewedBy: ['', Validators.required],
-            approvedBy: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: [''],
 
             status: ['Pending'],
             isActive: [true]
         });
+
+        // System-managed fields — always readonly
+        this.inspectionForm.get('documentNo')?.disable();
+        this.inspectionForm.get('issueNo')?.disable();
+        this.inspectionForm.get('revNo')?.disable();
+        this.inspectionForm.get('formatNo')?.disable();
     }
 
     get parameters(): FormArray {
@@ -127,11 +142,6 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.parameters.clear();
                     data.parameters?.forEach(p => {
                         const paramForm = this.fb.group({
@@ -145,6 +155,17 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
                     });
 
                     this.inspectionForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.inspectionForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.inspectionForm.get('documentNo')?.disable();
+                this.inspectionForm.get('issueNo')?.disable();
+                this.inspectionForm.get('revNo')?.disable();
+                this.inspectionForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }

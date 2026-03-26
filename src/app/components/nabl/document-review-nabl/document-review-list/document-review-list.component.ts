@@ -17,6 +17,7 @@ export class DocumentReviewListComponent implements OnInit {
     baseRoute = '/document-review';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'srNo', label: 'Sr. No.', type: 'number', width: '80px' },
         { key: 'documentName', label: 'Document', type: 'string', filter: true },
         { key: 'lastReviewDate', label: 'Last Review Date', type: 'date', width: '150px', filter: true },

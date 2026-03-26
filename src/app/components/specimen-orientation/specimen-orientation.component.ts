@@ -26,13 +26,13 @@ export class SpecimenOrientationComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     code: 'string',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -50,7 +50,7 @@ export class SpecimenOrientationComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -109,7 +109,7 @@ export class SpecimenOrientationComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.SpecimenOrientationList = [];
       }
     }
@@ -117,8 +117,10 @@ export class SpecimenOrientationComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.specimenOrientationService.getSpecimenOrientationById(this.specimenOrientationId).subscribe({
+    const requestId = this.specimenOrientationId;
+    this.specimenOrientationService.getSpecimenOrientationById(requestId).subscribe({
       next: (response) => {
+        if (this.specimenOrientationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.SpecimentOrientationForm.patchValue(response);
         this.SpecimentOrientationForm.patchValue({
@@ -260,13 +262,14 @@ export class SpecimenOrientationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
     this.initForm();
+    this.specimenOrientationId = 0;
     if (id > 0) {
       this.specimenOrientationId = id;
       this.getDetails();
@@ -364,7 +367,7 @@ export class SpecimenOrientationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -376,7 +379,7 @@ export class SpecimenOrientationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

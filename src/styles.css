@@ -646,9 +646,10 @@ body {
   box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1) !important;
 }
 
-/* Native select — red dropdown arrow + red selected option */
+/* Native select — red dropdown arrow + red accent */
 .form-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  accent-color: #da261c;
 }
 
 .form-select option:checked {
@@ -656,10 +657,16 @@ body {
   color: #fff;
 }
 
-/* Native option hover — light red (supported in Firefox/Edge) */
+/* Native option hover — light red (Firefox/Edge) */
 .form-select option:hover {
   background-color: #fef2f2 !important;
   color: #da261c;
+}
+
+/* Chrome: highlight uses system accent — override via ::highlight (future) */
+select:focus option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%) !important;
+  color: #fff !important;
 }
 
 /* Flat Card Styling for List items inside forms */
@@ -1239,8 +1246,8 @@ body {
 }
 
 .icon-svg {
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
   display: block;
@@ -1526,8 +1533,8 @@ label .text-danger {
 }
 
 .ng-dropdown-panel .ng-option.ng-option-marked {
-  background-color: var(--neutral-100) !important;
-  color: var(--neutral-800) !important;
+  background-color: #fef2f2 !important;
+  color: var(--primary-color) !important;
 }
 
 .ng-dropdown-panel .ng-option.ng-option-selected {
@@ -1561,6 +1568,31 @@ label .text-danger {
 .ng-select.ng-select-disabled .ng-select-container {
   background-color: var(--neutral-100) !important;
   cursor: not-allowed;
+}
+
+/* ─── ng-select Multi-Select Tags (Red Theme) ─── */
+.ng-select.ng-select-multiple .ng-value {
+  background-color: #fef2f2 !important;
+  border: 1px solid #da261c !important;
+  border-radius: 4px !important;
+  color: #da261c !important;
+  font-size: var(--font-sm) !important;
+  padding: 0 6px !important;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-label {
+  color: #da261c !important;
+  font-weight: 500;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-icon {
+  color: #da261c !important;
+  border-right: 1px solid rgba(218, 38, 28, 0.3) !important;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-icon:hover {
+  background-color: #da261c !important;
+  color: #fff !important;
 }
 
 /* ════════════════════════════════════════════════════════════════

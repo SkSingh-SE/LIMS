@@ -17,7 +17,7 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { CompanyCategoryService } from '../../../services/company-category.service';
 import { ToastService } from '../../../services/toast.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DispatchModeService } from '../../../services/dispatch-mode.service';
 import { AreaService } from '../../../services/area.service';
 import { ConfigService } from '../../../services/config.service';
@@ -27,7 +27,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 
 @Component({
   selector: 'app-customer-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, RouterLink],
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
 })
@@ -202,9 +202,9 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       name: ['', isRequired ? Validators.required : [Validators.required]],
       departmentID: [0],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
-      mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)] : [Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/)]],
+      mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)] : [Validators.pattern(/^[+]?\d{10,13}$/)]],
       isWhatsappNo: [false],
-      telephoneNo: [''],
+      telephoneNo: ['', [Validators.pattern(/^[+]?\d{10,13}$/)]],
       sendBill: [false],
       sendReport: [false],
       customerID: [0],
@@ -268,8 +268,10 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         });
       }
 
+    } else {
+      this.toastService.show('Form is invalid. Please check the highlighted fields.', 'warning');
+      this.logInvalidControls(this.customerForm);
     }
-    this.logInvalidControls(this.customerForm);
   }
 
 
@@ -378,6 +380,16 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   }
   asFormGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
+  }
+
+  getDynamicIndex(arrayIndex: number): number {
+    let dynamicCount = 0;
+    for (let i = 0; i < arrayIndex; i++) {
+      if (this.contactPersonsArray.controls[i].get('type')?.value === 'dynamic') {
+        dynamicCount++;
+      }
+    }
+    return dynamicCount + 1;
   }
 
   onCategoryToggle(event: Event): void {
@@ -552,7 +564,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
   verifyCustomer(event: Event): void {
-    debugger;
     const checkbox = event.target as HTMLInputElement;
     var status = false;
     if (checkbox && checkbox.type === 'checkbox') {
@@ -561,9 +572,10 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     this.customerService.verifyCustomer(this.customerId, status).subscribe({
       next: (res) => {
         this.toastService.show('Customer verified/unverified successfully', 'success');
+        this.loadCustomer();
       },
       error: (err) => {
-        console.error('Error verifying customer:', err);
+        this.toastService.show(err?.error?.message || 'Failed to verify customer', 'error');
       }
     });
   }

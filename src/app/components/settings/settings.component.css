@@ -214,6 +214,16 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+.info-box {
+  background: #f0f7ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.82rem;
+  color: #31708f;
+  line-height: 1.4;
+}
+
 /* ============================================
    COMPACT FORM LAYOUT
    ============================================ */

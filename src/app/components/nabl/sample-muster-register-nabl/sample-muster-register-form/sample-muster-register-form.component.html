@@ -99,25 +99,7 @@
           </div>
         </div>
 
-        <!-- Section III: Responsibility & Signatures -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('signatures')">
-            <i class="bi" [ngClass]="openSections['signatures'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Responsibility &amp; Signatures</span>
-          </div>
-          <div *ngIf="openSections['signatures']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Prepared By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Lab Incharge" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Reviewed By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Technical Manager" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-nabl-signature-section [parentForm]="requestForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

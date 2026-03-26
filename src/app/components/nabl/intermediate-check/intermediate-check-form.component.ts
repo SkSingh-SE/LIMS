@@ -11,11 +11,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-intermediate-check-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './intermediate-check-form.component.html'
 })
 export class IntermediateCheckFormComponent implements CanComponentDeactivate, OnInit {
@@ -57,10 +59,17 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('IntermediateCheck').subscribe({
+            next: (defaults) => {
+                this.checkForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.loadEquipments();
 
         this.recordId = Number(this.route.snapshot.params['id']);
@@ -87,11 +96,11 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
         const todayStr = today.toISOString().split('T')[0];
         this.checkForm = this.fb.group({
             id: [0],
-            formatNo: ['F-16', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-16'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [todayStr, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
             issueDate: [todayStr, Validators.required],
 
             checkMonth: [today.getMonth() + 1, Validators.required],
@@ -109,8 +118,17 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
             nextCalibrationDue: ['', Validators.required],
 
             checkedBy: ['', Validators.required],
-            verifiedBy: ['']
+            verifiedBy: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.checkForm.get('documentNo')?.disable();
+        this.checkForm.get('issueNo')?.disable();
+        this.checkForm.get('revNo')?.disable();
+        this.checkForm.get('formatNo')?.disable();
     }
 
     get dailyRecords(): FormArray {
@@ -163,11 +181,6 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
                     formValues.nextCalibrationDue = data.nextCalibrationDue ? new Date(data.nextCalibrationDue).toISOString().split('T')[0] : '';
                     formValues.issueDate = data.issueDate ? new Date(data.issueDate).toISOString().split('T')[0] : '';
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.dailyRecords.clear();
                     data.dailyRecords?.forEach((r, index) => {
                         this.dailyRecords.push(this.fb.group({
@@ -181,6 +194,17 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
                     });
 
                     this.checkForm.patchValue(formValues);
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.checkForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields
+                    this.checkForm.get('documentNo')?.disable();
+                    this.checkForm.get('issueNo')?.disable();
+                    this.checkForm.get('revNo')?.disable();
+                    this.checkForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }

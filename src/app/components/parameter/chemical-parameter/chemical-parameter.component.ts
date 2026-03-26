@@ -8,10 +8,11 @@ import { ToastService } from '../../../services/toast.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
 import { ParameterCategoryService } from '../../../services/parameter-category.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
 
 @Component({
   selector: 'app-chemical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, SymbolPickerComponent],
   templateUrl: './chemical-parameter.component.html',
   styleUrl: './chemical-parameter.component.css'
 })
@@ -33,14 +34,14 @@ export class ChemicalParameterComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     unitName: 'string',
     factor: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -59,7 +60,7 @@ export class ChemicalParameterComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -103,11 +104,12 @@ export class ChemicalParameterComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       code: ['', Validators.required],
-      decimalPrecision: [3],
+      decimalPrecision: [3, [Validators.required, Validators.min(0), Validators.max(6)]],
+      conversionFactor: [1, [Validators.required, Validators.min(0.000001)]],
       minReportableLimit: [null],
       defaultTestMethodID: [null],
       parameterCategoryID: [null],
-      parameterUnitID: [0, Validators.required],
+      parameterUnitID: [0, [Validators.required, Validators.min(1)]],
       note: [''],
       elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
@@ -124,7 +126,7 @@ export class ChemicalParameterComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.ParameterList = [];
       }
     }
@@ -142,8 +144,10 @@ export class ChemicalParameterComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.parameterService.getParameterById(this.parameterId).subscribe({
+    const requestId = this.parameterId;
+    this.parameterService.getParameterById(requestId).subscribe({
       next: (response) => {
+        if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ParameterForm.patchValue(response);
       },
@@ -281,13 +285,14 @@ export class ChemicalParameterComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
     this.initForm();
+    this.parameterId = 0;
     if (id > 0) {
       this.parameterId = id;
       this.getDetails();
@@ -339,7 +344,7 @@ export class ChemicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -351,7 +356,7 @@ export class ChemicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }
@@ -502,6 +507,7 @@ export class ChemicalParameterComponent implements OnInit {
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
   }
+
 
   @HostListener('window:focus')
   onWindowFocus(): void {}

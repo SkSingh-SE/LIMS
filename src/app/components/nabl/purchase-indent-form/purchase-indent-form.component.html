@@ -14,12 +14,6 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border " role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="indentForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="indentForm.disabled">
 
         <!-- Section I: Header Information -->
@@ -154,16 +148,15 @@
             <div class="row g-3">
                 <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Enter special instructions or justification for purchase..." [readOnly]="isViewMode"></quill-editor>
               <div class="col-md-6">
-                <label class="form-label fw-semibold text-muted small">Indent Prepared By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm border-dashed  fw-semibold" formControlName="preparedBy">
-              </div>
-              <div class="col-md-6">
                 <label class="form-label fw-semibold text-muted small">Current Status</label>
                 <input type="text" class="form-control form-control-sm bg-light fw-bold" formControlName="status" readonly>
               </div>
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="indentForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">

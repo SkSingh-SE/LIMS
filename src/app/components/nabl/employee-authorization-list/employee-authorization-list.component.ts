@@ -14,6 +14,7 @@ import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-tab
 export class EmployeeAuthorizationListComponent implements OnInit {
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'department', label: 'Department', type: 'string', filter: true },
         { key: 'personnelName', label: 'Personnel Name', type: 'string', filter: true },
         { key: 'uid', label: 'UID', type: 'string', filter: true },

@@ -31,6 +31,16 @@
       </div>
     </div>
 
+    <!-- Clear Icon -->
+    <span
+      class="input-group-text clear-icon"
+      role="button"
+      (click)="clearSelection($event)"
+      *ngIf="!isDisabled && selectedLabel"
+      title="Clear"
+    >
+      <i class="bi bi-x-lg"></i>
+    </span>
     <!-- Dropdown Icon -->
     <span class="input-group-text dropdown-toggle-icon" role="button" (click)="showDropdown ? showDropdown = false : openDropdown()" *ngIf="!isDisabled">
       <i class="bi bi-chevron-down"></i>

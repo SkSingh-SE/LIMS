@@ -20,7 +20,7 @@ export class ListDesignationComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
     { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
@@ -28,7 +28,6 @@ export class ListDesignationComponent implements OnInit {
     name: 'string',
     description: 'string',
     createdBy: 'string',
-    createdOn: 'date',
     modifiedBy: 'string',
     modifiedOn: 'date'
   };
@@ -49,7 +48,7 @@ export class ListDesignationComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

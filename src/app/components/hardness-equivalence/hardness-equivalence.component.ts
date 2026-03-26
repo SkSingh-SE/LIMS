@@ -56,7 +56,7 @@ export class HardnessEquivalenceComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -117,8 +117,10 @@ export class HardnessEquivalenceComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.hardnessEquivalenceService.getHardnessEquivalenceById(this.hardnessEquivalenceId).subscribe({
+    const requestId = this.hardnessEquivalenceId;
+    this.hardnessEquivalenceService.getHardnessEquivalenceById(requestId).subscribe({
       next: (response) => {
+        if (this.hardnessEquivalenceId !== requestId) return; // discard stale response
         this.hardnessEquivalenceForm.patchValue(response);
       },
       error: (error) => {
@@ -265,6 +267,7 @@ export class HardnessEquivalenceComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.hardnessEquivalenceForm.reset();
     this.hardnessEquivalenceForm.enable();
+    this.hardnessEquivalenceId = 0;
     if (id > 0) {
       this.hardnessEquivalenceId = id;
       this.getDetails();
@@ -272,9 +275,7 @@ export class HardnessEquivalenceComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Hardness Equivalence Form';
-      this.hardnessEquivalenceForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

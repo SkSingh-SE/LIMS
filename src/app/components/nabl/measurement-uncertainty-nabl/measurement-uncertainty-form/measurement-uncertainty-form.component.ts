@@ -10,11 +10,11 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
-    selector: 'app-measurement-uncertainty-form',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './measurement-uncertainty-form.component.html',
     styleUrl: './measurement-uncertainty-form.component.css'
 })
@@ -61,10 +61,17 @@ export class MeasurementUncertaintyFormComponent implements CanComponentDeactiva
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('MeasurementUncertainty').subscribe({
+            next: (defaults) => {
+                this.uncertaintyForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
 
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -89,11 +96,11 @@ export class MeasurementUncertaintyFormComponent implements CanComponentDeactiva
         const today = new Date().toISOString().split('T')[0];
         this.uncertaintyForm = this.fb.group({
             id: [0],
-            formatNo: ['F-35', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-35'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             testParameter: ['', Validators.required],
             testMethod: ['', Validators.required],
@@ -116,11 +123,17 @@ export class MeasurementUncertaintyFormComponent implements CanComponentDeactiva
             uncertaintySources: this.fb.array([]),
 
             remarks: [''],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             reviewedBy: [''],
             approvedBy: [''],
             status: ['Completed']
         });
+
+        // System-managed fields — always readonly
+        this.uncertaintyForm.get('documentNo')?.disable();
+        this.uncertaintyForm.get('issueNo')?.disable();
+        this.uncertaintyForm.get('revNo')?.disable();
+        this.uncertaintyForm.get('formatNo')?.disable();
     }
 
     get readings(): FormArray {
@@ -180,7 +193,19 @@ export class MeasurementUncertaintyFormComponent implements CanComponentDeactiva
                         data.uncertaintySources.forEach(() => this.addUncertaintySource());
                     }
                     this.uncertaintyForm.patchValue(data);
-                    if (this.isViewMode) this.uncertaintyForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.uncertaintyForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.uncertaintyForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.uncertaintyForm.get('documentNo')?.disable();
+                this.uncertaintyForm.get('issueNo')?.disable();
+                this.uncertaintyForm.get('revNo')?.disable();
+                this.uncertaintyForm.get('formatNo')?.disable();
                 }
             },
             error: () => {}

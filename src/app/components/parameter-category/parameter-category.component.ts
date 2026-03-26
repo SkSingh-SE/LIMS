@@ -20,12 +20,12 @@ export class ParameterCategoryComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -43,7 +43,7 @@ export class ParameterCategoryComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   payload = {
@@ -93,8 +93,10 @@ export class ParameterCategoryComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.parameterCategoryService.getParameterCategoryById(this.parameterCategoryId).subscribe({
+    const requestId = this.parameterCategoryId;
+    this.parameterCategoryService.getParameterCategoryById(requestId).subscribe({
       next: (response) => {
+        if (this.parameterCategoryId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ParameterCategoryForm.patchValue(response);
       },
@@ -241,6 +243,7 @@ export class ParameterCategoryComponent implements OnInit {
     // Reset form before rendering new data
     this.ParameterCategoryForm.reset();
     this.ParameterCategoryForm.enable();
+    this.parameterCategoryId = 0;
 
     if (id > 0) {
       this.parameterCategoryId = id;
@@ -249,9 +252,7 @@ export class ParameterCategoryComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.ParameterCategoryForm.reset();
       this.formTitle = 'Parameter Category Form';
-      this.ParameterCategoryForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-meeting-minutes-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './meeting-minutes-form.component.html',
     styleUrl: './meeting-minutes-form.component.css'
 })
@@ -45,8 +47,15 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
         private route: ActivatedRoute,
         private router: Router,
         private service: MeetingMinutesService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('MeetingMinutes').subscribe({
+            next: (defaults) => {
+                this.minutesForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -69,19 +78,28 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
 
     private initForm() {
         this.minutesForm = this.fb.group({
-            formatNo: ['F-54', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-54', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-54'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             meetingDate: ['', Validators.required],
             chairperson: ['', Validators.required],
             reviewPeriod: ['', Validators.required],
             discussions: this.fb.array([]),
-            actionItems: this.fb.array([])
+            actionItems: this.fb.array([]),
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.minutesForm.get('docNo')?.disable();
+        this.minutesForm.get('issueNo')?.disable();
+        this.minutesForm.get('revNo')?.disable();
+        this.minutesForm.get('formatNo')?.disable();
     }
 
     get discussions(): FormArray {
@@ -128,7 +146,19 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
                 data.actionItems.forEach(() => this.addActionItem());
 
                 this.minutesForm.patchValue(data);
-                if (this.isViewMode) this.minutesForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.minutesForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.minutesForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.minutesForm.get('docNo')?.disable();
+                this.minutesForm.get('issueNo')?.disable();
+                this.minutesForm.get('revNo')?.disable();
+                this.minutesForm.get('formatNo')?.disable();
             }
         });
     }
@@ -140,9 +170,9 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
     onSubmit() {
         if (this.minutesForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.minutesForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.minutesForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.minutesForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.minutesForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

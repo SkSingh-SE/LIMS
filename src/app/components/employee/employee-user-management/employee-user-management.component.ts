@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, signal, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { UserPermissionComponent } from '../user-permission/user-permission.component';
 import { UserService } from '../../../services/user.service';
 import { ToastService } from '../../../services/toast.service';
@@ -58,7 +59,8 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private userService: UserService,
     private toastService: ToastService,
-    private roleService: RoleService
+    private roleService: RoleService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -163,6 +165,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     this.userService.updateUserByEmployeeId(this.employeeId, payload).subscribe({
       next: () => {
         this.toastService.show('User settings saved successfully.', 'success');
+        this.router.navigate(['/employee']);
       },
       error: (err) => {
         console.error('Error saving user settings:', err);

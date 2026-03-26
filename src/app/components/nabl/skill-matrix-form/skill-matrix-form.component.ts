@@ -12,6 +12,7 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-skill-matrix-form',
@@ -46,10 +47,17 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SkillMatrix').subscribe({
+            next: (defaults) => {
+                this.matrixForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.loadDesignations();
 
         this.route.paramMap.subscribe(params => {
@@ -101,6 +109,16 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
             designationName: item.name,
             title: item.name
         });
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.matrixForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.matrixForm.get('issueNo')?.disable();
+                this.matrixForm.get('revNo')?.disable();
+                this.matrixForm.get('formatNo')?.disable();
         // Auto-load employees
         this.employeeService.getAllEmployees({ designationId: item.id }).subscribe(resp => {
             const emps = resp?.items || [];
@@ -123,12 +141,12 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
     initForm() {
         this.matrixForm = this.fb.group({
             id: [0],
-            formatNo: ['F-6', Validators.required],
+            formatNo: ['F-6'],
             designationId: [null, Validators.required],
             designationName: [''],
-            issueNo: ['', Validators.required],
+            issueNo: [''],
             date: ['', Validators.required],
-            revNo: ['', Validators.required],
+            revNo: [''],
             title: ['', Validators.required],
             decision: [''],
             skills: this.fb.array([], Validators.required),
@@ -137,6 +155,11 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
             issuedBy: [''],
             reviewedApprovedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.matrixForm.get('issueNo')?.disable();
+        this.matrixForm.get('revNo')?.disable();
+        this.matrixForm.get('formatNo')?.disable();
     }
 
     get skills(): FormArray {

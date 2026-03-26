@@ -9,11 +9,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-supplier-evaluation-record-form',
 
-    imports: [CommonModule, ReactiveFormsModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './supplier-evaluation-record-form.component.html',
     styleUrls: ['./supplier-evaluation-record-form.component.css']
 })
@@ -59,11 +61,18 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.formNumbers = NablFormsHelper.getFormNumbers();
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SupplierEvaluation').subscribe({
+            next: (defaults) => {
+                this.evaluationForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
         this.route.params.subscribe(params => {
             if (params['id']) {
@@ -91,10 +100,10 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
 
     initForm(): void {
         this.evaluationForm = this.fb.group({
-            formatNo: ['F-26', Validators.required],
-            documentNo: ['', Validators.required],
-            issueNo: [{ value: '01', disabled: true }, Validators.required],
-            revNo: [{ value: '00', disabled: true }, Validators.required],
+            formatNo: ['F-26'],
+            documentNo: [''],
+            issueNo: [{ value: '01', disabled: true }],
+            revNo: [{ value: '00', disabled: true }],
             date: [{ value: new Date().toISOString().split('T')[0], disabled: true }, Validators.required],
 
             supplierName: ['', Validators.required],
@@ -112,8 +121,12 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
             recommendation: ['Approved', Validators.required],
             generalRemarks: [''],
             evaluatedBy: ['', Validators.required],
-            approvedBy: ['', Validators.required]
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.evaluationForm.get('documentNo')?.disable();
+        this.evaluationForm.get('formatNo')?.disable();
     }
 
     get criteria(): FormArray {
@@ -182,10 +195,17 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
                 });
 
                 this.evaluationForm.patchValue(record);
-
-                if (this.isViewMode) {
+                // Lock form if not in editable status
+                const status = (record as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.evaluationForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
                     this.evaluationForm.disable();
                 }
+                // Re-disable system fields
+                this.evaluationForm.get('documentNo')?.disable();
+                this.evaluationForm.get('formatNo')?.disable();
             } else {
                 this.toastService.show('Record not found', 'error');
                 this.router.navigate(['/supplier-evaluation']);

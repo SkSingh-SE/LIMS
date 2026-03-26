@@ -134,8 +134,10 @@ export class MenuPermissionComponent implements OnInit {
 
 
   getDetails(): void {
-    this.menuService.getPermissions(this.menuId).subscribe({
+    const requestId = this.menuId;
+    this.menuService.getPermissions(requestId).subscribe({
       next: (res: any) => {
+        if (this.menuId !== requestId) return; // discard stale response
         if (res) {
           this.permissionForm.patchValue({
             menuId: this.menuId
@@ -340,6 +342,7 @@ export class MenuPermissionComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.menuId = 0;
     if (id > 0) {
       this.menuId = id;
       this.getDetails();
@@ -349,7 +352,6 @@ export class MenuPermissionComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Permission Form';
-      this.permissionForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

@@ -20,6 +20,7 @@ export class CustomerListComponent  implements OnInit {
     { key: 'PinCode', type: 'string', label: 'Pin Code', filter: true },
     { key: 'GSTNo', type: 'string', label: 'GST', filter: true },
     { key: 'SampleReturn', type: 'string', label: 'Sample Return', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -27,7 +28,8 @@ export class CustomerListComponent  implements OnInit {
     CustomerType: 'string',
     PinCode: 'string',
     GSTNo: 'string',
-    SampleReturn: 'string'
+    SampleReturn: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -46,7 +48,7 @@ export class CustomerListComponent  implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

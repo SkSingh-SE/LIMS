@@ -54,7 +54,7 @@ export class SamplePreparationMasterComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -113,8 +113,10 @@ export class SamplePreparationMasterComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.service.getById(this.recordId).subscribe({
+    const requestId = this.recordId;
+    this.service.getById(requestId).subscribe({
       next: (response) => {
+        if (this.recordId !== requestId) return; // discard stale response
         this.formGroup.patchValue(response);
       },
       error: (error) => {
@@ -259,6 +261,7 @@ export class SamplePreparationMasterComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.formGroup.reset();
     this.formGroup.enable();
+    this.recordId = 0;
     if (id > 0) {
       this.recordId = id;
       this.getDetails();
@@ -268,7 +271,6 @@ export class SamplePreparationMasterComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Sample Preparation Master Form';
-      this.formGroup.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

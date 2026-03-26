@@ -24,12 +24,12 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,7 +47,7 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   payload = {
@@ -100,8 +100,10 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
     );
   }
   getDetails(): void {
-    this.service.getProductFormById(this.entityId).subscribe({
+    const requestId = this.entityId;
+    this.service.getProductFormById(requestId).subscribe({
       next: (response) => {
+        if (this.entityId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ProductFormForm.patchValue(response);
       },
@@ -248,6 +250,7 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
     // Reset form before rendering new data
     this.ProductFormForm.reset();
     this.ProductFormForm.enable();
+    this.entityId = 0;
 
     if (id > 0) {
       this.entityId = id;
@@ -258,7 +261,6 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Product Form';
-      this.ProductFormForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

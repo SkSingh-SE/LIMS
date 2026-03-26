@@ -160,6 +160,15 @@ export class SearchableDropdownModalComponent {
     const idx = this.dropdownData.findIndex(d => d.id === item.id);
     this.highlightedIndex = idx >= 0 ? idx : -1;
   }
+
+  clearSelection(event: Event): void {
+    event.stopPropagation();
+    this.selectedLabel = '';
+    this.searchTerm = '';
+    this.selectedItem = null;
+    this.itemSelected.emit(null);
+    this.showDropdown = false;
+  }
   onScroll(event: any) {
     const div = event.target;
     if (div.scrollTop + div.clientHeight >= div.scrollHeight - 5) {

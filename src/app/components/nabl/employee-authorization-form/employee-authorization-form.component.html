@@ -29,6 +29,34 @@
                 </select>
               </div>
 
+              <!-- Document No -->
+              <div class="col-md-3">
+                <label class="form-label">Document No</label>
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="Auto-generated" />
+              </div>
+
+              <!-- Issue No -->
+              <div class="col-md-3">
+                <label class="form-label">Issue No</label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+
+              <!-- Rev No -->
+              <div class="col-md-3">
+                <label class="form-label">Rev No</label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+
+              <!-- Date -->
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date"
+                  [ngClass]="{'is-invalid': authForm.get('date')?.invalid && authForm.get('date')?.touched}" />
+                <div *ngIf="authForm.get('date')?.invalid && authForm.get('date')?.touched" class="text-danger text-sm mt-1">
+                  Date is required
+                </div>
+              </div>
+
               <!-- Department Dropdown -->
               <div class="col-md-3">
                 <app-searchable-dropdown
@@ -65,11 +93,7 @@
                 </div>
               </div>
 
-              <!-- UID (auto-filled from employee) -->
-              <div class="col-md-3">
-                <label class="form-label">Personnel UID</label>
-                <input type="text" class="form-control" formControlName="uid" placeholder="Auto-filled from employee" readonly />
-              </div>
+              <!-- UID removed as per requirement -->
             </div>
           </div>
         </div>
@@ -118,6 +142,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="authForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">

@@ -73,7 +73,7 @@
                   Date / Month & Year
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="dateMonthYear" placeholder="e.g. 13/09/25" />
+                <input type="date" class="form-control" formControlName="dateMonthYear" />
               </div>
               <div class="col-12">
                 <label class="form-label fw-bold">
@@ -130,6 +130,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="ncForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

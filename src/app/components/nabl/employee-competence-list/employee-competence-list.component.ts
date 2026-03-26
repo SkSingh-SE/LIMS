@@ -42,6 +42,7 @@ export class EmployeeCompetenceListComponent implements OnInit {
     };
 
     columns = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'id', label: 'ID', type: 'number', width: '60px' },
         { key: 'employeeName', label: 'Employee Name', type: 'string', filter: true },
         { key: 'designationName', label: 'Designation', type: 'string' },

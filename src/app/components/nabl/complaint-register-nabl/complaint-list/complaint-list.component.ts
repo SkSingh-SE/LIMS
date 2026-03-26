@@ -16,6 +16,7 @@ export class ComplaintListComponent implements OnInit {
     baseRoute = '/complaint-register';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'monthYear', label: 'Month & Year', type: 'string', width: '120px', filter: true },
         { key: 'complaintNo', label: 'Complaint No.', type: 'string', width: '120px', filter: true },
         { key: 'dateOfComplaint', label: 'Date', type: 'date', width: '120px', filter: true },

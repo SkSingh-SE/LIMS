@@ -9,9 +9,9 @@ import { CommonModule } from '@angular/common';
   styleUrl: './nabl-print-footer.component.css'
 })
 export class NablPrintFooterComponent {
-  @Input() preparedByName: string = 'General Manager';
-  @Input() issuedByName: string = 'Quality Manager';
-  @Input() reviewedApprovedByName: string = 'Managing Director';
+  @Input() preparedByName: string = '';
+  @Input() issuedByName: string = '';
+  @Input() reviewedApprovedByName: string = '';
 
   @Input() preparedByRole: string = 'Prepared By';
   @Input() issuedByRole: string = 'Issued By';

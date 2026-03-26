@@ -41,11 +41,6 @@
 </div>
 
 <div class="nabl-preview-page">
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border" style="color: #DA261C;" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
   <app-print-frame *ngIf="record" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
@@ -160,6 +155,10 @@
               <td>{{ record.observedValueAverage }}</td>
               <td>{{ record.originalValue }}</td>
               <td>{{ record.remarks }}</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="lbl">Performance Level</td>
+              <td colspan="3">{{ record.performanceLevel }}</td>
             </tr>
             <tr>
               <td colspan="5" class="lbl pt-2 pb-5 position-relative" style="min-height: 80px;">

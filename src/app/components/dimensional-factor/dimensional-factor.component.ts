@@ -5,15 +5,16 @@ import { Modal } from 'bootstrap';
 import { DimensionalFactorService } from '../../services/dimensional-factor.service';
 import { ProductFormService } from '../../services/product-form.service';
 import { ParameterUnitService } from '../../services/parameter-unit.service';
-import { TestMethodStandardService } from '../../services/test-method-standard.service';
+import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 @Component({
   selector: 'app-dimensional-factor',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
   templateUrl: './dimensional-factor.component.html',
   styleUrl: './dimensional-factor.component.css'
 })
@@ -55,7 +56,7 @@ export class DimensionalFactorComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -75,6 +76,12 @@ export class DimensionalFactorComponent implements OnInit {
   customerTypeObject: any = null;
   dimensionalFactorId: number = 0;
   formTitle = 'Dimensional Factor Form';
+  modalReloadKey = 0;
+  toleranceTypes = [
+    { name: 'Bilateral', value: 'Bilateral' },
+    { name: 'Unilateral', value: 'Unilateral' },
+    { name: 'Limit', value: 'Limit' }
+  ];
 
   constructor(
     private fb: FormBuilder,
@@ -83,7 +90,7 @@ export class DimensionalFactorComponent implements OnInit {
     private dimensionalService: DimensionalFactorService,
     private productFormService: ProductFormService,
     private parameterUnitService: ParameterUnitService,
-    private testMethodStandardService: TestMethodStandardService,
+    private testMethodSpecificationService: TestMethodSpecificationService,
     private toastService: ToastService,
   ) {}
 
@@ -116,7 +123,7 @@ export class DimensionalFactorComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.DimensionalFactorList = [];
       }
     }
@@ -124,8 +131,10 @@ export class DimensionalFactorComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.dimensionalService.getDimensionalFactorById(this.dimensionalFactorId).subscribe({
+    const requestId = this.dimensionalFactorId;
+    this.dimensionalService.getDimensionalFactorById(requestId).subscribe({
       next: (response) => {
+        if (this.dimensionalFactorId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.DimensionalFactorForm.patchValue(response);
         this.DimensionalFactorForm.patchValue({
@@ -266,13 +275,18 @@ export class DimensionalFactorComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    // Force dropdown reset by setting sentinel value before reinitializing form
+    if (this.DimensionalFactorForm) {
+      this.DimensionalFactorForm.patchValue({ parameterUnitID: -1, defaultTestMethodID: -1, applicableFormIds: [-1] });
+    }
     this.initForm();
+    this.dimensionalFactorId = 0;
     if (id > 0) {
       this.dimensionalFactorId = id;
       this.getDetails();
@@ -317,7 +331,7 @@ export class DimensionalFactorComponent implements OnInit {
   };
 
   getTestMethodDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.testMethodStandardService.getTestMethodStandardDropdown(searchTerm, pageNo, pageSize);
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(searchTerm, pageNo, pageSize);
   };
 
   openLinkedMaster(route: string): void {
@@ -354,7 +368,7 @@ export class DimensionalFactorComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -366,7 +380,7 @@ export class DimensionalFactorComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

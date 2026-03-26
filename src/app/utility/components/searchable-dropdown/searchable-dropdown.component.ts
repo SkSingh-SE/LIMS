@@ -219,6 +219,15 @@ export class SearchableDropdownComponent {
     this.closeDropdown();
   }
 
+  clearSelection(event: Event): void {
+    event.stopPropagation();
+    this.selectedLabel = '';
+    this.searchTerm = '';
+    this.selectedItem = null;
+    this.itemSelected.emit(null);
+    this.closeDropdown();
+  }
+
   onScroll(event: any) {
     const div = event.target;
     if (div.scrollTop + div.clientHeight >= div.scrollHeight - 5) {

@@ -10,11 +10,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-supplier-registration-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './supplier-registration-form.component.html'
 })
 export class SupplierRegistrationFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class SupplierRegistrationFormComponent implements CanComponentDeactivate
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SupplierRegistration').subscribe({
+            next: (defaults) => {
+                this.registrationForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -75,11 +84,11 @@ export class SupplierRegistrationFormComponent implements CanComponentDeactivate
         const today = new Date().toISOString().split('T')[0];
         this.registrationForm = this.fb.group({
             id: [0],
-            formatNo: ['F-19', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-19'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             supplierName: ['', Validators.required],
             address: ['', Validators.required],
@@ -115,8 +124,17 @@ export class SupplierRegistrationFormComponent implements CanComponentDeactivate
             registrationStatus: ['Pending', Validators.required],
             remarks: [''],
             recordedBy: ['', Validators.required],
-            verifiedBy: ['']
+            verifiedBy: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.registrationForm.get('documentNo')?.disable();
+        this.registrationForm.get('issueNo')?.disable();
+        this.registrationForm.get('revNo')?.disable();
+        this.registrationForm.get('formatNo')?.disable();
     }
 
     loadData(): void {
@@ -126,12 +144,18 @@ export class SupplierRegistrationFormComponent implements CanComponentDeactivate
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.registrationForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.registrationForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.registrationForm.get('documentNo')?.disable();
+                this.registrationForm.get('issueNo')?.disable();
+                this.registrationForm.get('revNo')?.disable();
+                this.registrationForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }

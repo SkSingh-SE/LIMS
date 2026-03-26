@@ -279,6 +279,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       if (required && !this.equipmentForm.get('nextCalibrationDueDate')?.value) {
         const calDue = this.calculateDueDate(new Date().toDateString(), 'EveryDay');
         this.equipmentForm.get('nextCalibrationDueDate')?.setValue(calDue);
+      } else if (!required) {
+        this.equipmentForm.get('nextCalibrationDueDate')?.setValue(null);
       }
     });
 
@@ -379,28 +381,38 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
   submit(): void {
     if (this.equipmentForm.valid) {
-      console.log(this.equipmentForm.value);
-      // Call API or further processing
+      // Strip nested arrays — calibrations/maintenances/sops are managed via separate endpoints
+      const { calibrations, maintenances, sops, ...payload } = this.equipmentForm.value;
+      // Convert empty strings to proper types for backend
+      if (!payload.nextCalibrationDueDate) payload.nextCalibrationDueDate = null;
+      if (!payload.nextMaintenanceDueDate) payload.nextMaintenanceDueDate = null;
+      if (!payload.lastCalibrationDate) payload.lastCalibrationDate = null;
+      if (!payload.calibrationFrequencyDays && payload.calibrationFrequencyDays !== 0) payload.calibrationFrequencyDays = null;
+      // Ensure numeric IDs are sent as numbers, not empty strings
+      if (!payload.oemID) payload.oemID = 0;
+      if (!payload.departmentID) payload.departmentID = 0;
+      if (!payload.equipmentTypeID) payload.equipmentTypeID = 0;
+
       if (this.equipmentId > 0) {
-        this.equipmentService.updateEquipment(this.equipmentForm.value).subscribe({
+        this.equipmentService.updateEquipment(payload).subscribe({
           next: response => {
             this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/equipment']);
           },
           error: error => {
-            this.toastService.show(error.error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
           },
         });
       } else {
-        this.equipmentService.createEquipment(this.equipmentForm.value).subscribe({
+        this.equipmentService.createEquipment(payload).subscribe({
           next: response => {
             this.saved = true;
             this.toastService.show(response.message, 'success');
             this.router.navigate(['/equipment']);
           },
           error: error => {
-            this.toastService.show(error.error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
           },
         });
       }
@@ -556,7 +568,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.loadEquipment(this.equipmentId);
         },
         error: error => {
-          this.toastService.show(error.error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
         },
       });
     } else {
@@ -580,7 +592,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.loadEquipment(this.equipmentId);
         },
         error: error => {
-          this.toastService.show(error.error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
         },
       });
     } else {
@@ -606,7 +618,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.loadEquipment(this.equipmentId);
         },
         error: error => {
-          this.toastService.show(error.error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
         }
       });
     } else {
@@ -631,7 +643,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.loadEquipment(this.equipmentId);
         },
         error: error => {
-          this.toastService.show(error.error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
         }
       });
     } else {
@@ -688,7 +700,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.sopVideos = this.sopVideos.filter(item => item.id !== video.id);
         },
         error: error => {
-          this.toastService.show(error.error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
         }
       });
     }

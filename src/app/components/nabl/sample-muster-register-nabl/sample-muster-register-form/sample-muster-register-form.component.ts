@@ -8,11 +8,13 @@ import { ToastService } from '../../../../services/toast.service';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-sample-muster-register-nabl-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './sample-muster-register-form.component.html'
 })
 export class SampleMusterRegisterNablFormComponent implements CanComponentDeactivate, OnInit {
@@ -36,10 +38,17 @@ export class SampleMusterRegisterNablFormComponent implements CanComponentDeacti
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SampleMusterRegister').subscribe({
+            next: (defaults) => {
+                this.requestForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
 
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -63,18 +72,25 @@ export class SampleMusterRegisterNablFormComponent implements CanComponentDeacti
         const today = new Date().toISOString().split('T')[0];
         this.requestForm = this.fb.group({
             id: [0],
-            formatNo: ['F-32', Validators.required],
-            issueNo: ['03', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-32'],
+            issueNo: ['03'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             entries: this.fb.array([]),
 
-            preparedBy: ['', Validators.required],
-            reviewedBy: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: [''],
             status: ['Active']
         });
+
+        // System-managed fields — always readonly
+        this.requestForm.get('documentNo')?.disable();
+        this.requestForm.get('issueNo')?.disable();
+        this.requestForm.get('revNo')?.disable();
+        this.requestForm.get('formatNo')?.disable();
     }
 
     get entries(): FormArray {
@@ -92,7 +108,7 @@ export class SampleMusterRegisterNablFormComponent implements CanComponentDeacti
             analystName: ['', Validators.required],
             analysisStartDate: [''],
             analysisEndDate: [''],
-            status: ['Pending', Validators.required],
+            status: ['Pending'],
             remarks: ['']
         });
         this.entries.push(group);
@@ -117,7 +133,19 @@ export class SampleMusterRegisterNablFormComponent implements CanComponentDeacti
                         data.entries.forEach(() => this.addEntry());
                     }
                     this.requestForm.patchValue(data);
-                    if (this.isViewMode) this.requestForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.requestForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.requestForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.requestForm.get('documentNo')?.disable();
+                this.requestForm.get('issueNo')?.disable();
+                this.requestForm.get('revNo')?.disable();
+                this.requestForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {

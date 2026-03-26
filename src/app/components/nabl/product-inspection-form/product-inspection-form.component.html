@@ -14,12 +14,6 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border " role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="inspectionForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="inspectionForm.disabled">
 
         <!-- Section I: Header Information -->
@@ -144,11 +138,11 @@
           </div>
         </div>
 
-        <!-- Section IV: Signatories & Remarks -->
+        <!-- Section IV: Remarks -->
         <div class="accordion-section mb-4">
           <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('signatories')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['signatories'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">IV. Signatories & Remarks</span>
+            <span class="fw-bold ms-2 ">IV. Remarks</span>
           </div>
           <div *ngIf="openSections['signatories']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
@@ -156,21 +150,11 @@
                 <label class="form-label fw-semibold text-dark small">General Remarks</label>
                 <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Enter special instructions or remarks..."></quill-editor>
               </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Prepared By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="preparedBy">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Reviewed By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="reviewedBy">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Approved By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="approvedBy">
-              </div>
             </div>
           </div>
         </div>
+
+        <app-nabl-signature-section [parentForm]="inspectionForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">

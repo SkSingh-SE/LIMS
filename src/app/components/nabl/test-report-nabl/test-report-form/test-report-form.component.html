@@ -206,52 +206,7 @@
           </div>
         </div>
 
-        <!-- Section V: Approval & Conclusion -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('approval')">
-            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">V. Approval & Conclusion</span>
-          </div>
-          <div *ngIf="openSections['approval']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Statement of Conformity</label>
-                <select class="form-select" formControlName="statementOfConformity">
-                  <option value="Conforming">Conforming to Requirements</option>
-                  <option value="Non-Conforming">Non-Conforming to Requirements</option>
-                  <option value="Not Applicable">Not Applicable</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Prepared By
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="preparedBy" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Reviewed By</label>
-                <input type="text" class="form-control" formControlName="reviewedBy" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Approved By
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="approvedBy" placeholder="Authorized Signatory" />
-              </div>
-              <div class="col-12 mt-3">
-                <label class="form-label fw-bold">Remarks / Disclaimer</label>
-                <quill-editor
-                  formControlName="remarks"
-                  [modules]="quillModules"
-                  [readOnly]="isViewMode"
-                  placeholder="Enter any remarks, limitations or disclaimers..."
-                ></quill-editor>
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-nabl-signature-section [parentForm]="reportForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

@@ -102,6 +102,7 @@ export class TestResultEntryFormComponent implements OnInit {
   // Phase 4: Machine Data Integration
   // ================================================================
   machineDataLoading: Record<number, boolean> = {};
+  loadingParams: Record<number, boolean> = {};
 
   // ================================================================
   // Phase 5: Preparation Status + Verification
@@ -385,7 +386,12 @@ export class TestResultEntryFormComponent implements OnInit {
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
                 parameterType: param.parameterType || '',
-                testMethodUsed: param.testMethodUsed || ''
+                testMethodUsed: param.testMethodUsed || '',
+                decimalPrecision: param.decimalPrecision ?? 2,
+                conversionFactor: param.conversionFactor ?? 1,
+                convertedValue: param.convertedValue ?? null,
+                selectedUnit: param.selectedUnit || param.unit || '',
+                unitOptions: param.unitOptions || []
               }))
             }
           ]
@@ -432,7 +438,12 @@ export class TestResultEntryFormComponent implements OnInit {
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
                 parameterType: param.parameterType || '',
-                testMethodUsed: param.testMethodUsed || ''
+                testMethodUsed: param.testMethodUsed || '',
+                decimalPrecision: param.decimalPrecision ?? 2,
+                conversionFactor: param.conversionFactor ?? 1,
+                convertedValue: param.convertedValue ?? null,
+                selectedUnit: param.selectedUnit || param.unit || '',
+                unitOptions: param.unitOptions || []
               }))
             }
           ]
@@ -676,7 +687,12 @@ export class TestResultEntryFormComponent implements OnInit {
       sourceTestMethodId: [p.sourceTestMethodId ?? null],
       resultStatus: [p.resultStatus || null],
       parameterType: [p.parameterType || ''],
-      testMethodUsed: [p.testMethodUsed || '']
+      testMethodUsed: [p.testMethodUsed || ''],
+      decimalPrecision: [p.decimalPrecision ?? 2],
+      conversionFactor: [p.conversionFactor ?? 1],
+      convertedValue: [p.convertedValue ?? null],
+      selectedUnit: [p.selectedUnit || p.unit || ''],
+      unitOptions: [p.unitOptions || []]
     });
   }
 
@@ -708,6 +724,34 @@ export class TestResultEntryFormComponent implements OnInit {
 
   removeParameter(planIndex: number, testIndex: number, paramIndex: number): void {
     this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+  }
+
+  loadParametersFromSpec(planIndex: number, testIndex: number): void {
+    const headerId = this.plans[planIndex]?.tests[testIndex]?.headerId;
+    if (!headerId) {
+      this.toastService.show('Test header not found.', 'warning');
+      return;
+    }
+    this.loadingParams[headerId] = true;
+    this.testResultService.loadParametersFromSpec(headerId).subscribe({
+      next: (res) => {
+        this.loadingParams[headerId] = false;
+        if (res.added > 0) {
+          this.toastService.show(`${res.added} parameter(s) loaded from specification.`, 'success');
+          // Reload full payload to refresh parameters
+          this.loadFullResultPayload(this.sampleId);
+        } else {
+          this.toastService.show('No new parameters to load. All specification parameters already present.', 'info');
+        }
+        if (res.warnings?.length) {
+          res.warnings.forEach((w: string) => this.toastService.show(w, 'warning'));
+        }
+      },
+      error: (err) => {
+        this.loadingParams[headerId] = false;
+        this.toastService.show(err?.error?.message || 'Failed to load parameters.', 'error');
+      }
+    });
   }
 
   // Check if parameter name already exists
@@ -868,7 +912,9 @@ export class TestResultEntryFormComponent implements OnInit {
               isWithinLimit: param.isWithinLimit,
               altered: param.altered || false,
               formula: param.formulaExpression || '',
-              testMethodUsed: param.testMethodUsed || ''
+              testMethodUsed: param.testMethodUsed || '',
+              convertedValue: param.convertedValue ?? null,
+              selectedUnit: param.selectedUnit || ''
             }))
           });
         } else if (apiChemical) {
@@ -888,7 +934,9 @@ export class TestResultEntryFormComponent implements OnInit {
               isWithinLimit: param.isWithinLimit,
               altered: param.altered || false,
               formula: param.formulaExpression || '',
-              testMethodUsed: param.testMethodUsed || ''
+              testMethodUsed: param.testMethodUsed || '',
+              convertedValue: param.convertedValue ?? null,
+              selectedUnit: param.selectedUnit || ''
             }))
           });
         }
@@ -912,20 +960,72 @@ export class TestResultEntryFormComponent implements OnInit {
   // ----------------------------------------------------------------
   onValueChanged(planIndex: number, testIndex: number, paramIndex: number): void {
     const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const rawValue = row.get('value')?.value;
+    const planType = this.plansFA.at(planIndex).get('type')?.value; // 'General' or 'Chemical'
 
-    const value = Number(row.get('value')?.value);
-    const min = row.get('minValue')?.value;
-    const max = row.get('maxValue')?.value;
+    // Use minValue/maxValue first, fallback to specMinValue/specMaxValue
+    const minRaw = row.get('minValue')?.value ?? row.get('specMinValue')?.value;
+    const maxRaw = row.get('maxValue')?.value ?? row.get('specMaxValue')?.value;
+    const min = Number(minRaw);
+    const max = Number(maxRaw);
+    const hasMin = minRaw != null && minRaw !== '';
+    const hasMax = maxRaw != null && maxRaw !== '';
 
-    if (min != null || max != null) {
-      let pass = true;
-      if (min != null && value < min) pass = false;
-      if (max != null && value > max) pass = false;
-      row.patchValue({ isWithinLimit: pass });
+    // Qualitative: pass/fail from select, no numeric comparison
+    if (row.value.parameterType === 'Qualitative') {
+      const isPass = rawValue === 'Pass' || rawValue === 'Satisfactory';
+      const isFail = rawValue === 'Fail' || rawValue === 'Not Satisfactory';
+      row.patchValue({
+        isWithinLimit: isPass ? true : isFail ? false : null,
+        resultStatus: isPass ? 'Pass' : isFail ? 'Fail' : null
+      }, { emitEvent: false });
+      return;
+    }
+
+    if (rawValue === null || rawValue === '' || rawValue === undefined) {
+      row.patchValue({ isWithinLimit: null, resultStatus: null }, { emitEvent: false });
+      this.recalculateFormulas(planIndex, testIndex);
+      return;
+    }
+
+    const enteredValue = Number(rawValue);
+    if (isNaN(enteredValue)) {
+      row.patchValue({ isWithinLimit: null, resultStatus: null }, { emitEvent: false });
+      this.recalculateFormulas(planIndex, testIndex);
+      return;
+    }
+
+    // Apply conversion factor and decimal precision for comparison
+    // Note: entered value stays in the input; converted value used only for comparison
+    const conversionFactor = Number(row.get('conversionFactor')?.value) || 1;
+    const decimalPrecision = Number(row.get('decimalPrecision')?.value) ?? 2;
+    const compareValue = Number((enteredValue * conversionFactor).toFixed(decimalPrecision));
+
+    if (hasMin || hasMax) {
+      const withinMin = !hasMin || compareValue >= min;
+      const withinMax = !hasMax || compareValue <= max;
+      const withinLimit = withinMin && withinMax;
+
+      // Chemical → Pass/Fail, Mechanical → Within Range/Under Range/Over Range
+      let status: string;
+      if (planType === 'Chemical') {
+        status = withinLimit ? 'Pass' : 'Fail';
+      } else {
+        if (!withinMin) status = 'Under Range';
+        else if (!withinMax) status = 'Over Range';
+        else status = 'Within Range';
+      }
+
+      row.patchValue({ isWithinLimit: withinLimit, resultStatus: status }, { emitEvent: false });
+    } else {
+      row.patchValue({ isWithinLimit: null, resultStatus: null }, { emitEvent: false });
     }
 
     // Auto-recalculate all formula-based parameters in this test
     this.recalculateFormulas(planIndex, testIndex);
+
+    // Recalculate converted value for selected equivalent unit
+    this.onUnitChanged(planIndex, testIndex, paramIndex);
   }
 
   /**
@@ -933,7 +1033,9 @@ export class TestResultEntryFormComponent implements OnInit {
    * This provides on-the-fly calculation without needing a backend call.
    */
   recalculateFormulas(planIndex: number, testIndex: number): void {
+    const planType = this.plansFA.at(planIndex).get('type')?.value;
     const params = this.getParameters(planIndex, testIndex);
+
     params.controls.forEach((row, idx) => {
       const formulaExpr = row.get('formulaExpression')?.value;
       if (!formulaExpr) return;
@@ -941,19 +1043,42 @@ export class TestResultEntryFormComponent implements OnInit {
       const calculatedValue = this.evaluateFormula(formulaExpr, planIndex, testIndex, idx);
       if (calculatedValue !== null) {
         const currentValue = row.get('value')?.value;
-        // Only update if the calculated value is different (avoid infinite loops)
         if (Number(currentValue) !== calculatedValue) {
-          row.patchValue({ value: calculatedValue }, { emitEvent: false });
+          // Apply decimal precision
+          const decimalPrecision = Number(row.get('decimalPrecision')?.value) || 2;
+          const rounded = Number(calculatedValue.toFixed(decimalPrecision));
+          row.patchValue({ value: rounded }, { emitEvent: false });
 
-          // Update isWithinLimit for the formula-calculated parameter
-          const min = row.get('minValue')?.value;
-          const max = row.get('maxValue')?.value;
-          if (min != null || max != null) {
-            let pass = true;
-            if (min != null && calculatedValue < min) pass = false;
-            if (max != null && calculatedValue > max) pass = false;
-            row.patchValue({ isWithinLimit: pass }, { emitEvent: false });
+          // Use specMinValue/specMaxValue as fallback (same as onValueChanged)
+          const minRaw = row.get('minValue')?.value ?? row.get('specMinValue')?.value;
+          const maxRaw = row.get('maxValue')?.value ?? row.get('specMaxValue')?.value;
+          const hasMin = minRaw != null && minRaw !== '';
+          const hasMax = maxRaw != null && maxRaw !== '';
+
+          // Apply conversion factor for comparison
+          const convFactor = Number(row.get('conversionFactor')?.value) || 1;
+          const compareValue = rounded * convFactor;
+
+          if (hasMin || hasMax) {
+            const min = Number(minRaw);
+            const max = Number(maxRaw);
+            const withinMin = !hasMin || compareValue >= min;
+            const withinMax = !hasMax || compareValue <= max;
+            const withinLimit = withinMin && withinMax;
+
+            let status: string;
+            if (planType === 'Chemical') {
+              status = withinLimit ? 'Pass' : 'Fail';
+            } else {
+              if (!withinMin) status = 'Under Range';
+              else if (!withinMax) status = 'Over Range';
+              else status = 'Within Range';
+            }
+            row.patchValue({ isWithinLimit: withinLimit, resultStatus: status }, { emitEvent: false });
           }
+
+          // Update converted value for equivalent unit
+          this.onUnitChanged(planIndex, testIndex, idx);
         }
       }
     });
@@ -967,6 +1092,72 @@ export class TestResultEntryFormComponent implements OnInit {
 
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.parameterService.getParameterDropdown(term, page, pageSize);
+
+  getTestMethodSpecDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.testMethodService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+  /** Get unit options from form control (safe accessor) */
+  getUnitOptions(row: any): any[] {
+    return row.get('unitOptions')?.value || [];
+  }
+
+  /** Clear formula from a parameter and make it editable again */
+  clearParameterFormula(planIndex: number, testIndex: number, paramIndex: number): void {
+    const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+    row.patchValue({
+      formulaExpression: '',
+      isCalculated: false,
+      value: null,
+      isWithinLimit: null,
+      resultStatus: null
+    });
+    this.toastService.show('Formula cleared. You can now enter value manually.', 'info');
+  }
+
+  /** Convert formula like "P5 * P7 / 2" to "Tensile × Yield / 2" using parameter names */
+  getReadableFormula(expression: string, planIndex: number, testIndex: number): string {
+    if (!expression) return '';
+    const params = this.getParameters(planIndex, testIndex);
+    let readable = expression;
+    params.controls.forEach(row => {
+      const v = row.value;
+      if (v.parameterID) {
+        const ref = `P${v.parameterID}`;
+        const name = v.parameterName || ref;
+        readable = readable.replace(new RegExp(ref, 'g'), name);
+      }
+    });
+    return readable
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷');
+  }
+
+  onUnitChanged(planIndex: number, testIndex: number, paramIndex: number): void {
+    const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const selectedUnit = row.get('selectedUnit')?.value;
+    const primaryUnit = row.get('unit')?.value;
+    const value = Number(row.get('value')?.value);
+    const unitOptions: any[] = row.get('unitOptions')?.value || [];
+    const decimalPrecision = Number(row.get('decimalPrecision')?.value) || 2;
+
+    if (!value || isNaN(value) || !selectedUnit || selectedUnit === primaryUnit) {
+      row.patchValue({ convertedValue: null }, { emitEvent: false });
+      return;
+    }
+
+    const option = unitOptions.find((o: any) => o.unitName === selectedUnit);
+    if (option?.factor) {
+      const converted = Number((value * option.factor).toFixed(decimalPrecision));
+      row.patchValue({ convertedValue: converted }, { emitEvent: false });
+    } else {
+      row.patchValue({ convertedValue: null }, { emitEvent: false });
+    }
+  }
+
+  onTestMethodUsedSelected(planIndex: number, testIndex: number, paramIndex: number, selectedItem: any): void {
+    const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+    row.patchValue({ testMethodUsed: selectedItem?.name || '' });
+  }
 
   getParameterDrop = (type: string) => {
     if (type === 'Chemical') {
@@ -1454,8 +1645,12 @@ export class TestResultEntryFormComponent implements OnInit {
   // ================================================================
   getResultStatusClass(status: string | null): string {
     switch (status) {
-      case 'Pass': return 'badge-pass';
-      case 'Fail': return 'badge-fail';
+      case 'Pass':
+      case 'Within Range': return 'badge-pass';
+      case 'Fail':
+      case 'Out of Range': return 'badge-fail';
+      case 'Under Range':
+      case 'Over Range': return 'badge-warn';
       case 'Marginal': return 'badge-warn';
       default: return 'badge-pending';
     }
@@ -1463,8 +1658,12 @@ export class TestResultEntryFormComponent implements OnInit {
 
   getResultStatusIcon(status: string | null): string {
     switch (status) {
-      case 'Pass': return 'bi-check-circle';
-      case 'Fail': return 'bi-x-circle';
+      case 'Pass':
+      case 'Within Range': return 'bi-check-circle';
+      case 'Fail':
+      case 'Out of Range': return 'bi-x-circle';
+      case 'Under Range': return 'bi-arrow-down-circle';
+      case 'Over Range': return 'bi-arrow-up-circle';
       case 'Marginal': return 'bi-exclamation-triangle';
       default: return 'bi-dash-circle';
     }

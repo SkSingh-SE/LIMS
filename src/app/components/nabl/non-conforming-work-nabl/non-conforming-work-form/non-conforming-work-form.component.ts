@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-non-conforming-work-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './non-conforming-work-form.component.html',
     styleUrl: './non-conforming-work-form.component.css'
 })
@@ -45,8 +47,15 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         private route: ActivatedRoute,
         private router: Router,
         private service: NonConformingWorkService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('NonConformingWork').subscribe({
+            next: (defaults) => {
+                this.ncForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -66,11 +75,11 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
 
     private initForm() {
         this.ncForm = this.fb.group({
-            formatNo: ['F-41', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-41', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-41'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             dateMonthYear: ['', Validators.required],
@@ -78,15 +87,36 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
             rootCauseAnalysis: [''],
             correctiveAction: [''],
             closerDate: [''],
-            signatureTDQM: ['']
+            signatureTDQM: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.ncForm.get('docNo')?.disable();
+        this.ncForm.get('issueNo')?.disable();
+        this.ncForm.get('revNo')?.disable();
+        this.ncForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.ncForm.patchValue(data);
-                if (this.isViewMode) this.ncForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.ncForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.ncForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.ncForm.get('docNo')?.disable();
+                this.ncForm.get('issueNo')?.disable();
+                this.ncForm.get('revNo')?.disable();
+                this.ncForm.get('formatNo')?.disable();
             }
         });
     }
@@ -98,9 +128,9 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
     onSubmit() {
         if (this.ncForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.ncForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

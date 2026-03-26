@@ -26,12 +26,14 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Invoice Case Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'value', type: 'string', label: 'Value', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     aliasName: 'string',
-    value: 'string'
+    value: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -49,7 +51,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -317,8 +319,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
 
   getDetails(): void {
-    this.invoiceCaseConfig.getInvoiceCaseConfigById(this.invoiceId).subscribe({
+    const requestId = this.invoiceId;
+    this.invoiceCaseConfig.getInvoiceCaseConfigById(requestId).subscribe({
       next: (res: any) => {
+        if (this.invoiceId !== requestId) return; // discard stale response
         if (res) {
           const aliasArray: FormArray<FormGroup> = this.fb.array<FormGroup>([]);
           (res.aliasNames || []).forEach((alias: any) => {
@@ -487,6 +491,7 @@ debugger;
   openModal(type: string, id: number): void {
     this.invoiceForm.reset();
     this.invoiceForm.enable();
+    this.invoiceId = 0;
     if (id > 0) {
       this.invoiceId = id;
       this.getDetails();
@@ -499,7 +504,6 @@ debugger;
         this.addAlias();
       }
       this.formTitle = 'Invoice Case Configuration Form';
-      this.invoiceForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

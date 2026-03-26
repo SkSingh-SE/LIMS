@@ -17,6 +17,7 @@ export class CustomerFeedbackListComponent implements OnInit {
     baseRoute = '/customer-feedback';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
         { key: 'customerName', label: 'Customer Name', type: 'string', filter: true },
         { key: 'contactPerson', label: 'Contact Person', type: 'string', filter: true }

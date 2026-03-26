@@ -11,12 +11,13 @@ import { NablRegisterTableComponent, RegisterColumn } from '../../nabl-register-
     styleUrl: './nc-corrective-action-list.component.css'
 })
 export class NcCorrectiveActionListComponent implements OnInit {
-    title = 'F-42: NC & CORRECTIVE ACTION REPORT';
+    title = 'F-42: NC & Corrective Action Report';
     addButtonLabel = 'Add New Report';
     addRoute = '/nc-corrective-action/create';
     baseRoute = '/nc-corrective-action';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
         { key: 'ncNo', label: 'NC No.', type: 'string', width: '100px', filter: true },
         { key: 'clauseNo', label: 'Clause No.', type: 'string', width: '100px' },

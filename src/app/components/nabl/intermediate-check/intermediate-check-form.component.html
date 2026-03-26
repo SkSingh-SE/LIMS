@@ -9,12 +9,6 @@
     </div>
 
     <div class="card-body">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="checkForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="checkForm.disabled">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -133,7 +127,7 @@
                       <input type="text" class="form-control form-control-sm border-dashed" formControlName="observations" placeholder="Normal function">
                     </td>
                     <td>
-                      <input type="text" class="form-control form-control-sm text-center" formControlName="checkTime" placeholder="09:30 AM">
+                      <input type="time" class="form-control form-control-sm text-center" formControlName="checkTime">
                     </td>
                   </tr>
                 </tbody>
@@ -169,6 +163,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="checkForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

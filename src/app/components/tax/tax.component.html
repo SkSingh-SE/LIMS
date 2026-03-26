@@ -26,6 +26,7 @@
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
                             <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
@@ -37,27 +38,22 @@
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
                                             (click)="applySorting(column.key)"></i>
                                     </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
                                         (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
                                         (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                                 </div>
                             </th>
-                            <th class="align-middle text-center">Actions</th>
                         </tr>
 
 
                     </thead>
                     <tbody>
                         <tr *ngFor="let customerType of taxList; let i = index" class="text-sm">
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.rate }}</td>
-                            <td>{{ customerType.date | date:"dd MMM, yyyy hh:mm a" }}</td>
-                            <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
+                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
                                     <a (click)="openModal('view',customerType.id)" class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
@@ -71,7 +67,11 @@
                             </td>
 
 
-                        </tr>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ customerType.name }}</td>
+                            <td>{{ customerType.rate }}</td>
+                            <td>{{ customerType.date | date:"dd MMM, yyyy hh:mm a" }}</td>
+                            <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
 

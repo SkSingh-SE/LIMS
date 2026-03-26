@@ -10,11 +10,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-retesting-of-retained-sample-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './retesting-of-retained-sample-form.component.html',
     styleUrl: './retesting-of-retained-sample-form.component.css'
 })
@@ -58,10 +60,17 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('Retesting').subscribe({
+            next: (defaults) => {
+                this.retestForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         if (path === 'details') { this.isViewMode = true; this.formTitle = 'View Retesting Record'; this.retestForm.disable(); }
@@ -73,11 +82,11 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
         const today = new Date().toISOString().split('T')[0];
         this.retestForm = this.fb.group({
             id: [0],
-            formatNo: ['F-38', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-38'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
             discipline: ['', Validators.required],
             groupSubgroup: ['', Validators.required],
             sampleName: ['', Validators.required],
@@ -87,9 +96,18 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
             parameters: this.fb.array([]),
             remarks: [''],
             analyst: ['', Validators.required],
-            authorizedSignatory: ['', Validators.required],
-            status: ['Completed']
+            authorizedSignatory: [''],
+            status: ['Completed'],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.retestForm.get('documentNo')?.disable();
+        this.retestForm.get('issueNo')?.disable();
+        this.retestForm.get('revNo')?.disable();
+        this.retestForm.get('formatNo')?.disable();
     }
 
     get parameters(): FormArray { return this.retestForm.get('parameters') as FormArray; }
@@ -120,7 +138,19 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
                 if (data) {
                     if (data.parameters) { this.parameters.clear(); data.parameters.forEach(() => this.addParameter()); }
                     this.retestForm.patchValue(data);
-                    if (this.isViewMode) this.retestForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.retestForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.retestForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.retestForm.get('documentNo')?.disable();
+                this.retestForm.get('issueNo')?.disable();
+                this.retestForm.get('revNo')?.disable();
+                this.retestForm.get('formatNo')?.disable();
                 }
             },
             error: () => {}

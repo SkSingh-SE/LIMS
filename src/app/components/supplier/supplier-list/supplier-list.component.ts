@@ -22,6 +22,7 @@ export class SupplierListComponent implements OnInit {
     { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
     { key: 'emailId1', type: 'string', label: 'Email', filter: true },
     { key: 'address', type: 'string', label: 'Address', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -30,7 +31,8 @@ export class SupplierListComponent implements OnInit {
     contactPerson1: 'string',
     contactNo1: 'number',
     emailId1: 'string',
-    address: 'string'
+    address: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -49,7 +51,7 @@ export class SupplierListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

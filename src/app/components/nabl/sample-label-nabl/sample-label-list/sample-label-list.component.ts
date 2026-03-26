@@ -11,6 +11,7 @@ import { NablRegisterTableComponent, RegisterColumn } from '../../nabl-register-
 })
 export class SampleLabelNablListComponent implements OnInit {
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'sampleId', type: 'string', label: 'Sample ID', filter: true },
         { key: 'receiptDate', type: 'date', label: 'Receipt Date', filter: true },
         { key: 'description', type: 'string', label: 'Description', filter: true },

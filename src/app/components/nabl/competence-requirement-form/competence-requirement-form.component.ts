@@ -11,11 +11,13 @@ import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
   selector: 'app-competence-requirement-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule, NablSignatureSectionComponent],
   templateUrl: './competence-requirement-form.component.html',
   styleUrl: './competence-requirement-form.component.css'
 })
@@ -59,10 +61,17 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
     private competenceRequirementService: CompetenceRequirementService,
     private designationService: DesignationService,
     private toastService: ToastService
-  , private unsavedChangesService: UnsavedChangesService) { }
+  , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
   ngOnInit(): void {
     this.initForm();
+        this.nablHeaderService.getFormDefaults('CompetenceRequirement').subscribe({
+            next: (defaults) => {
+                this.requirementForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
     this.route.paramMap.subscribe(params => {
       this.requirementId = Number(params.get('id'));
@@ -86,9 +95,9 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
   initForm(): void {
     this.requirementForm = this.fb.group({
       id: [0],
-      formatNo: ['F-4', Validators.required],
-      issueNo: ['01', Validators.required],
-      revNo: ['00', Validators.required],
+      formatNo: ['F-4'],
+      issueNo: ['01'],
+      revNo: ['00'],
       date: [new Date().toISOString().split('T')[0], Validators.required],
       isExternal: [false],
       positionId: [null],
@@ -96,8 +105,15 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
       relatedActivity: [''],
       minimumEducation: ['', Validators.required],
       minimumExperience: ['', Validators.required],
-      approvedBy: ['', Validators.required]
+      preparedBy: [''],
+      reviewedBy: [''],
+      approvedBy: ['']
     });
+
+        // System-managed fields — always readonly
+        this.requirementForm.get('issueNo')?.disable();
+        this.requirementForm.get('revNo')?.disable();
+        this.requirementForm.get('formatNo')?.disable();
 
     // Handle conditional validation based on isExternal
     this.requirementForm.get('isExternal')?.valueChanges.subscribe(isExternal => {
@@ -118,19 +134,20 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
       next: (data) => {
         if (data) {
           const formValues = { ...data };
-          // Handle Versioning on Load
-          if (this.isEditMode) {
-            // Increment Rev No on Edit
-            const currentRev = parseInt(data.revNo || '00');
-            formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-            // Keep current date for edit
-            formValues.date = new Date().toISOString().split('T')[0];
-          }
 
           this.requirementForm.patchValue(formValues);
-          if (this.isViewMode) {
-            this.requirementForm.disable();
-          }
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.requirementForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.requirementForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.requirementForm.get('issueNo')?.disable();
+                this.requirementForm.get('revNo')?.disable();
+                this.requirementForm.get('formatNo')?.disable();
         }
       },
       error: (error) => {

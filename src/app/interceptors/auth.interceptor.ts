@@ -10,13 +10,16 @@ let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
 
 const errorMessages: { [key: number]: string } = {
-  0: 'Service Unavailable',
-  400: 'Bad Request',
-  401: 'Unauthorized',
-  403: 'Forbidden',
-  404: 'Not Found',
-  500: 'Internal Server Error',
-  503: 'Service Unavailable',
+  0: 'Unable to connect to the server. Please check your internet connection.',
+  400: 'Invalid request. Please check your input and try again.',
+  401: 'Your session has expired. Please log in again.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested resource was not found. Please refresh and try again.',
+  409: 'A conflict occurred. The record may have been modified by another user.',
+  422: 'The submitted data is invalid. Please check and try again.',
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'An unexpected server error occurred. Please try again or contact your administrator.',
+  503: 'The server is temporarily unavailable. Please try again in a few minutes.',
 };
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -58,13 +61,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return error.error.title;
       }
     }
-    if (error.message) {
-      return error.message;
-    }
+    // Use user-friendly status message (before raw error.message which contains URLs)
     if (errorMessages[error.status]) {
       return errorMessages[error.status];
     }
-    return 'An unexpected error occurred';
+    return 'An unexpected error occurred. Please try again.';
   };
 
   // Auto-show toast for all API errors (except 401 which triggers logout)
@@ -133,14 +134,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     );
   }
 
-  // No token or excluded
-  if (!excludeLoaderUrl.some(url => req.url.includes(req.url))) {
-    loaderService.show();
-  }
-
-  // Token exists and not expiring
+  // Token exists and not expiring — handleRequest manages loader internally
   if (token && !shouldExclude) {
     return handleRequest(token);
+  }
+
+  // No token or excluded — show loader for non-excluded URLs
+  if (!excludeLoaderUrl.some(url => req.url.includes(url))) {
+    loaderService.show();
   }
 
   return next(req).pipe(

@@ -10,11 +10,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-test-report-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './test-report-form.component.html',
     styleUrl: './test-report-form.component.css'
 })
@@ -59,10 +61,17 @@ export class TestReportFormComponent implements CanComponentDeactivate, OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('TestReport').subscribe({
+            next: (defaults) => {
+                this.reportForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         if (path === 'details') { this.isViewMode = true; this.formTitle = 'View Test Report'; this.reportForm.disable(); }
@@ -74,10 +83,10 @@ export class TestReportFormComponent implements CanComponentDeactivate, OnInit {
         const today = new Date().toISOString().split('T')[0];
         this.reportForm = this.fb.group({
             id: [0],
-            formatNo: ['F-39', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
-            documentNo: ['', Validators.required],
+            formatNo: ['F-39'],
+            issueNo: ['01'],
+            revNo: ['00'],
+            documentNo: [''],
             dateOfIssue: [today, Validators.required],
             customerName: ['', Validators.required],
             customerAddress: ['', Validators.required],
@@ -93,11 +102,17 @@ export class TestReportFormComponent implements CanComponentDeactivate, OnInit {
             results: this.fb.array([]),
             remarks: [''],
             statementOfConformity: ['Conforming'],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             reviewedBy: [''],
-            approvedBy: ['', Validators.required],
+            approvedBy: [''],
             status: ['Draft']
         });
+
+        // System-managed fields — always readonly
+        this.reportForm.get('documentNo')?.disable();
+        this.reportForm.get('issueNo')?.disable();
+        this.reportForm.get('revNo')?.disable();
+        this.reportForm.get('formatNo')?.disable();
     }
 
     get results(): FormArray { return this.reportForm.get('results') as FormArray; }
@@ -127,7 +142,19 @@ export class TestReportFormComponent implements CanComponentDeactivate, OnInit {
                 if (data) {
                     if (data.results) { this.results.clear(); data.results.forEach(() => this.addResult()); }
                     this.reportForm.patchValue(data);
-                    if (this.isViewMode) this.reportForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.reportForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.reportForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.reportForm.get('documentNo')?.disable();
+                this.reportForm.get('issueNo')?.disable();
+                this.reportForm.get('revNo')?.disable();
+                this.reportForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {

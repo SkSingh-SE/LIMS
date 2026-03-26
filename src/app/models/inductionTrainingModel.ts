@@ -29,6 +29,7 @@ export interface InductionTrainingRecord {
     observedValueAverage: number | string;
     originalValue: number | string;
     remarks: string;
+    performanceLevel: string;
 
     trainerComments: string;
 }

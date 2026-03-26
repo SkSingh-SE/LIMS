@@ -19,8 +19,15 @@
           <div class="row gy-3">
             <!--Alias Name-->
             <div class="col-md-3">
-              <label class="form-label">Specification Name</label>
-              <input type="text" class="form-control" formControlName="aliasName" placeholder="Specification Name" maxlength="100" />
+              <label class="form-label">Specification Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="aliasName" placeholder="Specification Name" maxlength="100"
+                [ngClass]="{ 'is-invalid': MaterialSpecificationForm.get('aliasName')?.touched && MaterialSpecificationForm.get('aliasName')?.invalid }" />
+              <div
+                *ngIf="MaterialSpecificationForm.get('aliasName')?.touched && MaterialSpecificationForm.get('aliasName')?.invalid"
+                class="text-danger text-sm"
+              >
+                Specification Name is required.
+              </div>
             </div>
             <!--Standard Organisation Dropdown -->
             <div class="col-md-3">
@@ -125,7 +132,7 @@
                     (blur)="generateSpecificationName()"
                     [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
                   />
-                  <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger" class="small">Grade is required</span>
+                  <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger small">Grade is required.</span>
                 </div>
 
                 <!-- Metal Classification per-grade -->
@@ -191,7 +198,7 @@
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'other'" (click)="selectSpecTab(gi, 'other')">Other</a>
                 </li> -->
               </ul>
-              <span *ngIf="grade.hasError('noSpecLine') && grade.touched" class="text-danger" class="small">
+              <span *ngIf="grade.hasError('noSpecLine') && grade.touched" class="text-danger small">
                 At least one specification line is required in Chemical or Mechanical tab.
               </span>
               <div [formGroupName]="'specificationLines'">
@@ -242,7 +249,6 @@
                           <th class="spec-th text-center">#</th>
                           <th class="spec-th text-center">Manual</th>
                           <th class="spec-th wide-input">Parameter</th>
-                          <th class="spec-th wide-input">Test Methods</th>
                           <th class="spec-th wide-input">Min</th>
                           <th class="spec-th wide-input">Max</th>
                           <th class="spec-th wide-input">Note</th>
@@ -295,25 +301,6 @@
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
-                            </td>
-                            <td class="wide-input">
-                              <div class="d-flex align-items-center gap-1">
-                                <div class="flex-grow-1">
-                                  <app-multi-select-dropdown
-                                    class="w-100"
-                                    [placeholder]="'Search Test Method'"
-                                    [labelName]="'Test Method'"
-                                    [fetchDataFn]="getTestMethodSpecification"
-                                    [hideLabel]="true"
-                                    [isDisabled]="isViewMode"
-                                    [selectedValues]="group.get('laboratoryTestIDs')?.value"
-                                    (itemsSelected)="onTestMethodsSelected($event, gi, i, 'chemical')"
-                                  ></app-multi-select-dropdown>
-                                </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Test Method" (click)="openLinkedMaster('/test-specification/create')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
-                              </div>
                             </td>
                             <td>
                               <input
@@ -415,7 +402,7 @@
                                     [selectedItem]="group.get('dimensionalFactorID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimensional-factor')">
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
                                   <i class="bi bi-plus-lg"></i>
                                 </button>
                               </div>
@@ -557,7 +544,6 @@
                           <th class="spec-th text-center">#</th>
                           <th class="spec-th text-center">Manual</th>
                           <th class="spec-th wide-input">Parameter</th>
-                          <th class="spec-th wide-input">Test Methods</th>
                           <th class="spec-th wide-input">Min</th>
                           <th class="spec-th wide-input">Max</th>
                           <th class="spec-th wide-input">Note</th>
@@ -610,25 +596,6 @@
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
-                            </td>
-                            <td class="wide-input">
-                              <div class="d-flex align-items-center gap-1">
-                                <div class="flex-grow-1">
-                                  <app-multi-select-dropdown
-                                    class="w-100"
-                                    [placeholder]="'Search Test Method'"
-                                    [labelName]="'Test Method'"
-                                    [fetchDataFn]="getTestMethodSpecification"
-                                    [hideLabel]="true"
-                                    [isDisabled]="isViewMode"
-                                    [selectedValues]="group.get('laboratoryTestIDs')?.value"
-                                    (itemsSelected)="onTestMethodsSelected($event, gi, i, 'mechanical')"
-                                  ></app-multi-select-dropdown>
-                                </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Test Method" (click)="openLinkedMaster('/test-specification/create')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
-                              </div>
                             </td>
                             <td>
                               <input
@@ -730,7 +697,7 @@
                                     [selectedItem]="group.get('dimensionalFactorID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimensional-factor')">
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
                                   <i class="bi bi-plus-lg"></i>
                                 </button>
                               </div>

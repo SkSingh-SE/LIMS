@@ -72,7 +72,7 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label">Mobile No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="mobileNo" placeholder="10-digit number" />
+                <input type="tel" class="form-control" formControlName="mobileNo" placeholder="10-digit number" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">Email <span class="text-danger">*</span></label>
@@ -197,14 +197,6 @@
           </div>
           <div *ngIf="openSections['signatures']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Prepared / Received By (Lab In-charge) <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Authorized / Reviewed By</label>
-                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Quality Manager / Tech Manager" />
-              </div>
               <div class="col-12">
                 <label class="form-label">Remarks / Receipt Note</label>
                 <quill-editor formControlName="remarks" [modules]="quillModules" [readOnly]="isViewMode"
@@ -213,6 +205,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="requestForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

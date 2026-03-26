@@ -126,6 +126,9 @@
           </div>
         </div>
 
+        
+        <app-nabl-signature-section [parentForm]="riskForm"></app-nabl-signature-section>
+
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>

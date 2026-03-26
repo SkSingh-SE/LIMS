@@ -21,6 +21,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     { key: 'metalClassificationName', type: 'string', label: 'Metal Classification', filter: true },
     { key: 'standardYear', type: 'number', label: 'StandardYear', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -28,7 +29,8 @@ export class MaterialSpecificationListComponent implements OnInit {
     metalClassificationName: 'string',
     standardOrganizationName: 'string',
     standardYear: 'number',
-    grade: 'string'
+    grade: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,7 +49,7 @@ export class MaterialSpecificationListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

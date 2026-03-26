@@ -28,14 +28,14 @@ export class MetalClassificationComponent implements OnInit {
     { key: 'hasChemicalParams', type: 'string', label: 'Chemical', filter: false },
     { key: 'hasMechanicalParams', type: 'string', label: 'Mechanical', filter: false },
     { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     code: 'string',
     name: 'string',
     sortOrder: 'number',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   // common filter variables
@@ -53,7 +53,7 @@ export class MetalClassificationComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -105,7 +105,7 @@ export class MetalClassificationComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.MetalClassificationList = [];
       }
     }
@@ -113,8 +113,10 @@ export class MetalClassificationComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.metalclassificationService.getMetalClassificationById(this.metalClassificationId).subscribe({
+    const requestId = this.metalClassificationId;
+    this.metalclassificationService.getMetalClassificationById(requestId).subscribe({
       next: (response) => {
+        if (this.metalClassificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.MetalClassificationForm.patchValue(response);
         this.MetalClassificationForm.patchValue({
@@ -255,7 +257,7 @@ export class MetalClassificationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
@@ -263,6 +265,7 @@ export class MetalClassificationComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.initForm();
     this.parameterReloadKey++;
+    this.metalClassificationId = 0;
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -362,7 +365,7 @@ export class MetalClassificationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -375,7 +378,7 @@ export class MetalClassificationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

@@ -26,8 +26,13 @@
   position: relative;
 }
 
+.input-group {
+  min-height: 36px;
+}
+
 .input-group:hover {
-  border-color: #adb5bd;
+  border-color: var(--primary-color, #da261c);
+  background-color: #fff8f8;
 }
 
 .input-group:focus-within {
@@ -141,6 +146,28 @@
 .input-group .input-group-text.dropdown-toggle-icon i {
   font-size: 0.65rem;
   transition: transform 0.2s ease;
+}
+
+/* ─── Clear Icon ─── */
+.input-group .input-group-text.clear-icon {
+  border: none !important;
+  background: transparent;
+  padding: 0 0.3rem;
+  color: #adb5bd;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.input-group .input-group-text.clear-icon:hover {
+  color: #dc3545;
+}
+
+.input-group .input-group-text.clear-icon i {
+  font-size: 0.6rem;
 }
 
 /* ─── Disabled State ─── */

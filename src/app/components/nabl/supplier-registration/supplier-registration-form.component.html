@@ -15,12 +15,6 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border " role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="registrationForm"
         (ngSubmit)="onSubmit()"
         [class.ra-form-disabled]="registrationForm.disabled"
@@ -125,7 +119,7 @@
                   Mobile No
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control shadow-sm" formControlName="mobileNo" />
+                <input type="tel" class="form-control shadow-sm" formControlName="mobileNo" />
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold text-dark small">
@@ -336,6 +330,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="registrationForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">

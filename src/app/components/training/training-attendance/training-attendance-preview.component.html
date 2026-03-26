@@ -12,7 +12,7 @@
 </div>
 
 <app-print-frame orientation="portrait" *ngIf="record() as data">
-  <div class="preview-content p-4">
+  <ng-container header>
     <app-nabl-print-header
       [formatNo]="data.formatNo || 'F-9'"
       mainTitle="TRAINING ATTENDANCE RECORD"
@@ -21,7 +21,9 @@
       [revNo]="data.revNo || '00'"
       [revDate]="data.date || ''"
     ></app-nabl-print-header>
+  </ng-container>
 
+  <ng-container body>
     <div class="my-4">
       <!-- Session Identification -->
       <div class="row g-3 mb-4 border rounded p-3 bg-light mx-0 shadow-sm print-no-shadow">
@@ -95,17 +97,13 @@
         </div>
       </div>
     </div>
+  </ng-container>
 
+  <ng-container footer>
     <app-nabl-print-footer
       [preparedByName]="data.preparedBy || 'General Manager'"
       [issuedByName]="data.issuedBy || 'Quality Manager'"
       [reviewedApprovedByName]="data.reviewedApprovedBy || 'Managing Director'"
     ></app-nabl-print-footer>
-  </div>
+  </ng-container>
 </app-print-frame>
-
-<div *ngIf="false" class="text-center py-5">
-  <div class="spinner-border text-primary" role="status">
-    <span class="visually-hidden">Loading...</span>
-  </div>
-</div>

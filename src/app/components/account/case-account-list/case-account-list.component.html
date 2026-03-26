@@ -47,18 +47,18 @@
                     ></i>
                   </span>
                   <span
-                    *ngIf="!hasFilter(column.key) && i != 0 && column.filter"
+                    *ngIf="!hasFilter(column.key) && column.filter"
                     class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)"
                   >
                     <i class="bi bi-funnel text-muted"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center fw-semibold">Actions</th>
+              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
             </tr>
           </thead>
 

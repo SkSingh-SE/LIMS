@@ -20,6 +20,7 @@ export class InvoiceCaseListComponent implements OnInit {
     { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
     { key: 'name', type: 'string', label: 'Invoice Case', filter: true },
     { key: 'price', type: 'number', label: 'Price', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -27,6 +28,7 @@ export class InvoiceCaseListComponent implements OnInit {
     financialYear: 'string',
     laboratoryTest: 'string',
     price: 'number',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,7 +47,7 @@ export class InvoiceCaseListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -211,7 +213,7 @@ export class InvoiceCaseListComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }

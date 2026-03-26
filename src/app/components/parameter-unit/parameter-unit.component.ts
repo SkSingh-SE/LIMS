@@ -43,7 +43,7 @@ export class ParameterUnitComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   isLoading = signal(false);
@@ -153,8 +153,10 @@ export class ParameterUnitComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.parameterUnitService.getParameterUnitById(this.parameterUnitId).subscribe({
+    const requestId = this.parameterUnitId;
+    this.parameterUnitService.getParameterUnitById(requestId).subscribe({
       next: (response) => {
+        if (this.parameterUnitId !== requestId) return; // discard stale response
         this.parameterUnitForm.patchValue(response);
         this.detectSimilarUnitCount();
       },
@@ -276,6 +278,7 @@ export class ParameterUnitComponent implements OnInit {
     this.testValue = null;
     this.parameterUnitForm.reset();
     this.parameterUnitForm.enable();
+    this.parameterUnitId = 0;
     if (id > 0) {
       this.parameterUnitId = id;
       this.getDetails();
@@ -286,7 +289,6 @@ export class ParameterUnitComponent implements OnInit {
       this.initForm();
       this.similarUnitCount = 0;
       this.formTitle = 'Create Parameter Unit';
-      this.parameterUnitForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

@@ -17,6 +17,7 @@ export class AuditSummaryListComponent implements OnInit {
     baseRoute = '/audit-summary';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'auditDate', label: 'Audit Date', type: 'date', width: '150px', filter: true },
         { key: 'areasCovered', label: 'Areas Covered', type: 'string', filter: true },
         { key: 'majorNCs', label: 'Major NCs', type: 'number', width: '120px' },

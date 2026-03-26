@@ -1,1106 +1,602 @@
-<div class="card shadow-lg m-2">
-    <div class="card-header card-form-header text-white text-center">
-        <label class="fw-medium">Customer Form</label>
-    </div>
-    <div class="card-body">
-        <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
-            <div class="mb-3">
-                <!-- Row for basic info -->
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
-                    <!-- Customer Name -->
-                    <div>
-                        <label class="form-label">
-                            Customer Name
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
-                            maxlength="100"
-                            [ngClass]="{ 'is-invalid': customerForm.get('name')?.touched && customerForm.get('name')?.invalid }" />
-                            <!-- toogle button -->
-                            <div class="form-check mt-1">
-                                <input type="checkbox" class="form-check-input mt-1" formControlName="isVerified"
-                                    id="isVerified" (click)="verifyCustomer($event)" />
-                                <label class="form-check-label form-label mb-0" for="isVerified">Verified</label>
-                            </div>
-                        <div *ngIf="customerForm.get('name')?.touched && customerForm.get('name')?.invalid"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </div>
-                    </div>
+<div class="card shadow-sm m-2">
+  <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
+    <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/customer" title="Back to List">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+    <label class="fw-medium flex-grow-1 text-center mb-0">
+      {{ isViewMode ? 'View Customer' : (customerId > 0 ? 'Edit Customer' : 'Create Customer') }}
+    </label>
+    <div style="width: 32px;"></div>
+  </div>
+  <div class="card-body">
+    <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
 
-                    <!-- Tally Ledger Name -->
-                    <div>
-                        <label class="form-label">
-                            Tally Ledger Name
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="tallyLedgerName" maxlength="100"
-                            placeholder="Enter Tally Ledger Name"
-                            [ngClass]="{ 'is-invalid': customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid }" />
-                        <div class="form-check mt-1">
-                            <input type="checkbox" class="form-check-input mt-1" formControlName="sameAsCustomerName"
-                                id="sameAsCustomerName" (click)="copyCustomerNameToLedgerName($event)" />
-                            <label class="form-check-label form-label mb-0" for="sameAsCustomerName">Same as Customer
-                                Name</label>
-                        </div>
-                        <div *ngIf="customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid"
-                            class="text-danger text-sm">
-                            Tally Ledger Name is required.
-                        </div>
-                    </div>
+      <!-- ======================== Basic Information ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">Basic Information</legend>
+        <div class="row gy-1">
+          <!-- Customer Name -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
+              maxlength="100"
+              [ngClass]="{ 'is-invalid': customerForm.get('name')?.touched && customerForm.get('name')?.invalid }" />
+            <span *ngIf="customerForm.get('name')?.touched && customerForm.get('name')?.invalid"
+              class="text-danger text-sm">
+              Customer Name is required.
+            </span>
+            <div class="form-check mt-1" *ngIf="customerId > 0">
+              <input type="checkbox" class="form-check-input mt-1" formControlName="isVerified" id="isVerified"
+                (click)="verifyCustomer($event)" />
+              <label class="form-check-label form-label mb-0" for="isVerified">Verified</label>
+            </div>
+          </div>
 
-                    <!-- Customer Type -->
-                    <div>
-                        <label class="form-label">
-                            Customer Type
-                            <span class="text-danger">*</span>
-                        </label>
-                        <select class="form-select" formControlName="customerType"
-                            [ngClass]="{ 'is-invalid': customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid }">
-                            <option value="">Select Type</option>
-                            <option *ngFor="let type of customerTypes" [value]="type">{{ type }}</option>
-                        </select>
-                        <div *ngIf="customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid"
-                            class="text-danger text-sm">
-                            Customer type is required.
-                        </div>
-                    </div>
+          <!-- Legal Name -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Legal Name</label>
+            <input type="text" class="form-control" formControlName="legalName" placeholder="Enter Legal Name"
+              maxlength="100" />
+          </div>
 
-                    <!-- Company Categories -->
-                    <div>
-                        <label class="form-label">
-                            Company Categories
-                            <span class="text-danger">*</span>
-                        </label>
-                        <div class="dropdown">
-                            <button
-                                class="form-control dropdown-toggle d-flex justify-content-between align-items-center"
-                                type="button" data-bs-toggle="dropdown" aria-expanded="false" [disabled]="isViewMode">
-                                {{ getSelectedCategoriesText() || "Select Company Categories" }}
-                            </button>
-                            <ul class="dropdown-menu w-100 shadow p-2" [class.disabled]="isViewMode"
-                                style="max-height: 250px; overflow-y: auto">
-                                <li class="hover-bg" *ngFor="let cat of companyCategory">
-                                    <div class="form-check">
-                                        <input class="form-check-input mt-1" type="checkbox" [id]="'cat-' + cat.id"
-                                            [value]="cat.id" (change)="onCategoryToggle($event)"
-                                            [checked]="isCategorySelected(cat.id)" [disabled]="isViewMode" />
-                                        <label class="form-check-label ms-2" [for]="'cat-' + cat.id"
-                                            (click)="$event.stopPropagation()">
-                                            {{ cat.name }}
-                                        </label>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
+          <!-- Tally Ledger Name -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Tally Ledger Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="tallyLedgerName" maxlength="100"
+              placeholder="Enter Tally Ledger Name"
+              [ngClass]="{ 'is-invalid': customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid }" />
+            <div class="form-check mt-1">
+              <input type="checkbox" class="form-check-input mt-1" formControlName="sameAsCustomerName"
+                id="sameAsCustomerName" (click)="copyCustomerNameToLedgerName($event)" />
+              <label class="form-check-label form-label mb-0" for="sameAsCustomerName">Same as Customer Name</label>
+            </div>
+            <span *ngIf="customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid"
+              class="text-danger text-sm">
+              Tally Ledger Name is required.
+            </span>
+          </div>
 
-                        <div *ngIf="customerForm.get('customerCompanyCategories')?.touched && customerForm.get('customerCompanyCategories')?.invalid"
-                            class="text-danger text-sm">
-                            At least one Company Category is required.
-                        </div>
-                    </div>
+          <!-- Customer Type -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Customer Type <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="customerType"
+              [ngClass]="{ 'is-invalid': customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid }">
+              <option value="">Select Type</option>
+              <option *ngFor="let type of customerTypes" [value]="type">{{ type }}</option>
+            </select>
+            <span *ngIf="customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid"
+              class="text-danger text-sm">
+              Customer Type is required.
+            </span>
+          </div>
 
-                    <!-- GST No -->
-                    <div>
-                        <label class="form-label">
-                            GST No
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="gstNo" placeholder="Enter GST No."
-                            maxlength="15" [value]="customerForm.get('gstNo')?.value | uppercase" />
-                        <div *ngIf="customerForm.get('gstNo')?.touched && !customerForm.get('gstna')?.value && customerForm.get('gstNo')?.invalid"
-                            class="text-danger text-sm">
-                            Invalid GST No.
-                        </div>
-                        <div class="form-check mt-1">
-                            <input type="checkbox" class="form-check-input mt-1" formControlName="gstna" id="gstna" />
-                            <label class="form-check-label form-label mb-0" for="gstna">GST not applicable</label>
-                        </div>
-                    </div>
-
-                    <!-- Address -->
-                    <div>
-                        <label class="form-label">
-                            Address
-                            <span class="text-danger">*</span>
-                        </label>
-                        <textarea class="form-control" formControlName="address" rows="2" maxlength="500"
-                            placeholder="Enter Address"></textarea>
-                    </div>
-
-                    <!-- PIN Code -->
-                    <div>
-                        <label class="form-label">
-                            PIN Code
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="pinCode" maxlength="6" appNumberOnly
-                            (input)="fetchAreaData('pinCode', true)" placeholder="Enter PIN Code"
-                            [ngClass]="{ 'is-invalid': customerForm.get('pinCode')?.touched && customerForm.get('pinCode')?.invalid }" />
-                        <span *ngIf="customerForm.get('pinCode')?.invalid && customerForm.get('pinCode')?.touched"
-                            class="text-danger text-sm">
-                            PIN Code is required.
-                        </span>
-                    </div>
-
-                    <!-- Area -->
-                    <div>
-                        <label class="form-label">
-                            Area
-                            <span class="text-danger">*</span>
-                        </label>
-                        <select class="form-select" formControlName="areaID"
-                            (change)="fetchLocationData('areaID', 'city', 'state', 'country')">
-                            <option value="0">Select Area</option>
-                            <option *ngFor="let area of areas" [value]="area.areaId">{{ area.areaName }}</option>
-                        </select>
-                        <span *ngIf="customerForm.get('areaID')?.invalid && customerForm.get('areaID')?.touched"
-                            class="text-danger text-sm">
-                            Area is required.
-                        </span>
-                    </div>
-
-                    <!-- City -->
-                    <div>
-                        <label class="form-label">
-                            City
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="city" placeholder="City" readonly />
-                        <span *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched"
-                            class="text-danger text-sm">
-                            City is required.
-                        </span>
-                    </div>
-
-                    <!-- State -->
-                    <div>
-                        <label class="form-label">
-                            State
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="state" placeholder="State" readonly />
-                        <span *ngIf="customerForm.get('state')?.invalid && customerForm.get('state')?.touched"
-                            class="invalid-feedback">
-                            State is required.
-                        </span>
-                    </div>
-
-                    <!-- Country -->
-                    <div>
-                        <label class="form-label">
-                            Country
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" formControlName="country" placeholder="Country"
-                            readonly />
-                        <span *ngIf="customerForm.get('country')?.invalid && customerForm.get('country')?.touched"
-                            class="text-danger text-sm">
-                            Country is required.
-                        </span>
-                    </div>
-
-                    <!-- Sample Return -->
-                    <div>
-                        <label class="form-label">
-                            Sample Return
-                            <span class="text-danger">*</span>
-                        </label>
-                        <br />
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn"
-                                [value]="true" id="sampleYes" />
-                            <label class="form-check-label" for="sampleYes">Yes</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn"
-                                [value]="false" id="sampleNo" />
-                            <label class="form-check-label" for="sampleNo">No</label>
-                        </div>
-                        <div *ngIf="customerForm.get('sampleReturn')?.touched && customerForm.get('sampleReturn')?.invalid"
-                            class="text-danger text-sm">
-                            Please select sample return option.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dispatch Modes -->
-                <div class="">
-                    <label class="form-label">
-                        Dispatch Modes
-                        <span class="text-danger">*</span>
+          <!-- Company Categories -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Company Categories <span class="text-danger">*</span></label>
+            <div class="dropdown">
+              <button class="form-control dropdown-toggle d-flex justify-content-between align-items-center"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false" [disabled]="isViewMode">
+                {{ getSelectedCategoriesText() || "Select Company Categories" }}
+              </button>
+              <ul class="dropdown-menu w-100 shadow p-2" [class.disabled]="isViewMode"
+                style="max-height: 250px; overflow-y: auto">
+                <li class="hover-bg" *ngFor="let cat of companyCategory">
+                  <div class="form-check">
+                    <input class="form-check-input mt-1" type="checkbox" [id]="'cat-' + cat.id" [value]="cat.id"
+                      (change)="onCategoryToggle($event)" [checked]="isCategorySelected(cat.id)"
+                      [disabled]="isViewMode" />
+                    <label class="form-check-label ms-2" [for]="'cat-' + cat.id" (click)="$event.stopPropagation()">
+                      {{ cat.name }}
                     </label>
-                    <div class="d-flex flex-wrap gap-2">
-                        <div class="form-check form-check-inline" *ngFor="let mode of dispatchModes">
-                            <input type="checkbox" class="form-check-input mt-1" [value]="mode.id"
-                                [checked]="isDispatchModeSelected(mode.id)" (change)="onDispatchModeToggle($event)"
-                                [disabled]="isViewMode" />
-                            <label class="form-check-label form-label mb-0">{{ mode.name }}</label>
-                        </div>
-                    </div>
-                    <div *ngIf="customerDispatchModesArray.touched && customerDispatchModesArray.invalid"
-                        class="text-danger small mt-1">
-                        At least one Dispatch Mode is required.
-                    </div>
-                </div>
+                  </div>
+                </li>
+              </ul>
             </div>
-            <div formArrayName="contactPersons">
-                <fieldset *ngIf="contact1" [formGroup]="contact1" class="border rounded p-3 mb-3 position-relative">
-                    <legend class="w-auto px-2 fw-semibold theme-color"
-                        >
-                        Contact Info 1
-                    </legend>
-                    <div class="row">
-                        <!-- LEFT SIDE: Contact Details -->
-                        <div class="col-12 col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-2">
-                                    <label class="form-label">
-                                        Salutation
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-select form-control" formControlName="salutation"
-                                        [ngClass]="{ 'border-danger': contact1.get('salutation')?.touched && contact1.get('salutation')?.invalid }">
-                                        <option value="">Select</option>
-                                        <option value="Mr.">Mr.</option>
-                                        <option value="Mrs.">Mrs.</option>
-                                        <option value="Ms.">Ms.</option>
-                                        <option value="Dr.">Dr.</option>
-                                    </select>
-                                    <div class="text-danger"
-                                        *ngIf="contact1.get('salutation')?.touched && contact1.get('salutation')?.invalid">
-                                        Required.
-                                    </div>
-                                </div>
+            <span
+              *ngIf="customerCompanyCategoriesArray.touched && customerCompanyCategoriesArray.invalid"
+              class="text-danger text-sm">
+              At least one Company Category is required.
+            </span>
+          </div>
 
-                                <div class="col-6 col-md-5">
-                                    <label class="form-label">
-                                        Contact Person
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Contact Person"
-                                        formControlName="name"
-                                        [ngClass]="{ 'is-invalid': contact1.get('name')?.touched && contact1.get('name')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('name')?.touched && contact1.get('name')?.invalid">
-                                        Contact Person is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-5">
-                                    <app-searchable-dropdown [placeholder]="'Search department'"
-                                        [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                                        (itemSelected)="onDepartmentSelected($event, contact1)"
-                                        [isDisabled]="isViewMode"
-                                        [selectedItem]="contact1.get('departmentID')?.value"></app-searchable-dropdown>
-                                </div>
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Mobile No
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Mobile No."
-                                        formControlName="mobileNo" maxlength="10" appNumberOnly
-                                        [ngClass]="{ 'is-invalid': contact1.get('mobileNo')?.touched && contact1.get('mobileNo')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('mobileNo')?.touched && contact1.get('mobileNo')?.invalid">
-                                        Mobile No is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Email ID
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="email" class="form-control" placeholder="Enter Email"
-                                        formControlName="emailId"
-                                        [ngClass]="{ 'is-invalid': contact1.get('emailId')?.touched && contact1.get('emailId')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('emailId')?.touched && contact1.get('emailId')?.invalid">
-                                        <div *ngIf="contact1.get('emailId')?.errors?.['required']">Email is required.
-                                        </div>
-                                        <div *ngIf="contact1.get('emailId')?.errors?.['email']">Invalid email format.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendBill" />
-                                        <label class="form-check-label form-label mb-0">Send Bill</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendReport" />
-                                        <label class="form-check-label form-label mb-0">Send Report</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="isWhatsappNo" />
-                                        <label class="form-check-label form-label mb-0">WhatsApp</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- RIGHT SIDE: Address Info -->
-                        <div class="col col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Address
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <textarea rows="4" class="form-control" placeholder="Enter Address"
-                                        formControlName="address"
-                                        [ngClass]="{ 'is-invalid': contact1.get('address')?.touched && contact1.get('address')?.invalid }"></textarea>
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('address')?.touched && contact1.get('address')?.invalid">
-                                        Address is required.
-                                    </div>
-                                </div>
-
-                                <div class="col col-md-6">
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Pin Code
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" class="form-control" formControlName="pinCode"
-                                            placeholder="Enter Pin Code" (input)="fetchContactAreaData(contact1)"
-                                            [ngClass]="{ 'is-invalid': contact1.get('pinCode')?.touched && contact1.get('pinCode')?.invalid }" />
-                                        <div class="invalid-feedback"
-                                            *ngIf="contact1.get('pinCode')?.touched && contact1.get('pinCode')?.invalid">
-                                            Pin Code is required.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Area
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" formControlName="areaID"
-                                            (change)="fetchLocationDataForContact(contact1)">
-                                            <option value="0">Select</option>
-                                            <option *ngFor="let area of contact1.get('areaOptions')?.value"
-                                                [value]="area.areaId">{{ area.areaName }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        City
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="city" readonly
-                                        [ngClass]="{ 'is-invalid': contact1.get('city')?.touched && contact1.get('city')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('city')?.touched && contact1.get('city')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        State
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="state" readonly
-                                        [ngClass]="{ 'is-invalid': contact1.get('state')?.touched && contact1.get('state')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('state')?.touched && contact1.get('state')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        Country
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="country" readonly
-                                        [ngClass]="{ 'is-invalid': contact1.get('country')?.touched && contact1.get('country')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact1.get('country')?.touched && contact1.get('country')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-
-                <fieldset *ngIf="contact2" [formGroup]="contact2" class="border rounded p-3 mb-3 position-relative">
-                    <legend class="w-auto px-2 fw-semibold theme-color"
-                        >
-                        Contact Info 2
-                    </legend>
-                    <div class="row">
-                        <!-- LEFT SIDE: Contact Details -->
-                        <div class="col-12 col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-2">
-                                    <label class="form-label">
-                                        Salutation
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-select form-control" formControlName="salutation"
-                                        [ngClass]="{ 'border-danger': contact2.get('salutation')?.touched && contact2.get('salutation')?.invalid }">
-                                        <option value="">Select</option>
-                                        <option value="Mr.">Mr.</option>
-                                        <option value="Mrs.">Mrs.</option>
-                                        <option value="Ms.">Ms.</option>
-                                        <option value="Dr.">Dr.</option>
-                                    </select>
-                                    <div class="text-danger"
-                                        *ngIf="contact2.get('salutation')?.touched && contact2.get('salutation')?.invalid">
-                                        Required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-5">
-                                    <label class="form-label">
-                                        Contact Person
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Contact Person"
-                                        formControlName="name"
-                                        [ngClass]="{ 'is-invalid': contact2.get('name')?.touched && contact2.get('name')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('name')?.touched && contact2.get('name')?.invalid">
-                                        Contact Person is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-5">
-                                    <app-searchable-dropdown [placeholder]="'Search department'"
-                                        [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                                        (itemSelected)="onDepartmentSelected($event, contact2)"
-                                        [isDisabled]="isViewMode"
-                                        [selectedItem]="contact2.get('departmentID')?.value"></app-searchable-dropdown>
-                                </div>
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Mobile No
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Mobile No."
-                                        formControlName="mobileNo" maxlength="10" appNumberOnly
-                                        [ngClass]="{ 'is-invalid': contact2.get('mobileNo')?.touched && contact2.get('mobileNo')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('mobileNo')?.touched && contact2.get('mobileNo')?.invalid">
-                                        Mobile No is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Email ID
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="email" class="form-control" placeholder="Enter Email"
-                                        formControlName="emailId"
-                                        [ngClass]="{ 'is-invalid': contact2.get('emailId')?.touched && contact2.get('emailId')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('emailId')?.touched && contact2.get('emailId')?.invalid">
-                                        <div *ngIf="contact2.get('emailId')?.errors?.['required']">Email is required.
-                                        </div>
-                                        <div *ngIf="contact2.get('emailId')?.errors?.['email']">Invalid email format.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendBill" />
-                                        <label class="form-check-label form-label mb-0">Send Bill</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendReport" />
-                                        <label class="form-check-label form-label mb-0">Send Report</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="isWhatsappNo" />
-                                        <label class="form-check-label form-label mb-0">WhatsApp</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- RIGHT SIDE: Address Info -->
-                        <div class="col col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Address
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <textarea rows="4" class="form-control" placeholder="Enter Address"
-                                        formControlName="address"
-                                        [ngClass]="{ 'is-invalid': contact2.get('address')?.touched && contact2.get('address')?.invalid }"></textarea>
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('address')?.touched && contact2.get('address')?.invalid">
-                                        Address is required.
-                                    </div>
-                                </div>
-
-                                <div class="col col-md-6">
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Pin Code
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" class="form-control" formControlName="pinCode"
-                                            placeholder="Enter Pin Code" (input)="fetchContactAreaData(contact2)"
-                                            [ngClass]="{ 'is-invalid': contact2.get('pinCode')?.touched && contact2.get('pinCode')?.invalid }" />
-                                        <div class="invalid-feedback"
-                                            *ngIf="contact2.get('pinCode')?.touched && contact2.get('pinCode')?.invalid">
-                                            Pin Code is required.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Area
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" formControlName="areaID"
-                                            (change)="fetchLocationDataForContact(contact2)">
-                                            <option value="0">Select</option>
-                                            <option *ngFor="let area of contact2.get('areaOptions')?.value"
-                                                [value]="area.areaId">{{ area.areaName }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        City
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="city" readonly
-                                        [ngClass]="{ 'is-invalid': contact2.get('city')?.touched && contact2.get('city')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('city')?.touched && contact2.get('city')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        State
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="state" readonly
-                                        [ngClass]="{ 'is-invalid': contact2.get('state')?.touched && contact2.get('state')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('state')?.touched && contact2.get('state')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        Country
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="country" readonly
-                                        [ngClass]="{ 'is-invalid': contact2.get('country')?.touched && contact2.get('country')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="contact2.get('country')?.touched && contact2.get('country')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset *ngIf="accountant" [formGroup]="accountant" class="border rounded p-3 mb-3 position-relative">
-                    <legend class="w-auto px-2 fw-semibold theme-color"
-                        >
-                        Account Info
-                    </legend>
-                    <div class="row">
-                        <!-- LEFT SIDE: Contact Details -->
-                        <div class="col-12 col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-2">
-                                    <label class="form-label">
-                                        Salutation
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-select form-control" formControlName="salutation"
-                                        [ngClass]="{ 'border-danger': accountant.get('salutation')?.touched && accountant.get('salutation')?.invalid }">
-                                        <option value="">Select</option>
-                                        <option value="Mr.">Mr.</option>
-                                        <option value="Mrs.">Mrs.</option>
-                                        <option value="Ms.">Ms.</option>
-                                        <option value="Dr.">Dr.</option>
-                                    </select>
-                                    <div class="text-danger"
-                                        *ngIf="accountant.get('salutation')?.touched && accountant.get('salutation')?.invalid">
-                                        Required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-5">
-                                    <label class="form-label">
-                                        Contact Person
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Contact Person"
-                                        formControlName="name"
-                                        [ngClass]="{ 'is-invalid': accountant.get('name')?.touched && accountant.get('name')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('name')?.touched && accountant.get('name')?.invalid">
-                                        Contact Person is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-5">
-                                    <app-searchable-dropdown [placeholder]="'Search department'"
-                                        [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                                        (itemSelected)="onDepartmentSelected($event, accountant)"
-                                        [isDisabled]="isViewMode"
-                                        [selectedItem]="accountant.get('departmentID')?.value"></app-searchable-dropdown>
-                                </div>
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Mobile No
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Enter Mobile No."
-                                        formControlName="mobileNo" maxlength="10" appNumberOnly
-                                        [ngClass]="{ 'is-invalid': accountant.get('mobileNo')?.touched && accountant.get('mobileNo')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('mobileNo')?.touched && accountant.get('mobileNo')?.invalid">
-                                        Mobile No is required.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Email ID
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="email" class="form-control" placeholder="Enter Email"
-                                        formControlName="emailId"
-                                        [ngClass]="{ 'is-invalid': accountant.get('emailId')?.touched && accountant.get('emailId')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('emailId')?.touched && accountant.get('emailId')?.invalid">
-                                        <div *ngIf="accountant.get('emailId')?.errors?.['required']">Email is required.
-                                        </div>
-                                        <div *ngIf="accountant.get('emailId')?.errors?.['email']">Invalid email format.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendBill" />
-                                        <label class="form-check-label form-label mb-0">Send Bill</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="sendReport" />
-                                        <label class="form-check-label form-label mb-0">Send Report</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4 d-flex align-items-center">
-                                    <div class="form-check form-check-sm mt-3">
-                                        <input class="form-check-input mt-1" type="checkbox"
-                                            formControlName="isWhatsappNo" />
-                                        <label class="form-check-label form-label mb-0">WhatsApp</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- RIGHT SIDE: Address Info -->
-                        <div class="col col-md-6">
-                            <div class="row g-2">
-                                <div class="col-6 col-md-6">
-                                    <label class="form-label mb-1">
-                                        Address
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <textarea rows="4" class="form-control" placeholder="Enter Address"
-                                        formControlName="address"
-                                        [ngClass]="{ 'is-invalid': accountant.get('address')?.touched && accountant.get('address')?.invalid }"></textarea>
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('address')?.touched && accountant.get('address')?.invalid">
-                                        Address is required.
-                                    </div>
-                                </div>
-
-                                <div class="col col-md-6">
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Pin Code
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" class="form-control" formControlName="pinCode"
-                                            placeholder="Enter Pin Code" (input)="fetchContactAreaData(accountant)"
-                                            [ngClass]="{ 'is-invalid': accountant.get('pinCode')?.touched && accountant.get('pinCode')?.invalid }" />
-                                        <div class="invalid-feedback"
-                                            *ngIf="accountant.get('pinCode')?.touched && accountant.get('pinCode')?.invalid">
-                                            Pin Code is required.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">
-                                            Area
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" formControlName="areaID"
-                                            (change)="fetchLocationDataForContact(accountant)">
-                                            <option value="0">Select</option>
-                                            <option *ngFor="let area of accountant.get('areaOptions')?.value"
-                                                [value]="area.areaId">{{ area.areaName }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        City
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="city" readonly
-                                        [ngClass]="{ 'is-invalid': accountant.get('city')?.touched && accountant.get('city')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('city')?.touched && accountant.get('city')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        State
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="state" readonly
-                                        [ngClass]="{ 'is-invalid': accountant.get('state')?.touched && accountant.get('state')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('state')?.touched && accountant.get('state')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-
-                                <div class="col-6 col-md-4">
-                                    <label class="form-label mb-1">
-                                        Country
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" placeholder="Auto Select"
-                                        formControlName="country" readonly
-                                        [ngClass]="{ 'is-invalid': accountant.get('country')?.touched && accountant.get('country')?.invalid }" />
-                                    <div class="invalid-feedback"
-                                        *ngIf="accountant.get('country')?.touched && accountant.get('country')?.invalid">
-                                        Please select an area.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
+          <!-- GST No -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">GST No <span *ngIf="!customerForm.get('gstna')?.value" class="text-danger">*</span></label>
+            <input type="text" class="form-control text-uppercase" formControlName="gstNo" placeholder="Enter GST No."
+              maxlength="15"
+              [ngClass]="{ 'is-invalid': customerForm.get('gstNo')?.touched && customerForm.get('gstNo')?.invalid && !customerForm.get('gstna')?.value }" />
+            <span
+              *ngIf="customerForm.get('gstNo')?.hasError('required') && !customerForm.get('gstna')?.value && customerForm.get('gstNo')?.touched"
+              class="text-danger text-sm">
+              GST No is required.
+            </span>
+            <span
+              *ngIf="customerForm.get('gstNo')?.hasError('pattern') && !customerForm.get('gstNo')?.hasError('required') && !customerForm.get('gstna')?.value && customerForm.get('gstNo')?.touched"
+              class="text-danger text-sm">
+              Invalid GST format. Expected: 22AAAAA0000A1Z5
+            </span>
+            <div class="form-check mt-1">
+              <input type="checkbox" class="form-check-input mt-1" formControlName="gstna" id="gstna" />
+              <label class="form-check-label form-label mb-0" for="gstna">GST not applicable</label>
             </div>
+          </div>
 
-            <fieldset class="border rounded p-3 mb-3 position-relative mt-4">
-                <legend class="w-auto px-2 fw-semibold theme-color"
-                    >
-                    Multiple Contacts
-                </legend>
-                <legend class="w-auto px-2 fw-semibold theme-color"
-                    >
-                    <!-- Add Contact Button -->
-                    <div class="text-end mb-1 mt-0">
-                        <button type="button" class="btn btn-sm btn-add" (click)="addContact()">
-                            <i class="bi bi-plus-circle-dotted"></i>
-                            Add Contact
-                        </button>
-                    </div>
-                </legend>
-                <div class="row" formArrayName="contactPersons">
-                    <!-- Dynamic Multi Contacts -->
-                    <ng-container>
-
-
-                        <div class="table-responsive">
-                            <table class="table table-sm table-compact">
-                                <thead class="table-light">
-                                    <tr class="text-nowrap text-muted small">
-                                        <th class="fw-medium px-2">Contact Person</th>
-                                        <th class="fw-medium px-2">Department</th>
-                                        <th class="fw-medium px-2">Email</th>
-                                        <th class="fw-medium px-2">Mobile</th>
-                                        <th class="fw-medium px-2">Address</th>
-                                        <th class="fw-medium px-2">PinCode</th>
-                                        <th class="fw-medium px-2">Area</th>
-                                        <th class="fw-medium text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <ng-container *ngFor="let contact of contactPersonsArray.controls; let i = index">
-                                        <tr [formGroupName]="i" *ngIf="contact.get('type')?.value === 'dynamic'">
-                                            <td>
-                                                <input class="form-control form-control-sm" formControlName="name"
-                                                    placeholder="Enter Contact Person" />
-                                                <div *ngIf="contact.get('name')?.touched && contact.get('name')?.invalid"
-                                                    class="text-danger text-sm">
-                                                    <div *ngIf="contact.get('name')?.errors?.['required']">Name is
-                                                        required.</div>
-                                                </div>
-                                            </td>
-                                            <td class="">
-                                                <app-searchable-dropdown class="w-100"
-                                                    [placeholder]="'Search department'" [labelName]="'Department'"
-                                                    [fetchDataFn]="getDepartments"
-                                                    (itemSelected)="onDepartmentSelected($event, asFormGroup(contact))"
-                                                    [isDisabled]="isViewMode" [hideLabel]="true"
-                                                    [selectedItem]="contact.get('departmentID')?.value"></app-searchable-dropdown>
-                                            </td>
-                                            <td>
-                                                <input class="form-control form-control-sm" formControlName="emailId"
-                                                    placeholder="Enter Email" />
-                                                <div *ngIf="contact.get('emailId')?.touched && contact.get('emailId')?.invalid"
-                                                    class="text-danger text-sm">
-                                                    <div *ngIf="contact.get('emailId')?.errors?.['email']">Invalid email
-                                                        format.</div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input class="form-control form-control-sm" formControlName="mobileNo"
-                                                    appNumberOnly maxlength="10" placeholder="Enter Mobile No" />
-                                                <div *ngIf="contact.get('mobileNo')?.touched && contact.get('mobileNo')?.invalid"
-                                                    class="text-danger text-sm">
-                                                    <div *ngIf="contact.get('mobileNo')?.errors?.['required']">Mobile No
-                                                        is required.</div>
-                                                    <div *ngIf="contact.get('mobileNo')?.errors?.['pattern']">Invalid
-                                                        Mobile No.</div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <textarea class="form-control form-control-sm" formControlName="address"
-                                                    placeholder="Enter Address" rows="1" maxlength="500"></textarea>
-                                                <div *ngIf="contact.get('address')?.touched && contact.get('address')?.invalid"
-                                                    class="text-danger text-sm">
-                                                    Address is required.
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control" formControlName="pinCode"
-                                                    placeholder="Enter Pin Code"
-                                                    (input)="fetchContactAreaData(dynamicContacts[i - 3])" />
-                                            </td>
-                                            <td>
-                                                <select class="form-select" formControlName="areaID"
-                                                    (change)="fetchLocationDataForContact(dynamicContacts[i - 3])">
-                                                    <option value="0">Select</option>
-                                                    <option
-                                                        *ngFor="let area of dynamicContacts[i - 3].get('areaOptions')?.value"
-                                                        [value]="area.areaId">
-                                                        {{ area.areaName }}
-                                                    </option>
-                                                </select>
-                                            </td>
-                                            <td class="text-center">
-                                                <a (click)="removeDynamicContact(contact)" class="icon-link btn"
-                                                    title="Delete">
-                                                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    </ng-container>
-                                </tbody>
-                            </table>
-                        </div>
-                    </ng-container>
-                </div>
-            </fieldset>
-
-            <!-- Account Section -->
-            <fieldset class="border rounded p-3 mb-3 position-relative">
-                <legend class="w-auto px-2 fw-semibold theme-color"
-                    >
-                    Account
-                </legend>
-                <div class="row g-3 mb-2">
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">Special Accounting Case</label>
-                        <select class="form-select" formControlName="specialAccountingCase">
-                            <option value="">Select Accounting Case</option>
-                            <option *ngFor="let option of specialAccountingCases" [value]="option.value">{{ option.name
-                                }}</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">Credit Limit Amount</label>
-                        <input type="text" class="form-control" placeholder="Enter credit limit amount" appNumberOnly
-                            formControlName="creditLimitAmount" maxlength="20" />
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">Credit Limit Time</label>
-                        <select class="form-select" formControlName="creditLimitTime">
-                            <option value="0">Select Days</option>
-                            <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
-                        </select>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="constantDiscount" />
-                            <label class="form-label text-center">Constat Discount</label>
-                        </div>
-                        <select *ngIf="customerForm.get('constantDiscount')?.value" class="form-select"
-                            formControlName="constantDiscountPercentage">
-                            <option value="0">Select Discount</option>
-                            <option *ngFor="let d of discountOptions" [value]="d.value">{{ d.name }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="row mb-2">
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox"
-                                formControlName="weeklyBillingCustomer" />
-                            <label class="form-check-label form-label">Weekly Billing Customer</label>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox"
-                                formControlName="monthlyBillingCustomer" />
-                            <label class="form-check-label form-label">Monthly Billing Customer</label>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox"
-                                formControlName="directTaxInvoiceNoPerforma" />
-                            <label class="form-check-label form-label">Direct Tax Invoice, No Performa Invoice</label>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="billingEvery" />
-                            <label class="form-check-label form-label">Billing Days</label>
-                        </div>
-                        <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select mt-2"
-                            formControlName="billingEveryDays">
-                            <option value="0">Select Days</option>
-                            <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox"
-                                formControlName="performaInvoiceRequiredBeforeTesting" />
-                            <label class="form-check-label form-label">Performa Invoice Required before testing.</label>
-                        </div>
-                    </div>
-                </div>
-            </fieldset>
-
-            <!-- D-Testo Section -->
-            <!-- <div class="border-top mb-1">
-                <label class="text-danger fw-bold border-bottom border-danger">D-Testo</label>
-                <div class="row g-3 mb-1">
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">D-Testo Login Id</label>
-                        <input type="text" class="form-control mt-1" placeholder="Enter D-Testo Login Id"
-                            formControlName="dTestoLoginId" maxlength="100" autocomplete="off" />
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">D-Testo Login Password</label>
-                        <input type="password" class="form-control mt-1" placeholder="Enter Password"
-                            formControlName="dTestoPassword" maxlength="100" autocomplete="off" />
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label d-block">D-Testo Login Active</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" value="true"
-                                formControlName="dTestoActive" id="dTestoActiveYes" />
-                            <label class="form-check-label" for="dTestoActiveYes">Yes</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" value="false"
-                                formControlName="dTestoActive" id="dTestoActiveNo" />
-                            <label class="form-check-label" for="dTestoActiveNo">No</label>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label d-block">Company Verified</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" value="true"
-                                formControlName="companyVerified" id="companyVerifiedYes" />
-                            <label class="form-check-label" for="companyVerifiedYes">Yes</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input mt-1" type="radio" value="false"
-                                formControlName="companyVerified" id="companyVerifiedNo" />
-                            <label class="form-check-label" for="companyVerifiedNo">No</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-1">
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="form-check">
-                            <input class="form-check-input mt-1" type="checkbox" formControlName="blockDTestoUser"
-                                id="blockDTestoUser" />
-                            <label class="form-check-label" for="blockDTestoUser">Block D-Testo user</label>
-                        </div>
-                    </div>
-                    <div *ngIf="customerForm.get('blockDTestoUser')?.value" class="col-6 col-md-4 col-lg-3">
-                        <label class="form-label">Block Reason</label>
-                        <input type="password" class="form-control mt-1" placeholder="Enter Reason"
-                            formControlName="blockReason" maxlength="250" />
-                    </div>
-                </div>
-            </div> -->
-
-            <!-- <div class="text-end mb-1">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Save
-                </button>
-            </div> -->
-            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-                <a class="btn btn-cancel">Cancel</a>
-                <button type="submit" class="btn btn-save px-3">Save</button>
+          <!-- Sample Return -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label d-block">Sample Return</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn" [value]="true"
+                id="sampleYes" />
+              <label class="form-check-label" for="sampleYes">Yes</label>
             </div>
-        </form>
-    </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn" [value]="false"
+                id="sampleNo" />
+              <label class="form-check-label" for="sampleNo">No</label>
+            </div>
+          </div>
+
+          <!-- Is Block -->
+          <div class="col-auto col-md-4 col-lg-3" *ngIf="customerId > 0">
+            <label class="form-label d-block">Block Customer</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="true"
+                id="blockYes" />
+              <label class="form-check-label" for="blockYes">Yes</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="false"
+                id="blockNo" />
+              <label class="form-check-label" for="blockNo">No</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ======================== Address Details ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">Address Details</legend>
+        <div class="row gy-1">
+          <!-- Address -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Address</label>
+            <textarea class="form-control" formControlName="address" rows="2" maxlength="500"
+              placeholder="Enter Address"></textarea>
+          </div>
+
+          <!-- PIN Code -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">PIN Code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="pinCode" maxlength="6" appNumberOnly
+              (input)="fetchAreaData('pinCode', true)" placeholder="Enter PIN Code"
+              [ngClass]="{ 'is-invalid': customerForm.get('pinCode')?.touched && customerForm.get('pinCode')?.invalid }" />
+            <span *ngIf="customerForm.get('pinCode')?.hasError('required') && customerForm.get('pinCode')?.touched"
+              class="text-danger text-sm">
+              PIN Code is required.
+            </span>
+            <span
+              *ngIf="customerForm.get('pinCode')?.hasError('pattern') && !customerForm.get('pinCode')?.hasError('required') && customerForm.get('pinCode')?.touched"
+              class="text-danger text-sm">
+              PIN Code must be exactly 6 digits.
+            </span>
+          </div>
+
+          <!-- Area -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Area <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="areaID"
+              (change)="fetchLocationData('areaID', 'city', 'state', 'country')"
+              [ngClass]="{ 'is-invalid': customerForm.get('areaID')?.touched && customerForm.get('areaID')?.invalid }">
+              <option value="0">Select Area</option>
+              <option *ngFor="let area of areas" [value]="area.areaId">{{ area.areaName }}</option>
+            </select>
+          </div>
+
+          <!-- City -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">City <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="city" placeholder="Auto Select" readonly />
+          </div>
+
+          <!-- State -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">State <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="state" placeholder="Auto Select" readonly />
+          </div>
+
+          <!-- Country -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Country <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="country" placeholder="Auto Select" readonly />
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ======================== Dispatch Modes ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">Dispatch Modes</legend>
+        <div class="d-flex flex-wrap gap-4">
+          <div class="form-check" *ngFor="let mode of dispatchModes; index as modeIndex">
+            <input [id]="'dispatchMode-' + modeIndex" type="checkbox" class="form-check-input" [value]="mode.id"
+              [checked]="isDispatchModeSelected(mode.id)" (change)="onDispatchModeToggle($event)"
+              [disabled]="isViewMode" />
+            <label [for]="'dispatchMode-' + modeIndex" class="form-check-label form-label">{{ mode.name }}</label>
+          </div>
+        </div>
+        <div *ngIf="customerDispatchModesArray.touched && customerDispatchModesArray.invalid"
+          class="text-danger text-sm mt-1">
+          At least one Dispatch Mode is required.
+        </div>
+      </fieldset>
+
+      <!-- ======================== Contact Persons ======================== -->
+      <div formArrayName="contactPersons">
+
+        <!-- Contact Info 1 -->
+        <ng-container *ngIf="contact1">
+          <ng-container
+            *ngTemplateOutlet="contactFieldset; context: { $implicit: contact1, title: 'Contact Info 1' }">
+          </ng-container>
+        </ng-container>
+
+        <!-- Contact Info 2 -->
+        <ng-container *ngIf="contact2">
+          <ng-container
+            *ngTemplateOutlet="contactFieldset; context: { $implicit: contact2, title: 'Contact Info 2' }">
+          </ng-container>
+        </ng-container>
+
+        <!-- Account Info -->
+        <ng-container *ngIf="accountant">
+          <ng-container
+            *ngTemplateOutlet="contactFieldset; context: { $implicit: accountant, title: 'Account Info' }">
+          </ng-container>
+        </ng-container>
+      </div>
+
+      <!-- ======================== Multiple Contacts (Dynamic) ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          Additional Contacts
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add ms-2" (click)="addContact()">
+            <i class="bi bi-plus-circle-dotted me-1"></i> Add Contact
+          </button>
+        </legend>
+
+        <div class="table-responsive" formArrayName="contactPersons">
+          <table class="table table-sm table-compact">
+            <thead class="table-light">
+              <tr class="text-nowrap text-muted small">
+                <th class="fw-medium px-2">#</th>
+                <th class="fw-medium px-2">Contact Person</th>
+                <th class="fw-medium px-2">Department</th>
+                <th class="fw-medium px-2">Email</th>
+                <th class="fw-medium px-2">Mobile</th>
+                <th class="fw-medium px-2">Address</th>
+                <th class="fw-medium px-2">Pin Code</th>
+                <th class="fw-medium px-2">Area</th>
+                <th *ngIf="!isViewMode" class="fw-medium text-center px-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Empty State -->
+              <tr *ngIf="dynamicContacts.length === 0">
+                <td [attr.colspan]="isViewMode ? 8 : 9">
+                  <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                    <i class="bi bi-people fs-2 mb-2"></i>
+                    <div class="fw-semibold">No additional contacts found</div>
+                    <small *ngIf="!isViewMode" class="text-muted">Click "Add Contact" to add more contacts.</small>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Data Rows -->
+              <ng-container *ngFor="let contact of contactPersonsArray.controls; let i = index">
+                <tr [formGroupName]="i" *ngIf="contact.get('type')?.value === 'dynamic'" class="align-content-center">
+                  <td class="align-middle px-2">{{ getDynamicIndex(i) | number : "2.0" }}</td>
+                  <td class="px-2">
+                    <input class="form-control form-control-sm" formControlName="name"
+                      placeholder="Enter Contact Person"
+                      [ngClass]="{ 'is-invalid': contact.get('name')?.touched && contact.get('name')?.invalid }" />
+                    <span *ngIf="contact.get('name')?.touched && contact.get('name')?.invalid"
+                      class="text-danger text-sm">Name is required.</span>
+                  </td>
+                  <td class="px-2">
+                    <app-searchable-dropdown class="w-100" [placeholder]="'Search department'"
+                      [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                      (itemSelected)="onDepartmentSelected($event, asFormGroup(contact))" [isDisabled]="isViewMode"
+                      [hideLabel]="true" [selectedItem]="contact.get('departmentID')?.value"
+                      [smallInput]="true"></app-searchable-dropdown>
+                  </td>
+                  <td class="px-2">
+                    <input class="form-control form-control-sm" formControlName="emailId" placeholder="Enter Email"
+                      [ngClass]="{ 'is-invalid': contact.get('emailId')?.touched && contact.get('emailId')?.invalid }" />
+                    <span *ngIf="contact.get('emailId')?.touched && contact.get('emailId')?.hasError('email')"
+                      class="text-danger text-sm">Invalid email format.</span>
+                  </td>
+                  <td class="px-2">
+                    <input class="form-control form-control-sm" formControlName="mobileNo" appNumberOnly maxlength="13"
+                      placeholder="Enter Mobile No"
+                      [ngClass]="{ 'is-invalid': contact.get('mobileNo')?.touched && contact.get('mobileNo')?.invalid }" />
+                    <span *ngIf="contact.get('mobileNo')?.touched && contact.get('mobileNo')?.hasError('pattern')"
+                      class="text-danger text-sm">Invalid Mobile No.</span>
+                  </td>
+                  <td class="px-2">
+                    <textarea class="form-control form-control-sm" formControlName="address" placeholder="Enter Address"
+                      rows="1" maxlength="500"></textarea>
+                  </td>
+                  <td class="px-2">
+                    <input type="text" class="form-control form-control-sm" formControlName="pinCode"
+                      placeholder="Enter Pin Code" appNumberOnly maxlength="6"
+                      (input)="fetchContactAreaData(asFormGroup(contact))" />
+                  </td>
+                  <td class="px-2">
+                    <select class="form-select form-select-sm" formControlName="areaID"
+                      (change)="fetchLocationDataForContact(asFormGroup(contact))">
+                      <option value="0">Select</option>
+                      <option *ngFor="let area of contact.get('areaOptions')?.value" [value]="area.areaId">
+                        {{ area.areaName }}
+                      </option>
+                    </select>
+                  </td>
+                  <td *ngIf="!isViewMode" class="text-center align-middle">
+                    <button type="button" class="btn btn-link text-danger p-0"
+                      (click)="removeDynamicContact(contact)" title="Delete">
+                      <i class="bi bi-trash-fill fs-5"></i>
+                    </button>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <!-- ======================== Account Section ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">Account</legend>
+        <div class="row gy-1 mb-2">
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Special Accounting Case</label>
+            <select class="form-select" formControlName="specialAccountingCase">
+              <option value="">Select Accounting Case</option>
+              <option *ngFor="let option of specialAccountingCases" [value]="option.value">{{ option.name }}</option>
+            </select>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Credit Limit Amount</label>
+            <input type="text" class="form-control" placeholder="Enter credit limit amount" appNumberOnly
+              formControlName="creditLimitAmount" maxlength="20" />
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">Credit Limit Time</label>
+            <select class="form-select" formControlName="creditLimitTime">
+              <option value="0">Select Days</option>
+              <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
+            </select>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="constantDiscount"
+                id="constantDiscount" />
+              <label class="form-check-label form-label" for="constantDiscount">Constant Discount</label>
+            </div>
+            <select *ngIf="customerForm.get('constantDiscount')?.value" class="form-select mt-1"
+              formControlName="constantDiscountPercentage">
+              <option value="0">Select Discount</option>
+              <option *ngFor="let d of discountOptions" [value]="d.value">{{ d.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row gy-1">
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="weeklyBillingCustomer"
+                id="weeklyBilling" />
+              <label class="form-check-label form-label" for="weeklyBilling">Weekly Billing Customer</label>
+            </div>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="monthlyBillingCustomer"
+                id="monthlyBilling" />
+              <label class="form-check-label form-label" for="monthlyBilling">Monthly Billing Customer</label>
+            </div>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="directTaxInvoiceNoPerforma"
+                id="directTaxInvoice" />
+              <label class="form-check-label form-label" for="directTaxInvoice">Direct Tax Invoice, No Proforma</label>
+            </div>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="billingEvery" id="billingEvery" />
+              <label class="form-check-label form-label" for="billingEvery">Billing Days</label>
+            </div>
+            <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select mt-1"
+              formControlName="billingEveryDays">
+              <option value="0">Select Days</option>
+              <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
+            </select>
+          </div>
+          <div class="col-auto col-md-4 col-lg-3">
+            <div class="form-check">
+              <input class="form-check-input mt-1" type="checkbox"
+                formControlName="performaInvoiceRequiredBeforeTesting" id="performaRequired" />
+              <label class="form-check-label form-label" for="performaRequired">Proforma Invoice Required Before
+                Testing</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ======================== Remark ======================== -->
+      <fieldset class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color">Remarks</legend>
+        <div class="row gy-1">
+          <div class="col-12 col-md-6">
+            <label class="form-label">Remark</label>
+            <textarea class="form-control" formControlName="remark" rows="3" maxlength="500"
+              placeholder="Enter any remarks..."></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+    </form>
+  </div>
 </div>
+
+<!-- ======================== Sticky Bottom Bar ======================== -->
+<div *ngIf="!isViewMode" class="sticky-bottom-bar">
+  <div class="d-flex justify-content-end align-items-center gap-2">
+    <a routerLink="/customer" class="btn btn-cancel btn-sm">
+      <i class="bi bi-x-lg me-1"></i> Cancel
+    </a>
+    <button type="button" class="btn btn-save btn-sm px-3" (click)="onSubmit()">
+      <i class="bi bi-check2-circle me-1"></i> {{ customerId > 0 ? 'Update' : 'Save' }}
+    </button>
+  </div>
+</div>
+
+<!-- ======================== Contact Fieldset Template ======================== -->
+<ng-template #contactFieldset let-contactGroup let-title="title">
+  <fieldset [formGroup]="contactGroup" class="border rounded p-3 mb-3 position-relative">
+    <legend class="w-auto px-2 fw-semibold theme-color">{{ title }}</legend>
+    <div class="row">
+      <!-- LEFT SIDE: Contact Details -->
+      <div class="col-12 col-md-6">
+        <div class="row g-2">
+          <div class="col-6 col-md-2">
+            <label class="form-label">Salutation <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="salutation"
+              [ngClass]="{ 'is-invalid': contactGroup.get('salutation')?.touched && contactGroup.get('salutation')?.invalid }">
+              <option value="">Select</option>
+              <option value="Mr.">Mr.</option>
+              <option value="Mrs.">Mrs.</option>
+              <option value="Ms.">Ms.</option>
+              <option value="Dr.">Dr.</option>
+            </select>
+            <span *ngIf="contactGroup.get('salutation')?.touched && contactGroup.get('salutation')?.invalid"
+              class="text-danger text-sm">Required.</span>
+          </div>
+
+          <div class="col-6 col-md-5">
+            <label class="form-label">Contact Person <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Enter Contact Person" formControlName="name"
+              [ngClass]="{ 'is-invalid': contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid }" />
+            <span *ngIf="contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid"
+              class="text-danger text-sm">Contact Person is required.</span>
+          </div>
+
+          <div class="col-6 col-md-5">
+            <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
+              [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event, contactGroup)"
+              [isDisabled]="isViewMode"
+              [selectedItem]="contactGroup.get('departmentID')?.value"></app-searchable-dropdown>
+          </div>
+
+          <div class="col-6 col-md-6">
+            <label class="form-label mb-1">Mobile No <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Enter Mobile No." formControlName="mobileNo"
+              maxlength="13" appNumberOnly
+              [ngClass]="{ 'is-invalid': contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid }" />
+            <div *ngIf="contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid">
+              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['required']" class="text-danger text-sm">Mobile No is
+                required.</span>
+              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['pattern']" class="text-danger text-sm">Mobile No
+                must be 10-13 digits.</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-6">
+            <label class="form-label mb-1">Email ID <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" placeholder="Enter Email" formControlName="emailId"
+              [ngClass]="{ 'is-invalid': contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid }" />
+            <div *ngIf="contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid">
+              <span *ngIf="contactGroup.get('emailId')?.errors?.['required']" class="text-danger text-sm">Email is
+                required.</span>
+              <span *ngIf="contactGroup.get('emailId')?.errors?.['email']" class="text-danger text-sm">Invalid email
+                format.</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-4 d-flex align-items-center">
+            <div class="form-check mt-3">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="sendBill" />
+              <label class="form-check-label form-label mb-0">Send Bill</label>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-4 d-flex align-items-center">
+            <div class="form-check mt-3">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="sendReport" />
+              <label class="form-check-label form-label mb-0">Send Report</label>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-4 d-flex align-items-center">
+            <div class="form-check mt-3">
+              <input class="form-check-input mt-1" type="checkbox" formControlName="isWhatsappNo" />
+              <label class="form-check-label form-label mb-0">WhatsApp</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE: Address Info -->
+      <div class="col-12 col-md-6">
+        <div class="row g-2">
+          <div class="col-6 col-md-6">
+            <label class="form-label mb-1">Address <span class="text-danger">*</span></label>
+            <textarea rows="4" class="form-control" placeholder="Enter Address" formControlName="address"
+              [ngClass]="{ 'is-invalid': contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid }"></textarea>
+            <span *ngIf="contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid"
+              class="text-danger text-sm">Address is required.</span>
+          </div>
+
+          <div class="col-6 col-md-6">
+            <div class="col-md-12">
+              <label class="form-label mb-1">Pin Code <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="pinCode" placeholder="Enter Pin Code"
+                appNumberOnly maxlength="6" (input)="fetchContactAreaData(contactGroup)"
+                [ngClass]="{ 'is-invalid': contactGroup.get('pinCode')?.touched && contactGroup.get('pinCode')?.invalid }" />
+              <span *ngIf="contactGroup.get('pinCode')?.touched && contactGroup.get('pinCode')?.invalid"
+                class="text-danger text-sm">Pin Code is required.</span>
+            </div>
+            <div class="col-md-12 mt-1">
+              <label class="form-label mb-1">Area <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="areaID"
+                (change)="fetchLocationDataForContact(contactGroup)">
+                <option value="0">Select</option>
+                <option *ngFor="let area of contactGroup.get('areaOptions')?.value" [value]="area.areaId">
+                  {{ area.areaName }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-4">
+            <label class="form-label mb-1">City <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Auto Select" formControlName="city" readonly
+              [ngClass]="{ 'is-invalid': contactGroup.get('city')?.touched && contactGroup.get('city')?.invalid }" />
+          </div>
+
+          <div class="col-6 col-md-4">
+            <label class="form-label mb-1">State <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Auto Select" formControlName="state" readonly
+              [ngClass]="{ 'is-invalid': contactGroup.get('state')?.touched && contactGroup.get('state')?.invalid }" />
+          </div>
+
+          <div class="col-6 col-md-4">
+            <label class="form-label mb-1">Country <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" placeholder="Auto Select" formControlName="country" readonly
+              [ngClass]="{ 'is-invalid': contactGroup.get('country')?.touched && contactGroup.get('country')?.invalid }" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+</ng-template>

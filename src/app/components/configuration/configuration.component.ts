@@ -45,7 +45,7 @@ export class ConfigManagerComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -113,8 +113,10 @@ export class ConfigManagerComponent implements OnInit {
 
 
   getDetails(): void {
-    this.configService.getConfigurationsById(this.configId).subscribe({
+    const requestId = this.configId;
+    this.configService.getConfigurationsById(requestId).subscribe({
       next: (res: any) => {
+        if (this.configId !== requestId) return; // discard stale response
         if (res) {
           // Parse pipe-separated values into array for dropdown
           const valuesArray = res.value ? res.value.split('|').map((item: string) => item.trim()) : [];
@@ -278,6 +280,7 @@ export class ConfigManagerComponent implements OnInit {
   openModal(type: string, id: number): void {
     // Reset form first
     this.initForm();
+    this.configId = 0;
 
     if (type === 'create') {
       this.isEditMode = false;

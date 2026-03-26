@@ -134,6 +134,10 @@ export class SkillMatrixPreviewComponent implements OnInit {
     }
 
     goBack(): void {
-        this.router.navigate(['/employee']);
+        if (this.matrixId > 0) {
+            this.router.navigate(['/skill-matrix']);
+        } else {
+            this.router.navigate(['/employee']);
+        }
     }
 }

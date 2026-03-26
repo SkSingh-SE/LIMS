@@ -17,6 +17,7 @@ export class AuditChecklistListComponent implements OnInit {
     baseRoute = '/audit-checklist';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'auditDate', label: 'Audit Date', type: 'date', width: '150px', filter: true },
         { key: 'areaDepartment', label: 'Area / Department', type: 'string', filter: true },
         { key: 'auditorName', label: 'Auditor Name', type: 'string', filter: true },

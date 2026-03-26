@@ -21,13 +21,13 @@ export class StandardOrgnizationComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'numberType', type: 'string', label: 'Number Type', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     numberType: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -46,7 +46,7 @@ export class StandardOrgnizationComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -101,8 +101,10 @@ export class StandardOrgnizationComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.standardOrgService.getStandardOrganizationById(this.standardOrganizationId).subscribe({
+    const requestId = this.standardOrganizationId;
+    this.standardOrgService.getStandardOrganizationById(requestId).subscribe({
       next: (response) => {
+        if (this.standardOrganizationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.StandardOrganizationForm.patchValue(response);
       },
@@ -248,6 +250,7 @@ export class StandardOrgnizationComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.StandardOrganizationForm.reset();
     this.StandardOrganizationForm.enable();
+    this.standardOrganizationId = 0;
     if (id > 0) {
       this.standardOrganizationId = id;
       this.getDetails();
@@ -257,7 +260,6 @@ export class StandardOrgnizationComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Specimen Orientation Form';
-      this.StandardOrganizationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

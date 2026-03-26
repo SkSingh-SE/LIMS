@@ -270,26 +270,35 @@
                 <div *ngIf="planHistoryData.length === 0" class="text-muted text-center py-3">
                   No history records found.
                 </div>
-                <div *ngFor="let entry of planHistoryData" class="d-flex border-bottom py-2 px-2">
-                  <div class="me-3 text-center" style="min-width: 50px;">
-                    <span class="badge"
-                      [ngClass]="{
-                        'bg-success': entry.changeType === 'Approved' || entry.changeType === 'ReplanApproved',
-                        'bg-danger': entry.changeType === 'Rejected' || entry.changeType === 'ReplanRejected' || entry.changeType === 'ReplanRequested',
-                        'bg-info': entry.changeType === 'Submitted',
-                        'bg-primary': entry.changeType === 'Created',
-                        'bg-warning': entry.changeType === 'Updated'
-                      }">
-                      V{{ entry.version }}
-                    </span>
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between">
-                      <span class="fw-semibold small">{{ entry.changeType }}</span>
-                      <span class="text-muted small">{{ entry.changedAt | date: 'dd MMM yyyy, hh:mm a' }}</span>
+                <div class="history-cards">
+                  <div *ngFor="let entry of planHistoryData" class="history-card"
+                    [ngClass]="{
+                      'card-approved': entry.changeType === 'Approved' || entry.changeType === 'ReplanApproved',
+                      'card-rejected': entry.changeType === 'Rejected' || entry.changeType === 'ReplanRejected',
+                      'card-replan': entry.changeType === 'ReplanRequested',
+                      'card-submitted': entry.changeType === 'Submitted',
+                      'card-created': entry.changeType === 'Created',
+                      'card-updated': entry.changeType === 'Updated'
+                    }">
+                    <div class="history-card-top">
+                      <span class="history-badge">V{{ entry.version }}</span>
+                      <span class="history-type">{{ entry.changeType }}</span>
                     </div>
-                    <div class="text-muted small">By: {{ entry.changedByName || 'System' }}</div>
-                    <div *ngIf="entry.remarks" class="small mt-1">{{ entry.remarks }}</div>
+                    <div class="history-card-meta">
+                      <i class="bi bi-person-fill"></i> {{ entry.changedByName || 'System' }}
+                    </div>
+                    <div class="history-card-meta">
+                      <i class="bi bi-clock"></i> {{ entry.changedAt | date: 'dd MMM, hh:mm a' }}
+                    </div>
+                    <div *ngIf="entry.remarks" class="history-card-remark">{{ entry.remarks }}</div>
+                    <div *ngIf="parseFieldChanges(entry.fieldChangesJson)?.length" class="history-changes">
+                      <div *ngFor="let fc of parseFieldChanges(entry.fieldChangesJson)" class="history-change-row">
+                        <span class="change-field">{{ fc.field }}</span>
+                        <span *ngIf="fc.oldValue" class="change-old">{{ fc.oldValue }}</span>
+                        <i *ngIf="fc.oldValue" class="bi bi-arrow-right change-arrow"></i>
+                        <span class="change-new">{{ fc.newValue }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -421,7 +430,7 @@
                           </td>
                           <td>
                             <div>{{ method.get("reportNo")?.value }}</div>
-                            <div class="d-flex justify-content-center gap-2">
+                            <div class="d-flex justify-content-center gap-3">
                               {{ method.get("ulrNo")?.value }}
                               <div class="form-check mt-0">
                                 <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
@@ -647,7 +656,7 @@
     <button type="button" class="btn btn-cancel" (click)="onCancel()">
       <i class="bi bi-x-circle me-1"></i> Cancel
     </button>
-    <button type="button" class="btn btn-save px-4" (click)="onSave()" [disabled]="!planForm.valid">
+    <button *ngIf="canSavePlan()" type="button" class="btn btn-save px-4" (click)="onSave()" [disabled]="!planForm.valid">
       <i class="bi bi-check-circle me-1"></i> Save Plan
     </button>
     <button *ngIf="canSendForReview()" type="button" class="btn btn-info" (click)="onSendForReview()">

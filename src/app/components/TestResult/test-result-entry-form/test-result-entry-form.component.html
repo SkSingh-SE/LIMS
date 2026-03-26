@@ -281,7 +281,6 @@
                     <thead class="result-table-head text-center">
                       <tr>
                         <th>Parameter</th>
-                        <th style="width: 70px">Type</th>
                         <th style="width: 70px">Unit</th>
                         <th style="width: 130px">Spec Range</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Min</th>
@@ -318,17 +317,21 @@
                           </div>
                         </td>
 
-                        <!-- Type Badge -->
-                        <td class="text-center">
-                          <span *ngIf="row.value.parameterType === 'Qualitative'" class="badge bg-primary">Qualitative</span>
-                          <span *ngIf="row.value.parameterType === 'Quantitative'" class="badge bg-success">Quantitative</span>
-                          <span *ngIf="!row.value.parameterType" class="badge bg-secondary">-</span>
-                        </td>
-
-                        <!-- Unit -->
+                        <!-- Unit (dropdown if equivalent units available) -->
                         <td>
-                          <input type="text" class="form-control form-control-sm" formControlName="unit" readonly
-                            [class.row-disabled]="isParameterCalculated(row.value)" />
+                          <ng-container *ngIf="getUnitOptions(row).length > 1; else plainUnit">
+                            <select class="form-select form-select-sm" formControlName="selectedUnit"
+                              (change)="onUnitChanged(p, t, r)"
+                              [attr.disabled]="isViewMode ? true : null">
+                              <option *ngFor="let opt of getUnitOptions(row)" [value]="opt.unitName">
+                                {{ opt.unitName }}
+                              </option>
+                            </select>
+                          </ng-container>
+                          <ng-template #plainUnit>
+                            <input type="text" class="form-control form-control-sm" formControlName="unit" readonly
+                              [class.row-disabled]="isParameterCalculated(row.value)" />
+                          </ng-template>
                         </td>
 
                         <!-- Spec Range -->
@@ -382,31 +385,28 @@
                               [readOnly]="isParameterCalculated(row.value)"
                               [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
                               appDecimalOnly />
-                            <small *ngIf="row.value.formulaExpression" class="text-info d-block" style="font-size: 10px;">
-                              <i class="bi bi-calculator me-1"></i>{{ row.value.formulaExpression }}
+                            <span *ngIf="row.value.formulaExpression" class="formula-tag" title="{{ row.value.formulaExpression }}">
+                              <i class="bi bi-calculator me-1"></i>{{ getReadableFormula(row.value.formulaExpression, p, t) }}
+                              <button *ngIf="!isViewMode" type="button" class="formula-clear" (click)="clearParameterFormula(p, t, r)" title="Clear formula">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </span>
+                            <small *ngIf="row.value.convertedValue != null && row.value.selectedUnit !== row.value.unit"
+                              class="text-primary d-block" style="font-size: 10px;">
+                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue }} {{ row.value.selectedUnit }}
                             </small>
                           </ng-template>
                         </td>
 
                         <!-- Status Badge -->
                         <td class="text-center">
-                          <ng-container *ngIf="row.value.resultStatus; else fallbackStatus">
-                            <span class="badge" [ngClass]="getResultStatusClass(row.value.resultStatus)">
-                              <i class="bi" [ngClass]="getResultStatusIcon(row.value.resultStatus)"></i>
-                              {{ row.value.resultStatus }}
-                            </span>
-                          </ng-container>
-                          <ng-template #fallbackStatus>
-                            <span *ngIf="row.value.isWithinLimit === true" class="badge badge-pass">
-                              <i class="bi bi-check-circle"></i> Pass
-                            </span>
-                            <span *ngIf="row.value.isWithinLimit === false" class="badge badge-fail">
-                              <i class="bi bi-x-circle"></i> Fail
-                            </span>
-                            <span *ngIf="row.value.isWithinLimit === null && !row.value.resultStatus" class="badge badge-pending">
-                              <i class="bi bi-dash-circle"></i> Pending
-                            </span>
-                          </ng-template>
+                          <span *ngIf="row.value.resultStatus" class="badge" [ngClass]="getResultStatusClass(row.value.resultStatus)">
+                            <i class="bi" [ngClass]="getResultStatusIcon(row.value.resultStatus)"></i>
+                            {{ row.value.resultStatus }}
+                          </span>
+                          <span *ngIf="!row.value.resultStatus" class="badge badge-pending">
+                            <i class="bi bi-dash-circle"></i> Pending
+                          </span>
                           <small *ngIf="row.value.acceptanceCriteria" class="d-block text-muted" style="font-size: 10px;"
                             [title]="row.value.acceptanceCriteria">
                             {{ row.value.acceptanceCriteria }}
@@ -442,8 +442,17 @@
 
                         <!-- Method Used -->
                         <td>
-                          <input type="text" class="form-control form-control-sm" formControlName="testMethodUsed"
-                            placeholder="Test method" maxlength="200" />
+                          <app-searchable-dropdown
+                            class="w-100"
+                            [placeholder]="'Test method'"
+                            [labelName]="'Test Method'"
+                            [fetchDataFn]="getTestMethodSpecDrop"
+                            (itemSelected)="onTestMethodUsedSelected(p, t, r, $event)"
+                            [hideLabel]="true"
+                            [selectedItem]="row.get('testMethodUsed')?.value"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode"
+                          ></app-searchable-dropdown>
                         </td>
 
                         <!-- Remarks -->
@@ -480,6 +489,13 @@
 
                   <!-- Parameter action buttons (removed duplicate standalone param button) -->
                   <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button class="btn btn-sm btn-outline-primary" type="button"
+                      (click)="loadParametersFromSpec(p, t)"
+                      [disabled]="loadingParams[plans[p].tests[t].headerId]"
+                      title="Load parameters from specification">
+                      <i class="bi" [ngClass]="loadingParams[plans[p].tests[t].headerId] ? 'bi-arrow-repeat spin' : 'bi-download'"></i>
+                      Load Parameters
+                    </button>
                     <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)">
                       <i class="bi bi-plus-circle-dotted"></i> Add Parameter
                     </button>
@@ -559,42 +575,44 @@
 
                   <!-- TEST IMAGES SECTION -->
                   <div class="card mt-3 test-images-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                      <h6 class="mb-0">Test Images</h6>
-                      <small class="text-muted">{{ plans[p].tests[t].name }}</small>
-                    </div>
-                    <div class="card-body">
-                      <div [class.d-none]="isViewMode">
-                        <div class="mb-2">
-                          <input type="file" accept="image/*" multiple class="form-control"
+                    <div class="card-header d-flex justify-content-between align-items-center py-1 px-3">
+                      <h6 class="mb-0 small fw-semibold"><i class="bi bi-images me-1"></i>Test Images</h6>
+                      <div class="d-flex align-items-center gap-2">
+                        <span *ngIf="testImagesMap[plans[p].tests[t].headerId]?.length" class="badge bg-secondary">
+                          {{ testImagesMap[plans[p].tests[t].headerId].length }}
+                        </span>
+                        <label *ngIf="!isViewMode" class="btn btn-outline-primary btn-sm mb-0" style="font-size: 0.75rem;">
+                          <i class="bi bi-plus-circle me-1"></i>Add Images
+                          <input type="file" accept="image/*" multiple class="d-none"
                             (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
-                        </div>
-                        <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId] && selectedFilesMap[plans[p].tests[t].headerId].length" class="mb-2">
-                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index" class="input-group mb-2">
-                            <span class="input-group-text p-0" style="width: 90px">
-                              <img [src]="sf.preview" style="width: 90px; height: 60px; object-fit: cover; cursor: pointer" (click)="openImage(sf.preview)" />
-                            </span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="card-body p-2">
+                      <!-- Pending uploads (staged files) -->
+                      <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="img-staged-bar mb-2">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index" class="img-staged-item">
+                            <img [src]="sf.preview" (click)="openImage(sf.preview)" />
                             <input type="text" class="form-control form-control-sm" [value]="sf.caption"
-                              (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)" placeholder="Optional caption" />
+                              (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)" placeholder="Caption" />
                           </div>
-                          <div class="text-end">
-                            <button class="btn btn-sm btn-primary" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">Upload Images</button>
-                          </div>
+                          <button class="btn btn-sm btn-save" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
+                            <i class="bi bi-cloud-upload me-1"></i>Upload
+                          </button>
                         </div>
                       </div>
-                      <div *ngIf="testImagesMap[plans[p].tests[t].headerId] && testImagesMap[plans[p].tests[t].headerId].length; else noImages">
-                        <div class="row g-2">
-                          <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="col-6 col-md-3 col-lg-2">
-                            <div class="card image-thumb-card h-100" role="button"
-                              (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
-                              <img [src]="baseUrl + img.filePath || img.fileUrl || img.thumbnailUrl" class="card-img-top" style="height: 100px; object-fit: cover" />
-                              <div class="card-body p-2 small text-truncate">{{ img.caption || img.name || "-" }}</div>
-                            </div>
-                          </div>
+
+                      <!-- Uploaded images gallery (horizontal scroll) -->
+                      <div *ngIf="testImagesMap[plans[p].tests[t].headerId]?.length; else noImages" class="img-gallery">
+                        <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="img-gallery-item"
+                          (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
+                          <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" />
+                          <span class="img-gallery-caption">{{ img.caption || '-' }}</span>
                         </div>
                       </div>
                       <ng-template #noImages>
-                        <div class="alert alert-secondary small mb-0">No images uploaded yet.</div>
+                        <div class="text-muted small text-center py-2"><i class="bi bi-image me-1"></i>No images uploaded yet.</div>
                       </ng-template>
                     </div>
                   </div>

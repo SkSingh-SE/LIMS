@@ -54,7 +54,7 @@ export class ToleranceMasterComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -118,8 +118,10 @@ export class ToleranceMasterComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.toleranceMasterService.getToleranceMasterById(this.toleranceMasterId).subscribe({
+    const requestId = this.toleranceMasterId;
+    this.toleranceMasterService.getToleranceMasterById(requestId).subscribe({
       next: (response) => {
+        if (this.toleranceMasterId !== requestId) return; // discard stale response
         this.toleranceMasterForm.patchValue(response);
       },
       error: (error) => {
@@ -266,6 +268,7 @@ export class ToleranceMasterComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.toleranceMasterForm.reset();
     this.toleranceMasterForm.enable();
+    this.toleranceMasterId = 0;
     if (id > 0) {
       this.toleranceMasterId = id;
       this.getDetails();
@@ -275,7 +278,6 @@ export class ToleranceMasterComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Tolerance Master Form';
-      this.toleranceMasterForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

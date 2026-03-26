@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-document-change-request-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './document-change-request-form.component.html',
     styleUrl: './document-change-request-form.component.css'
 })
@@ -45,8 +47,15 @@ export class DocumentChangeRequestFormComponent implements CanComponentDeactivat
         private route: ActivatedRoute,
         private router: Router,
         private service: DocumentChangeRequestService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('DocumentChangeRequest').subscribe({
+            next: (defaults) => {
+                this.changeForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -66,31 +75,57 @@ export class DocumentChangeRequestFormComponent implements CanComponentDeactivat
 
     private initForm() {
         this.changeForm = this.fb.group({
-            formatNo: ['F-44', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-44', Validators.required],
+            formatNo: ['F-44'],
+            docNo: [''],
             headerIssueNo: ['03', Validators.required],
-            headerIssueDate: ['2021-10-01', Validators.required],
+            headerIssueDate: ['', Validators.required],
             headerRevNo: ['00', Validators.required],
             headerRevDate: ['--', Validators.required],
 
             date: ['', Validators.required],
             documentTitle: ['', Validators.required],
-            documentNo: ['', Validators.required],
-            issueNo: ['', Validators.required],
-            revNo: ['', Validators.required],
+            documentNo: [''],
+            issueNo: [''],
+            revNo: [''],
             changesRequired: ['', Validators.required],
             justification: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
             initiatedBy: ['', Validators.required],
-            approvedBy: ['', Validators.required],
+            approvedBy: [''],
             actionTaken: ['']
         });
+
+        // System-managed fields — always readonly
+        this.changeForm.get('documentNo')?.disable();
+        this.changeForm.get('docNo')?.disable();
+        this.changeForm.get('issueNo')?.disable();
+        this.changeForm.get('revNo')?.disable();
+        this.changeForm.get('formatNo')?.disable();
+        this.changeForm.get('headerIssueNo')?.disable();
+        this.changeForm.get('headerRevNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.changeForm.patchValue(data);
-                if (this.isViewMode) this.changeForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.changeForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.changeForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.changeForm.get('documentNo')?.disable();
+                this.changeForm.get('docNo')?.disable();
+                this.changeForm.get('issueNo')?.disable();
+                this.changeForm.get('revNo')?.disable();
+                this.changeForm.get('formatNo')?.disable();
+                this.changeForm.get('headerIssueNo')?.disable();
+                this.changeForm.get('headerRevNo')?.disable();
             }
         });
     }
@@ -102,9 +137,9 @@ export class DocumentChangeRequestFormComponent implements CanComponentDeactivat
     onSubmit() {
         if (this.changeForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.changeForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.changeForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.changeForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.changeForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

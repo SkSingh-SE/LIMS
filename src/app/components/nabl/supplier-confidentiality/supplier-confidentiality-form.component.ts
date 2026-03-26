@@ -11,11 +11,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-supplier-confidentiality-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './supplier-confidentiality-form.component.html'
 })
 export class SupplierConfidentialityFormComponent implements CanComponentDeactivate, OnInit {
@@ -52,10 +54,17 @@ export class SupplierConfidentialityFormComponent implements CanComponentDeactiv
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('SupplierConfidentiality').subscribe({
+            next: (defaults) => {
+                this.agreementForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.loadSuppliers();
 
         this.recordId = Number(this.route.snapshot.params['id']);
@@ -79,10 +88,10 @@ export class SupplierConfidentialityFormComponent implements CanComponentDeactiv
         const today = new Date().toISOString().split('T')[0];
         this.agreementForm = this.fb.group({
             id: [0],
-            formatNo: ['F-2', Validators.required],
+            formatNo: ['F-2'],
             documentNo: [{ value: '', disabled: true }],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
 
             supplierId: [null, Validators.required],
@@ -93,14 +102,20 @@ export class SupplierConfidentialityFormComponent implements CanComponentDeactiv
             agreementDate: [today, Validators.required],
             validUntil: ['', Validators.required],
 
-            reviewedBy: ['Quality Manager', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
             reviewedDate: [today, Validators.required],
-            approvedBy: ['Director', Validators.required],
+            approvedBy: [''],
             approvalDate: [today, Validators.required],
 
-            status: ['active', Validators.required],
+            status: ['active'],
             remarks: ['']
         });
+
+        // System-managed fields — always readonly
+        this.agreementForm.get('issueNo')?.disable();
+        this.agreementForm.get('revNo')?.disable();
+        this.agreementForm.get('formatNo')?.disable();
     }
 
     loadSuppliers(): void {
@@ -129,12 +144,17 @@ export class SupplierConfidentialityFormComponent implements CanComponentDeactiv
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.agreementForm.patchValue(formValues);
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.agreementForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields
+                    this.agreementForm.get('issueNo')?.disable();
+                    this.agreementForm.get('revNo')?.disable();
+                    this.agreementForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }

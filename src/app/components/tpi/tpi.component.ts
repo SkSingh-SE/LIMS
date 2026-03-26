@@ -23,14 +23,14 @@ export class TPIComponent implements OnInit {
     { key: 'agencyName', type: 'string', label: 'Agency Name', filter: true },
     { key: 'emailId', type: 'string', label: 'Email', filter: true },
     { key: 'contactNo', type: 'string', label: 'Contact number', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     agencyName: 'string',
     emailId: 'string',
     contactNo: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -48,7 +48,7 @@ export class TPIComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -105,8 +105,10 @@ export class TPIComponent implements OnInit {
     );
   }
   loadBankData(): void {
-    this.tpiService.getTPIById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.tpiService.getTPIById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.TPIForm.patchValue(response);
       },
@@ -252,6 +254,7 @@ export class TPIComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.TPIForm.reset();
     this.TPIForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadBankData();
@@ -261,7 +264,6 @@ export class TPIComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'TPI Form';
-      this.TPIForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

@@ -37,11 +37,6 @@
 </div>
 
 <div class="nabl-preview-page">
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border" style="color: #DA261C;" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
   <app-print-frame *ngIf="record()" [title]="'Purchase Order (F-22)'" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header

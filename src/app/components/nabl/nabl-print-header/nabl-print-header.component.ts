@@ -1,5 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
   selector: 'app-nabl-print-header',
@@ -8,7 +9,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './nabl-print-header.component.html',
   styleUrl: './nabl-print-header.component.css'
 })
-export class NablPrintHeaderComponent {
+export class NablPrintHeaderComponent implements OnInit {
   @Input() formatNo: string = '';
   @Input() mainTitle: string = '';
   @Input() docNo: string = '';
@@ -17,8 +18,24 @@ export class NablPrintHeaderComponent {
   @Input() revNo: string | number = '00';
   @Input() revDate: string | Date = '--';
 
-  // Fixed company details (can be moved to a configuration service later)
-  companyName: string = 'DIVINE METALLURGICAL SERVICES PVT. LTD.';
-  companyAddress: string = 'Plot No. 14, Gopal Industrial Estate, Opp. Vallabhnagar, Odhav, AHMEDABAD – 382415, GUJRAT';
+  companyName = '';
+  companyAddress = '';
   logoPath: string = 'assets/images/logo.png';
+
+  constructor(private nablHeaderService: NablHeaderService) {}
+
+  ngOnInit(): void {
+    this.nablHeaderService.getCompanyInfo().subscribe({
+      next: (info) => {
+        this.companyName = info.companyName || 'DIVINE METALLURGICAL SERVICES PVT. LTD.';
+        this.companyAddress = info.companyAddress || '';
+        if (info.organizationLogo) {
+          this.logoPath = info.organizationLogo;
+        }
+      },
+      error: () => {
+        this.companyName = 'DIVINE METALLURGICAL SERVICES PVT. LTD.';
+      }
+    });
+  }
 }

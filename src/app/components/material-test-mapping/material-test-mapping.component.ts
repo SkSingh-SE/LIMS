@@ -30,7 +30,7 @@ export class MaterialTestMappingComponent implements OnInit {
     { key: 'productCondition', type: 'string', label: 'Product Condition', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
     { key: 'laboratoryTest', type: 'string', label: 'Laboratory Test', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -38,7 +38,7 @@ export class MaterialTestMappingComponent implements OnInit {
     productCondition: 'string',
     grade: 'string',
     laboratoryTest: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   // common filter variables
@@ -56,7 +56,7 @@ export class MaterialTestMappingComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -119,8 +119,10 @@ export class MaterialTestMappingComponent implements OnInit {
   }
   getDetails(): void {
     if (!this.mappingId || this.mappingId <= 0) return;
-    this.materialTestMappingService.getMaterialTestMappingById(this.mappingId).subscribe({
+    const requestId = this.mappingId;
+    this.materialTestMappingService.getMaterialTestMappingById(requestId).subscribe({
       next: (response) => {
+        if (this.mappingId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         if(response?.laboratoryTests){
           const labTestArray = this.MappingForm.get('laboratoryTests') as FormArray;

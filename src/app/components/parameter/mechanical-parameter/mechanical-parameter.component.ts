@@ -10,10 +10,11 @@ import { ParameterCategoryService } from '../../../services/parameter-category.s
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
 
 @Component({
   selector: 'app-mechanical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, SymbolPickerComponent],
   templateUrl: './mechanical-parameter.component.html',
   styleUrl: './mechanical-parameter.component.css'
 })
@@ -36,14 +37,14 @@ export class MechanicalParameterComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     unitName: 'string',
     factor: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -62,7 +63,7 @@ export class MechanicalParameterComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -105,10 +106,11 @@ export class MechanicalParameterComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       code: ['', Validators.required],
-      decimalPrecision: [1],
+      decimalPrecision: [1, [Validators.required, Validators.min(0), Validators.max(6)]],
+      conversionFactor: [1, [Validators.required, Validators.min(0.000001)]],
       defaultTestMethodID: [null],
       parameterCategoryID: [null],
-      parameterUnitID: [0, Validators.required],
+      parameterUnitID: [0, [Validators.required, Validators.min(1)]],
       note: [''],
       elementType: ['normal'],
       parameterType: ['Mechanical', Validators.required],
@@ -127,7 +129,7 @@ export class MechanicalParameterComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.ParameterList = [];
       }
     }
@@ -145,8 +147,10 @@ export class MechanicalParameterComponent implements OnInit {
   }
 
   getDetails(): void {
-    this.parameterService.getParameterById(this.parameterId).subscribe({
+    const requestId = this.parameterId;
+    this.parameterService.getParameterById(requestId).subscribe({
       next: (response) => {
+        if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ParameterForm.patchValue(response);
         if (response.allowedOrientations?.length > 0) {
@@ -288,13 +292,14 @@ export class MechanicalParameterComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
     this.initForm();
+    this.parameterId = 0;
     if (id > 0) {
       this.parameterId = id;
       this.getDetails();
@@ -324,6 +329,7 @@ export class MechanicalParameterComponent implements OnInit {
       this.bsModal.hide();
     }
     this.initForm();
+    this.customerTypeObject = null;
     this.parameterId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
@@ -347,7 +353,7 @@ export class MechanicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -359,7 +365,7 @@ export class MechanicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }
@@ -524,6 +530,7 @@ export class MechanicalParameterComponent implements OnInit {
     });
     this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
   }
+
 
   @HostListener('window:focus')
   onWindowFocus(): void {}

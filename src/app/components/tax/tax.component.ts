@@ -22,14 +22,14 @@ export class TaxComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'rate', type: 'number', label: 'Rate', filter: true },
     { key: 'date', type: 'date', label: 'Date', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     rate: 'string',
     date: 'date',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,7 +47,7 @@ export class TaxComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -108,8 +108,10 @@ export class TaxComponent implements OnInit {
     );
   }
   loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+    const requestId = this.taxId;
+    this.taxService.getTaxById(requestId).subscribe({
       next: (response) => {
+        if (this.taxId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.taxForm.patchValue({
           id: this.customerTypeObject.id || 0,
@@ -263,6 +265,7 @@ export class TaxComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.taxForm.reset();
     this.taxForm.enable();
+    this.taxId = 0;
     if (id > 0) {
       debugger;
       this.taxId = id;
@@ -273,7 +276,6 @@ export class TaxComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Tax Form';
-      this.taxForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

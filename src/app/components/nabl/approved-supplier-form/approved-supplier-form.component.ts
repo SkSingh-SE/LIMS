@@ -9,11 +9,13 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-approved-supplier-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './approved-supplier-form.component.html'
 })
 export class ApprovedSupplierFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('ApprovedSupplier').subscribe({
+            next: (defaults) => {
+                this.supplierForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
 
@@ -74,11 +83,11 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
         const today = new Date().toISOString().split('T')[0];
         this.supplierForm = this.fb.group({
             id: [0],
-            formatNo: ['F-20', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-20'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             supplierName: ['', Validators.required],
             contactDetails: ['', Validators.required],
@@ -93,9 +102,21 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             performanceGrade: [''],
 
             isBlacklisted: [false],
+            blacklistDate: [''],
+            address: [''],
+            agreementDate: [''],
             remarks: [''],
-            isActive: [true]
+            isActive: [true],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.supplierForm.get('documentNo')?.disable();
+        this.supplierForm.get('issueNo')?.disable();
+        this.supplierForm.get('revNo')?.disable();
+        this.supplierForm.get('formatNo')?.disable();
     }
 
     loadData(): void {
@@ -103,14 +124,19 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             next: (data) => {
                 if (data) {
                     const formValues = { ...data };
-                    // Set current date on edit as per NABL standard
                     formValues.date = new Date().toISOString().split('T')[0];
-
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
                     this.supplierForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.supplierForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.supplierForm.get('documentNo')?.disable();
+                this.supplierForm.get('issueNo')?.disable();
+                this.supplierForm.get('revNo')?.disable();
+                this.supplierForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }

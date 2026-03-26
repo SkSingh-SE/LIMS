@@ -14,6 +14,7 @@ import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-tab
 export class InductionTrainingListComponent implements OnInit {
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'employeeName', label: 'Employee Name', type: 'string', filter: true },
         { key: 'qualification', label: 'Qualification', type: 'string', filter: true },
         { key: 'position', label: 'Position', type: 'string', filter: true },

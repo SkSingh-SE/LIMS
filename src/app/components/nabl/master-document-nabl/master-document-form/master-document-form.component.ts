@@ -7,11 +7,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-master-document-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './master-document-form.component.html',
     styleUrl: './master-document-form.component.css'
 })
@@ -34,8 +36,15 @@ export class MasterDocumentFormComponent implements CanComponentDeactivate, OnIn
         private route: ActivatedRoute,
         private router: Router,
         private service: MasterDocumentService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('MasterDocument').subscribe({
+            next: (defaults) => {
+                this.docForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -55,24 +64,47 @@ export class MasterDocumentFormComponent implements CanComponentDeactivate, OnIn
 
     private initForm() {
         this.docForm = this.fb.group({
-            formatNo: ['F-43', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-43', Validators.required],
+            formatNo: ['F-43'],
+            docNo: [''],
             srNo: [null],
             documentName: ['', Validators.required],
-            documentNo: ['', Validators.required],
-            issueNo: ['', Validators.required],
+            documentNo: [''],
+            issueNo: [''],
             issueDate: ['', Validators.required],
-            revNo: ['', Validators.required],
+            revNo: [''],
             revDate: ['', Validators.required],
-            copyHolder: ['', Validators.required]
+            copyHolder: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.docForm.get('documentNo')?.disable();
+        this.docForm.get('docNo')?.disable();
+        this.docForm.get('issueNo')?.disable();
+        this.docForm.get('revNo')?.disable();
+        this.docForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.docForm.patchValue(data);
-                if (this.isViewMode) this.docForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.docForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.docForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.docForm.get('documentNo')?.disable();
+                this.docForm.get('docNo')?.disable();
+                this.docForm.get('issueNo')?.disable();
+                this.docForm.get('revNo')?.disable();
+                this.docForm.get('formatNo')?.disable();
             }
         });
     }
@@ -84,9 +116,9 @@ export class MasterDocumentFormComponent implements CanComponentDeactivate, OnIn
     onSubmit() {
         if (this.docForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.docForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.docForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.docForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.docForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

@@ -142,7 +142,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       grade: [''],
       isUNS: [false],
       unsSteelNumber: [''],
-      metalClassificationID: [''],
+      metalClassificationID: [null],
       specificationLines: this.fb.group({
         chemical: this.fb.array([]),
         mechanical: this.fb.array([]),
@@ -168,11 +168,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       id: [0],
       gradeID: [0],
       manualSelection: [false],
-      parameterID: [''],
+      parameterID: [null],
       minValue: [null],
       maxValue: [null],
       notes: [''],
-      parameterUnitID: [''],
+      parameterUnitID: [null],
       minValueEquation: [0],
       maxValueEquation: [0],
       minTolerance: [0],
@@ -384,8 +384,30 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
   };
   onParameterSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
-    const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
-    specificationLine.patchValue({ parameterID: item.id });
+    const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
+    const isDuplicate = lines.controls.some((ctrl, i) =>
+      i !== index && ctrl.get('parameterID')?.value === item.id
+    );
+    if (isDuplicate) {
+      this.toastService.show(`Parameter "${item.name}" is already added in this section.`, 'warning');
+      const specificationLine = lines.at(index) as FormGroup;
+      specificationLine.patchValue({ parameterID: -1, parameterUnitID: null });
+      setTimeout(() => specificationLine.patchValue({ parameterID: '', parameterUnitID: null }), 0);
+      return;
+    }
+    const specificationLine = lines.at(index) as FormGroup;
+    const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
+    specificationLine.patchValue({
+      parameterID: item.id,
+      parameterUnitID: unitID
+    });
+    // Disable unit dropdown after parameter auto-fills it
+    const unitControl = specificationLine.get('parameterUnitID');
+    if (unitID) {
+      unitControl?.disable();
+    } else {
+      unitControl?.enable();
+    }
   }
   getHeatTreatment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);

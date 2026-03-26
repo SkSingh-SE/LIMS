@@ -23,6 +23,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -38,26 +39,21 @@
                       (click)="applySorting(column.key)"
                     ></i>
                   </span>
-                  <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let customerType of listData; let i = index" class="text-sm">
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="wide-input">{{ customerType.specimenTypeName || '-' }}</td>
-              <td class="wide-input">{{ customerType.cuttingType }}</td>
-              <td class="wide-input">{{ customerType.unitType }}</td>
-              <td class="wide-input">{{ customerType.ratePerUnit }}</td>
+
               <td class="text-center">
-                <div class="d-flex justify-content-center gap-2">
+                <div class="d-flex justify-content-center gap-3">
                   <!-- Flex for spacing -->
                   <a (click)="openModal('view', customerType.id)" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
@@ -70,7 +66,11 @@
                   </a>
                 </div>
               </td>
-            </tr>
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="wide-input">{{ customerType.specimenTypeName || '-' }}</td>
+              <td class="wide-input">{{ customerType.cuttingType }}</td>
+              <td class="wide-input">{{ customerType.unitType }}</td>
+              <td class="wide-input">{{ customerType.ratePerUnit }}</td>            </tr>
           </tbody>
         </table>
       </div>

@@ -119,7 +119,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
         '',
         [
           Validators.required,
-          Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/),
+          Validators.pattern(/^[+]?\d{10,13}$/),
         ]
       ],
       gender: ['', Validators.required],
@@ -127,7 +127,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
         '',
         [
           Validators.required,
-          Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/),
+          Validators.pattern(/^[+]?\d{10,13}$/),
         ]
       ],
       emailId: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
@@ -146,7 +146,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       permanentAddressLine1: ['', Validators.required],
       permanentAddressLine2: [''],
       permanentPinCode: ['', Validators.pattern(/^\d{6}$/)],
-      permanentAreaID: [''],
+      permanentAreaID: [null],
       permanentCity: [{ value: '', disabled: true }],
       permanentState: [{ value: '', disabled: true }],
       permanentCountry: [{ value: '', disabled: true }],
@@ -312,7 +312,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
           next: (response) => {
             this.saved = true;
             this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
-            // Optional: refresh or redirect
+            this.router.navigate(['/employee']);
           },
           error: (error) => {
             console.error('Error updating employee:', error);
@@ -326,6 +326,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
             this.saved = true;
             this.employeeId = response.id;
             this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
+            this.router.navigate(['/employee']);
           },
           error: (error) => {
             console.error('Error creating employee:', error);

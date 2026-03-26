@@ -911,18 +911,6 @@
           <form [formGroup]="currentFormGroup">
             <div class="modal-body">
               <div *ngIf="getSpecificationLinesByTab(currentGradeIndex, currentTab).length > 0">
-                <!-- Laboratory Tests -->
-                <div>
-                  <app-multi-select-dropdown
-                    [placeholder]="'Select multiple items...'"
-                    [required]="true"
-                    [isDisabled]="false"
-                    [labelName]="'Laboratory Tests'"
-                    [fetchDataFn]="getLaboratoryTest"
-                    [selectedValues]="currentFormGroup.get('laboratoryTestIDs')?.value"
-                    (itemsSelected)="onLaboratoryTestChange($event, currentTab)"
-                  ></app-multi-select-dropdown>
-                </div>
               </div>
             </div>
 

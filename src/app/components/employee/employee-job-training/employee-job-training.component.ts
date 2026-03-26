@@ -40,7 +40,7 @@ export class EmployeeJobTrainingComponent implements OnInit, OnChanges {
 
     // Search and Filter (shared for active section)
     searchTerm: string = '';
-    sortByColumn: string = 'id';
+    sortByColumn: string = 'modifiedOn';
     sortOrder: string = 'desc';
     filters: { column: string; type: string; value: any; value2?: any }[] = [];
     filterColumn: string = '';

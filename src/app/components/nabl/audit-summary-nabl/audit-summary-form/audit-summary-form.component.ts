@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-audit-summary-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './audit-summary-form.component.html',
     styleUrl: './audit-summary-form.component.css'
 })
@@ -44,8 +46,15 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditSummaryService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('AuditSummary').subscribe({
+            next: (defaults) => {
+                this.summaryForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -65,11 +74,11 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
 
     private initForm() {
         this.summaryForm = this.fb.group({
-            formatNo: ['F-52', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-52', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-52'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             auditDate: ['', Validators.required],
@@ -77,15 +86,36 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
             majorNCs: [0, [Validators.required, Validators.min(0)]],
             minorNCs: [0, [Validators.required, Validators.min(0)]],
             observationSummary: ['', Validators.required],
-            conclusion: ['', Validators.required]
+            conclusion: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.summaryForm.get('docNo')?.disable();
+        this.summaryForm.get('issueNo')?.disable();
+        this.summaryForm.get('revNo')?.disable();
+        this.summaryForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.summaryForm.patchValue(data);
-                if (this.isViewMode) this.summaryForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.summaryForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.summaryForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.summaryForm.get('docNo')?.disable();
+                this.summaryForm.get('issueNo')?.disable();
+                this.summaryForm.get('revNo')?.disable();
+                this.summaryForm.get('formatNo')?.disable();
             }
         });
     }
@@ -98,12 +128,12 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
         if (this.summaryForm.valid) {
             this.isSubmitting = true;
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.summaryForm.value).subscribe({
+                this.service.update(this.recordId, this.summaryForm.getRawValue()).subscribe({
                     next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
                     error: () => { this.isSubmitting = false; }
                 });
             } else {
-                this.service.create(this.summaryForm.value).subscribe({
+                this.service.create(this.summaryForm.getRawValue()).subscribe({
                     next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
                     error: () => { this.isSubmitting = false; }
                 });

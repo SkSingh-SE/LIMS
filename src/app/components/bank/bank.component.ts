@@ -22,14 +22,15 @@ export class BankComponent implements OnInit {
     { key: 'bankName', type: 'string', label: 'Bank Name', filter: true },
     { key: 'accountHolderName', type: 'string', label: 'Account Holder Name', filter: true },
     { key: 'accountNumber', type: 'string', label: 'Account Number', filter: true },
-    { key: 'createdOn', type: 'string', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     bankName: 'string',
     accountHolderName: 'string',
     accountNumber: 'string',
-    accountType: 'string'
+    accountType: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,7 +48,7 @@ export class BankComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -89,10 +90,10 @@ export class BankComponent implements OnInit {
       id: [0],
       bankName: ['', Validators.required],
       accountHolderName: ['', Validators.required],
-      accountNumber: ['', Validators.required],
+      accountNumber: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
       accountType: ['', Validators.required],
       branchName: ['', Validators.required],
-      ifscCode: ['', Validators.required],
+      ifscCode: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
     });
   }
 
@@ -105,7 +106,7 @@ export class BankComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.bankList = [];
       }
     }
@@ -113,8 +114,10 @@ export class BankComponent implements OnInit {
     );
   }
   loadBankData(): void {
-    this.bankService.getBankById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.bankService.getBankById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.bankForm.patchValue({
           id: this.customerTypeObject.id || 0,
@@ -260,7 +263,7 @@ export class BankComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
@@ -268,6 +271,7 @@ export class BankComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.bankForm.reset();
     this.bankForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadBankData();
@@ -275,9 +279,7 @@ export class BankComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.bankForm.reset();
       this.formTitle = 'Bank Form';
-      this.bankForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -318,7 +320,7 @@ export class BankComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -330,7 +332,7 @@ export class BankComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

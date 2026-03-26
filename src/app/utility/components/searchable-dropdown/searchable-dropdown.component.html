@@ -21,6 +21,15 @@
     [ngClass]="{ 'is-invalid': required && modelRef.invalid && modelRef.touched }"
   />
     <span
+      class="input-group-text clear-icon"
+      role="button"
+      (click)="clearSelection($event)"
+      *ngIf="!isDisabled && selectedLabel"
+      title="Clear"
+    >
+      <i class="bi bi-x-lg"></i>
+    </span>
+    <span
       class="input-group-text dropdown-toggle-icon"
       role="button"
       (click)="onChevronClick()"

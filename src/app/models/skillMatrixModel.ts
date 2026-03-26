@@ -15,6 +15,7 @@ export interface SkillMatrix {
     revNo: string;
     title: string;
     decision?: string;
+    remarks?: string;
     skills: string[];
     employeeSkills: EmployeeSkill[];
     preparedBy?: string;

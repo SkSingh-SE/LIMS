@@ -22,7 +22,8 @@ export class EmployeeListComponent implements OnInit {
     { key: 'dateOfBirth', type: 'date', label: 'DOB', filter: true },
     { key: 'gender', type: 'string', label: 'Gender', filter: true },
     { key: 'departmentName', type: 'string', label: 'Department', filter: true },
-    { key: 'designationName', type: 'string', label: 'Designation', filter: true }
+    { key: 'designationName', type: 'string', label: 'Designation', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
@@ -32,7 +33,8 @@ export class EmployeeListComponent implements OnInit {
     dateOfBirth: 'date',
     gender: 'string',
     departmentName: 'string',
-    designationName: 'string'
+    designationName: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -52,7 +54,7 @@ export class EmployeeListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

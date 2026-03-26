@@ -30,8 +30,10 @@ export interface NablDashboardDto {
     totalForms: number;
     draftCount: number;
     submittedCount: number;
+    reviewedCount: number;
     approvedCount: number;
     rejectedCount: number;
+    overdueCount: number;
     pendingReviews: NablPendingReviewItem[];
     upcomingReviews: NablUpcomingReviewItem[];
     expiringDocuments: NablExpiringDocItem[];

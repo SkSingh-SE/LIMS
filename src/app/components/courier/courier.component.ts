@@ -22,13 +22,13 @@ export class CourierComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'contactNo', type: 'string', label: 'Contact Number', filter: true },
-    { key: 'createdOn', type: 'string', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     contactNo: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -46,7 +46,7 @@ export class CourierComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -110,8 +110,10 @@ export class CourierComponent implements OnInit {
     );
   }
   loadCourierData(): void {
-    this.courierService.getCourierById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.courierService.getCourierById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.courierForm.patchValue(response);
       },
@@ -257,6 +259,7 @@ export class CourierComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.courierForm.reset();
     this.courierForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadCourierData();
@@ -264,9 +267,7 @@ export class CourierComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.courierForm.reset();
       this.formTitle = 'Courier Form';
-      this.courierForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;

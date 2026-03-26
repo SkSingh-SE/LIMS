@@ -21,7 +21,7 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
     pageNumber = 1;
 
     columns: any[] = [
-        { key: 'documentNo', header: 'Document No.', type: 'text', sortable: true },
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'date', header: 'Date', type: 'date', sortable: true },
         { key: 'supplierName', header: 'Supplier Name', type: 'text', sortable: true },
         { key: 'invoiceNo', header: 'Invoice No.', type: 'text', sortable: true },

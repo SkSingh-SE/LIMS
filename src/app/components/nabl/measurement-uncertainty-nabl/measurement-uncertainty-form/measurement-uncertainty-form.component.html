@@ -283,43 +283,7 @@
           </div>
         </div>
 
-        <!-- Section VI: Approval & Acceptance -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('approval')">
-            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">VI. Approval & Acceptance</span>
-          </div>
-          <div *ngIf="openSections['approval']" class="section-body">
-            <div class="row g-3 mb-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Prepared By
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed By</label>
-                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Approved By</label>
-                <input type="text" class="form-control" formControlName="approvedBy" placeholder="Name" />
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-12">
-                <label class="form-label fw-bold">Remarks</label>
-                <quill-editor
-                  formControlName="remarks"
-                  [modules]="quillModules"
-                  [readOnly]="isViewMode"
-                  placeholder="Enter any additional observations..."
-                ></quill-editor>
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-nabl-signature-section [parentForm]="uncertaintyForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

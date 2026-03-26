@@ -105,7 +105,7 @@ export class InvoiceCaseComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       aliasName:['',Validators.required],
-      price: [0, Validators.required],
+      price: [0, [Validators.required, Validators.min(0)]],
       invoiceCaseConfigID: [null]
     }));
     this.caseNameInputs.push('');
@@ -278,7 +278,8 @@ export class InvoiceCaseComponent implements OnInit {
                   this.fb.group({
                     id: [0],
                     name: [newName],
-                    price: [0, Validators.required],
+                    aliasName: ['', Validators.required],
+                    price: [0, [Validators.required, Validators.min(0.01)]],
                     invoiceCaseConfigID: [item?.invoiceCaseConfigID]
                   })
                 );

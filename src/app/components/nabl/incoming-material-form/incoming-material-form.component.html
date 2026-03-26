@@ -14,12 +14,6 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border " role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="materialForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="materialForm.disabled">
 
         <!-- Section I: Header Information -->
@@ -191,6 +185,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="materialForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">

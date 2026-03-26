@@ -11,6 +11,7 @@ import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
   selector: 'app-responsibility-authority-form',
@@ -59,10 +60,17 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
     private raService: ResponsibilityAuthorityService,
     private designationService: DesignationService,
     private toastService: ToastService
-  , private unsavedChangesService: UnsavedChangesService) { }
+  , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
   ngOnInit(): void {
     this.initForm();
+        this.nablHeaderService.getFormDefaults('ResponsibilityAuthority').subscribe({
+            next: (defaults) => {
+                this.raForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
 
     this.route.paramMap.subscribe(params => {
       this.matrixId = Number(params.get('id'));
@@ -89,12 +97,12 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
   initForm(): void {
     this.raForm = this.fb.group({
       id: [0],
-      formatNo: ['F-4', Validators.required],
+      formatNo: ['F-4'],
       designationId: [null, Validators.required],
       designationName: [''],
-      issueNo: ['', Validators.required],
+      issueNo: [''],
       date: ['', Validators.required],
-      revNo: ['', Validators.required],
+      revNo: [''],
       responsibilities: ['', Validators.required],
       authorities: ['', Validators.required],
       employeeAccepted: [false],
@@ -102,6 +110,11 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       issuedBy: [''],
       reviewedApprovedBy: ['']
     });
+
+        // System-managed fields — always readonly
+        this.raForm.get('issueNo')?.disable();
+        this.raForm.get('revNo')?.disable();
+        this.raForm.get('formatNo')?.disable();
   }
 
   loadData(): void {
@@ -109,6 +122,16 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       next: (data) => {
         if (data) {
           this.raForm.patchValue(data);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.raForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.raForm.get('issueNo')?.disable();
+                this.raForm.get('revNo')?.disable();
+                this.raForm.get('formatNo')?.disable();
         }
       },
       error: (error) => {

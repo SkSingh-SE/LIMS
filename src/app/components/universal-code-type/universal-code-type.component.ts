@@ -20,12 +20,12 @@ export class UniversalCodeTypeComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -44,7 +44,7 @@ export class UniversalCodeTypeComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -88,7 +88,7 @@ export class UniversalCodeTypeComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.UniversalList = [];
       }
     }
@@ -96,8 +96,10 @@ export class UniversalCodeTypeComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.universalCodeTypeService.getUniversalCodeTypeById(this.universalId).subscribe({
+    const requestId = this.universalId;
+    this.universalCodeTypeService.getUniversalCodeTypeById(requestId).subscribe({
       next: (response) => {
+        if (this.universalId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.UniversalForm.patchValue(response);
       },
@@ -235,7 +237,7 @@ export class UniversalCodeTypeComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
@@ -243,6 +245,7 @@ export class UniversalCodeTypeComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.UniversalForm.reset();
     this.UniversalForm.enable();
+    this.universalId = 0;
     if (id > 0) {
       this.universalId = id;
       this.getDetails();
@@ -252,7 +255,6 @@ export class UniversalCodeTypeComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Universal Code Type Form';
-      this.UniversalForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -293,7 +295,7 @@ export class UniversalCodeTypeComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -305,7 +307,7 @@ export class UniversalCodeTypeComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

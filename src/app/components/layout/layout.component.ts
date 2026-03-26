@@ -5,12 +5,13 @@ import { CommonModule } from '@angular/common';
 import { GlobalLoaderComponent } from '../global-loader/global-loader.component';
 import { ToastComponent } from '../toast/toast.component';
 import { UnsavedChangesModalComponent } from '../../utility/components/unsaved-changes-modal/unsaved-changes-modal.component';
+import { FloatingSymbolPickerComponent } from '../../utility/components/floating-symbol-picker/floating-symbol-picker.component';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-layout',
-  imports: [CommonModule, NavbarComponent, GlobalLoaderComponent, ToastComponent, RouterOutlet, UnsavedChangesModalComponent],
+  imports: [CommonModule, NavbarComponent, GlobalLoaderComponent, ToastComponent, RouterOutlet, UnsavedChangesModalComponent, FloatingSymbolPickerComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-internal-auditor-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './internal-auditor-form.component.html',
     styleUrl: './internal-auditor-form.component.css'
 })
@@ -36,8 +38,15 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
         private router: Router,
         private service: InternalAuditorService,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) {
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('InternalAuditor').subscribe({
+            next: (defaults) => {
+                this.auditorForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -57,19 +66,28 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
 
     private initForm() {
         this.auditorForm = this.fb.group({
-            formatNo: ['F-49', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-49', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-49'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             auditorName: ['', Validators.required],
             qualification: ['', Validators.required],
             trainingDate: ['', Validators.required],
             examScore: ['', Validators.required],
-            remarks: ['']
+            remarks: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.auditorForm.get('docNo')?.disable();
+        this.auditorForm.get('issueNo')?.disable();
+        this.auditorForm.get('revNo')?.disable();
+        this.auditorForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
@@ -77,7 +95,19 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
             next: (data) => {
                 if (data) {
                     this.auditorForm.patchValue(data);
-                    if (this.isViewMode) this.auditorForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.auditorForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.auditorForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.auditorForm.get('docNo')?.disable();
+                this.auditorForm.get('issueNo')?.disable();
+                this.auditorForm.get('revNo')?.disable();
+                this.auditorForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }
@@ -91,12 +121,12 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
     onSubmit() {
         if (this.auditorForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.auditorForm.value).subscribe({
+                this.service.update(this.recordId, this.auditorForm.getRawValue()).subscribe({
                     next: () => { this.saved = true; this.onCancel(); },
                     error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
                 });
             } else {
-                this.service.create(this.auditorForm.value).subscribe({
+                this.service.create(this.auditorForm.getRawValue()).subscribe({
                     next: () => { this.saved = true; this.onCancel(); },
                     error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
                 });

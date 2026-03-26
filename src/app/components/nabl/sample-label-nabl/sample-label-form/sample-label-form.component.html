@@ -78,13 +78,12 @@
                 <label class="form-label">Parameters to be Tested <span class="text-danger">*</span></label>
                 <textarea class="form-control" formControlName="testParameters" rows="2"></textarea>
               </div>
-              <div class="col-md-4">
-                <label class="form-label">Labeled By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Receptionist / Analyst" />
-              </div>
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="requestForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

@@ -14,12 +14,6 @@
     </div>
 
     <div class="card-body p-4">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border " role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="poForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="poForm.disabled">
 
         <!-- Section I: Header Information -->
@@ -192,17 +186,12 @@
                 <label class="form-label fw-semibold text-dark small">Terms & Conditions <span class="text-danger">*</span></label>
                 <quill-editor formControlName="termsAndConditions" [modules]="quillModules" placeholder="Enter standard terms and conditions..."></quill-editor>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Prepared By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="preparedBy">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Authorized / Approved By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="authorizedBy">
-              </div>
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="poForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">

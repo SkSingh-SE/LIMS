@@ -88,6 +88,6 @@ export class EmployeeAuthorizationPreviewComponent implements OnInit {
     }
 
     goBack(): void {
-        this.router.navigate(['/employee']);
+        this.router.navigate(['/employee/equipment-authorization/list']);
     }
 }

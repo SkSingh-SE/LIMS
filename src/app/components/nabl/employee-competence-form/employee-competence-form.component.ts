@@ -8,11 +8,13 @@ import { CompetenceEvaluationParameter } from '../../../models/employeeCompetenc
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-employee-competence-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './employee-competence-form.component.html',
     styleUrl: './employee-competence-form.component.css',
     providers: [DatePipe]
@@ -36,10 +38,17 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
         private route: ActivatedRoute,
         private toastService: ToastService,
         private datePipe: DatePipe
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('EmployeeCompetence').subscribe({
+            next: (defaults) => {
+                this.reportForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.route.url.subscribe(url => {
             const path = url[url.length - 2]?.path; // check edit/details
             if (path === 'details') {
@@ -74,7 +83,10 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
             overallRating: [null, [Validators.required, Validators.min(1), Validators.max(10)]],
             specificTrainingRequired: [''],
             evaluationDoneBy: ['', [Validators.required]],
-            evaluationDate: ['', [Validators.required]]
+            evaluationDate: ['', [Validators.required]],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
     }
 
@@ -111,6 +123,12 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
                     if (data.evaluationDate) formValues.evaluationDate = this.formatDate(data.evaluationDate);
 
                     this.reportForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.reportForm.disable();
+                    this.isViewMode = true;
+                }
                 } else {
                     this.toastService.show('Report not found', 'error');
                     this.router.navigate(['/employee/competence']);

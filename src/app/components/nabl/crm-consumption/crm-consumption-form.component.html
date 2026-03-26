@@ -9,12 +9,6 @@
     </div>
 
     <div class="card-body">
-      <div *ngIf="false" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="consumptionForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="consumptionForm.disabled">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -189,6 +183,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="consumptionForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

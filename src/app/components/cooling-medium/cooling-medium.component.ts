@@ -20,12 +20,12 @@ export class CoolingMediumComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -43,7 +43,7 @@ export class CoolingMediumComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
   payload = {
@@ -85,7 +85,7 @@ export class CoolingMediumComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
 },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.CoolingMediumList = [];
 }
     }
@@ -93,8 +93,10 @@ export class CoolingMediumComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.coolingMediumService.getCoolingMediumById(this.coolingMediumId).subscribe({
+    const requestId = this.coolingMediumId;
+    this.coolingMediumService.getCoolingMediumById(requestId).subscribe({
       next: (response) => {
+        if (this.coolingMediumId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.CoolingMediumForm.patchValue(response);
       },
@@ -232,15 +234,16 @@ export class CoolingMediumComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
-    // Reset form before rendering new data
+    // Reset form and ID before rendering new data
     this.CoolingMediumForm.reset();
     this.CoolingMediumForm.enable();
+    this.coolingMediumId = 0;
 
     if (id > 0) {
       this.coolingMediumId = id;
@@ -249,9 +252,7 @@ export class CoolingMediumComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.CoolingMediumForm.reset();
       this.formTitle = 'Cooling Medium Form';
-      this.CoolingMediumForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -292,7 +293,7 @@ export class CoolingMediumComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -304,7 +305,7 @@ export class CoolingMediumComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

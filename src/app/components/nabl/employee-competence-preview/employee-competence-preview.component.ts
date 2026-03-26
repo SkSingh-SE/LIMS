@@ -131,6 +131,10 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
     }
 
     goBack(): void {
-        this.router.navigate(['/employee']);
+        if (this.isEmployeeMode) {
+            this.router.navigate(['/employee']);
+        } else {
+            this.router.navigate(['/employee/competence']);
+        }
     }
 }

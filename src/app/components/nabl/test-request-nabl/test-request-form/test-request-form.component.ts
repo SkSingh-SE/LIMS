@@ -9,11 +9,13 @@ import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-test-request-nabl-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './test-request-form.component.html'
 })
 export class TestRequestNablFormComponent implements CanComponentDeactivate, OnInit {
@@ -42,10 +44,17 @@ export class TestRequestNablFormComponent implements CanComponentDeactivate, OnI
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('TestRequest').subscribe({
+            next: (defaults) => {
+                this.requestForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
 
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -69,11 +78,11 @@ export class TestRequestNablFormComponent implements CanComponentDeactivate, OnI
         const today = new Date().toISOString().split('T')[0];
         this.requestForm = this.fb.group({
             id: [0],
-            formatNo: ['F-27', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-27'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             customerName: ['', Validators.required],
             address: ['', Validators.required],
@@ -94,10 +103,16 @@ export class TestRequestNablFormComponent implements CanComponentDeactivate, OnI
             dispatchModes: [[]],
 
             remarks: [''],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             reviewedBy: [''],
             status: ['Completed']
         });
+
+        // System-managed fields — always readonly
+        this.requestForm.get('documentNo')?.disable();
+        this.requestForm.get('issueNo')?.disable();
+        this.requestForm.get('revNo')?.disable();
+        this.requestForm.get('formatNo')?.disable();
     }
 
     get samples(): FormArray {
@@ -130,7 +145,19 @@ export class TestRequestNablFormComponent implements CanComponentDeactivate, OnI
                         data.samples.forEach(() => this.addSample());
                     }
                     this.requestForm.patchValue(data);
-                    if (this.isViewMode) this.requestForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.requestForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.requestForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.requestForm.get('documentNo')?.disable();
+                this.requestForm.get('issueNo')?.disable();
+                this.requestForm.get('revNo')?.disable();
+                this.requestForm.get('formatNo')?.disable();
                 }
             },
             error: () => {}

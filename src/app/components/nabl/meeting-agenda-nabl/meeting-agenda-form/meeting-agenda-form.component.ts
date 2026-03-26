@@ -7,11 +7,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-meeting-agenda-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './meeting-agenda-form.component.html',
     styleUrl: './meeting-agenda-form.component.css'
 })
@@ -36,8 +38,15 @@ export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnIni
         private route: ActivatedRoute,
         private router: Router,
         private service: MeetingAgendaService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('MeetingAgenda').subscribe({
+            next: (defaults) => {
+                this.agendaForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -61,11 +70,11 @@ export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnIni
 
     private initForm() {
         this.agendaForm = this.fb.group({
-            formatNo: ['F-53', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-53', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-53'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             meetingDate: ['', Validators.required],
@@ -73,8 +82,17 @@ export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnIni
             venue: ['', Validators.required],
             chairperson: ['', Validators.required],
             attendees: this.fb.array([]),
-            agendaItems: this.fb.array([])
+            agendaItems: this.fb.array([]),
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.agendaForm.get('docNo')?.disable();
+        this.agendaForm.get('issueNo')?.disable();
+        this.agendaForm.get('revNo')?.disable();
+        this.agendaForm.get('formatNo')?.disable();
     }
 
     get attendees(): FormArray {
@@ -120,7 +138,19 @@ export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnIni
                 data.agendaItems.forEach(() => this.addAgendaItem());
 
                 this.agendaForm.patchValue(data);
-                if (this.isViewMode) this.agendaForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.agendaForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.agendaForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.agendaForm.get('docNo')?.disable();
+                this.agendaForm.get('issueNo')?.disable();
+                this.agendaForm.get('revNo')?.disable();
+                this.agendaForm.get('formatNo')?.disable();
             }
         });
     }
@@ -132,9 +162,9 @@ export class MeetingAgendaFormComponent implements CanComponentDeactivate, OnIni
     onSubmit() {
         if (this.agendaForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.agendaForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.agendaForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.agendaForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.agendaForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

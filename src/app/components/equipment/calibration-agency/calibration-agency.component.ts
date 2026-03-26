@@ -21,15 +21,16 @@ export class CalibrationAgencyComponent implements OnInit {
     { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
     { key: 'emailId1', type: 'string', label: 'Email', filter: true },
     { key: 'address', type: 'string', label: 'Address', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
-    productType: 'string',
     contactPerson1: 'string',
     contactNo1: 'number',
     emailId1: 'string',
-    address: 'string'
+    address: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -48,7 +49,7 @@ export class CalibrationAgencyComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -207,15 +208,19 @@ export class CalibrationAgencyComponent implements OnInit {
   }
 
   deleteFn(id: number): void {
-    this.calibrationService.deleteCalibrationAgency(id).subscribe({
-      next: (response) => {
-        this.toastService.show(response.message,'success');
-        this.fetchData();
-      },
-      error: (error) => {
-        this.toastService.show(error.error.message, 'error');
-      }
-    });
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this calibration agency?');
+    if (confirmed) {
+      this.calibrationService.deleteCalibrationAgency(id).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.error?.message || error.message, 'error');
+        }
+      });
+    }
   }
 }
 

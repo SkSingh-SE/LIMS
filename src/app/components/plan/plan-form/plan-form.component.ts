@@ -212,12 +212,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   createElementRow(): FormGroup {
     return this.fb.group({
-      parameterID: [''],
-      specificationLineID: [''],
+      parameterID: [null],
+      specificationLineID: [null],
       parameterName: [''],
       minValue: [null],
       maxValue: [null],
-      parameterUnitID: [''],
+      parameterUnitID: [null],
       parameterUnit: [''],
       selected: [false]
     });
@@ -1102,8 +1102,27 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
+  parseFieldChanges(json: string | null): any[] | null {
+    if (!json) return null;
+    try { return JSON.parse(json); } catch { return null; }
+  }
+
   isPlanApproved(testPlan: any): boolean {
     return testPlan?.get('planStatus')?.value === 'Approved';
+  }
+
+  /** Save button visible only when at least one plan is in editable status */
+  canSavePlan(): boolean {
+    if (this.isViewMode) return false;
+    const editableStatuses = ['Draft', 'ReplanRequested', 'ReplanApproved'];
+    for (let i = 0; i < this.samples.length; i++) {
+      const plans = this.getTestPlans(i);
+      for (let j = 0; j < plans.length; j++) {
+        const status = plans.at(j).get('planStatus')?.value;
+        if (editableStatuses.includes(status)) return true;
+      }
+    }
+    return this.samples.length === 0; // new plan with no samples yet
   }
 
   getPlanStatusLabel(status: string): string {

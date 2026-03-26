@@ -8,11 +8,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-feedback-analysis-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './feedback-analysis-form.component.html',
     styleUrl: './feedback-analysis-form.component.css'
 })
@@ -45,8 +47,15 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
         private route: ActivatedRoute,
         private router: Router,
         private service: FeedbackAnalysisService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('FeedbackAnalysis').subscribe({
+            next: (defaults) => {
+                this.analysisForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -66,25 +75,48 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
 
     private initForm() {
         this.analysisForm = this.fb.group({
-            formatNo: ['F-48', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-48', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-48'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             period: ['', Validators.required],
             totalFeedbackReceived: [null, [Validators.required, Validators.min(0)]],
             analysisSummary: ['', Validators.required],
-            actionsTaken: ['', Validators.required]
+            actionsTaken: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.analysisForm.get('documentNo')?.disable();
+        this.analysisForm.get('docNo')?.disable();
+        this.analysisForm.get('issueNo')?.disable();
+        this.analysisForm.get('revNo')?.disable();
+        this.analysisForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.analysisForm.patchValue(data);
-                if (this.isViewMode) this.analysisForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.analysisForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.analysisForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.analysisForm.get('documentNo')?.disable();
+                this.analysisForm.get('docNo')?.disable();
+                this.analysisForm.get('issueNo')?.disable();
+                this.analysisForm.get('revNo')?.disable();
+                this.analysisForm.get('formatNo')?.disable();
                 // Load related Customer Feedback if linked
                 const record = data as any;
                 if (record.customerFeedbackId) {
@@ -105,9 +137,9 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
     onSubmit() {
         if (this.analysisForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.analysisForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.analysisForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.analysisForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.analysisForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

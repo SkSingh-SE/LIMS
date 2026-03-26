@@ -9,12 +9,6 @@
     </div>
 
     <div class="card-body">
-      <div *ngIf="false" class="text-center p-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <form [formGroup]="verificationForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
 
         <!-- Section I: Header Information -->
@@ -169,6 +163,9 @@
             </div>
           </div>
         </div>
+
+        
+        <app-nabl-signature-section [parentForm]="verificationForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">

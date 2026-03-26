@@ -17,6 +17,7 @@ export class MeetingMinutesListComponent implements OnInit {
     baseRoute = '/meeting-minutes';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'meetingDate', label: 'Meeting Date', type: 'date', width: '150px', filter: true },
         { key: 'chairperson', label: 'Chairperson', type: 'string', filter: true },
         { key: 'reviewPeriod', label: 'Review Period', type: 'string', filter: true }

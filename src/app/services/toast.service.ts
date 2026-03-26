@@ -8,6 +8,10 @@ export class ToastService {
   toasts: any[] = [];
   duration = 5000;
   show(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+    // Prevent duplicate toasts with the same message within a short window
+    const isDuplicate = this.toasts.some(t => t.message === message && t.show);
+    if (isDuplicate) return;
+
     const toast = { message, type, show: true, progress: 100 };
     this.toasts.push(toast);
 

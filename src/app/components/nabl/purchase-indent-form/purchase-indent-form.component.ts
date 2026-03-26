@@ -9,11 +9,13 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { ToastService } from '../../../services/toast.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-purchase-indent-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './purchase-indent-form.component.html'
 })
 export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
         private router: Router,
         private route: ActivatedRoute,
         private unsavedChangesService: UnsavedChangesService,
-        private toastService: ToastService) { }
+        private toastService: ToastService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('PurchaseIndent').subscribe({
+            next: (defaults) => {
+                this.indentForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
 
@@ -76,11 +85,11 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
         const today = new Date().toISOString().split('T')[0];
         this.indentForm = this.fb.group({
             id: [0],
-            formatNo: ['F-21', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-21'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             departmentName: ['', Validators.required],
             indentorName: ['', Validators.required],
@@ -90,9 +99,15 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
 
             status: ['Pending'],
             remarks: [''],
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             isActive: [true]
         });
+
+        // System-managed fields — always readonly
+        this.indentForm.get('documentNo')?.disable();
+        this.indentForm.get('issueNo')?.disable();
+        this.indentForm.get('revNo')?.disable();
+        this.indentForm.get('formatNo')?.disable();
     }
 
     get items(): FormArray {
@@ -105,7 +120,7 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
             quantity: [1, [Validators.required, Validators.min(0.01)]],
             unitOfMeasure: ['Nos', Validators.required],
             purpose: [''],
-            estimatedCost: [null]
+            estimatedCost: [null, [Validators.min(0)]]
         }));
     }
 
@@ -122,11 +137,6 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.items.clear();
                     data.items?.forEach(item => {
                         this.items.push(this.fb.group({
@@ -134,11 +144,22 @@ export class PurchaseIndentFormComponent implements CanComponentDeactivate, OnIn
                             quantity: [item.quantity, [Validators.required, Validators.min(0.01)]],
                             unitOfMeasure: [item.unitOfMeasure, Validators.required],
                             purpose: [item.purpose],
-                            estimatedCost: [item.estimatedCost]
+                            estimatedCost: [item.estimatedCost, [Validators.min(0)]]
                         }));
                     });
 
                     this.indentForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.indentForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.indentForm.get('documentNo')?.disable();
+                this.indentForm.get('issueNo')?.disable();
+                this.indentForm.get('revNo')?.disable();
+                this.indentForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {

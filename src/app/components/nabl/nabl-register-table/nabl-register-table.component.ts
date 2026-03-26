@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TruncatePipe } from '../../../utility/pipe/truncate.pipe';
+import { NablWorkflowService } from '../../../services/nabl-workflow.service';
+import { NablRevisionDialogComponent, RevisionDialogResult } from '../nabl-revision-dialog/nabl-revision-dialog.component';
+import { ToastService } from '../../../services/toast.service';
 
 export interface RegisterColumn {
     key: string;
@@ -15,7 +18,7 @@ export interface RegisterColumn {
 @Component({
     selector: 'app-nabl-register-table',
 
-    imports: [CommonModule, FormsModule, RouterModule,TruncatePipe],
+    imports: [CommonModule, FormsModule, RouterModule, TruncatePipe, NablRevisionDialogComponent],
     templateUrl: './nabl-register-table.component.html',
     styleUrl: './nabl-register-table.component.css'
 })
@@ -41,12 +44,17 @@ export class NablRegisterTableComponent {
     @Input() showPagination: boolean = true;
     @Input() baseRoute: string = '';  // e.g. '/responsibility-authority'
 
+    // --- Workflow Inputs ---
+    @Input() showWorkflowActions: boolean = false;
+    @Input() formType: string = '';
+
     // --- Event Outputs ---
     @Output() onEdit = new EventEmitter<number>();
     @Output() onDelete = new EventEmitter<number>();
     @Output() onView = new EventEmitter<number>();
     @Output() onPreview = new EventEmitter<number>();
     @Output() onPageChange = new EventEmitter<any>();
+    @Output() onRevise = new EventEmitter<{ id: number; newId: number }>();
 
     // --- Pagination State ---
     pageNumber = 1;
@@ -64,6 +72,15 @@ export class NablRegisterTableComponent {
     filterValue: string = '';
     filterValue2: string = '';
     isFilterOpen = false;
+
+    // --- Revision Dialog State ---
+    showRevisionDialog = false;
+    revisionTargetId: number = 0;
+
+    constructor(
+        private workflowService: NablWorkflowService,
+        private toastService: ToastService
+    ) {}
 
     // --- Serial Number helper ---
     getSerialNumber(index: number): number {
@@ -189,5 +206,94 @@ export class NablRegisterTableComponent {
             sortOrder: this.sortOrder,
             filter: this.filters
         });
+    }
+
+    // --- Workflow Actions ---
+
+    getStatusBadgeClass(status: string): string {
+        switch (status) {
+            case 'Draft': return 'bg-secondary';
+            case 'Submitted': return 'bg-info';
+            case 'Reviewed': return 'bg-warning text-dark';
+            case 'Approved': return 'bg-success';
+            case 'Rejected': return 'bg-danger';
+            default: return 'bg-dark';
+        }
+    }
+
+    canEdit(row: any): boolean {
+        if (!this.showWorkflowActions) return true;
+        return row.status === 'Draft' || row.status === 'Rejected';
+    }
+
+    canDelete(row: any): boolean {
+        if (!this.showWorkflowActions) return true;
+        return row.status === 'Draft';
+    }
+
+    doSubmit(row: any): void {
+        if (!confirm('Submit this document for review?')) return;
+        this.workflowService.submit(this.formType, row.id).subscribe({
+            next: (res) => {
+                this.toastService.show(res.message || 'Submitted successfully', 'success');
+                this.emitPageChange();
+            },
+            error: (err) => this.toastService.show(err.error?.message || 'Submit failed', 'error')
+        });
+    }
+
+    doReview(row: any): void {
+        if (!confirm('Mark this document as reviewed?')) return;
+        this.workflowService.review(this.formType, row.id).subscribe({
+            next: (res) => {
+                this.toastService.show(res.message || 'Reviewed successfully', 'success');
+                this.emitPageChange();
+            },
+            error: (err) => this.toastService.show(err.error?.message || 'Review failed', 'error')
+        });
+    }
+
+    doApprove(row: any): void {
+        if (!confirm('Approve this document? This will lock it from further editing.')) return;
+        this.workflowService.approve(this.formType, row.id).subscribe({
+            next: (res) => {
+                this.toastService.show(res.message || 'Approved successfully', 'success');
+                this.emitPageChange();
+            },
+            error: (err) => this.toastService.show(err.error?.message || 'Approval failed', 'error')
+        });
+    }
+
+    doReject(row: any): void {
+        const remarks = prompt('Enter rejection remarks:');
+        if (remarks === null) return;
+        this.workflowService.reject(this.formType, row.id, remarks).subscribe({
+            next: (res) => {
+                this.toastService.show(res.message || 'Rejected', 'success');
+                this.emitPageChange();
+            },
+            error: (err) => this.toastService.show(err.error?.message || 'Reject failed', 'error')
+        });
+    }
+
+    openReviseDialog(row: any): void {
+        this.revisionTargetId = row.id;
+        this.showRevisionDialog = true;
+    }
+
+    onRevisionConfirm(result: RevisionDialogResult): void {
+        this.showRevisionDialog = false;
+        this.workflowService.revise(this.formType, this.revisionTargetId, result.revisionType, result.reason).subscribe({
+            next: (res) => {
+                this.toastService.show(res.message || 'Revision created', 'success');
+                this.onRevise.emit({ id: this.revisionTargetId, newId: res.id });
+                this.emitPageChange();
+            },
+            error: (err) => this.toastService.show(err.error?.message || 'Revision failed', 'error')
+        });
+    }
+
+    onRevisionCancel(): void {
+        this.showRevisionDialog = false;
     }
 }

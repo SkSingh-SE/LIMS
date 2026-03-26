@@ -21,13 +21,13 @@ export class CompanyCategoryComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true }
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     description: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,7 +45,7 @@ export class CompanyCategoryComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -90,7 +90,7 @@ export class CompanyCategoryComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.filteredCompanyCategoryList = [];
       }
     }
@@ -98,8 +98,10 @@ export class CompanyCategoryComponent implements OnInit {
     );
   }
   loadCustomerTypeData(): void {
-    this.companyCategoryService.getCompanyCategoryById(this.customerTypeId).subscribe({
+    const requestId = this.customerTypeId;
+    this.companyCategoryService.getCompanyCategoryById(requestId).subscribe({
       next: (response) => {
+        if (this.customerTypeId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.customerTypeForm.patchValue({
           id: this.customerTypeObject.id || 0,
@@ -242,7 +244,7 @@ export class CompanyCategoryComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
@@ -250,6 +252,7 @@ export class CompanyCategoryComponent implements OnInit {
   openModal(type: string, id: number): void {
     this.customerTypeForm.reset();
     this.customerTypeForm.enable();
+    this.customerTypeId = 0;
     if (id > 0) {
       debugger;
       this.customerTypeId = id;
@@ -258,9 +261,7 @@ export class CompanyCategoryComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.customerTypeForm.reset();
       this.formTitle = 'Company Category Form';
-      this.customerTypeForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -300,7 +301,7 @@ export class CompanyCategoryComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -312,7 +313,7 @@ export class CompanyCategoryComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }

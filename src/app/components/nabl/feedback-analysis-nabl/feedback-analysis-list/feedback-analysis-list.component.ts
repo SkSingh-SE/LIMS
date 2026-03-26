@@ -17,6 +17,7 @@ export class FeedbackAnalysisListComponent implements OnInit {
     baseRoute = '/feedback-analysis';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'period', label: 'Period', type: 'string', filter: true },
         { key: 'totalFeedbackReceived', label: 'Total Feedback Received', type: 'number', width: '200px' }
     ];

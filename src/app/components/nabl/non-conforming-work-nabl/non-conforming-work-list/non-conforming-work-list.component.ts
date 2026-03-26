@@ -16,6 +16,7 @@ export class NonConformingWorkListComponent implements OnInit {
     baseRoute = '/non-conforming-work';
 
     columns: RegisterColumn[] = [
+        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'dateMonthYear', label: 'Date / Month & Year', type: 'string', width: '150px', filter: true },
         { key: 'ncDetail', label: 'NC Detail', type: 'string', filter: true },
         { key: 'closerDate', label: 'Closer Date', type: 'date', width: '130px', filter: true }

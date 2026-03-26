@@ -1,73 +1,215 @@
-.dropdown-menu {
-    border-radius: 0.5rem;
-    background-color: #fff;
-  }
-  
-  .badge {
-    font-size: 0.9rem;
-    padding: 0.5em 0.75em;
-    display: inline-flex;
-    align-items: center;
-  }
-  .badge span {
-    font-weight: bold;
-  }
-  .hover-bg:hover {
-    background-color: #f8f9fa; /* light gray */
-    cursor: pointer;
-  }
+/* ─── Theme Variables ─── */
+:host ::ng-deep {
+  --primary-color: #da261c;
+  --primary-hover: #b91c1c;
+}
 
-  /* =========================================
-   Compact Red Slide Toggle (Hover + Height)
-   ========================================= */
+/* ─── Fieldset (Option A: Left Accent) ─── */
+fieldset.border {
+  border: none !important;
+  border-left: 3px solid var(--primary-color, #da261c) !important;
+  background: #fafbfc;
+  border-radius: 0 6px 6px 0;
+  padding: 0.6rem 0.8rem !important;
+  margin-bottom: 0.6rem !important;
+}
 
-.compact-red-toggle {
-  /* Brand colors */
-  --mdc-switch-selected-track-color: #DA261C;
-  --mdc-switch-selected-handle-color: #ffffff;
-  --mdc-switch-selected-hover-track-color: #B91C1C;
-  --mdc-switch-selected-focus-track-color: #B91C1C;
+fieldset legend {
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  background: transparent;
+  padding: 0 0.4rem;
+  margin-bottom: 0.2rem;
+  border: none;
+  float: none;
+  width: auto;
+}
 
-  --mdc-switch-unselected-track-color: #e5e7eb;
-  --mdc-switch-unselected-hover-track-color: #d1d5db;
-  --mdc-switch-unselected-handle-color: #ffffff;
+/* ─── Cards ─── */
+.card {
+  border: 1px solid #e9ecef !important;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
 
+.card .card-header {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background: var(--primary-color, #da261c);
+  font-size: 0.85rem;
+  padding: 0.4rem 1rem;
+}
+
+.card .card-body {
+  padding: 0.6rem 0.8rem;
+}
+
+/* ─── Form Controls (Ultra Compact) ─── */
+.form-control,
+.form-select {
   font-size: 0.8rem;
-  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  height: auto;
+  min-height: 30px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Control overall height */
-.compact-red-toggle .mdc-form-field {
-  height: 28px;
-  align-items: center;
+textarea.form-control {
+  min-height: unset;
 }
 
-/* Scale down the switch */
-.compact-red-toggle .mdc-switch {
-  transform: scale(0.82);
-  transition: transform 0.15s ease;
+.form-control:focus,
+.form-select:focus {
+  border-color: #da261c;
+  box-shadow: 0 0 0 0.12rem rgba(218, 38, 28, 0.12);
 }
 
-/* Hover effect (smooth lift + glow) */
-.compact-red-toggle:hover .mdc-switch {
-  transform: scale(0.9);
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
-/* Subtle hover glow */
-.compact-red-toggle:hover {
-  filter: drop-shadow(0 2px 6px rgba(218, 38, 28, 0.25));
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
 }
 
-/* Label styling */
-.compact-red-toggle .mdc-form-field > label {
-  margin-left: 6px;
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.15rem;
+}
+
+/* ─── Checkbox / Radio ─── */
+.form-check {
+  margin-bottom: 0;
+}
+
+.form-check-input {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+}
+
+.form-check-inline {
+  margin-right: 0.75rem;
+}
+
+.form-check-label {
+  font-size: 0.78rem;
+}
+
+/* ─── Row Spacing Override ─── */
+.row.gy-1 > * {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+/* ─── Tables (Compact) ─── */
+.table-compact {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.table-compact th {
+  background: #f1f3f5;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-compact td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  font-size: 0.8rem;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
   font-weight: 500;
-  color: #1f2937;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+:host ::ng-deep .btn-outline-primary,
+.btn-outline-primary {
+  color: #da261c !important;
+  border-color: #da261c !important;
+}
+
+:host ::ng-deep .btn-outline-primary:hover,
+.btn-outline-primary:hover {
+  background-color: #da261c !important;
+  border-color: #da261c !important;
+  color: #fff !important;
+}
+
+/* ─── Dropdown ─── */
+.dropdown-menu {
+  border-radius: 0.4rem;
+  background-color: #fff;
+  font-size: 0.8rem;
+}
+
+.hover-bg:hover {
+  background-color: #f8f9fa;
   cursor: pointer;
 }
 
-/* Disabled state */
-.compact-red-toggle.mat-disabled {
-  opacity: 0.6;
-  filter: none;
+/* ─── Text Helpers ─── */
+.text-sm {
+  font-size: 0.72rem;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+/* ─── Sticky Bottom Bar ─── */
+.sticky-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: #fff;
+  border-top: 2px solid var(--primary-color, #da261c);
+  padding: 0.4rem 1.5rem;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .card .card-body {
+    padding: 0.5rem;
+  }
+
+  .sticky-bottom-bar {
+    padding: 0.4rem 0.6rem;
+  }
+
+  fieldset.border {
+    padding: 0.5rem 0.6rem !important;
+  }
 }

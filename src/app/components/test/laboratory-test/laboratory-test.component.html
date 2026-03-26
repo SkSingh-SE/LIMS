@@ -39,6 +39,9 @@
             [required]="true"
             [selectedItem]="labTestForm.get('labDepartmentID')?.value"
           ></app-searchable-dropdown>
+          <span *ngIf="labTestForm.get('labDepartmentID')?.touched && labTestForm.get('labDepartmentID')?.invalid" class="text-danger text-sm">
+            Department is required.
+          </span>
         </div>
         <div>
           <label for="subGroup" class="form-label">

@@ -9,11 +9,13 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-incoming-material-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './incoming-material-form.component.html'
 })
 export class IncomingMaterialFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService,
-        private unsavedChangesService: UnsavedChangesService) { }
+        private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('IncomingMaterial').subscribe({
+            next: (defaults) => {
+                this.materialForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
 
@@ -76,11 +85,11 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
         const today = new Date().toISOString().split('T')[0];
         this.materialForm = this.fb.group({
             id: [0],
-            formatNo: ['F-24', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-24'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             materialName: ['', Validators.required],
             materialCode: ['', Validators.required],
@@ -102,8 +111,17 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
 
             inspectedBy: ['', Validators.required],
             verifiedBy: ['', Validators.required],
-            isActive: [true]
+            isActive: [true],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.materialForm.get('documentNo')?.disable();
+        this.materialForm.get('issueNo')?.disable();
+        this.materialForm.get('revNo')?.disable();
+        this.materialForm.get('formatNo')?.disable();
     }
 
     get resultsArray(): FormArray {
@@ -133,11 +151,6 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.resultsArray.clear();
                     data.results?.forEach(r => {
                         const rForm = this.fb.group({
@@ -150,6 +163,17 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
                     });
 
                     this.materialForm.patchValue(formValues);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.materialForm.disable();
+                    this.isViewMode = true;
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.materialForm.get('documentNo')?.disable();
+                this.materialForm.get('issueNo')?.disable();
+                this.materialForm.get('revNo')?.disable();
+                this.materialForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }

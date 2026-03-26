@@ -7,11 +7,13 @@ import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.hel
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-document-review-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
     templateUrl: './document-review-form.component.html',
     styleUrl: './document-review-form.component.css'
 })
@@ -34,8 +36,15 @@ export class DocumentReviewFormComponent implements CanComponentDeactivate, OnIn
         private route: ActivatedRoute,
         private router: Router,
         private service: DocumentReviewService
-    , private unsavedChangesService: UnsavedChangesService) {
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('DocumentReview').subscribe({
+            next: (defaults) => {
+                this.reviewForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
     }
 
     ngOnInit() {
@@ -55,26 +64,47 @@ export class DocumentReviewFormComponent implements CanComponentDeactivate, OnIn
 
     private initForm() {
         this.reviewForm = this.fb.group({
-            formatNo: ['F-45', Validators.required],
-            docNo: ['DMSPL / Level-04 / Format / F-45', Validators.required],
-            issueNo: ['03', Validators.required],
-            issueDate: ['2021-10-01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-45'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
             revDate: ['--', Validators.required],
 
             srNo: [null],
             documentName: ['', Validators.required],
             lastReviewDate: ['', Validators.required],
             nextReviewDate: ['', Validators.required],
-            reviewDoneBy: ['', Validators.required]
+            reviewDoneBy: ['', Validators.required],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
         });
+
+        // System-managed fields — always readonly
+        this.reviewForm.get('docNo')?.disable();
+        this.reviewForm.get('issueNo')?.disable();
+        this.reviewForm.get('revNo')?.disable();
+        this.reviewForm.get('formatNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.reviewForm.patchValue(data);
-                if (this.isViewMode) this.reviewForm.disable();
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.reviewForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.reviewForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.reviewForm.get('docNo')?.disable();
+                this.reviewForm.get('issueNo')?.disable();
+                this.reviewForm.get('revNo')?.disable();
+                this.reviewForm.get('formatNo')?.disable();
             }
         });
     }
@@ -86,9 +116,9 @@ export class DocumentReviewFormComponent implements CanComponentDeactivate, OnIn
     onSubmit() {
         if (this.reviewForm.valid) {
             if (this.isEditMode) {
-                this.service.update(this.recordId, this.reviewForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.update(this.recordId, this.reviewForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             } else {
-                this.service.create(this.reviewForm.value).subscribe(() => { this.saved = true; this.onCancel(); });
+                this.service.create(this.reviewForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
             }
         }
     }

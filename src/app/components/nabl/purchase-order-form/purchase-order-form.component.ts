@@ -9,11 +9,13 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { ToastService } from '../../../services/toast.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
 
 @Component({
     selector: 'app-purchase-order-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
     templateUrl: './purchase-order-form.component.html'
 })
 export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnInit {
@@ -49,10 +51,17 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
         private router: Router,
         private route: ActivatedRoute,
         private unsavedChangesService: UnsavedChangesService,
-        private toastService: ToastService) { }
+        private toastService: ToastService,
+        private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
         this.initForm();
+        this.nablHeaderService.getFormDefaults('PurchaseOrder').subscribe({
+            next: (defaults) => {
+                this.poForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
 
@@ -76,11 +85,11 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
         const today = new Date().toISOString().split('T')[0];
         this.poForm = this.fb.group({
             id: [0],
-            formatNo: ['F-22', Validators.required],
-            issueNo: ['01', Validators.required],
-            revNo: ['00', Validators.required],
+            formatNo: ['F-22'],
+            issueNo: ['01'],
+            revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: ['', Validators.required],
+            documentNo: [''],
 
             supplierName: ['', Validators.required],
             supplierAddress: ['', Validators.required],
@@ -92,7 +101,7 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
 
             items: this.fb.array([]),
             totalAmount: [0],
-            gstPercentage: [18],
+            gstPercentage: [18, [Validators.min(0), Validators.max(100)]],
             gstAmount: [0],
             grandTotal: [0],
 
@@ -100,11 +109,17 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
             deliveryDate: ['', Validators.required],
             paymentTerms: ['', Validators.required],
 
-            preparedBy: ['', Validators.required],
+            preparedBy: [''],
             authorizedBy: ['', Validators.required],
             status: ['Draft'],
             isActive: [true]
         });
+
+        // System-managed fields — always readonly
+        this.poForm.get('documentNo')?.disable();
+        this.poForm.get('issueNo')?.disable();
+        this.poForm.get('revNo')?.disable();
+        this.poForm.get('formatNo')?.disable();
 
         // Watch items and GST for totals calculation
         this.poForm.get('items')?.valueChanges.subscribe(() => this.calculateTotals());
@@ -159,11 +174,6 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
                     const formValues = { ...data };
                     formValues.date = new Date().toISOString().split('T')[0];
 
-                    if (this.isEditMode) {
-                        const currentRev = parseInt(data.revNo || '0');
-                        formValues.revNo = (currentRev + 1).toString().padStart(2, '0');
-                    }
-
                     this.items.clear();
                     data.items?.forEach(item => {
                         const itemForm = this.fb.group({
@@ -177,6 +187,17 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
                     });
 
                     this.poForm.patchValue(formValues);
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.poForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields
+                    this.poForm.get('documentNo')?.disable();
+                    this.poForm.get('issueNo')?.disable();
+                    this.poForm.get('revNo')?.disable();
+                    this.poForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => {

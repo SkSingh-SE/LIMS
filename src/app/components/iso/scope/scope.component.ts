@@ -96,6 +96,7 @@ export class ScopeComponent implements OnInit {
       labScopeID: [this.scopeForm.get('ID')?.value || 0],
       testMethodSpecification: [''],
       testMethodSpecificationID: ['', Validators.required],
+      testMethodSpecificationVersionID: [null],
       parameters: this.fb.array([]),
     });
     this.specifications.push(specGroup);
@@ -103,6 +104,17 @@ export class ScopeComponent implements OnInit {
 
   removeSpecification(index: number): void {
     this.specifications.removeAt(index);
+    // Rebuild specVersionsMap indices after removal
+    const newMap = new Map<number, any[]>();
+    this.specifications.controls.forEach((spec, idx) => {
+      const specId = spec.get('testMethodSpecificationID')?.value;
+      // Try to find existing data from old map, otherwise empty
+      const oldData = this.specVersionsMap.get(idx >= index ? idx + 1 : idx);
+      if (oldData) {
+        newMap.set(idx, oldData);
+      }
+    });
+    this.specVersionsMap = newMap;
   }
 
   parameters(specIndex: number): FormArray {
@@ -119,7 +131,7 @@ export class ScopeComponent implements OnInit {
       isUnderISO: [false],
       lowerLimit: [''],
       upperLimit: [''],
-      disciplineID: [''],
+      disciplineID: [null],
       groupID: [null],
       subGroupID: [null],
       equipmentIDs: [[]],
@@ -191,17 +203,51 @@ export class ScopeComponent implements OnInit {
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
+  specVersionsMap: Map<number, any[]> = new Map();
   onTestSpecificationSelected(item: any, index: number) {
-    this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id });
+    this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
     this.specifications.at(index).patchValue({ testMethodSpecification: item.name });
+    this.loadSpecVersionsForIndex(item.id, index);
   };
+  loadSpecVersionsForIndex(specId: number, index: number) {
+    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+      next: (data) => {
+        this.specVersionsMap.set(index, data || []);
+        if (data?.length === 1) {
+          this.specifications.at(index).patchValue({ testMethodSpecificationVersionID: data[0].id });
+        }
+      },
+      error: () => { this.specVersionsMap.set(index, []); }
+    });
+  }
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
   onParameterSelected(item: any, specIndex: number, paramIndex: number) {
-    const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
+    const params = this.parameters(specIndex);
+    // Duplicate check within same specification
+    const isDuplicate = params.controls.some((ctrl, i) =>
+      i !== paramIndex && ctrl.get('parameterID')?.value === item.id
+    );
+    if (isDuplicate) {
+      this.toastService.show(`Parameter "${item.name}" is already added in this specification.`, 'warning');
+      const param = params.at(paramIndex) as FormGroup;
+      param.patchValue({ parameterID: -1, parameterUnitID: '' });
+      setTimeout(() => param.patchValue({ parameterID: '', parameterUnitID: '' }), 0);
+      param.get('parameterUnitID')?.enable();
+      return;
+    }
+
+    const spec = params.at(paramIndex) as FormGroup;
     const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
     spec.patchValue({ parameterID: item.id, parameterUnitID: unitID });
+    // Disable unit dropdown after parameter auto-fills it
+    const unitControl = spec.get('parameterUnitID');
+    if (unitID) {
+      unitControl?.disable();
+    } else {
+      unitControl?.enable();
+    }
   };
   getDiscipline = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.disciplineService.getDisciplineDropdown(term, page, pageSize);
@@ -283,36 +329,36 @@ export class ScopeComponent implements OnInit {
   }
   onSubmit() {
     if (this.scopeForm.valid) {
+      const payload = this.scopeForm.getRawValue(); // includes disabled controls like parameterUnitID
       if (this.labScopeId > 0) {
-        this.scopeService.updateLabScope(this.scopeForm.value).subscribe({
+        this.scopeService.updateLabScope(payload).subscribe({
           next: (data) => {
             this.scopeForm.reset();
             this.toastService.show(data.message, 'success');
             this.router.navigate(['/scope']);
           },
           error: (err) => {
-            console.error('Error updating scope', err);
-            this.toastService.show(err.error.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to update scope', 'error');
           }
         });
       }
       else {
-        this.scopeService.createLabScope(this.scopeForm.value).subscribe({
+        this.scopeService.createLabScope(payload).subscribe({
           next: (data) => {
             this.toastService.show(data.message, 'success');
             this.scopeForm.reset();
             this.router.navigate(['/scope']);
           },
           error: (err) => {
-            this.toastService.show(err.error.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to create scope', 'error');
           }
         });
       }
     }
     else {
       this.scopeForm.markAllAsTouched();
+      this.toastService.show('Please fill all required fields.', 'warning');
     }
-
   }
   loadScope(id: number) {
     this.scopeService.getLabScopeById(id).subscribe({
@@ -328,6 +374,7 @@ export class ScopeComponent implements OnInit {
             labScopeID: [data.id],
             testMethodSpecification: [spec?.testMethodSpecification || ''],
             testMethodSpecificationID: [spec.testMethodSpecificationID, Validators.required],
+            testMethodSpecificationVersionID: [spec.testMethodSpecificationVersionID || null],
             parameters: this.fb.array([]),
           });
 
@@ -390,6 +437,11 @@ export class ScopeComponent implements OnInit {
           });
 
           this.specifications.push(specGroup);
+          // Load version dropdown for this specification
+          const specIndex = this.specifications.length - 1;
+          if (spec.testMethodSpecificationID) {
+            this.loadSpecVersionsForIndex(spec.testMethodSpecificationID, specIndex);
+          }
         });
 
         if (this.isViewMode) {

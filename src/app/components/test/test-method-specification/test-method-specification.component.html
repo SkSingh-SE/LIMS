@@ -96,16 +96,61 @@
             [disabled]="testSpecificationForm.get('isDisabled')?.value"
           >
             <i class="bi bi-plus-circle-dotted"></i>
-            Version
+            Add New Version
           </button>
         </div>
       </div>
 
       <div formArrayName="versions">
-        <div *ngFor="let group of versions.controls; let i = index" [formGroupName]="i" class="border p-3 mb-2 rounded">
+        <div
+          *ngFor="let group of versions.controls; let i = index"
+          [formGroupName]="i"
+          class="border p-3 mb-2 rounded"
+          [ngClass]="{
+            'border-success border-2': group.get('status')?.value === VersionStatus.Active,
+            'border-warning': group.get('status')?.value === VersionStatus.Draft,
+            'opacity-75': isVersionReadOnly(i)
+          }"
+        >
+          <!-- Version Header: Status Badge + Actions -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge" [ngClass]="getStatusBadgeClass(i)">
+              {{ getStatusLabel(i) }}
+            </span>
+            <div class="d-flex gap-2">
+              <button
+                *ngIf="!isViewMode && group.get('status')?.value === VersionStatus.Draft && !testSpecificationForm.get('isDisabled')?.value"
+                type="button"
+                class="btn btn-success btn-sm"
+                (click)="onActivateVersion(i)"
+                title="Set as current active version"
+              >
+                <i class="bi bi-check-circle"></i> Activate
+              </button>
+              <button
+                *ngIf="!isViewMode && (group.get('status')?.value === VersionStatus.Active || group.get('status')?.value === VersionStatus.Draft) && !testSpecificationForm.get('isDisabled')?.value"
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                (click)="onWithdrawVersion(i)"
+                title="Withdraw this version"
+              >
+                <i class="bi bi-x-circle"></i> Withdraw
+              </button>
+              <button
+                *ngIf="!isViewMode && !isVersionReadOnly(i) && versions.controls.length > 1 && !testSpecificationForm.get('isDisabled')?.value"
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="removeVersion(i)"
+                title="Remove version"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1">
             <div class="d-flex flex-row gap-2 justify-content-between">
-              <div *ngIf="versions.controls.length > 1" class="d-flex flex-column align-items-center gap-2">
+              <div *ngIf="versions.controls.length > 1 && !isVersionReadOnly(i)" class="d-flex flex-column align-items-center gap-2">
                 <button type="button" class="btn btn-sm btn-danger" [disabled]="i === 0" (click)="moveVersionUp(i)">
                   <i class="bi bi-arrow-up-circle-fill"></i>
                 </button>
@@ -119,28 +164,31 @@
                   Version
                   <span class="text-danger">*</span>
                 </label>
-                <!-- <div class="input-group left-input-group">
-                                    <div class="input-group-text ">
-                                        <input class="form-check-input mt-0" type="checkbox" formControlName="default"
-                                            (change)="onDefaultChange(i)"
-                                            aria-label="Checkbox for following text input"
-                                             title="Set this version as default">
-                                    </div>
-                                    <input type="text" class="form-control" aria-label="Text input with checkbox"
-                                        placeholder="e.g., 24a" formControlName="version"
-                                        [ngClass]="{'is-invalid': group.get('version')?.invalid && group.get('version')?.touched}">
-                                </div> -->
                 <input
                   type="text"
                   class="form-control"
                   placeholder="Enter Version"
                   formControlName="version"
+
                   [ngClass]="{ 'is-invalid': group.get('version')?.invalid && group.get('version')?.touched }"
                 />
                 <span *ngIf="group.get('version')?.invalid && group.get('version')?.touched" class="text-danger text-sm">
                   Version is required.
                 </span>
               </div>
+            </div>
+
+            <div>
+              <label class="form-label">Year</label>
+              <input
+                type="number"
+                class="form-control"
+                placeholder="e.g., 2024"
+                formControlName="year"
+                [attr.disabled]="isVersionReadOnly(i) ? true : null"
+                min="1900"
+                max="2100"
+              />
             </div>
 
             <div>
@@ -160,7 +208,7 @@
                     {{ group.get("standardFile")?.value }}
                   </span>
                   <button
-                    *ngIf="!isViewMode && !this.testSpecificationForm.get('isDisabled')?.value"
+                    *ngIf="!isViewMode && !isVersionReadOnly(i) && !testSpecificationForm.get('isDisabled')?.value"
                     type="button"
                     class="btn btn-sm btn-link text-danger p-0"
                     (click)="removeFile(i)"
@@ -175,10 +223,10 @@
                   class="form-control form-control-sm input-file"
                   type="file"
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                  [disabled]="isViewMode"
+                  [disabled]="isViewMode || isVersionReadOnly(i)"
                   (change)="onFileChange($event, i)"
                 />
-                <span *ngIf="group.get('standardFilePath')?.invalid && group.get('standardFilePath')?.touched" class="text-danger text-sm">
+                <span *ngIf="group.get('standardFile')?.invalid && group.get('standardFile')?.touched" class="text-danger text-sm">
                   Standard File is required.
                 </span>
               </ng-template>
@@ -189,11 +237,52 @@
               <div>{{ getCaption(group.get("year")?.value) }}</div>
             </div>
           </div>
+
+          <!-- Row 2: Dates and Change Reason -->
+          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-gap-lg-1 mt-2">
+            <div>
+              <label class="form-label text-muted small">Effective Date</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                formControlName="effectiveDate"
+                readonly
+              />
+            </div>
+            <div>
+              <label class="form-label text-muted small">Review Date</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                formControlName="reviewDate"
+                [attr.disabled]="isVersionReadOnly(i) ? true : null"
+              />
+            </div>
+            <div *ngIf="group.get('supersededDate')?.value">
+              <label class="form-label text-muted small">Superseded Date</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                formControlName="supersededDate"
+                readonly
+              />
+            </div>
+            <div *ngIf="group.get('changeReason')?.value || !isVersionReadOnly(i)">
+              <label class="form-label text-muted small">Change Reason</label>
+              <textarea
+                class="form-control form-control-sm"
+                formControlName="changeReason"
+                rows="1"
+                placeholder="Reason for this version"
+                [attr.disabled]="isVersionReadOnly(i) ? true : null"
+              ></textarea>
+            </div>
+          </div>
         </div>
       </div>
 
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a class="btn btn-cancel">Cancel</a>
+        <a class="btn btn-cancel" routerLink="/test-specification">Cancel</a>
         <button [disabled]="testSpecificationForm.invalid" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>

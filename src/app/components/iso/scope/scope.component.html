@@ -68,6 +68,13 @@
                     [selectedItem]="spec.get('testMethodSpecificationID')?.value"
                   ></app-searchable-dropdown>
                 </div>
+                <div class="col-md-3" *ngIf="specVersionsMap.get(i)?.length">
+                  <label class="form-label">Spec Version</label>
+                  <select class="form-select" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
+                    <option [ngValue]="null">-- Auto (Active) --</option>
+                    <option *ngFor="let v of specVersionsMap.get(i)" [ngValue]="v.id">{{ v.name }}</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Parameters Table -->
@@ -145,12 +152,8 @@
                         ></app-searchable-dropdown>
                       </td>
                       <td>
-                        <select
-                          class="form-select wide-input"
-                          formControlName="parameterUnitID"
-                          [attr.disabled]="true"
-                        >
-                          <option value="" disabled>Select Unit</option>
+                        <select class="form-select wide-input" formControlName="parameterUnitID">
+                          <option value="" disabled selected>Select Unit</option>
                           <option *ngFor="let unit of parameterUnits" [value]="unit.id">{{ unit.name }}</option>
                         </select>
                       </td>

@@ -19,16 +19,20 @@ export class TestMethodSpecificationListComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
     { key: 'testMethodStandard', type: 'string', label: 'Standard', filter: true },
+    { key: 'currentVersion', type: 'string', label: 'Current Version', filter: true },
+    { key: 'currentVersionYear', type: 'number', label: 'Year', filter: true },
     { key: 'isDisabled', type: 'number', label: 'Disabled', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     name: 'string',
     standardOrganizationName: 'string',
     testMethodStandard: 'string',
+    currentVersion: 'string',
+    currentVersionYear: 'number',
     isDisabled: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,7 +51,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 

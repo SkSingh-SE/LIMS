@@ -33,13 +33,15 @@ export class ProductSpecificationComponent implements OnInit {
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'materialSpecification', type: 'string', label: 'Material Specification', filter: true },
     { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
     specificationName: 'string',
     aliasName: 'string',
     materialSpecification: 'string',
-    specificationCode: 'string'
+    specificationCode: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -57,7 +59,7 @@ export class ProductSpecificationComponent implements OnInit {
   totalItems = 0;
   pageSizes = [5, 10, 20];
 
-  sortByColumn: string = 'id';
+  sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
@@ -117,6 +119,7 @@ export class ProductSpecificationComponent implements OnInit {
       laboratoryTestID: ['', Validators.required],
       metalClassificationID: ['', Validators.required],
       testMethodSpecificationID: ['', Validators.required],
+      testMethodSpecificationVersionID: [null],
       isCustom: [false],
       size: [''],
     });
@@ -130,8 +133,7 @@ export class ProductSpecificationComponent implements OnInit {
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
       },
-      error: (error) => {
-        this.toastService.show(error.message, 'error');
+      error: () => {
         this.ProductSpecificationList = [];
       }
     }
@@ -139,10 +141,16 @@ export class ProductSpecificationComponent implements OnInit {
     );
   }
   getDetails(): void {
-    this.productSpecificationService.getProductSpecificationById(this.productSpecificationId).subscribe({
+    const requestId = this.productSpecificationId;
+    this.productSpecificationService.getProductSpecificationById(requestId).subscribe({
       next: (response) => {
+        if (this.productSpecificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ProductSpecificationForm.patchValue(response);
+        // Load version dropdown if spec has testMethodSpecificationID
+        if (response.testMethodSpecificationID) {
+          this.loadSpecVersions(response.testMethodSpecificationID);
+        }
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -277,9 +285,7 @@ export class ProductSpecificationComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
+        error: () => {}
       });
     }
   }
@@ -287,6 +293,7 @@ export class ProductSpecificationComponent implements OnInit {
     this.ProductSpecificationForm.reset();
     this.ProductSpecificationForm.enable();
     this.activeTab = 'details';
+    this.productSpecificationId = 0;
     if (id > 0) {
       this.productSpecificationId = id;
       this.getDetails();
@@ -301,7 +308,6 @@ export class ProductSpecificationComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Product Specification Form';
-      this.ProductSpecificationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -331,7 +337,6 @@ export class ProductSpecificationComponent implements OnInit {
 
   onSubmit(): void {
     if (this.ProductSpecificationForm.valid) {
-      debugger;
       let formData = this.ProductSpecificationForm.value;
       if (this.isEditMode) {
         this.productSpecificationService.updateProductSpecification(formData).subscribe({
@@ -340,9 +345,7 @@ export class ProductSpecificationComponent implements OnInit {
             this.closeModal();
             this.fetchData();
           },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
+          error: () => {}
         });
       } else {
         formData.id = 0;
@@ -352,9 +355,7 @@ export class ProductSpecificationComponent implements OnInit {
             this.closeModal();
             this.fetchData();
           },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
+          error: () => {}
         });
       }
     }
@@ -380,8 +381,21 @@ export class ProductSpecificationComponent implements OnInit {
   onMetalSelected(item:any){
     this.ProductSpecificationForm.patchValue({ metalClassificationID: item.id });
   }
+  specVersions: any[] = [];
   onTestSpecificationSelected(item:any){
-    this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id });
+    this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
+    this.loadSpecVersions(item.id);
+  }
+  loadSpecVersions(specId: number) {
+    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+      next: (data) => {
+        this.specVersions = data || [];
+        if (this.specVersions.length === 1) {
+          this.ProductSpecificationForm.patchValue({ testMethodSpecificationVersionID: this.specVersions[0].id });
+        }
+      },
+      error: () => { this.specVersions = []; }
+    });
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const line = this.ProductSpecificationForm.get('testMethods') as FormArray;
@@ -432,9 +446,9 @@ export class ProductSpecificationComponent implements OnInit {
       id: 0,
       productSpecificationID: this.productSpecificationId,
       laboratoryTestID: this.newTestGroup.laboratoryTestID,
-      testMethodSpecificationID: this.newTestGroup.testMethodSpecificationID,
+      testMethodStandardID: this.newTestGroup.testMethodSpecificationID,
       isPerBatch: this.newTestGroup.isPerBatch,
-      year: this.newTestGroup.year
+      year: this.newTestGroup.year ? parseInt(this.newTestGroup.year, 10) : null
     };
     this.productTestGroupService.create(payload).subscribe({
       next: (response) => {
@@ -442,7 +456,7 @@ export class ProductSpecificationComponent implements OnInit {
         this.loadTestGroups(this.productSpecificationId);
         this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
       },
-      error: (error) => this.toastService.show(error?.error?.message || 'Error adding test group', 'error')
+      error: () => {}
     });
   }
 
@@ -453,7 +467,7 @@ export class ProductSpecificationComponent implements OnInit {
         this.toastService.show(response.message || 'Test Group removed', 'success');
         this.loadTestGroups(this.productSpecificationId);
       },
-      error: (error) => this.toastService.show(error?.error?.message || 'Error removing test group', 'error')
+      error: () => {}
     });
   }
 
@@ -479,7 +493,7 @@ export class ProductSpecificationComponent implements OnInit {
         this.loadSpecGrades(this.productSpecificationId);
         this.newSpecGrade = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
       },
-      error: (error) => this.toastService.show(error?.error?.message || 'Error adding grade', 'error')
+      error: () => {}
     });
   }
 
@@ -490,7 +504,7 @@ export class ProductSpecificationComponent implements OnInit {
         this.toastService.show(response.message || 'Grade removed', 'success');
         this.loadSpecGrades(this.productSpecificationId);
       },
-      error: (error) => this.toastService.show(error?.error?.message || 'Error removing grade', 'error')
+      error: () => {}
     });
   }
 }

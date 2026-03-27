@@ -14,9 +14,7 @@ export class SettingsService {
   }
 
   saveOrganization(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/save-organization`, payload).pipe(
-      // errors handled at component via error handler if desired
-    );
+    return this.http.post<any>(`${this.apiUrl}/save-organization`, payload);
   }
 
   saveNabl(payload: any): Observable<any> {
@@ -39,7 +37,7 @@ export class SettingsService {
     return this.http.post<any>(`${this.apiUrl}/save-signatories`, { signatories });
   }
 
-  // File uploads
+  // File uploads — FormData key must match backend IFormFile parameter name
   uploadOrganizationLogo(file: File): Observable<any> {
     const fd = new FormData();
     fd.append('logo', file);
@@ -48,21 +46,21 @@ export class SettingsService {
 
   uploadNablCertificate(file: File): Observable<any> {
     const fd = new FormData();
-    fd.append('certificate', file);
+    fd.append('logo', file); // backend param is 'logo'
     return this.http.post<any>(`${this.apiUrl}/upload-nabl-certificate`, fd);
   }
 
   uploadSignature(file: File): Observable<any> {
     const fd = new FormData();
-    fd.append('signature', file);
+    fd.append('logo', file); // backend param is 'logo'
     return this.http.post<any>(`${this.apiUrl}/upload-signature`, fd);
   }
 
   saveAll(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/save-all`, payload);
+    // backend expects { payload: { ... } } wrapped in SaveAllRequest
+    return this.http.post<any>(`${this.apiUrl}/save-all`, { payload });
   }
 
-  // sample delete signatory endpoint
   deleteSignatory(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/signatory/${id}`);
   }

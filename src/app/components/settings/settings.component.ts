@@ -1,9 +1,80 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import { SettingsService } from '../../services/settings.service';
 import { ToastService } from '../../services/toast.service';
+
+// ============================================
+// Custom Validators
+// ============================================
+
+function noWhitespaceValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const isWhitespace = typeof control.value === 'string' && control.value.trim().length === 0;
+    return isWhitespace ? { whitespace: true } : null;
+  };
+}
+
+function phoneValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const pattern = /^[\d\s\+\-\(\)]{7,20}$/;
+    return pattern.test(control.value.trim()) ? null : { phone: true };
+  };
+}
+
+function gstinValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const pattern = /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/;
+    return pattern.test(control.value.trim().toUpperCase()) ? null : { gstin: true };
+  };
+}
+
+function panValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const pattern = /^[A-Z]{5}\d{4}[A-Z]{1}$/;
+    return pattern.test(control.value.trim().toUpperCase()) ? null : { pan: true };
+  };
+}
+
+function financialYearRangeValidator(): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    const startDate = group.get('startDate')?.value;
+    const endDate = group.get('endDate')?.value;
+    if (!startDate || !endDate) return null;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+    const errors: ValidationErrors = {};
+
+    if (end <= start) {
+      errors['dateRange'] = true;
+    }
+
+    // Duration check: 11-13 months
+    const monthsDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (monthsDiff < 11 || monthsDiff > 13) {
+      errors['fyDuration'] = true;
+    }
+
+    return Object.keys(errors).length ? errors : null;
+  };
+}
 
 @Component({
   selector: 'app-settings',
@@ -15,6 +86,8 @@ import { ToastService } from '../../services/toast.service';
 export class SettingsComponent implements OnInit {
   settingsForm!: FormGroup;
   organizationId: number = 0;
+  submitted = false;
+  tabSubmitted: { [key: number]: boolean } = { 1: false, 2: false, 3: false, 4: false, 5: false };
 
   // Tab management
   activeTab: number = 1;
@@ -34,6 +107,23 @@ export class SettingsComponent implements OnInit {
   nablLogoPreview: string | null = null;
   signatureFile: File | null = null;
   signaturePreview: string | null = null;
+  signatureUploadedUrl: string | null = null;
+
+  // File validation errors
+  fileErrors: { [key: string]: string | null } = {
+    organizationLogo: null,
+    nablCertificate: null,
+    nablLogo: null,
+    signature: null
+  };
+
+  // Allowed file configs
+  private readonly IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
+  private readonly IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg'];
+  private readonly PDF_TYPES = ['application/pdf'];
+  private readonly PDF_EXTENSIONS = ['.pdf'];
+  private readonly MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+  private readonly MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB
 
   // Multiple signatories
   signatories: any[] = [];
@@ -42,7 +132,7 @@ export class SettingsComponent implements OnInit {
   // GST Rate options
   gstRateOptions = [0, 5, 12, 18, 28];
 
-  constructor(private fb: FormBuilder, private settingsService: SettingsService, private toastService: ToastService) { }
+  constructor(private fb: FormBuilder, private settingsService: SettingsService, private toastService: ToastService) {}
 
   initialSnapshot: any = null;
 
@@ -79,13 +169,12 @@ export class SettingsComponent implements OnInit {
         }
         this.captureInitialSnapshot();
       },
-      error: (err) => {
+      error: () => {
         this.toastService.show('Failed to load settings', 'error');
       }
     });
   }
 
-  // called after loadMockData completes to capture baseline
   private captureInitialSnapshot(): void {
     this.initialSnapshot = this.settingsForm.getRawValue();
   }
@@ -94,36 +183,36 @@ export class SettingsComponent implements OnInit {
     this.settingsForm = this.fb.group({
       // Organization Information
       organizationInfo: this.fb.group({
-        labName: ['', Validators.required],
-        labCode: ['', Validators.required],
-        labAddress: ['', Validators.required],
-        contactEmail: ['', [Validators.required, Validators.email]],
-        contactPhone: ['', Validators.required],
+        labName: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(200)]],
+        labCode: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
+        labAddress: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(500)]],
+        contactEmail: ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
+        contactPhone: ['', [Validators.required, phoneValidator()]],
         organizationLogo: ['']
       }),
 
       // NABL Accreditation
       nablAccreditation: this.fb.group({
-        nablEnabled: [true, Validators.required],
-        nablTcNumber: [''],
+        nablEnabled: [true],
+        nablTcNumber: ['', [Validators.maxLength(100)]],
         nablCertificate: [''],
         nablLogo: ['']
       }),
 
       // Numbering & Identity
       numbering: this.fb.group({
-        tcBaseNumber: ['', Validators.required],
-        reportNumberPrefix: ['', Validators.required],
+        tcBaseNumber: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]],
+        reportNumberPrefix: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]],
         yearCode: [{ value: '', disabled: true }],
         runningCounter: [{ value: '', disabled: true }]
       }),
 
       // GST & Tax Configuration
       gstConfig: this.fb.group({
-        gstApplicable: [true, Validators.required],
-        gstin: [''],
-        panNumber: [''],
-        stateCode: [''],
+        gstApplicable: [true],
+        gstin: ['', [Validators.maxLength(15)]],
+        panNumber: ['', [panValidator(), Validators.maxLength(10)]],
+        stateCode: ['', [Validators.maxLength(50)]],
         defaultGstRate: [18, Validators.required],
         cgst: [{ value: 9, disabled: true }],
         sgst: [{ value: 9, disabled: true }],
@@ -136,12 +225,12 @@ export class SettingsComponent implements OnInit {
         startDate: ['', Validators.required],
         endDate: ['', Validators.required],
         currency: [{ value: 'INR – ₹', disabled: true }]
-      }),
+      }, { validators: financialYearRangeValidator() }),
 
       // Authorized Signatory
       authorizedSignatory: this.fb.group({
-        signatoryName: ['', Validators.required],
-        designation: ['', Validators.required],
+        signatoryName: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(200)]],
+        designation: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(200)]],
         applicableFor: [true],
         signatureImage: [''],
         status: [true, Validators.required]
@@ -154,22 +243,16 @@ export class SettingsComponent implements OnInit {
     this.settingsForm.get('nablAccreditation.nablEnabled')?.valueChanges.subscribe(enabled => {
       const tcNumberControl = this.settingsForm.get('nablAccreditation.nablTcNumber');
       if (enabled) {
-        tcNumberControl?.setValidators([Validators.required]);
+        tcNumberControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]);
       } else {
-        tcNumberControl?.clearValidators();
+        tcNumberControl?.setValidators([Validators.maxLength(100)]);
       }
       tcNumberControl?.updateValueAndValidity();
     });
 
-    // GST conditional validation
+    // GST conditional validation — all GST fields mandatory only when applicable
     this.settingsForm.get('gstConfig.gstApplicable')?.valueChanges.subscribe(applicable => {
-      const gstinControl = this.settingsForm.get('gstConfig.gstin');
-      if (applicable) {
-        gstinControl?.setValidators([Validators.required]);
-      } else {
-        gstinControl?.clearValidators();
-      }
-      gstinControl?.updateValueAndValidity();
+      this.applyGstValidators(applicable);
     });
 
     // GST Rate breakdown calculation
@@ -183,16 +266,96 @@ export class SettingsComponent implements OnInit {
         }
       }, { emitEvent: false });
     });
+
+    // Trigger initial conditional validators
+    const nablEnabled = this.settingsForm.get('nablAccreditation.nablEnabled')?.value;
+    if (nablEnabled) {
+      const tcNumberControl = this.settingsForm.get('nablAccreditation.nablTcNumber');
+      tcNumberControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]);
+      tcNumberControl?.updateValueAndValidity();
+    }
+
+    // Apply initial GST validators based on current value
+    this.applyGstValidators(this.settingsForm.get('gstConfig.gstApplicable')?.value);
   }
 
-  // loadMockData removed: replaced by API integration
+  // ============================================
+  // GST conditional validator helper
+  // ============================================
 
+  private applyGstValidators(applicable: boolean): void {
+    const gstinControl = this.settingsForm.get('gstConfig.gstin');
+    const stateCodeControl = this.settingsForm.get('gstConfig.stateCode');
+    const panControl = this.settingsForm.get('gstConfig.panNumber');
+    const rateControl = this.settingsForm.get('gstConfig.defaultGstRate');
+
+    if (applicable) {
+      gstinControl?.setValidators([Validators.required, gstinValidator(), Validators.maxLength(15)]);
+      stateCodeControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]);
+      panControl?.setValidators([panValidator(), Validators.maxLength(10)]);
+      rateControl?.setValidators([Validators.required]);
+    } else {
+      gstinControl?.clearValidators();
+      stateCodeControl?.clearValidators();
+      panControl?.clearValidators();
+      rateControl?.clearValidators();
+    }
+
+    gstinControl?.updateValueAndValidity();
+    stateCodeControl?.updateValueAndValidity();
+    panControl?.updateValueAndValidity();
+    rateControl?.updateValueAndValidity();
+  }
+
+  // ============================================
+  // File Validation (size + type + extension)
+  // ============================================
+
+  private validateFile(file: File, allowedTypes: string[], allowedExtensions: string[], maxSize: number, fieldKey: string): boolean {
+    this.fileErrors[fieldKey] = null;
+
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      this.fileErrors[fieldKey] = `Invalid file type. Allowed: ${allowedExtensions.join(', ')}`;
+      return false;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      this.fileErrors[fieldKey] = `Invalid MIME type. Allowed: ${allowedTypes.join(', ')}`;
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+      this.fileErrors[fieldKey] = `File too large. Maximum size: ${maxMB}MB`;
+      return false;
+    }
+
+    if (file.size === 0) {
+      this.fileErrors[fieldKey] = 'File is empty';
+      return false;
+    }
+
+    return true;
+  }
+
+  validateImageFile(file: File, fieldKey: string = 'organizationLogo'): boolean {
+    return this.validateFile(file, this.IMAGE_TYPES, this.IMAGE_EXTENSIONS, this.MAX_IMAGE_SIZE, fieldKey);
+  }
+
+  validatePdfFile(file: File, fieldKey: string = 'nablCertificate'): boolean {
+    return this.validateFile(file, this.PDF_TYPES, this.PDF_EXTENSIONS, this.MAX_PDF_SIZE, fieldKey);
+  }
+
+  // ============================================
   // File upload handlers
+  // ============================================
+
   onOrganizationLogoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (this.validateImageFile(file)) {
+      if (this.validateImageFile(file, 'organizationLogo')) {
         this.organizationLogoFile = file;
         this.previewImage(file, 'organizationLogo');
         this.settingsService.uploadOrganizationLogo(file).subscribe({
@@ -206,6 +369,8 @@ export class SettingsComponent implements OnInit {
             this.toastService.show('Logo upload failed', 'error');
           }
         });
+      } else {
+        input.value = '';
       }
     }
   }
@@ -214,7 +379,7 @@ export class SettingsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (file.type === 'application/pdf') {
+      if (this.validatePdfFile(file, 'nablCertificate')) {
         this.nablCertificateFile = file;
         this.settingsService.uploadNablCertificate(file).subscribe({
           next: (res: any) => {
@@ -227,7 +392,7 @@ export class SettingsComponent implements OnInit {
           }
         });
       } else {
-        alert('Please upload a PDF file');
+        input.value = '';
       }
     }
   }
@@ -236,7 +401,7 @@ export class SettingsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (this.validateImageFile(file)) {
+      if (this.validateImageFile(file, 'nablLogo')) {
         this.nablLogoFile = file;
         this.previewImage(file, 'nablLogo');
         this.settingsService.uploadNablCertificate(file).subscribe({
@@ -249,6 +414,8 @@ export class SettingsComponent implements OnInit {
             this.toastService.show('NABL logo upload failed', 'error');
           }
         });
+      } else {
+        input.value = '';
       }
     }
   }
@@ -257,12 +424,13 @@ export class SettingsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (this.validateImageFile(file)) {
+      if (this.validateImageFile(file, 'signature')) {
         this.signatureFile = file;
         this.previewImage(file, 'signature');
         this.settingsService.uploadSignature(file).subscribe({
           next: (res: any) => {
             if (res && res.url) {
+              this.signatureUploadedUrl = res.url;
               this.settingsForm.get('authorizedSignatory.signatureImage')?.setValue(res.url);
             }
           },
@@ -270,25 +438,10 @@ export class SettingsComponent implements OnInit {
             this.toastService.show('Signature upload failed', 'error');
           }
         });
+      } else {
+        input.value = '';
       }
     }
-  }
-
-  validateImageFile(file: File): boolean {
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    const maxSize = 2 * 1024 * 1024; // 2MB
-
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a PNG or JPG file');
-      return false;
-    }
-
-    if (file.size > maxSize) {
-      alert('File size must be less than 2MB');
-      return false;
-    }
-
-    return true;
   }
 
   previewImage(file: File, type: string): void {
@@ -313,6 +466,7 @@ export class SettingsComponent implements OnInit {
   clearOrganizationLogo(): void {
     this.organizationLogoFile = null;
     this.organizationLogoPreview = null;
+    this.fileErrors['organizationLogo'] = null;
     const fileInput = document.getElementById('orgLogoInput') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   }
@@ -320,312 +474,29 @@ export class SettingsComponent implements OnInit {
   clearNablLogo(): void {
     this.nablLogoFile = null;
     this.nablLogoPreview = null;
+    this.fileErrors['nablLogo'] = null;
   }
 
   clearSignature(): void {
     this.signatureFile = null;
     this.signaturePreview = null;
+    this.fileErrors['signature'] = null;
     const fileInput = document.getElementById('signatureInput') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   }
 
+  clearNablCertificate(): void {
+    this.nablCertificateFile = null;
+    this.fileErrors['nablCertificate'] = null;
+  }
+
+  // ============================================
   // Getters for form groups
+  // ============================================
+
   get organizationInfo(): FormGroup {
     return this.settingsForm.get('organizationInfo') as FormGroup;
   }
-
-  // Tab dirty tracking
-  tabDirty: { [key: number]: boolean } = {
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-    5: false
-  };
-
-  initTabDirtyTracking(): void {
-    // Subscribe to changes on each sub form and set dirty flag
-    const groups: Array<{ key: number, control: FormGroup }> = [
-      { key: 1, control: this.organizationInfo },
-      { key: 2, control: this.nablAccreditation },
-      { key: 3, control: this.numbering },
-      { key: 4, control: this.gstConfig },
-      { key: 5, control: this.authorizedSignatory }
-    ];
-
-    groups.forEach(g => {
-      g.control.valueChanges.subscribe(() => {
-        this.tabDirty[g.key] = g.control.dirty;
-      });
-    });
-  }
-
-  // Reset a specific tab to initial snapshot
-  resetTab(tabKey: number): void {
-    if (!this.initialSnapshot) return;
-    switch (tabKey) {
-      case 1:
-        this.organizationInfo.patchValue(this.initialSnapshot.organizationInfo || {});
-        this.organizationInfo.markAsPristine();
-        this.tabDirty[1] = false;
-        break;
-      case 2:
-        this.nablAccreditation.patchValue(this.initialSnapshot.nablAccreditation || {});
-        this.nablAccreditation.markAsPristine();
-        this.tabDirty[2] = false;
-        break;
-      case 3:
-        this.numbering.patchValue(this.initialSnapshot.numbering || {});
-        this.numbering.markAsPristine();
-        this.tabDirty[3] = false;
-        break;
-      case 4:
-        this.gstConfig.patchValue(this.initialSnapshot.gstConfig || {});
-        this.financialYear.patchValue(this.initialSnapshot.financialYear || {});
-        this.gstConfig.markAsPristine();
-        this.financialYear.markAsPristine();
-        this.tabDirty[4] = false;
-        break;
-      case 5:
-        this.signatories = (this.initialSnapshot.signatories || []).slice();
-        this.authorizedSignatory.markAsPristine();
-        this.tabDirty[5] = false;
-        break;
-    }
-  }
-
-  // Save a specific tab (section)
-  saveTab(tabKey: number): void {
-    if (tabKey === 1) {
-      const data = { ...this.organizationInfo.value, id: this.organizationId };
-      if (this.organizationInfo.invalid) {
-        this.markFormGroupTouched(this.organizationInfo);
-        this.toastService.show('Please fix organization details before saving.', 'warning');
-        return;
-      }
-
-      const proceedSave = () => {
-        this.settingsService.saveOrganization(data).subscribe({
-          next: (res) => {
-            if (res && res.id) {
-              this.organizationId = res.id;
-            }
-            this.organizationInfo.markAsPristine();
-            this.tabDirty[1] = false;
-            this.toastService.show('Organization saved', 'success');
-          },
-          error: (err) => {
-            this.toastService.show(err?.message, 'error');
-          }
-        });
-      };
-      const upload$ = this.organizationLogoFile
-        ? this.settingsService.uploadOrganizationLogo(this.organizationLogoFile)
-        : null;
-      if (upload$) {
-        upload$.subscribe({
-          next: (res: any) => {
-            if (res && res.url) {
-              this.organizationLogoPreview = res.url;
-              this.organizationInfo.patchValue({ organizationLogo: res.url });
-            }
-            proceedSave();
-          }, error: () => proceedSave()
-        });
-      } else {
-        proceedSave();
-      }
-    }
-
-    if (tabKey === 2) {
-      const data = { ...this.nablAccreditation.value, organizationId: this.organizationId };
-      if (this.isNablEnabled && this.nablAccreditation.invalid) {
-        this.markFormGroupTouched(this.nablAccreditation);
-        this.toastService.show('Please fix NABL details before saving.', 'warning');
-        return;
-      }
-      const uploads: Array<any> = [];
-      if (this.nablCertificateFile) {
-        uploads.push(this.settingsService.uploadNablCertificate(this.nablCertificateFile));
-      }
-      if (this.nablLogoFile) {
-        uploads.push(this.settingsService.uploadNablCertificate(this.nablLogoFile));
-      }
-      if (uploads.length > 0) {
-        uploads[0].subscribe({
-          next: (res: any) => {
-            this.settingsService.saveNabl(data).subscribe(
-              {
-                next: () => {
-                  this.nablAccreditation.markAsPristine();
-                  this.tabDirty[2] = false;
-                  this.toastService.show('NABL settings saved', 'success');
-                }, error: (err) => {
-                  this.toastService.show(err?.message, 'error');
-                }
-              });
-          }, error: () => {
-            this.settingsService.saveNabl(data).subscribe(() => {
-              this.nablAccreditation.markAsPristine();
-              this.tabDirty[2] = false;
-              this.toastService.show('NABL settings saved', 'success');
-            });
-          }
-        });
-      } else {
-        this.settingsService.saveNabl(data).subscribe({
-          next: () => {
-            this.nablAccreditation.markAsPristine();
-            this.tabDirty[2] = false;
-            this.toastService.show('NABL settings saved', 'success');
-          }, error: (err) => {
-            this.toastService.show(err?.message, 'error');
-          }
-        });
-      }
-    }
-
-    if (tabKey === 3) {
-      const data = { ...this.numbering.value, organizationId: this.organizationId };
-      if (this.numbering.invalid) {
-        this.markFormGroupTouched(this.numbering);
-        this.toastService.show('Please fix numbering details.', 'warning');
-        return;
-      }
-      this.settingsService.saveNumbering(data).subscribe({
-        next: () => {
-          this.numbering.markAsPristine();
-          this.tabDirty[3] = false;
-          this.toastService.show('Numbering saved', 'success');
-        }, error: (err) => {
-          this.toastService.show(err?.message, 'error');
-        }
-      });
-    }
-
-    if (tabKey === 4) {
-      const gst = { ...this.gstConfig.value, organizationId: this.organizationId };
-      const fy = { ...this.financialYear.value, organizationId: this.organizationId };
-      if (this.gstConfig.invalid || this.financialYear.invalid) {
-        this.markFormGroupTouched(this.gstConfig);
-        this.markFormGroupTouched(this.financialYear);
-        this.toastService.show('Please fix GST/financial details.', 'warning');
-        return;
-      }
-      this.settingsService.saveGst(gst).subscribe({
-        next: () => {
-          this.gstConfig.markAsPristine();
-          this.financialYear.markAsPristine();
-          this.tabDirty[4] = false;
-          this.toastService.show('GST & financial settings saved', 'success');
-        }, error: (err) => {
-          this.toastService.show(err?.message, 'error');
-        }
-      });
-      // Optionally, save financial year if required by backend
-      this.settingsService.saveFinancialYear(fy).subscribe();
-    }
-
-    if (tabKey === 5) {
-      if (!this.signatories || this.signatories.length === 0) {
-        this.toastService.show('Please add at least one signatory with signature.', 'warning');
-        return;
-      }
-      const invalidSig = this.signatories.some(s => !s.preview && !(s.file instanceof File) && !(typeof s.file === 'string' && s.file));
-      if (invalidSig) {
-        this.toastService.show('Each signatory must have a signature image before saving.', 'warning');
-        return;
-      }
-      const uploads: any[] = [];
-      const uploadMap: Array<{ idx: number, obs: any }> = [];
-      this.signatories.forEach((s, idx) => {
-        if (s.file instanceof File) {
-          uploadMap.push({ idx, obs: this.settingsService.uploadSignature(s.file) });
-        }
-      });
-      const signatoryPayload = this.signatories.map(s => ({ ...s, organizationId: this.organizationId }));
-      if (uploadMap.length > 0) {
-        const obsArr = uploadMap.map(m => m.obs);
-        forkJoin(obsArr).subscribe({
-          next: (results: any[]) => {
-            results.forEach((res, i) => {
-              const mapItem = uploadMap[i];
-              if (res && res.url) {
-                this.signatories[mapItem.idx].preview = res.url;
-                this.signatories[mapItem.idx].file = res.url;
-              }
-            });
-            this.settingsService.saveSignatories(signatoryPayload).subscribe({
-              next: () => {
-                this.authorizedSignatory.markAsPristine();
-                this.tabDirty[5] = false;
-                this.toastService.show('Signatories saved', 'success');
-              }, error: (err) => {
-                this.toastService.show(err?.message, 'error');
-              }
-            });
-          }, error: () => {
-            this.settingsService.saveSignatories(signatoryPayload).subscribe(() => {
-              this.authorizedSignatory.markAsPristine();
-              this.tabDirty[5] = false;
-              this.toastService.show('Signatories saved', 'success');
-            });
-          }
-        });
-      } else {
-        this.settingsService.saveSignatories(signatoryPayload).subscribe({
-          next: () => {
-            this.authorizedSignatory.markAsPristine();
-            this.tabDirty[5] = false;
-            this.toastService.show('Signatories saved', 'success');
-          }, error: (err) => {
-            this.toastService.show(err?.message, 'error');
-          }
-        });
-      }
-    }
-  }
-
-  // Save entire settings
-  saveAll(): void {
-    if (this.settingsForm.invalid) {
-      this.markFormGroupTouched(this.settingsForm);
-      this.toastService.show('Please fix errors before saving all settings.', 'warning');
-      return;
-    }
-
-    const payload = {
-      organizationInfo: { ...this.organizationInfo.value, id: this.organizationId },
-      nablAccreditation: { ...this.nablAccreditation.value, organizationId: this.organizationId },
-      numbering: { ...this.numbering.value, organizationId: this.organizationId },
-      gstConfig: { ...this.gstConfig.value, organizationId: this.organizationId },
-      financialYear: { ...this.financialYear.value, organizationId: this.organizationId },
-      signatories: this.signatories.map(s => ({ ...s, organizationId: this.organizationId }))
-    };
-
-    this.settingsService.saveAll(payload).subscribe({
-      next: (res) => {
-        if (res && res.organizationInfo && res.organizationInfo.id) {
-          this.organizationId = res.organizationInfo.id;
-        }
-        // Mark all groups pristine
-        this.organizationInfo.markAsPristine();
-        this.nablAccreditation.markAsPristine();
-        this.numbering.markAsPristine();
-        this.gstConfig.markAsPristine();
-        this.financialYear.markAsPristine();
-        this.authorizedSignatory.markAsPristine();
-
-        Object.keys(this.tabDirty).forEach(k => this.tabDirty[Number(k)] = false);
-
-        this.toastService.show('All settings saved', 'success');
-      }, error: (err) => {
-        this.toastService.show(err?.message, 'error');
-      }
-    });
-  }
-
-
 
   get nablAccreditation(): FormGroup {
     return this.settingsForm.get('nablAccreditation') as FormGroup;
@@ -668,14 +539,375 @@ export class SettingsComponent implements OnInit {
     return `${tcBase}${year}00000123F`;
   }
 
-  // Form actions
+  // ============================================
+  // Field error helper — returns first error message for a field
+  // ============================================
+
+  getFieldError(formGroupName: string, fieldName: string): string | null {
+    const control = this.settingsForm.get(`${formGroupName}.${fieldName}`);
+    if (!control || !control.errors || (!control.touched && !this.tabSubmitted[this.activeTab])) return null;
+
+    if (control.errors['required']) return 'This field is required';
+    if (control.errors['whitespace']) return 'Cannot be blank spaces only';
+    if (control.errors['email']) return 'Enter a valid email address';
+    if (control.errors['maxlength']) {
+      const max = control.errors['maxlength'].requiredLength;
+      return `Maximum ${max} characters allowed`;
+    }
+    if (control.errors['minlength']) {
+      const min = control.errors['minlength'].requiredLength;
+      return `Minimum ${min} characters required`;
+    }
+    if (control.errors['phone']) return 'Enter a valid phone number (7-20 digits)';
+    if (control.errors['gstin']) return 'Enter a valid 15-character GSTIN (e.g., 22AAAAA0000A1Z5)';
+    if (control.errors['pan']) return 'Enter a valid 10-character PAN (e.g., ABCDE1234F)';
+    return 'Invalid value';
+  }
+
+  getGroupError(formGroupName: string): string | null {
+    const group = this.settingsForm.get(formGroupName);
+    if (!group || !group.errors) return null;
+
+    // Show group errors only after attempted submit or when children are touched
+    const anyTouched = Object.keys((group as FormGroup).controls).some(
+      k => (group as FormGroup).get(k)?.touched
+    );
+    if (!anyTouched && !this.tabSubmitted[this.activeTab]) return null;
+
+    if (group.errors['dateRange']) return 'End Date must be after Start Date';
+    if (group.errors['fyDuration']) return 'Financial year must be approximately 12 months (11-13 months)';
+    return null;
+  }
+
+  isFieldInvalid(formGroupName: string, fieldName: string): boolean {
+    const control = this.settingsForm.get(`${formGroupName}.${fieldName}`);
+    return !!(control && control.invalid && (control.touched || this.tabSubmitted[this.activeTab]));
+  }
+
+  // ============================================
+  // Tab dirty tracking
+  // ============================================
+
+  tabDirty: { [key: number]: boolean } = { 1: false, 2: false, 3: false, 4: false, 5: false };
+
+  initTabDirtyTracking(): void {
+    const groups: Array<{ key: number; control: FormGroup }> = [
+      { key: 1, control: this.organizationInfo },
+      { key: 2, control: this.nablAccreditation },
+      { key: 3, control: this.numbering },
+      { key: 4, control: this.gstConfig },
+      { key: 5, control: this.authorizedSignatory }
+    ];
+
+    groups.forEach(g => {
+      g.control.valueChanges.subscribe(() => {
+        this.tabDirty[g.key] = g.control.dirty;
+      });
+    });
+  }
+
+  resetTab(tabKey: number): void {
+    if (!this.initialSnapshot) return;
+    this.tabSubmitted[tabKey] = false;
+    switch (tabKey) {
+      case 1:
+        this.organizationInfo.patchValue(this.initialSnapshot.organizationInfo || {});
+        this.organizationInfo.markAsPristine();
+        this.organizationInfo.markAsUntouched();
+        this.tabDirty[1] = false;
+        this.fileErrors['organizationLogo'] = null;
+        break;
+      case 2:
+        this.nablAccreditation.patchValue(this.initialSnapshot.nablAccreditation || {});
+        this.nablAccreditation.markAsPristine();
+        this.nablAccreditation.markAsUntouched();
+        this.tabDirty[2] = false;
+        this.fileErrors['nablCertificate'] = null;
+        this.fileErrors['nablLogo'] = null;
+        break;
+      case 3:
+        this.numbering.patchValue(this.initialSnapshot.numbering || {});
+        this.numbering.markAsPristine();
+        this.numbering.markAsUntouched();
+        this.tabDirty[3] = false;
+        break;
+      case 4:
+        this.gstConfig.patchValue(this.initialSnapshot.gstConfig || {});
+        this.financialYear.patchValue(this.initialSnapshot.financialYear || {});
+        this.gstConfig.markAsPristine();
+        this.gstConfig.markAsUntouched();
+        this.financialYear.markAsPristine();
+        this.financialYear.markAsUntouched();
+        this.tabDirty[4] = false;
+        break;
+      case 5:
+        this.signatories = (this.initialSnapshot.signatories || []).slice();
+        this.authorizedSignatory.markAsPristine();
+        this.authorizedSignatory.markAsUntouched();
+        this.tabDirty[5] = false;
+        this.fileErrors['signature'] = null;
+        break;
+    }
+  }
+
+  // ============================================
+  // Tab-level save with full validation
+  // ============================================
+
+  saveTab(tabKey: number): void {
+    this.tabSubmitted[tabKey] = true;
+
+    if (tabKey === 1) {
+      if (this.organizationInfo.invalid) {
+        this.markFormGroupTouched(this.organizationInfo);
+        this.toastService.show('Please fix organization details before saving.', 'warning');
+        return;
+      }
+      const data = { ...this.organizationInfo.value, id: this.organizationId };
+
+      const proceedSave = () => {
+        this.settingsService.saveOrganization(data).subscribe({
+          next: (res) => {
+            if (res && res.id) {
+              this.organizationId = res.id;
+            }
+            this.organizationInfo.markAsPristine();
+            this.tabDirty[1] = false;
+            this.tabSubmitted[1] = false;
+            this.toastService.show('Organization saved', 'success');
+          },
+          error: (err) => {
+            this.toastService.show(err?.error?.message || err?.message || 'Failed to save organization', 'error');
+          }
+        });
+      };
+      const upload$ = this.organizationLogoFile ? this.settingsService.uploadOrganizationLogo(this.organizationLogoFile) : null;
+      if (upload$) {
+        upload$.subscribe({
+          next: (res: any) => {
+            if (res && res.url) {
+              this.organizationLogoPreview = res.url;
+              this.organizationInfo.patchValue({ organizationLogo: res.url });
+            }
+            proceedSave();
+          },
+          error: () => proceedSave()
+        });
+      } else {
+        proceedSave();
+      }
+    }
+
+    if (tabKey === 2) {
+      if (this.isNablEnabled && this.nablAccreditation.invalid) {
+        this.markFormGroupTouched(this.nablAccreditation);
+        this.toastService.show('Please fix NABL details before saving.', 'warning');
+        return;
+      }
+      const data = { ...this.nablAccreditation.value, organizationId: this.organizationId };
+      const uploads: any[] = [];
+      if (this.nablCertificateFile) {
+        uploads.push(this.settingsService.uploadNablCertificate(this.nablCertificateFile));
+      }
+      if (this.nablLogoFile) {
+        uploads.push(this.settingsService.uploadNablCertificate(this.nablLogoFile));
+      }
+      const doSave = () => {
+        this.settingsService.saveNabl(data).subscribe({
+          next: () => {
+            this.nablAccreditation.markAsPristine();
+            this.tabDirty[2] = false;
+            this.tabSubmitted[2] = false;
+            this.toastService.show('NABL settings saved', 'success');
+          },
+          error: (err) => {
+            this.toastService.show(err?.error?.message || err?.message || 'Failed to save NABL settings', 'error');
+          }
+        });
+      };
+      if (uploads.length > 0) {
+        forkJoin(uploads).subscribe({ next: () => doSave(), error: () => doSave() });
+      } else {
+        doSave();
+      }
+    }
+
+    if (tabKey === 3) {
+      if (this.numbering.invalid) {
+        this.markFormGroupTouched(this.numbering);
+        this.toastService.show('Please fix numbering details.', 'warning');
+        return;
+      }
+      const data = { ...this.numbering.value, organizationId: this.organizationId };
+      this.settingsService.saveNumbering(data).subscribe({
+        next: () => {
+          this.numbering.markAsPristine();
+          this.tabDirty[3] = false;
+          this.tabSubmitted[3] = false;
+          this.toastService.show('Numbering saved', 'success');
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || err?.message || 'Failed to save numbering', 'error');
+        }
+      });
+    }
+
+    if (tabKey === 4) {
+      if (this.gstConfig.invalid || this.financialYear.invalid) {
+        this.markFormGroupTouched(this.gstConfig);
+        this.markFormGroupTouched(this.financialYear);
+        this.toastService.show('Please fix GST/financial details.', 'warning');
+        return;
+      }
+      const gst = { ...this.gstConfig.value, organizationId: this.organizationId };
+      const fy = { ...this.financialYear.value, organizationId: this.organizationId };
+
+      forkJoin([this.settingsService.saveGst(gst), this.settingsService.saveFinancialYear(fy)]).subscribe({
+        next: () => {
+          this.gstConfig.markAsPristine();
+          this.financialYear.markAsPristine();
+          this.tabDirty[4] = false;
+          this.tabSubmitted[4] = false;
+          this.toastService.show('GST & financial settings saved', 'success');
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || err?.message || 'Failed to save GST/FY', 'error');
+        }
+      });
+    }
+
+    if (tabKey === 5) {
+      if (!this.signatories || this.signatories.length === 0) {
+        this.toastService.show('Please add at least one signatory.', 'warning');
+        return;
+      }
+      const signatoryPayload = this.signatories.map(s => ({ ...s, organizationId: this.organizationId }));
+
+      const uploadMap: Array<{ idx: number; obs: any }> = [];
+      this.signatories.forEach((s, idx) => {
+        if (s.file instanceof File) {
+          uploadMap.push({ idx, obs: this.settingsService.uploadSignature(s.file) });
+        }
+      });
+
+      const doSave = () => {
+        this.settingsService.saveSignatories(signatoryPayload).subscribe({
+          next: () => {
+            this.authorizedSignatory.markAsPristine();
+            this.tabDirty[5] = false;
+            this.tabSubmitted[5] = false;
+            this.toastService.show('Signatories saved', 'success');
+          },
+          error: (err) => {
+            this.toastService.show(err?.error?.message || err?.message || 'Failed to save signatories', 'error');
+          }
+        });
+      };
+
+      if (uploadMap.length > 0) {
+        const obsArr = uploadMap.map(m => m.obs);
+        forkJoin(obsArr).subscribe({
+          next: (results: any[]) => {
+            results.forEach((res, i) => {
+              const mapItem = uploadMap[i];
+              if (res && res.url) {
+                this.signatories[mapItem.idx].preview = res.url;
+                this.signatories[mapItem.idx].file = res.url;
+              }
+            });
+            doSave();
+          },
+          error: () => doSave()
+        });
+      } else {
+        doSave();
+      }
+    }
+  }
+
+  // ============================================
+  // Save All with full validation
+  // ============================================
+
+  saveAll(): void {
+    this.submitted = true;
+    Object.keys(this.tabSubmitted).forEach(k => (this.tabSubmitted[Number(k)] = true));
+
+    // Validate tabs 1-4 (authorizedSignatory is excluded — it's an add/edit helper, not saved data)
+    const coreGroups: Array<{ key: number; group: FormGroup }> = [
+      { key: 1, group: this.organizationInfo },
+      { key: 2, group: this.nablAccreditation },
+      { key: 3, group: this.numbering },
+      { key: 4, group: this.gstConfig }
+    ];
+    const hasCoreErrors = coreGroups.some(g => g.group.invalid) || this.financialYear.invalid;
+    const noSignatories = !this.signatories || this.signatories.length === 0;
+
+    if (hasCoreErrors || noSignatories) {
+      if (hasCoreErrors) {
+        coreGroups.forEach(g => this.markFormGroupTouched(g.group));
+        this.markFormGroupTouched(this.financialYear);
+        for (const tg of coreGroups) {
+          if (tg.group.invalid) {
+            this.activeTab = tg.key;
+            break;
+          }
+        }
+        if (this.financialYear.invalid && this.activeTab !== 4) {
+          this.activeTab = 4;
+        }
+      }
+      if (noSignatories && !hasCoreErrors) {
+        this.activeTab = 5;
+      }
+      this.toastService.show(
+        noSignatories && !hasCoreErrors
+          ? 'Please add at least one signatory before saving.'
+          : 'Please fix all validation errors before saving.',
+        'warning'
+      );
+      return;
+    }
+
+    const payload = {
+      organizationInfo: { ...this.organizationInfo.value, id: this.organizationId },
+      nablAccreditation: { ...this.nablAccreditation.value, organizationId: this.organizationId },
+      numbering: { ...this.numbering.value, organizationId: this.organizationId },
+      gstConfig: { ...this.gstConfig.value, organizationId: this.organizationId },
+      financialYear: { ...this.financialYear.value, organizationId: this.organizationId },
+      signatories: this.signatories.map(s => ({ ...s, organizationId: this.organizationId }))
+    };
+
+    this.settingsService.saveAll(payload).subscribe({
+      next: (res) => {
+        if (res && res.organizationInfo && res.organizationInfo.id) {
+          this.organizationId = res.organizationInfo.id;
+        }
+        this.organizationInfo.markAsPristine();
+        this.nablAccreditation.markAsPristine();
+        this.numbering.markAsPristine();
+        this.gstConfig.markAsPristine();
+        this.financialYear.markAsPristine();
+        this.authorizedSignatory.markAsPristine();
+        Object.keys(this.tabDirty).forEach(k => (this.tabDirty[Number(k)] = false));
+        Object.keys(this.tabSubmitted).forEach(k => (this.tabSubmitted[Number(k)] = false));
+        this.submitted = false;
+        this.toastService.show('All settings saved', 'success');
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || err?.message || 'Failed to save settings', 'error');
+      }
+    });
+  }
+
   onSave(): void {
-    // Use saveAll to persist all sections
     this.saveAll();
   }
 
   onCancel(): void {
     if (confirm('Are you sure you want to discard changes?')) {
+      this.submitted = false;
+      Object.keys(this.tabSubmitted).forEach(k => (this.tabSubmitted[Number(k)] = false));
       this.loadSettingsFromApi();
       this.organizationLogoFile = null;
       this.organizationLogoPreview = null;
@@ -684,54 +916,74 @@ export class SettingsComponent implements OnInit {
       this.nablLogoPreview = null;
       this.signatureFile = null;
       this.signaturePreview = null;
+      Object.keys(this.fileErrors).forEach(k => (this.fileErrors[k] = null));
     }
   }
 
-  // Signature Management Methods
+  // ============================================
+  // Signatory Management
+  // ============================================
+
   addSignatory(): void {
-    // require a signature image (file selected or existing preview)
+    this.tabSubmitted[5] = true;
+
+    if (this.authorizedSignatory.invalid) {
+      this.markFormGroupTouched(this.authorizedSignatory);
+      this.toastService.show('Please fill all required signatory fields.', 'warning');
+      return;
+    }
+
     if (!this.signaturePreview && !(this.signatureFile instanceof File)) {
       this.toastService.show('Please upload a signature image before adding signatory.', 'warning');
       return;
     }
 
-    if (this.authorizedSignatory.valid) {
-      // ensure signatureImage field is set for validator consistency
-      const signatureName = this.signaturePreview || (this.signatureFile ? (this.signatureFile.name || '') : '');
-      this.authorizedSignatory.patchValue({ signatureImage: signatureName });
-
-      const signData = {
-        ...this.authorizedSignatory.value,
-        preview: this.signaturePreview || null,
-        file: this.signatureFile || null
-      };
-
-      if (this.editingSignatoryIndex >= 0) {
-        this.signatories[this.editingSignatoryIndex] = signData;
-        this.editingSignatoryIndex = -1;
-      } else {
-        this.signatories.push(signData);
-      }
-
-      this.tabDirty[5] = true;
-      this.resetSignatureForm();
-    } else {
-      this.markFormGroupTouched(this.authorizedSignatory);
-      this.toastService.show('Please fill required signatory fields.', 'warning');
+    // Duplicate name check
+    const newName = (this.authorizedSignatory.get('signatoryName')?.value || '').trim().toLowerCase();
+    const duplicateIdx = this.signatories.findIndex(
+      (s, idx) => (s.signatoryName || '').trim().toLowerCase() === newName && idx !== this.editingSignatoryIndex
+    );
+    if (duplicateIdx >= 0) {
+      this.toastService.show('A signatory with this name already exists.', 'warning');
+      return;
     }
+
+    // Use uploaded URL for signatureImage (NOT base64 preview)
+    const uploadedUrl = this.signatureUploadedUrl || this.authorizedSignatory.get('signatureImage')?.value || '';
+    this.authorizedSignatory.patchValue({ signatureImage: uploadedUrl });
+
+    const signData = {
+      ...this.authorizedSignatory.value,
+      signatureImage: uploadedUrl,
+      preview: this.signaturePreview || uploadedUrl || null,
+      file: this.signatureFile || null
+    };
+
+    if (this.editingSignatoryIndex >= 0) {
+      signData.id = this.signatories[this.editingSignatoryIndex].id;
+      this.signatories[this.editingSignatoryIndex] = signData;
+      this.editingSignatoryIndex = -1;
+    } else {
+      this.signatories.push(signData);
+    }
+
+    this.tabDirty[5] = true;
+    this.tabSubmitted[5] = false;
+    this.resetSignatureForm();
   }
 
   editSignatory(index: number): void {
     const sig = this.signatories[index];
+    this.signatureUploadedUrl = sig.signatureImage || null;
     this.authorizedSignatory.patchValue({
       signatoryName: sig.signatoryName,
       designation: sig.designation,
       applicableFor: sig.applicableFor,
       status: sig.status,
-      signatureImage: sig.preview || (sig.file && (sig.file as any).name) || ''
+      signatureImage: sig.signatureImage || ''
     });
-    this.signaturePreview = sig.preview;
-    this.signatureFile = sig.file instanceof File ? sig.file : (sig.file || null);
+    this.signaturePreview = sig.preview || sig.signatureImage || null;
+    this.signatureFile = sig.file instanceof File ? sig.file : sig.file || null;
     this.editingSignatoryIndex = index;
   }
 
@@ -739,12 +991,10 @@ export class SettingsComponent implements OnInit {
     this.resetSignatureForm();
   }
 
-  // Delete a signatory
   deleteSignatory(index: number): void {
     const sig = this.signatories[index];
     if (!confirm('Are you sure you want to delete this signatory?')) return;
 
-    // if signatory has an id, call backend to delete
     if (sig && sig.id) {
       this.settingsService.deleteSignatory(sig.id).subscribe({
         next: () => {
@@ -754,8 +1004,9 @@ export class SettingsComponent implements OnInit {
             this.resetSignatureForm();
           }
           this.tabDirty[5] = true;
-        }, error: (err) => {
-          this.toastService.show(err?.message, 'error');
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || err?.message || 'Failed to delete signatory', 'error');
         }
       });
     } else {
@@ -768,38 +1019,46 @@ export class SettingsComponent implements OnInit {
   }
 
   private resetSignatureForm(): void {
-    this.authorizedSignatory.reset({
-      status: true,
-      applicableFor: true
-    });
+    this.authorizedSignatory.reset({ status: true, applicableFor: true });
+    this.authorizedSignatory.markAsUntouched();
     this.signatureFile = null;
     this.signaturePreview = null;
+    this.signatureUploadedUrl = null;
     this.editingSignatoryIndex = -1;
-  }
-
-  clearNablCertificate(): void {
-    this.nablCertificateFile = null;
+    this.fileErrors['signature'] = null;
+    this.tabSubmitted[5] = false;
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
       control?.markAsTouched();
-
       if (control instanceof FormGroup) {
         this.markFormGroupTouched(control);
       }
     });
   }
 
-  // Helper method to check if field is invalid and touched
-  isFieldInvalid(formGroupName: string, fieldName: string): boolean {
-    const field = this.settingsForm.get(`${formGroupName}.${fieldName}`);
-    return !!(field && field.invalid && field.touched);
-  }
-
   // Tab navigation
   setActiveTab(tabKey: number): void {
     this.activeTab = tabKey;
+  }
+
+  // Check if a tab has validation errors
+  hasTabErrors(tabKey: number): boolean {
+    switch (tabKey) {
+      case 1:
+        return this.organizationInfo.invalid;
+      case 2:
+        return this.isNablEnabled && this.nablAccreditation.invalid;
+      case 3:
+        return this.numbering.invalid;
+      case 4:
+        return this.gstConfig.invalid || this.financialYear.invalid;
+      case 5:
+        return this.signatories.length === 0; // error only when no signatories added
+      default:
+        return false;
+    }
   }
 }

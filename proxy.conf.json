@@ -9,5 +9,10 @@
     "secure": false,
     "changeOrigin": true,
     "ws": true
+  },
+  "/Uploads": {
+    "target": "https://localhost:7049",
+    "secure": false,
+    "changeOrigin": true
   }
 }

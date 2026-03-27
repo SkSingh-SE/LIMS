@@ -12,6 +12,7 @@ import {
 } from '@angular/forms';
 import { SettingsService } from '../../services/settings.service';
 import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 // ============================================
 // Custom Validators
@@ -165,7 +166,11 @@ export class SettingsComponent implements OnInit {
           this.settingsForm.get('financialYear')?.patchValue(res.financialYear);
         }
         if (res.signatories) {
-          this.signatories = res.signatories;
+          this.signatories = res.signatories.map((s: any) => ({
+            ...s,
+            signatureImage: this.normalizeFileUrl(s.signatureImage),
+            preview: this.normalizeFileUrl(s.signatureImage)
+          }));
         }
         this.captureInitialSnapshot();
       },
@@ -430,8 +435,8 @@ export class SettingsComponent implements OnInit {
         this.settingsService.uploadSignature(file).subscribe({
           next: (res: any) => {
             if (res && res.url) {
-              this.signatureUploadedUrl = res.url;
-              this.settingsForm.get('authorizedSignatory.signatureImage')?.setValue(res.url);
+              this.signatureUploadedUrl = this.normalizeFileUrl(res.url);
+              this.settingsForm.get('authorizedSignatory.signatureImage')?.setValue(this.signatureUploadedUrl);
             }
           },
           error: () => {
@@ -460,6 +465,17 @@ export class SettingsComponent implements OnInit {
       }
     };
     reader.readAsDataURL(file);
+  }
+
+  // Normalize a relative file path from the server into a full URL for display/storage
+  normalizeFileUrl(path: string | null | undefined): string {
+    if (!path) return '';
+    // Already a full URL (http/https) or data URI — return as-is
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    // Replace Windows backslashes and ensure single leading slash
+    const normalized = '/' + path.replace(/\\/g, '/').replace(/^\/+/, '');
+    const base = environment.baseUrl.replace(/\/$/, ''); // strip trailing slash
+    return base + normalized;
   }
 
   // Clear file upload methods
@@ -811,8 +827,10 @@ export class SettingsComponent implements OnInit {
             results.forEach((res, i) => {
               const mapItem = uploadMap[i];
               if (res && res.url) {
-                this.signatories[mapItem.idx].preview = res.url;
-                this.signatories[mapItem.idx].file = res.url;
+                const fullUrl = this.normalizeFileUrl(res.url);
+                this.signatories[mapItem.idx].signatureImage = fullUrl;
+                this.signatories[mapItem.idx].preview = fullUrl;
+                this.signatories[mapItem.idx].file = null; // clear File object after upload
               }
             });
             doSave();

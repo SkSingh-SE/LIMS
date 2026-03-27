@@ -22,6 +22,7 @@ import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.e
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 
 @Component({
   selector: 'app-sample-inward-form',
@@ -49,6 +50,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   sampleNumbers: string[] = [];
 
   // State
+  submitted = false;
   sampleInwardForm!: FormGroup;
   globalTestCounter = 1;
   uploadedFile: File | null = null;
@@ -568,9 +570,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     this.sampleInwardForm.patchValue({
       customerID: item.id
     });
-    if (this.sampleId === 0) {
-      this.getCustomerDetails(item.id);
-    }
+    this.getCustomerDetails(item.id);
   }
 
   isDispatchModeSelected(id: number): boolean {
@@ -869,10 +869,16 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     this.sampleDetails.at(index).patchValue({ fileName: '', file: null });
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.sampleInwardForm, path, this.submitted);
+  }
+
   // Submission
   onSubmit(includePlans: boolean = false): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.sampleInwardForm);
     if (!this.sampleInwardForm.valid) {
-      this.sampleInwardForm.markAllAsTouched();
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
 

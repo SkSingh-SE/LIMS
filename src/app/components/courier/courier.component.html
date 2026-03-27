@@ -167,13 +167,10 @@
                     <div class="mb-1 ">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': courierForm.get('name')?.touched && courierForm.get('name')?.invalid}"
+                            placeholder="Enter Name" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="courierForm.get('name')?.invalid && courierForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                        <app-field-error [control]="courierForm.get('name')" label="Name" [submitted]="submitted"/>
                     </div>
 
                     <!--Contact Number-->
@@ -181,18 +178,11 @@
                         <label for="contactNo" class="form-label">Contact Number <span
                                 class="text-danger">*</span></label>
                         <input type="text" id="contactNo" class="form-control" formControlName="contactNo"
-                            placeholder="Enter Contact Number" required
+                            placeholder="Enter Contact Number"
                             maxlength="13" appNumberOnly
-                            [ngClass]="{'is-invalid': courierForm.get('contactNo')?.touched && courierForm.get('contactNo')?.invalid}"
+                            [ngClass]="{'is-invalid': isFieldInvalid('contactNo')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="courierForm.get('contactNo')?.hasError('required') && courierForm.get('contactNo')?.touched"
-                            class="text-danger text-sm">
-                            Contact Number is required.
-                        </span>
-                        <span *ngIf="courierForm.get('contactNo')?.hasError('pattern') && !courierForm.get('contactNo')?.hasError('required') && courierForm.get('contactNo')?.touched"
-                            class="text-danger text-sm">
-                            Contact Number must be 10-13 digits.
-                        </span>
+                        <app-field-error [control]="courierForm.get('contactNo')" label="Contact No" [submitted]="submitted"/>
                     </div>
 
 
@@ -201,7 +191,7 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="courierForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

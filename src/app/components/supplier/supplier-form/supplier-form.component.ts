@@ -9,16 +9,20 @@ import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-supplier-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, FormFieldErrorComponent],
   templateUrl: './supplier-form.component.html',
   styleUrl: './supplier-form.component.css'
 })
 export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
   supplierForm!: FormGroup
+  submitted = false;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
   supplierId: number = 0;
@@ -50,9 +54,9 @@ export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
   initForm() {
     this.supplierForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       productType: ['Product', Validators.required],
-      contactPerson1: ['', Validators.required],
+      contactPerson1: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       contactNo1: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
       emailId1: ['', [Validators.required, Validators.email]],
       contactPerson2: [''],
@@ -94,67 +98,69 @@ export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
           this.supplierForm.disable();
         }
       },
-      error: (error) => {
-        this.toastService.show(error.message, 'error');
+      error: () => {
       }
     })
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.supplierForm, path, this.submitted);
+  }
+
   onSubmit(): void {
-    if (this.supplierForm.valid) {
-      const raw = this.supplierForm.getRawValue();
-      const formData = new FormData();
-      formData.append('id', raw.id);
-      formData.append('name', raw.name);
-      formData.append('productType', raw.productType);
-      formData.append('contactPerson1', raw.contactPerson1 || '');
-      formData.append('contactPerson2', raw.contactPerson2 || '');
-      formData.append('contactPerson3', raw.contactPerson3 || '');
-      formData.append('contactNo1', raw.contactNo1 || '');
-      formData.append('contactNo2', raw.contactNo2 || '');
-      formData.append('contactNo3', raw.contactNo3 || '');
-      formData.append('emailId1', raw.emailId1 || '');
-      formData.append('emailId2', raw.emailId2 || '');
-      formData.append('emailId3', raw.emailId3 || '');
-      formData.append('address', raw.address || '');
-      formData.append('presentStatus', raw.presentStatus.toString());
-      formData.append('uploadReferenceID', raw.uploadReferenceID ?? '');
-      formData.append('agreementFilePath', raw.agreementFilePath || '');
-      formData.append('fileName', raw.fileName || '');
-      formData.append('supplierApproved', raw.supplierApproved.toString());
-      formData.append('isBlacklisted', raw.isBlacklisted.toString());
-      formData.append('reasonForBlacklisting', raw.reasonForBlacklisting || '');
-      formData.append('blacklistDate', raw.blacklistDate || '');
-
-      if (raw.file) {
-        formData.append('file', raw.file, raw.file.name);
-      }
-
-      if (this.supplierId > 0) {
-        this.supplierService.updateSupplier(formData).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/supplier']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      } else {
-        this.supplierService.createSupplier(formData).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/supplier']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.supplierForm);
+    if (!this.supplierForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
     }
-    else {
-      this.supplierForm.markAllAsTouched();
+    const raw = this.supplierForm.getRawValue();
+    const formData = new FormData();
+    formData.append('id', raw.id);
+    formData.append('name', raw.name);
+    formData.append('productType', raw.productType);
+    formData.append('contactPerson1', raw.contactPerson1 || '');
+    formData.append('contactPerson2', raw.contactPerson2 || '');
+    formData.append('contactPerson3', raw.contactPerson3 || '');
+    formData.append('contactNo1', raw.contactNo1 || '');
+    formData.append('contactNo2', raw.contactNo2 || '');
+    formData.append('contactNo3', raw.contactNo3 || '');
+    formData.append('emailId1', raw.emailId1 || '');
+    formData.append('emailId2', raw.emailId2 || '');
+    formData.append('emailId3', raw.emailId3 || '');
+    formData.append('address', raw.address || '');
+    formData.append('presentStatus', raw.presentStatus.toString());
+    formData.append('uploadReferenceID', raw.uploadReferenceID ?? '');
+    formData.append('agreementFilePath', raw.agreementFilePath || '');
+    formData.append('fileName', raw.fileName || '');
+    formData.append('supplierApproved', raw.supplierApproved.toString());
+    formData.append('isBlacklisted', raw.isBlacklisted.toString());
+    formData.append('reasonForBlacklisting', raw.reasonForBlacklisting || '');
+    formData.append('blacklistDate', raw.blacklistDate || '');
+
+    if (raw.file) {
+      formData.append('file', raw.file, raw.file.name);
+    }
+
+    if (this.supplierId > 0) {
+      this.supplierService.updateSupplier(formData).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/supplier']);
+        },
+        error: () => {
+        }
+      })
+    } else {
+      this.supplierService.createSupplier(formData).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/supplier']);
+        },
+        error: () => {
+        }
+      })
     }
   }
 

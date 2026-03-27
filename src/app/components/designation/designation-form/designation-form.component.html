@@ -14,13 +14,10 @@
             <div class="col-md-6 mb-3">
               <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
               <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Designation"
-                required
-                [ngClass]="{'is-invalid': designationForm.get('name')?.touched && designationForm.get('name')?.invalid}"
+                maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                 [attr.disabled]="isViewMode ? true : null" />
-              <span *ngIf="designationForm.get('name')?.invalid && designationForm.get('name')?.touched"
-                class="text-danger text-sm">
-                Name is required.
-              </span>
+              <app-field-error [control]="designationForm.get('name')" label="Name" [submitted]="submitted"/>
             </div>
             <div class="col-md-6 mb-3">
               <label for="description" class="form-label">Description</label>
@@ -66,7 +63,7 @@
         </div>
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="designationForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

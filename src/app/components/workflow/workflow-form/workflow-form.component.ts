@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { Observable } from 'rxjs';
 import { RoleService } from '../../../services/role.service';
 import { EmployeeService } from '../../../services/employee.service';
@@ -15,12 +18,13 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 
 @Component({
   selector: 'app-workflow-form',
-  imports: [CommonModule, ReactiveFormsModule, MultiSelectDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, MultiSelectDropdownComponent, FormFieldErrorComponent],
   templateUrl: './workflow-form.component.html',
   styleUrl: './workflow-form.component.css'
 })
 export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
   saved = false;
+  submitted = false;
   workflowForm!: FormGroup;
   isViewMode = false;
   isEditMode = false;
@@ -87,7 +91,7 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
   initform() {
     this.workflowForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       entityType: ['', Validators.required],
       steps: this.fb.array([], [Validators.required, this.duplicateStepNameValidator]),
     });
@@ -102,7 +106,7 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
       id: [0],
       workflowID: [0],
       orderNo: [this.steps.length + 1],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       assignedToType: ['User', Validators.required],
       assignedToValue: ['', Validators.required],
       selectedIDs: ['', Validators.required],
@@ -159,7 +163,13 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
     }
   };
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.workflowForm, path, this.submitted);
+  }
+
   submit() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.workflowForm);
     if (this.workflowForm.valid) {
       console.log('Workflow Definition:', this.workflowForm.value);
       // TODO: call API
@@ -188,9 +198,13 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
           }
         });
       }
+    } else {
+      this.toast.show('Please fix validation errors before submitting.', 'warning');
     }
   }
+
   onCancel(): void {
+    this.submitted = false;
     this.workflowForm.reset();
     this.router.navigate(['/workflow']);
   }
@@ -269,7 +283,7 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
                 id: [step.id],
                 workflowID: [step.workflowID],
                 orderNo: [step.orderNo],
-                name: [step.name, Validators.required],
+                name: [step.name, [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
                 assignedToType: [step.assignedToType, Validators.required],
                 assignedToValue: [step.assignedToValue, Validators.required],
                 selectedIDs: [selectedIds, Validators.required],

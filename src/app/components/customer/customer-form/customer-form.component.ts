@@ -23,11 +23,14 @@ import { AreaService } from '../../../services/area.service';
 import { ConfigService } from '../../../services/config.service';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 
 @Component({
   selector: 'app-customer-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, RouterLink, FormFieldErrorComponent],
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
 })
@@ -60,6 +63,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   isViewMode: boolean = false;
   selectedCompanyCategoryIds: number[] = [];
   customerId: number = 0;
+  submitted = false;
   constructor(
     private fb: FormBuilder,
     private employeeService: EmployeeService,
@@ -87,11 +91,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
     this.customerForm = this.fb.group({
       id: [0],
-      name: ['', [Validators.required, Validators.maxLength(100)]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       legalName: [''],
-      tallyLedgerName: ['', [Validators.required]],
+      tallyLedgerName: ['', [Validators.required, noWhitespaceValidator()]],
       sameAsCustomerName: [false],
-      address: [''],
+      address: ['', [Validators.required, Validators.maxLength(500), noWhitespaceValidator()]],
       areaID: [0],
       cityID: [0],
       city: ['', [Validators.required]],
@@ -237,40 +241,40 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     }
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.customerForm, path, this.submitted);
+  }
+
   /* ===== Form Submission ===== */
   onSubmit(): void {
-    this.customerForm.markAllAsTouched();
-    console.log('Form Submitted', this.customerForm.value);
-    if (this.customerForm.valid) {
-      if (this.customerId > 0) {
-        this.customerService.updateCustomer(this.customerForm.value).subscribe({
-          next: resp => {
-            this.saved = true;
-            this.toastService.show(resp.message, 'success');
-            this.router.navigate(['/customer']);
-          },
-          error: err => {
-            this.toastService.show(err?.error?.message || 'Failed to save customer', 'error');
-          }
-        });
-      }
-      else {
-        this.customerForm.patchValue({ customerID: 0 });
-        this.customerService.createCustomer(this.customerForm.value).subscribe({
-          next: resp => {
-            this.saved = true;
-            this.toastService.show(resp.message, 'success');
-            this.router.navigate(['/customer']);
-          },
-          error: err => {
-            this.toastService.show(err?.error?.message || 'Failed to save customer', 'error');
-          }
-        });
-      }
-
-    } else {
-      this.toastService.show('Form is invalid. Please check the highlighted fields.', 'warning');
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.customerForm);
+    if (!this.customerForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       this.logInvalidControls(this.customerForm);
+      return;
+    }
+    if (this.customerId > 0) {
+      this.customerService.updateCustomer(this.customerForm.value).subscribe({
+        next: resp => {
+          this.saved = true;
+          this.toastService.show(resp.message, 'success');
+          this.router.navigate(['/customer']);
+        },
+        error: () => {
+        }
+      });
+    } else {
+      this.customerForm.patchValue({ customerID: 0 });
+      this.customerService.createCustomer(this.customerForm.value).subscribe({
+        next: resp => {
+          this.saved = true;
+          this.toastService.show(resp.message, 'success');
+          this.router.navigate(['/customer']);
+        },
+        error: () => {
+        }
+      });
     }
   }
 

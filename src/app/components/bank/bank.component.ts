@@ -4,11 +4,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { BankService } from '../../services/bank.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator, ifscValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-bank',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './bank.component.html',
   styleUrl: './bank.component.css'
 })
@@ -63,6 +66,7 @@ export class BankComponent implements OnInit {
 
   // form
   bankForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -88,12 +92,12 @@ export class BankComponent implements OnInit {
     this.fetchData();
     this.bankForm = this.fb.group({
       id: [0],
-      bankName: ['', Validators.required],
-      accountHolderName: ['', Validators.required],
-      accountNumber: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+      bankName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      accountHolderName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      accountNumber: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^\d+$/)]],
       accountType: ['', Validators.required],
-      branchName: ['', Validators.required],
-      ifscCode: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
+      branchName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      ifscCode: ['', [Validators.required, Validators.maxLength(11), ifscValidator()]],
     });
   }
 
@@ -106,7 +110,6 @@ export class BankComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.bankList = [];
       }
     }
@@ -262,8 +265,7 @@ export class BankComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        error: () => {
         }
       });
     }
@@ -307,35 +309,42 @@ export class BankComponent implements OnInit {
     this.bankId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.bankForm, path, this.submitted);
   }
 
   onSubmit(): void {
-    if (this.bankForm.valid) {
-      let formData = this.bankForm.value;
-      if (this.isEditMode) {
-        this.bankService.updateBank(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.bankService.createBank(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.bankForm);
+    if (!this.bankForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.bankForm.value;
+    if (this.isEditMode) {
+      this.bankService.updateBank(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.bankService.createBank(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
     }
   }
 

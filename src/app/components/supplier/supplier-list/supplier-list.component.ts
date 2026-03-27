@@ -216,7 +216,6 @@ export class SupplierListComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting supplier:', error);
-          this.toastService.show('Failed to delete supplier', 'error');
         }
       });
     }

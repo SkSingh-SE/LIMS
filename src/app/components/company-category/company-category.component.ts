@@ -5,10 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { CompanyCategoryService } from '../../services/company-category.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-company-category',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './company-category.component.html',
   styleUrl: './company-category.component.css'
 })
@@ -60,6 +63,7 @@ export class CompanyCategoryComponent implements OnInit {
 
   // form
   customerTypeForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -76,8 +80,8 @@ export class CompanyCategoryComponent implements OnInit {
 
     this.customerTypeForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      description: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      description: ['', [Validators.maxLength(500)]],
     });
   }
 
@@ -279,7 +283,12 @@ export class CompanyCategoryComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.customerTypeForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -291,32 +300,36 @@ export class CompanyCategoryComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.customerTypeForm.valid) {
-      let formData = this.customerTypeForm.value;
-      if (this.isEditMode) {
-        this.companyCategoryService.updateCompanyCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.companyCategoryService.createCompanyCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.customerTypeForm);
+    if (!this.customerTypeForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.customerTypeForm.value;
+    if (this.isEditMode) {
+      this.companyCategoryService.updateCompanyCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.companyCategoryService.createCompanyCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 

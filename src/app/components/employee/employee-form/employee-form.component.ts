@@ -20,9 +20,12 @@ import { EmployeePerformanceRecordComponent } from '../employee-performance-reco
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { EmployeeAuthorizationService } from '../../../services/employee-authorization.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 @Component({
   selector: 'app-employee-form',
-  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent],
+  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent, FormFieldErrorComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
@@ -54,6 +57,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   residentialAreas: any[] = [];
   permanentAreas: any[] = [];
   designationRoleName: string = '';
+  submitted = false;
   // Define the form group
   personalInfoForm!: FormGroup;
   qualificationForm!: FormGroup;
@@ -112,7 +116,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
 
     this.personalInfoForm = this.fb.group({
       id: [this.employeeId],
-      name: ['', [Validators.required, Validators.maxLength(100)]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       dateOfBirth: ['', Validators.required],
       bloodGroup: ['', Validators.maxLength(5)],
       mobileNo: [
@@ -302,42 +306,42 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   }
   // Role is derived from Designation — no manual role selection
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.personalInfoForm, path, this.submitted);
+  }
+
   submitForm() {
-    if (this.personalInfoForm.valid) {
-      console.log('Form Submitted', this.personalInfoForm.value);
-
-      if (this.employeeId) {
-        // Update employee
-        this.employeeService.updateEmployee(this.employeeId, this.personalInfoForm.value).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
-            this.router.navigate(['/employee']);
-          },
-          error: (error) => {
-            console.error('Error updating employee:', error);
-            this.toastService.show(`${error?.error?.message || 'Error updating employee'}`, 'error');
-          }
-        });
-      } else {
-        // Create new employee
-        this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.employeeId = response.id;
-            this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
-            this.router.navigate(['/employee']);
-          },
-          error: (error) => {
-            console.error('Error creating employee:', error);
-            this.toastService.show(`${error?.error?.message || 'Error creating employee'}`, 'error');
-          }
-        });
-      }
-
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.personalInfoForm);
+    if (!this.personalInfoForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    if (this.employeeId) {
+      // Update employee
+      this.employeeService.updateEmployee(this.employeeId, this.personalInfoForm.value).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
+          this.router.navigate(['/employee']);
+        },
+        error: (error) => {
+          console.error('Error updating employee:', error);
+        }
+      });
     } else {
-      this.toastService.show('Form is invalid. Please check the fields.', 'warning');
-      this.personalInfoForm.markAllAsTouched(); // Mark all controls to show validation errors
+      // Create new employee
+      this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.employeeId = response.id;
+          this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
+          this.router.navigate(['/employee']);
+        },
+        error: (error) => {
+          console.error('Error creating employee:', error);
+        }
+      });
     }
   }
 

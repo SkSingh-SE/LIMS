@@ -5,10 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../services/toast.service';
 import { TaxService } from '../../services/tax.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-tax',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './tax.component.html',
   styleUrl: './tax.component.css'
 })
@@ -62,6 +65,7 @@ export class TaxComponent implements OnInit {
 
   // form
   taxForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -84,10 +88,10 @@ export class TaxComponent implements OnInit {
   initForm() {
     this.taxForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       date: ['', Validators.required],
       rate: ['', Validators.required],
-      remark: [''],
+      remark: ['', [Validators.maxLength(500)]],
     });
   }
 
@@ -100,7 +104,6 @@ export class TaxComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
         this.taxList = [];
       }
     }
@@ -256,8 +259,7 @@ export class TaxComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
+        error: () => {
         }
       });
     }
@@ -294,7 +296,12 @@ export class TaxComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.taxForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -306,32 +313,34 @@ export class TaxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
-      if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.taxForm);
+    if (!this.taxForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.taxForm.value;
+    if (this.isEditMode) {
+      this.taxService.updateTax(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.taxService.createTax(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
     }
   }
 

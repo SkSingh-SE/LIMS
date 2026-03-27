@@ -16,10 +16,13 @@ import { EquipmentReferenceMaterialService } from '../../../services/equipment-r
 import { environment } from '../../../../environments/environment';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-equipment-form',
-  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent, FormFieldErrorComponent],
   templateUrl: './equipment-form.component.html',
   styleUrl: './equipment-form.component.css',
 })
@@ -29,6 +32,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   private bsModal!: Modal;
 
   equipmentForm!: FormGroup;
+  submitted = false;
   calibrationForm!: FormGroup;
   maintenanceForm!: FormGroup;
   sopAttachmentForm!: FormGroup;
@@ -95,8 +99,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   initForm(): void {
     this.equipmentForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      equipmentNo: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      equipmentNo: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       departmentID: ['', Validators.required],
       equipmentTypeID: ['', Validators.required],
       oemID: ['', Validators.required],
@@ -269,7 +273,6 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       },
       error: err => {
         console.error('Error loading equipment:', err);
-        this.toastService.show(err.error?.message || 'Error loading equipment', 'error');
       },
     });
   }
@@ -379,46 +382,49 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   onEquipmentTypeSelected(item: any) {
     this.equipmentForm.patchValue({ equipmentTypeID: item.id });
   }
-  submit(): void {
-    if (this.equipmentForm.valid) {
-      // Strip nested arrays — calibrations/maintenances/sops are managed via separate endpoints
-      const { calibrations, maintenances, sops, ...payload } = this.equipmentForm.value;
-      // Convert empty strings to proper types for backend
-      if (!payload.nextCalibrationDueDate) payload.nextCalibrationDueDate = null;
-      if (!payload.nextMaintenanceDueDate) payload.nextMaintenanceDueDate = null;
-      if (!payload.lastCalibrationDate) payload.lastCalibrationDate = null;
-      if (!payload.calibrationFrequencyDays && payload.calibrationFrequencyDays !== 0) payload.calibrationFrequencyDays = null;
-      // Ensure numeric IDs are sent as numbers, not empty strings
-      if (!payload.oemID) payload.oemID = 0;
-      if (!payload.departmentID) payload.departmentID = 0;
-      if (!payload.equipmentTypeID) payload.equipmentTypeID = 0;
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.equipmentForm, path, this.submitted);
+  }
 
-      if (this.equipmentId > 0) {
-        this.equipmentService.updateEquipment(payload).subscribe({
-          next: response => {
-            this.saved = true;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/equipment']);
-          },
-          error: error => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
-          },
-        });
-      } else {
-        this.equipmentService.createEquipment(payload).subscribe({
-          next: response => {
-            this.saved = true;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/equipment']);
-          },
-          error: error => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
-          },
-        });
-      }
+  submit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.equipmentForm);
+    if (!this.equipmentForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    // Strip nested arrays — calibrations/maintenances/sops are managed via separate endpoints
+    const { calibrations, maintenances, sops, ...payload } = this.equipmentForm.value;
+    // Convert empty strings to proper types for backend
+    if (!payload.nextCalibrationDueDate) payload.nextCalibrationDueDate = null;
+    if (!payload.nextMaintenanceDueDate) payload.nextMaintenanceDueDate = null;
+    if (!payload.lastCalibrationDate) payload.lastCalibrationDate = null;
+    if (!payload.calibrationFrequencyDays && payload.calibrationFrequencyDays !== 0) payload.calibrationFrequencyDays = null;
+    // Ensure numeric IDs are sent as numbers, not empty strings
+    if (!payload.oemID) payload.oemID = 0;
+    if (!payload.departmentID) payload.departmentID = 0;
+    if (!payload.equipmentTypeID) payload.equipmentTypeID = 0;
+
+    if (this.equipmentId > 0) {
+      this.equipmentService.updateEquipment(payload).subscribe({
+        next: response => {
+          this.saved = true;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/equipment']);
+        },
+        error: () => {
+        },
+      });
     } else {
-      this.equipmentForm.markAllAsTouched();
-      console.log('Form is invalid');
+      this.equipmentService.createEquipment(payload).subscribe({
+        next: response => {
+          this.saved = true;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/equipment']);
+        },
+        error: () => {
+        },
+      });
     }
   }
 
@@ -567,8 +573,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.closeModal();
           this.loadEquipment(this.equipmentId);
         },
-        error: error => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
+        error: () => {
         },
       });
     } else {
@@ -591,8 +596,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.closeModal();
           this.loadEquipment(this.equipmentId);
         },
-        error: error => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
+        error: () => {
         },
       });
     } else {
@@ -617,8 +621,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.closeModal();
           this.loadEquipment(this.equipmentId);
         },
-        error: error => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
+        error: () => {
         }
       });
     } else {
@@ -642,8 +645,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.closeModal();
           this.loadEquipment(this.equipmentId);
         },
-        error: error => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
+        error: () => {
         }
       });
     } else {
@@ -699,8 +701,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           this.toastService.show(response.message, 'success');
           this.sopVideos = this.sopVideos.filter(item => item.id !== video.id);
         },
-        error: error => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Failed to save equipment', 'error');
+        error: () => {
         }
       });
     }

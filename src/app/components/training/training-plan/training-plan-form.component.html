@@ -20,10 +20,12 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-8">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-8"
+                       [ngClass]="{'is-invalid': isFieldInvalid('formatNo')}">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
+                <app-field-error [control]="planForm.get('formatNo')" label="Form Number" [submitted]="submitted"/>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Issue No <span class="text-danger">*</span></label>
@@ -39,15 +41,21 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Document No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="documentNo" placeholder="Enter Document No">
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="Enter Document No"
+                       [ngClass]="{'is-invalid': isFieldInvalid('documentNo')}">
+                <app-field-error [control]="planForm.get('documentNo')" label="Document No" [submitted]="submitted"/>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Planning Year <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" formControlName="planningYear" placeholder="2025">
+                <input type="number" class="form-control" formControlName="planningYear" placeholder="2025"
+                       [ngClass]="{'is-invalid': isFieldInvalid('planningYear')}">
+                <app-field-error [control]="planForm.get('planningYear')" label="Planning Year" [submitted]="submitted"/>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Plan Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" formControlName="planDate">
+                <input type="date" class="form-control" formControlName="planDate"
+                       [ngClass]="{'is-invalid': isFieldInvalid('planDate')}">
+                <app-field-error [control]="planForm.get('planDate')" label="Plan Date" [submitted]="submitted"/>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Approval Status <span class="text-danger">*</span></label>
@@ -83,11 +91,15 @@
                 <div class="row g-2">
                   <div class="col-md-2">
                     <label class="form-label small fw-bold">Code *</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="courseCode" placeholder="CTR-001">
+                    <input type="text" class="form-control form-control-sm" formControlName="courseCode" placeholder="CTR-001"
+                           [ngClass]="{'is-invalid': course.get('courseCode')?.invalid && (course.get('courseCode')?.touched || submitted)}">
+                    <app-field-error [control]="course.get('courseCode')" label="Code" [submitted]="submitted"/>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label small fw-bold">Training Description *</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="courseName" placeholder="Requirement of National/International standards">
+                    <input type="text" class="form-control form-control-sm" formControlName="courseName" placeholder="Requirement of National/International standards"
+                           [ngClass]="{'is-invalid': course.get('courseName')?.invalid && (course.get('courseName')?.touched || submitted)}">
+                    <app-field-error [control]="course.get('courseName')" label="Training Description" [submitted]="submitted"/>
                   </div>
                   <div class="col-md-2">
                     <label class="form-label small fw-bold">Month</label>
@@ -112,7 +124,9 @@
                   </div>
                   <div class="col-md-1">
                     <label class="form-label small fw-bold">Days *</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="duration">
+                    <input type="number" class="form-control form-control-sm" formControlName="duration"
+                           [ngClass]="{'is-invalid': course.get('duration')?.invalid && (course.get('duration')?.touched || submitted)}">
+                    <app-field-error [control]="course.get('duration')" label="Days" [submitted]="submitted"/>
                   </div>
                   <div class="col-md-5">
                     <label class="form-label small fw-bold">Remarks</label>

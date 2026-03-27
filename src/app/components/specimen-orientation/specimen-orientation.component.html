@@ -167,25 +167,19 @@
                         <div class="col-md-6 mb-1">
                             <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
                             <input type="text" id="code" class="form-control" formControlName="code"
-                                placeholder="Enter Code"
-                                [ngClass]="{'is-invalid': SpecimentOrientationForm.get('code')?.touched && SpecimentOrientationForm.get('code')?.invalid}"
+                                placeholder="Enter Code" maxlength="50"
+                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
                                 [attr.disabled]="isViewMode ? true : null" />
-                            <span *ngIf="SpecimentOrientationForm.get('code')?.invalid && SpecimentOrientationForm.get('code')?.touched"
-                                class="text-danger text-sm">
-                                Code is required.
-                            </span>
+                            <app-field-error [control]="SpecimentOrientationForm.get('code')" label="Code" [submitted]="submitted"/>
                         </div>
                         <!-- Name Field -->
                         <div class="col-md-6 mb-1">
                             <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" class="form-control" formControlName="name"
-                                placeholder="Enter Name" required
-                                [ngClass]="{'is-invalid': SpecimentOrientationForm.get('name')?.touched && SpecimentOrientationForm.get('name')?.invalid}"
+                                placeholder="Enter Name" maxlength="200"
+                                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                                 [attr.disabled]="isViewMode ? true : null" />
-                            <span *ngIf="SpecimentOrientationForm.get('name')?.invalid && SpecimentOrientationForm.get('name')?.touched"
-                                class="text-danger text-sm">
-                                Name is required.
-                            </span>
+                            <app-field-error [control]="SpecimentOrientationForm.get('name')" label="Name" [submitted]="submitted"/>
                         </div>
                     </div>
                     <div class="row">
@@ -265,7 +259,7 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="SpecimentOrientationForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

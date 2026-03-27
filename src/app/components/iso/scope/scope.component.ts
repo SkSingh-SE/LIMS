@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { Observable } from 'rxjs';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
@@ -17,13 +20,14 @@ import { EquipmentService } from '../../../services/equipment.service';
 import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 @Component({
   selector: 'app-scope',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterModule, SearchableDropdownModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterModule, SearchableDropdownModalComponent, FormFieldErrorComponent],
   templateUrl: './scope.component.html',
   styleUrl: './scope.component.css'
 })
 
 export class ScopeComponent implements OnInit {
   scopeForm!: FormGroup;
+  submitted = false;
   labScopeId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -327,7 +331,18 @@ export class ScopeComponent implements OnInit {
       equipmentsArray.push(equipmentGroup);
     });
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.scopeForm, path, this.submitted);
+  }
+
+  onCancel(): void {
+    this.submitted = false;
+    this.router.navigate(['/scope']);
+  }
+
   onSubmit() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.scopeForm);
     if (this.scopeForm.valid) {
       const payload = this.scopeForm.getRawValue(); // includes disabled controls like parameterUnitID
       if (this.labScopeId > 0) {
@@ -356,7 +371,6 @@ export class ScopeComponent implements OnInit {
       }
     }
     else {
-      this.scopeForm.markAllAsTouched();
       this.toastService.show('Please fill all required fields.', 'warning');
     }
   }

@@ -18,7 +18,7 @@
     (keydown)="handleKeydown($event)"
     autocomplete="off"
     [required]="required"
-    [ngClass]="{ 'is-invalid': required && modelRef.invalid && modelRef.touched }"
+    [ngClass]="{ 'is-invalid': (required && modelRef.invalid && modelRef.touched) || isInvalid }"
   />
     <span
       class="input-group-text clear-icon"

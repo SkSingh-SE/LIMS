@@ -9,10 +9,13 @@ import { Observable } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-role-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule, FormFieldErrorComponent],
   templateUrl: './role-form.component.html',
   styleUrl: './role-form.component.css'
 })
@@ -65,6 +68,7 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
 
   // form
   roleForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   roleId: number = 0;
@@ -97,12 +101,16 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
   initForm() {
     this.roleForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      description: [''],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      description: ['', [Validators.maxLength(500)]],
       isAdmin: [false],
       menuIDs: [[]],
       menuItems: this.fb.array([]),
     });
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.roleForm, path, this.submitted);
   }
   fetchData() {
     this.roleService.getAllRoles(this.payload).subscribe({
@@ -313,6 +321,7 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   closeModal(): void {
+    this.submitted = false;
     this.roleForm.reset();
     if (this.bsModal) {
       this.bsModal.hide();
@@ -320,37 +329,39 @@ export class RoleFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   onSubmit(): void {
-    if (this.roleForm.valid) {
-      const payload = this.roleForm.getRawValue();
-      const roleId = payload.id;
-
-      // Transform menuIDs into menuItems[]
-      const menuItems = payload.menuIDs.map((menuId: number) => ({
-        id: 0,                // or undefined/null if new
-        roleId: roleId,
-        menuId: menuId
-      }));
-      payload.menuItems = menuItems;
-
-
-      const saveFn = this.roleId > 0
-        ? this.roleService.updateRole
-        : this.roleService.createRole;
-
-
-      saveFn.call(this.roleService, payload).subscribe({
-        next: (res: any) => {
-          this.saved = true;
-          this.toastService.show(res.message, 'success');
-          this.closeModal();
-          this.initForm();
-          this.fetchData()
-        },
-        error: (err: any) => this.toastService.show(err.error.message, 'error')
-      });
-    } else {
-      this.roleForm.markAllAsTouched();
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.roleForm);
+    if (!this.roleForm.valid) {
+      this.toastService.show('Please fill in all required fields correctly.', 'warning');
+      return;
     }
+    const payload = this.roleForm.getRawValue();
+    const roleId = payload.id;
+
+    // Transform menuIDs into menuItems[]
+    const menuItems = payload.menuIDs.map((menuId: number) => ({
+      id: 0,                // or undefined/null if new
+      roleId: roleId,
+      menuId: menuId
+    }));
+    payload.menuItems = menuItems;
+
+
+    const saveFn = this.roleId > 0
+      ? this.roleService.updateRole
+      : this.roleService.createRole;
+
+
+    saveFn.call(this.roleService, payload).subscribe({
+      next: (res: any) => {
+        this.saved = true;
+        this.toastService.show(res.message, 'success');
+        this.closeModal();
+        this.initForm();
+        this.fetchData()
+      },
+      error: (err: any) => this.toastService.show(err.error.message, 'error')
+    });
   }
 
   trackByFn(item: any) {

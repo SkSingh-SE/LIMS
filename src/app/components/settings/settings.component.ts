@@ -2,80 +2,22 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
-  ValidationErrors,
-  ValidatorFn,
   Validators
 } from '@angular/forms';
 import { SettingsService } from '../../services/settings.service';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
-
-// ============================================
-// Custom Validators
-// ============================================
-
-function noWhitespaceValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) return null;
-    const isWhitespace = typeof control.value === 'string' && control.value.trim().length === 0;
-    return isWhitespace ? { whitespace: true } : null;
-  };
-}
-
-function phoneValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) return null;
-    const pattern = /^[\d\s\+\-\(\)]{7,20}$/;
-    return pattern.test(control.value.trim()) ? null : { phone: true };
-  };
-}
-
-function gstinValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) return null;
-    const pattern = /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/;
-    return pattern.test(control.value.trim().toUpperCase()) ? null : { gstin: true };
-  };
-}
-
-function panValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) return null;
-    const pattern = /^[A-Z]{5}\d{4}[A-Z]{1}$/;
-    return pattern.test(control.value.trim().toUpperCase()) ? null : { pan: true };
-  };
-}
-
-function financialYearRangeValidator(): ValidatorFn {
-  return (group: AbstractControl): ValidationErrors | null => {
-    const startDate = group.get('startDate')?.value;
-    const endDate = group.get('endDate')?.value;
-    if (!startDate || !endDate) return null;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
-
-    const errors: ValidationErrors = {};
-
-    if (end <= start) {
-      errors['dateRange'] = true;
-    }
-
-    // Duration check: 11-13 months
-    const monthsDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-    if (monthsDiff < 11 || monthsDiff > 13) {
-      errors['fyDuration'] = true;
-    }
-
-    return Object.keys(errors).length ? errors : null;
-  };
-}
+import {
+  noWhitespaceValidator,
+  phoneValidator,
+  gstinValidator,
+  panValidator,
+  financialYearRangeValidator,
+} from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 
 @Component({
   selector: 'app-settings',
@@ -230,7 +172,7 @@ export class SettingsComponent implements OnInit {
         startDate: ['', Validators.required],
         endDate: ['', Validators.required],
         currency: [{ value: 'INR – ₹', disabled: true }]
-      }, { validators: financialYearRangeValidator() }),
+      }, { validators: financialYearRangeValidator('startDate', 'endDate') }),
 
       // Authorized Signatory
       authorizedSignatory: this.fb.group({
@@ -561,38 +503,18 @@ export class SettingsComponent implements OnInit {
 
   getFieldError(formGroupName: string, fieldName: string): string | null {
     const control = this.settingsForm.get(`${formGroupName}.${fieldName}`);
-    if (!control || !control.errors || (!control.touched && !this.tabSubmitted[this.activeTab])) return null;
-
-    if (control.errors['required']) return 'This field is required';
-    if (control.errors['whitespace']) return 'Cannot be blank spaces only';
-    if (control.errors['email']) return 'Enter a valid email address';
-    if (control.errors['maxlength']) {
-      const max = control.errors['maxlength'].requiredLength;
-      return `Maximum ${max} characters allowed`;
-    }
-    if (control.errors['minlength']) {
-      const min = control.errors['minlength'].requiredLength;
-      return `Minimum ${min} characters required`;
-    }
-    if (control.errors['phone']) return 'Enter a valid phone number (7-20 digits)';
-    if (control.errors['gstin']) return 'Enter a valid 15-character GSTIN (e.g., 22AAAAA0000A1Z5)';
-    if (control.errors['pan']) return 'Enter a valid 10-character PAN (e.g., ABCDE1234F)';
-    return 'Invalid value';
+    if (!control || (!control.touched && !this.tabSubmitted[this.activeTab])) return null;
+    return FormValidationHelper.getFieldError(control);
   }
 
   getGroupError(formGroupName: string): string | null {
     const group = this.settingsForm.get(formGroupName);
     if (!group || !group.errors) return null;
-
-    // Show group errors only after attempted submit or when children are touched
     const anyTouched = Object.keys((group as FormGroup).controls).some(
-      k => (group as FormGroup).get(k)?.touched
+      k => (group as FormGroup).get(k)?.touched,
     );
     if (!anyTouched && !this.tabSubmitted[this.activeTab]) return null;
-
-    if (group.errors['dateRange']) return 'End Date must be after Start Date';
-    if (group.errors['fyDuration']) return 'Financial year must be approximately 12 months (11-13 months)';
-    return null;
+    return FormValidationHelper.getGroupError(group);
   }
 
   isFieldInvalid(formGroupName: string, fieldName: string): boolean {

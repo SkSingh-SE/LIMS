@@ -149,7 +149,10 @@ export class ChemicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
-        this.ParameterForm.patchValue(response);
+        this.ParameterForm.patchValue({
+          ...response,
+          elementType: (response.elementType || 'normal').toLowerCase()
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);

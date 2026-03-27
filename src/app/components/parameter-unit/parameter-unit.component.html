@@ -132,10 +132,10 @@
                             <div class="col-md-6 mb-2">
                                 <label class="form-label">Unit Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" formControlName="name"
-                                    placeholder="e.g. MPa, %, J, HRC, mm"
-                                    [ngClass]="{'is-invalid': parameterUnitForm.get('name')?.touched && parameterUnitForm.get('name')?.invalid}"
+                                    placeholder="e.g. MPa, %, J, HRC, mm" maxlength="100"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                                     [attr.disabled]="isViewMode ? true : null" />
-                                <span *ngIf="parameterUnitForm.get('name')?.invalid && parameterUnitForm.get('name')?.touched" class="text-danger text-sm">Unit Name is required.</span>
+                                <app-field-error [control]="parameterUnitForm.get('name')" label="Name" [submitted]="submitted"/>
                             </div>
                             <div class="col-md-6 mb-2">
                                 <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
@@ -253,7 +253,7 @@
 
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="parameterUnitForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

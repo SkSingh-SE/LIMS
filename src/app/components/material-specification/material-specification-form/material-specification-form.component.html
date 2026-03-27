@@ -20,14 +20,9 @@
             <!--Alias Name-->
             <div class="col-md-3">
               <label class="form-label">Specification Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="aliasName" placeholder="Specification Name" maxlength="100"
-                [ngClass]="{ 'is-invalid': MaterialSpecificationForm.get('aliasName')?.touched && MaterialSpecificationForm.get('aliasName')?.invalid }" />
-              <div
-                *ngIf="MaterialSpecificationForm.get('aliasName')?.touched && MaterialSpecificationForm.get('aliasName')?.invalid"
-                class="text-danger text-sm"
-              >
-                Specification Name is required.
-              </div>
+              <input type="text" class="form-control" formControlName="aliasName" placeholder="Specification Name" maxlength="200"
+                [ngClass]="{ 'is-invalid': isFieldInvalid('aliasName') }" />
+              <app-field-error [control]="MaterialSpecificationForm.get('aliasName')" label="Specification Name" [submitted]="submitted" />
             </div>
             <!--Standard Organisation Dropdown -->
             <div class="col-md-3">
@@ -55,15 +50,7 @@
                   <i class="bi bi-plus-lg"></i>
                 </button>
               </div>
-              <div
-                *ngIf="
-                  MaterialSpecificationForm.get('standardOrganizationID')?.touched &&
-                  MaterialSpecificationForm.get('standardOrganizationID')?.invalid
-                "
-                class="text-danger text-sm"
-              >
-                Standard Organization is required.
-              </div>
+              <app-field-error [control]="MaterialSpecificationForm.get('standardOrganizationID')" label="Standard Organization" [submitted]="submitted" />
             </div>
 
             <!--Part-->
@@ -85,16 +72,11 @@
                 maxlength="4"
                 appNumberOnly
                 [ngClass]="{
-                  'is-invalid': MaterialSpecificationForm.get('standardYear')?.touched && MaterialSpecificationForm.get('standardYear')?.invalid
+                  'is-invalid': isFieldInvalid('standardYear')
                 }"
                 (blur)="generateSpecificationName()"
               />
-              <div
-                *ngIf="MaterialSpecificationForm.get('standardYear')?.touched && MaterialSpecificationForm.get('standardYear')?.invalid"
-                class="text-danger text-sm"
-              >
-                Year is required.
-              </div>
+              <app-field-error [control]="MaterialSpecificationForm.get('standardYear')" label="Year" [submitted]="submitted" />
             </div>
           </div>
         </div>

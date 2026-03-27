@@ -15,10 +15,13 @@ import { MetalClassificationService } from '../../services/metal-classification.
 import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
 import { ProductTestGroupService } from '../../services/product-test-group.service';
 import { ProductSpecificationGradeService } from '../../services/product-specification-grade.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-product-specification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective, FormFieldErrorComponent],
   templateUrl: './product-specification.component.html',
   styleUrl: './product-specification.component.css'
 })
@@ -74,6 +77,7 @@ export class ProductSpecificationComponent implements OnInit {
 
   // form
   ProductSpecificationForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -112,9 +116,9 @@ export class ProductSpecificationComponent implements OnInit {
   initForm() {
     this.ProductSpecificationForm = this.fb.group({
       id: [0],
-      specificationName: ['', Validators.required],
-      aliasName: ['', Validators.required],
-      specificationCode: ['', Validators.required],
+      specificationName: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      aliasName: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      specificationCode: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       gradeID : ['', Validators.required],
       laboratoryTestID: ['', Validators.required],
       metalClassificationID: ['', Validators.required],
@@ -333,9 +337,16 @@ export class ProductSpecificationComponent implements OnInit {
     this.productSpecificationId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.ProductSpecificationForm, path, this.submitted);
   }
 
   onSubmit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.ProductSpecificationForm);
     if (this.ProductSpecificationForm.valid) {
       let formData = this.ProductSpecificationForm.value;
       if (this.isEditMode) {
@@ -358,6 +369,8 @@ export class ProductSpecificationComponent implements OnInit {
           error: () => {}
         });
       }
+    } else {
+      this.toastService.show('Please fill all required fields.', 'warning');
     }
   }
   getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> => {

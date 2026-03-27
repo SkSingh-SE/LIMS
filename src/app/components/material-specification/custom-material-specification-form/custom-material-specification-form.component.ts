@@ -18,13 +18,12 @@ import { ToastService } from '../../../services/toast.service';
 import { Observable } from 'rxjs';
 import { Modal } from 'bootstrap';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-material-specification-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent,MultiSelectDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent],
   templateUrl: './custom-material-specification-form.component.html',
   styleUrl: './custom-material-specification-form.component.css'
 })

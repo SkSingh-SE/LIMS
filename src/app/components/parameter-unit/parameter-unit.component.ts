@@ -4,10 +4,13 @@ import { CommonModule } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { ParameterUnitService } from '../../services/parameter-unit.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-parameter-unit',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './parameter-unit.component.html',
   styleUrl: './parameter-unit.component.css',
 })
@@ -58,6 +61,7 @@ export class ParameterUnitComponent implements OnInit {
   };
 
   parameterUnitForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   parameterUnitId: number = 0;
@@ -81,7 +85,7 @@ export class ParameterUnitComponent implements OnInit {
   initForm() {
     this.parameterUnitForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       conversaionFactor: [''],
       similarUnit1: [''],
       conversionFactor1: [null],
@@ -304,7 +308,12 @@ export class ParameterUnitComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.parameterUnitForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) this.bsModal.hide();
     this.parameterUnitForm.reset();
     this.parameterUnitForm.enable();
@@ -314,20 +323,24 @@ export class ParameterUnitComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.parameterUnitForm.valid) {
-      let formData = this.parameterUnitForm.value;
-      if (this.isEditMode) {
-        this.parameterUnitService.updateParameterUnit(formData).subscribe({
-          next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
-          error: (error) => { this.toastService.show(error.message, 'error'); },
-        });
-      } else {
-        formData.id = 0;
-        this.parameterUnitService.createParameterUnit(formData).subscribe({
-          next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
-          error: (error) => { this.toastService.show(error.message, 'error'); },
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.parameterUnitForm);
+    if (!this.parameterUnitForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.parameterUnitForm.value;
+    if (this.isEditMode) {
+      this.parameterUnitService.updateParameterUnit(formData).subscribe({
+        next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
+        error: (error) => { this.toastService.show(error.message, 'error'); },
+      });
+    } else {
+      formData.id = 0;
+      this.parameterUnitService.createParameterUnit(formData).subscribe({
+        next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
+        error: (error) => { this.toastService.show(error.message, 'error'); },
+      });
     }
   }
 }

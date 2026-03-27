@@ -220,8 +220,7 @@ export class DepartmentListComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+        error: () => {
         }
       });
     }

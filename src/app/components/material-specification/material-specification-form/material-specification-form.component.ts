@@ -24,9 +24,11 @@ import { MaterialSpecificationService } from '../../../services/material-specifi
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { Observable } from 'rxjs';
-import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-material-specification-form',
@@ -37,13 +39,14 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
     ReactiveFormsModule,
     NumberOnlyDirective,
     SearchableDropdownComponent,
-    MultiSelectDropdownComponent
+    FormFieldErrorComponent,
   ],
   templateUrl: './material-specification-form.component.html',
   styleUrl: './material-specification-form.component.css',
 })
 export class MaterialSpecificationFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
+  submitted = false;
   materialSpecificationId: number = 0;
   materialSpecifications: any = null;
   MaterialSpecificationForm!: FormGroup;
@@ -141,7 +144,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       standard: [''],
       part: [''],
       standardYear: ['', Validators.required],
-      aliasName: [{ value: '', disabled: true }, Validators.required],
+      aliasName: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       isCustom: [false],
       grades: this.fb.array([]),
     });
@@ -350,17 +353,22 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   }
 
   onSubmit() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.MaterialSpecificationForm);
+    // Mark all grades as touched to trigger spec line validation
+    this.grades.controls.forEach(g => g.markAsTouched());
     const formValue = this.MaterialSpecificationForm.getRawValue();
     const formattedData = this.formatedPayload(formValue);
     if (this.MaterialSpecificationForm.valid) {
       this.saveData(formattedData);
     } else {
       this.toastService.show('Please fill all required fields.', 'warning');
-      this.MaterialSpecificationForm.markAllAsTouched();
-      // Mark all grades as touched to trigger spec line validation
-      this.grades.controls.forEach(g => g.markAsTouched());
     }
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.MaterialSpecificationForm, path, this.submitted);
+  }
+
   formatedPayload(formValue: any): any {
     const formattedData = { ...formValue };
 

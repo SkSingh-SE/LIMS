@@ -16,7 +16,9 @@
                     Workflow Name
                     <span class="text-danger">*</span>
                   </label>
-                  <input type="text" formControlName="name" class="form-control" placeholder="Enter workflow name" />
+                  <input type="text" formControlName="name" class="form-control" placeholder="Enter workflow name" maxlength="200"
+                    [ngClass]="{'is-invalid': isFieldInvalid('name')}" />
+                  <app-field-error [control]="workflowForm.get('name')" label="Workflow Name" [submitted]="submitted" />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">
@@ -47,10 +49,9 @@
                         Name
                         <span class="text-danger">*</span>
                       </label>
-                      <input type="text" formControlName="name" class="form-control" placeholder="Enter step name" />
-                      <div *ngIf="step.get('name')?.errors?.['required'] && step.get('name')?.touched" class="text-danger small">
-                        Step name is required.
-                      </div>
+                      <input type="text" formControlName="name" class="form-control" placeholder="Enter step name" maxlength="200"
+                        [ngClass]="{'is-invalid': step.get('name')?.invalid && (step.get('name')?.touched || submitted)}" />
+                      <app-field-error [control]="step.get('name')" label="Step Name" [submitted]="submitted" />
                       <div *ngIf="workflowForm.get('steps')?.errors?.['duplicateStepName']" class="text-danger small">
                         Step name must be unique.
                       </div>
@@ -201,7 +202,7 @@
 
             <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-0">
               <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-              <button type="submit" class="btn btn-save px-3" [disabled]="!workflowForm.valid">
+              <button type="submit" class="btn btn-save px-3">
                 {{ isEditMode ? "Update" : "Save" }}
               </button>
             </div>

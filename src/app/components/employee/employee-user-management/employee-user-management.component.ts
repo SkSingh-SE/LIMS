@@ -7,7 +7,6 @@ import { UserService } from '../../../services/user.service';
 import { ToastService } from '../../../services/toast.service';
 import { RoleService } from '../../../services/role.service';
 import { Observable } from 'rxjs';
-import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,7 +17,7 @@ import { ipRestrictionValidator } from '../../../utility/validators/ip-restricti
 @Component({
   selector: 'app-employee-user-management',
 
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, UserPermissionComponent, SearchableDropdownComponent, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, UserPermissionComponent, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
   templateUrl: './employee-user-management.component.html',
   styleUrl: './employee-user-management.component.css'
 })

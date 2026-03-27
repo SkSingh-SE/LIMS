@@ -5,10 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ProductConditionCategoryService } from '../../services/product-condition-category.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-product-condition-category',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './product-condition-category.component.html',
   styleUrl: './product-condition-category.component.css'
 })
@@ -57,6 +60,7 @@ export class ProductConditionCategoryComponent implements OnInit {
 
   // form
   ProductConditionCategoryForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -75,7 +79,7 @@ export class ProductConditionCategoryComponent implements OnInit {
   initForm() {
     this.ProductConditionCategoryForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]]
     });
   }
 
@@ -284,35 +288,44 @@ export class ProductConditionCategoryComponent implements OnInit {
     this.entityId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.ProductConditionCategoryForm, path, this.submitted);
   }
 
   onSubmit(): void {
-    if (this.ProductConditionCategoryForm.valid) {
-      let formData = this.ProductConditionCategoryForm.value;
-      if (this.isEditMode) {
-        this.service.updateProductConditionCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.service.createProductConditionCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.ProductConditionCategoryForm);
+    if (!this.ProductConditionCategoryForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.ProductConditionCategoryForm.value;
+    if (this.isEditMode) {
+      this.service.updateProductConditionCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.service.createProductConditionCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

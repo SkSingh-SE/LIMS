@@ -5,10 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { HeatTreatmentCategoryService } from '../../services/heat-treatment-category.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-heat-treatment-category',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './heat-treatment-category.component.html',
   styleUrl: './heat-treatment-category.component.css'
 })
@@ -57,6 +60,7 @@ export class HeatTreatmentCategoryComponent implements OnInit {
 
   // form
   HeatTreatmentCategoryForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -72,7 +76,7 @@ export class HeatTreatmentCategoryComponent implements OnInit {
     this.fetchData();
     this.HeatTreatmentCategoryForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]]
     });
   }
 
@@ -280,35 +284,44 @@ export class HeatTreatmentCategoryComponent implements OnInit {
     this.heatTreatmentCategoryId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.HeatTreatmentCategoryForm, path, this.submitted);
   }
 
   onSubmit(): void {
-    if (this.HeatTreatmentCategoryForm.valid) {
-      let formData = this.HeatTreatmentCategoryForm.value;
-      if (this.isEditMode) {
-        this.heatTreatmentCategoryService.updateHeatTreatmentCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.heatTreatmentCategoryService.createHeatTreatmentCategory(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.HeatTreatmentCategoryForm);
+    if (!this.HeatTreatmentCategoryForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.HeatTreatmentCategoryForm.value;
+    if (this.isEditMode) {
+      this.heatTreatmentCategoryService.updateHeatTreatmentCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.heatTreatmentCategoryService.createHeatTreatmentCategory(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

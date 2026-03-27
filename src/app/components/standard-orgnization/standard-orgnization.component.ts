@@ -5,10 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { StandardOrgnizationService } from '../../services/standard-orgnization.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-standard-orgnization',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './standard-orgnization.component.html',
   styleUrl: './standard-orgnization.component.css'
 })
@@ -61,6 +64,7 @@ export class StandardOrgnizationComponent implements OnInit {
 
   // form
   StandardOrganizationForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -80,8 +84,8 @@ export class StandardOrgnizationComponent implements OnInit {
   initForm() {
     this.StandardOrganizationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      numberType: ['None', Validators.required]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      numberType: ['None', [Validators.required, noWhitespaceValidator()]]
     });
   }
   fetchData() {
@@ -278,7 +282,12 @@ export class StandardOrgnizationComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.StandardOrganizationForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -290,32 +299,36 @@ export class StandardOrgnizationComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.StandardOrganizationForm.valid) {
-      let formData = this.StandardOrganizationForm.value;
-      if (this.isEditMode) {
-        this.standardOrgService.updateStandardOrganization(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.standardOrgService.createStandardOrganization(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.StandardOrganizationForm);
+    if (!this.StandardOrganizationForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.StandardOrganizationForm.value;
+    if (this.isEditMode) {
+      this.standardOrgService.updateStandardOrganization(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.standardOrgService.createStandardOrganization(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

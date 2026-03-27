@@ -11,15 +11,21 @@
           <div class="row row-col-md-4 g-2">
             <div class="col">
               <label class="form-label">Menu Title</label>
-              <input class="form-control" formControlName="title" placeholder="Enter menu title" maxlength="50" />
+              <input class="form-control" formControlName="title" placeholder="Enter menu title" maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('title')}" />
+              <app-field-error [control]="menuForm.get('title')" label="Menu Title" [submitted]="submitted" />
             </div>
             <div class="col">
               <label class="form-label">Icon</label>
-              <input class="form-control" formControlName="icon" placeholder="Enter icon name" maxlength="50" />
+              <input class="form-control" formControlName="icon" placeholder="Enter icon name" maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('icon')}" />
+              <app-field-error [control]="menuForm.get('icon')" label="Icon" [submitted]="submitted" />
             </div>
             <div class="col">
               <label class="form-label">Path</label>
-              <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="100" />
+              <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="200"
+                [ngClass]="{'is-invalid': isFieldInvalid('route')}" />
+              <app-field-error [control]="menuForm.get('route')" label="Path" [submitted]="submitted" />
             </div>
             <div class="col">
               <label class="form-label">Color</label>
@@ -61,7 +67,9 @@
     <div [formGroup]="sub" class="border-start ps-3 mb-3">
       <div class="row g-2">
         <div class="col-md-3">
-          <input type="text" class="form-control" formControlName="title" placeholder="Submenu Title" maxlength="50" />
+          <input type="text" class="form-control" formControlName="title" placeholder="Submenu Title" maxlength="100"
+            [ngClass]="{'is-invalid': sub.get('title')?.invalid && (sub.get('title')?.touched || submitted)}" />
+          <app-field-error [control]="sub.get('title')" label="Submenu Title" [submitted]="submitted" />
         </div>
         <!-- <div class="col-md-3">
           <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="100" />

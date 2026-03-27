@@ -168,29 +168,21 @@
                     <div class="mb-3">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Company Category" required
-                            [ngClass]="{'is-invalid': customerTypeForm.get('name')?.touched && customerTypeForm.get('name')?.invalid}"
+                            placeholder="Enter Company Category" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="customerTypeForm.get('name')?.invalid && customerTypeForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                        <app-field-error [control]="customerTypeForm.get('name')" label="Name" [submitted]="submitted"/>
                     </div>
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <label for="description" class="form-label">Description</label>
                         <input type="text" id="description" class="form-control" formControlName="description"
-                            placeholder="Enter Company Category Description" required
-                            [ngClass]="{'is-invalid': customerTypeForm.get('description')?.touched && customerTypeForm.get('description')?.invalid}"
+                            placeholder="Enter Company Category Description" maxlength="500"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="customerTypeForm.get('description')?.invalid && customerTypeForm.get('description')?.touched" class="text-danger text-sm">
-                            Description is required.
-                        </span>
                     </div>
                 </div>
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save"
-                        [disabled]="customerTypeForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

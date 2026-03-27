@@ -21,6 +21,7 @@ export class SearchableDropdownComponent {
   @Input() selectedItem: any;
   @Input() hideLabel = false;
   @Input() smallInput = false;
+  @Input() isInvalid = false;
 
   @Output() itemSelected = new EventEmitter<any>();
 

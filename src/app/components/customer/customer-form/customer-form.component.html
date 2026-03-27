@@ -20,11 +20,8 @@
             <label class="form-label">Customer Name <span class="text-danger">*</span></label>
             <input type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
               maxlength="100"
-              [ngClass]="{ 'is-invalid': customerForm.get('name')?.touched && customerForm.get('name')?.invalid }" />
-            <span *ngIf="customerForm.get('name')?.touched && customerForm.get('name')?.invalid"
-              class="text-danger text-sm">
-              Customer Name is required.
-            </span>
+              [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
+            <app-field-error [control]="customerForm.get('name')" label="Customer Name" [submitted]="submitted"/>
             <div class="form-check mt-1" *ngIf="customerId > 0">
               <input type="checkbox" class="form-check-input mt-1" formControlName="isVerified" id="isVerified"
                 (click)="verifyCustomer($event)" />
@@ -44,30 +41,24 @@
             <label class="form-label">Tally Ledger Name <span class="text-danger">*</span></label>
             <input type="text" class="form-control" formControlName="tallyLedgerName" maxlength="100"
               placeholder="Enter Tally Ledger Name"
-              [ngClass]="{ 'is-invalid': customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid }" />
+              [ngClass]="{ 'is-invalid': isFieldInvalid('tallyLedgerName') }" />
             <div class="form-check mt-1">
               <input type="checkbox" class="form-check-input mt-1" formControlName="sameAsCustomerName"
                 id="sameAsCustomerName" (click)="copyCustomerNameToLedgerName($event)" />
               <label class="form-check-label form-label mb-0" for="sameAsCustomerName">Same as Customer Name</label>
             </div>
-            <span *ngIf="customerForm.get('tallyLedgerName')?.touched && customerForm.get('tallyLedgerName')?.invalid"
-              class="text-danger text-sm">
-              Tally Ledger Name is required.
-            </span>
+            <app-field-error [control]="customerForm.get('tallyLedgerName')" label="Tally Ledger Name" [submitted]="submitted"/>
           </div>
 
           <!-- Customer Type -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label">Customer Type <span class="text-danger">*</span></label>
             <select class="form-select" formControlName="customerType"
-              [ngClass]="{ 'is-invalid': customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid }">
+              [ngClass]="{ 'is-invalid': isFieldInvalid('customerType') }">
               <option value="">Select Type</option>
               <option *ngFor="let type of customerTypes" [value]="type">{{ type }}</option>
             </select>
-            <span *ngIf="customerForm.get('customerType')?.touched && customerForm.get('customerType')?.invalid"
-              class="text-danger text-sm">
-              Customer Type is required.
-            </span>
+            <app-field-error [control]="customerForm.get('customerType')" label="Customer Type" [submitted]="submitted"/>
           </div>
 
           <!-- Company Categories -->
@@ -159,9 +150,11 @@
         <div class="row gy-1">
           <!-- Address -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Address</label>
+            <label class="form-label">Address <span class="text-danger">*</span></label>
             <textarea class="form-control" formControlName="address" rows="2" maxlength="500"
-              placeholder="Enter Address"></textarea>
+              placeholder="Enter Address"
+              [ngClass]="{'is-invalid': isFieldInvalid('address')}"></textarea>
+            <app-field-error [control]="customerForm.get('address')" label="Address" [submitted]="submitted"/>
           </div>
 
           <!-- PIN Code -->
@@ -195,19 +188,25 @@
           <!-- City -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label">City <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="city" placeholder="Auto Select" readonly />
+            <input type="text" class="form-control" formControlName="city" placeholder="Auto Select" readonly
+              [ngClass]="{ 'is-invalid': isFieldInvalid('city') }" />
+            <app-field-error [control]="customerForm.get('city')" label="City" [submitted]="submitted"/>
           </div>
 
           <!-- State -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label">State <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="state" placeholder="Auto Select" readonly />
+            <input type="text" class="form-control" formControlName="state" placeholder="Auto Select" readonly
+              [ngClass]="{ 'is-invalid': isFieldInvalid('state') }" />
+            <app-field-error [control]="customerForm.get('state')" label="State" [submitted]="submitted"/>
           </div>
 
           <!-- Country -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label">Country <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="country" placeholder="Auto Select" readonly />
+            <input type="text" class="form-control" formControlName="country" placeholder="Auto Select" readonly
+              [ngClass]="{ 'is-invalid': isFieldInvalid('country') }" />
+            <app-field-error [control]="customerForm.get('country')" label="Country" [submitted]="submitted"/>
           </div>
         </div>
       </fieldset>

@@ -1,13 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MenuService } from '../../../services/menu.service';
 import { ToastService } from '../../../services/toast.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-menu-management',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, FormFieldErrorComponent],
   templateUrl: './menu-management.component.html',
   styleUrl: './menu-management.component.css'
 })
@@ -16,6 +19,7 @@ export class MenuManagementComponent implements OnInit {
   menuId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  submitted = false;
 
   constructor(public fb: FormBuilder, private menuService: MenuService, private toastService: ToastService, private route: ActivatedRoute,
     private router: Router) {
@@ -45,9 +49,9 @@ export class MenuManagementComponent implements OnInit {
   initForm(): void {
     this.menuForm = this.fb.group({
       id: [0],
-      title: [''],
-      icon: ['bi-layout-text-sidebar'],
-      route: [''],
+      title: ['', [Validators.maxLength(100), noWhitespaceValidator()]],
+      icon: ['bi-layout-text-sidebar', [Validators.maxLength(100)]],
+      route: ['', [Validators.maxLength(200)]],
       color: ['#' + Math.floor(Math.random() * 16777215).toString(16)],
       submenu: this.fb.array([])
     });
@@ -64,8 +68,8 @@ export class MenuManagementComponent implements OnInit {
   addSubmenu(parentArray: FormArray): void {
     const group = this.fb.group({
       id: [0],
-      title: [''],
-      route: [''],
+      title: ['', [Validators.maxLength(100), noWhitespaceValidator()]],
+      route: ['', [Validators.maxLength(200)]],
       color: ['#' + Math.floor(Math.random() * 16777215).toString(16)],
       submenu: this.fb.array([])
     });
@@ -76,7 +80,9 @@ export class MenuManagementComponent implements OnInit {
     parentArray.removeAt(index);
   }
 
- submit(): void {
+  submit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.menuForm);
     if (this.menuForm.valid) {
       const payload = this.menuForm.getRawValue();
 
@@ -93,7 +99,7 @@ export class MenuManagementComponent implements OnInit {
         error: (err: any) => this.toastService.show(err.error.message, 'error')
       });
     } else {
-      this.menuForm.markAllAsTouched();
+      this.toastService.show('Please fix validation errors before submitting.', 'warning');
     }
   }
 
@@ -129,14 +135,18 @@ export class MenuManagementComponent implements OnInit {
     submenus.forEach(sub => {
       const group = this.fb.group({
         id: [sub.id || 0],
-        title: [sub.title || ''],
-        route: [sub.route || ''],
+        title: [sub.title || '', [Validators.maxLength(100), noWhitespaceValidator()]],
+        route: [sub.route || '', [Validators.maxLength(200)]],
         color: [sub.color || '#' + Math.floor(Math.random() * 16777215).toString(16)],
         submenu: sub.subMenu ? this.buildSubmenuArray(sub.subMenu) : this.fb.array([])
       });
       arr.push(group);
     });
     return arr;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.menuForm, path, this.submitted);
   }
 
 }

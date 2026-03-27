@@ -168,13 +168,10 @@
                     <div class="mb-3">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Tax Name" required
-                            [ngClass]="{'is-invalid': taxForm.get('name')?.touched && taxForm.get('name')?.invalid}"
+                            placeholder="Enter Tax Name" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="taxForm.get('name')?.invalid && taxForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                        <app-field-error [control]="taxForm.get('name')" label="Name" [submitted]="submitted"/>
                     </div>
 
 
@@ -215,8 +212,7 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save"
-                        [disabled]="taxForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

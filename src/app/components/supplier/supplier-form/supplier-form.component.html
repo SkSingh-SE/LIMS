@@ -11,9 +11,8 @@
                     <label class="form-label">Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" formControlName="name" placeholder="Enter Name"
                         maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid }" />
-                    <div *ngIf="supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid"
-                        class="text-danger text-sm">Name is required.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
+                    <app-field-error [control]="supplierForm.get('name')" label="Name" [submitted]="submitted"/>
                 </div>
                 <!--Product Type-->
                 <div>
@@ -36,9 +35,8 @@
                     <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" formControlName="contactPerson1"
                         placeholder="Enter Contact Person 1" maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid }" />
-                    <div *ngIf="supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid"
-                        class="text-danger text-sm">Contact Person 1 is required.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson1') }" />
+                    <app-field-error [control]="supplierForm.get('contactPerson1')" label="Contact Person 1" [submitted]="submitted"/>
                 </div>
                 <!--Contact No 1-->
                 <div>

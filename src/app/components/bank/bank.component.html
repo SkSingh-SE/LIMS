@@ -168,13 +168,10 @@
                     <div class="mb-1 ">
                         <label for="name" class="form-label">Bank Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="bankName"
-                            placeholder="Enter Bank Name" required
-                            [ngClass]="{'is-invalid': bankForm.get('bankName')?.touched && bankForm.get('bankName')?.invalid}"
+                            placeholder="Enter Bank Name" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('bankName')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="bankForm.get('bankName')?.invalid && bankForm.get('bankName')?.touched"
-                            class="text-danger text-sm">
-                            Bank Name is required.
-                        </span>
+                        <app-field-error [control]="bankForm.get('bankName')" label="Bank Name" [submitted]="submitted"/>
                     </div>
 
                     <!--Account Holder Name-->
@@ -182,14 +179,10 @@
                         <label for="accountHolderName" class="form-label">Account Holder Name <span
                                 class="text-danger">*</span></label>
                         <input type="text" id="accountHolderName" class="form-control"
-                            formControlName="accountHolderName" placeholder="Enter Account Holder Name" required
-                            [ngClass]="{'is-invalid': bankForm.get('accountHolderName')?.touched && bankForm.get('accountHolderName')?.invalid}"
+                            formControlName="accountHolderName" placeholder="Enter Account Holder Name" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('accountHolderName')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span
-                            *ngIf="bankForm.get('accountHolderName')?.invalid && bankForm.get('accountHolderName')?.touched"
-                            class="text-danger text-sm">
-                            Account Holder Name is required.
-                        </span>
+                        <app-field-error [control]="bankForm.get('accountHolderName')" label="Account Holder Name" [submitted]="submitted"/>
                     </div>
 
                     <!-- Account Number -->
@@ -197,33 +190,23 @@
                         <label for="accountNumber" class="form-label
                             ">Account Number <span class="text-danger">*</span></label>
                         <input type="text" id="accountNumber" class="form-control" formControlName="accountNumber"
-                            placeholder="Enter Account Number" required
-                            [ngClass]="{'is-invalid': bankForm.get('accountNumber')?.touched && bankForm.get('accountNumber')?.invalid}"
+                            placeholder="Enter Account Number" maxlength="50"
+                            [ngClass]="{'is-invalid': isFieldInvalid('accountNumber')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="bankForm.get('accountNumber')?.hasError('required') && bankForm.get('accountNumber')?.touched"
-                            class="text-danger text-sm">
-                            Account Number is required.
-                        </span>
-                        <span *ngIf="bankForm.get('accountNumber')?.hasError('pattern') && bankForm.get('accountNumber')?.touched"
-                            class="text-danger text-sm">
-                            Account Number must contain only digits.
-                        </span>
+                        <app-field-error [control]="bankForm.get('accountNumber')" label="Account Number" [submitted]="submitted"/>
                     </div>
 
                     <!--Account Type-->
                     <div class="mb-1">
                         <label for="accountType" class="form-label">Account Type <span
                                 class="text-danger">*</span></label>
-                        <select id="accountType" class="form-select" formControlName="accountType" required
-                            [ngClass]="{'is-invalid': bankForm.get('accountType')?.touched && bankForm.get('accountType')?.invalid}"
+                        <select id="accountType" class="form-select" formControlName="accountType"
+                            [ngClass]="{'is-invalid': isFieldInvalid('accountType')}"
                             [attr.disabled]="isViewMode ? true : null">
                             <option  [defaultSelected]="">Select Account Type</option>
                             <option *ngFor="let type of accountTypes" [value]="type.id">{{ type.name }}</option>
                         </select>
-                        <span *ngIf="bankForm.get('accountType')?.invalid && bankForm.get('accountType')?.touched"
-                            class="text-danger text-sm">
-                            Account Type is required.
-                        </span>
+                        <app-field-error [control]="bankForm.get('accountType')" label="Account Type" [submitted]="submitted"/>
                     </div>
 
                     <!--Branch Name-->
@@ -231,37 +214,27 @@
                         <label for="branchName" class="form-label">Branch Name <span
                                 class="text-danger">*</span></label>
                         <input type="text" id="branchName" class="form-control" formControlName="branchName"
-                            placeholder="Enter Branch Name" required
-                            [ngClass]="{'is-invalid': bankForm.get('branchName')?.touched && bankForm.get('branchName')?.invalid}"
+                            placeholder="Enter Branch Name" maxlength="100"
+                            [ngClass]="{'is-invalid': isFieldInvalid('branchName')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="bankForm.get('branchName')?.invalid && bankForm.get('branchName')?.touched"
-                            class="text-danger text-sm">
-                            Branch Name is required.
-                        </span>
+                        <app-field-error [control]="bankForm.get('branchName')" label="Branch Name" [submitted]="submitted"/>
                     </div>
 
                     <!--IFSC Code-->
                     <div class="mb-1">
                         <label for="ifscCode" class="form-label">IFSC Code <span class="text-danger">*</span></label>
                         <input type="text" id="ifscCode" class="form-control" formControlName="ifscCode"
-                            placeholder="Enter IFSC Code" required
-                            [ngClass]="{'is-invalid': bankForm.get('ifscCode')?.touched && bankForm.get('ifscCode')?.invalid}"
+                            placeholder="Enter IFSC Code" maxlength="11"
+                            [ngClass]="{'is-invalid': isFieldInvalid('ifscCode')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="bankForm.get('ifscCode')?.hasError('required') && bankForm.get('ifscCode')?.touched"
-                            class="text-danger text-sm">
-                            IFSC Code is required.
-                        </span>
-                        <span *ngIf="bankForm.get('ifscCode')?.hasError('pattern') && bankForm.get('ifscCode')?.touched"
-                            class="text-danger text-sm">
-                            IFSC Code format: XXXX0XXXXXX (e.g., SBIN0001234)
-                        </span>
+                        <app-field-error [control]="bankForm.get('ifscCode')" label="IFSC Code" [submitted]="submitted"/>
                     </div>
                 </div>
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="bankForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

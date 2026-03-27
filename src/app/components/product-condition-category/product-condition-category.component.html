@@ -165,13 +165,10 @@
                     <div class="mb-1 ">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': ProductConditionCategoryForm.get('name')?.touched && ProductConditionCategoryForm.get('name')?.invalid}"
+                            placeholder="Enter Name" maxlength="200"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="ProductConditionCategoryForm.get('name')?.invalid && ProductConditionCategoryForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                        <app-field-error [control]="ProductConditionCategoryForm.get('name')" label="Name" [submitted]="submitted"/>
                     </div>
 
                 </div>
@@ -179,7 +176,7 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="ProductConditionCategoryForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

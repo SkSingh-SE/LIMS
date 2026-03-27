@@ -10,10 +10,13 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-designation-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, FormFieldErrorComponent],
   templateUrl: './designation-form.component.html',
   styleUrl: './designation-form.component.css'
 })
@@ -22,6 +25,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
   designationForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = false;
   designationObjet: any = null;
@@ -33,8 +37,8 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   ngOnInit(): void {
     this.designationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      description: [''],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      description: ['', [Validators.maxLength(500)]],
       roleID: [null],
       qualification: [''],
       minExperience: [null],
@@ -95,7 +99,12 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.designationForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
       this.router.navigate(['/designation']);
@@ -108,32 +117,34 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   }
 
   onSubmit(): void {
-    if (this.designationForm.valid) {
-      const formData = this.designationForm.value;
-      if (this.isEditMode) {
-        this.designationService.updateDesignation(formData).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.toastService.show('Designation updated successfully', 'success');
-            this.closeModal();
-          },
-          error: (error) => {
-            console.error('Error updating designation:', error);
-            this.toastService.show('Error updating designation. Please try again.', 'error');
-          }
-        });
-      } else {
-        this.designationService.createDesignation(formData).subscribe({
-          next: (response) => {
-            this.toastService.show('Designation created successfully', 'success');
-            this.closeModal();
-          },
-          error: (error) => {
-            console.error('Error creating designation:', error);
-            this.toastService.show('Error creating designation. Please try again.', 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.designationForm);
+    if (!this.designationForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    const formData = this.designationForm.value;
+    if (this.isEditMode) {
+      this.designationService.updateDesignation(formData).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show('Designation updated successfully', 'success');
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Error updating designation:', error);
+        }
+      });
+    } else {
+      this.designationService.createDesignation(formData).subscribe({
+        next: (response) => {
+          this.toastService.show('Designation created successfully', 'success');
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Error creating designation:', error);
+        }
+      });
     }
   }
 

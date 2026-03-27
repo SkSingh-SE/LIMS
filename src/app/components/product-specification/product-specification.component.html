@@ -184,41 +184,28 @@
                             <div class="">
                                 <label for="name" class="form-label">Specification <span class="text-danger">*</span></label>
                                 <input type="text" id="name" class="form-control" formControlName="specificationName"
-                                    placeholder="Enter Specification" required
-                                    [ngClass]="{'is-invalid': ProductSpecificationForm.get('specificationName')?.touched && ProductSpecificationForm.get('specificationName')?.invalid}"
+                                    placeholder="Enter Specification" maxlength="200"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('specificationName')}"
                                     [attr.disabled]="isViewMode ? true : null" />
-                                <span
-                                    *ngIf="ProductSpecificationForm.get('specificationName')?.invalid && ProductSpecificationForm.get('specificationName')?.touched"
-                                    class="text-danger text-sm">
-                                    Specification is required.
-                                </span>
+                                <app-field-error [control]="ProductSpecificationForm.get('specificationName')" label="Specification" [submitted]="submitted" />
                             </div>
 
                             <div class=" ">
                                 <label for="code" class="form-label">Specification Code <span
                                         class="text-danger">*</span></label>
                                 <textarea type="text" id="code" class="form-control" formControlName="specificationCode"
-                                    placeholder="Enter Specification Code" required
-                                    [ngClass]="{'is-invalid': ProductSpecificationForm.get('specificationCode')?.touched && ProductSpecificationForm.get('specificationCode')?.invalid}"
+                                    placeholder="Enter Specification Code" maxlength="100"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('specificationCode')}"
                                     [attr.disabled]="isViewMode ? true : null"> </textarea>
-                                <span
-                                    *ngIf="ProductSpecificationForm.get('specificationCode')?.invalid && ProductSpecificationForm.get('specificationCode')?.touched"
-                                    class="text-danger text-sm">
-                                    Specification Code is required.
-                                </span>
+                                <app-field-error [control]="ProductSpecificationForm.get('specificationCode')" label="Specification Code" [submitted]="submitted" />
                             </div>
 
                             <div>
                                 <label for="aliasName" class="form-label">Alias Name <span class="text-danger">*</span></label>
                                 <input type="text" id="aliasName" class="form-control" formControlName="aliasName"
-                                    placeholder="Enter Alias Name" [attr.disabled]="isViewMode ? true : null"
-                                    [ngClass]="{'is-invalid': ProductSpecificationForm.get('aliasName')?.touched && ProductSpecificationForm.get('aliasName')?.invalid}"
-                                    required />
-                                <span
-                                    *ngIf="ProductSpecificationForm.get('aliasName')?.invalid && ProductSpecificationForm.get('aliasName')?.touched"
-                                    class="text-danger text-sm">
-                                    Alias Name is required.
-                                </span>
+                                    placeholder="Enter Alias Name" maxlength="200" [attr.disabled]="isViewMode ? true : null"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('aliasName')}" />
+                                <app-field-error [control]="ProductSpecificationForm.get('aliasName')" label="Alias Name" [submitted]="submitted" />
                             </div>
 
                             <div>
@@ -274,8 +261,7 @@
 
                         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-cancel me-2" (click)="closeModal()"> Cancel</button>
-                            <button type="submit" class="btn btn-save"
-                                [disabled]="ProductSpecificationForm.invalid">
+                            <button type="submit" class="btn btn-save">
                                 {{ isEditMode ? 'Update' : 'Save' }}
                             </button>
                         </div>

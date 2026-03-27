@@ -220,8 +220,7 @@ export class EquipmentListComponent implements OnInit {
           this.toastService.show(response.message, 'success');
           this.fetchData();
         },
-        error: (error) => {
-          this.toastService.show(error.error?.message || error.message, 'error');
+        error: () => {
         }
       });
     }

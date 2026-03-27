@@ -188,25 +188,20 @@
               class="form-control"
               formControlName="name"
               placeholder="Enter name"
-              maxlength="50"
-              [ngClass]="{ 'is-invalid': roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty) }"
+              maxlength="100"
+              [ngClass]="{ 'is-invalid': isFieldInvalid('name') }"
             />
+            <app-field-error [control]="roleForm.get('name')" label="Name" [submitted]="submitted"/>
             <div class="form-check">
               <label for="isAdmin" class="form-check-label form-label">Admin</label>
               <input type="checkbox" id="isAdmin" class="form-check-input mt-1" formControlName="isAdmin" />
-            </div>
-            <div
-              *ngIf="roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)"
-              class="invalid-feedback"
-            >
-              <div *ngIf="roleForm.get('name')?.errors?.['required']">Name is required.</div>
-              <div *ngIf="roleForm.get('name')?.errors?.['maxlength']">Name cannot exceed 50 characters.</div>
             </div>
           </div>
           <!-- Description -->
           <div class="col">
             <label class="form-label">Description</label>
-            <textarea class="form-control" rows="2" formControlName="description" placeholder="Enter description"></textarea>
+            <textarea class="form-control" rows="2" formControlName="description" placeholder="Enter description" maxlength="500"></textarea>
+            <app-field-error [control]="roleForm.get('description')" label="Description" [submitted]="submitted"/>
           </div>
           <div class="col-12">
             <label class="form-label">Select Menus</label>
@@ -245,7 +240,7 @@
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-          <button type="button" class="btn btn-save" [disabled]="roleForm.invalid" (click)="onSubmit()">
+          <button type="button" class="btn btn-save" (click)="onSubmit()">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>

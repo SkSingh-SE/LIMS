@@ -8,17 +8,21 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-training-plan-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormFieldErrorComponent],
   templateUrl: './training-plan-form.component.html',
   styleUrl: './training-plan-form.component.css',
   providers: [DatePipe]
 })
 export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
+  submitted = false;
   planForm!: FormGroup;
   planId: number = 0;
   isEditMode = false;
@@ -71,7 +75,7 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
     this.planForm = this.fb.group({
       id: [0],
       formatNo: ['F-8', Validators.required],
-      documentNo: ['', Validators.required],
+      documentNo: ['', [Validators.required, noWhitespaceValidator()]],
       issueNo: ['01', Validators.required],
       revNo: ['00', Validators.required],
       date: [today, Validators.required],
@@ -136,8 +140,8 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
   addCourse(): void {
     if (!this.isViewMode) {
       this.courses.push(this.fb.group({
-        courseCode: ['', Validators.required],
-        courseName: ['', Validators.required],
+        courseCode: ['', [Validators.required, noWhitespaceValidator()]],
+        courseName: ['', [Validators.required, noWhitespaceValidator()]],
         provider: [''],
         duration: [1, Validators.required],
         targetAudience: [''],
@@ -154,9 +158,15 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
     }
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.planForm, path, this.submitted);
+  }
+
   onSubmit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.planForm);
     if (this.planForm.invalid) {
-      this.planForm.markAllAsTouched();
+      this.toastService.show('Please fill all required fields correctly.', 'warning');
       return;
     }
 
@@ -190,6 +200,7 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
   }
 
   onCancel(): void {
+    this.submitted = false;
     this.router.navigate(['/training-plan']);
   }
 

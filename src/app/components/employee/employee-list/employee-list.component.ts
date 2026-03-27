@@ -231,8 +231,7 @@ export class EmployeeListComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
+        error: () => {
         }
       });
     }

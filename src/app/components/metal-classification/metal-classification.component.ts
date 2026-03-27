@@ -9,10 +9,13 @@ import { ParameterService } from '../../services/parameter.service';
 import { Observable } from 'rxjs';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-metal-classification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent, FormFieldErrorComponent],
   templateUrl: './metal-classification.component.html',
   styleUrl: './metal-classification.component.css'
 })
@@ -68,6 +71,7 @@ export class MetalClassificationComponent implements OnInit {
 
   // form base varryable
   MetalClassificationForm!: FormGroup;
+  submitted = false;
   MetalClassificationList: any[] = [];
   metalClassificationId: number = 0;
   isEditMode: boolean = false;
@@ -86,8 +90,8 @@ export class MetalClassificationComponent implements OnInit {
   initForm() {
     this.MetalClassificationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      code: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      code: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
       parentID: [null],
       hasChemicalParams: [false],
       hasMechanicalParams: [false],
@@ -290,7 +294,12 @@ export class MetalClassificationComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.MetalClassificationForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -348,40 +357,44 @@ export class MetalClassificationComponent implements OnInit {
   onWindowFocus(): void {}
 
   onSubmit(): void {
-    if (this.MetalClassificationForm.valid) {
-      let formData = this.MetalClassificationForm.value;
-      const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
-      const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
-      if (hasParams && parameterArray.length === 0) {
-        this.toastService.show('Please select at least one parameter.', 'warning');
-        return;
-      }
-      if (this.isEditMode) {
-        this.metalclassificationService.updateMetalClassification(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.MetalClassificationForm.reset();
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.metalclassificationService.createMetalClassification(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.MetalClassificationForm.reset();
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.MetalClassificationForm);
+    if (!this.MetalClassificationForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.MetalClassificationForm.value;
+    const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
+    const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+    if (hasParams && parameterArray.length === 0) {
+      this.toastService.show('Please select at least one parameter.', 'warning');
+      return;
+    }
+    if (this.isEditMode) {
+      this.metalclassificationService.updateMetalClassification(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.MetalClassificationForm.reset();
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.metalclassificationService.createMetalClassification(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.MetalClassificationForm.reset();
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 

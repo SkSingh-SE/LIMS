@@ -166,13 +166,10 @@
                     <div class="mb-1 ">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': StandardOrganizationForm.get('name')?.touched && StandardOrganizationForm.get('name')?.invalid}"
+                            placeholder="Enter Name" maxlength="200"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="StandardOrganizationForm.get('name')?.invalid && StandardOrganizationForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                        <app-field-error [control]="StandardOrganizationForm.get('name')" label="Name" [submitted]="submitted"/>
                     </div>
 
                     <!-- Number Type -->
@@ -194,7 +191,7 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save" [disabled]="StandardOrganizationForm.invalid">
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

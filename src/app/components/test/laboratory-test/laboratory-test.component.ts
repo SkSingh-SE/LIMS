@@ -11,17 +11,21 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 
 @Component({
   selector: 'app-laboratory-test',
   templateUrl: './laboratory-test.component.html',
   styleUrl: './laboratory-test.component.css',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent, FormFieldErrorComponent],
 
 })
 export class LaboratoryTestComponent implements OnInit {
   labTestForm!: FormGroup;
+  submitted = false;
   labTestId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -97,9 +101,9 @@ export class LaboratoryTestComponent implements OnInit {
   initForm() {
     this.labTestForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       labDepartmentID: [0, Validators.required],
-      subGroup: ['', Validators.required],
+      subGroup: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       testCaption: [''],
       invoiceCaption: [''],
       testDuration: [null],
@@ -153,32 +157,38 @@ export class LaboratoryTestComponent implements OnInit {
       }
     });
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.labTestForm, path, this.submitted);
+  }
+
   onSubmit(): void {
-    if (this.labTestForm.valid) {
-      if (this.labTestId > 0) {
-        this.labService.updateLaboratoryTest(this.labTestForm.value).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/test']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      } else {
-        this.labService.createLaboratoryTest(this.labTestForm.value).subscribe({
-          next: (response) => {
-            this.labTestId = response.id;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/test']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.labTestForm);
+    if (!this.labTestForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    if (this.labTestId > 0) {
+      this.labService.updateLaboratoryTest(this.labTestForm.value).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/test']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      })
     } else {
-      this.labTestForm.markAllAsTouched();
+      this.labService.createLaboratoryTest(this.labTestForm.value).subscribe({
+        next: (response) => {
+          this.labTestId = response.id;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/test']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      })
     }
   }
 

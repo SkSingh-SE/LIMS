@@ -6,10 +6,13 @@ import { CourierService } from '../../services/courier.service';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
+import { noWhitespaceValidator, phoneValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-courier',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,NumberOnlyDirective],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent],
   templateUrl: './courier.component.html',
   styleUrl: './courier.component.css'
 })
@@ -61,6 +64,7 @@ export class CourierComponent implements OnInit {
 
   // form
   courierForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -88,8 +92,8 @@ export class CourierComponent implements OnInit {
     this.fetchData();
     this.courierForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/), Validators.maxLength(13), phoneValidator()]],
     });
   }
 
@@ -102,7 +106,6 @@ export class CourierComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
         this.courierList = [];
       }
     }
@@ -250,8 +253,7 @@ export class CourierComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
+        error: () => {
         }
       });
     }
@@ -286,7 +288,12 @@ export class CourierComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.courierForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
@@ -298,32 +305,34 @@ export class CourierComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.courierForm.valid) {
-      let formData = this.courierForm.value;
-      if (this.isEditMode) {
-        this.courierService.updateCourier(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.courierService.createCourier(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.courierForm);
+    if (!this.courierForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.courierForm.value;
+    if (this.isEditMode) {
+      this.courierService.updateCourier(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.courierService.createCourier(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
     }
   }
 

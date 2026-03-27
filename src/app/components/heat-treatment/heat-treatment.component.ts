@@ -10,10 +10,13 @@ import { MetalClassificationService } from '../../services/metal-classification.
 import { ToastService } from '../../services/toast.service';
 import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-heat-treatment',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, FormFieldErrorComponent],
   templateUrl: './heat-treatment.component.html',
   styleUrl: './heat-treatment.component.css'
 })
@@ -65,6 +68,7 @@ export class HeatTreatmentComponent implements OnInit {
 
   // form
   HeatTreatmentForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -258,8 +262,8 @@ export class HeatTreatmentComponent implements OnInit {
   initForm() {
     this.HeatTreatmentForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      code: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       heatTreatmentCategoryID: [null],
       tempRangeMin: [null],
       tempRangeMax: [null],
@@ -297,6 +301,10 @@ export class HeatTreatmentComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.HeatTreatmentForm, path, this.submitted);
+  }
+
   closeModal(): void {
     if (this.bsModal) {
       this.bsModal.hide();
@@ -306,37 +314,42 @@ export class HeatTreatmentComponent implements OnInit {
     this.heatTreatmentId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
   }
 
   onSubmit(): void {
-    if (this.HeatTreatmentForm.valid) {
-      let formData = this.HeatTreatmentForm.value;
-      const classIds = formData.applicableClassificationIds || [];
-      formData.applicableClassifications = classIds.map((id: number) => ({ metalClassificationID: id }));
-      if (this.isEditMode) {
-        this.heatTreatmentService.updateHeatTreatment(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.heatTreatmentService.createHeatTreatment(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.HeatTreatmentForm);
+    if (!this.HeatTreatmentForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.HeatTreatmentForm.value;
+    const classIds = formData.applicableClassificationIds || [];
+    formData.applicableClassifications = classIds.map((id: number) => ({ metalClassificationID: id }));
+    if (this.isEditMode) {
+      this.heatTreatmentService.updateHeatTreatment(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.heatTreatmentService.createHeatTreatment(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 

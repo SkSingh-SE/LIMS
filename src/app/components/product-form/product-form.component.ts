@@ -6,12 +6,15 @@ import { Modal } from 'bootstrap';
 import { ProductFormService } from '../../services/product-form.service';
 import { ToastService } from '../../services/toast.service';
 import { Observable } from 'rxjs';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-product-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './product-form.component.html',
   styleUrl: './product-form.component.css'
 })
@@ -61,6 +64,7 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
 
   // form
   ProductFormForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -79,7 +83,7 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
   initForm() {
     this.ProductFormForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]]
     });
   }
 
@@ -288,38 +292,45 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
     this.entityId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.ProductFormForm, path, this.submitted);
   }
 
   onSubmit(): void {
-    if (this.ProductFormForm.valid) {
-      let formData = this.ProductFormForm.value;
-      if (this.isEditMode) {
-        this.service.updateProductForm(formData).subscribe({
-          next: (response) => {
-            this.saved = true;
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.service.createProductForm(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.ProductFormForm);
+    if (!this.ProductFormForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.ProductFormForm.value;
+    if (this.isEditMode) {
+      this.service.updateProductForm(formData).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     } else {
-      this.ProductFormForm.markAllAsTouched();
+      formData.id = 0;
+      this.service.createProductForm(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

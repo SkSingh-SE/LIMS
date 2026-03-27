@@ -56,6 +56,15 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
 
+  loggedInUserName: string = '';
+  loggedInUserRole: string = '';
+  loggedInUserInitials: string = '';
+  loggedInEmail: string = '';
+  loggedInIsAdmin: boolean = false;
+  loggedInAccountStatus: string = '';
+  loggedInLastLogin: string | null = null;
+  isProfileOpen = signal(false);
+
   // Search properties
   searchQuery = '';
   searchResults: FlatMenuItem[] = [];
@@ -77,8 +86,21 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   ngOnInit(): void {
     const userData = this.authService.getUserData();
-    if (userData && userData.employeeId) {
-      this.getUserMenu(userData.employeeId);
+    if (userData) {
+      this.loggedInUserName = userData.userName || '';
+      this.loggedInUserRole = userData.role || '';
+      this.loggedInEmail = userData.email || '';
+      this.loggedInIsAdmin = userData.isAdmin || false;
+      this.loggedInAccountStatus = userData.accountStatus || '';
+      this.loggedInLastLogin = userData.lastLoginDate
+        ? new Date(userData.lastLoginDate).toLocaleString() : null;
+      const parts = (userData.userName || '').trim().split(' ');
+      this.loggedInUserInitials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : (userData.userName || '').substring(0, 2).toUpperCase();
+      if (userData.employeeId) {
+        this.getUserMenu(userData.employeeId);
+      }
     }
   }
 
@@ -254,9 +276,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (!this.menuContainer || !this.menuItemEls) return;
 
     requestAnimationFrame(() => {
-      const parentWidth = this.menuContainer.nativeElement.parentElement?.getBoundingClientRect().width || 0;
-      const rightWidth = this.navRight?.nativeElement?.getBoundingClientRect().width || 0;
-      const availableWidth = parentWidth - rightWidth - 24;
+      // nav-menu-cell is the 1fr grid column — browser already subtracted logo + navRight.
+      // parentElement of menuContainer = nav-menu-cell = exact available width. No subtraction needed.
+      const availableWidth = (this.menuContainer.nativeElement.parentElement?.getBoundingClientRect().width || 0) - 16;
 
       const menuEls = this.menuItemEls.toArray();
 
@@ -372,7 +394,11 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     setTimeout(() => this.updateNavbarHeight(), 300);
   }
 
+  openProfile() { this.isProfileOpen.set(true); }
+  closeProfile() { this.isProfileOpen.set(false); }
+
   logout() {
+    this.isProfileOpen.set(false);
     this.authService.logout();
   }
 
@@ -396,8 +422,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       this.collapseSearch();
     } else {
       this.isSearchExpanded.set(true);
-      this.isSearchOpen.set(true);
-      setTimeout(() => this.searchInput?.nativeElement?.focus(), 150);
+      setTimeout(() => this.searchInput?.nativeElement?.focus(), 50);
     }
   }
 
@@ -468,7 +493,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   closeSearch() {
-    setTimeout(() => this.collapseSearch(), 200);
+    // kept for compatibility — overlay uses explicit close button and Escape key
+    this.collapseSearch();
   }
 
   @HostListener('document:keydown', ['$event'])

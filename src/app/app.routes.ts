@@ -607,6 +607,7 @@ export const routes: Routes = [
             { path: 'sample/inward/create', component: SampleInwardFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: 'config', component: ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent },

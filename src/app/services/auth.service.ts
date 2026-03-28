@@ -84,6 +84,19 @@ export class AuthService {
     return userData ? userData.token : null;
   }
 
+  getProfileImagePath(): string | null {
+    const userData = this.getUserData();
+    return userData?.profileImagePath || null;
+  }
+
+  updateProfileImagePath(path: string): void {
+    const userData = this.getUserData();
+    if (userData) {
+      userData.profileImagePath = path;
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
+  }
+
   /**
    * Get user roles from stored user data
    */

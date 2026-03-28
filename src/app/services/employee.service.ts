@@ -39,4 +39,10 @@ export class EmployeeService {
   getEmployeeOrgChart(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/org-chart`);
   }
+
+  uploadProfileImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/upload-profile-image`, formData);
+  }
 }

@@ -5,8 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { NotificationBellComponent } from './notification-bell/notification-bell.component';
 import { UserService } from '../../services/user.service';
+import { EmployeeService } from '../../services/employee.service';
+import { ToastService } from '../../services/toast.service';
 import { getAllMenuItems, MenuItem } from '../../models/MenuItem';
 import { PermissionService } from '../../utility/permission/permission.service';
+import { environment } from '../../../environments/environment';
 
 export interface FlatMenuItem {
   title: string;
@@ -64,6 +67,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   loggedInAccountStatus: string = '';
   loggedInLastLogin: string | null = null;
   isProfileOpen = signal(false);
+  profileImageUrl: string | null = null;
+  isUploadingImage = signal(false);
+
+  @ViewChild('profileImageInput') profileImageInput!: ElementRef;
 
   // Search properties
   searchQuery = '';
@@ -78,6 +85,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private userService: UserService,
+    private employeeService: EmployeeService,
+    private toastService: ToastService,
     private permissionService: PermissionService,
     private router: Router
   ) {
@@ -98,10 +107,62 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       this.loggedInUserInitials = parts.length >= 2
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : (userData.userName || '').substring(0, 2).toUpperCase();
+      this.loadProfileImage(userData);
       if (userData.employeeId) {
         this.getUserMenu(userData.employeeId);
       }
     }
+  }
+
+  private loadProfileImage(userData: any): void {
+    if (userData.profileImagePath) {
+      this.profileImageUrl = environment.baseUrl + userData.profileImagePath;
+    }
+  }
+
+  triggerProfileImageUpload(): void {
+    this.profileImageInput?.nativeElement?.click();
+  }
+
+  onProfileImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || !input.files.length) return;
+
+    const file = input.files[0];
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.toastService.show('Please select a valid image file', 'error');
+      input.value = '';
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.toastService.show('Image size must be less than 2MB', 'error');
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingImage.set(true);
+    this.employeeService.uploadProfileImage(file).subscribe({
+      next: (res: any) => {
+        const imagePath = res.profileImagePath || res.path || res.filePath;
+        if (imagePath) {
+          this.authService.updateProfileImagePath(imagePath);
+          this.profileImageUrl = environment.baseUrl + imagePath;
+          this.toastService.show('Profile image updated successfully', 'success');
+        }
+        this.isUploadingImage.set(false);
+        input.value = '';
+      },
+      error: (err: any) => {
+        this.toastService.show('Failed to upload profile image', 'error');
+        this.isUploadingImage.set(false);
+        input.value = '';
+      }
+    });
   }
 
   ngAfterViewInit() {

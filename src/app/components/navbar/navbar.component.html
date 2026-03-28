@@ -44,7 +44,8 @@
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
-          <div class="user-initials-circle">{{ loggedInUserInitials }}</div>
+          <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
+          <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
           <div class="user-name-display d-none d-lg-flex flex-column align-items-start">
             <span class="user-display-name">{{ loggedInUserName }}</span>
             <span class="user-display-role">{{ loggedInUserRole }}</span>
@@ -55,7 +56,8 @@
           <!-- Header -->
           <li class="user-menu-header px-3 py-2">
             <div class="d-flex align-items-center gap-2">
-              <div class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
+              <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" />
+              <div *ngIf="!profileImageUrl" class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
               <div>
                 <div class="user-menu-name">{{ loggedInUserName }}</div>
                 <div class="user-menu-role">{{ loggedInUserRole }}</div>
@@ -244,7 +246,21 @@
         <i class="bi bi-x-lg"></i>
       </button>
 
-      <div class="pd-avatar">{{ loggedInUserInitials }}</div>
+      <div class="pd-avatar-wrapper" (click)="triggerProfileImageUpload()">
+        <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="pd-avatar-img" alt="Profile" />
+        <div *ngIf="!profileImageUrl" class="pd-avatar">{{ loggedInUserInitials }}</div>
+        <div class="pd-avatar-overlay">
+          <i class="bi bi-camera-fill" *ngIf="!isUploadingImage()"></i>
+          <i class="bi bi-arrow-repeat pd-spin" *ngIf="isUploadingImage()"></i>
+        </div>
+      </div>
+      <input
+        #profileImageInput
+        type="file"
+        accept="image/*"
+        class="d-none"
+        (change)="onProfileImageSelected($event)"
+      />
       <div class="pd-name">{{ loggedInUserName }}</div>
 
       <div class="pd-pills">

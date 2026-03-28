@@ -23,8 +23,8 @@ export class ToastService {
     const toast = { message, type, show: true, progress: 100 };
     this.toasts.push(toast);
 
-    // Calculate decrement per interval (100ms updates)
-    const intervalTime = 200; // Update every 100ms
+    // Calculate decrement per interval
+    const intervalTime = 200;
     const decrementValue = 100 / (this.duration / intervalTime);
 
     const interval = setInterval(() => {

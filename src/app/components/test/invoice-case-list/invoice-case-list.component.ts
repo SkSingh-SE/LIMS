@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { InvoiceCaseService } from '../../../services/invoice-case.service';
@@ -16,18 +16,15 @@ export class InvoiceCaseListComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'financialYear', type: 'string', label: 'FinancialYear', filter: true },
+    { key: 'financialYear', type: 'string', label: 'Financial Year', filter: true },
     { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
-    { key: 'name', type: 'string', label: 'Invoice Case', filter: true },
-    { key: 'price', type: 'number', label: 'Price', filter: true },
+    { key: 'tierCount', type: 'number', label: 'Tiers', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     id: 'number',
-    name: 'string',
     financialYear: 'string',
     laboratoryTest: 'string',
-    price: 'number',
     modifiedOn: 'date',
   };
 
@@ -39,8 +36,9 @@ export class InvoiceCaseListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  
+
   dataList: any[] = [];
+  expandedRows: Set<number> = new Set();
 
   pageNumber = 1;
   pageSize = 10;
@@ -68,7 +66,6 @@ export class InvoiceCaseListComponent implements OnInit {
   }
 
   fetchData() {
-
     this.invoiceCaseService.getAllInvoiceCases(this.payload).subscribe({
       next: (response) => {
         this.dataList = response?.items || [];
@@ -80,9 +77,19 @@ export class InvoiceCaseListComponent implements OnInit {
         console.error('Error fetching list:', error);
         this.dataList = [];
       }
-
     });
+  }
 
+  toggleRow(id: number): void {
+    if (this.expandedRows.has(id)) {
+      this.expandedRows.delete(id);
+    } else {
+      this.expandedRows.add(id);
+    }
+  }
+
+  isExpanded(id: number): boolean {
+    return this.expandedRows.has(id);
   }
 
   applySorting(column: string) {
@@ -107,7 +114,6 @@ export class InvoiceCaseListComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
-    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -171,7 +177,7 @@ export class InvoiceCaseListComponent implements OnInit {
 
   changePageSize(event: Event) {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
@@ -195,7 +201,6 @@ export class InvoiceCaseListComponent implements OnInit {
     return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
-
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
   }
@@ -218,6 +223,4 @@ export class InvoiceCaseListComponent implements OnInit {
       });
     }
   }
-
 }
-

@@ -71,6 +71,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   isUploadingImage = signal(false);
 
   @ViewChild('profileImageInput') profileImageInput!: ElementRef;
+  @ViewChild('cameraInput') cameraInput!: ElementRef;
 
   // Search properties
   searchQuery = '';
@@ -122,6 +123,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   triggerProfileImageUpload(): void {
     this.profileImageInput?.nativeElement?.click();
+  }
+
+  triggerCameraCapture(): void {
+    this.cameraInput?.nativeElement?.click();
   }
 
   onProfileImageSelected(event: Event): void {

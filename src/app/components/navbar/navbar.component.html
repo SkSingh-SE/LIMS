@@ -246,18 +246,33 @@
         <i class="bi bi-x-lg"></i>
       </button>
 
-      <div class="pd-avatar-wrapper" (click)="triggerProfileImageUpload()">
+      <div class="pd-avatar-wrapper">
         <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="pd-avatar-img" alt="Profile" />
         <div *ngIf="!profileImageUrl" class="pd-avatar">{{ loggedInUserInitials }}</div>
-        <div class="pd-avatar-overlay">
-          <i class="bi bi-camera-fill" *ngIf="!isUploadingImage()"></i>
-          <i class="bi bi-arrow-repeat pd-spin" *ngIf="isUploadingImage()"></i>
+        <div class="pd-avatar-actions" *ngIf="!isUploadingImage()">
+          <button class="pd-avatar-btn" title="Take Photo" (click)="triggerCameraCapture()">
+            <i class="bi bi-camera-fill"></i>
+          </button>
+          <button class="pd-avatar-btn" title="Upload Image" (click)="triggerProfileImageUpload()">
+            <i class="bi bi-image-fill"></i>
+          </button>
+        </div>
+        <div class="pd-avatar-overlay" *ngIf="isUploadingImage()">
+          <i class="bi bi-arrow-repeat pd-spin"></i>
         </div>
       </div>
       <input
         #profileImageInput
         type="file"
         accept="image/*"
+        class="d-none"
+        (change)="onProfileImageSelected($event)"
+      />
+      <input
+        #cameraInput
+        type="file"
+        accept="image/*"
+        capture="user"
         class="d-none"
         (change)="onProfileImageSelected($event)"
       />

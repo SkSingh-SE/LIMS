@@ -203,7 +203,7 @@
                         <select id="accountType" class="form-select" formControlName="accountType"
                             [ngClass]="{'is-invalid': isFieldInvalid('accountType')}"
                             [attr.disabled]="isViewMode ? true : null">
-                            <option  [defaultSelected]="">Select Account Type</option>
+                            <option value="">Select Account Type</option>
                             <option *ngFor="let type of accountTypes" [value]="type.id">{{ type.name }}</option>
                         </select>
                         <app-field-error [control]="bankForm.get('accountType')" label="Account Type" [submitted]="submitted"/>

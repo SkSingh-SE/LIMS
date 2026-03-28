@@ -102,7 +102,7 @@ export class LaboratoryTestComponent implements OnInit {
     this.labTestForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      labDepartmentID: [0, Validators.required],
+      labDepartmentID: [null, Validators.required],
       subGroup: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       testCaption: [''],
       invoiceCaption: [''],

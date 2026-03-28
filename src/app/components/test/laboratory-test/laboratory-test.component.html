@@ -38,7 +38,7 @@
             [selectedItem]="labTestForm.get('labDepartmentID')?.value"
             [isInvalid]="isFieldInvalid('labDepartmentID')"
           ></app-searchable-dropdown>
-          <span *ngIf="labTestForm.get('labDepartmentID')?.touched && labTestForm.get('labDepartmentID')?.invalid" class="text-danger text-sm">
+          <span *ngIf="(labTestForm.get('labDepartmentID')?.touched || submitted) && labTestForm.get('labDepartmentID')?.invalid" class="text-danger text-sm">
             Department is required.
           </span>
         </div>
@@ -111,7 +111,8 @@
 
       <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/test']" class="btn btn-cancel">Cancel</a>
-        <button type="submit" class="btn btn-save px-3">Save</button>
+        <button type="submit" class="btn btn-save px-3"
+          [disabled]="submitted && !labTestForm.valid">Save</button>
       </div>
     </form>
   </div>

@@ -278,7 +278,8 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save">
+                    <button type="submit" class="btn btn-save"
+                        [disabled]="submitted && !DimensionalFactorForm.valid">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

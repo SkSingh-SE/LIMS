@@ -253,7 +253,8 @@ export class CourierComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: () => {
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.message || 'Failed to delete courier.', 'error');
         }
       });
     }

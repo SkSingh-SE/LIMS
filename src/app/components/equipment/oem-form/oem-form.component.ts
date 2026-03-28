@@ -158,6 +158,7 @@ export class OEMFormComponent implements CanComponentDeactivate, OnInit {
     }
     else {
       this.OEMForm.markAllAsTouched();
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
     }
   }
 

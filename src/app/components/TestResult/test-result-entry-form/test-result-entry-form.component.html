@@ -290,6 +290,7 @@
                         <th style="width: 90px">NABL</th>
                         <th style="width: 150px">Method Used</th>
                         <th style="width: 180px">Remarks</th>
+                        <th style="width: 60px">Billable</th>
                         <th style="width: 120px">Actions</th>
                       </tr>
                     </thead>
@@ -459,6 +460,11 @@
                         <td>
                           <input type="text" class="form-control form-control-sm" formControlName="remarks"
                             placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value)" />
+                        </td>
+
+                        <!-- Billable -->
+                        <td class="text-center">
+                          <input type="checkbox" class="form-check-input" formControlName="isBillable" />
                         </td>
 
                         <!-- Actions -->

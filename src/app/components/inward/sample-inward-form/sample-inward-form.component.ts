@@ -567,6 +567,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   onCustomerSelect(item: any): void {
+    if (!item) {
+      this.sampleInwardForm.patchValue({ customerID: null });
+      return;
+    }
     this.sampleInwardForm.patchValue({
       customerID: item.id
     });
@@ -777,9 +781,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   onMetalClassificationSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
-      metalClassificationID: item.id,
-      metalClassificationName: item.name || '',
-      specimenOrientationID: '',
+      metalClassificationID: item?.id || null,
+      metalClassificationName: item?.name || '',
+      specimenOrientationID: null,
       specimenOrientationName: '',
     });
   }
@@ -787,8 +791,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   onProductConditionSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
-      productConditionID: item.id,
-      productConditionName: item.name || '',
+      productConditionID: item?.id || null,
+      productConditionName: item?.name || '',
     });
   }
 
@@ -806,8 +810,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
-      specimenOrientationID: item.id,
-      specimenOrientationName: item.name || '',
+      specimenOrientationID: item?.id || null,
+      specimenOrientationName: item?.name || '',
     });
   }
 
@@ -1024,6 +1028,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       next: (response: any) => {
         this.saved = true;
         this.toastService.show('Sample Inward saved successfully!', 'success');
+        // Show credit limit warning (advisory — inward is already saved)
+        if (response?.creditWarning) {
+          this.toastService.show(response.creditWarning, 'warning');
+        }
         if (isNew && response?.id) {
           // Navigate to edit mode so Plan tab becomes visible
           this.router.navigate(['/sample/inward/edit', response.id], { state: { mode: 'edit' } });

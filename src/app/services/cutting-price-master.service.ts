@@ -39,4 +39,10 @@ export class CuttingPriceMasterService {
     getCuttingPriceMasterDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+
+    getPriceBySpecimenAndCutting(specimenTypeId: number, cuttingType: string): Observable<any> {
+      return this.http.get<any>(
+        `${this.apiUrl}/lookup?specimenTypeId=${specimenTypeId}&cuttingType=${encodeURIComponent(cuttingType)}`
+      );
+    }
 }

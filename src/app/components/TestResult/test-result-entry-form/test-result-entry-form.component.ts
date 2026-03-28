@@ -391,7 +391,8 @@ export class TestResultEntryFormComponent implements OnInit {
                 conversionFactor: param.conversionFactor ?? 1,
                 convertedValue: param.convertedValue ?? null,
                 selectedUnit: param.selectedUnit || param.unit || '',
-                unitOptions: param.unitOptions || []
+                unitOptions: param.unitOptions || [],
+                isBillable: param.isBillable ?? true
               }))
             }
           ]
@@ -443,7 +444,8 @@ export class TestResultEntryFormComponent implements OnInit {
                 conversionFactor: param.conversionFactor ?? 1,
                 convertedValue: param.convertedValue ?? null,
                 selectedUnit: param.selectedUnit || param.unit || '',
-                unitOptions: param.unitOptions || []
+                unitOptions: param.unitOptions || [],
+                isBillable: param.isBillable ?? true
               }))
             }
           ]
@@ -692,7 +694,8 @@ export class TestResultEntryFormComponent implements OnInit {
       conversionFactor: [p.conversionFactor ?? 1],
       convertedValue: [p.convertedValue ?? null],
       selectedUnit: [p.selectedUnit || p.unit || ''],
-      unitOptions: [p.unitOptions || []]
+      unitOptions: [p.unitOptions || []],
+      isBillable: [p.isBillable ?? true]
     });
   }
 
@@ -914,7 +917,8 @@ export class TestResultEntryFormComponent implements OnInit {
               formula: param.formulaExpression || '',
               testMethodUsed: param.testMethodUsed || '',
               convertedValue: param.convertedValue ?? null,
-              selectedUnit: param.selectedUnit || ''
+              selectedUnit: param.selectedUnit || '',
+              isBillable: param.isBillable ?? true
             }))
           });
         } else if (apiChemical) {
@@ -936,7 +940,8 @@ export class TestResultEntryFormComponent implements OnInit {
               formula: param.formulaExpression || '',
               testMethodUsed: param.testMethodUsed || '',
               convertedValue: param.convertedValue ?? null,
-              selectedUnit: param.selectedUnit || ''
+              selectedUnit: param.selectedUnit || '',
+              isBillable: param.isBillable ?? true
             }))
           });
         }
@@ -1170,6 +1175,11 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   onParameterSelected(planIndex: number, testIndex: number, paramIndex: number, selectedItem: any): void {
+    if (!selectedItem) {
+      const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+      row.patchValue({ parameterID: null, parameterName: null, unit: null });
+      return;
+    }
     const row = this.getParameters(planIndex, testIndex).at(paramIndex);
     const planType = this.plansFA.at(planIndex).get('type')?.value;
     const unit = selectedItem?.additionalValues ? selectedItem?.additionalValues["Unit"] : row.get('unit')?.value;
@@ -1504,6 +1514,9 @@ export class TestResultEntryFormComponent implements OnInit {
     this.equipmentService.getEquipmentDropdown(term, page, pageSize);
 
   onEquipmentSelected(headerId: number, selectedItem: any): void {
+    if (!selectedItem) {
+      return;
+    }
     if (!this.selectedEquipmentMap[headerId]) {
       this.selectedEquipmentMap[headerId] = [];
     }
@@ -1597,6 +1610,11 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   onTestMethodSelected(selectedItem: any): void {
+    if (!selectedItem) {
+      this.fromMethodForm.patchValue({ testMethodId: null, parameterID: null });
+      this.methodParameters = [];
+      return;
+    }
     this.fromMethodForm.patchValue({ testMethodId: selectedItem.id, parameterID: null });
     this.methodParameters = [];
     this.loadingMethodParams = true;

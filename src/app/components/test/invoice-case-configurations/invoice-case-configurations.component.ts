@@ -1,14 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../../services/toast.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
-import { concat, debounceTime, distinctUntilChanged, Observable, Subject, switchMap, tap } from 'rxjs';
+import { concat, distinctUntilChanged, merge, Observable, Subject, switchMap, tap } from 'rxjs';
 import { of } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
 
+interface TypeConfig {
+  isRange: boolean;
+  isSizeLoad?: boolean;
+  inputType: 'text' | 'number';
+  unit: string;
+  valuePlaceholder: string;
+  startPlaceholder: string;
+  endPlaceholder: string;
+  defaultValue: string;
+}
 
 @Component({
   selector: 'app-invoice-case-configurations',
@@ -42,7 +52,6 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   filterType: string = 'Contains';
   filterValue: string = '';
   filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
   invoiceList: any[] = [];
 
@@ -68,74 +77,117 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   invoiceForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
-  customerTypeObject: any = null;
   invoiceId: number = 0;
   formTitle = 'Invoice Case Configuration Form';
+  rangeError: string = '';
 
   selectionTypes = [
-    { label: 'Element', value: 'Element' },
-    { label: 'Hours', value: 'Hours' },
-    { label: 'Size', value: 'Size' },
-    { label: 'Weight', value: 'Weight' },
-    { label: 'Temprature', value: 'Temprature' },
-    { label: 'Hours Range', value: 'HoursRange' },
-    { label: 'Size Range', value: 'SizeRange' },
-    { label: 'Weight Range', value: 'WeightRange' },
-    { label: 'Temprature Range', value: 'TempratureRange' },
-    { label: 'Spectro Combination', value: 'SpectroCombination' },
-    { label: 'Other', value: 'Other' }
+    { label: 'Element',            value: 'Element',           group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
+    { label: 'Hours',              value: 'Hours',             group: 'Single Value', hint: 'e.g. 24hr, 672hr' },
+    { label: 'Size',               value: 'Size',              group: 'Single Value', hint: 'e.g. 10mm, 32mm' },
+    { label: 'Weight',             value: 'Weight',            group: 'Single Value', hint: 'e.g. 600kN, 1000kN' },
+    { label: 'Temperature',        value: 'Temprature',        group: 'Single Value', hint: 'e.g. RT, 0°C, -20°C' },
+    { label: 'Hours Range',        value: 'HoursRange',        group: 'Range',        hint: 'From – To hours' },
+    { label: 'Size Range',         value: 'SizeRange',         group: 'Range',        hint: 'From – To mm' },
+    { label: 'Weight Range',       value: 'WeightRange',       group: 'Range',        hint: 'From – To kN' },
+    { label: 'Temperature Range',  value: 'TempratureRange',   group: 'Range',        hint: 'From – To °C' },
+    { label: 'Size + Load',        value: 'SizeLoad',          group: 'Combo',        hint: 'Size range + Max load capacity' },
+    { label: 'Size + Load Range',  value: 'SizeAndLoad',       group: 'Combo',        hint: 'Size range + Load range' },
+    { label: 'Spectro Combination',value: 'SpectroCombination',group: 'Special',      hint: 'e.g. Full + N + B' },
+    { label: 'Other',              value: 'Other',             group: 'Special',      hint: 'Custom value' }
   ];
 
-  unitMap: { [key: string]: string } = {
-    Element: 'Element',
-    Hours: 'hr',
-    Size: 'mm',
-    Weight: 'kn',
-    Temprature: '°C',
-    HoursRange: 'hr',
-    SizeRange: 'mm',
-    WeightRange: 'kn',
-    TempratureRange: '°C',
-    Other: 'other'
+  /**
+   * Drives ALL form behaviour per type.
+   * To support a new type, add one entry here — no other code changes needed.
+   */
+  typeConfig: Record<string, TypeConfig> = {
+    Element:           { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'e.g. Ag, Fe, 10 Element',   startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Hours:             { isRange: false, inputType: 'number', unit: 'hr', valuePlaceholder: 'Enter hours (e.g. 24, 672)', startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Size:              { isRange: false, inputType: 'number', unit: 'mm', valuePlaceholder: 'Enter size in mm',           startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Weight:            { isRange: false, inputType: 'number', unit: 'kn', valuePlaceholder: 'Enter weight in kN',         startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Temprature:        { isRange: false, inputType: 'text',   unit: '°C', valuePlaceholder: 'e.g. RT, 0, -20',           startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    HoursRange:        { isRange: true,  inputType: 'number', unit: 'hr', valuePlaceholder: '', startPlaceholder: 'From (hr)', endPlaceholder: 'To (hr)', defaultValue: '' },
+    SizeRange:         { isRange: true,  inputType: 'number', unit: 'mm', valuePlaceholder: '', startPlaceholder: 'From (mm)', endPlaceholder: 'To (mm)', defaultValue: '' },
+    WeightRange:       { isRange: true,  inputType: 'number', unit: 'kn', valuePlaceholder: '', startPlaceholder: 'From (kN)', endPlaceholder: 'To (kN)', defaultValue: '' },
+    TempratureRange:   { isRange: true,  inputType: 'text',   unit: '°C', valuePlaceholder: '', startPlaceholder: 'From (°C)', endPlaceholder: 'To (°C)', defaultValue: '' },
+    SpectroCombination:{ isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'e.g. Full + N + B',          startPlaceholder: '', endPlaceholder: '', defaultValue: 'Full' },
+    SizeLoad:          { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
+    SizeAndLoad:       { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
+    Other:             { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'Enter value',                startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
   };
+
+  /** Returns true when the current type needs Start + End + Value (3+ fields). */
+  get isSizeLoadType(): boolean {
+    return this.currentConfig.isSizeLoad === true;
+  }
+
+  /** Returns true for SizeAndLoad (4-field variant: MinSize + MaxSize + MinLoad + MaxLoad). */
+  get isSizeAndLoadType(): boolean {
+    return this.invoiceForm?.get('selectionType')?.value === 'SizeAndLoad';
+  }
+
+  /** Dynamic placeholder for Name ng-select based on selected type. */
+  get namePlaceholder(): string {
+    const type = this.invoiceForm?.get('selectionType')?.value;
+    if (!type) return 'Select type first';
+    const found = this.selectionTypes.find(t => t.value === type);
+    return found?.hint ? `e.g. ${found.hint}` : 'Type or select a name';
+  }
+
+  /** Returns config for the currently selected type. Falls back gracefully for unknown types. */
+  get currentConfig(): TypeConfig {
+    const type = this.invoiceForm?.get('selectionType')?.value as string;
+    if (!type) return { isRange: false, inputType: 'text', unit: '', valuePlaceholder: 'Enter value', startPlaceholder: 'Start', endPlaceholder: 'End', defaultValue: '' };
+    return this.typeConfig[type] ?? {
+      isRange: type.toLowerCase().includes('range'),
+      inputType: 'text',
+      unit: '',
+      valuePlaceholder: 'Enter value',
+      startPlaceholder: 'Start',
+      endPlaceholder: 'End',
+      defaultValue: ''
+    };
+  }
 
   selectedSuggestion: any;
   suggestionList: {
     name: string;
     selectionType: string;
     value?: string;
+    value2?: string;
     start?: string;
     end?: string;
     unit: string;
   }[] = [
-      { selectionType: 'Element', name: 'Ag', value: 'Ag', unit: 'Element' },
-      { selectionType: 'Element', name: 'Au', value: 'Au', unit: 'Element' },
-      { selectionType: 'Element', name: 'Pt', value: 'Pt', unit: 'Element' },
-      { selectionType: 'Element', name: 'Ir', value: 'Ir', unit: 'Element' },
-      { selectionType: 'Element', name: 'Pd', value: 'Pd', unit: 'Element' },
-      { selectionType: 'Element', name: 'Se', value: 'Se', unit: 'Element' },
-      { selectionType: 'Element', name: 'Rh', value: 'Rh', unit: 'Element' },
-      { selectionType: 'Element', name: 'Te', value: 'Te', unit: 'Element' },
-      { selectionType: 'Element', name: '1 Element', value: '1', unit: 'Element' },
-      { selectionType: 'Element', name: '2 Element', value: '2', unit: 'Element' },
-      { selectionType: 'Element', name: '3 Element', value: '3', unit: 'Element' },
-      { selectionType: 'Element', name: '4 Element', value: '4', unit: 'Element' },
-      { selectionType: 'Element', name: '5 Element', value: '5', unit: 'Element' },
-      { selectionType: 'Element', name: '6 Element', value: '6', unit: 'Element' },
-      { selectionType: 'Element', name: '7 Element', value: '7', unit: 'Element' },
-      { selectionType: 'Element', name: '8 Element', value: '8', unit: 'Element' },
-      { selectionType: 'Element', name: '9 Element', value: '9', unit: 'Element' },
-      { selectionType: 'Element', name: '10 Element', value: '10', unit: 'Element' },
-      { selectionType: 'Element', name: '11 Element', value: '11', unit: 'Element' },
-      { selectionType: 'Element', name: '12 Element', value: '12', unit: 'Element' },
-      { selectionType: 'Element', name: '13 Element', value: '13', unit: 'Element' },
-      { selectionType: 'Element', name: '14 Element', value: '14', unit: 'Element' },
-      { selectionType: 'Element', name: '15 Element', value: '15', unit: 'Element' },
-      { selectionType: 'Element', name: '16 Element', value: '16', unit: 'Element' },
-      { selectionType: 'Element', name: '17 Element', value: '17', unit: 'Element' },
-      { selectionType: 'Element', name: '18 Element', value: '18', unit: 'Element' },
-      { selectionType: 'Element', name: '19 Element', value: '19', unit: 'Element' },
-      { selectionType: 'Element', name: '20 Element', value: '20', unit: 'Element' },
+      { selectionType: 'Element', name: 'Ag', value: 'Ag', unit: '' },
+      { selectionType: 'Element', name: 'Au', value: 'Au', unit: '' },
+      { selectionType: 'Element', name: 'Pt', value: 'Pt', unit: '' },
+      { selectionType: 'Element', name: 'Ir', value: 'Ir', unit: '' },
+      { selectionType: 'Element', name: 'Pd', value: 'Pd', unit: '' },
+      { selectionType: 'Element', name: 'Se', value: 'Se', unit: '' },
+      { selectionType: 'Element', name: 'Rh', value: 'Rh', unit: '' },
+      { selectionType: 'Element', name: 'Te', value: 'Te', unit: '' },
+      { selectionType: 'Element', name: '1 Element', value: '1', unit: '' },
+      { selectionType: 'Element', name: '2 Element', value: '2', unit: '' },
+      { selectionType: 'Element', name: '3 Element', value: '3', unit: '' },
+      { selectionType: 'Element', name: '4 Element', value: '4', unit: '' },
+      { selectionType: 'Element', name: '5 Element', value: '5', unit: '' },
+      { selectionType: 'Element', name: '6 Element', value: '6', unit: '' },
+      { selectionType: 'Element', name: '7 Element', value: '7', unit: '' },
+      { selectionType: 'Element', name: '8 Element', value: '8', unit: '' },
+      { selectionType: 'Element', name: '9 Element', value: '9', unit: '' },
+      { selectionType: 'Element', name: '10 Element', value: '10', unit: '' },
+      { selectionType: 'Element', name: '11 Element', value: '11', unit: '' },
+      { selectionType: 'Element', name: '12 Element', value: '12', unit: '' },
+      { selectionType: 'Element', name: '13 Element', value: '13', unit: '' },
+      { selectionType: 'Element', name: '14 Element', value: '14', unit: '' },
+      { selectionType: 'Element', name: '15 Element', value: '15', unit: '' },
+      { selectionType: 'Element', name: '16 Element', value: '16', unit: '' },
+      { selectionType: 'Element', name: '17 Element', value: '17', unit: '' },
+      { selectionType: 'Element', name: '18 Element', value: '18', unit: '' },
+      { selectionType: 'Element', name: '19 Element', value: '19', unit: '' },
+      { selectionType: 'Element', name: '20 Element', value: '20', unit: '' },
       { selectionType: 'Hours', name: '24hr', value: '24', unit: 'hr' },
       { selectionType: 'Hours', name: '24hr@RT', value: '24', unit: 'hr' },
       { selectionType: 'Hours', name: '24hr@HT', value: '24', unit: 'hr' },
@@ -148,18 +200,16 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'Size', name: '32mm', value: '32', unit: 'mm' },
       { selectionType: 'Size', name: '36mm', value: '36', unit: 'mm' },
       { selectionType: 'Size', name: '40mm', value: '40', unit: 'mm' },
-      { selectionType: 'SizeRange', name: '10 to 12mm', start: '10', end: '12', unit: 'mm' },
-      { selectionType: 'SizeRange', name: '16 to 20mm', start: '16', end: '20', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '10mm to 12mm', start: '10', end: '12', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '16mm to 20mm', start: '16', end: '20', unit: 'mm' },
       { selectionType: 'SizeRange', name: '<25mm', start: '0', end: '24', unit: 'mm' },
-      { selectionType: 'SizeRange', name: '25 to 50mm', start: '25', end: '50', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '25mm to 50mm', start: '25', end: '50', unit: 'mm' },
       { selectionType: 'Weight', name: 'Up to 600KN', value: '600', unit: 'kn' },
       { selectionType: 'WeightRange', name: '601KN to 1000KN', start: '601', end: '1000', unit: 'kn' },
       { selectionType: 'Weight', name: 'Above 1000KN', value: '>1000', unit: 'kn' },
       { selectionType: 'Temprature', name: 'ASTM@RT', value: 'RT', unit: '°C' },
       { selectionType: 'Temprature', name: 'ASTM@0°C', value: '0', unit: '°C' },
-      { selectionType: 'TempratureRange', name: 'ASTM@-1to-50°C', start: '-1', end: '50', unit: '°C' },
-      { selectionType: 'PointType', name: 'Single Point', value: 'Single', unit: '' },
-      { selectionType: 'PointType', name: 'Multi Point', value: 'Multi', unit: '' },
+      { selectionType: 'TempratureRange', name: 'ASTM@-1°C to -50°C', start: '-1', end: '-50', unit: '°C' },
       { selectionType: 'Other', name: '5 Field', value: '5', unit: '' },
       { selectionType: 'Other', name: '10 Field', value: '10', unit: '' },
       { selectionType: 'Other', name: '15 Field', value: '15', unit: '' },
@@ -167,6 +217,15 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'Other', name: 'E45 Method A', value: 'A', unit: '' },
       { selectionType: 'Other', name: 'E45 Method D', value: 'D', unit: '' },
       { selectionType: 'Other', name: 'ISO 643', value: 'ISO 643', unit: '' },
+      { selectionType: 'SizeLoad', name: 'Size 0-20mm, Load ≤600kN', start: '0', end: '20', value: '600', unit: '' },
+      { selectionType: 'SizeLoad', name: 'Size 0-20mm, Load ≤1000kN', start: '0', end: '20', value: '1000', unit: '' },
+      { selectionType: 'SizeLoad', name: 'Size 20-40mm, Load ≤600kN', start: '20', end: '40', value: '600', unit: '' },
+      { selectionType: 'SizeLoad', name: 'Size 20-40mm, Load ≤1000kN', start: '20', end: '40', value: '1000', unit: '' },
+      { selectionType: 'SizeLoad', name: 'Size 40-60mm, Load ≤2000kN', start: '40', end: '60', value: '2000', unit: '' },
+      { selectionType: 'SizeAndLoad', name: 'Size 0-25mm, Load 400-600kN', start: '0', end: '25', value: '400', value2: '600', unit: '' },
+      { selectionType: 'SizeAndLoad', name: 'Size 0-25mm, Load 600-1000kN', start: '0', end: '25', value: '600', value2: '1000', unit: '' },
+      { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 600-1000kN', start: '25', end: '50', value: '600', value2: '1000', unit: '' },
+      { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 1000-2000kN', start: '25', end: '50', value: '1000', value2: '2000', unit: '' },
       { selectionType: 'SpectroCombination', name: 'Full', value: 'Full', unit: '' },
       { selectionType: 'SpectroCombination', name: 'Full + N', value: 'Full + N', unit: '' },
       { selectionType: 'SpectroCombination', name: 'Full + B', value: 'Full + B', unit: '' },
@@ -175,23 +234,26 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'SpectroCombination', name: 'Full + N + Ca', value: 'Full + N + Ca', unit: '' },
       { selectionType: 'SpectroCombination', name: 'Full + B + Ca', value: 'Full + B + Ca', unit: '' },
       { selectionType: 'SpectroCombination', name: 'Full + B + N + Ca', value: 'Full + B + N + Ca', unit: '' },
-
     ];
 
   nameInput$ = new Subject<string>();
+  typeChange$ = new Subject<string>();
   filteredSuggestions$!: Observable<any[]>;
   nameLoading = false;
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private invoiceCaseConfig: InvoiceCaseConfigurationService, private toastService: ToastService) {
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private invoiceCaseConfig: InvoiceCaseConfigurationService,
+    private toastService: ToastService
+  ) {
     this.route.params.subscribe(params => {
       this.invoiceId = params['id'] || 0;
       if (this.invoiceId > 0) {
         this.getDetails();
       }
     });
-
   }
-
 
   ngOnInit() {
     this.initForm();
@@ -202,37 +264,48 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   initForm() {
     this.invoiceForm = this.fb.group({
       id: [0],
-      selectionType: ['', Validators.required],
-      name: [''],
+      selectionType: [null, Validators.required],
+      name: ['', Validators.required],
       aliasName: [''],
       aliasNames: this.fb.array([]),
       value: [''],
+      value2: [''],
       start: [''],
       end: [''],
       unit: ['']
     });
   }
+
   setupAutocomplete(): void {
-
-    this.filteredSuggestions$ = concat(
-      of([]), // default items
-      this.nameInput$.pipe(
-        distinctUntilChanged(),
-        tap(() => (this.nameLoading = true)),
-        switchMap((term: string) => {
-          const results = this.suggestionList.filter(s =>
-            s.name?.toLowerCase().includes(term?.toLowerCase())
-          );
-          return of(results).pipe(tap(() => (this.nameLoading = false)));
-        })
-      ),
+    const typeSearch$ = this.nameInput$.pipe(
+      distinctUntilChanged(),
+      tap(() => (this.nameLoading = true)),
+      switchMap((term: string) => {
+        const currentType = this.invoiceForm.get('selectionType')?.value;
+        const results = this.suggestionList.filter(s =>
+          (!currentType || s.selectionType === currentType) &&
+          s.name?.toLowerCase().includes(term?.toLowerCase() || '')
+        );
+        return of(results).pipe(tap(() => (this.nameLoading = false)));
+      })
     );
-  }
 
+    const typeChanged$ = this.typeChange$.pipe(
+      switchMap((type: string) => {
+        const results = type
+          ? this.suggestionList.filter(s => s.selectionType === type)
+          : [];
+        return of(results);
+      })
+    );
+
+    this.filteredSuggestions$ = concat(of([]), merge(typeSearch$, typeChanged$));
+  }
 
   get aliasNames(): FormArray {
     return this.invoiceForm.get('aliasNames') as FormArray;
   }
+
   createAliasNameGroup(): FormGroup {
     return this.fb.group({
       id: [0],
@@ -249,57 +322,209 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.aliasNames.removeAt(index);
   }
 
+  // ─── Type change ─────────────────────────────────────────────────────────────
+
   onTypeChange(): void {
+    const config = this.currentConfig;
     const type = this.invoiceForm.get('selectionType')?.value;
-    const isRange = type?.toLowerCase().includes('range') || false;
-
-    const unit = this.unitMap[type] || '';
+    this.rangeError = '';
     this.invoiceForm.patchValue({
-      unit,
-      value: '',
+      unit: config.unit,
+      value: config.defaultValue,
+      value2: '',
       start: '',
-      end: ''
+      end: '',
+      name: ''
     });
+    this.selectedSuggestion = null;
+    this.applyValidatorsForType(config.isRange);
+    // Emit type change so Name suggestions auto-filter for this type
+    this.typeChange$.next(type || '');
+  }
 
-    // Set validators
-    if (isRange) {
+  private applyValidatorsForType(isRange: boolean): void {
+    const config = this.currentConfig;
+    if (config.isSizeLoad) {
+      // SizeLoad/SizeAndLoad: Start + End + Value always required
+      this.invoiceForm.get('start')?.setValidators([Validators.required]);
+      this.invoiceForm.get('end')?.setValidators([Validators.required]);
+      this.invoiceForm.get('value')?.setValidators([Validators.required]);
+      // SizeAndLoad (4-field): value2 = MaxLoad also required
+      if (this.isSizeAndLoadType) {
+        this.invoiceForm.get('value2')?.setValidators([Validators.required]);
+      } else {
+        this.invoiceForm.get('value2')?.clearValidators();
+      }
+    } else if (isRange) {
       this.invoiceForm.get('start')?.setValidators([Validators.required]);
       this.invoiceForm.get('end')?.setValidators([Validators.required]);
       this.invoiceForm.get('value')?.clearValidators();
+      this.invoiceForm.get('value2')?.clearValidators();
     } else {
       this.invoiceForm.get('value')?.setValidators([Validators.required]);
       this.invoiceForm.get('start')?.clearValidators();
       this.invoiceForm.get('end')?.clearValidators();
+      this.invoiceForm.get('value2')?.clearValidators();
     }
-
     this.invoiceForm.get('value')?.updateValueAndValidity();
+    this.invoiceForm.get('value2')?.updateValueAndValidity();
     this.invoiceForm.get('start')?.updateValueAndValidity();
     this.invoiceForm.get('end')?.updateValueAndValidity();
-
-    // Auto-update name if value exists
-    this.updateName();
-    this.updateRangeName();
-
   }
 
+  // ─── Auto name generation ────────────────────────────────────────────────────
 
+  /**
+   * Single unified method called by any value/start/end input event.
+   * Generates the name based on the current type config.
+   */
+  autoGenerateName(): void {
+    const config = this.currentConfig;
+    const type = this.invoiceForm.get('selectionType')?.value;
+    if (!type) return;
 
-  updateName(): void {
-    const value = this.invoiceForm.get('value')?.value;
-    const unit = this.invoiceForm.get('unit')?.value;
-    const name = value + " " + unit;
-    this.onSuggestionSelected(name);
-    this.invoiceForm.patchValue({ name });
+    this.rangeError = '';
+
+    if (config.isSizeLoad) {
+      const start = (this.invoiceForm.get('start')?.value ?? '').toString().trim();
+      const end   = (this.invoiceForm.get('end')?.value ?? '').toString().trim();
+      const value = (this.invoiceForm.get('value')?.value ?? '').toString().trim();
+
+      // Size range validation
+      if (start && end) {
+        const s = parseFloat(start), e = parseFloat(end);
+        if (!isNaN(s) && !isNaN(e) && s >= e) {
+          this.rangeError = 'Min Size must be less than Max Size.';
+          return;
+        }
+      }
+
+      if (this.isSizeAndLoadType) {
+        // SizeAndLoad: 4 fields → "Size 0-25mm, Load 400-1000kN"
+        const value2 = (this.invoiceForm.get('value2')?.value ?? '').toString().trim();
+        if (value && value2) {
+          const v = parseFloat(value), v2 = parseFloat(value2);
+          if (!isNaN(v) && !isNaN(v2) && v >= v2) {
+            this.rangeError = 'Min Load must be less than Max Load.';
+            return;
+          }
+        }
+        if (!start && !end && !value && !value2) return;
+        const name = `Size ${start}-${end}mm, Load ${value}-${value2}kN`;
+        this.invoiceForm.patchValue({ name });
+        this.selectedSuggestion = { name };
+      } else {
+        // SizeLoad: 3 fields → "Size 0-20mm, Load ≤1000kN"
+        if (!start && !end && !value) return;
+        const name = `Size ${start}-${end}mm, Load ≤${value}kN`;
+        this.invoiceForm.patchValue({ name });
+        this.selectedSuggestion = { name };
+      }
+    } else if (config.isRange) {
+      const start = (this.invoiceForm.get('start')?.value ?? '').toString().trim();
+      const end   = (this.invoiceForm.get('end')?.value ?? '').toString().trim();
+
+      // Real-time numeric range validation
+      if (config.inputType === 'number' && start && end) {
+        const s = parseFloat(start), e = parseFloat(end);
+        if (!isNaN(s) && !isNaN(e) && s >= e) {
+          this.rangeError = 'Start value must be less than End value.';
+          return;
+        }
+      }
+      if (!start && !end) return;
+
+      const name = config.unit
+        ? `${start}${config.unit} to ${end}${config.unit}`
+        : `${start} to ${end}`;
+      this.invoiceForm.patchValue({ name });
+      this.selectedSuggestion = { name };
+    } else {
+      const value = (this.invoiceForm.get('value')?.value ?? '').toString().trim();
+      if (!value) return;
+      const name = config.unit ? `${value}${config.unit}` : value;
+      this.invoiceForm.patchValue({ name });
+      this.selectedSuggestion = { name };
+    }
   }
 
-  updateRangeName(): void {
-    const start = this.invoiceForm.get('start')?.value;
-    const end = this.invoiceForm.get('end')?.value;
-    const unit = this.invoiceForm.get('unit')?.value;
-    const name = `${start} - ${end} ${unit}`;
-    this.onSuggestionSelected(name);
-    this.invoiceForm.patchValue({ name });
+  // ─── Suggestion selection ────────────────────────────────────────────────────
+
+  onSuggestionSelected(selection: any): void {
+    if (!selection) {
+      this.invoiceForm.patchValue({ name: '' });
+      return;
+    }
+
+    // Full suggestion object from predefined list
+    if (typeof selection === 'object' && selection.selectionType) {
+      const cfg = this.typeConfig[selection.selectionType];
+      const isRange = cfg?.isRange ?? selection.selectionType.toLowerCase().includes('range');
+      this.invoiceForm.patchValue({
+        name: selection.name,
+        selectionType: selection.selectionType,
+        unit: selection.unit ?? cfg?.unit ?? '',
+        value: selection.value || '',
+        value2: selection.value2 || '',
+        start: selection.start || '',
+        end: selection.end || ''
+      });
+      this.applyValidatorsForType(isRange);
+      this.selectedSuggestion = selection;
+      this.nameLoading = false;
+      return;
+    }
+
+    // Custom typed string (ng-select addTag)
+    const label = (typeof selection === 'string' ? selection : selection?.name)?.trim();
+    if (!label) return;
+
+    const spectro = this.processSpectroCombination(label.toLowerCase());
+    if (spectro.valid && spectro.suggestion) {
+      const s = spectro.suggestion;
+      this.invoiceForm.patchValue({
+        name: s.name, selectionType: s.selectionType,
+        unit: s.unit || '', value: s.value || '', start: '', end: ''
+      });
+      this.applyValidatorsForType(false);
+      this.selectedSuggestion = s;
+    } else {
+      // Just apply as the name; keep current type/value intact
+      this.invoiceForm.patchValue({ name: label });
+      this.selectedSuggestion = { name: label };
+    }
+    this.nameLoading = false;
   }
+
+  processSpectroCombination(label: string): { valid: boolean; suggestion?: any } {
+    const input = label.replace(/\s+/g, '').toLowerCase();
+    if (!input.startsWith('full')) return { valid: false };
+
+    const parts = input.split('+').map(p => p.trim());
+    if (parts[0] !== 'full') return { valid: false };
+
+    const elements = parts.slice(1);
+    const existingNames = this.suggestionList
+      .filter(s => s.selectionType === 'Element')
+      .map(s => s.name.toLowerCase());
+
+    const newElements: string[] = [];
+    elements.forEach(el => {
+      const cap = el.charAt(0).toUpperCase() + el.slice(1);
+      if (!existingNames.includes(el)) {
+        this.suggestionList.push({ selectionType: 'Element', name: cap, value: cap, unit: '' });
+      }
+      newElements.push(cap);
+    });
+
+    const formatted = ['Full', ...newElements].join(' + ');
+    return {
+      valid: true,
+      suggestion: { name: formatted, selectionType: 'SpectroCombination', value: formatted, unit: '' }
+    };
+  }
+
+  // ─── Data loading ─────────────────────────────────────────────────────────────
 
   fetchData() {
     this.invoiceCaseConfig.getAllInvoiceCaseConfigs(this.payload).subscribe({
@@ -313,47 +538,148 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         this.toastService.show(error.message, 'error');
         this.invoiceList = [];
       }
-    }
-    );
+    });
   }
-
 
   getDetails(): void {
     const requestId = this.invoiceId;
     this.invoiceCaseConfig.getInvoiceCaseConfigById(requestId).subscribe({
       next: (res: any) => {
-        if (this.invoiceId !== requestId) return; // discard stale response
-        if (res) {
-          const aliasArray: FormArray<FormGroup> = this.fb.array<FormGroup>([]);
-          (res.aliasNames || []).forEach((alias: any) => {
-            aliasArray.push(this.fb.group({
-              id: [alias.id],
-              invoiceConfigurationID: [alias.invoiceConfigurationID],
-              name: [alias.name]
-            }));
-          });
-debugger;
-          this.invoiceForm.patchValue({
-            id: res.id,
-            selectionType: res.selectionType,
-            name: res.name,
-            aliasName: res.aliasName,
-            value: res.value,
-            start: res.start,
-            end: res.end,
-            unit: res.unit
-          });
+        if (this.invoiceId !== requestId) return;
+        if (!res) return;
 
-          this.invoiceForm.setControl('aliasNames', aliasArray);
-          this.updateName();
-          this.updateRangeName();
+        const aliasArray = this.fb.array<FormGroup>([]);
+        (res.aliasNames || []).forEach((alias: any) => {
+          aliasArray.push(this.fb.group({
+            id: [alias.id],
+            invoiceConfigurationID: [alias.invoiceConfigurationID],
+            name: [alias.name]
+          }));
+        });
+
+        // SizeAndLoad stores "minLoad-maxLoad" in value — split back for UI
+        let loadValue = res.value;
+        let loadValue2 = '';
+        if (res.selectionType === 'SizeAndLoad' && res.value?.includes('-')) {
+          const parts = res.value.split('-');
+          loadValue = parts[0];
+          loadValue2 = parts[1];
         }
+
+        this.invoiceForm.patchValue({
+          id: res.id,
+          selectionType: res.selectionType,
+          name: res.name,
+          aliasName: res.aliasName,
+          value: loadValue,
+          value2: loadValue2,
+          start: res.start,
+          end: res.end,
+          unit: res.unit
+        });
+        this.invoiceForm.setControl('aliasNames', aliasArray);
+
+        // Restore ng-select display with the saved name
+        this.selectedSuggestion = { name: res.name };
+
+        // Re-apply validators based on the loaded type
+        const cfg = this.typeConfig[res.selectionType];
+        const isRange = cfg?.isRange ?? res.selectionType?.toLowerCase().includes('range') ?? false;
+        this.applyValidatorsForType(isRange);
       },
-      error: err => {
-        this.toastService.show(err.error.message, 'error');
-      }
+      error: err => this.toastService.show(err.error?.message || err.message, 'error')
     });
   }
+
+  // ─── Form submit ──────────────────────────────────────────────────────────────
+
+  onSubmit(): void {
+    if (this.invoiceForm.invalid) {
+      this.invoiceForm.markAllAsTouched();
+      return;
+    }
+
+    // Block on live range error or run a fresh range check
+    if (this.rangeError) {
+      this.toastService.show(this.rangeError, 'error');
+      return;
+    }
+
+    const payload = this.invoiceForm.getRawValue();
+    // Backend expects string fields — number inputs produce numeric values
+    payload.value = payload.value != null && payload.value !== '' ? String(payload.value) : '';
+    payload.start = payload.start != null && payload.start !== '' ? String(payload.start) : '';
+    payload.end = payload.end != null && payload.end !== '' ? String(payload.end) : '';
+    // SizeAndLoad: combine MinLoad-MaxLoad into single value field for DB
+    if (payload.selectionType === 'SizeAndLoad' && payload.value2 != null && payload.value2 !== '') {
+      payload.value = `${payload.value}-${String(payload.value2)}`;
+    }
+    delete payload.value2; // Not in backend model
+    payload.aliasName = payload.aliasNames.map((a: any) => a.name).join(', ');
+
+    const saveFn = this.invoiceId > 0
+      ? this.invoiceCaseConfig.updateInvoiceCaseConfig
+      : this.invoiceCaseConfig.createInvoiceCaseConfig;
+
+    saveFn.call(this.invoiceCaseConfig, [payload]).subscribe({
+      next: (res: any) => {
+        this.toastService.show(res.message, 'success');
+        this.closeModal();
+        this.initForm();
+        this.fetchData();
+      },
+      error: (err: any) => this.toastService.show(err.error?.message || err.message, 'error')
+    });
+  }
+
+  // ─── Modal ───────────────────────────────────────────────────────────────────
+
+  openModal(type: string, id: number): void {
+    this.invoiceForm.reset();
+    this.invoiceForm.enable();
+    this.invoiceId = 0;
+    this.selectedSuggestion = null;
+    this.rangeError = '';
+
+    if (id > 0) {
+      this.invoiceId = id;
+      this.getDetails();
+    }
+
+    if (type === 'create') {
+      this.isEditMode = false;
+      this.isViewMode = false;
+      this.initForm();
+      if (this.aliasNames.length === 0) this.addAlias();
+      this.formTitle = 'Invoice Case Configuration Form';
+    } else if (type === 'edit') {
+      this.isEditMode = true;
+      this.isViewMode = false;
+      this.formTitle = 'Invoice Case Configuration Form';
+      this.invoiceForm.enable();
+    } else if (type === 'view') {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.formTitle = 'View Invoice Case Configuration';
+      this.invoiceForm.disable();
+    }
+
+    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) this.bsModal.hide();
+    this.invoiceForm.reset();
+    this.invoiceForm.enable();
+    this.invoiceId = 0;
+    this.selectedSuggestion = null;
+    this.rangeError = '';
+    this.isEditMode = false;
+    this.isViewMode = false;
+  }
+
+  // ─── Table helpers ────────────────────────────────────────────────────────────
 
   applySorting(column: string) {
     if (this.sortByColumn === column) {
@@ -369,33 +695,15 @@ debugger;
 
   openFilterModal(column: string, event: MouseEvent) {
     this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    })
+    this.columns.forEach(col => { if (col.key === column) this.filterColumnTitle = col.label; });
     this.filterValue = '';
     this.filterValue2 = '';
 
     const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
+    this.filterType = columnType === 'number' ? 'Equal' : columnType === 'date' ? 'Between' : 'Contains';
 
     this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
     if (this.filterModal) {
       const modal = this.filterModal.nativeElement;
       modal.style.display = 'block';
@@ -406,30 +714,25 @@ debugger;
 
   applyFilter() {
     if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
+    const existingIndex = this.filters.findIndex(f => f.column === this.filterColumn);
     const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
+    if (existingIndex > -1) {
+      this.filters[existingIndex] = filterData;
     } else {
       this.filters.push(filterData);
     }
-
     this.fetchData();
     this.closeFilterModal();
   }
 
   resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
+    this.filters = this.filters.filter(f => f.column !== column);
     this.payload.filter = this.filters;
     this.fetchData();
   }
 
   closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
+    if (this.filterModal) this.filterModal.nativeElement.style.display = 'none';
   }
 
   onPageChange(page: number) {
@@ -440,7 +743,7 @@ debugger;
 
   changePageSize(event: Event) {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
@@ -456,261 +759,18 @@ debugger;
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
-
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
-  }
+  getStartRecord(): number { return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1; }
+  getEndRecord(): number { return Math.min(this.pageNumber * this.pageSize, this.totalItems); }
+  hasFilter(column: string): boolean { return this.filters?.some(f => f.column === column) ?? false; }
 
   deleteFn(id: number): void {
     if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.invoiceCaseConfig.deleteInvoiceCaseConfig(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
-  }
-  openModal(type: string, id: number): void {
-    this.invoiceForm.reset();
-    this.invoiceForm.enable();
-    this.invoiceId = 0;
-    if (id > 0) {
-      this.invoiceId = id;
-      this.getDetails();
-    }
-    if (type === 'create') {
-      this.isEditMode = false;
-      this.isViewMode = false;
-      this.initForm();
-      if (this.aliasNames.length === 0) {
-        this.addAlias();
-      }
-      this.formTitle = 'Invoice Case Configuration Form';
-    } else if (type === 'edit') {
-      this.isEditMode = true;
-      this.isViewMode = false;
-      this.formTitle = 'Invoice Case Configuration Form';
-      this.invoiceForm.enable();
-
-    }
-    else if (type === 'view') {
-      this.isViewMode = true;
-      this.isEditMode = false;
-      this.formTitle = 'View Invoice Case Configuration';
-      this.invoiceForm.disable();
-    }
-
-    this.bsModal = new Modal(this.modalElement.nativeElement);
-    this.bsModal.show();
-  }
-
-  closeModal(): void {
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
-    this.invoiceForm.reset();
-    this.invoiceForm.enable();
-    this.invoiceId = 0;
-    this.isEditMode = false;
-    this.isViewMode = false;
-  }
-
-  onSubmit(): void {
-    if (this.invoiceForm.valid) {
-      const payload = this.invoiceForm.getRawValue();
-      payload.aliasName = payload.aliasNames.map((a: any) => a.name).join(', ');
-
-
-      const saveFn = this.invoiceId > 0
-        ? this.invoiceCaseConfig.updateInvoiceCaseConfig
-        : this.invoiceCaseConfig.createInvoiceCaseConfig;
-
-      let configurations = [payload];
-      saveFn.call(this.invoiceCaseConfig, configurations).subscribe({
-        next: (res: any) => {
-          this.toastService.show(res.message, 'success');
-          this.closeModal();
-          this.initForm();
-          this.fetchData()
-        },
-        error: (err: any) => this.toastService.show(err.error.message, 'error')
-      });
-    } else {
-      this.invoiceForm.markAllAsTouched();
-    }
-  }
-
-  onSuggestionSelected(selection: any): void {
-    let label = typeof selection === 'string' ? selection.trim() : selection?.name?.trim();
-    if (!label) return;
-
-    // Normalize spacing
-    label = label.replace(/\s+/g, ' ').toLowerCase();
-
-    // Try exact match
-    let suggestion = this.suggestionList.find(s => s.name.toLowerCase() === label);
-
-    if (!suggestion) {
-      const spectro = this.processSpectroCombination(label);
-
-      // Try to match "10mm to 30mm" or "10 mm to 30 mm"
-      const complexRangeMatch = label.match(/^(\d+)\s*(mm|hr|kn|°c)?\s*(to|-)\s*(\d+)\s*(mm|hr|kn|°c)?$/i);
-      const simpleRangeMatch = label.match(/^(\d+)\s*(to|-)\s*(\d+)\s*(mm|hr|kn|°c)?$/i);
-      const singleValueMatch = label.match(/^(\d+)\s*(mm|hr|kn|°c)?$/i);
-
-      if (spectro.valid && spectro.suggestion) {
-        suggestion = {
-          name: spectro.suggestion?.name,
-          selectionType: spectro.suggestion?.selectionType,
-          start: spectro.suggestion?.start || '',
-          end:spectro.suggestion?.end || '',
-          unit: spectro.suggestion?.unit || '',
-          value: spectro.suggestion?.value || '',
-        };
-      }
-      else if (complexRangeMatch) {
-        const [, start, unit1, , end, unit2] = complexRangeMatch;
-        const unit = unit1 || unit2 || '';
-        const selectionType = Object.entries(this.unitMap).find(([type, u]) => u === unit && type.toLowerCase().includes('range'))?.[0] || 'SizeRange';
-
-        suggestion = {
-          name: `${start} to ${end}${unit ? ' ' + unit : ''}`,
-          selectionType,
-          start,
-          end,
-          unit
-        };
-      }
-      else if (simpleRangeMatch) {
-        const [, start, , end, unit] = simpleRangeMatch;
-        const u = unit || '';
-        const selectionType = Object.entries(this.unitMap).find(([type, v]) => v === u && type.toLowerCase().includes('range'))?.[0] || 'SizeRange';
-
-        suggestion = {
-          name: `${start} to ${end}${u ? ' ' + u : ''}`,
-          selectionType,
-          start,
-          end,
-          unit: u
-        };
-      }
-      else if (singleValueMatch) {
-        const [, value, unit] = singleValueMatch;
-        const u = unit || '';
-        const selectionType = Object.entries(this.unitMap).find(([type, v]) => v === u && !type.toLowerCase().includes('range'))?.[0] || 'Other';
-
-        suggestion = {
-          name: `${value}${u ? ' ' + u : ''}`,
-          selectionType,
-          value,
-          unit: u
-        };
-      }
-      else {
-        // fallback
-        const selectionType = this.invoiceForm.get('selectionType')?.value || 'Other';
-        const unit = this.unitMap[selectionType] || '';
-        const isRange = selectionType?.toLowerCase().includes('range');
-
-        suggestion = {
-          name: label,
-          selectionType,
-          unit,
-          ...(isRange
-            ? {
-              start: this.invoiceForm.get('start')?.value || '',
-              end: this.invoiceForm.get('end')?.value || ''
-            }
-            : {
-              value: this.invoiceForm.get('value')?.value || ''
-            })
-        };
-      }
-
-      // Add new suggestion
-      this.suggestionList.push(suggestion);
-    }
-
-    // Apply values to form
-    this.invoiceForm.patchValue({
-      name: suggestion.name,
-      selectionType: suggestion.selectionType,
-      unit: suggestion.unit || '',
-      value: suggestion.value || '',
-      start: suggestion.start || '',
-      end: suggestion.end || ''
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    this.invoiceCaseConfig.deleteInvoiceCaseConfig(id).subscribe({
+      next: (res) => { this.fetchData(); this.toastService.show(res.message, 'success'); },
+      error: (err) => this.toastService.show(err.message, 'error')
     });
-
-    this.selectedSuggestion = suggestion;
-    this.nameLoading = false;
   }
 
-  processSpectroCombination(label: string): { valid: boolean, suggestion?: any } {
-    const input = label.replace(/\s+/g, '').toLowerCase();
-
-    if (!input.startsWith('full')) return { valid: false };
-
-    const parts = input.split('+').map(p => p.trim());
-    if (parts[0] !== 'full') return { valid: false };
-
-    const elements = parts.slice(1);
-
-    const existingElementNames = this.suggestionList
-      .filter(s => s.selectionType === 'Element')
-      .map(s => s.name.toLowerCase());
-
-    const newElements: string[] = [];
-
-    // Add any missing elements to suggestionList
-    elements.forEach(el => {
-      const capitalized = el.charAt(0).toUpperCase() + el.slice(1);
-      if (!existingElementNames.includes(el)) {
-        this.suggestionList.push({
-          selectionType: 'Element',
-          name: capitalized,
-          value: capitalized,
-          unit: 'Element'
-        });
-      }
-      newElements.push(capitalized);
-    });
-
-    const formatted = ['Full', ...newElements].join(' + ');
-
-    return {
-      valid: true,
-      suggestion: {
-        name: formatted,
-        selectionType: 'SpectroCombination',
-        value: formatted,
-        unit: ''
-      }
-    };
-  }
-
-
-  trackByFn(item: any) {
-    return item.label;
-  }
+  trackByFn(item: any) { return item.label; }
 }
-
-
-

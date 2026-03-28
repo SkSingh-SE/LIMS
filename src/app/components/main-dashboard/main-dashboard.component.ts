@@ -417,7 +417,8 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
         'pending-reports': '/reporting/dashboard',
         'pending-invoices': '/accounts/cases',
         'equipment-due': '/equipment',
-        'calibration-due': '/calibration-agency'
+        'calibration-due': '/calibration-agency',
+        'standards-due-review': '/test-method-specification'
       };
 
       const route = routeMap[card.key];

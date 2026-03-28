@@ -385,6 +385,10 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
 
   onMetalClassificationSelected(item: any, sampleIndex: number): void {
     const sampleGroup = this.samplesFA.at(sampleIndex) as FormGroup;
+    if (!item) {
+      sampleGroup.patchValue({ metalClassificationID: null, specimenTypeId: null });
+      return;
+    }
     sampleGroup.patchValue({ metalClassificationID: item.id });
   }
 
@@ -450,14 +454,22 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
       return;
     }
 
-    cuts.push(this.fb.group({
+    const newRow = this.fb.group({
       cuttingID: [price.id],
       cuttingType: [price.cuttingType],
       unitType: [price.unitType],
       rate: [{ value: price.rate, disabled: this.isViewMode }],
       quantity: ['', [Validators.required, Validators.min(1)]],
       total: [{ value: 0, disabled: true }]
-    }));
+    });
+    cuts.push(newRow);
+
+    // Auto-fill rate if specimen type already selected
+    const sampleGroup = this.samplesFA.at(sampleIdx) as FormGroup;
+    const specimenTypeId = sampleGroup.get('specimenTypeId')?.value;
+    if (specimenTypeId && price.cuttingType) {
+      this.fetchCuttingRate(newRow, specimenTypeId, price.cuttingType);
+    }
   }
 
   updateTotal(sampleIdx: number, rowIdx: number): void {
@@ -551,7 +563,42 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
 
   onSpecimenTypeSelected(item: any, sampleIndex: number): void {
     const sampleGroup = this.samplesFA.at(sampleIndex) as FormGroup;
-    sampleGroup.patchValue({ specimenTypeId: item?.id || null });
+    if (!item) {
+      sampleGroup.patchValue({ specimenTypeId: null });
+      return;
+    }
+    sampleGroup.patchValue({ specimenTypeId: item.id });
+
+    // Auto-fill rates for all existing cutting rows when specimen type changes
+    if (item.id) {
+      this.autoFillCuttingRates(sampleIndex, item.id);
+    }
+  }
+
+  /** Auto-fill rate from CuttingPriceMaster for all cutting rows of a sample */
+  private autoFillCuttingRates(sampleIdx: number, specimenTypeId: number): void {
+    const cuts = this.cuttingsFA(sampleIdx);
+    cuts.controls.forEach((row) => {
+      const cuttingType = row.get('cuttingType')?.value;
+      if (cuttingType) {
+        this.fetchCuttingRate(row as FormGroup, specimenTypeId, cuttingType);
+      }
+    });
+  }
+
+  /** Fetch rate from backend and patch into the cutting row (advisory — silent on error) */
+  private fetchCuttingRate(row: FormGroup, specimenTypeId: number, cuttingType: string): void {
+    this.cuttingPriceService
+      .getPriceBySpecimenAndCutting(specimenTypeId, cuttingType)
+      .subscribe({
+        next: (r) => {
+          if (r?.ratePerUnit != null) {
+            row.get('rate')?.setValue(r.ratePerUnit);
+            this.toastService.show(`Rate auto-filled: ₹${r.ratePerUnit}`, 'info');
+          }
+        },
+        error: () => { /* silent — user enters manually */ }
+      });
   }
 
   printSampleCuttingRaw(): void {

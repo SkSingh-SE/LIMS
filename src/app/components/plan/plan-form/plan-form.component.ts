@@ -632,8 +632,21 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const metalId = sampleGroup.get('metalClassificationID')?.value || null;
     const productConditionId = sampleGroup.get('productConditionID')?.value || null;
 
-    // General Test Logic — no longer depends on MaterialTestMapping;
-    // tests are selected independently via searchable dropdown.
+    // General Test Logic — fetch mechanical limits for info
+    if (testType === 'generalTests' && spec1) {
+      this.materialSpecificationService
+        .getMechanicalLimitsByGrade(spec1, spec2 || undefined)
+        .subscribe({
+          next: (limits: any[]) => {
+            if (limits?.length > 0) {
+              this.toastService.show(
+                `${limits.length} mechanical spec limits found for selected grade.`,
+                'info'
+              );
+            }
+          }
+        });
+    }
 
     // Chemical Test Logic
     if (testType === 'chemicalTests') {

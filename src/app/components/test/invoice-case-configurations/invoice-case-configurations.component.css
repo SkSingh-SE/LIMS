@@ -69,3 +69,21 @@
     overflow-x: auto;
     max-width: 100%;
   }
+
+  /* Ensure ng-select dropdown is not clipped inside modal */
+  ::ng-deep .modal-body {
+    overflow: visible !important;
+  }
+  ::ng-deep .modal-content {
+    overflow: visible !important;
+  }
+
+  /* Hide number input spinners for cleaner look */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }

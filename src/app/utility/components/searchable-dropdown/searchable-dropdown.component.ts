@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ComponentRef, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ComponentRef, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, Subject, Subscription, switchMap } from 'rxjs';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
@@ -10,7 +10,8 @@ import { DropdownPanelComponent } from '../dropdown-panel/dropdown-panel.compone
   selector: 'app-searchable-dropdown',
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './searchable-dropdown.component.html',
-  styleUrl: './searchable-dropdown.component.css'
+  styleUrl: './searchable-dropdown.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchableDropdownComponent {
   @Input() placeholder = 'Type to search...';
@@ -22,6 +23,7 @@ export class SearchableDropdownComponent {
   @Input() hideLabel = false;
   @Input() smallInput = false;
   @Input() isInvalid = false;
+  @Input() reloadKey: any;
 
   @Output() itemSelected = new EventEmitter<any>();
 
@@ -30,6 +32,7 @@ export class SearchableDropdownComponent {
   searchTerm = '';
   dropdownData: any[] = [];
   selectedLabel = '';
+  private hasValidSelection = false;
   showDropdown = false;
   pageNo = 0;
   pageSize = 20;
@@ -41,9 +44,7 @@ export class SearchableDropdownComponent {
   private sub = new Subscription();
   private overlayRef!: OverlayRef;
   private dropdownComponentRef!: ComponentRef<DropdownPanelComponent>;
-  private initialLoaded = false;
-
-  constructor(private overlay: Overlay, private vcr: ViewContainerRef) {}
+  constructor(private overlay: Overlay, private vcr: ViewContainerRef, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const searchSub = this.searchSubject
@@ -56,13 +57,20 @@ export class SearchableDropdownComponent {
           return this.fetchDataFn(term, this.pageNo, this.pageSize);
         })
       )
-      .subscribe(data => {
-        this.dropdownData = data as any[];
-        this.hasMore = (data as any[]).length === this.pageSize;
-        this.pageNo++;
-        this.loading = false;
-        this.highlightedIndex = this.dropdownData.length > 0 ? 0 : -1;
-        this.openDropdownPanel();
+      .subscribe({
+        next: data => {
+          this.dropdownData = data as any[];
+          this.hasMore = (data as any[]).length === this.pageSize;
+          this.pageNo++;
+          this.loading = false;
+          this.highlightedIndex = this.dropdownData.length > 0 ? 0 : -1;
+          this.cdr.markForCheck();
+          this.openDropdownPanel();
+        },
+        error: () => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
       });
 
     this.sub.add(searchSub);
@@ -74,30 +82,52 @@ export class SearchableDropdownComponent {
       if (!val && val !== 0) {
         this.selectedLabel = '';
         this.searchTerm = '';
+        this.hasValidSelection = false;
         return;
       }
       const matched = this.dropdownData.find(x => x.id === this.selectedItem);
       if (matched) {
         if (this.selectedLabel.length === 0) {
           this.selectedLabel = matched.name;
+          this.hasValidSelection = true;
           this.selectItem(matched);
         }
       } else {
-        this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
-          const found = data.find(x => x.id === this.selectedItem);
-          if (found) {
-            this.dropdownData = [found, ...this.dropdownData];
-            this.selectedLabel = found.name;
-            this.selectItem(found);
-          }
+        this.fetchDataFn(this.selectedItem, 0, 1).subscribe({
+          next: (data: any[]) => {
+            const found = data.find(x => x.id === this.selectedItem);
+            if (found) {
+              this.dropdownData = [found, ...this.dropdownData];
+              this.selectedLabel = found.name;
+              this.hasValidSelection = true;
+              this.cdr.markForCheck();
+              this.selectItem(found);
+            }
+          },
+          error: () => {
+            this.cdr.markForCheck();
+          },
         });
       }
+    }
+
+    // Reload dropdown data when reloadKey changes
+    if (changes['reloadKey'] && !changes['reloadKey'].firstChange) {
+      this.dropdownData = [];
+      this.pageNo = 0;
+      this.hasMore = true;
     }
   }
 
   handleInput(event: any): void {
     this.searchTerm = event.target.value;
     this.selectedLabel = this.searchTerm;
+    if (this.hasValidSelection) {
+      this.hasValidSelection = false;
+      this.selectedItem = null;
+      this.itemSelected.emit(null);
+      this.cdr.markForCheck();
+    }
     this.searchSubject.next(this.searchTerm);
   }
 
@@ -116,14 +146,20 @@ export class SearchableDropdownComponent {
     this.loading = true;
     this.pageNo = 0;
     this.dropdownData = [];
-    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe((data: any[]) => {
-      this.dropdownData = data;
-      this.hasMore = data.length === this.pageSize;
-      this.pageNo++;
-      this.loading = false;
-      this.initialLoaded = true;
-      this.highlightedIndex = data.length > 0 ? 0 : -1;
-      this.openDropdownPanel();
+    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
+      next: (data: any[]) => {
+        this.dropdownData = data;
+        this.hasMore = data.length === this.pageSize;
+        this.pageNo++;
+        this.loading = false;
+        this.highlightedIndex = data.length > 0 ? 0 : -1;
+        this.cdr.markForCheck();
+        this.openDropdownPanel();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -210,14 +246,17 @@ export class SearchableDropdownComponent {
 
     if (!clickedInsideInput && !clickedInsideDropdown) {
       this.closeDropdown();
+      this.cdr.markForCheck();
     }
   };
 
   selectItem(item: any): void {
     this.selectedLabel = item.name;
     this.searchTerm = '';
+    this.hasValidSelection = true;
     this.itemSelected.emit(item);
     this.closeDropdown();
+    this.cdr.markForCheck();
   }
 
   clearSelection(event: Event): void {
@@ -225,8 +264,21 @@ export class SearchableDropdownComponent {
     this.selectedLabel = '';
     this.searchTerm = '';
     this.selectedItem = null;
+    this.hasValidSelection = false;
     this.itemSelected.emit(null);
     this.closeDropdown();
+    this.cdr.markForCheck();
+  }
+
+  onBlur(): void {
+    // If user typed text but never selected a valid item, revert
+    if (!this.hasValidSelection && this.selectedLabel) {
+      this.selectedLabel = '';
+      this.searchTerm = '';
+      this.selectedItem = null;
+      this.itemSelected.emit(null);
+      this.cdr.markForCheck();
+    }
   }
 
   onScroll(event: any) {
@@ -241,12 +293,19 @@ export class SearchableDropdownComponent {
     this.loading = true;
     this.syncLoadingToPanel();
 
-    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe((data: any[]) => {
-      this.dropdownData = [...this.dropdownData, ...data];
-      this.hasMore = data.length === this.pageSize;
-      this.pageNo++;
-      this.loading = false;
-      this.openDropdownPanel();
+    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
+      next: (data: any[]) => {
+        this.dropdownData = [...this.dropdownData, ...data];
+        this.hasMore = data.length === this.pageSize;
+        this.pageNo++;
+        this.loading = false;
+        this.cdr.markForCheck();
+        this.openDropdownPanel();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 

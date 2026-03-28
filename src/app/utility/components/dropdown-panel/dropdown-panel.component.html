@@ -1,13 +1,11 @@
 <ul
+  #listRef
   class="list-group dropdown-panel"
-  tabindex="0"
   style="max-height: 220px; overflow-y: auto;"
   (scroll)="onScrollEvent($event)"
-  (keydown)="onKeyDown($event)"
 >
   <li
-    *ngFor="let item of items; let i = index"
-    [id]="'dropdown-item-' + i"
+    *ngFor="let item of items; let i = index; trackBy: trackById"
     class="list-group-item cursor-pointer"
     [class.active]="i === highlightedIndex"
     (click)="onSelect(item, i)"

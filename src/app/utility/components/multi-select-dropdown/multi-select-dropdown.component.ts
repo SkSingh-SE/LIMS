@@ -11,6 +11,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import {
   debounceTime,
   distinctUntilChanged,
+  forkJoin,
   Observable,
   Subject,
   Subscription,
@@ -109,10 +110,15 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
         this.items = [];
       }),
       switchMap(term => this.fetchDataFn(term || '', this.page, this.pageSize))
-    ).subscribe(data => {
-      this.items = data;
-      this.loading = false;
-      this.hasMore = data.length === this.pageSize;
+    ).subscribe({
+      next: data => {
+        this.items = data;
+        this.loading = false;
+        this.hasMore = data.length === this.pageSize;
+      },
+      error: () => {
+        this.loading = false;
+      },
     });
 
     this.subscriptions.push(typeaheadSub);
@@ -159,32 +165,18 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   private fetchMissingItems(ids: any[], emit: boolean = false): void {
     const requests = ids.map(id => this.fetchDataFn(id.toString(), 0, 1));
 
-    const sub = new Observable<any[]>(subscriber => {
-      let collected: any[] = [];
-      let completed = 0;
-
-      requests.forEach(req => {
-        req.subscribe({
-          next: (data) => {
-            if (data && data.length > 0) {
-              collected.push(data[0]);
-            }
-          },
-          complete: () => {
-            completed++;
-            if (completed === requests.length) {
-              subscriber.next(collected);
-              subscriber.complete();
-            }
-          }
-        });
-      });
-    }).subscribe(fetchedItems => {
-      this.items = [
-        ...this.items,
-        ...fetchedItems.filter(f => !this.items.some(i => i.id === f.id))
-      ];
-      this.syncSelectedItems(emit); // only sync, no emit
+    const sub = forkJoin(requests).subscribe({
+      next: (results: any[][]) => {
+        const collected = results.filter(data => data?.length > 0).map(data => data[0]);
+        this.items = [
+          ...this.items,
+          ...collected.filter(f => !this.items.some(i => i.id === f.id))
+        ];
+        this.syncSelectedItems(emit);
+      },
+      error: () => {
+        this.syncSelectedItems(emit);
+      },
     });
 
     this.subscriptions.push(sub);

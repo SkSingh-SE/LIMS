@@ -27,22 +27,22 @@
       <span class="compact-label">{{ getCompactLabel() || placeholder }}</span>
       <!-- Hover tooltip showing all selected names (fixed position to escape overflow) -->
       <div *ngIf="selectedItems.length > 1" class="hover-tooltip" [ngStyle]="tooltipStyle">
-        <div *ngFor="let item of selectedItems" class="tooltip-item">{{ item.name }}</div>
+        <div *ngFor="let item of selectedItems; trackBy: trackById" class="tooltip-item">{{ item.name }}</div>
       </div>
     </div>
 
-    <!-- Clear Icon -->
+    <!-- Clear Icon — works for both single and multi-select -->
     <span
       class="input-group-text clear-icon"
       role="button"
-      (click)="clearSelection($event)"
-      *ngIf="!isDisabled && selectedLabel"
+      (mousedown)="clearSelection($event)"
+      *ngIf="!isDisabled && (selectedLabel || selectedItems.length > 0)"
       title="Clear"
     >
       <i class="bi bi-x-lg"></i>
     </span>
     <!-- Dropdown Icon -->
-    <span class="input-group-text dropdown-toggle-icon" role="button" (click)="showDropdown ? showDropdown = false : openDropdown()" *ngIf="!isDisabled">
+    <span class="input-group-text dropdown-toggle-icon" role="button" (mousedown)="showDropdown ? showDropdown = false : openDropdown()" *ngIf="!isDisabled">
       <i class="bi bi-chevron-down"></i>
     </span>
   </div>
@@ -51,14 +51,14 @@
 
   <!-- Dropdown list -->
   <ul
-    *ngIf="showDropdown && dropdownData.length > 0"
+    *ngIf="showDropdown"
     class="dropdown-panel"
     [ngStyle]="dropdownStyle"
     (scroll)="onScroll($event)"
   >
     <li
       class="dropdown-item"
-      *ngFor="let item of dropdownData; let i = index"
+      *ngFor="let item of dropdownData; let i = index; trackBy: trackById"
       [id]="randomId + '-item-' + i"
       [class.active]="!isMultiSelect && highlightedIndex === i"
       [class.multi-selected]="isMultiSelect && isSelected(item)"
@@ -69,6 +69,15 @@
       {{ item.name }}
     </li>
 
-    <li *ngIf="loading" class="dropdown-item loading-item">Loading...</li>
+    <!-- Loading -->
+    <li *ngIf="loading" class="dropdown-item loading-item">
+      <span class="spinner-border spinner-border-sm text-danger me-1" role="status"></span>
+      <span class="text-muted small">Loading...</span>
+    </li>
+
+    <!-- Empty state -->
+    <li *ngIf="dropdownData.length === 0 && !loading" class="dropdown-item text-muted text-center">
+      <span class="fw-lighter fst-italic fs-6">No Record</span>
+    </li>
   </ul>
 </div>

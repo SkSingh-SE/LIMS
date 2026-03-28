@@ -127,6 +127,25 @@ textarea.form-control {
   margin-bottom: 0.15rem;
 }
 
+/* ─── Searchable Dropdown — compact override for this form ─── */
+:host ::ng-deep app-searchable-dropdown .form-label,
+:host ::ng-deep app-searchable-dropdown-modal .form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group,
+:host ::ng-deep app-searchable-dropdown-modal .input-group {
+  min-height: 30px;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group .form-control,
+:host ::ng-deep app-searchable-dropdown-modal .input-group .form-control {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
 /* ─── Checkbox / Radio ─── */
 .form-check {
   margin-bottom: 0;

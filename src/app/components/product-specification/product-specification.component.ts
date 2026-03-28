@@ -137,7 +137,8 @@ export class ProductSpecificationComponent implements OnInit {
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
       },
-      error: () => {
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load product specifications', 'error');
         this.ProductSpecificationList = [];
       }
     }
@@ -157,7 +158,7 @@ export class ProductSpecificationComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load product specification details', 'error');
       }
     });
   }
@@ -289,7 +290,9 @@ export class ProductSpecificationComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: () => {}
+        error: (error) => {
+          this.toastService.show(error?.error?.message || 'Failed to delete product specification', 'error');
+        }
       });
     }
   }
@@ -356,7 +359,9 @@ export class ProductSpecificationComponent implements OnInit {
             this.closeModal();
             this.fetchData();
           },
-          error: () => {}
+          error: (error) => {
+            this.toastService.show(error?.error?.message || 'Failed to update product specification', 'error');
+          }
         });
       } else {
         formData.id = 0;
@@ -366,7 +371,9 @@ export class ProductSpecificationComponent implements OnInit {
             this.closeModal();
             this.fetchData();
           },
-          error: () => {}
+          error: (error) => {
+            this.toastService.show(error?.error?.message || 'Failed to create product specification', 'error');
+          }
         });
       }
     } else {
@@ -424,7 +431,10 @@ export class ProductSpecificationComponent implements OnInit {
           this.ProductSpecificationForm.patchValue({ testMethodSpecificationVersionID: this.specVersions[0].id });
         }
       },
-      error: () => { this.specVersions = []; }
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load specification versions', 'error');
+        this.specVersions = [];
+      }
     });
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
@@ -446,14 +456,20 @@ export class ProductSpecificationComponent implements OnInit {
   loadTestGroups(productSpecId: number) {
     this.productTestGroupService.getByProductSpec(productSpecId).subscribe({
       next: (data) => this.testGroups = data || [],
-      error: () => this.testGroups = []
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load test groups', 'error');
+        this.testGroups = [];
+      }
     });
   }
 
   loadSpecGrades(productSpecId: number) {
     this.productSpecGradeService.getByProductSpec(productSpecId).subscribe({
       next: (data) => this.specGrades = data || [],
-      error: () => this.specGrades = []
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load specification grades', 'error');
+        this.specGrades = [];
+      }
     });
   }
 
@@ -486,7 +502,9 @@ export class ProductSpecificationComponent implements OnInit {
         this.loadTestGroups(this.productSpecificationId);
         this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
       },
-      error: () => {}
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to add test group', 'error');
+      }
     });
   }
 
@@ -497,7 +515,9 @@ export class ProductSpecificationComponent implements OnInit {
         this.toastService.show(response.message || 'Test Group removed', 'success');
         this.loadTestGroups(this.productSpecificationId);
       },
-      error: () => {}
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to remove test group', 'error');
+      }
     });
   }
 
@@ -523,7 +543,9 @@ export class ProductSpecificationComponent implements OnInit {
         this.loadSpecGrades(this.productSpecificationId);
         this.newSpecGrade = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
       },
-      error: () => {}
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to add specification grade', 'error');
+      }
     });
   }
 
@@ -534,7 +556,9 @@ export class ProductSpecificationComponent implements OnInit {
         this.toastService.show(response.message || 'Grade removed', 'success');
         this.loadSpecGrades(this.productSpecificationId);
       },
-      error: () => {}
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to remove specification grade', 'error');
+      }
     });
   }
 }

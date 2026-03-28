@@ -7,10 +7,18 @@ export class ToastService {
 
   toasts: any[] = [];
   duration = 5000;
+  private lastToastTime = 0;
   show(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
-    // Prevent duplicate toasts with the same message within a short window
+    // Prevent duplicate toasts with the same message (regardless of type)
     const isDuplicate = this.toasts.some(t => t.message === message && t.show);
     if (isDuplicate) return;
+
+    // Suppress rapid-fire toasts (e.g., interceptor warning + component error for the same API call)
+    const now = Date.now();
+    if (now - this.lastToastTime < 100 && (type === 'error' || type === 'warning') && this.toasts.some(t => t.show)) {
+      return;
+    }
+    this.lastToastTime = now;
 
     const toast = { message, type, show: true, progress: 100 };
     this.toasts.push(toast);

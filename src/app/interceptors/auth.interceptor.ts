@@ -104,7 +104,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
         const message = getErrorMessage(error);
         showErrorToast(error, message);
-        const enhancedError = Object.assign(error, { errorMessage: message });
+        // Normalize message on the error so component-level handlers get the same string
+        // and ToastService dedup prevents duplicate toasts
+        if (error.error && typeof error.error === 'object') {
+          error.error.message = message;
+        }
+        const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
       })
     );
@@ -128,7 +133,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         loaderService.hide();
         const message = getErrorMessage(error);
         showErrorToast(error, message);
-        const enhancedError = Object.assign(error, { errorMessage: message });
+        // Normalize message on the error so component-level handlers get the same string
+        // and ToastService dedup prevents duplicate toasts
+        if (error.error && typeof error.error === 'object') {
+          error.error.message = message;
+        }
+        const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
       })
     );
@@ -165,7 +175,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
       const message = getErrorMessage(error);
       showErrorToast(error, message);
-      const enhancedError = Object.assign(error, { errorMessage: message });
+      // Normalize message on the error so component-level handlers get the same string
+      // and ToastService dedup prevents duplicate toasts
+      if (error.error && typeof error.error === 'object') {
+        error.error.message = message;
+      }
+      const enhancedError = Object.assign(error, { errorMessage: message, message });
       return throwError(() => enhancedError);
     })
   );

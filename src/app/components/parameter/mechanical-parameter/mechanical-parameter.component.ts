@@ -141,7 +141,7 @@ export class MechanicalParameterComponent implements OnInit {
         this.ParameterUnits = response || [];
       },
       error: (error) => {
-        console.error('Error fetching parameter units:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameter units', 'error');
       }
     });
   }
@@ -159,7 +159,7 @@ export class MechanicalParameterComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameter details', 'error');
       }
     });
   }
@@ -378,7 +378,7 @@ export class MechanicalParameterComponent implements OnInit {
         this.allParameters = response || [];
       },
       error: (error) => {
-        console.error('Error fetching parameters:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameters', 'error');
       }
     });
   }

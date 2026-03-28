@@ -268,14 +268,32 @@
         class="d-none"
         (change)="onProfileImageSelected($event)"
       />
-      <input
-        #cameraInput
-        type="file"
-        accept="image/*"
-        capture="user"
-        class="d-none"
-        (change)="onProfileImageSelected($event)"
-      />
+      <!-- Camera Capture Overlay -->
+      <div class="camera-overlay" *ngIf="isCameraOpen()">
+        <div class="camera-container">
+          <div class="camera-header">
+            <span>Take Photo</span>
+            <button class="camera-close" (click)="closeCamera()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="camera-body">
+            <video #cameraVideo autoplay playsinline class="camera-video" *ngIf="!capturedImageUrl"></video>
+            <img *ngIf="capturedImageUrl" [src]="capturedImageUrl" class="camera-preview" alt="Captured" />
+          </div>
+          <div class="camera-footer">
+            <button *ngIf="!capturedImageUrl" class="btn btn-light btn-sm" (click)="capturePhoto()">
+              <i class="bi bi-circle-fill text-danger me-1"></i> Capture
+            </button>
+            <ng-container *ngIf="capturedImageUrl">
+              <button class="btn btn-light btn-sm" (click)="retakePhoto()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Retake
+              </button>
+              <button class="btn btn-save btn-sm" (click)="useCapturedPhoto()">
+                <i class="bi bi-check-lg me-1"></i> Use Photo
+              </button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
       <div class="pd-name">{{ loggedInUserName }}</div>
 
       <div class="pd-pills">

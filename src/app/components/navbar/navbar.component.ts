@@ -69,9 +69,12 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   isProfileOpen = signal(false);
   profileImageUrl: string | null = null;
   isUploadingImage = signal(false);
+  isCameraOpen = signal(false);
+  capturedImageUrl: string | null = null;
+  private cameraStream: MediaStream | null = null;
 
   @ViewChild('profileImageInput') profileImageInput!: ElementRef;
-  @ViewChild('cameraInput') cameraInput!: ElementRef;
+  @ViewChild('cameraVideo') cameraVideo!: ElementRef<HTMLVideoElement>;
 
   // Search properties
   searchQuery = '';
@@ -126,30 +129,81 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   triggerCameraCapture(): void {
-    this.cameraInput?.nativeElement?.click();
+    this.isCameraOpen.set(true);
+    this.capturedImageUrl = null;
+    setTimeout(() => this.startCamera(), 100);
+  }
+
+  private async startCamera(): Promise<void> {
+    try {
+      this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
+      if (this.cameraVideo?.nativeElement) {
+        this.cameraVideo.nativeElement.srcObject = this.cameraStream;
+      }
+    } catch {
+      this.toastService.show('Camera access denied or not available', 'error');
+      this.isCameraOpen.set(false);
+    }
+  }
+
+  capturePhoto(): void {
+    const video = this.cameraVideo?.nativeElement;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0);
+    this.capturedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+    this.stopCameraStream();
+  }
+
+  retakePhoto(): void {
+    this.capturedImageUrl = null;
+    setTimeout(() => this.startCamera(), 100);
+  }
+
+  useCapturedPhoto(): void {
+    if (!this.capturedImageUrl) return;
+    // Convert data URL to File
+    fetch(this.capturedImageUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+        this.closeCamera();
+        this.uploadProfileFile(file);
+      });
+  }
+
+  closeCamera(): void {
+    this.stopCameraStream();
+    this.capturedImageUrl = null;
+    this.isCameraOpen.set(false);
+  }
+
+  private stopCameraStream(): void {
+    this.cameraStream?.getTracks().forEach(t => t.stop());
+    this.cameraStream = null;
   }
 
   onProfileImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || !input.files.length) return;
-
     const file = input.files[0];
+    input.value = '';
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       this.toastService.show('Please select a valid image file', 'error');
-      input.value = '';
       return;
     }
-
-    // Validate file size (max 2MB)
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       this.toastService.show('Image size must be less than 2MB', 'error');
-      input.value = '';
       return;
     }
+    this.uploadProfileFile(file);
+  }
 
+  private uploadProfileFile(file: File): void {
     this.isUploadingImage.set(true);
     this.employeeService.uploadProfileImage(file).subscribe({
       next: (res: any) => {
@@ -160,12 +214,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           this.toastService.show('Profile image updated successfully', 'success');
         }
         this.isUploadingImage.set(false);
-        input.value = '';
       },
-      error: (err: any) => {
+      error: () => {
         this.toastService.show('Failed to upload profile image', 'error');
         this.isUploadingImage.set(false);
-        input.value = '';
       }
     });
   }
@@ -586,5 +638,6 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (this.resizeObserver) { this.resizeObserver.disconnect(); }
     if (this.submenuTimer)   { clearTimeout(this.submenuTimer); }
     if (this.groupTimer)     { clearTimeout(this.groupTimer); }
+    this.stopCameraStream();
   }
 }

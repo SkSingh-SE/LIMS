@@ -1128,14 +1128,17 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   canSavePlan(): boolean {
     if (this.isViewMode) return false;
     const editableStatuses = ['Draft', 'ReplanRequested', 'ReplanApproved'];
+    let hasAnyPlan = false;
     for (let i = 0; i < this.samples.length; i++) {
       const plans = this.getTestPlans(i);
       for (let j = 0; j < plans.length; j++) {
+        hasAnyPlan = true;
         const status = plans.at(j).get('planStatus')?.value;
-        if (editableStatuses.includes(status)) return true;
+        if (!status || editableStatuses.includes(status)) return true;
       }
     }
-    return this.samples.length === 0; // new plan with no samples yet
+    // Allow save when no plans exist yet (new plan or plans not yet created)
+    return !hasAnyPlan;
   }
 
   getPlanStatusLabel(status: string): string {

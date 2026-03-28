@@ -269,7 +269,8 @@
                   <app-searchable-dropdown
                     [placeholder]="'Search Designation'" [labelName]="'Designation'"
                     [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
-                    [isDisabled]="isViewMode"
+                    [isDisabled]="isViewMode" [required]="true"
+                    [isInvalid]="submitted && !personalInfoForm.get('designationID')?.value"
                     [selectedItem]="personalInfoForm.get('designationID')?.value"></app-searchable-dropdown>
                 </div>
 
@@ -288,6 +289,7 @@
                     [placeholder]="'Search department'" [labelName]="'Department'"
                     [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
+                    [isInvalid]="submitted && !personalInfoForm.get('departmentID')?.value"
                     [selectedItem]="personalInfoForm.get('departmentID')?.value"></app-searchable-dropdown>
                 </div>
 
@@ -297,6 +299,7 @@
                     [placeholder]="'Search employee'" [labelName]="'Reporting Manager'"
                     [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
+                    [isInvalid]="submitted && !personalInfoForm.get('reportingManagerID')?.value"
                     [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"></app-searchable-dropdown>
                 </div>
 
@@ -764,7 +767,8 @@
     </a>
 
     <!-- Tab 1: Basic Details Save -->
-    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm px-3" (click)="submitForm()">
+    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm px-3" (click)="submitForm()"
+      [disabled]="submitted && personalInfoForm.invalid">
       <i class="bi bi-check2-circle me-1"></i> {{ employeeId > 0 ? 'Update' : 'Save' }}
     </button>
 

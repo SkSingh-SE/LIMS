@@ -75,7 +75,7 @@ import { PlanFormComponent } from './components/plan/plan-form/plan-form.compone
 import { ReviewOfRequestComponent } from './components/inward/review-of-request/review-of-request.component';
 import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
 import { WorkflowListComponent } from './components/workflow/workflow-list/workflow-list.component';
-import { MaterialTestMappingComponent } from './components/material-test-mapping/material-test-mapping.component';
+
 import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
 import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
 import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
@@ -621,7 +621,7 @@ export const routes: Routes = [
             { path: 'workflow/create', component: WorkflowFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'workflow/edit/:id', component: WorkflowFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'workflow/details/:id', component: WorkflowFormComponent },
-            { path: 'test-mapping', component: MaterialTestMappingComponent },
+
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },

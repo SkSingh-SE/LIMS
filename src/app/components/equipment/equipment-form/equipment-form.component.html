@@ -312,7 +312,7 @@
             <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
               <label class="section-divider">Maintenance History</label>
               <button
-                *ngIf="isEditMode && calibrationDue"
+                *ngIf="isEditMode && maintenanceDue"
                 type="button"
                 class="btn btn-add btn-sm"
                 (click)="openMaintenanceModal()"
@@ -397,6 +397,7 @@
                     <thead class="table-light">
                       <tr class="text-nowrap">
                         <th class="spec-th text-center">#</th>
+                        <th class="spec-th">Title</th>
                         <th class="spec-th">Attachment</th>
                         <th *ngIf="!isViewMode" class="spec-th text-center">Action</th>
                       </tr>
@@ -404,6 +405,7 @@
                     <tbody>
                       <tr *ngFor="let attachment of sopAttachments; let i = index" class="text-sm">
                         <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                        <td>{{ attachment.title || '-' }}</td>
                         <td>
                           <button type="button" class="btn btn-sm btn-add" (click)="openFileInNewTab(attachment.url)">
                             <i class="bi bi-file-earmark-fill"></i>
@@ -417,7 +419,7 @@
                         </td>
                       </tr>
                       <tr *ngIf="sopAttachments.length === 0">
-                        <td [attr.colspan]="isViewMode ? 2 : 3" class="text-center text-muted py-3">
+                        <td [attr.colspan]="isViewMode ? 3 : 4" class="text-center text-muted py-3">
                           <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
                           No attachments found
                         </td>
@@ -431,6 +433,7 @@
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mt-2">
                   <div class="p-2" *ngFor="let video of sopVideos">
                     <div class="border p-2 rounded text-center">
+                      <p class="fw-medium small mb-1 text-truncate" title="{{ video.title }}">{{ video.title || 'Untitled' }}</p>
                       <video controls width="100%" height="250" style="object-fit: cover">
                         <source [src]="video.url" type="video/mp4" />
                         Your browser does not support the video tag.
@@ -482,8 +485,8 @@
                     <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                     <td>{{ rm.materialName }}</td>
                     <td>
-                      <span class="badge" [ngClass]="rm.materialType === 'CRM' ? 'bg-primary' : 'bg-info'">
-                        {{ rm.materialType }}
+                      <span class="badge" [ngClass]="rm.type === 'CRM' ? 'bg-primary' : 'bg-info'">
+                        {{ rm.type }}
                       </span>
                     </td>
                     <td>{{ rm.lotNumber || '-' }}</td>
@@ -590,7 +593,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitCalibrationForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-save" (click)="submitCalibrationForm()">Save</button>
       </div>
     </div>
   </div>
@@ -653,7 +656,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()">Save</button>
       </div>
     </div>
   </div>
@@ -677,18 +680,26 @@
       <div class="modal-body">
         <form [formGroup]="sopAttachmentForm">
           <div class="mb-3">
-            <label class="form-label">Title</label>
-            <input type="text" class="form-control" formControlName="title" placeholder="Enter title" />
+            <label class="form-label">Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="title" placeholder="Enter title"
+              [class.is-invalid]="sopAttachmentForm.get('title')?.invalid && sopAttachmentForm.get('title')?.touched" />
+            <div *ngIf="sopAttachmentForm.get('title')?.invalid && sopAttachmentForm.get('title')?.touched" class="invalid-feedback">
+              Title is required.
+            </div>
           </div>
           <div class="mb-2">
-            <label class="form-label">Attachments</label>
-            <input type="file" class="form-control" (change)="onFileChange($event, 'sop')" />
+            <label class="form-label">Attachment <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" (change)="onFileChange($event, 'sop')"
+              [class.is-invalid]="sopAttachmentForm.get('file')?.invalid && sopAttachmentForm.get('file')?.touched" />
+            <div *ngIf="sopAttachmentForm.get('file')?.invalid && sopAttachmentForm.get('file')?.touched" class="invalid-feedback">
+              Attachment file is required.
+            </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()">Save</button>
       </div>
     </div>
   </div>
@@ -705,18 +716,26 @@
       <div class="modal-body">
         <form [formGroup]="sopVideoForm">
           <div class="mb-3">
-            <label class="form-label">Title</label>
-            <input type="text" class="form-control" formControlName="title" placeholder="Enter title" />
+            <label class="form-label">Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="title" placeholder="Enter title"
+              [class.is-invalid]="sopVideoForm.get('title')?.invalid && sopVideoForm.get('title')?.touched" />
+            <div *ngIf="sopVideoForm.get('title')?.invalid && sopVideoForm.get('title')?.touched" class="invalid-feedback">
+              Title is required.
+            </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Videos</label>
-            <input type="file" class="form-control" (change)="onSOPVideoChange($event)" accept="video/*" />
+            <label class="form-label">Video <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" (change)="onSOPVideoChange($event)" accept="video/*"
+              [class.is-invalid]="sopVideoForm.get('file')?.invalid && sopVideoForm.get('file')?.touched" />
+            <div *ngIf="sopVideoForm.get('file')?.invalid && sopVideoForm.get('file')?.touched" class="invalid-feedback">
+              Video file is required.
+            </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()">Save</button>
       </div>
     </div>
   </div>
@@ -750,8 +769,8 @@
             </div>
             <div>
               <label class="form-label">Material Type <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="materialType">
-                <option *ngFor="let type of materialTypeOptions" [value]="type">{{ type }}</option>
+              <select class="form-select" formControlName="type">
+                <option *ngFor="let t of materialTypeOptions" [value]="t">{{ t }}</option>
               </select>
             </div>
             <div>
@@ -772,7 +791,7 @@
             </div>
             <div>
               <label class="form-label">Supplier Name</label>
-              <input type="text" class="form-control" formControlName="supplierName" placeholder="Enter supplier name" />
+              <input type="text" class="form-control" formControlName="supplier" placeholder="Enter supplier name" />
             </div>
             <div>
               <label class="form-label">Status</label>
@@ -787,7 +806,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()" data-bs-dismiss="modal">Save</button>
+        <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()">Save</button>
       </div>
     </div>
   </div>

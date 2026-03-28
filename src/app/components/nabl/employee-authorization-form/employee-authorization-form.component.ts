@@ -155,6 +155,10 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
     };
 
     onDepartmentSelected(item: any): void {
+        if (!item) {
+            this.authForm.patchValue({ departmentId: null, departmentName: '' });
+            return;
+        }
         this.authForm.patchValue({
             departmentId: item.id,
             departmentName: item.name
@@ -162,6 +166,10 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
     }
 
     onEmployeeSelected(item: any): void {
+        if (!item) {
+            this.authForm.patchValue({ employeeId: null, personnelName: '', uid: '' });
+            return;
+        }
         this.authForm.patchValue({
             employeeId: item.id,
             personnelName: item.name,

@@ -152,6 +152,16 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   get grades() {
     return this.MaterialSpecificationForm.get('grades') as FormArray;
   }
+  /** Validator: min value must not be greater than max value */
+  private minMaxValidator(group: AbstractControl): { [key: string]: boolean } | null {
+    const min = group.get('minValue')?.value;
+    const max = group.get('maxValue')?.value;
+    if (min != null && max != null && min > max) {
+      return { minGreaterThanMax: true };
+    }
+    return null;
+  }
+
   /** Validator: at least one specification line in chemical or mechanical */
   private atLeastOneSpecLineValidator(group: AbstractControl): { [key: string]: boolean } | null {
     const lines = group.get('specificationLines') as FormGroup;
@@ -233,7 +243,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       laboratoryTestIDs: this.fb.control([]),
       type: [tab],
       IsCustom: [false]
-    });
+    }, { validators: this.minMaxValidator });
   }
 
   addSpecificationLine(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
@@ -451,6 +461,12 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
   onParameterSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
+    if (!item) {
+      const specificationLine = lines.at(index) as FormGroup;
+      specificationLine.patchValue({ parameterID: null, parameterUnitID: null });
+      specificationLine.get('parameterUnitID')?.enable();
+      return;
+    }
     // Check for duplicate parameter in the same tab
     const isDuplicate = lines.controls.some((ctrl, i) =>
       i !== index && ctrl.get('parameterID')?.value === item.id
@@ -483,6 +499,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
   onHeatTreatmentSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    if (!item) {
+      specificationLine.patchValue({ heatTreatmentID: null });
+      return;
+    }
     specificationLine.patchValue({ heatTreatmentID: item.id });
   }
   getProductCondition = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -490,10 +510,18 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
   onProductCondition1Selected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    if (!item) {
+      specificationLine.patchValue({ productConditionID1: null });
+      return;
+    }
     specificationLine.patchValue({ productConditionID1: item.id });
   }
   onProductCondition2Selected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    if (!item) {
+      specificationLine.patchValue({ productConditionID2: null });
+      return;
+    }
     specificationLine.patchValue({ productConditionID2: item.id });
   }
 
@@ -502,6 +530,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
   onDimensionalFactorSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const specificationLine = this.getSpecificationLinesByTab(gradeIndex, tab).at(index) as FormGroup;
+    if (!item) {
+      specificationLine.patchValue({ dimensionalFactorID: null });
+      return;
+    }
     specificationLine.patchValue({ dimensionalFactorID: item.id });
   }
 
@@ -510,9 +542,15 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
 
   onMetalClassificationSelected(item: any, gradeIndex: number) {
+    if (!item) {
+      this.selectedMetalByGrade[gradeIndex] = null;
+      const grade = this.grades.at(gradeIndex);
+      grade.patchValue({ metalClassificationID: null });
+      return;
+    }
     this.selectedMetalByGrade[gradeIndex] = item;
     const grade = this.grades.at(gradeIndex);
-    grade.patchValue({ metalClassificationID: item?.id ?? null });
+    grade.patchValue({ metalClassificationID: item.id });
   }
 
   getParameterUnit() {

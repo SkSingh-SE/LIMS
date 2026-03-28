@@ -47,8 +47,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
 
   intermediateCheckintervalOptions: string[] = ['EveryDay', 'Weekly', '1 Month', '3 Months', '4 Months', '6 Months', '1 Year', '2 Years'];
 
-  sopAttachments: Array<{ id: number, name: string; type: string; url: string }> = [];
-  sopVideos: Array<{ id: number, name: string; type: string; url: string }> = [];
+  sopAttachments: Array<{ id: number; title: string; name: string; type: string; url: string }> = [];
+  sopVideos: Array<{ id: number; title: string; name: string; type: string; url: string }> = [];
 
   referenceMaterials: any[] = [];
   refMaterialForm!: FormGroup;
@@ -72,15 +72,15 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.route.paramMap.subscribe(params => {
       this.equipmentId = Number(params.get('id'));
     });
-    const state = history.state as { mode?: string };
 
-    if (state) {
-      if (state.mode === 'view') {
-        this.isViewMode = true;
-      }
-      if (state.mode === 'edit') {
-        this.isEditMode = true;
-      }
+    const urlPath = this.route.snapshot.url.map(s => s.path).join('/');
+    const state = history.state as { mode?: string };
+    const stateMode = state?.mode;
+
+    if (urlPath.includes('edit') || stateMode === 'edit') {
+      this.isEditMode = true;
+    } else if (urlPath.includes('details') || urlPath.includes('view') || stateMode === 'view') {
+      this.isViewMode = true;
     }
     this.initForm();
     this.initCalibrationForm();
@@ -151,9 +151,9 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       id: [0],
       equipmentID: [this.equipmentId],
       title: ['', Validators.required],
-      fileName: [''],
+      fileName: ['', Validators.required],
       filePath: [''],
-      file: [File],
+      file: [null, Validators.required],
       type: ['attachment'],
     });
 
@@ -161,9 +161,9 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       id: [0],
       equipmentID: [this.equipmentId],
       title: ['', Validators.required],
-      fileName: [''],
+      fileName: ['', Validators.required],
       filePath: [''],
-      file: [File],
+      file: [null, Validators.required],
       type: ['video'],
     });
   }
@@ -259,16 +259,16 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
             );
 
             if (sop.type === 'video') {
-              this.sopVideos.push({ id: sop.id, name: sop.fileName, type: sop.type, url: sop.filePath });
+              this.sopVideos.push({ id: sop.id, title: sop.title || '', name: sop.fileName, type: sop.type, url: sop.filePath });
             }
             if (sop.type === 'attachment') {
-              this.sopAttachments.push({ id: sop.id, name: sop.fileName, type: sop.type, url: sop.filePath });
+              this.sopAttachments.push({ id: sop.id, title: sop.title || '', name: sop.fileName, type: sop.type, url: sop.filePath });
             }
           });
-          if(this.isViewMode){
-            this.equipmentForm.disable();
-          }
           this.optimizeVideoPlayback();
+        }
+        if (this.isViewMode) {
+          this.equipmentForm.disable();
         }
       },
       error: err => {
@@ -362,24 +362,40 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     return this.departmentService.getDepartmentDropdown(term, page, pageSize);
   };
   onDepartmentSelected(item: any) {
+    if (!item) {
+      this.equipmentForm.patchValue({ departmentID: null });
+      return;
+    }
     this.equipmentForm.patchValue({ departmentID: item.id });
   }
   getOEM = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.oemService.getOEMDropdown(term, page, pageSize);
   };
   onOEMSelected(item: any) {
+    if (!item) {
+      this.equipmentForm.patchValue({ oemID: null });
+      return;
+    }
     this.equipmentForm.patchValue({ oemID: item.id });
   }
   getCalibrationAgency = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.agencyService.getCalibrationAgencyDropdown(term, page, pageSize);
   };
   onCalibrationAgencySelected(item: any) {
+    if (!item) {
+      this.equipmentForm.patchValue({ 'calibration.calibrationAgencyID': null });
+      return;
+    }
     this.equipmentForm.patchValue({ 'calibration.calibrationAgencyID': item.id });
   }
   getEquipmentType = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.equipmentTypeService.getEquipmentTypeDropdown(term, page, pageSize);
   };
   onEquipmentTypeSelected(item: any) {
+    if (!item) {
+      this.equipmentForm.patchValue({ equipmentTypeID: null });
+      return;
+    }
     this.equipmentForm.patchValue({ equipmentTypeID: item.id });
   }
   isFieldInvalid(path: string): boolean {
@@ -479,6 +495,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           filePath: previewUrl,
           file: file,
         });
+        this.sopAttachmentForm.get('file')?.markAsTouched();
       }
     }
   }
@@ -501,6 +518,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       fileName: file.name,
       file: file,
     });
+    this.sopVideoForm.get('file')?.markAsTouched();
   }
 
   openFileInNewTab(filePath: string): void {
@@ -557,7 +575,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     if (this.calibrationForm.valid) {
       const formData = new FormData();
       formData.append('id', this.calibrationForm.get('id')?.value);
-      formData.append('equipmentID', this.calibrationForm.get('equipmentID')?.value);
+      formData.append('equipmentID', String(this.equipmentId));
       formData.append('calibrationDate', this.calibrationForm.get('calibrationDate')?.value);
       formData.append('calibrationDueDate', this.calibrationForm.get('calibrationDueDate')?.value);
       formData.append('certificate', this.calibrationForm.get('certificate')?.value);
@@ -570,7 +588,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       this.equipmentService.addEquipmentCalibration(formData).subscribe({
         next: response => {
           this.toastService.show(response.message, 'success');
-          this.closeModal();
+          this.closeModalById('calibrationModal');
           this.loadEquipment(this.equipmentId);
         },
         error: () => {
@@ -584,7 +602,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     if (this.maintenanceForm.valid) {
       const formData = new FormData();
       formData.append('id', this.maintenanceForm.get('id')?.value);
-      formData.append('equipmentID', this.maintenanceForm.get('equipmentID')?.value);
+      formData.append('equipmentID', String(this.equipmentId));
       formData.append('maintenanceDate', this.maintenanceForm.get('maintenanceDate')?.value);
       formData.append('certificate', this.maintenanceForm.get('certificate')?.value);
       formData.append('certificatePath', this.maintenanceForm.get('certificatePath')?.value);
@@ -593,7 +611,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       this.equipmentService.addEquipmentMaintenance(formData).subscribe({
         next: response => {
           this.toastService.show(response.message, 'success');
-          this.closeModal();
+          this.closeModalById('maintenanceModal');
           this.loadEquipment(this.equipmentId);
         },
         error: () => {
@@ -608,17 +626,16 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     if (this.sopAttachmentForm.valid) {
       const formData = new FormData();
       formData.append('id', this.sopAttachmentForm.get('id')?.value);
-      formData.append('equipmentID', this.sopAttachmentForm.get('equipmentID')?.value);
+      formData.append('equipmentID', String(this.equipmentId));
       formData.append('title', this.sopAttachmentForm.get('title')?.value);
       formData.append('fileName', this.sopAttachmentForm.get('fileName')?.value);
       formData.append('filePath', this.sopAttachmentForm.get('filePath')?.value);
       formData.append('file', this.sopAttachmentForm.get('file')?.value);
       formData.append('type', this.sopAttachmentForm.get('type')?.value);
-      // Save logic here
       this.equipmentService.addEquipmentSOP(formData).subscribe({
         next: response => {
           this.toastService.show(response.message, 'success');
-          this.closeModal();
+          this.closeModalById('attachmentModal');
           this.loadEquipment(this.equipmentId);
         },
         error: () => {
@@ -628,21 +645,21 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       this.sopAttachmentForm.markAllAsTouched();
     }
   }
+
   submitSOPVideoForm(): void {
     if (this.sopVideoForm.valid) {
       const formData = new FormData();
       formData.append('id', this.sopVideoForm.get('id')?.value);
-      formData.append('equipmentID', this.sopVideoForm.get('equipmentID')?.value);
+      formData.append('equipmentID', String(this.equipmentId));
       formData.append('title', this.sopVideoForm.get('title')?.value);
       formData.append('fileName', this.sopVideoForm.get('fileName')?.value);
       formData.append('filePath', this.sopVideoForm.get('filePath')?.value);
       formData.append('file', this.sopVideoForm.get('file')?.value);
       formData.append('type', this.sopVideoForm.get('type')?.value);
-      // Save logic here
       this.equipmentService.addEquipmentSOP(formData).subscribe({
         next: response => {
           this.toastService.show(response.message, 'success');
-          this.closeModal();
+          this.closeModalById('videoModal');
           this.loadEquipment(this.equipmentId);
         },
         error: () => {
@@ -654,8 +671,16 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   review(index: number): void {
-    confirm('Are you sure you want to review this calibration record?') && this.calibrationRecords.at(index).patchValue({ isReviewed: true });
-
+    if (!confirm('Are you sure you want to mark this calibration as reviewed?')) return;
+    const calibrationId = this.calibrationRecords.at(index).get('id')?.value;
+    if (!calibrationId) return;
+    this.equipmentService.reviewCalibration(calibrationId).subscribe({
+      next: response => {
+        this.toastService.show(response.message, 'success');
+        this.calibrationRecords.at(index).patchValue({ isReviewed: true });
+      },
+      error: () => {},
+    });
   }
 
   openAttachmentModal(): void {
@@ -674,7 +699,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     }
   }
 
-  deleteAttachment(attachment: { name: string; type: string; url: string }): void {
+  deleteAttachment(attachment: { id: number; title: string; name: string; type: string; url: string }): void {
     this.sopAttachments = this.sopAttachments.filter(item => item !== attachment);
   }
 
@@ -720,12 +745,12 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       id: [0],
       equipmentMasterID: [this.equipmentId],
       materialName: ['', Validators.required],
-      materialType: ['CRM', Validators.required],
+      type: ['CRM', Validators.required],
       lotNumber: [''],
       certificateNumber: [''],
       manufactureDate: [null],
       expiryDate: [null],
-      supplierName: [''],
+      supplier: [''],
       status: ['Active'],
     });
   }
@@ -757,8 +782,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       payload.equipmentMasterID = this.equipmentId;
       this.refMaterialService.create(payload).subscribe({
         next: (response) => {
-          this.saved = true;
           this.toastService.show(response.message, 'success');
+          this.closeModalById('refMaterialModal');
           this.loadReferenceMaterials();
         },
         error: (error) => {
@@ -767,6 +792,14 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       });
     } else {
       this.refMaterialForm.markAllAsTouched();
+    }
+  }
+
+  closeModalById(modalId: string): void {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      const modal = Modal.getInstance(modalElement);
+      modal?.hide();
     }
   }
 

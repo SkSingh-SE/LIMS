@@ -348,6 +348,10 @@ export class ToleranceMasterComponent implements OnInit {
   }
 
   onParameterSelected(item: any) {
+    if (!item) {
+      this.toleranceMasterForm.patchValue({ parameterID: null });
+      return;
+    }
     this.toleranceMasterForm.patchValue({ parameterID: item.id });
   }
 }

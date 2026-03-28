@@ -147,6 +147,10 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
   };
 
   onDesignationSelected(item: any): void {
+    if (!item) {
+      this.raForm.patchValue({ designationId: null, designationName: '' });
+      return;
+    }
     this.raForm.patchValue({
       designationId: item.id,
       designationName: item.name

@@ -131,7 +131,7 @@ export class CustomerPOComponent implements OnInit {
   }
 
   onCustomerSelect(item: any): void {
-    this.poForm.patchValue({ customerId: item.id });
+    this.poForm.patchValue({ customerId: item?.id || null });
   }
 
   onSubmit(): void {

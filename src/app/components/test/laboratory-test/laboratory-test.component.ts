@@ -197,6 +197,10 @@ export class LaboratoryTestComponent implements OnInit {
   };
 
   onDepartmentSelected(item: any) {
+    if (!item) {
+      this.labTestForm.patchValue({ labDepartmentID: null });
+      return;
+    }
     this.labTestForm.patchValue({ labDepartmentID: item.id });
   }
 

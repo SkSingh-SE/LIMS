@@ -202,6 +202,10 @@ export class ScopeComponent implements OnInit {
   };
 
   onLaboratorySelected(item: any) {
+    if (!item) {
+      this.scopeForm.patchValue({ laboratoryTestID: '' });
+      return;
+    }
     this.scopeForm.patchValue({ laboratoryTestID: item.id });
   };
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -209,6 +213,11 @@ export class ScopeComponent implements OnInit {
   };
   specVersionsMap: Map<number, any[]> = new Map();
   onTestSpecificationSelected(item: any, index: number) {
+    if (!item) {
+      this.specifications.at(index).patchValue({ testMethodSpecificationID: '', testMethodSpecificationVersionID: null, testMethodSpecification: '' });
+      this.specVersionsMap.set(index, []);
+      return;
+    }
     this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
     this.specifications.at(index).patchValue({ testMethodSpecification: item.name });
     this.loadSpecVersionsForIndex(item.id, index);
@@ -229,24 +238,30 @@ export class ScopeComponent implements OnInit {
   };
   onParameterSelected(item: any, specIndex: number, paramIndex: number) {
     const params = this.parameters(specIndex);
+    const param = params.at(paramIndex) as FormGroup;
+
+    if (!item) {
+      param.patchValue({ parameterID: '', parameterUnitID: '' });
+      param.get('parameterUnitID')?.enable();
+      return;
+    }
+
     // Duplicate check within same specification
     const isDuplicate = params.controls.some((ctrl, i) =>
       i !== paramIndex && ctrl.get('parameterID')?.value === item.id
     );
     if (isDuplicate) {
       this.toastService.show(`Parameter "${item.name}" is already added in this specification.`, 'warning');
-      const param = params.at(paramIndex) as FormGroup;
       param.patchValue({ parameterID: -1, parameterUnitID: '' });
       setTimeout(() => param.patchValue({ parameterID: '', parameterUnitID: '' }), 0);
       param.get('parameterUnitID')?.enable();
       return;
     }
 
-    const spec = params.at(paramIndex) as FormGroup;
     const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
-    spec.patchValue({ parameterID: item.id, parameterUnitID: unitID });
+    param.patchValue({ parameterID: item.id, parameterUnitID: unitID });
     // Disable unit dropdown after parameter auto-fills it
-    const unitControl = spec.get('parameterUnitID');
+    const unitControl = param.get('parameterUnitID');
     if (unitID) {
       unitControl?.disable();
     } else {
@@ -258,10 +273,19 @@ export class ScopeComponent implements OnInit {
   };
   onDisciplineSelected(item: any, specIndex: number, paramIndex: number) {
     const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    spec.patchValue({ disciplineID: item.id });
+    const key = `${specIndex}-${paramIndex}`;
+
+    if (!item) {
+      spec.patchValue({ disciplineID: null, groupID: null, subGroupID: null });
+      this.groupOptionsPerParam[key] = [];
+      this.subGroupOptionsPerParam[key] = [];
+      return;
+    }
+
+    spec.patchValue({ disciplineID: item.id, groupID: null, subGroupID: null });
+    this.subGroupOptionsPerParam[key] = [];
     this.groupService.getGroupDropdown('', 0, 100, item.id).subscribe({
       next: (data) => {
-        const key = `${specIndex}-${paramIndex}`;
         this.groupOptionsPerParam[key] = data;
       },
       error: (error) => {

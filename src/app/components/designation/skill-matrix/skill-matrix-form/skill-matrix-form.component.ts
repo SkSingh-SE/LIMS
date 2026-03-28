@@ -95,6 +95,7 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
     };
 
     onDesignationSelected(item: any): void {
+        if (!item) { this.matrixForm.patchValue({ designationId: null, designationName: '', title: '' }); this.employeeSkills.clear(); return; }
         this.matrixForm.patchValue({
             designationId: item.id,
             designationName: item.name,

@@ -102,6 +102,7 @@ export class UserPermissionComponent implements OnInit, OnChanges {
 
   // 2. Fetch User Permissions
   onUserSelected(item: any) {
+    if (!item) { this.selectedUser = ''; return; }
     this.selectedUser = item.id;
     this.fetchUserPermissions(item.id);
   }

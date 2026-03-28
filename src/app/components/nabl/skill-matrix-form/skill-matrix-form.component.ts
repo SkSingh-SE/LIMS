@@ -104,21 +104,15 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
     };
 
     onDesignationSelected(item: any): void {
+        if (!item) {
+            this.matrixForm.patchValue({ designationId: null, designationName: '', title: '' });
+            return;
+        }
         this.matrixForm.patchValue({
             designationId: item.id,
             designationName: item.name,
             title: item.name
         });
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.matrixForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.matrixForm.get('issueNo')?.disable();
-                this.matrixForm.get('revNo')?.disable();
-                this.matrixForm.get('formatNo')?.disable();
         // Auto-load employees
         this.employeeService.getAllEmployees({ designationId: item.id }).subscribe(resp => {
             const emps = resp?.items || [];

@@ -197,6 +197,10 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
     };
 
     onDesignationSelected(item: any): void {
+        if (!item) {
+            this.jobDescForm.patchValue({ designationId: null, designationName: '' });
+            return;
+        }
         this.jobDescForm.patchValue({
             designationId: item.id,
             designationName: item.name
@@ -204,6 +208,10 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
     }
 
     onDepartmentSelected(item: any): void {
+        if (!item) {
+            this.jobDescForm.patchValue({ departmentId: null, departmentName: '' });
+            return;
+        }
         this.jobDescForm.patchValue({
             departmentId: item.id,
             departmentName: item.name

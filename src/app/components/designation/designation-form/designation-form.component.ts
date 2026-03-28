@@ -153,6 +153,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   };
 
   onRoleSelected(item: any) {
+    if (!item) { this.designationForm.patchValue({ roleID: null }); return; }
     this.designationForm.patchValue({ roleID: item.id });
   }
 

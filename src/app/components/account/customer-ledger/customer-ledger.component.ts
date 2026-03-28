@@ -49,6 +49,11 @@ export class CustomerLedgerComponent implements OnInit {
   }
 
   onCustomerSelect(item: any): void {
+    if (!item) {
+      this.selectedCustomerId = null;
+      this.selectedCustomerName = '';
+      return;
+    }
     this.selectedCustomerId = item.id;
     this.selectedCustomerName = item.name;
     this.loadLedger();

@@ -160,10 +160,10 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       accountHolderName: ['', Validators.maxLength(100)],
       accountNumber: ['', [Validators.maxLength(20), Validators.pattern(/^\d+$/)]],
       ifscCode: ['', [Validators.maxLength(11), Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
-      departmentID: [null],
-      reportingManagerID: [null],
-      designationID: [null],
-      dateOfJoin: [''],
+      departmentID: [null, Validators.required],
+      reportingManagerID: [null, Validators.required],
+      designationID: [null, Validators.required],
+      dateOfJoin: ['', Validators.required],
       // roleID derived from Designation → Role (not a form field)
       password: ['', [Validators.required, Validators.minLength(6)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
@@ -283,6 +283,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     return this.roleService.getRoleDropdown(term, page, pageSize);
   }
   onDesignationSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ designationID: null }); this.designationRoleName = ''; return; }
     this.personalInfoForm.patchValue({ designationID: item.id });
     // Fetch designation details to resolve the role from Designation -> Role
     this.designationService.getDesignationById(item.id).subscribe({
@@ -299,9 +300,11 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     });
   }
   onDepartmentSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ departmentID: null }); return; }
     this.personalInfoForm.patchValue({ departmentID: item.id });
   }
   onEmployeeSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ reportingManagerID: null }); return; }
     this.personalInfoForm.patchValue({ reportingManagerID: item.id });
   }
   // Role is derived from Designation — no manual role selection

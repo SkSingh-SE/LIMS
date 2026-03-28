@@ -163,6 +163,10 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
   };
 
   onDesignationSelected(item: any): void {
+    if (!item) {
+      this.requirementForm.patchValue({ positionId: null, positionName: '' });
+      return;
+    }
     this.requirementForm.patchValue({
       positionId: item.id,
       positionName: item.name

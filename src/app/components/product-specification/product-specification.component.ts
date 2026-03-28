@@ -386,16 +386,33 @@ export class ProductSpecificationComponent implements OnInit {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
   onGradeSelected(item: any) {
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ gradeID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ gradeID : item.id });
   }
   onLaboratorySelected(item:any){
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ laboratoryTestID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ laboratoryTestID: item.id });
   }
   onMetalSelected(item:any){
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ metalClassificationID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ metalClassificationID: item.id });
   }
   specVersions: any[] = [];
   onTestSpecificationSelected(item:any){
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: null, testMethodSpecificationVersionID: null });
+      this.specVersions = [];
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
     this.loadSpecVersions(item.id);
   }

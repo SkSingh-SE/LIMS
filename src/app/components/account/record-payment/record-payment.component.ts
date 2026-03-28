@@ -91,6 +91,10 @@ export class RecordPaymentComponent implements OnInit {
   }
 
   onCustomerSelect(item: any): void {
+    if (!item) {
+      this.selectedCustomerId = null;
+      return;
+    }
     this.selectedCustomerId = item.id;
     this.showSuccessPanel = false;
     this.receiptNumber = null;

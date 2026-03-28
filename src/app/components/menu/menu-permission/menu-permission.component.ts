@@ -403,6 +403,12 @@ export class MenuPermissionComponent implements OnInit {
     return this.menuService.getSubMenuDropdown(term, page, pageSize);
   };
   onMenuSelected(item: any) {
+    if (!item) {
+      this.permissionForm.patchValue({ menuId: null });
+      this.selectedMenu = null;
+      this.menuId = 0;
+      return;
+    }
     this.permissionForm.patchValue({ menuId: item.id });
     this.selectedMenu = item;
     this.menuId = item.id;

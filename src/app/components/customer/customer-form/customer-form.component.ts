@@ -380,6 +380,10 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   };
 
   onDepartmentSelected(item: any, targetFormGroup: FormGroup) {
+    if (!item) {
+      targetFormGroup.patchValue({ departmentID: null });
+      return;
+    }
     targetFormGroup.patchValue({ departmentID: item.id });
   }
   asFormGroup(control: AbstractControl): FormGroup {

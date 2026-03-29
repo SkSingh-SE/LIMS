@@ -45,6 +45,15 @@
       <div class="info-label">Remarks</div>
       <div class="info-value" [title]="sample?.remarks">{{ sample?.remarks || '-' }}</div>
     </div>
+    <div class="info-card" *ngIf="sample?.thickness || sample?.diameter || sample?.width || sample?.length">
+      <div class="info-label">Dimensions</div>
+      <div class="info-value">
+        <span *ngIf="sample?.thickness">T:{{sample.thickness}}mm </span>
+        <span *ngIf="sample?.diameter">D:{{sample.diameter}}mm </span>
+        <span *ngIf="sample?.width">W:{{sample.width}}mm </span>
+        <span *ngIf="sample?.length">L:{{sample.length}}mm</span>
+      </div>
+    </div>
   </div>
 
   <!-- ================================================================ -->
@@ -336,12 +345,23 @@
                         </td>
 
                         <!-- Spec Range -->
-                        <td class="text-center small text-muted">
-                          <span [title]="row.value.acceptanceCriteria ? 'Acceptance: ' + row.value.acceptanceCriteria : ''">
-                            {{ row.value.specMinValue != null ? row.value.specMinValue : '-' }}
-                            &ndash;
-                            {{ row.value.specMaxValue != null ? row.value.specMaxValue : '-' }}
-                          </span>
+                        <td class="text-center small">
+                          <ng-container *ngIf="(row.value.specMinValue != null && row.value.specMinValue !== '') || (row.value.specMaxValue != null && row.value.specMaxValue !== ''); else specEditTpl">
+                            <span class="text-muted"
+                              [title]="row.value.acceptanceCriteria ? 'Acceptance: ' + row.value.acceptanceCriteria : ''">
+                              {{ row.value.specMinValue ?? '-' }} &ndash; {{ row.value.specMaxValue ?? '-' }}
+                            </span>
+                          </ng-container>
+                          <ng-template #specEditTpl>
+                            <div class="d-flex gap-1 align-items-center" *ngIf="!isViewMode">
+                              <input type="number" class="form-control form-control-sm" style="width:55px; font-size:0.75rem"
+                                formControlName="specMinValue" placeholder="Min" />
+                              <span>–</span>
+                              <input type="number" class="form-control form-control-sm" style="width:55px; font-size:0.75rem"
+                                formControlName="specMaxValue" placeholder="Max" />
+                            </div>
+                            <span *ngIf="isViewMode" class="text-muted">- &ndash; -</span>
+                          </ng-template>
                         </td>
 
                         <!-- Chemical Only: Min -->
@@ -463,8 +483,11 @@
                         </td>
 
                         <!-- Billable -->
-                        <td class="text-center">
-                          <input type="checkbox" class="form-check-input" formControlName="isBillable" />
+                        <td class="text-center" style="vertical-align: middle;">
+                          <div class="form-check d-flex justify-content-center m-0">
+                            <input type="checkbox" class="form-check-input" formControlName="isBillable"
+                              style="width: 18px; height: 18px; cursor: pointer;" />
+                          </div>
                         </td>
 
                         <!-- Actions -->
@@ -519,7 +542,24 @@
                   <div class="price-card" *ngIf="!isViewMode || priceSummaryMap[plans[p].tests[t].headerId]">
                     <div class="price-card-header d-flex justify-content-between align-items-center">
                       <span><i class="bi bi-currency-rupee me-1"></i>Price Calculation</span>
-                      <div class="btn-group btn-group-sm" *ngIf="!isViewMode">
+                      <div class="d-flex align-items-center gap-2" *ngIf="!isViewMode">
+                        <button type="button" class="btn btn-outline-info btn-sm"
+                          (click)="toggleRecPanel(plans[p].tests[t].headerId)"
+                          [disabled]="pricingRecLoading[plans[p].tests[t].headerId]">
+                          <i class="bi bi-lightbulb me-1"></i>
+                          <span *ngIf="pricingRecLoading[plans[p].tests[t].headerId]" class="spinner-border spinner-border-sm me-1"></span>
+                          Smart Pricing
+                        </button>
+                        <select *ngIf="priceSummaryMap[plans[p].tests[t].headerId]?.availablePricingTypes?.length > 1"
+                          class="form-select form-select-sm" style="width: auto; font-size: 0.8rem;"
+                          [value]="priceSummaryMap[plans[p].tests[t].headerId]?.selectedPricingType || priceSummaryMap[plans[p].tests[t].headerId]?.defaultPricingType || ''"
+                          (change)="onPricingTypeChange(plans[p].tests[t].headerId, $event)">
+                          <option value="">Auto-detect</option>
+                          <option *ngFor="let pt of priceSummaryMap[plans[p].tests[t].headerId]?.availablePricingTypes" [value]="pt">
+                            {{ pt === 'Element' ? 'Parameter Count' : pt === 'SizeLoad' ? 'Size + Load' : pt === 'SizeAndLoad' ? 'Size + Load Range' : pt === 'FlatRate' ? 'Flat Rate' : pt }}
+                          </option>
+                        </select>
+                      <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-add btn-sm"
                           (click)="calculateTestPrice(p, t)"
                           [disabled]="priceLoadingMap[plans[p].tests[t].headerId]"
@@ -534,6 +574,7 @@
                           title="Override Price">
                           <i class="bi bi-pencil-square me-1"></i>Override
                         </button>
+                      </div>
                       </div>
                     </div>
                     <div class="card-body p-2" *ngIf="priceSummaryMap[plans[p].tests[t].headerId] as priceSummary">
@@ -575,6 +616,63 @@
                     <div class="card-body p-2" *ngIf="!priceSummaryMap[plans[p].tests[t].headerId]">
                       <div class="text-muted small">
                         <i class="bi bi-info-circle me-1"></i>Click "Calculate" to compute pricing based on test parameters.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SMART PRICING RECOMMENDATION PANEL -->
+                  <div class="card mt-2 border-info" *ngIf="showRecPanel[plans[p].tests[t].headerId] && pricingRecMap[plans[p].tests[t].headerId] as recData">
+                    <div class="card-header bg-info bg-opacity-10 py-1 d-flex justify-content-between align-items-center">
+                      <span class="fw-semibold small"><i class="bi bi-lightbulb-fill me-1 text-info"></i>Smart Pricing — {{ recData.testName }}</span>
+                      <button type="button" class="btn-close btn-sm" (click)="showRecPanel[plans[p].tests[t].headerId] = false"></button>
+                    </div>
+                    <div class="card-body p-2">
+                      <!-- Sample Dimensions -->
+                      <div class="mb-2 small" *ngIf="recData.sampleDimensions as dims">
+                        <span class="text-muted me-1">Sample:</span>
+                        <span *ngIf="dims.thickness" class="badge bg-light text-dark border me-1">T:{{dims.thickness}}mm</span>
+                        <span *ngIf="dims.diameter" class="badge bg-light text-dark border me-1">D:{{dims.diameter}}mm</span>
+                        <span *ngIf="dims.width" class="badge bg-light text-dark border me-1">W:{{dims.width}}mm</span>
+                        <span *ngIf="dims.length" class="badge bg-light text-dark border me-1">L:{{dims.length}}mm</span>
+                        <span *ngIf="!dims.thickness && !dims.diameter && !dims.width && !dims.length" class="text-warning">
+                          <i class="bi bi-exclamation-triangle me-1"></i>No dimensions at inward
+                        </span>
+                      </div>
+
+                      <!-- Recommendations -->
+                      <div *ngFor="let rec of recData.recommendations"
+                           class="d-flex align-items-center justify-content-between border rounded p-2 mb-1 small"
+                           [class.border-success]="rec.isRecommended"
+                           [class.bg-success]="rec.isRecommended"
+                           [class.bg-opacity-10]="rec.isRecommended">
+                        <div class="flex-grow-1 me-2">
+                          <div class="fw-semibold">
+                            {{ rec.displayName }}
+                            <span *ngIf="rec.isRecommended" class="badge bg-success ms-1">Best</span>
+                            <span class="badge bg-secondary ms-1">{{ rec.score }}</span>
+                            <span class="badge bg-light text-dark border ms-1">{{ rec.tierCount }} tier(s)</span>
+                          </div>
+                          <div class="text-muted" style="font-size:0.75rem">{{ rec.reason }}</div>
+                          <div *ngIf="rec.autoDetectedValue != null" class="text-success" style="font-size:0.75rem">
+                            <i class="bi bi-check-circle me-1"></i>Auto: {{ rec.autoDetectedValue }} {{ rec.unit }} ({{ rec.valueSource }})
+                          </div>
+                          <div *ngIf="rec.status === 'needs_input'" class="text-warning" style="font-size:0.75rem">
+                            <i class="bi bi-exclamation-triangle me-1"></i>{{ rec.inputHint }}
+                          </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                          <input *ngIf="rec.requiredInput" type="number" class="form-control form-control-sm"
+                            style="width:80px; font-size:0.8rem"
+                            [placeholder]="rec.unit || ''"
+                            [title]="rec.inputHint || ''"
+                            [value]="dimInputValue[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
+                            (input)="dimInputValue[plans[p].tests[t].headerId] = +$any($event.target).value">
+                          <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="applyRec(plans[p].tests[t].headerId, rec)"
+                            [disabled]="priceLoadingMap[plans[p].tests[t].headerId]">
+                            Apply
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1040,58 +1138,147 @@
         <button type="button" class="btn-close" (click)="closeFormulaBuilder()"></button>
       </div>
       <div class="modal-body">
-        <!-- Available Parameters -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Available Parameters</label>
-          <div class="d-flex flex-wrap gap-2">
-            <button *ngFor="let param of formulaAvailableParams" type="button"
-              class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
-              [title]="param.parameterName + ' (' + param.unit + ')'">
-              <span class="formula-param-ref">{{ param.ref }}</span>
-              <span class="formula-param-name">{{ param.parameterName }}</span>
-            </button>
-          </div>
-          <small class="text-muted" *ngIf="!formulaAvailableParams.length">
-            No other parameters available. Add parameters to the test first.
-          </small>
+        <!-- Mode Toggle -->
+        <div class="d-flex justify-content-end mb-2">
+          <button type="button" class="btn btn-sm"
+            [ngClass]="smartFormulaMode ? 'btn-outline-secondary' : 'btn-outline-primary'"
+            (click)="toggleSmartFormulaMode()">
+            <i class="bi me-1" [ngClass]="smartFormulaMode ? 'bi-grid-3x3-gap' : 'bi-pencil-square'"></i>
+            {{ smartFormulaMode ? 'Switch to Click Mode' : 'Switch to Type Mode' }}
+          </button>
         </div>
 
-        <!-- Operators -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Operators</label>
-          <div class="d-flex flex-wrap gap-1">
-            <button *ngFor="let op of formulaOperators" type="button"
-              class="formula-op-btn" (click)="insertFormulaToken(op)">{{ op }}</button>
+        <!-- ═══ CLICK MODE (existing) ═══ -->
+        <ng-container *ngIf="!smartFormulaMode">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-tags me-1"></i>Parameters</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button *ngFor="let param of formulaAvailableParams" type="button"
+                class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
+                [title]="param.parameterName + ' (' + param.unit + ')'">
+                <span class="formula-param-ref">{{ param.ref }}</span>
+                <span class="formula-param-name">{{ param.parameterName }}</span>
+              </button>
+            </div>
+            <small class="text-muted" *ngIf="!formulaAvailableParams.length">
+              No other parameters available. Add parameters to the test first.
+            </small>
           </div>
-        </div>
 
-        <!-- Functions -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Functions</label>
-          <div class="d-flex flex-wrap gap-1">
-            <button *ngFor="let fn of formulaFunctions" type="button"
-              class="formula-fn-btn" (click)="insertFormulaFunction(fn)">{{ fn }}()</button>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1"></i>Operators</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button *ngFor="let op of formulaOperators" type="button"
+                class="formula-op-btn" (click)="insertFormulaToken(op)">{{ op }}</button>
+            </div>
           </div>
-        </div>
 
-        <!-- Formula Expression -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Formula Expression</label>
-          <textarea class="form-control formula-textarea" rows="3"
-            [(ngModel)]="formulaExpression"
-            (click)="onFormulaInputChange($event)"
-            (keyup)="onFormulaInputChange($event)"
-            placeholder="Build your formula using parameters and operators above..."></textarea>
-          <small class="text-muted d-block mt-1">
-            <i class="bi bi-info-circle me-1"></i>
-            Use <code>P&#123;ID&#125;</code> to reference parameters. Example: <code>(P5 * 1000) / P7</code>
-          </small>
-        </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Numeric Constant</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="number" class="form-control form-control-sm" style="width: 150px"
+                placeholder="e.g. 100, 0.5" #constantInput>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                (click)="insertFormulaToken(constantInput.value); constantInput.value = ''">+ Add</button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Formula Expression</label>
+            <textarea class="form-control formula-textarea" rows="3"
+              [(ngModel)]="formulaExpression"
+              (click)="onFormulaInputChange($event)"
+              (keyup)="onFormulaInputChange($event)"
+              placeholder="Click parameters and operators above to build formula..."></textarea>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-info-circle me-1"></i>
+              Use <code>P&#123;ID&#125;</code> to reference parameters. Example: <code>(P5 * 1000) / P7</code>
+            </small>
+          </div>
+        </ng-container>
+
+        <!-- ═══ SMART TYPE MODE (new) ═══ -->
+        <ng-container *ngIf="smartFormulaMode">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-pencil-square me-1"></i>Type Formula</label>
+            <textarea class="form-control" rows="2"
+              [(ngModel)]="smartFormulaInput"
+              (input)="parseSmartFormula()"
+              placeholder="Type formula using parameter names, e.g. (UTL * 1000) / So"></textarea>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-lightbulb me-1"></i>
+              Use parameter names directly. Example: <code>(UTL * 1000) / So</code> or <code>3.1416 * (D / 2) * (D / 2)</code>
+            </small>
+          </div>
+
+          <!-- Available parameters reference -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted" style="font-size: 0.8rem">
+              <i class="bi bi-tags me-1"></i>Available Parameters (click to insert)
+            </label>
+            <div class="d-flex flex-wrap gap-1">
+              <button *ngFor="let param of formulaAvailableParams" type="button"
+                class="badge bg-light text-dark border" style="font-size: 0.75rem; cursor: pointer;"
+                (click)="smartFormulaInput = smartFormulaInput + ' ' + param.parameterName; parseSmartFormula()"
+                [title]="param.ref + ' — ' + param.unit">
+                {{ param.parameterName }} <small class="text-muted">{{ param.ref }}</small>
+              </button>
+            </div>
+          </div>
+
+          <!-- Validation Results -->
+          <div class="mb-3" *ngIf="smartFormulaTokens.length > 0">
+            <label class="form-label fw-semibold">Validation</label>
+            <div class="border rounded p-2" style="background: #fafbfc; font-size: 0.85rem;">
+              <div *ngFor="let t of smartFormulaTokens; let i = index" class="d-inline">
+                <span *ngIf="t.type === 'param'" class="badge bg-success-subtle text-success border border-success me-1 mb-1"
+                  [title]="t.matched + ' → ' + t.paramRef">
+                  {{ t.token }} <i class="bi bi-check-circle-fill ms-1"></i>
+                </span>
+                <span *ngIf="t.type === 'number'" class="badge bg-info-subtle text-info border border-info me-1 mb-1">
+                  {{ t.token }}
+                </span>
+                <span *ngIf="t.type === 'operator'" class="badge bg-light text-dark border me-1 mb-1">
+                  {{ t.token }}
+                </span>
+                <span *ngIf="t.type === 'function'" class="badge bg-warning-subtle text-warning border border-warning me-1 mb-1">
+                  {{ t.token }}()
+                </span>
+                <span *ngIf="t.type === 'unknown'" class="badge bg-danger-subtle text-danger border border-danger me-1 mb-1">
+                  {{ t.token }} <i class="bi bi-x-circle-fill ms-1"></i>
+                </span>
+              </div>
+
+              <!-- Parsed output -->
+              <div class="mt-2 pt-2 border-top" *ngIf="smartFormulaValid">
+                <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Formula is valid</small>
+                <div class="text-muted mt-1" style="font-size: 0.8rem; font-family: monospace;">
+                  Parsed: <span *ngFor="let t of smartFormulaTokens">{{ t.paramRef || t.token }} </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Errors -->
+            <div *ngIf="smartFormulaErrors.length > 0" class="mt-2">
+              <div *ngFor="let err of smartFormulaErrors" class="text-danger small">
+                <i class="bi bi-exclamation-triangle me-1"></i>{{ err }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" (click)="clearFormula()">Clear</button>
+        <button type="button" class="btn btn-cancel" (click)="smartFormulaMode ? smartFormulaInput = '' : clearFormula()">
+          <i class="bi bi-eraser me-1"></i>Clear
+        </button>
         <button type="button" class="btn btn-secondary" (click)="closeFormulaBuilder()">Cancel</button>
-        <button type="button" class="btn btn-primary" (click)="applyFormula()" [disabled]="!formulaExpression.trim()">
+        <button *ngIf="!smartFormulaMode" type="button" class="btn btn-primary"
+          (click)="applyFormula()" [disabled]="!formulaExpression.trim()">
+          <i class="bi bi-check-circle me-1"></i>Apply Formula
+        </button>
+        <button *ngIf="smartFormulaMode" type="button" class="btn btn-success"
+          (click)="applySmartFormula()" [disabled]="!smartFormulaValid">
           <i class="bi bi-check-circle me-1"></i>Apply Formula
         </button>
       </div>

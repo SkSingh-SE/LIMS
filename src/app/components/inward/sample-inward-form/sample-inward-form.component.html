@@ -479,7 +479,10 @@
                   <th class="fw-medium text-center">Metal Classification</th>
                   <th class="fw-medium text-center">Product Condition</th>
                   <th class="fw-medium text-center">Specimen Orientation</th>
-                  <th class="fw-medium text-center">Remarks</th>
+                  <th class="fw-medium text-center">Thickness (mm)</th>
+                  <th class="fw-medium text-center">Diameter (mm)</th>
+                  <th class="fw-medium text-center">Width (mm)</th>
+                  <th class="fw-medium text-center">Length (mm)</th>
                   <th class="fw-medium text-center">Quantity</th>
                   <th class="fw-medium text-center">Image</th>
                   <th class="fw-medium text-center">Action</th>
@@ -519,7 +522,10 @@
                       [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </td>
-                  <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
                   <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" /></td>
                   <td>
                     <ng-container *ngIf="sample.get('sampleFilePath')?.value; else uploadField">

@@ -655,7 +655,11 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
-      file: [null]
+      file: [null],
+      thickness: [existingSample?.thickness || null],
+      diameter: [existingSample?.diameter || null],
+      width: [existingSample?.width || null],
+      length: [existingSample?.length || null]
     });
 
     this.sampleDetails.push(sampleForm);

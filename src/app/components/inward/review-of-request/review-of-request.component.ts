@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { getActionConfig, ActionButtonConfig } from '../../../utility/workflow-action.helper';
 
 @Component({
   selector: 'app-review-of-request',
@@ -201,6 +202,10 @@ export class ReviewOfRequestComponent  implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  getActionCfg(action: string): ActionButtonConfig {
+    return getActionConfig(action);
   }
 
   onActionClick(action: any) {

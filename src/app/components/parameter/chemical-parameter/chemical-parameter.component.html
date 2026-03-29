@@ -416,56 +416,126 @@
         <button class="btn-close btn-close-white" (click)="closeFormulaModal()"></button>
       </div>
       <div class="modal-body">
-        <div class="border rounded-3 p-3 mb-3 bg-light" style="min-height: 60px;">
-          <label class="form-label fw-semibold mb-1"><i class="bi bi-code-square me-1 text-primary"></i> Formula Expression</label>
-          <div class="d-flex flex-wrap gap-1 align-items-center" style="min-height: 36px;">
-            <span *ngFor="let token of formulaTokens; let i = index" class="badge rounded-pill px-2 py-1"
-              [ngClass]="{'bg-primary': token.type === 'param', 'bg-dark': token.type === 'operator', 'bg-info text-dark': token.type === 'number', 'bg-warning text-dark': token.type === 'paren'}"
-              style="font-size: 13px; cursor: pointer;" (click)="removeToken(i)" title="Click to remove">{{ token.display }}</span>
-            <span *ngIf="formulaTokens.length === 0" class="text-muted">Click parameters and operators below...</span>
+        <!-- Mode Toggle -->
+        <div class="d-flex justify-content-end mb-2">
+          <button type="button" class="btn btn-sm"
+            [ngClass]="smartFormulaMode ? 'btn-outline-secondary' : 'btn-outline-primary'"
+            (click)="toggleSmartMode()">
+            <i class="bi me-1" [ngClass]="smartFormulaMode ? 'bi-grid-3x3-gap' : 'bi-pencil-square'"></i>
+            {{ smartFormulaMode ? 'Switch to Click Mode' : 'Switch to Type Mode' }}
+          </button>
+        </div>
+
+        <!-- ═══ CLICK MODE ═══ -->
+        <ng-container *ngIf="!smartFormulaMode">
+          <div class="border rounded-3 p-3 mb-3 bg-light" style="min-height: 60px;">
+            <label class="form-label fw-semibold mb-1"><i class="bi bi-code-square me-1 text-primary"></i> Formula Expression</label>
+            <div class="d-flex flex-wrap gap-1 align-items-center" style="min-height: 36px;">
+              <span *ngFor="let token of formulaTokens; let i = index" class="badge rounded-pill px-2 py-1"
+                [ngClass]="{'bg-primary': token.type === 'param', 'bg-dark': token.type === 'operator', 'bg-info text-dark': token.type === 'number', 'bg-warning text-dark': token.type === 'paren'}"
+                style="font-size: 13px; cursor: pointer;" (click)="removeToken(i)" title="Click to remove">{{ token.display }}</span>
+              <span *ngIf="formulaTokens.length === 0" class="text-muted">Click parameters and operators below...</span>
+            </div>
           </div>
-        </div>
-        <div *ngIf="formulaPreview" class="mb-3 px-3 py-2 border rounded bg-white">
-          <small class="text-muted">Preview: </small><span class="fw-medium text-dark">{{ formulaPreview }}</span>
-        </div>
-        <div *ngIf="formulaTokens.length > 0" class="mb-3">
-          <small [ngClass]="isFormulaValid ? 'text-success' : 'text-danger'">
-            <i [ngClass]="isFormulaValid ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'" class="me-1"></i>
-            {{ isFormulaValid ? 'Formula is valid' : 'Unbalanced parentheses' }}
-          </small>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold"><i class="bi bi-box me-1 text-success"></i> Parameters</label>
-          <div class="d-flex flex-wrap gap-2">
-            <button *ngFor="let p of allParameters" type="button" class="btn btn-outline-primary btn-sm" (click)="addParamToken(p.id, p.name)">{{ p.name }} <small class="text-muted ms-1">P{{ p.id }}</small></button>
+          <div *ngIf="formulaPreview" class="mb-3 px-3 py-2 border rounded bg-white">
+            <small class="text-muted">Preview: </small><span class="fw-medium text-dark">{{ formulaPreview }}</span>
           </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1 text-warning"></i> Operators</label>
-          <div class="d-flex gap-2 flex-wrap">
-            <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('+')"><strong>+</strong></button>
-            <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('-')"><strong>&minus;</strong></button>
-            <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('*')"><strong>&times;</strong></button>
-            <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('/')"><strong>&divide;</strong></button>
-            <button type="button" class="btn btn-outline-warning btn-sm px-3" (click)="addParenToken('(')"><strong>(</strong></button>
-            <button type="button" class="btn btn-outline-warning btn-sm px-3" (click)="addParenToken(')')"><strong>)</strong></button>
+          <div *ngIf="formulaTokens.length > 0" class="mb-3">
+            <small [ngClass]="isFormulaValid ? 'text-success' : 'text-danger'">
+              <i [ngClass]="isFormulaValid ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'" class="me-1"></i>
+              {{ isFormulaValid ? 'Formula is valid' : 'Unbalanced parentheses' }}
+            </small>
           </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold"><i class="bi bi-123 me-1 text-info"></i> Numeric Constant</label>
-          <div class="input-group" style="max-width: 300px;">
-            <input type="number" class="form-control" [(ngModel)]="numericInput" [ngModelOptions]="{standalone: true}" placeholder="e.g. 100, 0.5" step="any" (keydown.enter)="addNumberToken()" />
-            <button type="button" class="btn btn-outline-info" (click)="addNumberToken()"><i class="bi bi-plus-lg me-1"></i>Add</button>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-box me-1 text-success"></i> Parameters</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button *ngFor="let p of allParameters" type="button" class="btn btn-outline-primary btn-sm" (click)="addParamToken(p.id, p.name)">{{ p.name }} <small class="text-muted ms-1">P{{ p.id }}</small></button>
+            </div>
           </div>
-        </div>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="undoLastToken()" [disabled]="formulaTokens.length === 0"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>
-          <button type="button" class="btn btn-outline-danger btn-sm" (click)="clearFormula()" [disabled]="formulaTokens.length === 0"><i class="bi bi-trash me-1"></i>Clear All</button>
-        </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1 text-warning"></i> Operators</label>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('+')"><strong>+</strong></button>
+              <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('-')"><strong>&minus;</strong></button>
+              <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('*')"><strong>&times;</strong></button>
+              <button type="button" class="btn btn-outline-dark btn-sm px-3" (click)="addOperatorToken('/')"><strong>&divide;</strong></button>
+              <button type="button" class="btn btn-outline-warning btn-sm px-3" (click)="addParenToken('(')"><strong>(</strong></button>
+              <button type="button" class="btn btn-outline-warning btn-sm px-3" (click)="addParenToken(')')"><strong>)</strong></button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-123 me-1 text-info"></i> Numeric Constant</label>
+            <div class="input-group" style="max-width: 300px;">
+              <input type="number" class="form-control" [(ngModel)]="numericInput" [ngModelOptions]="{standalone: true}" placeholder="e.g. 100, 0.5" step="any" (keydown.enter)="addNumberToken()" />
+              <button type="button" class="btn btn-outline-info" (click)="addNumberToken()"><i class="bi bi-plus-lg me-1"></i>Add</button>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="undoLastToken()" [disabled]="formulaTokens.length === 0"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" (click)="clearFormula()" [disabled]="formulaTokens.length === 0"><i class="bi bi-trash me-1"></i>Clear All</button>
+          </div>
+        </ng-container>
+
+        <!-- ═══ SMART TYPE MODE ═══ -->
+        <ng-container *ngIf="smartFormulaMode">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-pencil-square me-1"></i>Type Formula</label>
+            <textarea class="form-control" rows="2"
+              [(ngModel)]="smartFormulaInput" [ngModelOptions]="{standalone: true}"
+              (input)="parseSmartInput()"
+              placeholder="Type formula using parameter names, e.g. (C * 1000) / Fe"></textarea>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-lightbulb me-1"></i>Use parameter names directly.
+            </small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted" style="font-size: 0.8rem">
+              <i class="bi bi-tags me-1"></i>Available Parameters (click to insert)
+            </label>
+            <div class="d-flex flex-wrap gap-1">
+              <button *ngFor="let p of allParameters" type="button"
+                class="badge bg-light text-dark border" style="font-size: 0.75rem; cursor: pointer;"
+                (click)="insertSmartParam(p.name)" [title]="'P' + p.id">
+                {{ p.name }} <small class="text-muted">P{{ p.id }}</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-3" *ngIf="smartTokens.length > 0">
+            <label class="form-label fw-semibold">Validation</label>
+            <div class="border rounded p-2" style="background: #fafbfc; font-size: 0.85rem;">
+              <span *ngFor="let t of smartTokens" class="d-inline">
+                <span *ngIf="t.type === 'param'" class="badge bg-success-subtle text-success border border-success me-1 mb-1"
+                  [title]="t.matched + ' → ' + t.paramRef">{{ t.token }} <i class="bi bi-check-circle-fill ms-1"></i></span>
+                <span *ngIf="t.type === 'number'" class="badge bg-info-subtle text-info border border-info me-1 mb-1">{{ t.token }}</span>
+                <span *ngIf="t.type === 'operator'" class="badge bg-light text-dark border me-1 mb-1">{{ t.token }}</span>
+                <span *ngIf="t.type === 'unknown'" class="badge bg-danger-subtle text-danger border border-danger me-1 mb-1">{{ t.token }} <i class="bi bi-x-circle-fill ms-1"></i></span>
+              </span>
+              <div class="mt-2 pt-2 border-top" *ngIf="smartValid">
+                <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Formula is valid</small>
+                <div class="text-muted mt-1" style="font-size: 0.8rem; font-family: monospace;">
+                  Parsed: <span *ngFor="let t of smartTokens">{{ t.paramRef || t.token }} </span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="smartErrors.length > 0" class="mt-2">
+              <div *ngFor="let err of smartErrors" class="text-danger small">
+                <i class="bi bi-exclamation-triangle me-1"></i>{{ err }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
       </div>
+
       <div class="modal-footer">
         <button class="btn btn-cancel" (click)="closeFormulaModal()">Cancel</button>
-        <button class="btn btn-save" (click)="saveFormula()" [disabled]="!isFormulaValid || formulaTokens.length === 0"><i class="bi bi-check-lg me-1"></i>Apply Formula</button>
+        <button *ngIf="!smartFormulaMode" class="btn btn-save" (click)="saveFormula()" [disabled]="!isFormulaValid || formulaTokens.length === 0">
+          <i class="bi bi-check-lg me-1"></i>Apply Formula
+        </button>
+        <button *ngIf="smartFormulaMode" class="btn btn-success" (click)="applySmartFormula()" [disabled]="!smartValid">
+          <i class="bi bi-check-lg me-1"></i>Apply Formula
+        </button>
       </div>
     </div>
   </div>

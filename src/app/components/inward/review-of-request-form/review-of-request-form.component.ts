@@ -8,6 +8,7 @@ import { LaboratoryTestService } from '../../../services/laboratory-test.service
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { ParameterService } from '../../../services/parameter.service';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
+import { ProductConditionService } from '../../../services/product-condition.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
@@ -20,7 +21,7 @@ import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.e
   selector: 'app-review-of-request-form',
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
@@ -36,6 +37,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
   standardMap: { [id: string]: string } = {};
   testMethodMap: { [id: string]: string } = {};
   metalClassificationMap: { [id: string]: string } = {};
+  productConditionMap: { [id: string]: string } = {};
   parameterMap: { [id: string]: string } = {};
 
   // Filtered test methods and standards for dependent dropdowns
@@ -57,7 +59,8 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private activeRoute: ActivatedRoute,
     private router: Router,
     private workflowService: WorkflowService,
-    private toast: ToastService
+    private toast: ToastService,
+    private productConditionService: ProductConditionService
   ) { }
 
   ngOnInit(): void {
@@ -87,6 +90,10 @@ export class ReviewOfRequestFormComponent implements OnInit {
       this.metalClassificationMap = {};
       (list || []).forEach((item: any) => this.metalClassificationMap[item.id] = item.name);
     });
+    this.productConditionService.getProductConditionDropdown('', 0, 1000).subscribe(list => {
+      this.productConditionMap = {};
+      (list || []).forEach((item: any) => this.productConditionMap[item.id] = item.name);
+    });
     this.parameterService.getChemicalParameterDropdown('', 0, 1000).subscribe(list => {
       this.parameterMap = {};
       (list || []).forEach((item: any) => this.parameterMap[item.id] = item.name);
@@ -103,7 +110,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
             id: data.id,
             customerName: data.customerName,
             customerAddress: data.address,
-            customerContact: data.customerContact,
+            customerContact: data.contacts?.find((c: any) => c.selected)?.name || data.contacts?.[0]?.name || '-',
             caseNo: data.caseNo,
             sampleReceiptNote: data.sampleReceiptNote,
             urgent: data.urgent,
@@ -164,8 +171,8 @@ export class ReviewOfRequestFormComponent implements OnInit {
               return {
                 sampleNo: s.sampleNo,
                 details: s.details,
-                category: s.category,
-                nature: s.nature,
+                category: this.metalClassificationMap[s.metalClassificationID] || s.category || '-',
+                nature: this.productConditionMap[s.productConditionID] || s.nature || '-',
                 remarks: s.remarks,
                 quantity: s.quantity,
                 preparationRequired: s.preparationRequired ?? false,

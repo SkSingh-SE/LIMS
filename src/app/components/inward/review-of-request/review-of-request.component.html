@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
+                            <th class="align-middle text-center" style="width: 260px; min-width: 260px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -51,55 +51,28 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of listData; let i = index" class="text-sm">
-              <td class="">
-                <div class="d-flex justify-content-center gap-3">
-                  <!-- Flex for spacing -->
-                  <!-- <a [routerLink]="['/sample/inward/details', item.id]"
-                                    [state]="{ mode: 'view' }"
-                                     class="icon-link"
-                                        title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-
-                                    <a [routerLink]="['/sample/inward/edit', item.id]"
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-
-                                    </a> -->
-                  <a
-                    *ngIf="!item.reviewStatus"
-                    [routerLink]="['/sample/plan/edit', item.id]"
-                    [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-add"
-                    title="Plan"
-                  >
-                    Plan
-                  </a>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-2 align-items-center">
                   <a
                     [routerLink]="['/sample/review', item.id]"
-                    [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-add"
-                    title="Review"
+                    [state]="{ mode: 'review' }"
+                    class="icon-link"
+                    title="Review Plan"
                   >
-                    Review
+                    <img src="/icons/view.svg" alt="Review" class="icon-svg">
                   </a>
-                  <div *ngIf="item.canTakeAction">
-                    <!-- <a *ngFor="let action of item.actions" class="icon-link d-inline-block" title="{{ action.name }}">
-                      <img src="/icons/{{ action.action }}.svg" alt="Edit" class="icon-svg" />
-                    </a> -->
-                    <div ngbDropdown class="d-inline-block">
-                      <button
-                        *ngFor="let action of item.actions"
-                        type="button"
-                        class="btn btn-sm btn-add me-2"
-                        (click)="onActionClick(action)"
-                      >
-                        {{ action.name }}
-                      </button>
-                    </div>
-                  </div>
+                  <ng-container *ngIf="item.canTakeAction">
+                    <button
+                      *ngFor="let action of item.actions"
+                      type="button"
+                      class="btn btn-sm"
+                      [ngClass]="getActionCfg(action.action).btnClass"
+                      [title]="action.name"
+                      (click)="onActionClick(action)"
+                    >
+                      <i class="bi me-1" [ngClass]="getActionCfg(action.action).icon"></i>{{ action.name }}
+                    </button>
+                  </ng-container>
                 </div>
               </td>
               <td class="fw-semibold">

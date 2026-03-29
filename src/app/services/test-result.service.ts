@@ -217,6 +217,18 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/calculate-price/${headerId}`, {});
   }
 
+  setPricingType(headerId: number, pricingType: string | null): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/set-pricing-type/${headerId}`, { pricingType });
+  }
+
+  getPricingRecommendation(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/pricing-recommendation/${headerId}`);
+  }
+
+  setPricingWithValue(headerId: number, dto: { pricingType: string | null; dimensionValue: number | null }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/set-pricing-with-value/${headerId}`, dto);
+  }
+
   /**
    * Get price breakdown per parameter
    */

@@ -48,6 +48,13 @@ export class TestResultEntryFormComponent implements OnInit {
   formulaOperators = ['+', '-', '*', '/', '(', ')'];
   formulaFunctions = ['MEAN', 'MAX', 'MIN', 'SUM', 'COUNT', 'STDEV'];
 
+  // Smart formula input
+  smartFormulaInput = '';
+  smartFormulaMode = false;
+  smartFormulaTokens: { token: string; type: 'param' | 'operator' | 'number' | 'function' | 'unknown'; matched?: string; paramRef?: string }[] = [];
+  smartFormulaValid = false;
+  smartFormulaErrors: string[] = [];
+
   // Environment info panel visibility per headerId
   envInfoVisible: { [key: string]: boolean } = {};
 
@@ -89,6 +96,12 @@ export class TestResultEntryFormComponent implements OnInit {
   priceOverrideHeaderId: number = 0;
   priceOverrideAmount: number | null = null;
   priceOverrideReason: string = '';
+
+  // Smart Pricing Recommendation
+  pricingRecMap: Record<number, any> = {};
+  pricingRecLoading: Record<number, boolean> = {};
+  showRecPanel: Record<number, boolean> = {};
+  dimInputValue: Record<number, number | null> = {};
 
   // ================================================================
   // Phase 1-2: NABL Scope + Uncertainty
@@ -343,6 +356,10 @@ export class TestResultEntryFormComponent implements OnInit {
       productCondition: sampleData.productCondition || '',
       batchNo: this.getBatchNoFromAdditionalDetails(sampleData.additionalDetails),
       remarks: sampleData.remarks || '',
+      thickness: sampleData.thickness,
+      diameter: sampleData.diameter,
+      width: sampleData.width,
+      length: sampleData.length,
     };
 
     // Map Plans
@@ -382,6 +399,7 @@ export class TestResultEntryFormComponent implements OnInit {
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
+                isCalculated: param.isCalculated || false,
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
@@ -435,6 +453,7 @@ export class TestResultEntryFormComponent implements OnInit {
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
+                isCalculated: param.isCalculated || false,
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
@@ -1175,30 +1194,31 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   onParameterSelected(planIndex: number, testIndex: number, paramIndex: number, selectedItem: any): void {
+    const row = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const currentParamId = row.get('parameterID')?.value;
+
     if (!selectedItem) {
-      const row = this.getParameters(planIndex, testIndex).at(paramIndex);
       row.patchValue({ parameterID: null, parameterName: null, unit: null });
       return;
     }
-    const row = this.getParameters(planIndex, testIndex).at(paramIndex);
-    const planType = this.plansFA.at(planIndex).get('type')?.value;
-    const unit = selectedItem?.additionalValues ? selectedItem?.additionalValues["Unit"] : row.get('unit')?.value;
 
-    const value = Number(row.get('value')?.value);
-    const min = row.get('minValue')?.value;
-    const max = row.get('maxValue')?.value;
+    // Skip if same parameter re-selected (e.g., dropdown init on load)
+    if (currentParamId === selectedItem.id) return;
 
-    let pass = true;
-    if (min != null && value < min) pass = false;
-    if (max != null && value > max) pass = false;
+    const unit = selectedItem?.additionalValues?.['Unit'] || selectedItem?.unit || row.get('unit')?.value;
 
+    // Parameter actually changed — clear old values and update
     row.patchValue({
       parameterID: selectedItem.id,
       parameterName: selectedItem.name,
-      unit: selectedItem.unit || unit,
-      minValue: planType === 'Chemical' ? (row.value.minValue ?? 0) : null ,
-      maxValue: planType === 'Chemical' ? (row.value.maxValue ?? 0) : null,
-      isWithinLimit: pass,
+      unit: unit,
+      specMinValue: null,
+      specMaxValue: null,
+      minValue: null,
+      maxValue: null,
+      value: null,
+      isWithinLimit: null,
+      resultStatus: null,
     });
   }
 
@@ -1753,6 +1773,70 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
+  onPricingTypeChange(headerId: number, event: Event): void {
+    const pricingType = (event.target as HTMLSelectElement).value || null;
+    this.priceLoadingMap[headerId] = true;
+    this.testResultService.setPricingType(headerId, pricingType).subscribe({
+      next: (summary: any) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show('Pricing method updated', 'success');
+      },
+      error: (err: any) => {
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show(err?.error?.message || 'Error updating pricing method', 'error');
+      }
+    });
+  }
+
+  // ── Smart Pricing Recommendation ──
+
+  toggleRecPanel(headerId: number): void {
+    if (!this.showRecPanel[headerId]) {
+      this.fetchPricingRec(headerId);
+    } else {
+      this.showRecPanel[headerId] = false;
+    }
+  }
+
+  fetchPricingRec(headerId: number): void {
+    if (!headerId || headerId <= 0) return;
+    this.pricingRecLoading[headerId] = true;
+    this.testResultService.getPricingRecommendation(headerId).subscribe({
+      next: (rec: any) => {
+        this.pricingRecMap[headerId] = rec;
+        this.pricingRecLoading[headerId] = false;
+        this.showRecPanel[headerId] = true;
+        const top = rec.recommendations?.[0];
+        if (top?.autoDetectedValue != null && !this.dimInputValue[headerId]) {
+          this.dimInputValue[headerId] = top.autoDetectedValue;
+        }
+      },
+      error: () => { this.pricingRecLoading[headerId] = false; }
+    });
+  }
+
+  applyRec(headerId: number, rec: any): void {
+    if (rec.autoDetectedValue != null) this.dimInputValue[headerId] = rec.autoDetectedValue;
+    this.priceLoadingMap[headerId] = true;
+    this.testResultService.setPricingWithValue(headerId, {
+      pricingType: rec.pricingType,
+      dimensionValue: this.dimInputValue[headerId] || null
+    }).subscribe({
+      next: (summary: any) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show(`Applied: ${rec.displayName} pricing`, 'success');
+      },
+      error: (err: any) => {
+        this.priceLoadingMap[headerId] = false;
+        this.toastService.show(err?.error?.message || 'Error', 'error');
+      }
+    });
+  }
+
   fetchPriceSummary(headerId: number): void {
     if (headerId == null || headerId <= 0) return;
     this.testResultService.getPriceSummary(headerId).subscribe({
@@ -2069,6 +2153,11 @@ export class TestResultEntryFormComponent implements OnInit {
         });
       }
     });
+    this.smartFormulaMode = false;
+    this.smartFormulaInput = '';
+    this.smartFormulaTokens = [];
+    this.smartFormulaErrors = [];
+    this.smartFormulaValid = false;
     this.showFormulaBuilderModal = true;
   }
 
@@ -2105,6 +2194,149 @@ export class TestResultEntryFormComponent implements OnInit {
       this.toastService.show(`Formula applied — calculated value: ${calculatedValue}`, 'success');
     } else {
       this.toastService.show('Formula applied but could not evaluate — missing parameter values', 'warning');
+    }
+  }
+
+  // ── Smart Formula Input ──────────────────────────────────────
+
+  toggleSmartFormulaMode(): void {
+    this.smartFormulaMode = !this.smartFormulaMode;
+    if (this.smartFormulaMode) {
+      // Convert existing P-notation to readable names for editing
+      this.smartFormulaInput = this.formulaBuilderTargetRow
+        ? this.pNotationToNames(this.formulaExpression)
+        : '';
+    }
+  }
+
+  /** Convert P-notation (P12 * 1000) to names (UTL * 1000) */
+  private pNotationToNames(expr: string): string {
+    if (!expr) return '';
+    let result = expr;
+    this.formulaAvailableParams.forEach(p => {
+      result = result.replace(new RegExp(p.ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), p.parameterName);
+    });
+    return result;
+  }
+
+  /** Parse smart formula input — tokenize, match, validate */
+  parseSmartFormula(): void {
+    const input = this.smartFormulaInput.trim();
+    this.smartFormulaTokens = [];
+    this.smartFormulaErrors = [];
+    this.smartFormulaValid = false;
+
+    if (!input) return;
+
+    // Tokenize: split by operators/brackets but keep them
+    const rawTokens = input.match(/([a-zA-Z_][a-zA-Z0-9_]*|[0-9]*\.?[0-9]+|[+\-*/(),])/g) || [];
+
+    const operators = new Set(['+', '-', '*', '/', '(', ')', ',']);
+    const functions = new Set(this.formulaFunctions.map(f => f.toUpperCase()));
+    const specialConstants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265', 'π': '3.14159265' };
+
+    for (const raw of rawTokens) {
+      // Operator
+      if (operators.has(raw)) {
+        this.smartFormulaTokens.push({ token: raw, type: 'operator' });
+        continue;
+      }
+
+      // Number
+      if (/^[0-9]*\.?[0-9]+$/.test(raw)) {
+        this.smartFormulaTokens.push({ token: raw, type: 'number' });
+        continue;
+      }
+
+      // Special constant (pi)
+      if (specialConstants[raw]) {
+        this.smartFormulaTokens.push({ token: raw, type: 'number', matched: `= ${specialConstants[raw]}` });
+        continue;
+      }
+
+      // Function
+      if (functions.has(raw.toUpperCase())) {
+        this.smartFormulaTokens.push({ token: raw, type: 'function', matched: raw.toUpperCase() });
+        continue;
+      }
+
+      // P-notation already (P12, P207 etc.)
+      const pMatch = raw.match(/^P(\d+)$/i);
+      if (pMatch) {
+        const found = this.formulaAvailableParams.find(p => p.ref.toUpperCase() === raw.toUpperCase());
+        if (found) {
+          this.smartFormulaTokens.push({ token: raw, type: 'param', matched: found.parameterName, paramRef: found.ref });
+        } else {
+          this.smartFormulaTokens.push({ token: raw, type: 'unknown' });
+          this.smartFormulaErrors.push(`"${raw}" — no matching parameter found`);
+        }
+        continue;
+      }
+
+      // Try matching by parameter name (case-insensitive)
+      const exactMatch = this.formulaAvailableParams.find(
+        p => p.parameterName.toLowerCase() === raw.toLowerCase()
+      );
+      if (exactMatch) {
+        this.smartFormulaTokens.push({ token: raw, type: 'param', matched: exactMatch.parameterName, paramRef: exactMatch.ref });
+        continue;
+      }
+
+      // Partial/fuzzy match
+      const partialMatch = this.formulaAvailableParams.find(
+        p => p.parameterName.toLowerCase().startsWith(raw.toLowerCase())
+      );
+      if (partialMatch) {
+        this.smartFormulaTokens.push({ token: raw, type: 'param', matched: `${partialMatch.parameterName}?`, paramRef: partialMatch.ref });
+        this.smartFormulaErrors.push(`"${raw}" → did you mean "${partialMatch.parameterName}"?`);
+        continue;
+      }
+
+      // No match
+      this.smartFormulaTokens.push({ token: raw, type: 'unknown' });
+      this.smartFormulaErrors.push(`"${raw}" — no matching parameter found`);
+    }
+
+    // Validate brackets
+    let depth = 0;
+    for (const t of this.smartFormulaTokens) {
+      if (t.token === '(') depth++;
+      if (t.token === ')') depth--;
+      if (depth < 0) { this.smartFormulaErrors.push('Unmatched closing bracket ")"'); break; }
+    }
+    if (depth > 0) this.smartFormulaErrors.push(`${depth} unclosed bracket(s)`);
+
+    this.smartFormulaValid = this.smartFormulaErrors.length === 0 && this.smartFormulaTokens.length > 0;
+  }
+
+  /** Apply smart formula — convert to P-notation */
+  applySmartFormula(): void {
+    if (!this.smartFormulaValid) return;
+
+    const specialConstants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265', 'π': '3.14159265' };
+
+    // Build P-notation expression
+    const parts = this.smartFormulaTokens.map(t => {
+      if (t.type === 'param' && t.paramRef) return t.paramRef;
+      if (t.type === 'number' && specialConstants[t.token]) return specialConstants[t.token];
+      return t.token;
+    });
+
+    this.formulaExpression = parts.join(' ').replace(/\s*\(\s*/g, '(').replace(/\s*\)\s*/g, ')').replace(/\s+/g, ' ').trim();
+    this.smartFormulaMode = false;
+    this.applyFormula();
+  }
+
+  /** Use suggested match for an unknown token */
+  acceptSuggestion(tokenIndex: number, paramRef: string, paramName: string): void {
+    const token = this.smartFormulaTokens[tokenIndex];
+    if (token) {
+      // Replace in input text
+      this.smartFormulaInput = this.smartFormulaInput.replace(
+        new RegExp(`\\b${token.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`),
+        paramName
+      );
+      this.parseSmartFormula();
     }
   }
 

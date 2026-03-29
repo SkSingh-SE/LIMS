@@ -29,6 +29,13 @@ export class ChemicalParameterComponent implements OnInit {
   formulaTokens: { type: string; value: string; display: string }[] = [];
   formulaPreview: string = '';
   isFormulaValid = true;
+
+  smartFormulaMode = false;
+  smartFormulaInput = '';
+  smartTokens: { token: string; type: 'param' | 'operator' | 'number' | 'unknown'; matched?: string; paramRef?: string }[] = [];
+  smartValid = false;
+  smartErrors: string[] = [];
+
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
@@ -501,6 +508,82 @@ export class ChemicalParameterComponent implements OnInit {
     this.ParameterForm.patchValue({
       formula: '',
     });
+  }
+
+  // ── Smart Formula ──
+  toggleSmartMode(): void {
+    this.smartFormulaMode = !this.smartFormulaMode;
+    if (this.smartFormulaMode) {
+      let readable = this.tempFormula || '';
+      this.allParameters.forEach((p: any) => {
+        readable = readable.replace(new RegExp(`\\{P${p.id}\\}`, 'g'), p.name);
+      });
+      this.smartFormulaInput = readable;
+      this.parseSmartInput();
+    }
+  }
+
+  parseSmartInput(): void {
+    const input = this.smartFormulaInput.trim();
+    this.smartTokens = [];
+    this.smartErrors = [];
+    this.smartValid = false;
+    if (!input) return;
+
+    const rawTokens = input.match(/([a-zA-Z_][a-zA-Z0-9_ ]*[a-zA-Z0-9_]|[a-zA-Z_][a-zA-Z0-9_]*|[0-9]*\.?[0-9]+|[+\-*/(),])/g) || [];
+    const operators = new Set(['+', '-', '*', '/', '(', ')', ',']);
+    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
+
+    for (const raw of rawTokens) {
+      if (operators.has(raw)) { this.smartTokens.push({ token: raw, type: 'operator' }); continue; }
+      if (/^[0-9]*\.?[0-9]+$/.test(raw)) { this.smartTokens.push({ token: raw, type: 'number' }); continue; }
+      if (constants[raw]) { this.smartTokens.push({ token: raw, type: 'number', matched: `= ${constants[raw]}` }); continue; }
+
+      const exact = this.allParameters.find((p: any) => p.name.toLowerCase() === raw.toLowerCase());
+      if (exact) { this.smartTokens.push({ token: raw, type: 'param', matched: exact.name, paramRef: `{P${exact.id}}` }); continue; }
+
+      const partial = this.allParameters.find((p: any) => p.name.toLowerCase().startsWith(raw.toLowerCase()));
+      if (partial) {
+        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.name}?`, paramRef: `{P${partial.id}}` });
+        this.smartErrors.push(`"${raw}" → did you mean "${partial.name}"?`);
+        continue;
+      }
+
+      this.smartTokens.push({ token: raw, type: 'unknown' });
+      this.smartErrors.push(`"${raw}" — no matching parameter`);
+    }
+
+    let depth = 0;
+    for (const t of this.smartTokens) {
+      if (t.token === '(') depth++;
+      if (t.token === ')') depth--;
+      if (depth < 0) { this.smartErrors.push('Unmatched ")"'); break; }
+    }
+    if (depth > 0) this.smartErrors.push(`${depth} unclosed bracket(s)`);
+
+    this.smartValid = this.smartErrors.length === 0 && this.smartTokens.length > 0;
+  }
+
+  applySmartFormula(): void {
+    if (!this.smartValid) return;
+    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
+    const parts = this.smartTokens.map(t => {
+      if (t.type === 'param' && t.paramRef) return t.paramRef;
+      if (t.type === 'number' && constants[t.token]) return constants[t.token];
+      if (t.type === 'operator') return t.token === '*' || t.token === '/' || t.token === '+' || t.token === '-' ? ` ${t.token} ` : t.token;
+      return t.token;
+    });
+    this.tempFormula = parts.join('').replace(/\s+/g, ' ').trim();
+    this.parseFormulaToTokens(this.tempFormula);
+    this.updateFormulaPreview();
+    this.validateParentheses();
+    this.smartFormulaMode = false;
+    this.saveFormula();
+  }
+
+  insertSmartParam(name: string): void {
+    this.smartFormulaInput = (this.smartFormulaInput + ' ' + name).trim();
+    this.parseSmartInput();
   }
 
   getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {

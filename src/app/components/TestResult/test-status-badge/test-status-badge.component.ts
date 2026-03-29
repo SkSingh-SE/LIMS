@@ -39,7 +39,7 @@ export class TestStatusBadgeComponent {
     'INWARD_COMPLETED':               { bg: '#C8E6C9', fg: '#1B5E20', label: 'Inward Completed' },
     'UNDER_PLANNING':                 { bg: '#FFF9C4', fg: '#F57F17', label: 'Under Planning' },
     'UNDER_REVIEW':                   { bg: '#FFE0B2', fg: '#E65100', label: 'Under Review' },
-    'REVIEW_COMPLETED':               { bg: '#B2DFDB', fg: '#004D40', label: 'Review Completed' },
+    'REVIEW_COMPLETED':               { bg: '#26A69A', fg: '#FFFFFF', label: 'Review Completed' },
     'IN_PROGRESS':                    { bg: '#BBDEFB', fg: '#0D47A1', label: 'In Progress' },
     'PARTIALLY_COMPLETED':            { bg: '#FFE082', fg: '#FF6F00', label: 'Partially Completed' },
     'COMPLETED':                      { bg: '#A5D6A7', fg: '#1B5E20', label: 'Completed' },

@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
+                            <th class="align-middle text-center" style="width: 180px; min-width: 180px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -55,40 +55,31 @@
 
           <tbody>
             <tr *ngFor="let item of listData" class="align-middle">
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
-                  <!-- Perform Testing Button -->
-                  <button
-                  *ngIf="item.sampleStatus !== 'Completed'"
-                    class="btn btn-sm btn-add"
+              <td class="text-center">
+                <div class="d-flex gap-2 justify-content-center align-items-center">
+                  <a
+                    *ngIf="item.sampleStatus !== 'Completed'"
                     [routerLink]="['/testing/perform', item.sampleId]"
+                    class="btn btn-sm btn-success"
                     title="Perform Testing"
-                    [disabled]="item.sampleStatus === 'Completed'"
                   >
-                    <i class="bi bi-play-fill"></i>
-                    <span class="d-none d-sm-inline">Perform Test</span>
-                  </button>
-
-                  <!-- View Results Button -->
-                  <button
-                    class="btn btn-sm btn-outline-info"
+                    <i class="bi bi-play-fill me-1"></i>Test
+                  </a>
+                  <a
                     [routerLink]="['/testing/results', item.sampleId]"
-                    title="View Full Result"
+                    class="icon-link"
+                    title="View Results"
                   >
-                    <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline">View</span>
-                  </button>
-
-                  <!-- Long-Term Tracking Button (only for active long-term tests) -->
-                  <button
+                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                  </a>
+                  <a
                     *ngIf="item.hasLongTermTests"
-                    class="btn btn-sm btn-outline-warning"
                     routerLink="/testing/longterm"
+                    class="icon-link"
                     title="Long-Term Tracking"
                   >
-                    <i class="bi bi-clock-history"></i>
-                    <span class="d-none d-sm-inline">LongTerm</span>
-                  </button>
+                    <i class="bi bi-clock-history" style="font-size: 1.3rem; color: #e65100;"></i>
+                  </a>
                 </div>
               </td>
               <td class="fw-semibold">
@@ -104,9 +95,14 @@
               <td>{{ item.material }}</td>
               <td>{{ item.condition }}</td>
               <td>
-                <small class="text-muted">{{ item.tests }}</small>
+                <ng-container *ngIf="item.tests?.length > 0">
+                  <span *ngFor="let test of item.tests" class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.75rem;">
+                    {{ test.testName }}
+                  </span>
+                </ng-container>
+                <span *ngIf="!item.tests || item.tests.length === 0" class="text-muted">-</span>
               </td>
-              <td class="">
+              <td class="text-center">
                 <app-test-status-badge [status]="item.sampleStatus"></app-test-status-badge>
               </td>
 

@@ -40,6 +40,13 @@ export class InvoiceCaseComponent implements OnInit {
   filteredSuggestionsList: string[][] = [];
   financialYears: string[] = [];
 
+  pricingTypeOptions = [
+    { value: 'Element', label: 'Parameter Count' },
+    { value: 'SizeLoad', label: 'Size + Load' },
+    { value: 'SizeAndLoad', label: 'Size + Load Range' },
+    { value: 'FlatRate', label: 'Flat Rate' },
+  ];
+
   constructor(private fb: FormBuilder, private labTestService: LaboratoryTestService, private invoiceService: InvoiceCaseService, private toastService: ToastService, private route: ActivatedRoute, private router: Router) { }
 
   ngOnInit(): void {
@@ -70,6 +77,7 @@ export class InvoiceCaseComponent implements OnInit {
       id: [0],
       financialYear: ['', Validators.required],
       laboratoryTestID: [null],
+      defaultPricingType: [null],
       invoiceCasePrices: this.fb.array([])
     });
   }

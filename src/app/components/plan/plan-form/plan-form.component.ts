@@ -411,6 +411,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     }));
   }
 
+  /** Auto-create a default plan for each sample that has no test plans yet */
+  private ensurePlansExist(): void {
+    for (let i = 0; i < this.samples.length; i++) {
+      const testPlans = this.getTestPlans(i);
+      if (testPlans.length === 0) {
+        this.addPlanToSample(i);
+      }
+    }
+  }
+
   // ────────────── API Calls ──────────────
   fetchSampleInwardDetails(sampleId: number): void {
     this.inwardService.getSampleInwardWithPlans(sampleId).subscribe({
@@ -506,6 +516,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         // }
 
         this.updateFormFromPayload(formatted);
+
+        // Auto-create a plan for samples that have no test plans yet
+        if (!this.isViewMode) {
+          this.ensurePlansExist();
+        }
 
         // Disable form after populating if in view mode
         if (this.isViewMode) {
@@ -959,7 +974,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       next: () => {
         this.saved = true;
         this.toastService.show('Plan sent for review successfully!', 'success');
-        this.router.navigate(['/sample/review', payload.id]);
+        this.router.navigate(['/sample/inward']);
       },
       error: (err) => {
         console.error('[PlanForm] Review Error:', err);

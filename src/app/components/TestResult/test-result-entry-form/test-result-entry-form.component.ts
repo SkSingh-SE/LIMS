@@ -1926,19 +1926,27 @@ export class TestResultEntryFormComponent implements OnInit {
 
   nablScopeAcknowledged: Record<number, boolean> = {};
 
-  getNablScopeSummary(headerId: number): { allInScope: boolean; outOfScopeCount: number; totalChecked: number } {
+  getNablScopeSummary(headerId: number): { allInScope: boolean; outOfScopeCount: number; notAccreditedCount: number; inScopeCount: number; totalChecked: number } {
     const results = this.nablScopeMap[headerId];
-    if (!results || results.length === 0) return { allInScope: true, outOfScopeCount: 0, totalChecked: 0 };
+    if (!results || results.length === 0) return { allInScope: false, outOfScopeCount: 0, notAccreditedCount: 0, inScopeCount: 0, totalChecked: 0 };
     const outOfScope = results.filter((r: any) => r.scopeStatus === 'OutsideScope');
+    const notAccredited = results.filter((r: any) => r.scopeStatus === 'NotAccredited');
+    const inScope = results.filter((r: any) => r.scopeStatus === 'WithinScope');
     return {
-      allInScope: outOfScope.length === 0,
+      allInScope: inScope.length > 0 && outOfScope.length === 0,
       outOfScopeCount: outOfScope.length,
+      notAccreditedCount: notAccredited.length,
+      inScopeCount: inScope.length,
       totalChecked: results.length,
     };
   }
 
   hasOutOfScopeParams(headerId: number): boolean {
     return this.getNablScopeSummary(headerId).outOfScopeCount > 0;
+  }
+
+  hasAnyInScope(headerId: number): boolean {
+    return this.getNablScopeSummary(headerId).inScopeCount > 0;
   }
 
   // ================================================================

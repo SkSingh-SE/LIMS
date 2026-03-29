@@ -18,17 +18,25 @@
           <div *ngIf="openSections['header']" class="section-body">
             <div class="row gy-3">
               <div class="col-md-6">
-                <app-searchable-dropdown
-                  [placeholder]="'Search Laboratory Test Method'"
-                  [labelName]="'Laboratory Test Method'"
-                  [fetchDataFn]="getLaboratoryTest"
-                  (itemSelected)="onLaboratorySelected($event)"
-                  [hideLabel]="false"
-                  [required]="true"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
-                  [isInvalid]="isFieldInvalid('laboratoryTestID')"
-                ></app-searchable-dropdown>
+                <div class="d-flex align-items-end gap-1">
+                  <div class="flex-grow-1">
+                    <app-searchable-dropdown
+                      [placeholder]="'Search Laboratory Test Method'"
+                      [labelName]="'Laboratory Test Method'"
+                      [fetchDataFn]="getLaboratoryTest"
+                      (itemSelected)="onLaboratorySelected($event)"
+                      [hideLabel]="false"
+                      [required]="true"
+                      [isDisabled]="isViewMode"
+                      [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
+                      [isInvalid]="isFieldInvalid('laboratoryTestID')"
+                    ></app-searchable-dropdown>
+                  </div>
+                  <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank"
+                    class="btn btn-outline-primary btn-sm" title="Add New Lab Test" style="margin-bottom: 2px;">
+                    <i class="bi bi-plus-lg"></i>
+                  </a>
+                </div>
                 <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test Method" [submitted]="submitted"/>
               </div>
             </div>
@@ -58,18 +66,26 @@
               <!-- Test Method Specification Dropdown -->
               <div class="row gy-3 mb-3">
                 <div class="col-md-6">
-                  <app-searchable-dropdown
-                    class="w-100"
-                    [placeholder]="'Search Test Specification'"
-                    [labelName]="'Test Method Specification'"
-                    [fetchDataFn]="getTestMethodSpecification"
-                    (itemSelected)="onTestSpecificationSelected($event, i)"
-                    [hideLabel]="false"
-                    [required]="true"
-                    [isDisabled]="isViewMode"
-                    [selectedItem]="spec.get('testMethodSpecificationID')?.value"
-                    [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"
-                  ></app-searchable-dropdown>
+                  <div class="d-flex align-items-end gap-1">
+                    <div class="flex-grow-1">
+                      <app-searchable-dropdown
+                        class="w-100"
+                        [placeholder]="'Search Test Specification'"
+                        [labelName]="'Test Method Specification'"
+                        [fetchDataFn]="getTestMethodSpecification"
+                        (itemSelected)="onTestSpecificationSelected($event, i)"
+                        [hideLabel]="false"
+                        [required]="true"
+                        [isDisabled]="isViewMode"
+                        [selectedItem]="spec.get('testMethodSpecificationID')?.value"
+                        [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"
+                      ></app-searchable-dropdown>
+                    </div>
+                    <a *ngIf="!isViewMode" routerLink="/test-specification/create" target="_blank"
+                      class="btn btn-outline-primary btn-sm" title="Add New Test Method Specification" style="margin-bottom: 2px;">
+                      <i class="bi bi-plus-lg"></i>
+                    </a>
+                  </div>
                   <app-field-error [control]="spec.get('testMethodSpecificationID')" label="Test Method Specification" [submitted]="submitted"/>
                 </div>
                 <div class="col-md-3" *ngIf="specVersionsMap.get(i)?.length">
@@ -126,8 +142,8 @@
                       <th class="spec-th wide-input">Parameter</th>
                       <th class="spec-th wide-input">Unit</th>
                       <th class="spec-th wide-input">Qual / Quant</th>
-                      <th class="spec-th wide-input">Lower</th>
-                      <th class="spec-th wide-input">Upper</th>
+                      <th class="spec-th" style="min-width:180px">Lower Limit</th>
+                      <th class="spec-th" style="min-width:180px">Upper Limit</th>
                       <th class="spec-th wide-input">Discipline</th>
                       <th class="spec-th wide-input">Group</th>
                       <th class="spec-th wide-input">Sub-Group</th>
@@ -144,16 +160,23 @@
                         </div>
                       </td>
                       <td class="wide-input">
-                        <app-searchable-dropdown
-                          class="w-100"
-                          [placeholder]="'Search Parameter'"
-                          [labelName]="'Parameter'"
-                          [fetchDataFn]="getParameter"
-                          (itemSelected)="onParameterSelected($event, i, j)"
-                          [isDisabled]="isViewMode"
-                          [hideLabel]="true"
-                          [selectedItem]="param.get('parameterID')?.value"
-                        ></app-searchable-dropdown>
+                        <div class="d-flex align-items-center gap-1">
+                          <app-searchable-dropdown
+                            class="flex-grow-1"
+                            [placeholder]="'Search Parameter'"
+                            [labelName]="'Parameter'"
+                            [fetchDataFn]="getParameter"
+                            (itemSelected)="onParameterSelected($event, i, j)"
+                            [isDisabled]="isViewMode"
+                            [hideLabel]="true"
+                            [selectedItem]="param.get('parameterID')?.value"
+                          ></app-searchable-dropdown>
+                          <a *ngIf="!isViewMode" routerLink="/parameter-category" target="_blank"
+                            class="btn btn-outline-primary btn-sm p-0" style="width:24px;height:24px;line-height:24px;text-align:center;"
+                            title="Add New Parameter">
+                            <i class="bi bi-plus-lg" style="font-size:0.7rem"></i>
+                          </a>
+                        </div>
                       </td>
                       <td>
                         <select class="form-select wide-input" formControlName="parameterUnitID">
@@ -173,24 +196,34 @@
                         </select>
                       </td>
                       <td>
-                        <select
-                          class="form-select wide-input"
-                          formControlName="lowerLimit"
-                          [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
-                        >
-                          <option value="">Select</option>
-                          <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
-                        </select>
+                        <div class="d-flex gap-1 align-items-center">
+                          <select
+                            class="form-select" style="width:60px; min-width:60px;"
+                            formControlName="lowerLimit"
+                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
+                          >
+                            <option value="">Op</option>
+                            <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
+                          </select>
+                          <input type="number" class="form-control" style="width:100px;"
+                            formControlName="lowerLimitValue" placeholder="Value"
+                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                        </div>
                       </td>
                       <td>
-                        <select
-                          class="form-select wide-input"
-                          formControlName="upperLimit"
-                          [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
-                        >
-                          <option value="">Select</option>
-                          <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
-                        </select>
+                        <div class="d-flex gap-1 align-items-center">
+                          <select
+                            class="form-select" style="width:60px; min-width:60px;"
+                            formControlName="upperLimit"
+                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
+                          >
+                            <option value="">Op</option>
+                            <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
+                          </select>
+                          <input type="number" class="form-control" style="width:100px;"
+                            formControlName="upperLimitValue" placeholder="Value"
+                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                        </div>
                       </td>
                       <td class="wide-input">
                         <app-searchable-dropdown

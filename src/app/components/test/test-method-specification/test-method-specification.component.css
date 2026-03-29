@@ -1,6 +1,10 @@
 input::file-selector-button {
     color: #fff;
-    background-color: #FF2C1F !important;
+    background-color: var(--primary-color, #da261c) !important;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 .input-file {
     cursor: pointer !important;

@@ -159,10 +159,19 @@
                       I acknowledge
                     </label>
                   </div>
-                  <div *ngIf="(nablScopeMap[plans[p].tests[t].headerId] || []).length > 0 && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                  <div *ngIf="hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
                     class="alert alert-success py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
                     <i class="bi bi-shield-check"></i>
-                    <span>All tests are within NABL accreditation scope</span>
+                    <span>All parameters are within NABL accreditation scope
+                      <span *ngIf="getNablScopeSummary(plans[p].tests[t].headerId).notAccreditedCount > 0" class="text-muted">
+                        ({{ getNablScopeSummary(plans[p].tests[t].headerId).notAccreditedCount }} parameter(s) not in scope)
+                      </span>
+                    </span>
+                  </div>
+                  <div *ngIf="(nablScopeMap[plans[p].tests[t].headerId] || []).length > 0 && !hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    <i class="bi bi-shield-x"></i>
+                    <span>No parameters are under NABL accreditation scope for this test. Create scope entry in ISO Scope form.</span>
                   </div>
 
                   <!-- Orientation Mismatch Warning Banner -->
@@ -296,7 +305,7 @@
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Max</th>
                         <th style="width: 140px">Value</th>
                         <th style="width: 90px">Status</th>
-                        <th style="width: 90px">NABL</th>
+                        <th style="width: 100px">NABL Scope</th>
                         <th style="width: 150px">Method Used</th>
                         <th style="width: 180px">Remarks</th>
                         <th style="width: 60px">Billable</th>
@@ -435,18 +444,40 @@
                         </td>
 
                         <!-- NABL Scope Badge -->
-                        <td class="text-center">
+                        <td class="text-center" style="min-width: 90px;">
                           <ng-container *ngIf="getNablStatus(plans[p].tests[t].headerId, row.value.parameterID) as nabl">
-                            <span *ngIf="nabl.scopeStatus === 'WithinScope'" class="badge bg-success" [title]="'NABL Range: ' + nabl.nablLowerLimit + ' - ' + nabl.nablUpperLimit">
-                              NABL
+                            <!-- Under Scope + Value Within Range -->
+                            <span *ngIf="nabl.scopeStatus === 'WithinScope' && nabl.value != null" class="badge bg-success"
+                              [title]="(nabl.nablLowerLimit != null || nabl.nablUpperLimit != null) ? 'NABL Range: ' + (nabl.nablLowerLimit ?? '-') + ' – ' + (nabl.nablUpperLimit ?? '-') : 'Under NABL Scope'">
+                              <i class="bi bi-shield-check me-1"></i>In Scope
                             </span>
-                            <span *ngIf="nabl.scopeStatus === 'OutsideScope'" class="badge bg-danger" [title]="'NABL Range: ' + nabl.nablLowerLimit + ' - ' + nabl.nablUpperLimit">
-                              Outside
+                            <!-- Under Scope but no value entered yet -->
+                            <span *ngIf="nabl.scopeStatus === 'WithinScope' && nabl.value == null" class="badge bg-info text-dark"
+                              [title]="'This parameter is under NABL accreditation scope'">
+                              <i class="bi bi-shield-fill-check me-1"></i>Under Scope
                             </span>
-                            <span *ngIf="nabl.scopeStatus === 'NotAccredited'" class="badge bg-secondary">
-                              N/A
+                            <!-- Outside Range -->
+                            <span *ngIf="nabl.scopeStatus === 'OutsideScope'" class="badge bg-danger"
+                              [title]="'NABL Range: ' + (nabl.nablLowerLimit ?? '-') + ' – ' + (nabl.nablUpperLimit ?? '-') + ' | Value: ' + nabl.value">
+                              <i class="bi bi-shield-exclamation me-1"></i>Outside
                             </span>
+                            <!-- Not Accredited -->
+                            <span *ngIf="nabl.scopeStatus === 'NotAccredited'" class="badge bg-secondary"
+                              title="This parameter is NOT under NABL accreditation scope">
+                              <i class="bi bi-shield-x me-1"></i>Not in Scope
+                            </span>
+                            <!-- Show range below badge if available -->
+                            <small *ngIf="nabl.nablLowerLimit != null || nabl.nablUpperLimit != null"
+                              class="d-block text-muted" style="font-size: 9px;">
+                              {{ nabl.nablLowerLimit ?? '-' }} – {{ nabl.nablUpperLimit ?? '-' }}
+                            </small>
                           </ng-container>
+                          <!-- No scope data loaded yet -->
+                          <span *ngIf="!getNablStatus(plans[p].tests[t].headerId, row.value.parameterID) && row.value.parameterID"
+                            class="badge bg-light text-muted border" style="font-size: 9px;">
+                            <i class="bi bi-hourglass-split me-1"></i>Checking...
+                          </span>
+                          <!-- Uncertainty -->
                           <ng-container *ngIf="getUncertainty(plans[p].tests[t].headerId, row.value.parameterID) as unc">
                             <small class="d-block text-muted" style="font-size: 9px;" *ngIf="unc.expandedUncertainty">
                               U={{unc.expandedUncertainty}} (k={{unc.coverageFactor}})

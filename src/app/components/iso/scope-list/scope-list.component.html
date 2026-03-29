@@ -77,9 +77,8 @@
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ material.laboratoryTestName }}</td>
                             <td>{{ material.testMethodSpecificationName }}</td>
-                            <td>{{ material.parameterName }}</td>
-                            <td>{{ material.parameterUnit }}</td>
-                            <td>{{material.isUnderISO ? 'Yes' : 'No'}}</td>
+                            <td class="text-center">{{ material.parameterCount }}</td>
+                            <td>{{ material.isUnderISO }}</td>
                             <td>{{ material.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>

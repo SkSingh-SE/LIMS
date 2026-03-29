@@ -19,8 +19,7 @@ export class ScopeListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: true },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
     { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Specification', filter: true },
-    { key: 'parameterName', type: 'string', label: 'Parameter', filter: true },
-    { key: 'parameterUnit', type: 'string', label: 'Parameter Unit', filter: true },
+    { key: 'parameterCount', type: 'number', label: 'Parameters', filter: false },
     { key: 'isUnderISO', type: 'string', label: 'Under ISO', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
@@ -28,8 +27,6 @@ export class ScopeListComponent implements OnInit {
     id: 'number',
     laboratoryTestName: 'string',
     testMethodSpecificationName: 'string',
-    parameterName: 'string',
-    parameterUnit: 'string',
     isUnderISO: 'string',
     modifiedOn: 'date',
   };

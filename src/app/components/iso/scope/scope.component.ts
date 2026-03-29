@@ -134,7 +134,9 @@ export class ScopeComponent implements OnInit {
       qualitativeQuantitative: ['', Validators.required],
       isUnderISO: [false],
       lowerLimit: [''],
+      lowerLimitValue: [null],
       upperLimit: [''],
+      upperLimitValue: [null],
       disciplineID: [null],
       groupID: [null],
       subGroupID: [null],
@@ -152,7 +154,9 @@ export class ScopeComponent implements OnInit {
       } else {
         paramGroup.patchValue({
           lowerLimit: '',
+          lowerLimitValue: null,
           upperLimit: '',
+          upperLimitValue: null,
         });
         lowerLimitControl?.disable({ emitEvent: false });
         upperLimitControl?.disable({ emitEvent: false });
@@ -407,10 +411,11 @@ export class ScopeComponent implements OnInit {
         });
         this.specifications.clear();
         data.specifications.forEach((spec: any) => {
+          const specName = spec?.testMethodSpecification?.name || spec?.testMethodSpecificationName || '';
           const specGroup = this.fb.group({
             ID: [spec.id],
             labScopeID: [data.id],
-            testMethodSpecification: [spec?.testMethodSpecification || ''],
+            testMethodSpecification: [specName],
             testMethodSpecificationID: [spec.testMethodSpecificationID, Validators.required],
             testMethodSpecificationVersionID: [spec.testMethodSpecificationVersionID || null],
             parameters: this.fb.array([]),
@@ -429,7 +434,9 @@ export class ScopeComponent implements OnInit {
               qualitativeQuantitative: [param.qualitativeQuantitative, Validators.required],
               isUnderISO: [param.isUnderISO],
               lowerLimit: [param.lowerLimit || ''],
+              lowerLimitValue: [param.lowerLimitValue ?? null],
               upperLimit: [param.upperLimit || ''],
+              upperLimitValue: [param.upperLimitValue ?? null],
               disciplineID: [param.disciplineID],
               groupID: [param.groupID],
               subGroupID: [param.subGroupID || null],

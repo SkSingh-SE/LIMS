@@ -123,7 +123,11 @@ export class SearchableDropdownModalComponent {
     if (this.hasValidSelection) {
       this.hasValidSelection = false;
       this.selectedItem = null;
+      this.dropdownData = [];
+      this.pageNo = 0;
+      this.hasMore = true;
       this.itemSelected.emit(null);
+      this.cdr.markForCheck();
     }
     this.searchSubject.next(this.searchTerm);
     this.openDropdown();
@@ -216,11 +220,15 @@ export class SearchableDropdownModalComponent {
     this.selectedItem = null;
     this.hasValidSelection = false;
     this.selectedItems = [];
+    this.dropdownData = [];
+    this.pageNo = 0;
+    this.hasMore = true;
     this.itemSelected.emit(null);
     if (this.isMultiSelect) {
       this.itemsSelected.emit([]);
     }
     this.showDropdown = false;
+    this.cdr.markForCheck();
   }
 
   onScroll(event: any) {

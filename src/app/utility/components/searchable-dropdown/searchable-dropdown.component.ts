@@ -125,6 +125,9 @@ export class SearchableDropdownComponent {
     if (this.hasValidSelection) {
       this.hasValidSelection = false;
       this.selectedItem = null;
+      this.dropdownData = [];
+      this.pageNo = 0;
+      this.hasMore = true;
       this.itemSelected.emit(null);
       this.cdr.markForCheck();
     }
@@ -265,6 +268,9 @@ export class SearchableDropdownComponent {
     this.searchTerm = '';
     this.selectedItem = null;
     this.hasValidSelection = false;
+    this.dropdownData = [];
+    this.pageNo = 0;
+    this.hasMore = true;
     this.itemSelected.emit(null);
     this.closeDropdown();
     this.cdr.markForCheck();

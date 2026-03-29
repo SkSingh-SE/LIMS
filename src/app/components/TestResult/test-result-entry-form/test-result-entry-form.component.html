@@ -660,13 +660,26 @@
                             <i class="bi bi-exclamation-triangle me-1"></i>{{ rec.inputHint }}
                           </div>
                         </div>
-                        <div class="d-flex align-items-center gap-1">
-                          <input *ngIf="rec.requiredInput" type="number" class="form-control form-control-sm"
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                          <!-- SizeLoad / SizeAndLoad: TWO inputs -->
+                          <ng-container *ngIf="rec.pricingType === 'SizeLoad' || rec.pricingType === 'SizeAndLoad'">
+                            <input type="number" class="form-control form-control-sm"
+                              style="width:70px; font-size:0.8rem" placeholder="Size mm"
+                              [value]="dimSizeMap[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
+                              (input)="dimSizeMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                            <input type="number" class="form-control form-control-sm"
+                              style="width:70px; font-size:0.8rem" placeholder="Load kN"
+                              [value]="dimLoadMap[plans[p].tests[t].headerId] ?? ''"
+                              (input)="dimLoadMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                          </ng-container>
+                          <!-- Single value types: ONE input -->
+                          <input *ngIf="rec.requiredInput && rec.pricingType !== 'SizeLoad' && rec.pricingType !== 'SizeAndLoad'"
+                            type="number" class="form-control form-control-sm"
                             style="width:80px; font-size:0.8rem"
                             [placeholder]="rec.unit || ''"
-                            [title]="rec.inputHint || ''"
-                            [value]="dimInputValue[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
-                            (input)="dimInputValue[plans[p].tests[t].headerId] = +$any($event.target).value">
+                            [value]="dimSizeMap[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
+                            (input)="dimSizeMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                          <!-- No input needed (Element, FlatRate, Spectro) -->
                           <button type="button" class="btn btn-sm btn-outline-primary"
                             (click)="applyRec(plans[p].tests[t].headerId, rec)"
                             [disabled]="priceLoadingMap[plans[p].tests[t].headerId]">

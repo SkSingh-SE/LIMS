@@ -225,7 +225,7 @@ export class TestResultService {
     return this.http.get<any>(`${this.apiUrl}/pricing-recommendation/${headerId}`);
   }
 
-  setPricingWithValue(headerId: number, dto: { pricingType: string | null; dimensionValue: number | null }): Observable<any> {
+  setPricingWithValue(headerId: number, dto: { pricingType: string | null; dimensionValue: string | null }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/set-pricing-with-value/${headerId}`, dto);
   }
 

@@ -101,7 +101,8 @@ export class TestResultEntryFormComponent implements OnInit {
   pricingRecMap: Record<number, any> = {};
   pricingRecLoading: Record<number, boolean> = {};
   showRecPanel: Record<number, boolean> = {};
-  dimInputValue: Record<number, number | null> = {};
+  dimSizeMap: Record<number, number | null> = {};
+  dimLoadMap: Record<number, number | null> = {};
 
   // ================================================================
   // Phase 1-2: NABL Scope + Uncertainty
@@ -1808,9 +1809,10 @@ export class TestResultEntryFormComponent implements OnInit {
         this.pricingRecMap[headerId] = rec;
         this.pricingRecLoading[headerId] = false;
         this.showRecPanel[headerId] = true;
-        const top = rec.recommendations?.[0];
-        if (top?.autoDetectedValue != null && !this.dimInputValue[headerId]) {
-          this.dimInputValue[headerId] = top.autoDetectedValue;
+        // Auto-fill size from sample dimensions
+        const dims = rec.sampleDimensions;
+        if (dims && !this.dimSizeMap[headerId]) {
+          this.dimSizeMap[headerId] = dims.diameter ?? dims.thickness ?? dims.width ?? null;
         }
       },
       error: () => { this.pricingRecLoading[headerId] = false; }
@@ -1818,11 +1820,23 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   applyRec(headerId: number, rec: any): void {
-    if (rec.autoDetectedValue != null) this.dimInputValue[headerId] = rec.autoDetectedValue;
     this.priceLoadingMap[headerId] = true;
+
+    // Build dimension string based on type
+    let dimensionValue: string | null = null;
+    const size = this.dimSizeMap[headerId] ?? rec.autoDetectedValue;
+    const load = this.dimLoadMap[headerId];
+
+    if (rec.pricingType === 'SizeLoad' || rec.pricingType === 'SizeAndLoad') {
+      if (size && load) dimensionValue = `${size}|${load}`;
+      else if (size) dimensionValue = `${size}`;
+    } else if (size) {
+      dimensionValue = `${size}`;
+    }
+
     this.testResultService.setPricingWithValue(headerId, {
       pricingType: rec.pricingType,
-      dimensionValue: this.dimInputValue[headerId] || null
+      dimensionValue: dimensionValue
     }).subscribe({
       next: (summary: any) => {
         this.priceSummaryMap[headerId] = summary;

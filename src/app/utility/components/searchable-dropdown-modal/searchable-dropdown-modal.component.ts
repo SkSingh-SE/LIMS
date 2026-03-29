@@ -129,7 +129,11 @@ export class SearchableDropdownModalComponent {
       this.itemSelected.emit(null);
       this.cdr.markForCheck();
     }
-    this.searchSubject.next(this.searchTerm);
+    if (!this.searchTerm) {
+      this.loadMore();
+    } else {
+      this.searchSubject.next(this.searchTerm);
+    }
     this.openDropdown();
   }
 

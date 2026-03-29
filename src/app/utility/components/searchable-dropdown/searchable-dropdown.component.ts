@@ -131,7 +131,13 @@ export class SearchableDropdownComponent {
       this.itemSelected.emit(null);
       this.cdr.markForCheck();
     }
-    this.searchSubject.next(this.searchTerm);
+    // Debounce only when user is actively typing a search term
+    // Skip debounce on empty (backspace clear) — load immediately
+    if (!this.searchTerm) {
+      this.loadInitialData();
+    } else {
+      this.searchSubject.next(this.searchTerm);
+    }
   }
 
   onFocus(): void {

@@ -73,11 +73,11 @@ export class SearchableDropdownModalComponent {
         this.loading = false;
         const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
         this.highlightedIndex = idx >= 0 ? idx : (this.dropdownData.length ? 0 : -1);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: () => {
         this.loading = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
 
@@ -197,11 +197,11 @@ export class SearchableDropdownModalComponent {
           const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
           this.highlightedIndex = idx >= 0 ? idx : 0;
         }
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: () => {
         this.loading = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
   }

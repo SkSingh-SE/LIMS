@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-dropdown-panel',
   imports: [CommonModule],
   templateUrl: './dropdown-panel.component.html',
   styleUrl: './dropdown-panel.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DropdownPanelComponent {
   @Input() items: any[] = [];

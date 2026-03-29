@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ComponentRef, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
+import { ChangeDetectorRef, Component, ComponentRef, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, Subject, Subscription, switchMap } from 'rxjs';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
@@ -11,7 +11,6 @@ import { DropdownPanelComponent } from '../dropdown-panel/dropdown-panel.compone
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './searchable-dropdown.component.html',
   styleUrl: './searchable-dropdown.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchableDropdownComponent {
   @Input() placeholder = 'Type to search...';
@@ -279,7 +278,7 @@ export class SearchableDropdownComponent {
     this.hasMore = true;
     this.itemSelected.emit(null);
     this.closeDropdown();
-    this.cdr.markForCheck();
+    this.loadInitialData();
   }
 
   onBlur(): void {

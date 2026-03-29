@@ -223,6 +223,7 @@ export class SearchableDropdownModalComponent {
       this.itemsSelected.emit([]);
     }
     this.showDropdown = false;
+    this.loadMore();
   }
 
   onScroll(event: any) {

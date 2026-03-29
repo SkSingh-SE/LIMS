@@ -1400,7 +1400,26 @@ export class TestResultEntryFormComponent implements OnInit {
     if (!headerId && headerId !== 0) return false;
     const relatedTests = this.plans.flatMap(p => p.tests || []).filter((t: any) => t.headerId === headerId);
     if (!relatedTests || relatedTests.length === 0) return false;
-    return relatedTests.every((t: any) => t.status === 'Completed');
+    const completedStatuses = ['Completed', 'PendingVerification', 'Verified', 'VerificationRejected'];
+    return relatedTests.every((t: any) => completedStatuses.includes(t.status));
+  }
+
+  isTestFinalized(status: string): boolean {
+    return ['Completed', 'PendingVerification', 'Verified'].includes(status);
+  }
+
+  submitForVerification(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+    this.testResultService.submitForVerification(headerId).subscribe({
+      next: () => {
+        test.status = 'PendingVerification';
+        this.toastService.show('Test submitted for verification', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
+      }
+    });
   }
 
   /** Handle file selection for a particular headerId */

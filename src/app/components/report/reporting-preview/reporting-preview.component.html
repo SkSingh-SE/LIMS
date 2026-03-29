@@ -18,7 +18,7 @@
     </legend>
 
     <div class="card-body p-3 mt-1">
-      <!-- Metadata Row -->
+      <!-- Metadata Row 1: Basic Info -->
       <div class="row g-3 align-items-start mb-2">
         <div class="col-md-2 col-sm-6">
           <small class="text-muted d-block">Sample No</small>
@@ -72,6 +72,79 @@
               </div>
             </ng-container>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sample Detail Section -->
+  <div *ngIf="reportData" class="card border-0 shadow-sm mb-2">
+    <div class="card-header py-2 bg-light">
+      <span class="fw-semibold text-dark">
+        <i class="bi bi-clipboard-data me-1"></i>Sample Details
+      </span>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3">
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.grade">
+          <small class="text-muted d-block">Grade</small>
+          <strong>{{ reportData.grade }}</strong>
+        </div>
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.heatNo || reportData.batchNo">
+          <small class="text-muted d-block">Heat / Batch No</small>
+          <strong>{{ reportData.heatNo || reportData.batchNo || '-' }}</strong>
+        </div>
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.sampleDescription || reportData.description">
+          <small class="text-muted d-block">Description</small>
+          <strong>{{ reportData.sampleDescription || reportData.description || '-' }}</strong>
+        </div>
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.quantity">
+          <small class="text-muted d-block">Quantity</small>
+          <strong>{{ reportData.quantity }}</strong>
+        </div>
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.sampleReceivedDate">
+          <small class="text-muted d-block">Date of Receipt</small>
+          <strong>{{ reportData.sampleReceivedDate | date: 'dd-MMM-yyyy' }}</strong>
+        </div>
+        <div class="col-md-2 col-sm-6" *ngIf="reportData.testStartDate || reportData.testDate">
+          <small class="text-muted d-block">Date of Testing</small>
+          <strong>{{ (reportData.testStartDate || reportData.testDate) | date: 'dd-MMM-yyyy' }}</strong>
+        </div>
+      </div>
+      <!-- Dimensions Row -->
+      <div class="row g-3 mt-1" *ngIf="reportData.thickness || reportData.diameter || reportData.width || reportData.length">
+        <div class="col-md-2 col-sm-3" *ngIf="reportData.thickness">
+          <small class="text-muted d-block">Thickness</small>
+          <strong>{{ reportData.thickness }} mm</strong>
+        </div>
+        <div class="col-md-2 col-sm-3" *ngIf="reportData.diameter">
+          <small class="text-muted d-block">Diameter</small>
+          <strong>{{ reportData.diameter }} mm</strong>
+        </div>
+        <div class="col-md-2 col-sm-3" *ngIf="reportData.width">
+          <small class="text-muted d-block">Width</small>
+          <strong>{{ reportData.width }} mm</strong>
+        </div>
+        <div class="col-md-2 col-sm-3" *ngIf="reportData.length">
+          <small class="text-muted d-block">Length</small>
+          <strong>{{ reportData.length }} mm</strong>
+        </div>
+      </div>
+      <!-- NABL / Conformity -->
+      <div class="row g-3 mt-1">
+        <div class="col-md-3" *ngIf="reportData.statementOfConformity">
+          <small class="text-muted d-block">Statement of Conformity</small>
+          <strong [ngClass]="reportData.statementOfConformity === 'Applicable' ? 'text-success' : 'text-muted'">
+            {{ reportData.statementOfConformity }}
+          </strong>
+        </div>
+        <div class="col-md-3" *ngIf="reportData.decisionRule">
+          <small class="text-muted d-block">Decision Rule</small>
+          <strong>{{ reportData.decisionRule }}</strong>
+        </div>
+        <div class="col-md-3" *ngIf="reportData.ulrNo || reportData.ulr">
+          <small class="text-muted d-block">ULR No</small>
+          <strong>{{ reportData.ulrNo || reportData.ulr || '-' }}</strong>
         </div>
       </div>
     </div>
@@ -175,24 +248,32 @@
                   <th>Parameter</th>
                   <th>Value</th>
                   <th>Unit</th>
-                  <th>Min</th>
-                  <th>Max</th>
-                  <!-- <th>Status</th> -->
+                  <th>Spec Min</th>
+                  <th>Spec Max</th>
+                  <th class="text-center">Status</th>
                   <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let param of test.parameters" [class.text-danger]="!param.isWithinLimit">
-                  <td>{{ param.parameterName }}</td>
-                  <td>{{ param.value }}</td>
+                <tr *ngFor="let param of test.parameters"
+                  [ngClass]="{'table-danger': param.isWithinLimit === false, 'table-warning': param.resultStatus === 'Marginal'}">
+                  <td class="fw-medium">{{ param.parameterName }}</td>
+                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
                   <td>{{ param.unit }}</td>
-                  <td>{{ param.minValue }}</td>
-                  <td>{{ param.maxValue }}</td>
-                  <!-- <td>
-                    <span class="badge" [ngClass]="param.isWithinLimit ? 'bg-success' : 'bg-danger'">
-                      {{ param.isWithinLimit ? "Pass" : "Fail" }}
+                  <td>{{ param.minValue ?? param.specMinValue ?? '-' }}</td>
+                  <td>{{ param.maxValue ?? param.specMaxValue ?? '-' }}</td>
+                  <td class="text-center">
+                    <span *ngIf="param.resultStatus" class="badge"
+                      [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
+                                  'bg-danger': param.resultStatus === 'Fail',
+                                  'bg-warning text-dark': param.resultStatus === 'Marginal'}">
+                      {{ param.resultStatus }}
                     </span>
-                  </td> -->
+                    <span *ngIf="!param.resultStatus && param.value != null" class="badge"
+                      [ngClass]="param.isWithinLimit ? 'bg-success' : 'bg-danger'">
+                      {{ param.isWithinLimit ? 'Pass' : 'Fail' }}
+                    </span>
+                  </td>
                   <td>{{ param.remarks || "-" }}</td>
                 </tr>
               </tbody>
@@ -246,24 +327,32 @@
                   <th>Parameter</th>
                   <th>Value</th>
                   <th>Unit</th>
-                  <th>Min</th>
-                  <th>Max</th>
-                  <!-- <th>Status</th> -->
+                  <th>Spec Min</th>
+                  <th>Spec Max</th>
+                  <th class="text-center">Status</th>
                   <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let param of test.parameters" [class.text-danger]="!param.isWithinLimit">
-                  <td>{{ param.parameterName }}</td>
-                  <td>{{ param.value }}</td>
+                <tr *ngFor="let param of test.parameters"
+                  [ngClass]="{'table-danger': param.isWithinLimit === false, 'table-warning': param.resultStatus === 'Marginal'}">
+                  <td class="fw-medium">{{ param.parameterName }}</td>
+                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
                   <td>{{ param.unit }}</td>
-                  <td>{{ param.minValue }}</td>
-                  <td>{{ param.maxValue }}</td>
-                  <!-- <td>
-                    <span class="badge" [ngClass]="param.isWithinLimit ? 'bg-success' : 'bg-danger'">
-                      {{ param.isWithinLimit ? "Pass" : "Fail" }}
+                  <td>{{ param.minValue ?? param.specMinValue ?? '-' }}</td>
+                  <td>{{ param.maxValue ?? param.specMaxValue ?? '-' }}</td>
+                  <td class="text-center">
+                    <span *ngIf="param.resultStatus" class="badge"
+                      [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
+                                  'bg-danger': param.resultStatus === 'Fail',
+                                  'bg-warning text-dark': param.resultStatus === 'Marginal'}">
+                      {{ param.resultStatus }}
                     </span>
-                  </td> -->
+                    <span *ngIf="!param.resultStatus && param.value != null" class="badge"
+                      [ngClass]="param.isWithinLimit ? 'bg-success' : 'bg-danger'">
+                      {{ param.isWithinLimit ? 'Pass' : 'Fail' }}
+                    </span>
+                  </td>
                   <td>{{ param.remarks || "-" }}</td>
                 </tr>
               </tbody>

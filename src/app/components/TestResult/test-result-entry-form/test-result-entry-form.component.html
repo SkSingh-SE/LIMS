@@ -211,6 +211,30 @@
                       <i class="bi bi-check-circle me-1"></i>Complete Test
                     </button>
 
+                    <!-- Submit for Verification (after Completed, before Verified) -->
+                    <button
+                      *ngIf="plans[p].tests[t].status === 'Completed'"
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      (click)="submitForVerification(p, t)"
+                      title="Submit test results for Lab Manager verification">
+                      <i class="bi bi-send-check me-1"></i>Submit for Verification
+                    </button>
+
+                    <!-- Verification Status Badges -->
+                    <span *ngIf="plans[p].tests[t].status === 'PendingVerification'"
+                      class="badge bg-warning text-dark">
+                      <i class="bi bi-hourglass-split me-1"></i>Pending Verification
+                    </span>
+                    <span *ngIf="plans[p].tests[t].status === 'Verified'"
+                      class="badge bg-success">
+                      <i class="bi bi-patch-check me-1"></i>Verified
+                    </span>
+                    <span *ngIf="plans[p].tests[t].status === 'VerificationRejected'"
+                      class="badge bg-danger">
+                      <i class="bi bi-x-octagon me-1"></i>Rejected — Re-test Required
+                    </span>
+
                     <div class="d-flex gap-1">
                       <button
                         *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"

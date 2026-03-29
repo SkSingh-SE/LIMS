@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, SimpleChanges } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs';
 
@@ -8,7 +8,6 @@ import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './searchable-dropdown-modal.component.html',
   styleUrl: './searchable-dropdown-modal.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchableDropdownModalComponent {
   @Input() placeholder: string = 'Type to search...';
@@ -42,7 +41,7 @@ export class SearchableDropdownModalComponent {
   private subscription = new Subscription();
   private closingFromBlur = false;
 
-  constructor(private elRef: ElementRef, private cdr: ChangeDetectorRef) {}
+  constructor(private elRef: ElementRef) {}
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -51,7 +50,6 @@ export class SearchableDropdownModalComponent {
     if (!this.elRef.nativeElement.contains(target) && !target.closest('.dropdown-panel')) {
       this.showDropdown = false;
       this.revertIfInvalid();
-      this.cdr.markForCheck();
     }
   }
 
@@ -62,7 +60,6 @@ export class SearchableDropdownModalComponent {
         this.pageNo = 0;
         this.dropdownData = [];
         this.loading = true;
-        this.cdr.markForCheck();
         return this.fetchDataFn(term, this.pageNo, this.pageSize);
       })
     ).subscribe({
@@ -73,11 +70,9 @@ export class SearchableDropdownModalComponent {
         this.loading = false;
         const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
         this.highlightedIndex = idx >= 0 ? idx : (this.dropdownData.length ? 0 : -1);
-        this.cdr.detectChanges();
       },
       error: () => {
         this.loading = false;
-        this.cdr.detectChanges();
       },
     });
 
@@ -127,7 +122,6 @@ export class SearchableDropdownModalComponent {
       this.pageNo = 0;
       this.hasMore = true;
       this.itemSelected.emit(null);
-      this.cdr.markForCheck();
     }
     if (!this.searchTerm) {
       this.loadMore();
@@ -197,11 +191,9 @@ export class SearchableDropdownModalComponent {
           const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
           this.highlightedIndex = idx >= 0 ? idx : 0;
         }
-        this.cdr.detectChanges();
       },
       error: () => {
         this.loading = false;
-        this.cdr.detectChanges();
       },
     });
   }
@@ -214,7 +206,6 @@ export class SearchableDropdownModalComponent {
     this.showDropdown = false;
     const idx = this.dropdownData.findIndex(d => d.id === item.id);
     this.highlightedIndex = idx >= 0 ? idx : -1;
-    this.cdr.markForCheck();
   }
 
   clearSelection(event: Event): void {
@@ -232,7 +223,6 @@ export class SearchableDropdownModalComponent {
       this.itemsSelected.emit([]);
     }
     this.showDropdown = false;
-    this.cdr.markForCheck();
   }
 
   onScroll(event: any) {
@@ -251,19 +241,16 @@ export class SearchableDropdownModalComponent {
   }
 
   onBlur(): void {
-    // Delay to allow mousedown on dropdown items to register first
     this.closingFromBlur = true;
     setTimeout(() => {
       if (this.closingFromBlur) {
         this.showDropdown = false;
         this.revertIfInvalid();
         this.closingFromBlur = false;
-        this.cdr.markForCheck();
       }
     }, 150);
   }
 
-  /** If user typed garbage without selecting, revert to empty */
   private revertIfInvalid(): void {
     if (this.isMultiSelect) return;
     if (!this.hasValidSelection && this.selectedLabel) {
@@ -296,24 +283,18 @@ export class SearchableDropdownModalComponent {
           }
         });
         if (idsToResolve.length > 0) {
-          this.fetchDataFn('', 0, 100).subscribe({
-            next: (data) => {
-              idsToResolve.forEach((id: any) => {
-                const found = data.find(item => item.id == id);
-                if (found && !this.selectedItems.some(si => si.id == found.id)) {
-                  this.selectedItems.push(found);
-                }
-              });
-              data.forEach((item: any) => {
-                if (!this.dropdownData.some(d => d.id === item.id)) {
-                  this.dropdownData.push(item);
-                }
-              });
-              this.cdr.markForCheck();
-            },
-            error: () => {
-              this.cdr.markForCheck();
-            },
+          this.fetchDataFn('', 0, 100).subscribe((data) => {
+            idsToResolve.forEach((id: any) => {
+              const found = data.find(item => item.id == id);
+              if (found && !this.selectedItems.some(si => si.id == found.id)) {
+                this.selectedItems.push(found);
+              }
+            });
+            data.forEach((item: any) => {
+              if (!this.dropdownData.some(d => d.id === item.id)) {
+                this.dropdownData.push(item);
+              }
+            });
           });
         }
       } else if (!this.isMultiSelect) {
@@ -325,22 +306,16 @@ export class SearchableDropdownModalComponent {
             this.selectItem(matched);
           }
         } else {
-          this.fetchDataFn(this.selectedItem, 0, 1).subscribe({
-            next: (data: any[]) => {
-              const found = data.find(x => x.id === this.selectedItem);
-              if (found) {
-                this.dropdownData = [found, ...this.dropdownData];
-                this.selectedLabel = found.name;
-                this.hasValidSelection = true;
-                this.selectItem(found);
-                const idx = this.dropdownData.findIndex(d => d.id === found.id);
-                this.highlightedIndex = idx >= 0 ? idx : -1;
-              }
-              this.cdr.markForCheck();
-            },
-            error: () => {
-              this.cdr.markForCheck();
-            },
+          this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
+            const found = data.find(x => x.id === this.selectedItem);
+            if (found) {
+              this.dropdownData = [found, ...this.dropdownData];
+              this.selectedLabel = found.name;
+              this.hasValidSelection = true;
+              this.selectItem(found);
+              const idx = this.dropdownData.findIndex(d => d.id === found.id);
+              this.highlightedIndex = idx >= 0 ? idx : -1;
+            }
           });
         }
       }
@@ -372,7 +347,6 @@ export class SearchableDropdownModalComponent {
     }
     this.searchTerm = '';
     this.itemsSelected.emit(this.selectedItems);
-    this.cdr.markForCheck();
   }
 
   isSelected(item: any): boolean {

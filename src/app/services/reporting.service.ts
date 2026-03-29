@@ -34,7 +34,10 @@ export interface TestParameter {
   unit: string;
   minValue: number | string;
   maxValue: number | string;
+  specMinValue?: number | string;
+  specMaxValue?: number | string;
   isWithinLimit: boolean;
+  resultStatus?: string;
   remarks?: string;
 }
 
@@ -99,6 +102,24 @@ export interface ReportingPreview {
   pricing?: any;
   priceSnapshot?: any;
   hasPriceSnapshot?: boolean;
+  // Sample details for approval review
+  grade?: string;
+  heatNo?: string;
+  batchNo?: string;
+  sampleDescription?: string;
+  description?: string;
+  quantity?: string;
+  sampleReceivedDate?: string;
+  testStartDate?: string;
+  testDate?: string;
+  thickness?: number;
+  diameter?: number;
+  width?: number;
+  length?: number;
+  statementOfConformity?: string;
+  decisionRule?: string;
+  ulrNo?: string;
+  ulr?: string;
 }
 
 @Injectable({

@@ -61,13 +61,23 @@ export class ReportingPreviewComponent implements OnInit {
         this.loadReportPreview(this.sampleId);
       }
     });
-    this.loadReportFormats();
   }
 
-  loadReportFormats(): void {
-    this.reportingService.getAvailableFormats().subscribe({
-      next: (formats) => this.reportFormats = formats,
-      error: () => this.reportFormats = [],
+  loadReportFormats(reportHeaderId: number | string): void {
+    this.reportingService.getAvailableFormatsForReport(+reportHeaderId).subscribe({
+      next: (formats) => {
+        this.reportFormats = formats;
+        if (formats.length > 0 && !this.selectedFormatType) {
+          this.selectedFormatType = formats[0].formatType;
+        }
+      },
+      error: () => {
+        // Fallback to static formats
+        this.reportingService.getAvailableFormats().subscribe({
+          next: (formats) => this.reportFormats = formats,
+          error: () => this.reportFormats = [],
+        });
+      },
     });
   }
 
@@ -99,6 +109,10 @@ export class ReportingPreviewComponent implements OnInit {
         // Extract pricing data if available (read-only after approval)
         this.pricingData = (data as any)?.pricing || (data as any)?.priceSnapshot || null;
         this.hasPriceSnapshot = !!this.pricingData || !!(data as any)?.hasPriceSnapshot || false;
+        // Load dynamic formats based on this report's actual test data
+        if (this.reportData.reportHeaderId) {
+          this.loadReportFormats(this.reportData.reportHeaderId);
+        }
       },
       error: (error) => {
         console.error('Error loading report preview:', error);

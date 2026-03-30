@@ -267,30 +267,39 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
         this.fetchArea(this.customerData?.areaID, this.sampleInwardForm);
 
-        this.contactControls.clear();
-        this.contactPersons = [];
-        this.billingToContactPerson = [];
-        this.reportingToContactPerson = [];
+        // Only reload contacts from customer master if:
+        // 1. Creating new inward (sampleId === 0), OR
+        // 2. No contacts loaded yet from API (contacts array is empty)
+        // This prevents overwriting saved Selected/SendBill/SendReport values on edit
+        if (this.contactControls.length === 0 || this.sampleId === 0) {
+          this.contactControls.clear();
+          this.contactPersons = [];
+          this.billingToContactPerson = [];
+          this.reportingToContactPerson = [];
 
-        if (Array.isArray(this.customerData?.contactPersons)) {
-          // When creating new (sampleId === 0), set selected: true by default
-          const defaultSelected = this.sampleId === 0;
+          if (Array.isArray(this.customerData?.contactPersons)) {
+            const defaultSelected = this.sampleId === 0;
 
-          this.customerData.contactPersons.forEach((contact: any) => {
-            contact.contactID = contact.id;
-            this.addContact(contact, defaultSelected);
-            this.contactPersons.push(contact);
-          });
+            this.customerData.contactPersons.forEach((contact: any) => {
+              contact.contactID = contact.id;
+              this.addContact(contact, defaultSelected);
+              this.contactPersons.push(contact);
+            });
 
-          // Update contact lists based on selected, sendBill, and sendReport
+            this.updateContactLists();
+          }
+        } else {
+          // Edit mode: just update the contactPersons list for dropdowns
+          this.contactPersons = this.customerData?.contactPersons?.map((c: any) => ({ ...c, contactID: c.id })) || [];
           this.updateContactLists();
+        }
 
-          if (this.billingToContactPerson.length > 0) {
-            this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
-          }
-          if (this.reportingToContactPerson.length > 0) {
-            this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
-          }
+        // Update billing/reporting address helpers
+        if (this.billingToContactPerson.length > 0) {
+          this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
+        }
+        if (this.reportingToContactPerson.length > 0) {
+          this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
         }
       },
       error: (error) => console.error('Error fetching customer details:', error)

@@ -246,6 +246,10 @@ export class ReportingService {
     return this.http.get<any[]>(`${this.apiUrl}/formats`);
   }
 
+  getAvailableFormatsForReport(reportHeaderId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${reportHeaderId}/available-formats`);
+  }
+
   generateByFormat(reportHeaderId: number, formatType: number, watermark?: string): Observable<Blob> {
     let url = `${this.apiUrl}/${reportHeaderId}/generate/${formatType}`;
     if (watermark) url += `?watermark=${encodeURIComponent(watermark)}`;

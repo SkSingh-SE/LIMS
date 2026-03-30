@@ -149,6 +149,8 @@ import { TechnicalRawDataPreviewComponent } from './components/nabl/technical-ra
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
+    // Public route — QR code scan opens this (no auth required)
+    { path: 'report/verify/:reportNo', loadComponent: () => import('./components/report/report-verify/report-verify.component').then(m => m.ReportVerifyComponent) },
     {
         path: '',
         component: LayoutComponent,

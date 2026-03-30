@@ -106,6 +106,19 @@
               </div>
             </div>
 
+            <div class="form-row">
+              <div>
+                <label class="form-label">ULR Prefix</label>
+                <input type="text" class="form-control" formControlName="ulrPrefix" placeholder="e.g., TC5098" maxlength="50" />
+                <small class="text-muted">Used for ULR number generation on test certificates</small>
+              </div>
+              <div>
+                <label class="form-label">Lab Location Code</label>
+                <input type="text" class="form-control" formControlName="labLocationCode" placeholder="e.g., 0 or 25000" maxlength="20" />
+                <small class="text-muted">Location identifier in ULR number</small>
+              </div>
+            </div>
+
             <!-- Lab Address -->
             <div class="form-row-full">
               <label class="form-label">

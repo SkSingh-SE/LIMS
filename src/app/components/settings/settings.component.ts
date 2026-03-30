@@ -148,6 +148,8 @@ export class SettingsComponent implements OnInit {
         mobileNo: [''],
         website: [''],
         cin: [''],
+        ulrPrefix: [''],
+        labLocationCode: [''],
         organizationLogo: ['']
       }),
 

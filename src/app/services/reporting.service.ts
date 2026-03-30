@@ -41,6 +41,12 @@ export interface TestParameter {
   remarks?: string;
 }
 
+export interface TestImage {
+  id: number;
+  filePath: string;
+  caption?: string;
+}
+
 export interface MechanicalTest {
   testResultHeaderId: string;
   testName: string;
@@ -49,6 +55,7 @@ export interface MechanicalTest {
   specification2Name?: string;
   status: 'Completed' | 'Running' | 'Pending' | 'Failed';
   parameters: TestParameter[];
+  images?: TestImage[];
 }
 
 export interface ChemicalTest {
@@ -59,6 +66,7 @@ export interface ChemicalTest {
   specification2Name?: string;
   status: 'Completed' | 'Running' | 'Pending' | 'Failed';
   parameters: TestParameter[];
+  images?: TestImage[];
 }
 
 export interface LongTermTestReading {

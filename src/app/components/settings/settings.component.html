@@ -168,17 +168,21 @@
             <!-- NABL Certificate (PDF) -->
             <div class="form-row-full" *ngIf="isNablEnabled">
               <label class="form-label">NABL Certificate (PDF)</label>
-              <div class="file-upload-inline" [class.has-file]="nablCertificateFile"
+              <div class="file-upload-inline" [class.has-file]="nablCertificateFile || nablCertificateLoadedPath"
                 [class.file-error]="fileErrors['nablCertificate']">
                 <input type="file" class="form-control" accept="application/pdf"
                   (change)="onNablCertificateChange($event)" />
-                <span class="file-label" *ngIf="!nablCertificateFile">
+                <span class="file-label" *ngIf="!nablCertificateFile && !nablCertificateLoadedPath">
                   <i class="bi bi-file-pdf"></i> Click to upload PDF
                 </span>
                 <span class="file-preview" *ngIf="nablCertificateFile">
                   {{ nablCertificateFile.name }}
                   <button type="button" class="btn-remove" (click)="clearNablCertificate()"><i
                       class="bi bi-x"></i></button>
+                </span>
+                <span class="file-preview" *ngIf="!nablCertificateFile && nablCertificateLoadedPath">
+                  <i class="bi bi-file-pdf-fill text-danger me-1"></i> Certificate uploaded
+                  <a [href]="nablCertificateLoadedPath" target="_blank" class="ms-1"><i class="bi bi-box-arrow-up-right"></i></a>
                 </span>
               </div>
               <div class="file-error-msg" *ngIf="fileErrors['nablCertificate']">

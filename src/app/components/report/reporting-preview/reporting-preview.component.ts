@@ -136,6 +136,7 @@ export class ReportingPreviewComponent implements OnInit {
           minValue: p.minValue ?? '',
           maxValue: p.maxValue ?? '',
           isWithinLimit:  p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          resultStatus: (p as any).resultStatus || '',
           remarks: p.remarks || ''
         }))
       })),
@@ -174,7 +175,24 @@ export class ReportingPreviewComponent implements OnInit {
         })
       })),
       actions: src.actions || [],
-      amendment: src.amendment || null
+      amendment: src.amendment || null,
+      // Sample details
+      grade: (src as any).grade || '',
+      heatNo: (src as any).heatNo || '',
+      batchNo: (src as any).batchNo || '',
+      sampleDescription: (src as any).sampleDescription || '',
+      description: (src as any).description || '',
+      quantity: (src as any).quantity || '',
+      sampleReceivedDate: (src as any).sampleReceivedDate || '',
+      testStartDate: (src as any).testStartDate || '',
+      testDate: (src as any).testDate || '',
+      thickness: (src as any).thickness || null,
+      diameter: (src as any).diameter || null,
+      width: (src as any).width || null,
+      length: (src as any).length || null,
+      statementOfConformity: (src as any).statementOfConformity || '',
+      decisionRule: (src as any).decisionRule || '',
+      ulrNo: (src as any).ulrNo || '',
     };
 
     return dst;

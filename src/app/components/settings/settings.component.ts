@@ -46,6 +46,7 @@ export class SettingsComponent implements OnInit {
   organizationLogoFile: File | null = null;
   organizationLogoPreview: string | null = null;
   nablCertificateFile: File | null = null;
+  nablCertificateLoadedPath: string | null = null;
   nablLogoFile: File | null = null;
   nablLogoPreview: string | null = null;
   signatureFile: File | null = null;
@@ -94,9 +95,18 @@ export class SettingsComponent implements OnInit {
         }
         if (res.organizationInfo) {
           this.settingsForm.get('organizationInfo')?.patchValue(res.organizationInfo);
+          if (res.organizationInfo.organizationLogo) {
+            this.organizationLogoPreview = this.normalizeFileUrl(res.organizationInfo.organizationLogo);
+          }
         }
         if (res.nablAccreditation) {
           this.settingsForm.get('nablAccreditation')?.patchValue(res.nablAccreditation);
+          if (res.nablAccreditation.nablLogo) {
+            this.nablLogoPreview = this.normalizeFileUrl(res.nablAccreditation.nablLogo);
+          }
+          if (res.nablAccreditation.nablCertificate) {
+            this.nablCertificateLoadedPath = this.normalizeFileUrl(res.nablAccreditation.nablCertificate);
+          }
         }
         if (res.numbering) {
           this.settingsForm.get('numbering')?.patchValue(res.numbering);

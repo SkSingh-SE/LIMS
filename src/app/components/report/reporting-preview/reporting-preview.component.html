@@ -8,66 +8,51 @@
     </div>
   </div>
 
-  <!-- Report Header -->
-  <div *ngIf="reportData" class="card border-1 border-danger-600 mb-2 position-relative">
-    <legend
-      class="w-auto px-2 fw-semibold theme-color"
-      
-    >
-      Report Preview - {{ reportData.reportNo }}
-    </legend>
-
-    <div class="card-body p-3 mt-1">
-      <!-- Metadata Row 1: Basic Info -->
-      <div class="row g-3 align-items-start mb-2">
-        <div class="col-md-2 col-sm-6">
-          <small class="text-muted d-block">Sample No</small>
-          <strong class="text-dark">{{ reportData.sampleNo || "-" }}</strong>
+  <!-- Report Header Card -->
+  <div *ngIf="reportData" class="report-header-card mb-3">
+    <div class="rh-title-bar">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-text fs-5"></i>
+        <span class="fw-bold">Report Preview</span>
+        <span class="text-white-50 ms-1">{{ reportData.reportNo }}</span>
+      </div>
+      <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
+    </div>
+    <div class="rh-body">
+      <div class="row g-3">
+        <div class="col-md-2 col-6">
+          <div class="info-label">Sample No</div>
+          <div class="info-value">{{ reportData.sampleNo || "-" }}</div>
         </div>
-        <div class="col-md-2 col-sm-6">
-          <small class="text-muted d-block">Case No</small>
-          <strong class="text-dark">{{ reportData.caseNo || "-" }}</strong>
+        <div class="col-md-2 col-6">
+          <div class="info-label">Case No</div>
+          <div class="info-value">{{ reportData.caseNo || "-" }}</div>
         </div>
-        <div class="col-md-2 col-sm-6">
-          <small class="text-muted d-block">Customer</small>
-          <strong class="text-dark">{{ reportData.customer || "-" }}</strong>
+        <div class="col-md-2 col-6">
+          <div class="info-label">Customer</div>
+          <div class="info-value">{{ reportData.customer || "-" }}</div>
         </div>
-        <div class="col-md-2 col-sm-6">
-          <small class="text-muted d-block">Material</small>
-          <strong class="text-dark">{{ reportData.material || "-" }}</strong>
+        <div class="col-md-2 col-6">
+          <div class="info-label">Material</div>
+          <div class="info-value">{{ reportData.material || "-" }}</div>
         </div>
-        <div class="col-md-2 col-sm-6">
-          <small class="text-muted d-block">Condition</small>
-          <strong class="text-dark">{{ reportData.condition || "-" }}</strong>
+        <div class="col-md-2 col-6">
+          <div class="info-label">Condition</div>
+          <div class="info-value">{{ reportData.condition || "-" }}</div>
         </div>
-
-        <!-- Status & Actions Column -->
-        <div class="col-md-2 col-sm-6">
-          <div class="d-flex flex-column gap-2 align-items-end text-end">
-            <!-- Status -->
-            <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
-
-            <!-- Action -->
+        <div class="col-md-2 col-6">
+          <div class="d-flex flex-column gap-1 align-items-end">
             <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting']">
-              <button
-                *ngIf="canGeneratePdf()"
-                class="btn btn-sm btn-outline-warning-500 d-flex align-items-center gap-1"
-                (click)="generatePdf()"
-                [disabled]="pdfGenerating || false || !canGeneratePdf()"
-                title="Generate PDF"
-              >
-                <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
-                <span>{{ pdfGenerating ? "Generating…" : "PDF" }}</span>
-              </button>
-
-              <!-- Multi-Format PDF Download -->
-              <div *ngIf="reportFormats.length > 0" class="d-flex align-items-center gap-1 ms-2">
-                <select class="form-select form-select-sm" [(ngModel)]="selectedFormatType" style="width: 200px; font-size: 12px;">
+              <div class="d-flex align-items-center gap-1">
+                <select *ngIf="reportFormats.length > 0" class="form-select form-select-sm" [(ngModel)]="selectedFormatType" style="width: 170px; font-size: 11px;">
                   <option *ngFor="let fmt of reportFormats" [ngValue]="fmt.formatType">{{ fmt.displayName }}</option>
                 </select>
-                <button class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1"
-                  (click)="downloadByFormat()" [disabled]="formatPdfGenerating" title="Download in selected format">
+                <button *ngIf="reportFormats.length > 0" class="btn btn-sm btn-outline-dark" (click)="downloadByFormat()" [disabled]="formatPdfGenerating" title="Download">
                   <i class="bi" [class.bi-download]="!formatPdfGenerating" [class.bi-hourglass-split]="formatPdfGenerating"></i>
+                </button>
+                <button *ngIf="canGeneratePdf()" class="btn btn-sm btn-outline-danger" (click)="generatePdf()" [disabled]="pdfGenerating" title="Generate PDF">
+                  <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
+                  {{ pdfGenerating ? "..." : "PDF" }}
                 </button>
               </div>
             </ng-container>
@@ -77,173 +62,169 @@
     </div>
   </div>
 
-  <!-- Sample Detail Section -->
-  <div *ngIf="reportData" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 bg-light">
-      <span class="fw-semibold text-dark">
-        <i class="bi bi-clipboard-data me-1"></i>Sample Details
-      </span>
+  <!-- Sample Details Section -->
+  <div *ngIf="reportData" class="section-card mb-3">
+    <div class="section-header" style="background: #f0f4f8; border-left: 4px solid #3b82f6;">
+      <i class="bi bi-clipboard-data me-2 text-primary"></i>
+      <span class="fw-semibold">Sample Details</span>
     </div>
-    <div class="card-body p-3">
-      <div class="row g-3">
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.grade">
-          <small class="text-muted d-block">Grade</small>
-          <strong>{{ reportData.grade }}</strong>
+    <div class="section-body">
+      <div class="row g-2">
+        <!-- Always show these core fields -->
+        <div class="col-md-2 col-sm-4 col-6">
+          <div class="detail-item">
+            <span class="detail-label">Material</span>
+            <span class="detail-value">{{ reportData.material || '-' }}</span>
+          </div>
         </div>
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.heatNo || reportData.batchNo">
-          <small class="text-muted d-block">Heat / Batch No</small>
-          <strong>{{ reportData.heatNo || reportData.batchNo || '-' }}</strong>
+        <div class="col-md-2 col-sm-4 col-6">
+          <div class="detail-item">
+            <span class="detail-label">Condition</span>
+            <span class="detail-value">{{ reportData.condition || '-' }}</span>
+          </div>
         </div>
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.sampleDescription || reportData.description">
-          <small class="text-muted d-block">Description</small>
-          <strong>{{ reportData.sampleDescription || reportData.description || '-' }}</strong>
+        <div class="col-md-3 col-sm-4 col-6">
+          <div class="detail-item">
+            <span class="detail-label">Description</span>
+            <span class="detail-value">{{ reportData.sampleDescription || reportData.description || '-' }}</span>
+          </div>
         </div>
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.quantity">
-          <small class="text-muted d-block">Quantity</small>
-          <strong>{{ reportData.quantity }}</strong>
+        <div class="col-md-2 col-sm-4 col-6" *ngIf="reportData.grade">
+          <div class="detail-item">
+            <span class="detail-label">Grade</span>
+            <span class="detail-value">{{ reportData.grade }}</span>
+          </div>
         </div>
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.sampleReceivedDate">
-          <small class="text-muted d-block">Date of Receipt</small>
-          <strong>{{ reportData.sampleReceivedDate | date: 'dd-MMM-yyyy' }}</strong>
+        <div class="col-md-2 col-sm-4 col-6" *ngIf="reportData.heatNo || reportData.batchNo">
+          <div class="detail-item">
+            <span class="detail-label">Heat / Batch No</span>
+            <span class="detail-value">{{ reportData.heatNo || reportData.batchNo }}</span>
+          </div>
         </div>
-        <div class="col-md-2 col-sm-6" *ngIf="reportData.testStartDate || reportData.testDate">
-          <small class="text-muted d-block">Date of Testing</small>
-          <strong>{{ (reportData.testStartDate || reportData.testDate) | date: 'dd-MMM-yyyy' }}</strong>
+        <div class="col-md-2 col-sm-4 col-6">
+          <div class="detail-item">
+            <span class="detail-label">Date of Receipt</span>
+            <span class="detail-value">{{ reportData.sampleReceivedDate ? (reportData.sampleReceivedDate | date: 'dd-MMM-yyyy') : '-' }}</span>
+          </div>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+          <div class="detail-item">
+            <span class="detail-label">Date of Testing</span>
+            <span class="detail-value">{{ (reportData.testStartDate || reportData.testDate) ? ((reportData.testStartDate || reportData.testDate) | date: 'dd-MMM-yyyy') : '-' }}</span>
+          </div>
         </div>
       </div>
-      <!-- Dimensions Row -->
-      <div class="row g-3 mt-1" *ngIf="reportData.thickness || reportData.diameter || reportData.width || reportData.length">
-        <div class="col-md-2 col-sm-3" *ngIf="reportData.thickness">
-          <small class="text-muted d-block">Thickness</small>
-          <strong>{{ reportData.thickness }} mm</strong>
-        </div>
-        <div class="col-md-2 col-sm-3" *ngIf="reportData.diameter">
-          <small class="text-muted d-block">Diameter</small>
-          <strong>{{ reportData.diameter }} mm</strong>
-        </div>
-        <div class="col-md-2 col-sm-3" *ngIf="reportData.width">
-          <small class="text-muted d-block">Width</small>
-          <strong>{{ reportData.width }} mm</strong>
-        </div>
-        <div class="col-md-2 col-sm-3" *ngIf="reportData.length">
-          <small class="text-muted d-block">Length</small>
-          <strong>{{ reportData.length }} mm</strong>
-        </div>
+      <!-- Dimensions -->
+      <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.thickness || reportData.diameter || reportData.width || reportData.length">
+        <span *ngIf="reportData.thickness" class="dimension-tag"><i class="bi bi-rulers me-1"></i>Thickness: <strong>{{ reportData.thickness }} mm</strong></span>
+        <span *ngIf="reportData.diameter" class="dimension-tag"><i class="bi bi-circle me-1"></i>Diameter: <strong>{{ reportData.diameter }} mm</strong></span>
+        <span *ngIf="reportData.width" class="dimension-tag"><i class="bi bi-arrows me-1"></i>Width: <strong>{{ reportData.width }} mm</strong></span>
+        <span *ngIf="reportData.length" class="dimension-tag"><i class="bi bi-arrows-expand me-1"></i>Length: <strong>{{ reportData.length }} mm</strong></span>
       </div>
-      <!-- NABL / Conformity -->
-      <div class="row g-3 mt-1">
-        <div class="col-md-3" *ngIf="reportData.statementOfConformity">
-          <small class="text-muted d-block">Statement of Conformity</small>
-          <strong [ngClass]="reportData.statementOfConformity === 'Applicable' ? 'text-success' : 'text-muted'">
-            {{ reportData.statementOfConformity }}
-          </strong>
-        </div>
-        <div class="col-md-3" *ngIf="reportData.decisionRule">
-          <small class="text-muted d-block">Decision Rule</small>
-          <strong>{{ reportData.decisionRule }}</strong>
-        </div>
-        <div class="col-md-3" *ngIf="reportData.ulrNo || reportData.ulr">
-          <small class="text-muted d-block">ULR No</small>
-          <strong>{{ reportData.ulrNo || reportData.ulr || '-' }}</strong>
-        </div>
+      <!-- Conformity -->
+      <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.statementOfConformity || reportData.decisionRule">
+        <span *ngIf="reportData.statementOfConformity" class="dimension-tag" [class.conformity-applicable]="reportData.statementOfConformity === 'Applicable'">
+          <i class="bi bi-shield-check me-1"></i>Conformity: <strong>{{ reportData.statementOfConformity }}</strong>
+        </span>
+        <span *ngIf="reportData.decisionRule" class="dimension-tag">
+          <i class="bi bi-signpost me-1"></i>Decision Rule: <strong>{{ reportData.decisionRule }}</strong>
+        </span>
       </div>
     </div>
   </div>
 
-  <!-- Pricing Section (Read-Only, Only After Approval) -->
-  <div *ngIf="canViewPricing() && pricingData" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 d-flex align-items-center justify-content-between bg-info text-white">
-      <span class="fw-semibold">
-        <i class="bi bi-currency-rupee"></i>
-        Pricing Information
-        <span *ngIf="hasPriceSnapshot" class="badge bg-light text-dark ms-2">
-          <i class="bi bi-lock-fill"></i> Price Snapshot
-        </span>
+  <!-- Pricing Section -->
+  <div *ngIf="canViewPricing() && pricingData" class="section-card mb-3">
+    <div class="section-header" style="background: #ecfdf5; border-left: 4px solid #10b981;">
+      <i class="bi bi-currency-rupee me-2 text-success"></i>
+      <span class="fw-semibold">Pricing Information</span>
+      <span *ngIf="hasPriceSnapshot" class="badge bg-light text-dark border ms-2" style="font-size:10px;">
+        <i class="bi bi-lock-fill"></i> Snapshot
       </span>
-      <small class="text-white-50">Read-Only</small>
     </div>
-    <div class="card-body">
+    <div class="section-body">
       <div class="row g-3">
         <div class="col-md-3">
-          <small class="text-muted d-block">Total Amount</small>
-          <strong class="text-dark fs-5">{{ pricingData.totalAmount || pricingData.amount | currency: 'INR' }}</strong>
+          <div class="detail-item">
+            <span class="detail-label">Total Amount</span>
+            <span class="detail-value fs-5 text-success">{{ pricingData.totalAmount || pricingData.amount | currency: 'INR' }}</span>
+          </div>
         </div>
         <div class="col-md-3" *ngIf="pricingData.subTotal">
-          <small class="text-muted d-block">Sub Total</small>
-          <strong class="text-dark">{{ pricingData.subTotal | currency: 'INR' }}</strong>
+          <div class="detail-item">
+            <span class="detail-label">Sub Total</span>
+            <span class="detail-value">{{ pricingData.subTotal | currency: 'INR' }}</span>
+          </div>
         </div>
         <div class="col-md-3" *ngIf="pricingData.tax">
-          <small class="text-muted d-block">Tax</small>
-          <strong class="text-dark">{{ pricingData.tax | currency: 'INR' }}</strong>
+          <div class="detail-item">
+            <span class="detail-label">Tax</span>
+            <span class="detail-value">{{ pricingData.tax | currency: 'INR' }}</span>
+          </div>
         </div>
         <div class="col-md-3" *ngIf="pricingData.discount">
-          <small class="text-muted d-block">Discount</small>
-          <strong class="text-dark">{{ pricingData.discount | currency: 'INR' }}</strong>
-        </div>
-        <div class="col-md-12" *ngIf="pricingData.snapshotDate">
-          <small class="text-muted">Price Snapshot Date: {{ pricingData.snapshotDate | date: 'medium' }}</small>
+          <div class="detail-item">
+            <span class="detail-label">Discount</span>
+            <span class="detail-value">{{ pricingData.discount | currency: 'INR' }}</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Amendment History Section -->
-  <div *ngIf="reportData?.amendment" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 bg-warning text-dark">
-      <span class="fw-semibold">
-        <i class="bi bi-file-earmark-text"></i>
-        Amendment History
-      </span>
+  <!-- Amendment History -->
+  <div *ngIf="reportData?.amendment" class="section-card mb-3">
+    <div class="section-header" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
+      <i class="bi bi-pencil-square me-2" style="color:#f59e0b"></i>
+      <span class="fw-semibold">Amendment Details</span>
     </div>
-    <div class="card-body">
-      <div class="alert alert-info mb-0">
-        <strong>Amendment Request:</strong> {{ reportData?.amendment?.reason || 'N/A' }}
-        <br>
-        <small class="text-muted" *ngIf="reportData?.amendment?.requestedOn">
-          Requested on: {{ reportData?.amendment?.requestedOn | date: 'medium' }}
-        </small>
+    <div class="section-body">
+      <div class="row g-3 align-items-start">
+        <div class="col-md-9">
+          <div class="mb-2"><strong>Reason:</strong> {{ reportData?.amendment?.reason || 'N/A' }}</div>
+          <div *ngIf="reportData?.amendment?.requestedOn" class="text-muted small">
+            Requested on: {{ reportData?.amendment?.requestedOn | date: 'dd-MMM-yyyy HH:mm' }}
+          </div>
+          <div *ngIf="reportData?.amendment?.filePath && !(reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png'))">
+            <a [href]="reportData?.amendment?.filePath" target="_blank" class="link-primary small">
+              <i class="bi bi-paperclip me-1"></i>{{ reportData?.amendment?.fileName }}
+            </a>
+          </div>
+        </div>
+        <div class="col-md-3" *ngIf="reportData?.amendment?.filePath && (reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png'))">
+          <img [src]="baseUrl + reportData?.amendment?.filePath" class="img-fluid rounded border" style="max-height:120px; cursor:pointer;" (click)="openFileInNewTab(reportData?.amendment?.filePath)" />
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Mechanical Tests Section -->
-  <div *ngIf="reportData && reportData.mechanicalTests && reportData.mechanicalTests.length > 0" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 d-flex align-items-center bg-danger-600 text-white">
-      <span class="fw-semibold">
-        <i class="bi bi-gear"></i>
-        Mechanical Tests ({{ reportData.mechanicalTests.length }})
-      </span>
+  <div *ngIf="reportData && reportData.mechanicalTests && reportData.mechanicalTests.length > 0" class="section-card mb-3">
+    <div class="section-header" style="background: #fef2f2; border-left: 4px solid var(--primary-color, #da261c);">
+      <i class="bi bi-gear me-2" style="color: var(--primary-color, #da261c)"></i>
+      <span class="fw-semibold">Mechanical Tests</span>
+      <span class="badge bg-light text-dark border ms-2">{{ reportData.mechanicalTests.length }}</span>
     </div>
-    <div class="card-body small p-2">
-      <div *ngFor="let test of reportData.mechanicalTests" class="mb-2">
-        <!-- Test Header (Collapsible) -->
-        <div
-          class="d-flex justify-content-between align-items-center py-2 px-2 bg-light rounded cursor-pointer border-start border-4 border-danger"
-          (click)="toggleMechanicalTest(test.testResultHeaderId)"
-        >
+    <div class="section-body p-0">
+      <div *ngFor="let test of reportData.mechanicalTests; let isFirst = first" class="test-block" [class.border-top]="!isFirst">
+        <div class="test-header" (click)="toggleMechanicalTest(test.testResultHeaderId)">
           <div class="d-flex align-items-center gap-2">
-            <i
-              class="bi"
-              [class.bi-chevron-down]="isMechanicalTestExpanded(test.testResultHeaderId)"
-              [class.bi-chevron-right]="!isMechanicalTestExpanded(test.testResultHeaderId)"
-            ></i>
+            <i class="bi" [class.bi-chevron-down]="isMechanicalTestExpanded(test.testResultHeaderId)" [class.bi-chevron-right]="!isMechanicalTestExpanded(test.testResultHeaderId)"></i>
             <strong>{{ test.testName }}</strong>
-            <small class="text-muted">Report: {{ test.reportNo }}</small>
+            <span class="text-muted small">Report: {{ test.reportNo }}</span>
           </div>
           <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
-        <!-- Test Details (Expandable) -->
-        <div *ngIf="isMechanicalTestExpanded(test.testResultHeaderId)" class="px-2 py-2">
-          <small class="text-muted d-block mb-2">
-            <strong>Specification:</strong>
-            <span class="badge bg-light text-dark me-2">{{ test.specification1Name }}</span>
-            <span *ngIf="test.specification2Name" class="badge bg-light text-dark">{{ test.specification2Name }}</span>
-          </small>
-
+        <div *ngIf="isMechanicalTestExpanded(test.testResultHeaderId)" class="test-content">
+          <div class="mb-2" *ngIf="test.specification1Name">
+            <span class="text-muted small me-1">Specification:</span>
+            <span class="badge bg-light text-dark border">{{ test.specification1Name }}</span>
+            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border ms-1">{{ test.specification2Name }}</span>
+          </div>
           <div class="table-responsive">
-            <table class="table table-sm bordered-table align-middle">
-              <thead class="table-light">
+            <table class="table table-sm result-table mb-0">
+              <thead>
                 <tr>
                   <th>Parameter</th>
                   <th>Value</th>
@@ -256,12 +237,13 @@
               </thead>
               <tbody>
                 <tr *ngFor="let param of test.parameters"
-                  [ngClass]="{'table-danger': param.isWithinLimit === false, 'table-warning': param.resultStatus === 'Marginal'}">
+                  [class.row-fail]="param.isWithinLimit === false"
+                  [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
                   <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td>{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? param.specMinValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? param.specMaxValue ?? '-' }}</td>
+                  <td class="text-muted">{{ param.unit }}</td>
+                  <td>{{ param.minValue ?? '-' }}</td>
+                  <td>{{ param.maxValue ?? '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
@@ -274,10 +256,21 @@
                       {{ param.isWithinLimit ? 'Pass' : 'Fail' }}
                     </span>
                   </td>
-                  <td>{{ param.remarks || "-" }}</td>
+                  <td class="text-muted small">{{ param.remarks || "-" }}</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+          <!-- Test Images -->
+          <div *ngIf="test.images?.length" class="mt-2">
+            <span class="detail-label d-block mb-1">Test Images ({{ test.images?.length }})</span>
+            <div class="d-flex flex-wrap gap-2">
+              <div *ngFor="let img of test.images" class="test-image-thumb">
+                <img [src]="baseUrl + img.filePath" [alt]="img.caption || 'Test Image'" class="img-fluid rounded border"
+                  style="max-height: 100px; cursor: pointer;" (click)="openFileInNewTab(img.filePath)" />
+                <small *ngIf="img.caption" class="d-block text-muted text-center" style="font-size:0.65rem;">{{ img.caption }}</small>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -285,44 +278,32 @@
   </div>
 
   <!-- Chemical Tests Section -->
-  <div *ngIf="reportData && reportData.chemicalTests && reportData.chemicalTests.length > 0" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 d-flex align-items-center bg-dark-1 text-white">
-      <span class="fw-semibold">
-        <i class="bi bi-droplet"></i>
-        Chemical Tests ({{ reportData.chemicalTests.length }})
-      </span>
+  <div *ngIf="reportData && reportData.chemicalTests && reportData.chemicalTests.length > 0" class="section-card mb-3">
+    <div class="section-header" style="background: #f0fdf4; border-left: 4px solid #16a34a;">
+      <i class="bi bi-droplet me-2" style="color:#16a34a"></i>
+      <span class="fw-semibold">Chemical Tests</span>
+      <span class="badge bg-light text-dark border ms-2">{{ reportData.chemicalTests.length }}</span>
     </div>
-    <div class="card-body small p-2">
-      <div *ngFor="let test of reportData.chemicalTests" class="mb-2">
-        <!-- Test Header (Collapsible) -->
-        <div
-          class="d-flex justify-content-between align-items-center py-2 px-2 bg-light rounded cursor-pointer border-start border-4"
-          [style.border-start-color]="'#6c757d'"
-          (click)="toggleChemicalTest(test.testResultHeaderId)"
-        >
+    <div class="section-body p-0">
+      <div *ngFor="let test of reportData.chemicalTests; let isFirst = first" class="test-block" [class.border-top]="!isFirst">
+        <div class="test-header" (click)="toggleChemicalTest(test.testResultHeaderId)">
           <div class="d-flex align-items-center gap-2">
-            <i
-              class="bi"
-              [class.bi-chevron-down]="isChemicalTestExpanded(test.testResultHeaderId)"
-              [class.bi-chevron-right]="!isChemicalTestExpanded(test.testResultHeaderId)"
-            ></i>
+            <i class="bi" [class.bi-chevron-down]="isChemicalTestExpanded(test.testResultHeaderId)" [class.bi-chevron-right]="!isChemicalTestExpanded(test.testResultHeaderId)"></i>
             <strong>{{ test.testName }}</strong>
-            <small class="text-muted">Report: {{ test.reportNo }}</small>
+            <span class="text-muted small">Report: {{ test.reportNo }}</span>
           </div>
           <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
-        <!-- Test Details (Expandable) -->
-        <div *ngIf="isChemicalTestExpanded(test.testResultHeaderId)" class="px-2 py-2">
-          <small class="text-muted d-block mb-2">
-            <strong>Specification:</strong>
-            <span class="badge bg-light text-dark me-2">{{ test.specification1Name }}</span>
-            <span *ngIf="test.specification2Name" class="badge bg-light text-dark">{{ test.specification2Name }}</span>
-          </small>
-
+        <div *ngIf="isChemicalTestExpanded(test.testResultHeaderId)" class="test-content">
+          <div class="mb-2" *ngIf="test.specification1Name">
+            <span class="text-muted small me-1">Specification:</span>
+            <span class="badge bg-light text-dark border">{{ test.specification1Name }}</span>
+            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border ms-1">{{ test.specification2Name }}</span>
+          </div>
           <div class="table-responsive">
-            <table class="table table-sm bordered-table align-middle">
-              <thead class="table-light">
+            <table class="table table-sm result-table mb-0">
+              <thead>
                 <tr>
                   <th>Parameter</th>
                   <th>Value</th>
@@ -335,12 +316,13 @@
               </thead>
               <tbody>
                 <tr *ngFor="let param of test.parameters"
-                  [ngClass]="{'table-danger': param.isWithinLimit === false, 'table-warning': param.resultStatus === 'Marginal'}">
+                  [class.row-fail]="param.isWithinLimit === false"
+                  [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
                   <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td>{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? param.specMinValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? param.specMaxValue ?? '-' }}</td>
+                  <td class="text-muted">{{ param.unit }}</td>
+                  <td>{{ param.minValue ?? '-' }}</td>
+                  <td>{{ param.maxValue ?? '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
@@ -353,7 +335,69 @@
                       {{ param.isWithinLimit ? 'Pass' : 'Fail' }}
                     </span>
                   </td>
-                  <td>{{ param.remarks || "-" }}</td>
+                  <td class="text-muted small">{{ param.remarks || "-" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Test Images -->
+          <div *ngIf="test.images?.length" class="mt-2">
+            <span class="detail-label d-block mb-1">Test Images ({{ test.images?.length }})</span>
+            <div class="d-flex flex-wrap gap-2">
+              <div *ngFor="let img of test.images" class="test-image-thumb">
+                <img [src]="baseUrl + img.filePath" [alt]="img.caption || 'Test Image'" class="img-fluid rounded border"
+                  style="max-height: 100px; cursor: pointer;" (click)="openFileInNewTab(img.filePath)" />
+                <small *ngIf="img.caption" class="d-block text-muted text-center" style="font-size:0.65rem;">{{ img.caption }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Long-Term Tests Section -->
+  <div *ngIf="reportData && reportData.longTermTests && reportData.longTermTests.length > 0" class="section-card mb-3">
+    <div class="section-header" style="background: #fff7ed; border-left: 4px solid #f97316;">
+      <i class="bi bi-hourglass-split me-2" style="color:#f97316"></i>
+      <span class="fw-semibold">Long-Term Tests</span>
+      <span class="badge bg-light text-dark border ms-2">{{ reportData.longTermTests.length }}</span>
+    </div>
+    <div class="section-body p-0">
+      <div *ngFor="let test of reportData.longTermTests" class="test-block">
+        <div class="test-header" (click)="toggleLongTermTest(test.longTermTestId)">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi" [class.bi-chevron-down]="isLongTermTestExpanded(test.longTermTestId)" [class.bi-chevron-right]="!isLongTermTestExpanded(test.longTermTestId)"></i>
+            <strong>{{ test.testName }}</strong>
+            <span class="text-muted small">Duration: {{ test.durationHours }}h</span>
+          </div>
+          <app-test-status-badge [status]="test.status"></app-test-status-badge>
+        </div>
+        <div *ngIf="isLongTermTestExpanded(test.longTermTestId)" class="test-content">
+          <div class="row g-2 mb-2">
+            <div class="col-md-4"><span class="detail-label">Started</span><br><small>{{ test.startedAt | date: "dd MMM, yy HH:mm" }}</small></div>
+            <div class="col-md-4"><span class="detail-label">Ended</span><br><small>{{ test.endedAt ? (test.endedAt | date: "dd MMM, yy HH:mm") : "Ongoing" }}</small></div>
+            <div class="col-md-4"><span class="detail-label">Duration</span><br><small>{{ test.durationHours }} hours</small></div>
+          </div>
+          <div *ngIf="test.parameters?.length" class="mb-2">
+            <span class="detail-label">Parameters:</span>
+            <span *ngFor="let p of test.parameters" class="badge bg-light text-dark border ms-1">{{ p.parameterName }}: <strong>{{ p.value }}</strong></span>
+          </div>
+          <div *ngIf="test.readings?.length">
+            <span class="detail-label d-block mb-1">Readings ({{ test.readings.length }}):</span>
+            <table class="table table-sm result-table mb-0">
+              <thead><tr><th>Time</th><th>Parameter</th><th>Value</th><th>Remarks</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let r of test.readings">
+                  <td><small>{{ r.recordedAt | date: "dd MMM HH:mm" }}</small></td>
+                  <ng-container *ngIf="extractReadingData(r.parsed) as d">
+                    <ng-container *ngFor="let item of d">
+                      <td><small>{{ item.parameterName }}</small></td>
+                      <td><small>{{ item.value }}</small></td>
+                      <td><small>{{ item.remarks }}</small></td>
+                    </ng-container>
+                    <td *ngIf="d.length === 0" colspan="3"><small class="text-muted">No data</small></td>
+                  </ng-container>
                 </tr>
               </tbody>
             </table>
@@ -363,293 +407,56 @@
     </div>
   </div>
 
-  <!-- Long-Term Tests Section -->
-  <div *ngIf="reportData && reportData.longTermTests && reportData.longTermTests.length > 0" class="card border-0 shadow-sm mb-2">
-    <div class="card-header py-2 d-flex align-items-center bg-warning-900">
-      <span class="fw-semibold text-white">
-        <i class="bi bi-hourglass-split"></i>
-        Long-Term Tests ({{ reportData.longTermTests.length }})
-      </span>
-    </div>
-    <div class="card-body small p-2">
-      <div *ngFor="let test of reportData.longTermTests" class="mb-2">
-        <!-- Test Header (Collapsible) -->
-        <div
-          class="d-flex justify-content-between align-items-center py-2 px-2 bg-light rounded cursor-pointer border-start border-4"
-          [style.border-start-color]="'#fd8c42'"
-          (click)="toggleLongTermTest(test.longTermTestId)"
-        >
-          <div class="d-flex align-items-center gap-2">
-            <i
-              class="bi"
-              [class.bi-chevron-down]="isLongTermTestExpanded(test.longTermTestId)"
-              [class.bi-chevron-right]="!isLongTermTestExpanded(test.longTermTestId)"
-            ></i>
-            <strong>{{ test.testName }}</strong>
-            <small class="text-muted">Duration: {{ test.durationHours }}h</small>
-          </div>
-          <app-test-status-badge [status]="test.status"></app-test-status-badge>
-        </div>
+  <!-- Sticky Action Bar (same design as Review of Request) -->
+  <div class="review-action-bar" *ngIf="reportData?.actions?.length">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </button>
 
-        <!-- Test Details (Expandable) -->
-        <div *ngIf="isLongTermTestExpanded(test.longTermTestId)" class="px-2 py-2">
-          <div class="row g-2 mb-2">
-            <div class="col-md-4">
-              <strong>Started:</strong>
-              <small class="d-block">{{ test.startedAt | date : "dd MMM, yy HH:mm" }}</small>
-            </div>
-            <div class="col-md-4">
-              <strong>Ended:</strong>
-              <small class="d-block">{{ test.endedAt ? (test.endedAt | date : "dd MMM, yy HH:mm") : "Ongoing" }}</small>
-            </div>
-            <div class="col-md-4">
-              <strong>Duration:</strong>
-              <small class="d-block">{{ test.durationHours }} hours</small>
-            </div>
-          </div>
-
-          <!-- Parameters -->
-          <div *ngIf="test.parameters && test.parameters.length > 0" class="mb-2">
-            <strong class="d-block mb-1">Parameters:</strong>
-            <div class="d-flex flex-wrap gap-1">
-              <span *ngFor="let param of test.parameters" class="badge bg-light text-dark">
-                {{ param.parameterName }}:
-                <strong>{{ param.value }}</strong>
-              </span>
-            </div>
-          </div>
-
-          <!-- Readings -->
-          <div *ngIf="test.readings && test.readings.length > 0; else noReadings">
-            <strong class="d-block mb-1">Readings ({{ test.readings.length }}):</strong>
-            <div class="table-responsive">
-              <table class="table table-sm bordered-table align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>Recorded At</th>
-                    <th>Parameter</th>
-                    <th>Value</th>
-                    <th>Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let reading of test.readings">
-                    <td>
-                      <small>{{ reading.recordedAt | date : "dd MMM, yy HH:mm" }}</small>
-                    </td>
-                    <ng-container *ngIf="extractReadingData(reading.parsed) as extractedData">
-                      <ng-container *ngIf="extractedData.length > 0; else noExtractedData">
-                        <ng-container *ngFor="let data of extractedData; let isLast = last">
-                          <td>
-                            <small>{{ data.parameterName }}</small>
-                          </td>
-                          <td>
-                            <small>{{ data.value }}</small>
-                          </td>
-                          <td>
-                            <small>{{ data.remarks }}</small>
-                          </td>
-                        </ng-container>
-                      </ng-container>
-                      <ng-template #noExtractedData>
-                        <td colspan="3">
-                          <small class="text-muted">No data</small>
-                        </td>
-                      </ng-template>
-                    </ng-container>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <ng-template #noReadings>
-            <small class="text-muted">No readings available</small>
-          </ng-template>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Action Panel -->
-  <div
-    class="position-fixed start-0 end-0"
-    [ngClass]="{ 'd-block': showActionPanel, 'd-none': !showActionPanel }"
-    style="bottom: 0; z-index: 1060"
-  >
-    <!-- Overlay -->
-    <div class="position-fixed top-0 start-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.15); z-index: 1059"></div>
-
-    <!-- Action Card -->
-    <div
-      class="card shadow-lg mx-auto mb-0 position-relative border-0"
-      style="max-width: 700px; border-top: 4px solid #da261c; z-index: 1060"
-    >
-      <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <!-- <ng-container *hasPermission="['CanReadReportingDashboard', 'CanManageReportingDashboard', 'CanApproveReportDashboard']"> -->
-        <ng-container>
-          <!-- <div class="btn-group" role="group" *ngIf="canApproveReport()"> -->
-          <div class="btn-group" role="group">
-            <ng-container *ngFor="let act of reportData?.actions">
-              <input
-                type="radio"
-                class="btn-check"
-                name="reportAction"
-                [id]="'action_' + act.action"
-                [value]="act"
-                [(ngModel)]="selectedAction"
-              />
-
-              <label
-                class="btn fw-semibold"
-              [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
-              [class.btn-remove]="act.name.toLowerCase().includes('reject')"
-              [class.btn-cancel]="act.name.toLowerCase().includes('back')"
-              [for]="'action_' + act.action"
-            >
-              <i
-                class="bi"
-                [class.bi-check2-circle]="act.name.toLowerCase().includes('approve')"
-                [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
-                [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
-              ></i>
-              {{ act.name }}
-            </label>
-          </ng-container>
-          </div>
-
-          <textarea
-            *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
-            class="form-control border-danger flex-grow-1"
-            [(ngModel)]="actionRemark"
-            rows="2"
-            placeholder="Enter reason..."
-            required
-          ></textarea>
-
-          <button
-            class="btn btn-danger px-4 fw-semibold"
-            [disabled]="!selectedAction || (selectedAction.action.toLowerCase() !== 'next' && !actionRemark)"
-            (click)="submitReview()"
-          >
-            <i class="bi bi-send-check"></i>
-            Submit
-          </button>
-          <button class="btn btn-link text-secondary ms-2" (click)="showActionPanel = false" aria-label="Close">
-            <i class="bi bi-x-lg fs-5"></i>
-          </button>
+      <div class="btn-group" role="group">
+        <ng-container *ngFor="let act of reportData?.actions">
+          <input type="radio" class="btn-check" name="reportAction"
+            [id]="'action_' + act.action" [value]="act" [(ngModel)]="selectedAction" />
+          <label class="btn btn-sm fw-semibold"
+            [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
+            [class.btn-outline-warning]="act.name.toLowerCase().includes('back')"
+            [class.btn-remove]="act.name.toLowerCase().includes('reject')"
+            [class.btn-add]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
+            [for]="'action_' + act.action">
+            <i class="bi me-1"
+              [class.bi-check2-circle]="act.name.toLowerCase().includes('approve')"
+              [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
+              [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
+              [class.bi-arrow-right]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
+            ></i>{{ act.name }}
+          </label>
         </ng-container>
       </div>
+
+      <textarea
+        *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
+        class="form-control form-control-sm flex-grow-1"
+        [(ngModel)]="actionRemark"
+        rows="1"
+        placeholder="Enter remarks..."
+        style="max-width: 400px;"
+      ></textarea>
+
+      <button class="btn btn-primary btn-sm px-4"
+        [disabled]="!selectedAction || (selectedAction?.action?.toLowerCase() !== 'next' && !actionRemark)"
+        (click)="submitReview()">
+        <i class="bi bi-send-check me-1"></i>Submit
+      </button>
     </div>
   </div>
 
-  <div *ngIf="reportData?.amendment" class="card border-warning mb-3">
-    <div class="card-header bg-warning text-dark fw-semibold">
-      <i class="bi bi-pencil-square"></i>
-      Amendment Details
-    </div>
-
-    <div class="card-body">
-      <div class="row g-3 align-items-start">
-        <!-- LEFT: DETAILS -->
-        <div class="col-md-9">
-          <div class="mb-3">
-            <strong>Reason:</strong>
-            <div class="text-muted">
-              {{ reportData?.amendment?.reason }}
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <strong>Requested On:</strong>
-            <div class="text-muted">
-              {{ reportData?.amendment?.requestedOn | date : "dd-MMM-yyyy HH:mm" }}
-            </div>
-          </div>
-
-          <!-- Non-image document -->
-          <ng-container
-            *ngIf="
-              reportData?.amendment?.filePath &&
-              !(
-                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') ||
-                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') ||
-                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png') ||
-                reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.webp')
-              )
-            "
-          >
-            <div>
-              <strong>Supporting Document:</strong>
-              <div>
-                <a [href]="reportData?.amendment?.filePath" target="_blank" class="link-primary">
-                  {{ reportData?.amendment?.fileName }}
-                </a>
-              </div>
-            </div>
-          </ng-container>
-        </div>
-
-        <!-- RIGHT: IMAGE PREVIEW -->
-        <div
-          class="col-md-3"
-          *ngIf="
-            reportData?.amendment?.filePath &&
-            (reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') ||
-              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') ||
-              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png') ||
-              reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.webp'))
-          "
-        >
-          <div
-            class="border rounded h-100 d-flex flex-column align-items-center justify-content-center p-2"
-            style="cursor: pointer"
-            (click)="openFileInNewTab(reportData?.amendment?.filePath)"
-          >
-            <img
-              [src]="baseUrl + reportData?.amendment?.filePath"
-              [alt]="reportData?.amendment?.fileName"
-              class="img-fluid mb-2"
-              style="max-height: 140px; object-fit: contain"
-            />
-            <small class="text-muted text-center">Click to view</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fixed Footer Action Buttons -->
-  <div *ngIf="reportData && !showActionPanel" class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow-sm z-3">
-    <div class="container-fluid">
-      <div class="d-flex gap-2 justify-content-end py-3 px-3">
-        <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
-          <i class="bi bi-arrow-left"></i>
-          Back
-        </button>
-
-        <ng-container *ngFor="let action of reportData.actions">
-          <button
-            type="button"
-            class="btn btn-sm fw-semibold"
-            [ngClass]="{
-              'btn-outline-success': action.action.toLowerCase().includes('next'),
-              'btn-remove': action.action.toLowerCase().includes('cancel'),
-              'btn-cancel': action.action.toLowerCase().includes('back')
-            }"
-            (click)="selectedAction = action; showActionPanel = true"
-            [disabled]="false"
-          >
-            <i
-              class="bi"
-              [class.bi-check2-circle]="action.action.toLowerCase().includes('next')",
-              [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')",
-              [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"
-            ></i>
-            {{ action.name }}
-          </button>
-        </ng-container>
-      </div>
+  <!-- Back button when no actions -->
+  <div *ngIf="reportData && !reportData?.actions?.length" class="review-action-bar">
+    <div class="d-flex justify-content-end">
+      <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </button>
     </div>
   </div>
 </div>

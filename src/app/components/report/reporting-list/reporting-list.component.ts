@@ -21,14 +21,14 @@ export class ReportingListComponent implements OnInit {
   columns = [
     { key: 'sampleNo', type: 'string', label: 'Sample No', filter: true },
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
-    { key: 'customerName', type: 'string', label: 'Customer', filter: true },
+    { key: 'customer', type: 'string', label: 'Customer', filter: true },
     { key: 'material', type: 'string', label: 'Material', filter: true },
     { key: 'condition', type: 'string', label: 'Condition', filter: true },
     { key: 'status', type: 'string', label: 'Status', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
     caseNo: 'string',
-    customerName: 'string',
+    customer: 'string',
     sampleNo: 'string',
     material: 'string',
     condition: 'string',
@@ -163,7 +163,6 @@ export class ReportingListComponent implements OnInit {
   }
 
   performWorkflowAction(item: any, action: 'Next' | 'Cancel' | 'Back') {
-    debugger;
     const selectedAction = item.actions?.find(
       (a: any) => a.action === action
     );
@@ -181,7 +180,7 @@ export class ReportingListComponent implements OnInit {
         `Enter comments for ${action.toLowerCase()} (optional):`,
         ''
       );
-      if (input === null && input === "") {
+      if (input === null || input === "") {
         return; // user cancelled
       }
       comments = input;
@@ -228,16 +227,23 @@ export class ReportingListComponent implements OnInit {
     }
 
     this.pdfGeneratingId = item.reportHeaderId;
-    this.reportingService.generateReportPdf(item.sampleId).subscribe({
-      next: (response) => {
+    // Download PDF directly via format endpoint (returns blob)
+    const headerId = +(item.reportHeaderId || 0);
+    this.reportingService.generateByFormat(headerId, 0).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Report-${item.sampleNo || headerId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
         this.pdfGeneratingId = null;
-        alert('PDF generated successfully.');
-        // Optionally: download PDF or refresh list
+        this.fetchData();
       },
       error: (err) => {
         this.pdfGeneratingId = null;
         console.error('PDF generation failed:', err);
-        alert('PDF generation failed. See console for details.');
+        this.toast.show('PDF generation failed', 'error');
       }
     });
   }

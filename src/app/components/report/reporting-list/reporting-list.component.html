@@ -67,7 +67,7 @@
             <tr *ngFor="let item of filteredData" class="align-middle text-center">
               <td class="fw-semibold">
                 <a
-                  [routerLink]="['/reporting/preview', item.reportHeaderId || item.sampleNo]"
+                  [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]"
                   class="text-primary text-decoration-none cursor-pointer"
                   [title]="'View details for ' + item.sampleNo">
                   {{ item.sampleNo }}
@@ -75,84 +75,57 @@
               </td>
               <td>{{ item.caseNo }}</td>
               <td>{{ item.customer }}</td>
-              <td>{{ item.material }}</td>
-              <td>{{ item.condition }}</td>
+              <td>{{ item.material || '-' }}</td>
+              <td>{{ item.condition || '-' }}</td>
               <td class="text-center">
                 <app-test-status-badge [status]="item.status"></app-test-status-badge>
               </td>
-              <td *ngIf="canViewPricing(item)" class="text-end">
-                <span class="text-muted small">
-                  <i class="bi bi-currency-rupee"></i>
-                  {{ getItemPrice(item) }}
+              <td class="text-end">
+                <span *ngIf="canViewPricing(item)" class="text-muted small">
+                  <i class="bi bi-currency-rupee"></i>{{ getItemPrice(item) }}
                 </span>
+                <span *ngIf="!canViewPricing(item)" class="text-muted small">-</span>
               </td>
               <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
-                  <!-- Preview Button -->
-                  <button
-                    class="btn btn-sm btn-cancel fw-semibold"
-                    [routerLink]="['/reporting/preview', item.reportHeaderId || item.sampleNo]"
-                    title="Preview Report"
-                  >
+                <div class="d-flex gap-1 justify-content-center flex-nowrap">
+                  <!-- Preview -->
+                  <button class="btn btn-sm btn-outline-info"
+                    [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]" title="Preview Report">
                     <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline"> Preview</span>
                   </button>
 
-                  <!-- Generate PDF Button (visible when Completed/Approved) -->
-                  <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting']">
-                    <button
-                      *ngIf="canGeneratePdf(item.status)"
-                      class="btn btn-sm btn-outline-warning-700 fw-semibold"
-                      title="Generate PDF"
-                      (click)="generatePdf(item, $event)"
-                      [disabled]="pdfGeneratingId === item.reportHeaderId || false || !canGeneratePdf(item.status)"
-                    >
-                    <span
-                      *ngIf="pdfGeneratingId === item.reportHeaderId"
-                      class="spinner-border spinner-border-sm me-1"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
+                  <!-- PDF -->
+                  <button *ngIf="item.reportHeaderId"
+                    class="btn btn-sm btn-outline-danger"
+                    title="Generate PDF"
+                    (click)="generatePdf(item, $event)"
+                    [disabled]="pdfGeneratingId === item.reportHeaderId">
                     <i *ngIf="pdfGeneratingId !== item.reportHeaderId" class="bi bi-file-pdf"></i>
-                    <span class="d-none d-sm-inline">{{ pdfGeneratingId === item.reportHeaderId ? "Generating..." : " PDF" }}</span>
+                    <span *ngIf="pdfGeneratingId === item.reportHeaderId" class="spinner-border spinner-border-sm"></span>
+                  </button>
+
+                  <!-- Amend -->
+                  <button *ngIf="canAmend(item.status)"
+                    class="btn btn-sm btn-outline-warning" title="Amend Report"
+                    (click)="openAmendment(item)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+
+                  <!-- Workflow Actions -->
+                  <ng-container *ngIf="item.canTakeAction && item.actions">
+                    <button *ngFor="let action of item.actions" class="btn btn-sm"
+                      [ngClass]="{
+                        'btn-outline-success': action.action.toLowerCase().includes('next'),
+                        'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
+                        'btn-outline-secondary': action.action.toLowerCase().includes('back')
+                      }"
+                      [title]="action.name"
+                      (click)="performWorkflowAction(item, action.action)">
+                      <i class="bi"
+                        [class.bi-check-circle]="action.action.toLowerCase().includes('next')"
+                        [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')"
+                        [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"></i>
                     </button>
-                  </ng-container>
-                  <!--  Amend Button (visible when canAmend is true and user has permission) -->
-                  <ng-container >
-                    <button
-                      *ngIf="canAmend(item.status) && canRequestAmendment()"
-                      class="btn btn-sm btn-outline-warning-900 fw-semibold"
-                      title="Amend Report"
-                      (click)="openAmendment(item)"
-                    >
-                      <i class="bi bi-pencil-square"></i>
-                      <span class="d-none d-sm-inline"> Amend</span>
-                    </button>
-                  </ng-container>
-                  <!-- Approve / Reject Buttons (visible when canTakeAction is true and user has permission) -->
-                  <ng-container *hasPermission="['CanReadReporting', 'CanManageReporting', 'CanApproveReport']">
-                    <ng-container *ngIf="item.canTakeAction && item.actions && canApproveReport()">
-                      <button
-                        *ngFor="let action of item.actions"
-                        class="btn btn-sm fw-semibold"
-                        [ngClass]="{
-                          'btn-danger': action.action.toLowerCase().includes('next'),
-                          'btn-remove': action.action.toLowerCase().includes('cancel'),
-                          'btn-cancel': action.action.toLowerCase().includes('back')
-                        }"
-                        [title]="action.name"
-                        [disabled]="!statusHelperService.canApproveReport(item.status) && action.action.toLowerCase().includes('next')"
-                        (click)="performWorkflowAction(item, action.action)"
-                      >
-                        <i
-                          class="bi"
-                          [class.bi-check-circle]="action.action.toLowerCase().includes('next')"
-                          [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')"
-                          [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"
-                        ></i>
-                        <span class="d-none d-sm-inline"> {{ action.name }}</span>
-                      </button>
-                    </ng-container>
                   </ng-container>
                 </div>
               </td>

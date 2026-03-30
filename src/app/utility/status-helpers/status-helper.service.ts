@@ -124,10 +124,10 @@ export class StatusHelperService {
    * Check if PDF can be generated
    */
   canGeneratePDF(status: string): boolean {
+    // PDF can be (re)generated until report is sent for approval
     const statusUpper = (status || '').toUpperCase();
-    return statusUpper === ReportStatus.FINAL_REPORT_APPROVED ||
-           statusUpper === 'COMPLETED' ||
-           statusUpper === 'APPROVED';
+    const blockedStatuses = ['PENDING FOR APPROVAL', 'APPROVED', 'FINAL', 'FINAL_REPORT_APPROVED', 'UNDER AMENDMENT REVIEW'];
+    return !blockedStatuses.includes(statusUpper);
   }
 
   /**
@@ -144,11 +144,11 @@ export class StatusHelperService {
    * Check if report can be amended
    */
   canAmendReport(status: string): boolean {
+    // Amendment only available AFTER report is approved/finalized
     const statusUpper = (status || '').toUpperCase();
     return statusUpper === ReportStatus.FINAL_REPORT_APPROVED ||
-           statusUpper === 'COMPLETED' ||
            statusUpper === 'APPROVED' ||
-           statusUpper === 'REPORT_GENERATED';
+           statusUpper === 'FINAL';
   }
 
   /**

@@ -8,6 +8,7 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { environment } from '../../../../environments/environment';
 import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { ToastService } from '../../../services/toast.service';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 
 @Component({
@@ -49,7 +50,8 @@ export class ReportingPreviewComponent implements OnInit {
     private reportingService: ReportingService,
     private router: Router,
     private statusHelper: StatusHelperService,
-    private roleHelper: RoleHelperService
+    private roleHelper: RoleHelperService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -138,7 +140,8 @@ export class ReportingPreviewComponent implements OnInit {
           isWithinLimit:  p.isWithinLimit !== undefined ? p.isWithinLimit : false,
           resultStatus: (p as any).resultStatus || '',
           remarks: p.remarks || ''
-        }))
+        })),
+        images: ((t as any).images || []).map((img: any) => ({ id: img.id || img.ID, filePath: img.filePath || img.FilePath, caption: img.caption || img.Caption }))
       })),
       chemicalTests: (src.chemicalTests || []).map(t => ({
         testResultHeaderId: (t as any).testResultHeaderId || (t as any).testId || '',
@@ -155,8 +158,10 @@ export class ReportingPreviewComponent implements OnInit {
           minValue: p.minValue ?? '',
           maxValue: p.maxValue ?? '',
           isWithinLimit: p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          resultStatus: (p as any).resultStatus || '',
           remarks: p.remarks || ''
-        }))
+        })),
+        images: ((t as any).images || []).map((img: any) => ({ id: img.id || img.ID, filePath: img.filePath || img.FilePath, caption: img.caption || img.Caption }))
       })),
       longTermTests: (src.longTermTests || []).map(t => ({
         longTermTestId: (t as any).longTermTestId || (t as any).id || '',
@@ -282,7 +287,6 @@ export class ReportingPreviewComponent implements OnInit {
 
   // Action handling - matches ReviewOfRequestFormComponent pattern
   submitReview(): void {
-    debugger;
     if (!this.selectedAction || !this.reportData || this.submitting) return;
     const actionKey = (this.selectedAction.action || '').toString().toLowerCase();
     if (actionKey !== 'next' && !this.actionRemark) return;
@@ -299,13 +303,13 @@ export class ReportingPreviewComponent implements OnInit {
         this.submitting = false;
         this.showActionPanel = false;
         // keep UX consistent with other screens
-        alert('Action completed successfully.');
+        this.toast.show('Action completed successfully', 'success');
         this.router.navigate(['/reporting/dashboard']);
       },
       error: (err) => {
         this.submitting = false;
         console.error('Action failed:', err);
-        alert('Action failed. See console for details.');
+        this.toast.show('Action failed', 'error');
       }
     });
   }
@@ -344,24 +348,44 @@ export class ReportingPreviewComponent implements OnInit {
   /**
    * Generate PDF for the current report
    */
+  // Generate & Save PDF on server (original behavior)
   generatePdf(): void {
     if (!this.reportData || this.pdfGenerating) return;
 
     if (!this.canGeneratePdf()) {
-      alert('PDF can only be generated for approved/completed reports.');
+      this.toast.show('PDF can only be generated before sending for approval', 'warning');
       return;
     }
 
     this.pdfGenerating = true;
-    this.reportingService.generateReportPdf(this.reportData.reportHeaderId).subscribe({
+    this.reportingService.generateReportPdf(this.sampleId).subscribe({
       next: () => {
         this.pdfGenerating = false;
-        alert('PDF generated successfully.');
+        this.toast.show('Report generated & saved successfully', 'success');
+        this.loadReportPreview(this.sampleId);
       },
       error: (err) => {
         this.pdfGenerating = false;
         console.error('PDF generation failed:', err);
-        alert('PDF generation failed. See console for details.');
+        this.toast.show(err?.error?.message || 'PDF generation failed', 'error');
+      }
+    });
+  }
+
+  // Preview selected format — opens PDF in new browser tab
+  previewByFormat(): void {
+    if (!this.reportData?.reportHeaderId || this.formatPdfGenerating) return;
+    this.formatPdfGenerating = true;
+    const headerId = +this.reportData.reportHeaderId;
+    this.reportingService.generateByFormat(headerId, this.selectedFormatType).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.formatPdfGenerating = false;
+      },
+      error: (err) => {
+        console.error('Preview failed:', err);
+        this.formatPdfGenerating = false;
       }
     });
   }

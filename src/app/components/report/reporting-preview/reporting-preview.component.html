@@ -47,10 +47,19 @@
                 <select *ngIf="reportFormats.length > 0" class="form-select form-select-sm" [(ngModel)]="selectedFormatType" style="width: 170px; font-size: 11px;">
                   <option *ngFor="let fmt of reportFormats" [ngValue]="fmt.formatType">{{ fmt.displayName }}</option>
                 </select>
-                <button *ngIf="reportFormats.length > 0" class="btn btn-sm btn-outline-dark" (click)="downloadByFormat()" [disabled]="formatPdfGenerating" title="Download">
+                <!-- Preview: opens selected format PDF in new browser tab -->
+                <button *ngIf="reportFormats.length > 0 && reportData.reportHeaderId" class="btn btn-sm btn-outline-info"
+                  (click)="previewByFormat()" [disabled]="formatPdfGenerating" title="Preview selected format">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <!-- Download: downloads selected format PDF -->
+                <button *ngIf="reportFormats.length > 0 && reportData.reportHeaderId" class="btn btn-sm btn-outline-dark"
+                  (click)="downloadByFormat()" [disabled]="formatPdfGenerating" title="Download selected format">
                   <i class="bi" [class.bi-download]="!formatPdfGenerating" [class.bi-hourglass-split]="formatPdfGenerating"></i>
                 </button>
-                <button *ngIf="canGeneratePdf()" class="btn btn-sm btn-outline-danger" (click)="generatePdf()" [disabled]="pdfGenerating" title="Generate PDF">
+                <!-- Generate & Save: creates report on server (status-gated) -->
+                <button *ngIf="canGeneratePdf()" class="btn btn-sm btn-outline-danger"
+                  (click)="generatePdf()" [disabled]="pdfGenerating" title="Generate & save report on server">
                   <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
                   {{ pdfGenerating ? "..." : "PDF" }}
                 </button>

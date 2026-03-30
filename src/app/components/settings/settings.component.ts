@@ -145,6 +145,9 @@ export class SettingsComponent implements OnInit {
         labAddress: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(500)]],
         contactEmail: ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
         contactPhone: ['', [Validators.required, phoneValidator()]],
+        mobileNo: [''],
+        website: [''],
+        cin: [''],
         organizationLogo: ['']
       }),
 

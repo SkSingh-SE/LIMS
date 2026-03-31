@@ -305,7 +305,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           contactPersonName: this.customerData.name,
           address: this.customerData.address,
           pinCode: this.customerData.pinCode,
-          returnSample: this.customerData.sampleReturn || false,
+          // Auto-fill ReturnSample from customer only on CREATE (don't overwrite saved value on edit)
+          ...(this.sampleId === 0 ? { returnSample: this.customerData.sampleReturn || false } : {}),
         });
 
         this.dispatchModesArray.clear();

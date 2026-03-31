@@ -86,6 +86,17 @@
                       <span class="text-muted">{{ sample.get("quantity")?.value || "0" }}</span>
                     </p>
                   </div>
+                  <div class="flex-grow-1 flex-basis-45" *ngIf="sample.get('thickness')?.value || sample.get('diameter')?.value || sample.get('width')?.value || sample.get('length')?.value">
+                    <p class="mb-1">
+                      <strong>Dimensions:</strong>
+                      <span class="text-muted">
+                        <span *ngIf="sample.get('thickness')?.value">T: {{ sample.get('thickness')?.value }}mm </span>
+                        <span *ngIf="sample.get('diameter')?.value">D: {{ sample.get('diameter')?.value }}mm </span>
+                        <span *ngIf="sample.get('width')?.value">W: {{ sample.get('width')?.value }}mm </span>
+                        <span *ngIf="sample.get('length')?.value">L: {{ sample.get('length')?.value }}mm</span>
+                      </span>
+                    </p>
+                  </div>
                   <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
                     <div class="flex-grow-1 flex-basis-45">
                       <p class="mb-1">

@@ -5,7 +5,7 @@ import { CustomerLedgerService } from '../../../services/customer-ledger.service
 import { CustomerService } from '../../../services/customer.service';
 import { AccountService } from '../../../services/account.service';
 import { ToastService } from '../../../services/toast.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
@@ -44,11 +44,18 @@ export class RecordPaymentComponent implements OnInit {
     private customerService: CustomerService,
     private accountService: AccountService,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.initForm();
+    this.route.queryParams.subscribe(params => {
+      if (params['customerId']) {
+        this.selectedCustomerId = +params['customerId'];
+        this.loadOutstandingInvoices();
+      }
+    });
   }
 
   initForm(): void {
@@ -56,6 +63,7 @@ export class RecordPaymentComponent implements OnInit {
       amount: [null, [Validators.required, Validators.min(0.01)]],
       paymentMode: ['', Validators.required],
       chequeNo: [''],
+      chequeDate: [''],
       bankName: [''],
       transactionRef: [''],
       remarks: [''],
@@ -68,15 +76,18 @@ export class RecordPaymentComponent implements OnInit {
 
   updateConditionalValidators(mode: string): void {
     const chequeNo = this.paymentForm.get('chequeNo');
+    const chequeDate = this.paymentForm.get('chequeDate');
     const bankName = this.paymentForm.get('bankName');
     const transactionRef = this.paymentForm.get('transactionRef');
 
     chequeNo?.clearValidators();
+    chequeDate?.clearValidators();
     bankName?.clearValidators();
     transactionRef?.clearValidators();
 
     if (mode === 'Cheque') {
-      chequeNo?.setValidators([Validators.required]);
+      chequeNo?.setValidators([Validators.required, Validators.pattern(/^\d{6}$/)]);
+      chequeDate?.setValidators([Validators.required]);
       bankName?.setValidators([Validators.required]);
     } else if (mode === 'NEFT/RTGS') {
       transactionRef?.setValidators([Validators.required]);
@@ -86,8 +97,23 @@ export class RecordPaymentComponent implements OnInit {
     }
 
     chequeNo?.updateValueAndValidity();
+    chequeDate?.updateValueAndValidity();
     bankName?.updateValueAndValidity();
     transactionRef?.updateValueAndValidity();
+  }
+
+  get showChequeFields(): boolean {
+    return this.paymentForm.get('paymentMode')?.value === 'Cheque';
+  }
+
+  get showBankName(): boolean {
+    const mode = this.paymentForm.get('paymentMode')?.value;
+    return mode === 'Cheque' || mode === 'NEFT/RTGS';
+  }
+
+  get showTransactionRef(): boolean {
+    const mode = this.paymentForm.get('paymentMode')?.value;
+    return mode === 'NEFT/RTGS' || mode === 'UPI';
   }
 
   onCustomerSelect(item: any): void {
@@ -144,20 +170,6 @@ export class RecordPaymentComponent implements OnInit {
     }
   }
 
-  get showChequeFields(): boolean {
-    return this.paymentForm.get('paymentMode')?.value === 'Cheque';
-  }
-
-  get showTransactionRef(): boolean {
-    const mode = this.paymentForm.get('paymentMode')?.value;
-    return mode === 'NEFT/RTGS' || mode === 'UPI';
-  }
-
-  get showBankName(): boolean {
-    const mode = this.paymentForm.get('paymentMode')?.value;
-    return mode === 'Cheque' || mode === 'NEFT/RTGS';
-  }
-
   onSubmit(): void {
     if (!this.selectedCustomerId) {
       this.toastService.show('Please select a customer', 'warning');
@@ -177,6 +189,7 @@ export class RecordPaymentComponent implements OnInit {
       amount: formVal.amount,
       paymentMode: formVal.paymentMode,
       chequeNo: formVal.chequeNo || null,
+      chequeDate: formVal.chequeDate || null,
       bankName: formVal.bankName || null,
       transactionRef: formVal.transactionRef || null,
       invoiceIds: this.selectedInvoiceIds,

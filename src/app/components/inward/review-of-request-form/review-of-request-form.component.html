@@ -169,6 +169,17 @@
                   <div class="review-value">{{ sample.testInstructions }}</div>
                 </div>
               </div>
+              <div class="col-md-6" *ngIf="sample.thickness || sample.diameter || sample.width || sample.length">
+                <div class="review-field">
+                  <label class="review-label">Dimensions</label>
+                  <div class="review-value">
+                    <span *ngIf="sample.thickness">Thickness: {{ sample.thickness }}mm </span>
+                    <span *ngIf="sample.diameter">Diameter: {{ sample.diameter }}mm </span>
+                    <span *ngIf="sample.width">Width: {{ sample.width }}mm </span>
+                    <span *ngIf="sample.length">Length: {{ sample.length }}mm</span>
+                  </div>
+                </div>
+              </div>
 
               <!-- Additional Details -->
               <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">

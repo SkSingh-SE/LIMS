@@ -13,6 +13,8 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
+import { CustomerPOService } from '../../../services/customer-po.service';
+import { AccountService } from '../../../services/account.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
@@ -55,6 +57,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   globalTestCounter = 1;
   uploadedFile: File | null = null;
   customerData: any = null;
+  showPODropdown: boolean = false;
+  selectedCustomerType: string = '';
+  selectedPODetails: any = null;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
   sampleId: number = 0;
@@ -79,7 +84,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private router: Router,
     private prodCondService: ProductConditionService,
     private specimenOrientationService: SpecimenOrientationService,
-    private unsavedChangesService: UnsavedChangesService) { }
+    private unsavedChangesService: UnsavedChangesService,
+    private customerPOService: CustomerPOService,
+    private accountService: AccountService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -117,7 +124,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       country: ['India'],
       gstNo: ['', Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/)],
       dispatchModes: this.fb.array([], Validators.required),
-      poNumber: [''],
+      purchaseOrderId: [null],
       advancePayment: [''],
       billRequired: [true],
       advancePIRequired: [false],
@@ -242,17 +249,63 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
 
+  checkCustomerHasPOs(customerId: number): void {
+    this.customerPOService.getDropdown(customerId, '', 0, 1).subscribe({
+      next: (pos) => {
+        this.showPODropdown = pos && pos.length > 0;
+      },
+      error: () => {
+        this.showPODropdown = false;
+      }
+    });
+  }
+
+  getPurchaseOrders = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const customerId = this.sampleInwardForm.get('customerID')?.value;
+    if (!customerId) return new Observable(subscriber => subscriber.next([]));
+    return this.customerPOService.getDropdown(customerId, term, page, pageSize);
+  };
+
+  onPOSelect(item: any): void {
+    if (!item) {
+      this.sampleInwardForm.patchValue({ purchaseOrderId: null });
+      this.selectedPODetails = null;
+      return;
+    }
+    this.sampleInwardForm.patchValue({ purchaseOrderId: item.id });
+    this.selectedPODetails = item;
+  }
+
   getCustomerDetails(id: number): void {
     this.customerService.getCustomerById(id).subscribe({
       next: (data) => {
         if (!data) return;
 
         this.customerData = data;
+        this.selectedCustomerType = (data.customerType || '').toLowerCase();
+        // PO is available for any customer type — check if customer has active POs
+        this.selectedPODetails = null;
+        this.sampleInwardForm.patchValue({ purchaseOrderId: null });
+        this.checkCustomerHasPOs(data.id);
+
+        // Credit limit advisory check for credit-type customers
+        if (this.selectedCustomerType.includes('credit') || this.selectedCustomerType.includes('relationship')) {
+          this.accountService.checkCreditLimit(data.id).subscribe({
+            next: (res) => {
+              if (res?.warning) {
+                this.toastService.show(res.warning, 'warning');
+              }
+            },
+            error: () => { /* silent — advisory only */ }
+          });
+        }
+
         this.sampleInwardForm.patchValue({
           caseNo: this.caseNumber,
           contactPersonName: this.customerData.name,
           address: this.customerData.address,
           pinCode: this.customerData.pinCode,
+          returnSample: this.customerData.sampleReturn || false,
         });
 
         this.dispatchModesArray.clear();
@@ -324,6 +377,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           next: (customer) => {
             if (customer) {
               this.customerData = customer;
+              this.selectedCustomerType = (customer.customerType || '').toLowerCase();
+              this.checkCustomerHasPOs(customer.id);
+
               this.sampleInwardForm.patchValue({
                 caseNo: data.caseNumber,
                 contactPersonName: customer.name,
@@ -357,6 +413,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               pinCode: data.pinCode,
               country: data.country,
               gstNo: data.gstNo,
+              purchaseOrderId: data.purchaseOrderId || null,
               advancePayment: data.advancePayment,
               billRequired: data.billRequired,
               advancePIRequired: data.advancePIRequired,
@@ -926,7 +983,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       pinCode: value.pinCode,
       country: value.country,
       gstNo: value.gstNo,
-      poNumber: value.poNumber,
+      purchaseOrderId: value.purchaseOrderId || '',
       advancePayment: value.advancePayment || '0',
       billRequired: value.billRequired || 'false',
       advancePIRequired: value.advancePIRequired || 'false',

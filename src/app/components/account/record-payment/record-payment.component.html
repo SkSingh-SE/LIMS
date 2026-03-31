@@ -82,10 +82,21 @@
             <!-- Cheque Fields -->
             <div *ngIf="showChequeFields" class="mb-3">
               <label class="form-label">Cheque No <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="chequeNo" placeholder="Enter cheque number" />
+              <input type="text" class="form-control" formControlName="chequeNo" placeholder="Enter 6-digit cheque number" maxlength="6" />
               <div *ngIf="paymentForm.get('chequeNo')?.touched && paymentForm.get('chequeNo')?.invalid"
                    class="text-danger small mt-1">
-                Cheque number is required.
+                <span *ngIf="paymentForm.get('chequeNo')?.hasError('required')">Cheque number is required.</span>
+                <span *ngIf="paymentForm.get('chequeNo')?.hasError('pattern')">Cheque number must be exactly 6 digits.</span>
+              </div>
+            </div>
+
+            <!-- Cheque Date -->
+            <div *ngIf="showChequeFields" class="mb-3">
+              <label class="form-label">Cheque Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="chequeDate" />
+              <div *ngIf="paymentForm.get('chequeDate')?.touched && paymentForm.get('chequeDate')?.invalid"
+                   class="text-danger small mt-1">
+                Cheque date is required.
               </div>
             </div>
 

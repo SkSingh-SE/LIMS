@@ -363,22 +363,35 @@ export class SettingsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (this.validateImageFile(file, 'nablLogo')) {
+      if (!this.validateImageFile(file, 'nablLogo')) {
+        input.value = '';
+        return;
+      }
+      // Validate minimum dimensions (300x300px for print quality)
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width < 300 || img.height < 300) {
+          this.fileErrors['nablLogo'] = `Image must be at least 300x300px (got ${img.width}x${img.height}px)`;
+          this.toastService.show(`NABL logo must be at least 300x300px for print quality. Current: ${img.width}x${img.height}px`, 'error');
+          input.value = '';
+          return;
+        }
         this.nablLogoFile = file;
         this.previewImage(file, 'nablLogo');
         this.settingsService.uploadNablCertificate(file).subscribe({
           next: (res: any) => {
             if (res && res.url) {
               this.settingsForm.get('nablAccreditation.nablLogo')?.setValue(res.url);
+              this.toastService.show('NABL logo uploaded', 'success');
             }
           },
           error: () => {
             this.toastService.show('NABL logo upload failed', 'error');
           }
         });
-      } else {
-        input.value = '';
-      }
+      };
+      img.src = URL.createObjectURL(file);
     }
   }
 

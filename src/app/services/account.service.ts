@@ -112,5 +112,13 @@ export class AccountService {
   checkCreditLimit(customerId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/credit-check/${customerId}`);
   }
+
+  canCloseCase(inwardId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/cases/${inwardId}/can-close`);
+  }
+
+  closeCase(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/close`, {});
+  }
 }
 

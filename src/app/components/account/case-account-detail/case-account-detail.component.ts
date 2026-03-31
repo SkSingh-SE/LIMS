@@ -30,6 +30,9 @@ export class CaseAccountDetailComponent implements OnInit {
   advancePayments: any[] = [];
   isGeneratingPI = signal(false);
   isRecalculating = signal(false);
+  canClose = false;
+  closeReason = '';
+  isClosing = signal(false);
 
   lineItems: any[] = [];
   showAddLineItem = false;
@@ -69,6 +72,7 @@ export class CaseAccountDetailComponent implements OnInit {
         this.proformaInvoice = response?.proformaInvoice || response?.pi || null;
         this.advancePayments = response?.advancePayments || [];
         this.loadLineItems();
+        this.checkCanClose();
       },
       error: (error) => {
         console.error('Error loading case summary:', error);
@@ -220,7 +224,7 @@ export class CaseAccountDetailComponent implements OnInit {
 
   canSendPaymentLink(status: string): boolean {
     const statusLower = (status || '').toLowerCase();
-    return statusLower === 'pending' || statusLower === 'failed';
+    return statusLower === 'paid';
   }
 
   getPaymentStatusBadgeClass(status: string): string {
@@ -394,6 +398,45 @@ export class CaseAccountDetailComponent implements OnInit {
     if (chargeType === 'MinimumChargeAdjustment') return 'Minimum Charge Adjustment';
     if (chargeType === 'CustomPreparation') return 'Custom Preparation';
     return chargeType;
+  }
+
+  checkCanClose(): void {
+    this.accountService.canCloseCase(this.inwardId).subscribe({
+      next: (res) => {
+        this.canClose = res?.canClose || false;
+        this.closeReason = res?.reason || '';
+      },
+      error: () => {
+        this.canClose = false;
+      }
+    });
+  }
+
+  closeCase(): void {
+    if (!this.canClose) return;
+    if (!confirm('Are you sure you want to close this case? This action cannot be undone.')) return;
+
+    this.isClosing.set(true);
+    this.accountService.closeCase(this.inwardId).subscribe({
+      next: () => {
+        this.toastService.show('Case closed successfully', 'success');
+        this.loadCaseSummary();
+        this.isClosing.set(false);
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to close case', 'error');
+        this.isClosing.set(false);
+      }
+    });
+  }
+
+  goToRecordPayment(): void {
+    this.router.navigate(['/account/record-payment'], {
+      queryParams: {
+        customerId: this.caseSummary?.customerId || this.caseSummary?.customer_id,
+        inwardId: this.inwardId
+      }
+    });
   }
 
   goBack(): void {

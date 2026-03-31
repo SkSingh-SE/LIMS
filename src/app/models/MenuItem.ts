@@ -82,7 +82,6 @@ export function getAllMenuItems(): MenuItem[] {
       children: [
         { id: 35, title: 'Laboratory Test', route: '/test', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() },
         { id: 36, title: 'Test Method Specification', route: '/test-specification', parentMenuID: 3, permissions: ['CanReadTestMethodSpecification'], children: [], color: getRandomColor() },
-        { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() }
       ]
     },
     {
@@ -286,30 +285,17 @@ export function getAllMenuItems(): MenuItem[] {
       color: '',
       children: [
         { id: 56, title: 'Testing Dashboard', route: '/testing/dashboard', parentMenuID: 9, permissions: ['CanReadTestingDashboard'], children: [], color: getRandomColor() },
-        { id: 57, title: 'Perform Test', route: '/testing/perform/:id', parentMenuID: 9, permissions: ['CanReadPerformTest'], children: [], color: getRandomColor() },
         { id: 58, title: 'Long Term Tracking', route: '/testing/longterm', parentMenuID: 9, permissions: ['CanReadLongTermTracking'], children: [], color: getRandomColor() },
-        { id: 59, title: 'Test Results', route: '/testing/results/:id', parentMenuID: 9, permissions: ['CanReadTestResults'], children: [], color: getRandomColor() }
       ]
     },
+    // Configuration menu hidden — accessible only via direct URL for admins
+    // {
+    //   id: 10,
+    //   title: 'Configuration',
+    //   ...
+    // },
     {
-      id: 10,
-      title: 'Configuration',
-      route: '',
-      parentMenuID: null,
-      permissions: [],
-      icon: 'bi-gear',
-      color: '',
-      children: [
-        { id: 60, title: 'Configuration Manager', route: '/config', parentMenuID: 10, permissions: ['CanReadConfiguration'], children: [], color: getRandomColor() },
-        { id: 61, title: 'Menu Management', route: '/menu', parentMenuID: 10, permissions: ['CanReadMenuManagement'], children: [], color: getRandomColor() },
-        { id: 62, title: 'Menu Permission', route: '/menu-permission', parentMenuID: 10, permissions: ['CanReadMenuPermission'], children: [], color: getRandomColor() },
-        { id: 63, title: 'Role Management', route: '/role', parentMenuID: 10, permissions: ['CanReadRoleManagement'], children: [], color: getRandomColor() },
-        { id: 64, title: 'User Permission', route: '/user-permission', parentMenuID: 10, permissions: ['CanReadUserPermission'], children: [], color: getRandomColor() },
-        { id: 65, title: 'Workflow', route: '/workflow', parentMenuID: 10, permissions: ['CanReadWorkflow'], children: [], color: getRandomColor() }
-      ]
-    },
-    {
-      id: 11,
+      id: 1011,
       title: 'Reporting',
       route: '',
       parentMenuID: null,
@@ -317,11 +303,11 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-file-text',
       color: '',
       children: [
-        { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
+        { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 1011, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
       ]
     },
     {
-      id: 12,
+      id: 1012,
       title: 'Accounts',
       route: '',
       parentMenuID: null,
@@ -329,12 +315,12 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-wallet2',
       color: '',
       children: [
-        { id: 121, title: 'Accounts Dashboard', route: '/accounts/dashboard', parentMenuID: 12, permissions: ['CanReadAccountsDashboard'], children: [], color: getRandomColor() },
-        { id: 122, title: 'Case Accounts', route: '/accounts/cases', parentMenuID: 12, permissions: ['CanReadCaseAccounts'], children: [], color: getRandomColor() },
-        { id: 123, title: 'Customer Ledger', route: '/account/ledger', parentMenuID: 12, permissions: ['CanReadCustomerLedger'], children: [], color: getRandomColor() },
-        { id: 124, title: 'Record Payment', route: '/account/record-payment', parentMenuID: 12, permissions: ['CanReadRecordPayment'], children: [], color: getRandomColor() },
-        { id: 125, title: 'Aging Report', route: '/account/aging-report', parentMenuID: 12, permissions: ['CanReadAgingReport'], children: [], color: getRandomColor() },
-        { id: 126, title: 'Outstanding Report', route: '/account/outstanding-report', parentMenuID: 12, permissions: ['CanReadOutstandingReport'], children: [], color: getRandomColor() }
+        { id: 121, title: 'Accounts Dashboard', route: '/accounts/dashboard', parentMenuID: 1012, permissions: ['CanReadAccountsDashboard'], children: [], color: getRandomColor() },
+        { id: 122, title: 'Case Accounts', route: '/accounts/cases', parentMenuID: 1012, permissions: ['CanReadCaseAccounts'], children: [], color: getRandomColor() },
+        { id: 123, title: 'Customer Ledger', route: '/account/ledger', parentMenuID: 1012, permissions: ['CanReadCustomerLedger'], children: [], color: getRandomColor() },
+        { id: 124, title: 'Record Payment', route: '/account/record-payment', parentMenuID: 1012, permissions: ['CanReadRecordPayment'], children: [], color: getRandomColor() },
+        { id: 125, title: 'Aging Report', route: '/account/aging-report', parentMenuID: 1012, permissions: ['CanReadAgingReport'], children: [], color: getRandomColor() },
+        { id: 126, title: 'Outstanding Report', route: '/account/outstanding-report', parentMenuID: 1012, permissions: ['CanReadOutstandingReport'], children: [], color: getRandomColor() }
       ]
     }
   ];

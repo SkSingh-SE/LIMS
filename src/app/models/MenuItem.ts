@@ -263,19 +263,12 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 49, title: 'Lab Scope Master', route: '/scope', parentMenuID: 7, permissions: ['CanReadLabScopeMaster'], children: [], color: getRandomColor() }
       ]
     },
-    {
-      id: 8,
-      title: 'User Management',
-      route: '',
-      parentMenuID: null,
-      permissions: [],
-      icon: 'bi-person-fill-gear',
-      color: '',
-      children: [
-        { id: 50, title: 'Lab Employee Master', route: '/nabl/lab-employee', parentMenuID: 8, permissions: ['CanReadLabEmployeeMaster'], children: [], color: getRandomColor() },
-        { id: 51, title: 'Lab Score Master', route: '/nabl/lab-score', parentMenuID: 8, permissions: ['CanReadLabScore'], children: [], color: getRandomColor() }
-      ]
-    },
+    // User Management hidden — Lab Employee & Lab Score components not yet implemented
+    // {
+    //   id: 8,
+    //   title: 'User Management',
+    //   ...
+    // },
     {
       id: 9,
       title: 'Testing',

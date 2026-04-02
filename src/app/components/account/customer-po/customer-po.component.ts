@@ -55,7 +55,7 @@ export class CustomerPOComponent implements OnInit {
       poNumber: ['', Validators.required],
       poDate: ['', Validators.required],
       validUntil: [''],
-      amount: [null, [Validators.required, Validators.min(0.01)]],
+      poAmount: [null, [Validators.required, Validators.min(0.01)]],
       terms: [''],
       customerId: [null, Validators.required],
     });
@@ -117,7 +117,7 @@ export class CustomerPOComponent implements OnInit {
       poNumber: po.poNumber,
       poDate: po.poDate ? po.poDate.split('T')[0] : '',
       validUntil: po.validUntil ? po.validUntil.split('T')[0] : '',
-      amount: po.amount,
+      poAmount: po.poAmount || po.amount,
       terms: po.terms,
       customerId: po.customerId,
     });

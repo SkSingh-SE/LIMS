@@ -15,16 +15,16 @@ export class InvoiceCaseListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'financialYear', type: 'string', label: 'Financial Year', filter: true },
     { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
     { key: 'tierCount', type: 'number', label: 'Tiers', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
     financialYear: 'string',
     laboratoryTest: 'string',
+    tierCount: 'number',
     modifiedOn: 'date',
   };
 
@@ -138,6 +138,17 @@ export class InvoiceCaseListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -185,6 +196,8 @@ export class InvoiceCaseListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

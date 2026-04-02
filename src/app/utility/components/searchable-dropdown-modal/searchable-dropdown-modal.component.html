@@ -3,11 +3,11 @@
     {{ labelName }}
     <span *ngIf="required" class="text-danger">*</span>
   </label>
-  <div class="input-group">
+  <div class="input-group" [class.input-group-sm]="size === 'sm'">
     <input
       type="text"
       [id]="randomId"
-      class="form-control"
+      [class]="size === 'sm' ? 'form-control form-control-sm' : 'form-control'"
       name="searchInput"
       [placeholder]="placeholder"
       [(ngModel)]="selectedLabel"

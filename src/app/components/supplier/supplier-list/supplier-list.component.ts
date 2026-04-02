@@ -15,21 +15,20 @@ export class SupplierListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'productType', type: 'string', label: 'Product Type', filter: true },
     { key: 'contactPerson1', type: 'string', label: 'Contact Person', filter: true },
-    { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
+    { key: 'contactNo1', type: 'string', label: 'Contact Number', filter: true },
     { key: 'emailId1', type: 'string', label: 'Email', filter: true },
     { key: 'address', type: 'string', label: 'Address', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
     name: 'string',
     productType: 'string',
     contactPerson1: 'string',
-    contactNo1: 'number',
+    contactNo1: 'string',
     emailId1: 'string',
     address: 'string',
     modifiedOn: 'date',
@@ -136,6 +135,17 @@ export class SupplierListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -183,6 +193,8 @@ export class SupplierListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

@@ -75,10 +75,10 @@
             <label class="form-label">Amount <span class="text-danger">*</span></label>
             <div class="input-group">
               <span class="input-group-text">INR</span>
-              <input type="number" class="form-control" formControlName="amount"
+              <input type="number" class="form-control" formControlName="poAmount"
                      placeholder="Enter PO amount" step="0.01" min="0" />
             </div>
-            <div *ngIf="poForm.get('amount')?.touched && poForm.get('amount')?.invalid"
+            <div *ngIf="poForm.get('poAmount')?.touched && poForm.get('poAmount')?.invalid"
                  class="text-danger small mt-1">
               Amount is required and must be greater than 0.
             </div>
@@ -156,9 +156,9 @@
               <td class="fw-semibold">{{ po.poNumber }}</td>
               <td>{{ po.customerName || po.customer?.name || '-' }}</td>
               <td>{{ formatDate(po.poDate) }}</td>
-              <td class="text-end">{{ (po.amount || 0) | number:'1.2-2' }}</td>
-              <td class="text-end">{{ (po.utilized || po.utilizedAmount || 0) | number:'1.2-2' }}</td>
-              <td class="text-end fw-bold">{{ (po.remaining || po.remainingAmount || (po.amount - (po.utilized || po.utilizedAmount || 0))) | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (po.poAmount || po.amount || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (po.utilizedAmount || po.utilized || 0) | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">{{ (po.remainingAmount || po.remaining || ((po.poAmount || po.amount || 0) - (po.utilizedAmount || po.utilized || 0))) | number:'1.2-2' }}</td>
               <td class="text-center">
                 <span class="badge" [ngClass]="getStatusBadgeClass(po.status)">
                   {{ po.status || 'Active' }}
@@ -246,8 +246,6 @@
         of {{ totalRecords }} records
       </small>
       <nav>
-        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalRecords }} records</div>
-
         <ul class="pagination pagination-sm mb-0">
           <li class="page-item" [class.disabled]="currentPage === 1">
             <a class="page-link" (click)="onPageChange(currentPage - 1)">

@@ -20,6 +20,7 @@ export class SearchableDropdownModalComponent {
   @Input() hideLabel: boolean = false;
   @Input() isMultiSelect: boolean = false;
   @Input() reloadKey: any;
+  @Input() size: 'sm' | 'normal' = 'normal';
   @Output() itemsSelected = new EventEmitter<any[]>();
   selectedItems: any[] = [];
   dropdownStyle: { [key: string]: string } = {};
@@ -95,6 +96,7 @@ export class SearchableDropdownModalComponent {
           top: rect.bottom + 2 + 'px',
           left: rect.left + 'px',
           width: dropdownWidth + 'px',
+          'z-index': '99999',
         };
       } else {
         this.dropdownStyle = {
@@ -102,6 +104,7 @@ export class SearchableDropdownModalComponent {
           bottom: (window.innerHeight - rect.top + 2) + 'px',
           left: rect.left + 'px',
           width: dropdownWidth + 'px',
+          'z-index': '99999',
         };
       }
     }

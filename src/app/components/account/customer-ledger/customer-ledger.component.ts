@@ -85,6 +85,7 @@ export class CustomerLedgerComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading balance:', err);
+        this.toastService.show('Failed to load customer balance', 'error');
       },
     });
   }

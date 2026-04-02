@@ -75,7 +75,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ material.aliasName }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/material-specification/details', material.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + material.aliasName">
+                                    {{ material.aliasName }}
+                                </a>
+                            </td>
                             <td>{{ material.standardOrganizationName }}</td>
                             <td>{{ material.metalClassificationName }}</td>
                             <td>{{ material.standardYear }}</td>

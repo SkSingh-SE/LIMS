@@ -8,6 +8,7 @@ import { StatusHelperService } from '../../../utility/status-helpers/status-help
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+import { ConfigService } from '../../../services/config.service';
 
 @Component({
   selector: 'app-case-account-detail',
@@ -33,6 +34,7 @@ export class CaseAccountDetailComponent implements OnInit {
   canClose = false;
   closeReason = '';
   isClosing = signal(false);
+  paymentGatewayEnabled = false;
 
   lineItems: any[] = [];
   showAddLineItem = false;
@@ -46,7 +48,8 @@ export class CaseAccountDetailComponent implements OnInit {
     private accountService: AccountService,
     private toastService: ToastService,
     private statusHelper: StatusHelperService,
-    private roleHelper: RoleHelperService
+    private roleHelper: RoleHelperService,
+    private configService: ConfigService
   ) { }
 
   ngOnInit(): void {
@@ -61,6 +64,14 @@ export class CaseAccountDetailComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.isReadOnly = params['mode'] === 'view';
+    });
+
+    // Load payment gateway config
+    this.configService.getConfigurationValueBykey('PaymentGatewayEnabled').subscribe({
+      next: (val) => {
+        this.paymentGatewayEnabled = val === 'true' || val === true;
+      },
+      error: () => { this.paymentGatewayEnabled = false; }
     });
   }
 
@@ -171,6 +182,15 @@ export class CaseAccountDetailComponent implements OnInit {
     if (!this.caseSummary) return false;
     const billingStatus = this.caseSummary.billingStatus || this.caseSummary.billing_status || '';
     const reportStatus = this.caseSummary.reportStatus || this.caseSummary.report_status || '';
+    const piStatus = (this.caseSummary.piStatus || this.caseSummary.pi_status || '').toUpperCase();
+
+    // DirectTaxInvoice customers skip PI — allow invoice from PRICE_SNAPSHOT
+    if (piStatus === 'NOT_REQUIRED') {
+      const billingUpper = billingStatus.toUpperCase();
+      return (billingUpper === 'PRICE_SNAPSHOT' || billingUpper === 'ADVANCE_PAID')
+        && this.roleHelper.canGenerateInvoice();
+    }
+
     return this.statusHelper.canGenerateInvoice(billingStatus, reportStatus) && this.roleHelper.canGenerateInvoice();
   }
 
@@ -266,6 +286,7 @@ export class CaseAccountDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading line items:', err);
+        this.toastService.show('Failed to load line items', 'error');
       }
     });
   }
@@ -408,6 +429,7 @@ export class CaseAccountDetailComponent implements OnInit {
       },
       error: () => {
         this.canClose = false;
+        this.closeReason = '';
       }
     });
   }

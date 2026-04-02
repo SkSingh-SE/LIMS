@@ -1263,6 +1263,7 @@ select:focus option:checked {
   display: none;
   z-index: 1050;
   min-width: 220px;
+  max-width: calc(100vw - 20px);
   animation: fadeInDown 0.15s ease;
 }
 

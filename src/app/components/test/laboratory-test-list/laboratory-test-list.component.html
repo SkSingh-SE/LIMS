@@ -76,7 +76,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ lab.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/test/details', lab.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + lab.name">
+                                    {{ lab.name }}
+                                </a>
+                            </td>
                             <td>{{ lab.departmentName }}</td>
                             <td>{{ lab.subGroup || '-' }}</td>
                             <td>{{ lab.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>

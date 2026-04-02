@@ -327,7 +327,8 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 123, title: 'Customer Ledger', route: '/account/ledger', parentMenuID: 12, permissions: ['CanReadCustomerLedger'], children: [], color: getRandomColor() },
         { id: 124, title: 'Record Payment', route: '/account/record-payment', parentMenuID: 12, permissions: ['CanReadRecordPayment'], children: [], color: getRandomColor() },
         { id: 125, title: 'Aging Report', route: '/account/aging-report', parentMenuID: 12, permissions: ['CanReadAgingReport'], children: [], color: getRandomColor() },
-        { id: 126, title: 'Outstanding Report', route: '/account/outstanding-report', parentMenuID: 12, permissions: ['CanReadOutstandingReport'], children: [], color: getRandomColor() }
+        { id: 126, title: 'Outstanding Report', route: '/account/outstanding-report', parentMenuID: 12, permissions: ['CanReadOutstandingReport'], children: [], color: getRandomColor() },
+        { id: 127, title: 'Customer Purchase Orders', route: '/accounts/purchase-orders', parentMenuID: 12, permissions: ['CanReadCustomerPO'], children: [], color: getRandomColor() }
       ]
     }
   ];

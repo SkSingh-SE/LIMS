@@ -431,6 +431,26 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               collectionTime: data.collectionTime || this.getCurrentTime()
             });
 
+            // Restore PO details in edit mode
+            if (data.purchaseOrderId) {
+              this.customerPOService.getById(data.purchaseOrderId).subscribe({
+                next: (po: any) => {
+                  if (po) {
+                    this.selectedPODetails = {
+                      id: po.id,
+                      name: po.poNumber,
+                      additionalValues: {
+                        POAmount: po.poAmount,
+                        RemainingAmount: po.remainingAmount,
+                        ValidUntil: po.validUntil
+                      }
+                    };
+                  }
+                },
+                error: () => { /* PO details load failed — badge won't show, form still works */ }
+              });
+            }
+
             // Override Dispatch Modes
             if (Array.isArray(data.dispatchModes)) {
               this.dispatchModesArray.clear();

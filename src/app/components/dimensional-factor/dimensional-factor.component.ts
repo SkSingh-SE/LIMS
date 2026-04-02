@@ -27,7 +27,7 @@ export class DimensionalFactorComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: false },
@@ -37,7 +37,6 @@ export class DimensionalFactorComponent implements OnInit {
     { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
     code: 'string',
     name: 'string',
     instrument: 'string',
@@ -197,6 +196,17 @@ export class DimensionalFactorComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -244,6 +254,8 @@ export class DimensionalFactorComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

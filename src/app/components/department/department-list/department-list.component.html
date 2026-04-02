@@ -70,7 +70,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ department.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/department/details', department.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + department.name">
+                                    {{ department.name }}
+                                </a>
+                            </td>
                             <td>{{ department.description }}</td>
                             <td>{{ department.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td>{{department.createdBy}}</td>

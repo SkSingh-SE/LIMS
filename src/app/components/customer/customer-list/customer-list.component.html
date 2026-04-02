@@ -75,7 +75,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ employee.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/customer/details', employee.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + employee.name">
+                                    {{ employee.name }}
+                                </a>
+                            </td>
                             <td>{{ employee.customerType }}</td>
                             <td>{{ employee.pinCode }}</td>
                             <td>{{ employee.gstNo }}</td>

@@ -139,6 +139,17 @@ export class PlanListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -186,6 +197,8 @@ export class PlanListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

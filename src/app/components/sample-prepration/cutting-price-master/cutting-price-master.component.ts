@@ -22,18 +22,17 @@ export class CuttingPriceMasterComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'specimenTypeName', type: 'string', label: 'Specimen Type', filter: true },
     { key: 'cuttingType', type: 'string', label: 'Cutting Type', filter: true },
     { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
-    { key: 'ratePerUnit', type: 'string', label: 'Rate Per Unit', filter: true },
+    { key: 'ratePerUnit', type: 'number', label: 'Rate Per Unit', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
     specimenTypeName: 'string',
     cuttingType: 'string',
     unitType: 'string',
-    ratePerUnit: 'string'
+    ratePerUnit: 'number'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -180,6 +179,17 @@ export class CuttingPriceMasterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -227,6 +237,8 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

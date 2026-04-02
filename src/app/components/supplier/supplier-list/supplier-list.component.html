@@ -77,7 +77,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ supplier.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/supplier/details', supplier.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + supplier.name">
+                                    {{ supplier.name }}
+                                </a>
+                            </td>
                             <td>{{ supplier.productType }}</td>
                             <td>{{ supplier.contactPerson1 }}</td>
                             <td>{{ supplier.contactNo1 }}</td>

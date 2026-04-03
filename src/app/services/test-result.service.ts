@@ -305,6 +305,10 @@ export class TestResultService {
     return this.http.get<any[]>(`${environment.apiUrl}/machine-integration/logs/${headerId}`);
   }
 
+  deleteParameter(paramId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete-parameter/${paramId}`);
+  }
+
   // ================================================================
   // Phase 5: Test Verification Workflow
   // ================================================================

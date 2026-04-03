@@ -345,7 +345,7 @@
                       <tr>
                         <th>Parameter</th>
                         <th style="width: 70px">Unit</th>
-                        <th style="width: 130px">Spec Range</th>
+                        <th *ngIf="plans[p].type !== 'Chemical'" style="width: 130px">Spec Range</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Min</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Max</th>
                         <th style="width: 140px">Value</th>
@@ -398,8 +398,8 @@
                           </ng-template>
                         </td>
 
-                        <!-- Spec Range -->
-                        <td class="text-center small">
+                        <!-- Spec Range (General tests only — Chemical uses Min/Max columns) -->
+                        <td *ngIf="plans[p].type !== 'Chemical'" class="text-center small">
                           <ng-container *ngIf="(row.value.specMinValue != null && row.value.specMinValue !== '') || (row.value.specMaxValue != null && row.value.specMaxValue !== ''); else specEditTpl">
                             <span class="text-muted"
                               [title]="row.value.acceptanceCriteria ? 'Acceptance: ' + row.value.acceptanceCriteria : ''">
@@ -418,22 +418,23 @@
                           </ng-template>
                         </td>
 
-                        <!-- Chemical Only: Min -->
+                        <!-- Chemical Only: Min (editable — user enters if not auto-populated from spec) -->
                         <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
                           <input type="text" class="form-control form-control-sm" formControlName="minValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)" appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''" />
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Min"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter minimum value'" />
                         </td>
 
-                        <!-- Chemical Only: Max -->
+                        <!-- Chemical Only: Max (editable — user enters if not auto-populated from spec) -->
                         <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input type="text" class="form-control form-control-sm"
-                            [ngClass]="{ 'is-invalid': plans[p].type === 'Chemical' && row.get('maxValue')?.invalid && row.get('maxValue')?.touched && row.get('maxValue')?.errors && row.get('altered')?.value }"
-                            formControlName="maxValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)" appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''" />
-                          <span *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">
-                            Max is required
+                          <input type="text" class="form-control form-control-sm" formControlName="maxValue"
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Max"
+                            [ngClass]="{ 'is-invalid': row.get('maxValue')?.invalid && row.get('maxValue')?.touched }"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter maximum value'" />
+                          <span *ngIf="row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">
+                            Required
                           </span>
                         </td>
 

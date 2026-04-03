@@ -754,7 +754,23 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   removeParameter(planIndex: number, testIndex: number, paramIndex: number): void {
+    const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const paramId = paramGroup?.value?.id;
+
+    // Remove from UI immediately
     this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+
+    // If parameter exists in DB (has ID), delete from backend too
+    if (paramId && paramId > 0) {
+      this.testResultService.deleteParameter(paramId).subscribe({
+        next: () => {
+          this.toastService.show('Parameter removed', 'success');
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete parameter from server', 'error');
+        }
+      });
+    }
   }
 
   loadParametersFromSpec(planIndex: number, testIndex: number): void {
@@ -851,7 +867,8 @@ export class TestResultEntryFormComponent implements OnInit {
   // ----------------------------------------------------------------
   saveResults(): void {
     if (!this.resultForm.valid) {
-      this.toastService.show("Please fill all required fields", 'error');
+      const issues = this.getFormValidationErrors();
+      this.toastService.show(issues || 'Please fill all required fields', 'error');
       return;
     }
 
@@ -878,7 +895,8 @@ export class TestResultEntryFormComponent implements OnInit {
 
   completeResults(): void {
     if (!this.resultForm.valid) {
-      this.toastService.show("Please fill all required fields before completing", 'error');
+      const issues = this.getFormValidationErrors();
+      this.toastService.show(issues || 'Please fill all required fields before completing', 'error');
       return;
     }
 
@@ -901,6 +919,48 @@ export class TestResultEntryFormComponent implements OnInit {
         this.toastService.show("Error completing test results", 'error');
       }
     });
+  }
+
+  // ----------------------------------------------------------------
+  // Get specific validation errors for user-friendly messages
+  // ----------------------------------------------------------------
+  getFormValidationErrors(): string {
+    const errors: string[] = [];
+    const plansArray = this.resultForm.get('plans') as FormArray;
+    if (!plansArray) return '';
+
+    for (let p = 0; p < plansArray.length; p++) {
+      const planGroup = plansArray.at(p) as FormGroup;
+      const planName = this.plans[p]?.tests?.[0]?.name || `Test ${p + 1}`;
+      const testsArray = planGroup.get('tests') as FormArray;
+      if (!testsArray) continue;
+
+      for (let t = 0; t < testsArray.length; t++) {
+        const testGroup = testsArray.at(t) as FormGroup;
+        const paramsArray = testGroup.get('parameters') as FormArray;
+        if (!paramsArray) continue;
+
+        for (let r = 0; r < paramsArray.length; r++) {
+          const paramGroup = paramsArray.at(r) as FormGroup;
+          if (paramGroup.valid) continue;
+
+          const paramName = paramGroup.get('parameterName')?.value || `Row ${r + 1}`;
+          const fieldErrors: string[] = [];
+
+          if (paramGroup.get('parameterID')?.errors) fieldErrors.push('Parameter not selected');
+          if (paramGroup.get('minValue')?.errors) fieldErrors.push('Min value required');
+          if (paramGroup.get('maxValue')?.errors) fieldErrors.push('Max value required');
+
+          if (fieldErrors.length > 0) {
+            errors.push(`${planName} → ${paramName}: ${fieldErrors.join(', ')}`);
+          }
+        }
+      }
+    }
+
+    if (errors.length === 0) return 'Form has validation errors. Please check all fields.';
+    if (errors.length <= 3) return errors.join('\n');
+    return `${errors.slice(0, 3).join('\n')}\n...and ${errors.length - 3} more error(s)`;
   }
 
   // ----------------------------------------------------------------

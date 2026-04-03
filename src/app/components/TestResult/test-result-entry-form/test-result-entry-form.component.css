@@ -32,12 +32,12 @@
 .alert-banner .btn-close { font-size:.6rem; padding:.35rem; }
 
 /* Plan Sub-Tabs */
-.plan-tabs { display:flex; gap:.25rem; padding:0; margin:0 0 1rem; list-style:none; border-bottom:2px solid #E9ECEF; }
-.plan-tab-link { display:inline-flex; align-items:center; gap:.4rem; padding:.5rem .85rem; font-size:.8rem; font-weight:500; color:#6C757D; background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.plan-tabs { display:flex; gap:.25rem; padding:0; margin:0 0 1rem; list-style:none; border-bottom:2px solid #E9ECEF; overflow-x:auto; }
+.plan-tab-link { display:inline-flex; align-items:center; gap:.4rem; padding:.5rem .85rem; font-size:.8rem; font-weight:500; color:#6C757D; background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; transition:all .2s; max-width:380px; }
 .plan-tab-link:hover { color:var(--primary-color, #da261c); background:#fef8f8; }
 .plan-tab-link.active { color:var(--primary-color, #da261c); font-weight:600; border-bottom-color:var(--primary-color, #da261c); }
-.plan-tab-type { font-weight:600; }
-.plan-tab-spec { color:#ADB5BD; }
+.plan-tab-type { font-weight:600; flex-shrink:0; }
+.plan-tab-spec { color:#ADB5BD; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; display:inline-block; vertical-align:middle; }
 .plan-tab-count { background:#E9ECEF; color:#495057; font-size:.68rem; padding:.15em .4em; border-radius:10px; font-weight:600; }
 .plan-tab-link.active .plan-tab-count { background:var(--primary-50, #fdeaea); color:var(--primary-color, #da261c); }
 

@@ -263,9 +263,27 @@ export class CaseAccountDetailComponent implements OnInit {
     return 'badge bg-secondary';
   }
 
-  openInvoicePreview(): void {
-    if (this.invoice?.invoiceId || this.invoice?.invoice_id) {
-      this.router.navigate(['/accounts/invoices', this.invoice.invoiceId || this.invoice.invoice_id, 'preview']);
+  openInvoicePreview(type: 'pi' | 'invoice' = 'invoice'): void {
+    if (type === 'pi') {
+      const piId = this.proformaInvoice?.id || this.proformaInvoice?.piId;
+      if (!piId) {
+        this.toastService.show('PI not found', 'error');
+        return;
+      }
+      this.accountService.downloadPIPdf(piId).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || 'Failed to load PI PDF', 'error');
+        }
+      });
+    } else {
+      const invoiceId = this.invoice?.invoiceId || this.invoice?.invoice_id;
+      if (invoiceId) {
+        this.router.navigate(['/accounts/invoices', invoiceId, 'preview']);
+      }
     }
   }
 

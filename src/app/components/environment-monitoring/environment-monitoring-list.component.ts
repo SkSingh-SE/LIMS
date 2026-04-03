@@ -15,10 +15,12 @@ export class EnvironmentMonitoringListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'documentNo', label: 'Document No', type: 'string', filter: true },
-    { key: 'monitoringMonth', label: 'Month', type: 'string', filter: true },
-    { key: 'monitoringYear', label: 'Year', type: 'number', filter: true },
-    { key: 'location', label: 'Location', type: 'string', filter: true },
-    { key: 'totalRecordssTaken', label: 'Records Taken', type: 'number', filter: true }
+    { key: 'monitoringDate', label: 'Date', type: 'date', filter: true },
+    { key: 'departmentName', label: 'Department', type: 'string', filter: true },
+    { key: 'temperature', label: 'Temp (°C)', type: 'number', filter: false },
+    { key: 'humidity', label: 'Humidity (%)', type: 'number', filter: false },
+    { key: 'isWithinLimits', label: 'Within Limits', type: 'string', filter: true },
+    { key: 'status', label: 'Status', type: 'string', filter: true }
   ];
 
   records: any[] = [];

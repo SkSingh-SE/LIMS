@@ -346,7 +346,10 @@ export class ConfigManagerComponent implements OnInit {
   onSubmit(): void {
     if (this.configForm.valid) {
       const payload = this.configForm.getRawValue();
-      payload.value = payload.values.map((a: any) => a).join('|');
+      // For multi-value (csv/dropdown), join values array; for single, keep the value field as-is
+      if (payload.values && payload.values.length > 0) {
+        payload.value = payload.values.map((a: any) => a).join('|');
+      }
 
 
       const saveFn = this.configId > 0

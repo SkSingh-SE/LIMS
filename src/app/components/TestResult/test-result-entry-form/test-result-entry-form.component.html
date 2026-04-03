@@ -111,6 +111,7 @@
               (click)="activePlanIndex = p">
               <span class="plan-tab-type">{{ plans[p].type }}</span>
               <span class="plan-tab-spec">{{ plans[p].specification }}</span>
+              <span class="badge bg-info ms-1" *ngIf="plans[p].specimenLabel">{{ plans[p].specimenLabel }}</span>
               <span class="plan-tab-count">{{ plans[p].tests.length }}</span>
             </button>
           </li>

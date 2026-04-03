@@ -262,7 +262,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       type: [type],
       salutation: ['', isRequired ? Validators.required : []],
       name: ['', isRequired ? Validators.required : [Validators.required]],
-      departmentID: [0],
+      departmentID: [0, [Validators.required, Validators.min(1)]],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
       mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)] : [Validators.pattern(/^[+]?\d{10,13}$/)]],
       isWhatsappNo: [false],
@@ -582,6 +582,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   private contactLabelMap: Record<string, string> = {
     salutation: 'Salutation',
     name: 'Name',
+    departmentID: 'Department',
     emailId: 'Email',
     mobileNo: 'Mobile No',
     address: 'Address',

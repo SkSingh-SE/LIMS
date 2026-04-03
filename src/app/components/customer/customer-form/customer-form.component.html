@@ -268,7 +268,7 @@
               <tr class="text-nowrap text-muted small">
                 <th class="fw-medium px-2">#</th>
                 <th class="fw-medium px-2">Contact Person</th>
-                <th class="fw-medium px-2">Department</th>
+                <th class="fw-medium px-2">Department <span class="text-danger">*</span></th>
                 <th class="fw-medium px-2">Email</th>
                 <th class="fw-medium px-2">Mobile</th>
                 <th class="fw-medium px-2">Address</th>
@@ -306,6 +306,8 @@
                       (itemSelected)="onDepartmentSelected($event, asFormGroup(contact))" [isDisabled]="isViewMode"
                       [hideLabel]="true" [selectedItem]="contact.get('departmentID')?.value"
                       [smallInput]="true"></app-searchable-dropdown>
+                    <span *ngIf="contact.get('departmentID')?.touched && contact.get('departmentID')?.invalid"
+                      class="text-danger text-sm">Required.</span>
                   </td>
                   <td class="px-2">
                     <input class="form-control form-control-sm" formControlName="emailId" placeholder="Enter Email"
@@ -506,7 +508,10 @@
             <app-searchable-dropdown size="sm" [placeholder]="'Search department'" [labelName]="'Department'"
               [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event, contactGroup)"
               [isDisabled]="isViewMode"
+              [required]="true"
               [selectedItem]="contactGroup.get('departmentID')?.value"></app-searchable-dropdown>
+            <span *ngIf="contactGroup.get('departmentID')?.touched && contactGroup.get('departmentID')?.invalid"
+              class="text-danger text-sm">Department is required.</span>
           </div>
 
           <div class="col-6 col-md-6">

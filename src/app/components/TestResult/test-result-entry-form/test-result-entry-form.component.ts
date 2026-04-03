@@ -319,6 +319,8 @@ export class TestResultEntryFormComponent implements OnInit {
           generalTestId: generalTest.generalTestId,
           testMethodId: generalTest.testMethodId,
           laboratoryTestId: generalTest.laboratoryTestId,
+          sequenceNo: generalTest.sequenceNo || 1,
+          totalSpecimens: generalTest.totalSpecimens || 1,
           specification1: generalTest.specification1,
           specification2: generalTest.specification2,
           parameters: generalTest.parameters || []
@@ -374,16 +376,22 @@ export class TestResultEntryFormComponent implements OnInit {
           generalTest.specfication2Name
         );
 
+        const totalSpecimens = generalTest.totalSpecimens || 1;
+        const sequenceNo = generalTest.sequenceNo || 1;
+        const baseName = generalTest.laboratoryTest || 'General Test';
+        const testName = totalSpecimens > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
+
         const genPlan: any = {
           type: 'General',
           specification: specification,
           grade: '',
           headerId: generalTest.headerId,
+          specimenLabel: totalSpecimens > 1 ? `Specimen ${sequenceNo} of ${totalSpecimens}` : null,
           tests: [
             {
               id: `gen-${generalTest.headerId}`,
               headerId: generalTest.headerId,
-              name: generalTest.laboratoryTest || 'General Test',
+              name: testName,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
               parameters: (generalTest.parameters || []).map((param: any) => ({

@@ -1,8 +1,8 @@
-/* Component-specific styles if needed */
+@import '../account-shared.css';
+
 @media print {
-  .card-header,
+  .page-header,
   button {
     display: none !important;
   }
 }
-

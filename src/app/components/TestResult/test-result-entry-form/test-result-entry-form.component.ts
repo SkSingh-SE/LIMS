@@ -1416,15 +1416,58 @@ export class TestResultEntryFormComponent implements OnInit {
     return ['Completed', 'PendingVerification', 'Verified'].includes(status);
   }
 
-  submitForVerification(planIndex: number, testIndex: number): void {
-    const test = this.plans[planIndex].tests[testIndex];
-    const headerId = test.headerId;
-    this.testResultService.submitForVerification(headerId).subscribe({
-      next: () => {
-        test.status = 'PendingVerification';
-        this.toastService.show('Test submitted for verification', 'success');
+  // ================================================================
+  // Sample-Level Verification (NABL ISO 17025 Clause 7.7)
+  // ================================================================
+  isSubmittingVerification = false;
+
+  getVerificationBannerState(): { state: string; message: string } | null {
+    const allTests = this.plans.flatMap((p: any) => p.tests || []);
+    if (!allTests.length) return null;
+
+    const statuses = allTests.map((t: any) => t.status);
+    const allVerified = statuses.every((s: string) => s === 'Verified');
+    const allPending = statuses.every((s: string) => s === 'PendingVerification');
+    const allCompleted = statuses.every((s: string) => s === 'Completed');
+    const anyPending = statuses.some((s: string) => s === 'PendingVerification');
+    const anyIncomplete = statuses.some((s: string) =>
+      s !== 'Completed' && s !== 'PendingVerification' && s !== 'Verified');
+
+    if (allVerified) {
+      return { state: 'verified', message: 'All tests verified successfully.' };
+    }
+    if (allPending || (anyPending && !anyIncomplete)) {
+      return { state: 'pending', message: 'All tests submitted for verification. Awaiting reviewer approval.' };
+    }
+    if (allCompleted) {
+      return { state: 'ready', message: `All ${allTests.length} test(s) completed. Ready to submit for verification.` };
+    }
+    if (anyIncomplete) {
+      const completed = statuses.filter((s: string) => s === 'Completed' || s === 'PendingVerification' || s === 'Verified').length;
+      return { state: 'partial', message: `${completed} of ${allTests.length} test(s) completed. Complete all tests before submitting for verification.` };
+    }
+    return null;
+  }
+
+  submitSampleForVerification(): void {
+    if (this.isSubmittingVerification) return;
+    this.isSubmittingVerification = true;
+
+    this.testResultService.submitSampleForVerification(this.sampleId).subscribe({
+      next: (res: any) => {
+        this.isSubmittingVerification = false;
+        // Update all completed test statuses to PendingVerification
+        this.plans.forEach((plan: any) => {
+          (plan.tests || []).forEach((test: any) => {
+            if (test.status === 'Completed') {
+              test.status = 'PendingVerification';
+            }
+          });
+        });
+        this.toastService.show(res?.message || 'All tests submitted for verification', 'success');
       },
       error: (err: any) => {
+        this.isSubmittingVerification = false;
         this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
       }
     });

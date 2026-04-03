@@ -312,6 +312,10 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/submit-for-verification/${headerId}`, {});
   }
 
+  submitSampleForVerification(sampleId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/submit-sample-for-verification/${sampleId}`, {});
+  }
+
   getVerificationList(filter: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/verification-list`, filter);
   }

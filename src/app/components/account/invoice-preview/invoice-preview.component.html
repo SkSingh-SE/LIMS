@@ -1,21 +1,25 @@
-<div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
-    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-receipt"></i>
-        Invoice Preview
-      </label>
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-light me-2" (click)="printInvoice()">
-          <i class="bi bi-printer"></i> Print
-        </button>
-        <button class="btn btn-outline-light" (click)="goBack()">
-          <i class="bi bi-arrow-left"></i> Back
-        </button>
-      </div>
+<div class="container-fluid p-3">
+  <!-- Page Header (standardized with account module) -->
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="page-title mb-0">
+        <i class="bi bi-receipt me-2"></i>Invoice Preview
+      </h4>
+      <p class="page-subtitle">Preview and send invoice to customer</p>
     </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" (click)="printInvoice()">
+        <i class="bi bi-printer me-1"></i> Print
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </button>
+    </div>
+  </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+  <!-- Content -->
+  <div class="card border-0 shadow-sm mt-3" *ngIf="!isLoading()">
+    <div class="card-body">
       <div class="alert alert-info">
         <i class="bi bi-info-circle me-2"></i>
         Invoice preview functionality. In a production system, this would display the actual invoice PDF or formatted invoice.
@@ -23,7 +27,7 @@
 
       <div class="d-flex justify-content-center gap-3 mt-4">
         <button
-          class="btn btn-save btn-lg"
+          class="btn btn-primary btn-lg"
           (click)="sendInvoice('email')"
           [disabled]="isSendingInvoice()"
         >
@@ -32,7 +36,7 @@
           {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
         </button>
         <button
-          class="btn btn-save btn-lg"
+          class="btn btn-primary btn-lg"
           (click)="sendInvoice('whatsapp')"
           [disabled]="isSendingInvoice()"
         >
@@ -42,13 +46,12 @@
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-5">
+    <div class="spinner-border text-danger" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
   </div>
 </div>
-

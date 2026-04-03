@@ -1,47 +1,9 @@
+@import '../account-shared.css';
+
 .payment-container {
   padding: 20px;
   background-color: #f8f9fa;
   min-height: calc(100vh - 80px);
-}
-
-.page-header {
-  margin-bottom: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.page-title {
-  color: #2c3e50;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.page-subtitle {
-  color: #6c757d;
-  margin-bottom: 0;
-}
-
-.card-title {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.btn-primary {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
-.btn-primary:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
-}
-
-.btn-primary:disabled {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  opacity: 0.65;
 }
 
 .success-icon {
@@ -75,13 +37,5 @@
 @media (max-width: 768px) {
   .payment-container {
     padding: 10px;
-  }
-
-  .page-header {
-    padding: 15px;
-  }
-
-  .page-title {
-    font-size: 1.4rem;
   }
 }

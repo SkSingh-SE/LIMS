@@ -112,10 +112,40 @@
               <span class="plan-tab-type">{{ plans[p].type }}</span>
               <span class="plan-tab-spec">{{ plans[p].specification }}</span>
               <span class="badge bg-info ms-1" *ngIf="plans[p].specimenLabel">{{ plans[p].specimenLabel }}</span>
-              <span class="plan-tab-count">{{ plans[p].tests.length }}</span>
+              <span class="plan-tab-count" *ngIf="!plans[p].specimenLabel">{{ plans[p].tests.length }}</span>
             </button>
           </li>
         </ul>
+
+        <!-- Sample-Level Verification Banner (NABL ISO 17025 Clause 7.7) -->
+        <div class="verification-banner d-flex align-items-center justify-content-between p-2 mb-2 rounded"
+          *ngIf="getVerificationBannerState() as bannerState"
+          [ngClass]="{
+            'bg-light border': bannerState.state === 'ready',
+            'alert alert-warning mb-2': bannerState.state === 'pending',
+            'alert alert-success mb-2': bannerState.state === 'verified',
+            'alert alert-info mb-2': bannerState.state === 'partial'
+          }">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi" [ngClass]="{
+              'bi-send-check': bannerState.state === 'ready',
+              'bi-hourglass-split': bannerState.state === 'pending',
+              'bi-patch-check-fill': bannerState.state === 'verified',
+              'bi-info-circle': bannerState.state === 'partial'
+            }"></i>
+            <span class="small fw-semibold">{{ bannerState.message }}</span>
+          </div>
+          <button
+            *ngIf="bannerState.state === 'ready'"
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="submitSampleForVerification()"
+            [disabled]="isSubmittingVerification">
+            <span *ngIf="isSubmittingVerification" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isSubmittingVerification" class="bi bi-send-check me-1"></i>
+            Submit All for Verification
+          </button>
+        </div>
 
         <!-- Tab Content -->
         <div>
@@ -212,17 +242,7 @@
                       <i class="bi bi-check-circle me-1"></i>Complete Test
                     </button>
 
-                    <!-- Submit for Verification (after Completed, before Verified) -->
-                    <button
-                      *ngIf="plans[p].tests[t].status === 'Completed'"
-                      type="button"
-                      class="btn btn-outline-primary btn-sm"
-                      (click)="submitForVerification(p, t)"
-                      title="Submit test results for Lab Manager verification">
-                      <i class="bi bi-send-check me-1"></i>Submit for Verification
-                    </button>
-
-                    <!-- Verification Status Badges -->
+                    <!-- Verification Status Badges (per-specimen — informational) -->
                     <span *ngIf="plans[p].tests[t].status === 'PendingVerification'"
                       class="badge bg-warning text-dark">
                       <i class="bi bi-hourglass-split me-1"></i>Pending Verification

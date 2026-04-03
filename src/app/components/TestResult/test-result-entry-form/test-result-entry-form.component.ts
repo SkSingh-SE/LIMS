@@ -165,19 +165,27 @@ export class TestResultEntryFormComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       this.sampleId = Number(params.get('id'));
     });
+    // View mode: check history.state first, then route path as fallback
     const state = history.state as { mode?: string };
-    if (state) {
-      if (state.mode === 'view') {
+    if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
+      this.isViewMode = true;
+    }
+    // Also check query params (for verification mode)
+    this.route.queryParams.subscribe(params => {
+      if (params['mode'] === 'view' || params['mode'] === 'verify') {
         this.isViewMode = true;
       }
-    }
-    this.loadDummyData();
+    });
     this.buildForm();
     this.buildMoveToLongTermForm();
     this.buildStandaloneParamForm();
     this.buildFromMethodForm();
-    if(this.sampleId)
-      this.loadFullResultPayload(this.sampleId); // Sample ID
+    if (this.sampleId) {
+      this.loadFullResultPayload(this.sampleId);
+    } else {
+      this.loadDummyData();
+      // loading handled by interceptor
+    }
   }
 
   private buildMoveToLongTermForm(): void {
@@ -234,6 +242,7 @@ export class TestResultEntryFormComponent implements OnInit {
     if (!sampleId) {
       console.warn('[TestResultEntry] No sample ID provided');
       this.toastService.show('Sample ID is required', 'warning');
+      // loading handled by interceptor
       return;
     }
 
@@ -292,10 +301,12 @@ export class TestResultEntryFormComponent implements OnInit {
         this.loadPreparationStatus(sampleId);
         this.loadUnifiedPriceSummary(sampleId);
         this.loadMachiningItems(sampleId);
+        // loading handled by interceptor
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
         this.toastService.show('Failed to load test result data. Please try again.', 'error');
+        // loading handled by interceptor
       }
     });
   }
@@ -756,20 +767,24 @@ export class TestResultEntryFormComponent implements OnInit {
   removeParameter(planIndex: number, testIndex: number, paramIndex: number): void {
     const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
     const paramId = paramGroup?.value?.id;
+    const paramName = paramGroup?.value?.parameterName || `Row ${paramIndex + 1}`;
 
-    // Remove from UI immediately
-    this.getParameters(planIndex, testIndex).removeAt(paramIndex);
-
-    // If parameter exists in DB (has ID), delete from backend too
+    // If parameter exists in DB (has ID), delete from backend first, then remove from UI
     if (paramId && paramId > 0) {
+      if (!confirm(`Delete parameter "${paramName}"? This cannot be undone.`)) return;
+
       this.testResultService.deleteParameter(paramId).subscribe({
         next: () => {
+          this.getParameters(planIndex, testIndex).removeAt(paramIndex);
           this.toastService.show('Parameter removed', 'success');
         },
         error: (err: any) => {
           this.toastService.show(err?.error?.message || 'Failed to delete parameter from server', 'error');
         }
       });
+    } else {
+      // New unsaved parameter — just remove from UI
+      this.getParameters(planIndex, testIndex).removeAt(paramIndex);
     }
   }
 
@@ -816,13 +831,23 @@ export class TestResultEntryFormComponent implements OnInit {
   // 4. UI Helpers
   // ----------------------------------------------------------------
   isValueOutOfRange(param: any): boolean {
-    if (param.minValue == null || param.maxValue == null || param.value == null) return false;
-    return param.value < param.minValue || param.value > param.maxValue;
+    const min = param.specMinValue ?? param.minValue;
+    const max = param.specMaxValue ?? param.maxValue;
+    if (min == null && max == null) return false;
+    if (param.value == null) return false;
+    const val = Number(param.value) * (Number(param.conversionFactor) || 1);
+    if (min != null && val < Number(min)) return true;
+    if (max != null && val > Number(max)) return true;
+    return false;
   }
 
   isValueWithinRange(param: any): boolean {
-    if (param.minValue == null || param.maxValue == null || param.value == null) return false;
-    return param.value >= param.minValue && param.value <= param.maxValue;
+    const min = param.specMinValue ?? param.minValue;
+    const max = param.specMaxValue ?? param.maxValue;
+    if (min == null && max == null) return false;
+    if (param.value == null) return false;
+    const val = Number(param.value) * (Number(param.conversionFactor) || 1);
+    return (!min || val >= Number(min)) && (!max || val <= Number(max));
   }
 
   // ----------------------------------------------------------------
@@ -837,13 +862,13 @@ export class TestResultEntryFormComponent implements OnInit {
         plan.tests.forEach((test: any, testIdx: number) => {
           test.parameters.forEach((param: any, paramIdx: number) => {
             if (param.parameterID) {
-              if (param.minValue === 0 || param.minValue === null) {
+              if (param.minValue === null || param.minValue === undefined || param.minValue === '') {
                 invalidParams.push(`${param.parameterName} - Min Value is required`);
               }
-              if (param.maxValue === 0 || param.maxValue === null) {
+              if (param.maxValue === null || param.maxValue === undefined || param.maxValue === '') {
                 invalidParams.push(`${param.parameterName} - Max Value is required`);
               }
-              if (param.value === 0 || param.value === null) {
+              if (param.value === null || param.value === undefined || param.value === '') {
                 invalidParams.push(`${param.parameterName} - Value is required`);
               }
             }
@@ -893,33 +918,8 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
-  completeResults(): void {
-    if (!this.resultForm.valid) {
-      const issues = this.getFormValidationErrors();
-      this.toastService.show(issues || 'Please fill all required fields before completing', 'error');
-      return;
-    }
-
-    // Validate chemical parameters
-    const validation = this.validateChemicalParameters();
-    if (!validation.isValid) {
-      this.toastService.show(validation.message, 'error');
-      return;
-    }
-
-    const payload = this.buildCompletePayload();
-    console.log("COMPLETE Payload:", payload);
-
-    this.testResultService.completeTestResult(payload).subscribe({
-      next: (response) => {
-        this.toastService.show(response.message, 'success');
-      },
-      error: (error) => {
-        console.error("Error completing results:", error);
-        this.toastService.show("Error completing test results", 'error');
-      }
-    });
-  }
+  // completeResults() removed — use per-test completeTest(planIndex, testIndex) instead
+  // Each test is completed individually via POST /api/TestResults/complete-test/{headerId}
 
   // ----------------------------------------------------------------
   // Get specific validation errors for user-friendly messages
@@ -985,12 +985,17 @@ export class TestResultEntryFormComponent implements OnInit {
         const apiGeneral = this.apiMetadata.generalTests.find((gt: any) => gt.headerId === headerId);
         const apiChemical = this.apiMetadata.chemicalTests.find((ct: any) => ct.headerId === headerId);
 
+        // Get equipment for this header
+        const equipmentIds = this.selectedEquipmentMap[headerId] || [];
+        const equipmentIdsJson = equipmentIds.length > 0 ? JSON.stringify(equipmentIds.map((e: any) => e.id || e)) : null;
+
         if (apiGeneral) {
           payload.generalTests.push({
             headerId: headerId,
             generalTestId: apiGeneral.generalTestId,
             testMethodId: apiGeneral.testMethodId,
             laboratoryTestId: apiGeneral.laboratoryTestId,
+            equipmentIdsJson: equipmentIdsJson,
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -1012,8 +1017,9 @@ export class TestResultEntryFormComponent implements OnInit {
         } else if (apiChemical) {
           payload.chemicalTests.push({
             headerId: headerId,
-            chemicalTestId: apiChemical.chemicalTestId,
-            labTestId: apiChemical.labTestId,
+            generalTestId: apiChemical.chemicalTestId,
+            laboratoryTestId: apiChemical.labTestId,
+            equipmentIdsJson: equipmentIdsJson,
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -1298,6 +1304,8 @@ export class TestResultEntryFormComponent implements OnInit {
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
 
+    if (!confirm(`Start test "${test.name}"? This will record the start time and performer.`)) return;
+
     this.testResultService.startTest(headerId).subscribe({
       next: (response) => {
         test.status = 'Started';
@@ -1381,21 +1389,8 @@ export class TestResultEntryFormComponent implements OnInit {
           nextValueInput.focus();
         }
       }, 0);
-    } else {
-      // Auto-add new parameter row if on last and it's not empty
-      const currentValue = parametersArray.at(paramIndex).get('value')?.value;
-      if (currentValue !== null && currentValue !== '') {
-        this.addParameter(planIndex, testIndex);
-        setTimeout(() => {
-          const newInput = document.querySelector(
-            `[data-param-input="${planIndex}-${testIndex}-${nextParamIndex}"]`
-          ) as HTMLInputElement;
-          if (newInput) {
-            newInput.focus();
-          }
-        }, 100);
-      }
     }
+    // Removed auto-add on Enter at last row — user should explicitly click "Add Parameter"
   }
 
   /**

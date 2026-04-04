@@ -39,6 +39,10 @@ export interface TestParameter {
   isWithinLimit: boolean;
   resultStatus?: string;
   remarks?: string;
+  decimalPrecision?: number;
+  conversionFactor?: number;
+  convertedValue?: number;
+  selectedUnit?: string;
 }
 
 export interface TestImage {

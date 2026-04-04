@@ -92,39 +92,40 @@ export class ParameterUnitComponent implements OnInit {
       conversionFactor2: [null],
       similarUnit3: [''],
       conversionFactor3: [null],
+      similarUnit4: [''],
+      conversionFactor4: [null],
+      similarUnit5: [''],
+      conversionFactor5: [null],
+      similarUnit6: [''],
+      conversionFactor6: [null],
+      similarUnit7: [''],
+      conversionFactor7: [null],
     });
   }
 
   detectSimilarUnitCount(): void {
     let count = 0;
-    if (this.parameterUnitForm.get('similarUnit1')?.value || this.parameterUnitForm.get('conversionFactor1')?.value) count = 1;
-    if (this.parameterUnitForm.get('similarUnit2')?.value || this.parameterUnitForm.get('conversionFactor2')?.value) count = 2;
-    if (this.parameterUnitForm.get('similarUnit3')?.value || this.parameterUnitForm.get('conversionFactor3')?.value) count = 3;
+    for (let i = 1; i <= 7; i++) {
+      if (this.parameterUnitForm.get(`similarUnit${i}`)?.value || this.parameterUnitForm.get(`conversionFactor${i}`)?.value) count = i;
+    }
     this.similarUnitCount = count;
   }
 
   addSimilarUnit(): void {
-    if (this.similarUnitCount < 3) this.similarUnitCount++;
+    if (this.similarUnitCount < 7) this.similarUnitCount++;
   }
 
   removeSimilarUnit(index: number): void {
-    if (index === 1) {
-      this.parameterUnitForm.patchValue({
-        similarUnit1: this.parameterUnitForm.get('similarUnit2')?.value || '',
-        conversionFactor1: this.parameterUnitForm.get('conversionFactor2')?.value,
-        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
-        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
-        similarUnit3: '', conversionFactor3: null,
-      });
-    } else if (index === 2) {
-      this.parameterUnitForm.patchValue({
-        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
-        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
-        similarUnit3: '', conversionFactor3: null,
-      });
-    } else if (index === 3) {
-      this.parameterUnitForm.patchValue({ similarUnit3: '', conversionFactor3: null });
+    // Shift all units above the removed index down by one
+    const patch: any = {};
+    for (let i = index; i < 7; i++) {
+      patch[`similarUnit${i}`] = this.parameterUnitForm.get(`similarUnit${i + 1}`)?.value || '';
+      patch[`conversionFactor${i}`] = this.parameterUnitForm.get(`conversionFactor${i + 1}`)?.value || null;
     }
+    // Clear the last slot
+    patch[`similarUnit7`] = '';
+    patch[`conversionFactor7`] = null;
+    this.parameterUnitForm.patchValue(patch);
     this.similarUnitCount--;
   }
 

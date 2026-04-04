@@ -116,6 +116,10 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/load-parameters/${headerId}`, {});
   }
 
+  takeVerificationAction(payload: { id: number; action: string; remarks: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verification/action`, payload);
+  }
+
   // ================================================================
   // Phase 2A: Enhanced Test Execution
   // ================================================================

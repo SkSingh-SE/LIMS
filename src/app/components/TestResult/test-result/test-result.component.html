@@ -58,7 +58,7 @@
               <td class="text-center">
                 <div class="d-flex gap-2 justify-content-center align-items-center">
                   <a
-                    *ngIf="item.sampleStatus !== 'Completed'"
+                    *ngIf="item.actionStatus === 'CAN_TEST' || item.sampleStatus === 'In Progress' || item.sampleStatus === 'Pending'"
                     [routerLink]="['/testing/perform', item.sampleId]"
                     class="btn btn-sm btn-success"
                     title="Perform Testing"

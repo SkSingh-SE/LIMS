@@ -4,54 +4,27 @@
       <label class="text-center text-md fw-medium ms-3">Test Result Verification</label>
     </div>
 
-    <!-- Loading Spinner -->
-    <div *ngIf="false" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-
     <div class="card-body">
       <!-- Filters Row: Date Range + Search -->
       <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
         <!-- Date Range Filter -->
         <div class="d-flex align-items-center gap-2">
           <label class="form-label mb-0 text-muted small">From:</label>
-          <input
-            type="date"
-            class="form-control form-control-sm"
-            style="width: 160px;"
-            [(ngModel)]="dateFrom"
-            (change)="onDateFilter()"
-          />
+          <input type="date" class="form-control form-control-sm" style="width: 160px;"
+            [(ngModel)]="dateFrom" (change)="onDateFilter()" />
           <label class="form-label mb-0 text-muted small">To:</label>
-          <input
-            type="date"
-            class="form-control form-control-sm"
-            style="width: 160px;"
-            [(ngModel)]="dateTo"
-            (change)="onDateFilter()"
-          />
-          <button
-            *ngIf="dateFrom || dateTo"
-            class="btn btn-sm btn-cancel"
-            (click)="clearDateFilter()"
-            title="Clear date filter"
-          >
+          <input type="date" class="form-control form-control-sm" style="width: 160px;"
+            [(ngModel)]="dateTo" (change)="onDateFilter()" />
+          <button *ngIf="dateFrom || dateTo" class="btn btn-sm btn-cancel" (click)="clearDateFilter()" title="Clear date filter">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
 
         <!-- Search -->
         <div class="w-25 input-group custom-search">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="Search..."
-            [(ngModel)]="searchTerm"
-            (keydown.enter)="onSearch()"
-          />
-          <div class="input-group-text pe-auto cursor" (click)="onSearch()">
+          <input type="text" class="form-control" placeholder="Search..."
+            [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
             <i class="bi bi-search"></i>
           </div>
         </div>
@@ -71,6 +44,7 @@
               <th class="text-start">Tester</th>
               <th class="text-center">Completed Date</th>
               <th class="text-center">Status</th>
+              <th class="text-center">Current Step</th>
               <th class="text-center" style="width: 130px; min-width: 130px;">Actions</th>
             </tr>
           </thead>
@@ -80,124 +54,154 @@
               <!-- Main Row -->
               <tr class="align-middle cursor" (click)="toggleRow(item)">
                 <td class="text-center">
-                  <i
-                    class="bi"
-                    [ngClass]="isExpanded(item) ? 'bi-chevron-down' : 'bi-chevron-right'"
-                  ></i>
+                  <i class="bi" [ngClass]="isExpanded(item) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                 </td>
                 <td class="fw-semibold">
-                  <a
-                    class="text-primary text-decoration-none cursor"
+                  <a class="text-primary text-decoration-none cursor"
                     (click)="navigateToVerify(item, $event)"
-                    [title]="'View test results for ' + item.sampleNo"
-                  >
+                    [title]="'View test results for ' + item.sampleNo">
                     {{ item.sampleNo || '-' }}
                   </a>
                 </td>
                 <td>{{ item.caseNo || '-' }}</td>
-                <td>{{ item.testName || item.testMethodName || '-' }}</td>
-                <td class="text-center">{{ item.parametersCount || item.parameterCount || 0 }}</td>
+                <td>{{ item.testName || '-' }}</td>
+                <td class="text-center">{{ item.parametersCount || 0 }}</td>
                 <td class="text-center">
-                  <span
-                    class="badge"
-                    [ngClass]="item.isNabl || item.nablStatus ? 'bg-success' : 'bg-secondary'"
-                  >
-                    {{ item.isNabl || item.nablStatus ? 'NABL' : 'Non-NABL' }}
+                  <span class="badge" [ngClass]="item.isNabl ? 'bg-success' : 'bg-secondary'">
+                    {{ item.isNabl ? 'NABL' : 'Non-NABL' }}
                   </span>
                 </td>
-                <td>{{ item.testerName || item.testedBy || '-' }}</td>
+                <td>{{ item.performedBy || '-' }}</td>
                 <td class="text-center">
                   {{ item.completedDate ? (item.completedDate | date: 'dd-MMM-yyyy') : '-' }}
                 </td>
                 <td class="text-center">
-                  <span class="badge" [ngClass]="getStatusBadgeClass(item.status || item.verificationStatus)">
-                    {{ getStatusLabel(item.status || item.verificationStatus) }}
+                  <span class="badge" [ngClass]="getStatusBadgeClass(item.status)">
+                    {{ getStatusLabel(item.status) }}
                   </span>
                 </td>
                 <td class="text-center">
+                  <span *ngIf="item.currentStep" class="text-muted small">{{ item.currentStep }}</span>
+                  <span *ngIf="!item.currentStep" class="text-muted small">-</span>
+                </td>
+                <td class="text-center">
                   <div class="d-flex gap-1 justify-content-center flex-wrap">
-                    <button
-                      class="btn btn-sm btn-outline-info"
-                      (click)="navigateToVerify(item, $event)"
-                      title="View Test Results (Read-Only)"
-                    >
-                      <i class="bi bi-eye"></i>
-                      <span class="d-none d-sm-inline ms-1">View</span>
+                    <button class="btn btn-sm btn-outline-info" (click)="navigateToVerify(item, $event)" title="View Test Results">
+                      <i class="bi bi-eye"></i><span class="d-none d-sm-inline ms-1">View</span>
                     </button>
-                    <button
-                      class="btn btn-sm btn-outline-success"
-                      (click)="openApproveModal(item, $event)"
-                      title="Approve / Verify"
-                      [disabled]="(item.status || item.verificationStatus) === 'Verified'"
-                    >
-                      <i class="bi bi-check-circle"></i>
-                      <span class="d-none d-sm-inline ms-1">Approve</span>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-remove"
-                      (click)="openRejectModal(item, $event)"
-                      title="Reject"
-                      [disabled]="(item.status || item.verificationStatus) === 'Verified'"
-                    >
-                      <i class="bi bi-x-circle"></i>
-                      <span class="d-none d-sm-inline ms-1">Reject</span>
-                    </button>
+                    <ng-container *ngIf="item.status === 'PendingVerification' && (item.canTakeAction || !item.workflowInstanceId)">
+                      <button class="btn btn-sm btn-outline-success" (click)="openApproveModal(item, $event)" title="Approve">
+                        <i class="bi bi-check-circle"></i><span class="d-none d-sm-inline ms-1">Approve</span>
+                      </button>
+                      <button class="btn btn-sm btn-remove" (click)="openRejectModal(item, $event)" title="Reject">
+                        <i class="bi bi-x-circle"></i><span class="d-none d-sm-inline ms-1">Reject</span>
+                      </button>
+                    </ng-container>
+                    <span *ngIf="item.workflowInstanceId && !item.canTakeAction && item.status === 'PendingVerification'"
+                      class="text-muted small">
+                      Awaiting {{ item.currentStep || 'review' }}
+                    </span>
                   </div>
                 </td>
               </tr>
 
               <!-- Expanded Parameters Row -->
               <tr *ngIf="isExpanded(item)" class="expanded-row">
-                <td [attr.colspan]="10" class="p-0">
-                  <div class="p-3 bg-light border-top">
-                    <!-- Loading Parameters -->
+                <td [attr.colspan]="11" class="p-0">
+                  <div class="expanded-panel">
+                    <!-- Loading -->
                     <div *ngIf="isLoadingParameters()" class="text-center py-3">
-                      <div class="spinner-border spinner-border-sm text-danger" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
+                      <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
                       <span class="ms-2 text-muted">Loading parameters...</span>
                     </div>
 
                     <!-- Parameters Table -->
                     <div *ngIf="!isLoadingParameters() && expandedParameters.length > 0">
-                      <h6 class="fw-semibold mb-2">
-                        <i class="bi bi-list-ul me-1"></i>Test Parameters
-                      </h6>
-                      <table class="table table-sm table-bordered mb-0 bg-white">
-                        <thead class="table-light">
-                          <tr>
-                            <th>#</th>
-                            <th>Parameter Name</th>
-                            <th>Unit</th>
-                            <th>Specification</th>
-                            <th>Result Value</th>
-                            <th class="text-center">Pass/Fail</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let param of expandedParameters; let i = index">
-                            <td>{{ i + 1 }}</td>
-                            <td>{{ param.parameterName || param.name || '-' }}</td>
-                            <td>{{ param.unit || '-' }}</td>
-                            <td>{{ param.specification || param.requirement || '-' }}</td>
-                            <td class="fw-semibold">{{ param.resultValue || param.value || '-' }}</td>
-                            <td class="text-center">
-                              <span
-                                *ngIf="param.passFail || param.result"
-                                class="badge"
-                                [ngClass]="(param.passFail || param.result) === 'Pass' ? 'bg-success' : 'bg-danger'"
-                              >
-                                {{ param.passFail || param.result }}
-                              </span>
-                              <span *ngIf="!param.passFail && !param.result" class="text-muted">-</span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-semibold mb-0">
+                          <i class="bi bi-clipboard-data me-1 text-primary"></i>{{ item.testName }} — Parameters
+                        </h6>
+                        <div class="d-flex gap-2 align-items-center">
+                          <span class="badge" [ngClass]="item.isNabl ? 'bg-success' : 'bg-secondary'">
+                            {{ item.isNabl ? 'NABL Accredited' : 'Non-NABL' }}
+                          </span>
+                          <span *ngIf="item.performedBy" class="text-muted small">
+                            <i class="bi bi-person me-1"></i>{{ item.performedBy }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0 bg-white param-table">
+                          <thead class="table-light">
+                            <tr class="text-center">
+                              <th style="width:30px">#</th>
+                              <th class="text-start">Parameter</th>
+                              <th style="width:60px">Unit</th>
+                              <th style="width:120px">Spec Range</th>
+                              <th style="width:100px">Result</th>
+                              <th style="width:80px">Status</th>
+                              <th style="width:90px">NABL Scope</th>
+                              <th style="width:60px">Billable</th>
+                              <th class="text-start">Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let param of expandedParameters; let i = index"
+                              [ngClass]="{
+                                'row-pass': (param.passFail || param.result) === 'Pass',
+                                'row-fail': (param.passFail || param.result) === 'Fail',
+                                'row-marginal': (param.passFail || param.result) === 'Marginal'
+                              }">
+                              <td class="text-center text-muted">{{ i + 1 }}</td>
+                              <td class="fw-semibold">{{ param.parameterName || '-' }}</td>
+                              <td class="text-center text-muted">{{ param.unit || '-' }}</td>
+                              <td class="text-center">{{ param.specification || '-' }}</td>
+                              <td class="text-center fw-bold">
+                                <span *ngIf="param.value != null">{{ param.value | number:'1.2-4' }}</span>
+                                <span *ngIf="param.value == null" class="text-muted">-</span>
+                                <small *ngIf="param.convertedValue != null && param.convertedValue !== param.value"
+                                  class="text-primary d-block" style="font-size: 10px;">
+                                  ≈ {{ param.convertedValue | number:'1.2-4' }}
+                                </small>
+                              </td>
+                              <td class="text-center">
+                                <span *ngIf="param.passFail || param.result" class="badge badge-sm"
+                                  [ngClass]="{
+                                    'bg-success': (param.passFail || param.result) === 'Pass',
+                                    'bg-danger': (param.passFail || param.result) === 'Fail',
+                                    'bg-warning text-dark': (param.passFail || param.result) === 'Marginal'
+                                  }">
+                                  {{ param.passFail || param.result }}
+                                </span>
+                                <span *ngIf="!param.passFail && !param.result" class="text-muted">-</span>
+                              </td>
+                              <td class="text-center">
+                                <span *ngIf="param.isWithinNablScope === true" class="badge bg-success badge-sm">In Scope</span>
+                                <span *ngIf="param.isWithinNablScope === false" class="badge bg-danger badge-sm">Out</span>
+                                <span *ngIf="param.isWithinNablScope == null" class="text-muted">-</span>
+                              </td>
+                              <td class="text-center">
+                                <i *ngIf="param.isBillable" class="bi bi-check-circle-fill text-success"></i>
+                                <i *ngIf="!param.isBillable" class="bi bi-dash-circle text-muted"></i>
+                              </td>
+                              <td class="text-muted small">{{ param.remarks || '-' }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <!-- Summary Bar -->
+                      <div class="summary-bar d-flex gap-3 mt-2">
+                        <span><i class="bi bi-check-circle text-success me-1"></i>Pass: {{ getParamCount('Pass') }}</span>
+                        <span><i class="bi bi-exclamation-triangle text-warning me-1"></i>Marginal: {{ getParamCount('Marginal') }}</span>
+                        <span><i class="bi bi-x-circle text-danger me-1"></i>Fail: {{ getParamCount('Fail') }}</span>
+                        <span><i class="bi bi-dash-circle text-muted me-1"></i>Pending: {{ getParamCount('Pending') }}</span>
+                      </div>
                     </div>
 
                     <!-- No Parameters -->
-                    <div *ngIf="!isLoadingParameters() && expandedParameters.length === 0" class="text-center text-muted py-2">
+                    <div *ngIf="!isLoadingParameters() && expandedParameters.length === 0" class="text-center text-muted py-3">
                       <i class="bi bi-info-circle me-1"></i>No parameters found for this test.
                     </div>
                   </div>
@@ -223,9 +227,7 @@
             <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
           </select>
         </div>
-
         <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-
         <ul class="pagination mb-0 d-flex align-items-center">
           <li class="page-item" [class.disabled]="pageNumber === 1">
             <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
@@ -251,12 +253,7 @@
     </h5>
     <div class="mb-3">
       <label class="form-label">Comments (optional)</label>
-      <textarea
-        class="form-control"
-        rows="3"
-        [(ngModel)]="approveComments"
-        placeholder="Enter verification comments..."
-      ></textarea>
+      <textarea class="form-control" rows="3" [(ngModel)]="approveComments" placeholder="Enter verification comments..."></textarea>
     </div>
     <div class="d-flex justify-content-end gap-2">
       <button class="btn btn-sm btn-secondary" (click)="cancelApprove()">Cancel</button>
@@ -276,22 +273,14 @@
     </h5>
     <div class="mb-3">
       <label class="form-label">Rejection Comments <span class="text-danger">*</span></label>
-      <textarea
-        class="form-control"
-        rows="3"
-        [(ngModel)]="rejectComments"
+      <textarea class="form-control" rows="3" [(ngModel)]="rejectComments"
         placeholder="Please provide reason for rejection..."
-        [ngClass]="{ 'is-invalid': rejectComments !== undefined && rejectComments.trim() === '' }"
-      ></textarea>
+        [ngClass]="{ 'is-invalid': rejectComments !== undefined && rejectComments.trim() === '' }"></textarea>
       <div class="invalid-feedback">Rejection comments are required.</div>
     </div>
     <div class="d-flex justify-content-end gap-2">
       <button class="btn btn-sm btn-secondary" (click)="cancelReject()">Cancel</button>
-      <button
-        class="btn btn-sm btn-danger"
-        (click)="confirmReject()"
-        [disabled]="!rejectComments.trim()"
-      >
+      <button class="btn btn-sm btn-danger" (click)="confirmReject()" [disabled]="!rejectComments.trim()">
         <i class="bi bi-x-lg me-1"></i>Reject
       </button>
     </div>

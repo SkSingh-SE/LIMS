@@ -249,10 +249,16 @@
                   [class.row-fail]="param.isWithinLimit === false"
                   [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
-                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td class="text-muted">{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? '-' }}</td>
+                  <td class="fw-semibold">
+                    {{ param.value != null ? (param.value | number:'1.2-4') : '-' }}
+                    <small *ngIf="param.convertedValue != null && param.convertedValue !== param.value"
+                      class="text-primary d-block" style="font-size: 10px;">
+                      ≈ {{ param.convertedValue | number:'1.2-4' }} {{ param.selectedUnit }}
+                    </small>
+                  </td>
+                  <td class="text-muted">{{ param.unit || '-' }}</td>
+                  <td>{{ param.minValue != null ? (param.minValue | number:'1.2-4') : '-' }}</td>
+                  <td>{{ param.maxValue != null ? (param.maxValue | number:'1.2-4') : '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
@@ -328,10 +334,16 @@
                   [class.row-fail]="param.isWithinLimit === false"
                   [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
-                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td class="text-muted">{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? '-' }}</td>
+                  <td class="fw-semibold">
+                    {{ param.value != null ? (param.value | number:'1.2-4') : '-' }}
+                    <small *ngIf="param.convertedValue != null && param.convertedValue !== param.value"
+                      class="text-primary d-block" style="font-size: 10px;">
+                      ≈ {{ param.convertedValue | number:'1.2-4' }} {{ param.selectedUnit }}
+                    </small>
+                  </td>
+                  <td class="text-muted">{{ param.unit || '-' }}</td>
+                  <td>{{ param.minValue != null ? (param.minValue | number:'1.2-4') : '-' }}</td>
+                  <td>{{ param.maxValue != null ? (param.maxValue | number:'1.2-4') : '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',

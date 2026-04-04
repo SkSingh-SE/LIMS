@@ -148,8 +148,12 @@ export class TestResultVerificationComponent implements OnInit {
   // ================================================================
   // Approve
   // ================================================================
+  // Currently selected item for action
+  selectedItem: any = null;
+
   openApproveModal(item: any, event: Event): void {
     event.stopPropagation();
+    this.selectedItem = item;
     this.approveHeaderId = item.headerId || item.id;
     this.approveComments = '';
     this.showApproveModal = true;
@@ -158,25 +162,32 @@ export class TestResultVerificationComponent implements OnInit {
   confirmApprove(): void {
     if (!this.approveHeaderId) return;
 
-    this.testResultService.verifyTest(this.approveHeaderId, this.approveComments).subscribe({
-      next: () => {
-        this.toastService.show('Test verified successfully', 'success');
-        this.showApproveModal = false;
-        this.approveHeaderId = null;
-        this.approveComments = '';
-        this.fetchData();
-      },
-      error: (err: any) => {
-        console.error('Verification failed:', err);
-        this.toastService.show('Failed to verify test', 'error');
-      },
-    });
+    // If workflow instance exists, use workflow action; otherwise fallback to direct verify
+    if (this.selectedItem?.workflowInstanceId) {
+      this.performWorkflowAction(this.selectedItem.workflowInstanceId, 'Next', this.approveComments);
+    } else {
+      this.testResultService.verifyTest(this.approveHeaderId, this.approveComments).subscribe({
+        next: () => {
+          this.toastService.show('Test verified successfully', 'success');
+          this.resetApproveModal();
+          this.fetchData();
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to verify test', 'error');
+        },
+      });
+    }
   }
 
   cancelApprove(): void {
+    this.resetApproveModal();
+  }
+
+  private resetApproveModal(): void {
     this.showApproveModal = false;
     this.approveHeaderId = null;
     this.approveComments = '';
+    this.selectedItem = null;
   }
 
   // ================================================================
@@ -184,6 +195,7 @@ export class TestResultVerificationComponent implements OnInit {
   // ================================================================
   openRejectModal(item: any, event: Event): void {
     event.stopPropagation();
+    this.selectedItem = item;
     this.rejectHeaderId = item.headerId || item.id;
     this.rejectComments = '';
     this.showRejectModal = true;
@@ -195,25 +207,49 @@ export class TestResultVerificationComponent implements OnInit {
       return;
     }
 
-    this.testResultService.rejectVerification(this.rejectHeaderId, this.rejectComments).subscribe({
-      next: () => {
-        this.toastService.show('Test verification rejected', 'success');
-        this.showRejectModal = false;
-        this.rejectHeaderId = null;
-        this.rejectComments = '';
-        this.fetchData();
-      },
-      error: (err: any) => {
-        console.error('Rejection failed:', err);
-        this.toastService.show('Failed to reject verification', 'error');
-      },
-    });
+    if (this.selectedItem?.workflowInstanceId) {
+      this.performWorkflowAction(this.selectedItem.workflowInstanceId, 'Cancel', this.rejectComments);
+    } else {
+      this.testResultService.rejectVerification(this.rejectHeaderId, this.rejectComments).subscribe({
+        next: () => {
+          this.toastService.show('Test verification rejected', 'success');
+          this.resetRejectModal();
+          this.fetchData();
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to reject verification', 'error');
+        },
+      });
+    }
   }
 
   cancelReject(): void {
+    this.resetRejectModal();
+  }
+
+  private resetRejectModal(): void {
     this.showRejectModal = false;
     this.rejectHeaderId = null;
     this.rejectComments = '';
+    this.selectedItem = null;
+  }
+
+  // ================================================================
+  // Workflow Action (unified)
+  // ================================================================
+  private performWorkflowAction(instanceId: number, action: string, remarks: string): void {
+    const payload = { id: instanceId, action, remarks };
+    this.testResultService.takeVerificationAction(payload).subscribe({
+      next: () => {
+        this.toastService.show(`Verification action '${action}' completed`, 'success');
+        this.resetApproveModal();
+        this.resetRejectModal();
+        this.fetchData();
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Workflow action failed', 'error');
+      },
+    });
   }
 
   // ================================================================
@@ -245,6 +281,13 @@ export class TestResultVerificationComponent implements OnInit {
   // ================================================================
   // Status Badge
   // ================================================================
+  getParamCount(type: string): number {
+    if (type === 'Pending') {
+      return this.expandedParameters.filter((p: any) => !p.passFail && !p.result).length;
+    }
+    return this.expandedParameters.filter((p: any) => (p.passFail || p.result) === type).length;
+  }
+
   getStatusBadgeClass(status: string): string {
     switch (status) {
       case 'PendingVerification':

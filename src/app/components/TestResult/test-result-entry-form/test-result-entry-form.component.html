@@ -117,36 +117,6 @@
           </li>
         </ul>
 
-        <!-- Sample-Level Verification Banner (NABL ISO 17025 Clause 7.7) -->
-        <div class="verification-banner d-flex align-items-center justify-content-between p-2 mb-2 rounded"
-          *ngIf="getVerificationBannerState() as bannerState"
-          [ngClass]="{
-            'bg-light border': bannerState.state === 'ready',
-            'alert alert-warning mb-2': bannerState.state === 'pending',
-            'alert alert-success mb-2': bannerState.state === 'verified',
-            'alert alert-info mb-2': bannerState.state === 'partial'
-          }">
-          <div class="d-flex align-items-center gap-2">
-            <i class="bi" [ngClass]="{
-              'bi-send-check': bannerState.state === 'ready',
-              'bi-hourglass-split': bannerState.state === 'pending',
-              'bi-patch-check-fill': bannerState.state === 'verified',
-              'bi-info-circle': bannerState.state === 'partial'
-            }"></i>
-            <span class="small fw-semibold">{{ bannerState.message }}</span>
-          </div>
-          <button
-            *ngIf="bannerState.state === 'ready'"
-            type="button"
-            class="btn btn-primary btn-sm"
-            (click)="submitSampleForVerification()"
-            [disabled]="isSubmittingVerification">
-            <span *ngIf="isSubmittingVerification" class="spinner-border spinner-border-sm me-1"></span>
-            <i *ngIf="!isSubmittingVerification" class="bi bi-send-check me-1"></i>
-            Submit All for Verification
-          </button>
-        </div>
-
         <!-- Tab Content -->
         <div>
           <div
@@ -242,7 +212,17 @@
                       <i class="bi bi-check-circle me-1"></i>Complete Test
                     </button>
 
-                    <!-- Verification Status Badges (per-specimen — informational) -->
+                    <!-- Submit for Verification (per test — after Completed) -->
+                    <button
+                      *ngIf="plans[p].tests[t].status === 'Completed'"
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      (click)="submitForVerification(p, t)"
+                      title="Submit this test for reviewer verification">
+                      <i class="bi bi-send-check me-1"></i>Submit for Verification
+                    </button>
+
+                    <!-- Verification Status Badges -->
                     <span *ngIf="plans[p].tests[t].status === 'PendingVerification'"
                       class="badge bg-warning text-dark">
                       <i class="bi bi-hourglass-split me-1"></i>Pending Verification
@@ -376,7 +356,7 @@
                               (itemSelected)="onParameterSelected(p, t, r, $event)"
                               [hideLabel]="true"
                               [selectedItem]="row.get('parameterID')?.value"
-                              [isDisabled]="isParameterCalculated(row.value)"
+                              [isDisabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)"
                             ></app-searchable-dropdown>
                           </div>
                         </td>
@@ -386,7 +366,7 @@
                           <ng-container *ngIf="getUnitOptions(row).length > 1; else plainUnit">
                             <select class="form-select form-select-sm" formControlName="selectedUnit"
                               (change)="onUnitChanged(p, t, r)"
-                              [attr.disabled]="isViewMode ? true : null">
+                              [attr.disabled]="isViewMode || isTestFinalized(plans[p].tests[t].status) ? true : null">
                               <option *ngFor="let opt of getUnitOptions(row)" [value]="opt.unitName">
                                 {{ opt.unitName }}
                               </option>
@@ -443,7 +423,7 @@
                           <ng-container *ngIf="row.value.parameterType === 'Qualitative'; else quantitativeInput">
                             <select class="form-select form-select-sm" formControlName="value"
                               (change)="onValueChanged(p, t, r)"
-                              [disabled]="isParameterCalculated(row.value)">
+                              [disabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)">
                               <option value="">-- Select --</option>
                               <option value="Pass">Pass</option>
                               <option value="Fail">Fail</option>
@@ -452,6 +432,12 @@
                             </select>
                           </ng-container>
                           <ng-template #quantitativeInput>
+                            <ng-container *ngIf="isTestFinalized(plans[p].tests[t].status); else editableValue">
+                              <span class="form-control form-control-sm bg-light" style="border:none;">
+                                {{ row.value.value != null ? (row.value.value | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2)) : '-' }}
+                              </span>
+                            </ng-container>
+                            <ng-template #editableValue>
                             <input type="text" class="form-control form-control-sm"
                               [ngClass]="{ 'bg-primary-subtle': row.value.formulaExpression }"
                               [attr.data-param-input]="p + '-' + t + '-' + r"
@@ -461,6 +447,7 @@
                               [readOnly]="isParameterCalculated(row.value)"
                               [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
                               appDecimalOnly />
+                            </ng-template>
                             <span *ngIf="row.value.formulaExpression" class="formula-tag" title="{{ row.value.formulaExpression }}">
                               <i class="bi bi-calculator me-1"></i>{{ getReadableFormula(row.value.formulaExpression, p, t) }}
                               <button *ngIf="!isViewMode" type="button" class="formula-clear" (click)="clearParameterFormula(p, t, r)" title="Clear formula">
@@ -469,7 +456,7 @@
                             </span>
                             <small *ngIf="row.value.convertedValue != null && row.value.selectedUnit !== row.value.unit"
                               class="text-primary d-block" style="font-size: 10px;">
-                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue }} {{ row.value.selectedUnit }}
+                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2) }} {{ row.value.selectedUnit }}
                             </small>
                           </ng-template>
                         </td>
@@ -549,27 +536,30 @@
                             [hideLabel]="true"
                             [selectedItem]="row.get('testMethodUsed')?.value"
                             [smallInput]="true"
-                            [isDisabled]="isViewMode"
+                            [isDisabled]="isViewMode || isTestFinalized(plans[p].tests[t].status)"
                           ></app-searchable-dropdown>
                         </td>
 
                         <!-- Remarks -->
                         <td>
                           <input type="text" class="form-control form-control-sm" formControlName="remarks"
-                            placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value)" />
+                            placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)" />
                         </td>
 
                         <!-- Billable -->
                         <td class="text-center" style="vertical-align: middle;">
-                          <div class="form-check d-flex justify-content-center m-0">
+                          <div class="form-check d-flex justify-content-center m-0"
+                            [class.pe-none]="isTestFinalized(plans[p].tests[t].status)"
+                            [style.opacity]="isTestFinalized(plans[p].tests[t].status) ? '0.6' : '1'">
                             <input type="checkbox" class="form-check-input" formControlName="isBillable"
-                              style="width: 18px; height: 18px; cursor: pointer;" />
+                              style="width: 18px; height: 18px;"
+                              [style.cursor]="isTestFinalized(plans[p].tests[t].status) ? 'not-allowed' : 'pointer'" />
                           </div>
                         </td>
 
-                        <!-- Actions -->
+                        <!-- Actions (hidden for finalized tests) -->
                         <td class="text-center">
-                          <div class="d-flex align-items-center justify-content-center gap-1">
+                          <div *ngIf="!isTestFinalized(plans[p].tests[t].status)" class="d-flex align-items-center justify-content-center gap-1">
                             <button type="button" class="btn btn-outline-info btn-sm"
                               (click)="updateParameterInline(p, t, r)"
                               [disabled]="isParameterCalculated(row.value) || !row.get('parameterID')?.value"
@@ -588,6 +578,7 @@
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
+                          <span *ngIf="isTestFinalized(plans[p].tests[t].status)" class="text-muted">—</span>
                         </td>
                       </tr>
                     </tbody>
@@ -595,6 +586,7 @@
 
                   <!-- Parameter action buttons (removed duplicate standalone param button) -->
                   <div class="d-flex flex-wrap gap-2 mb-2">
+                    <ng-container *ngIf="!isTestFinalized(plans[p].tests[t].status)">
                     <button class="btn btn-sm btn-outline-primary" type="button"
                       (click)="loadParametersFromSpec(p, t)"
                       [disabled]="loadingParams[plans[p].tests[t].headerId]"
@@ -605,14 +597,14 @@
                     <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)">
                       <i class="bi bi-plus-circle-dotted"></i> Add Parameter
                     </button>
-                    <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)"
-                      *ngIf="!isViewMode">
+                    <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)">
                       <i class="bi bi-box-arrow-in-down"></i> Add From Test Method
                     </button>
                     <button class="btn btn-sm btn-outline-success" type="button" (click)="calculateParameters(p, t)"
-                      *ngIf="!isViewMode" title="Auto-calculate formula-based parameters">
+                      title="Auto-calculate formula-based parameters">
                       <i class="bi bi-calculator"></i> Auto-Calculate
                     </button>
+                    </ng-container>
                   </div>
 
                   <!-- PRICE CALCULATION SECTION -->
@@ -819,8 +811,8 @@
       </div>
     </div>
 
-    <!-- Action Bar -->
-    <div class="action-bar">
+    <!-- Action Bar (hidden when all tests are finalized) -->
+    <div class="action-bar" *ngIf="!isViewMode && canSaveAnyTest()">
       <button class="btn btn-secondary action-btn" type="button" (click)="cancel()">Cancel</button>
       <button class="btn action-btn action-btn-primary" type="button" (click)="saveResults()">
         <i class="bi bi-check-circle me-1"></i>Save Results
@@ -897,7 +889,8 @@
                     </tr>
                   </tfoot>
                 </table>
-                <!-- Add new machining line -->
+                <!-- Add new machining line (hidden in view mode) -->
+                <ng-container *ngIf="!isViewMode">
                 <div class="d-flex gap-2 align-items-end">
                   <div class="flex-grow-1">
                     <input type="text" class="form-control form-control-sm" placeholder="Description..." [(ngModel)]="newMachiningDesc" />
@@ -909,6 +902,7 @@
                     <i class="bi bi-plus-lg"></i>
                   </button>
                 </div>
+              </ng-container>
               </div>
             </div>
 
@@ -1245,7 +1239,7 @@
             <div class="d-flex flex-wrap gap-2">
               <button *ngFor="let param of formulaAvailableParams" type="button"
                 class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
-                [title]="param.parameterName + ' (' + param.unit + ')'">
+                [title]="param.parameterName + (param.unit ? ' (' + param.unit + ')' : '')">
                 <span class="formula-param-ref">{{ param.ref }}</span>
                 <span class="formula-param-name">{{ param.parameterName }}</span>
               </button>

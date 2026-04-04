@@ -303,6 +303,11 @@ export class TestResultEntryFormComponent implements OnInit {
         this.loadUnifiedPriceSummary(sampleId);
         this.loadMachiningItems(sampleId);
         this.refreshAlerts();
+
+        // Auto-set view mode if all tests are finalized (Verified/PendingVerification)
+        if (!this.canSaveAnyTest()) {
+          this.isViewMode = true;
+        }
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
@@ -1472,7 +1477,7 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   isTestFinalized(status: string): boolean {
-    return ['Completed', 'PendingVerification', 'Verified'].includes(status);
+    return ['PendingVerification', 'Verified'].includes(status);
   }
 
   // ================================================================
@@ -1506,6 +1511,22 @@ export class TestResultEntryFormComponent implements OnInit {
       return { state: 'partial', message: `${completed} of ${allTests.length} test(s) completed. Complete all tests before submitting for verification.` };
     }
     return null;
+  }
+
+  submitForVerification(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
+    if (!headerId) return;
+
+    this.testResultService.submitForVerification(headerId).subscribe({
+      next: () => {
+        test.status = 'PendingVerification';
+        this.toastService.show('Test submitted for verification', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
+      }
+    });
   }
 
   submitSampleForVerification(): void {
@@ -2281,6 +2302,13 @@ export class TestResultEntryFormComponent implements OnInit {
     if (allTests.every((t: any) => t.status === 'Completed')) return 'Completed';
     if (allTests.some((t: any) => t.status === 'Started' || t.status === 'In Progress')) return 'In Progress';
     return 'Pending';
+  }
+
+  /** Returns true if at least one test can accept saves (not verified/pending verification) */
+  canSaveAnyTest(): boolean {
+    const blockedStatuses = ['Verified', 'PendingVerification'];
+    const allTests = this.plans.flatMap((p: any) => p.tests || []);
+    return allTests.some((t: any) => !blockedStatuses.includes(t.status));
   }
 
   // ================================================================

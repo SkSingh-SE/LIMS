@@ -35,6 +35,7 @@ export class TestResultEntryFormComponent implements OnInit {
 
   // Dismissed alert IDs
   dismissedAlerts: Set<string> = new Set();
+  cachedAlerts: { id: string; type: 'fail' | 'warn'; title: string; message: string }[] = [];
 
   // Plan tabs - active tab index
   activePlanIndex: number = 0;
@@ -301,7 +302,7 @@ export class TestResultEntryFormComponent implements OnInit {
         this.loadPreparationStatus(sampleId);
         this.loadUnifiedPriceSummary(sampleId);
         this.loadMachiningItems(sampleId);
-        // loading handled by interceptor
+        this.refreshAlerts();
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
@@ -1125,6 +1126,9 @@ export class TestResultEntryFormComponent implements OnInit {
 
     // Recalculate converted value for selected equivalent unit
     this.onUnitChanged(planIndex, testIndex, paramIndex);
+
+    // Refresh alert banners
+    this.refreshAlerts();
   }
 
   /**
@@ -2238,12 +2242,15 @@ export class TestResultEntryFormComponent implements OnInit {
   // Alert Banners — Failed / Marginal Parameters
   // ================================================================
   get parameterAlerts(): { id: string; type: 'fail' | 'warn'; title: string; message: string }[] {
+    return this.cachedAlerts.filter(a => !this.dismissedAlerts.has(a.id));
+  }
+
+  refreshAlerts(): void {
     const alerts: { id: string; type: 'fail' | 'warn'; title: string; message: string }[] = [];
     this.plans.forEach((plan, pIdx) => {
       (plan.tests || []).forEach((test: any, tIdx: number) => {
         (test.parameters || []).forEach((param: any) => {
           const alertId = `${pIdx}-${tIdx}-${param.parameterID || param.id}`;
-          if (this.dismissedAlerts.has(alertId)) return;
           if (param.resultStatus === 'Fail' || (param.isWithinLimit === false && param.value != null)) {
             alerts.push({
               id: alertId,
@@ -2262,7 +2269,7 @@ export class TestResultEntryFormComponent implements OnInit {
         });
       });
     });
-    return alerts;
+    this.cachedAlerts = alerts;
   }
 
   dismissAlert(alertId: string): void {

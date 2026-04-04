@@ -1,21 +1,12 @@
-<div class="po-container">
-  <!-- Header -->
-  <div class="page-header">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h2 class="page-title">
-          <i class="bi bi-file-earmark-text me-2"></i>
-          Customer Purchase Orders
-        </h2>
-        <p class="page-subtitle">Manage customer purchase orders and track utilization</p>
-      </div>
-      <div class="col-md-4 text-end">
-        <button class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
-          <i class="bi bi-plus-circle me-1"></i> Create PO
-        </button>
-      </div>
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Customer Purchase Orders</label>
+      <button class="btn btn-outline-light btn-sm me-3" (click)="openCreateForm()" *ngIf="!showForm">
+        <i class="bi bi-plus-circle me-1"></i> Create PO
+      </button>
     </div>
-  </div>
+    <div class="card-body">
 
   <!-- Create/Edit Form -->
   <div class="card shadow-sm mb-4" *ngIf="showForm">
@@ -138,7 +129,7 @@
   <div class="card shadow-sm" *ngIf="!isLoading && !showForm">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table bordered-table align-middle w-100 mb-0">
           <thead class="table-light">
             <tr>
               <th>PO No</th>
@@ -262,6 +253,8 @@
           </li>
         </ul>
       </nav>
+    </div>
+
     </div>
   </div>
 </div>

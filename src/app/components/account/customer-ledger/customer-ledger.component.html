@@ -1,24 +1,17 @@
-<div class="ledger-container">
-  <!-- Header -->
-  <div class="page-header">
-    <div class="row align-items-center">
-      <div class="col-md-6">
-        <h2 class="page-title">
-          <i class="bi bi-journal-text me-2"></i>
-          Customer Ledger
-        </h2>
-        <p class="page-subtitle">View customer transaction history and balances</p>
-      </div>
-      <div class="col-md-6 text-end" *ngIf="selectedCustomerId">
-        <button class="btn btn-outline-success btn-sm me-2" (click)="exportToExcel()" [disabled]="!ledgerEntries.length">
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Customer Ledger</label>
+      <div class="d-flex gap-2 me-3" *ngIf="selectedCustomerId">
+        <button class="btn btn-outline-light btn-sm" (click)="exportToExcel()" [disabled]="!ledgerEntries.length">
           <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
         </button>
-        <button class="btn btn-add btn-sm" (click)="printStatement()">
+        <button class="btn btn-outline-light btn-sm" (click)="printStatement()">
           <i class="bi bi-printer me-1"></i> Print Statement
         </button>
       </div>
     </div>
-  </div>
+    <div class="card-body">
 
   <!-- Filters -->
   <div class="card mb-4 shadow-sm">
@@ -164,7 +157,7 @@
   <div class="card shadow-sm" *ngIf="selectedCustomerId">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table bordered-table align-middle w-100 mb-0">
           <thead class="table-light">
             <tr>
               <th>Date</th>
@@ -222,5 +215,8 @@
   <div *ngIf="!selectedCustomerId" class="text-center py-5">
     <i class="bi bi-person-lines-fill empty-icon"></i>
     <h5 class="text-muted mt-3">Select a customer to view their ledger</h5>
+  </div>
+
+    </div>
   </div>
 </div>

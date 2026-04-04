@@ -1,7 +1,5 @@
-@import '../account-shared.css';
-
 @media print {
-  .page-header,
+  .card-form-header,
   button {
     display: none !important;
   }

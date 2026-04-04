@@ -15,8 +15,9 @@ export class EnvironmentMonitoringListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'documentNo', label: 'Document No', type: 'string', filter: true },
-    { key: 'monitoringDate', label: 'Date', type: 'date', filter: true },
-    { key: 'departmentName', label: 'Department', type: 'string', filter: true },
+    { key: 'roomName', label: 'Lab Room', type: 'string', filter: true },
+    { key: 'monitoringMonth', label: 'Month', type: 'number', filter: true },
+    { key: 'monitoringYear', label: 'Year', type: 'number', filter: true },
     { key: 'temperature', label: 'Temp (°C)', type: 'number', filter: false },
     { key: 'humidity', label: 'Humidity (%)', type: 'number', filter: false },
     { key: 'isWithinLimits', label: 'Within Limits', type: 'string', filter: true },

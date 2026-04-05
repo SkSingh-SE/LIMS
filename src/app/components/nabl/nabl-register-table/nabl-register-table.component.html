@@ -218,16 +218,27 @@
         <option *ngIf="getColumnType(filterColumn) === 'number'" value="GreaterThan">Greater Than</option>
         <option *ngIf="getColumnType(filterColumn) === 'number'" value="LessThan">Less Than</option>
         <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+        <option *ngIf="getColumnType(filterColumn) === 'bool'" value="Equal">Equal</option>
+        <option *ngIf="getColumnType(filterColumn) === 'bool'" value="NotEqual">Not Equal</option>
       </select>
 
       <input
-        *ngIf="getColumnType(filterColumn) !== 'date'"
+        *ngIf="getColumnType(filterColumn) !== 'date' && getColumnType(filterColumn) !== 'bool'"
         type="text"
         class="form-control form-control-sm mb-2"
         [(ngModel)]="filterValue"
         placeholder="Value"
         (keydown.enter)="applyFilter()"
       />
+      <select
+        *ngIf="getColumnType(filterColumn) === 'bool'"
+        class="form-select form-select-sm mb-2"
+        [(ngModel)]="filterValue"
+      >
+        <option value="">Select...</option>
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
       <input
         *ngIf="getColumnType(filterColumn) === 'date'"
         type="date"

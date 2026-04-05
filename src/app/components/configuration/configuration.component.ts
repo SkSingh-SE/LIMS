@@ -23,7 +23,7 @@ export class ConfigManagerComponent implements OnInit {
     { key: 'groupName', type: 'string', label: 'Group Name', filter: true },
     { key: 'value', type: 'string', label: 'Value', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     keyName: 'string',
     groupName: 'string',
     value: 'string'

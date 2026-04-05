@@ -30,7 +30,7 @@ export class SamplePreparationMasterComponent implements OnInit {
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
     { key: 'testMethodStandard', type: 'string', label: 'Test Method Standard', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specimenType: 'string',
     dimensions: 'string',
     materialType: 'string',

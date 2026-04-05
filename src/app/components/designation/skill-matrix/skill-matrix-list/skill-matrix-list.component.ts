@@ -25,7 +25,7 @@ export class SkillMatrixListComponent implements OnInit {
         { key: 'decision', type: 'string', label: 'Decision', filter: true }
     ];
 
-    filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+    filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
         documentNo: 'string',
         designationName: 'string',
         formatNo: 'string',

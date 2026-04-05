@@ -26,7 +26,7 @@ export class ReportingListComponent implements OnInit {
     { key: 'condition', type: 'string', label: 'Condition', filter: true },
     { key: 'status', type: 'string', label: 'Status', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customer: 'string',
     sampleNo: 'string',

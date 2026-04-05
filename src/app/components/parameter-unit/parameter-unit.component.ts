@@ -25,7 +25,7 @@ export class ParameterUnitComponent implements OnInit {
     { key: 'conversaionFactor', type: 'string', label: 'Base Factor', filter: true },
     { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     conversaionFactor: 'string',
   };

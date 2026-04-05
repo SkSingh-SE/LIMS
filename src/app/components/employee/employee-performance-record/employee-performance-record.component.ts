@@ -50,7 +50,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
         { key: 'status', type: 'string', label: 'Status', filter: true },
     ];
 
-    filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+    filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
         reviewPeriod: 'string',
         technicalRating: 'number',
         behavioralRating: 'number',

@@ -28,7 +28,7 @@ export class CuttingPriceMasterComponent implements OnInit {
     { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
     { key: 'ratePerUnit', type: 'number', label: 'Rate Per Unit', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specimenTypeName: 'string',
     cuttingType: 'string',
     unitType: 'string',

@@ -23,7 +23,7 @@ export class TpiInspectionListComponent implements OnInit {
     { key: 'scheduledDate', type: 'date', label: 'Scheduled Date', filter: true },
     { key: 'inspectorName', type: 'string', label: 'Inspector', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     sampleNumber: 'string',
     tpiAgencyName: 'string',
     scheduledDate: 'date',

@@ -25,7 +25,7 @@ export class TPIComponent implements OnInit {
     { key: 'contactNo', type: 'string', label: 'Contact number', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     agencyName: 'string',
     emailId: 'string',
     contactNo: 'string',

@@ -13,10 +13,10 @@ export class PurchaseOrderListComponent implements OnInit {
 
     columns: RegisterColumn[] = [
         { key: 'documentNo', type: 'string', label: 'PO Number', filter: true },
-        { key: 'date', type: 'date', label: 'Date', filter: true },
+        { key: 'poDate', type: 'date', label: 'PO Date', filter: true },
         { key: 'supplierName', type: 'string', label: 'Supplier', filter: true },
-        { key: 'poType', type: 'string', label: 'Type', filter: true },
-        { key: 'grandTotal', type: 'number', label: 'Total Amount', filter: true },
+        { key: 'paymentTerms', type: 'string', label: 'Payment Terms', filter: true },
+        { key: 'totalAmount', type: 'number', label: 'Total Amount', filter: true },
         { key: 'status', type: 'string', label: 'Status', filter: true }
     ];
 

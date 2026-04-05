@@ -36,7 +36,7 @@ export class DimensionalFactorComponent implements OnInit {
     { key: 'instrument', type: 'string', label: 'Instrument', filter: true },
     { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
     instrument: 'string',

@@ -26,7 +26,7 @@ export class StandardOrgnizationComponent implements OnInit {
     { key: 'numberType', type: 'string', label: 'Number Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     numberType: 'string',
     modifiedOn: 'date',

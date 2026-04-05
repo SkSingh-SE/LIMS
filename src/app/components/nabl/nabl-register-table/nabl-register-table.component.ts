@@ -10,7 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 export interface RegisterColumn {
     key: string;
     label: string;
-    type: 'string' | 'number' | 'date';
+    type: 'string' | 'number' | 'date' | 'bool';
     width?: string;
     filter?: boolean;
 }
@@ -109,6 +109,7 @@ export class NablRegisterTableComponent {
             case 'string': this.filterType = 'Contains'; break;
             case 'number': this.filterType = 'Equal'; break;
             case 'date': this.filterType = 'Between'; break;
+            case 'bool': this.filterType = 'Equal'; break;
             default: this.filterType = 'Contains';
         }
 

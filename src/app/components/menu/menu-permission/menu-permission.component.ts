@@ -22,7 +22,7 @@ export class MenuPermissionComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'title', type: 'string', label: 'Title', filter: true }
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     title: 'string'
   };
 

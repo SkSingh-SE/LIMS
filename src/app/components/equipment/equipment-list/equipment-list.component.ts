@@ -25,7 +25,7 @@ export class EquipmentListComponent implements OnInit {
     { key: 'nextMaintenanceDueDate', type: 'date', label: 'Maintenance', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     equipmentNo: 'string',
     departmentName: 'string',

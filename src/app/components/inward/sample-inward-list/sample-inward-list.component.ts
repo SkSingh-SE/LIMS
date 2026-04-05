@@ -27,7 +27,7 @@ export class SampleInwardListComponent implements OnInit {
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     contactPersonName: 'string',

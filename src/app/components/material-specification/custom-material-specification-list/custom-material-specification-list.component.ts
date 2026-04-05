@@ -20,7 +20,7 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     aliasName: 'string',
     grade: 'string',
     modifiedOn: 'date',

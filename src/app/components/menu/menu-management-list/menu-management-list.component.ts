@@ -19,7 +19,7 @@ export class MenuManagementListComponent implements OnInit {
     // { key: 'isExpanded', type: 'string', label: 'Children', filter: true },
     // { key: 'route', type: 'string', label: 'Route', filter: true }
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     title: 'string',
     // isExpanded: 'string',
     // route: 'string'

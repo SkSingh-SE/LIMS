@@ -35,7 +35,7 @@ export class CustomProductSpecificationComponent implements OnInit {
     { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specificationName: 'string',
     aliasName: 'string',
     specificationCode: 'string',

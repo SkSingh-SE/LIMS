@@ -25,7 +25,7 @@ export class PlanListComponent implements OnInit {
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
     { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     contactPersonName: 'string',

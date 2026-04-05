@@ -28,7 +28,7 @@ export class HardnessEquivalenceComponent implements OnInit {
     { key: 'equivalentToValue', type: 'number', label: 'Equiv. To', filter: true },
     { key: 'standardReference', type: 'string', label: 'Standard', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     hardnessScale: 'string',
     indenterSize: 'string',
     load: 'string',

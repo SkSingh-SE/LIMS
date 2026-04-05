@@ -23,7 +23,7 @@ export class CaseAccountListComponent implements OnInit {
     { key: 'paymentStatus', type: 'string', label: 'Payment Status', filter: true },
   ];
 
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     customerType: 'string',

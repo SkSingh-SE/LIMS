@@ -27,7 +27,7 @@ export class CourierComponent implements OnInit {
     { key: 'contactNo', type: 'string', label: 'Contact Number', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     contactNo: 'string',
     modifiedOn: 'date',

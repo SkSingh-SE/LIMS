@@ -43,7 +43,7 @@ export class ChemicalParameterComponent implements OnInit {
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     unitName: 'string',
     factor: 'string',

@@ -145,7 +145,12 @@
             <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
         </select>
 
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+        <select *ngIf="filterColumn === 'SampleReturn'" class="form-select mb-2" [(ngModel)]="filterValue">
+            <option value="">Select...</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+        <input *ngIf="filterColumnTypes[filterColumn!] === 'string' && filterColumn !== 'SampleReturn'" type="text" class="form-control mb-2"
             [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
         <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
             [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />

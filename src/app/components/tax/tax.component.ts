@@ -27,7 +27,7 @@ export class TaxComponent implements OnInit {
     { key: 'date', type: 'date', label: 'Date', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     rate: 'number',
     date: 'date',

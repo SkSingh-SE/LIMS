@@ -24,7 +24,7 @@ export class CuttingSamplesComponent implements OnInit {
     { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: false },
   ];
 
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     grandTotal: 'number',
     prepRequired: 'string',

@@ -29,7 +29,7 @@ export class ToleranceMasterComponent implements OnInit {
     { key: 'toleranceValue', type: 'number', label: 'Tolerance', filter: true },
     { key: 'toleranceType', type: 'string', label: 'Type', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     standardName: 'string',
     parameterName: 'string',
     valueRangeStart: 'number',

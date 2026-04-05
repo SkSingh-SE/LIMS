@@ -25,7 +25,7 @@ export class PriceDimensionTypeComponent implements OnInit {
     { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
   ];
 
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     unit: 'string',
     description: 'string',

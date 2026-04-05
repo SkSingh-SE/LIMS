@@ -21,7 +21,7 @@ export class LaboratoryTestListComponent implements OnInit {
     { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     departmentName: 'string',
     subGroup: 'string',

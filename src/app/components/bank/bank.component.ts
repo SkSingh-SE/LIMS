@@ -27,7 +27,7 @@ export class BankComponent implements OnInit {
     { key: 'accountNumber', type: 'string', label: 'Account Number', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     bankName: 'string',
     accountHolderName: 'string',
     accountNumber: 'string',

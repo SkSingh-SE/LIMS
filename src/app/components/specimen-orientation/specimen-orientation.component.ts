@@ -31,7 +31,7 @@ export class SpecimenOrientationComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
     modifiedOn: 'date',

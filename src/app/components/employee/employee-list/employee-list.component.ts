@@ -25,7 +25,7 @@ export class EmployeeListComponent implements OnInit {
     { key: 'designationName', type: 'string', label: 'Designation', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     emailId: 'string',
     dateOfJoin: 'date',

@@ -25,7 +25,7 @@ export class TestResultComponent implements OnInit {
     { key: 'tests', type: 'string', label: 'Tests', filter: false },
     { key: 'sampleStatus', type: 'string', label: 'Status', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     sampleNo: 'string',

@@ -23,7 +23,7 @@ export class ScopeListComponent implements OnInit {
     { key: 'isUnderISO', type: 'string', label: 'Under ISO', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     laboratoryTestName: 'string',
     testMethodSpecificationName: 'string',
     isUnderISO: 'string',

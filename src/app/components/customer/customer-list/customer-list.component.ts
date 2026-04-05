@@ -22,7 +22,7 @@ export class CustomerListComponent  implements OnInit {
     { key: 'SampleReturn', type: 'string', label: 'Sample Return', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     CustomerType: 'string',
     PinCode: 'string',

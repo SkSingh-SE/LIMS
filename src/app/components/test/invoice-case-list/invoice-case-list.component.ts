@@ -21,7 +21,7 @@ export class InvoiceCaseListComponent implements OnInit {
     { key: 'tierCount', type: 'number', label: 'Tiers', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     financialYear: 'string',
     laboratoryTest: 'string',
     tierCount: 'number',

@@ -23,7 +23,7 @@ export class OemListComponent implements OnInit {
     { key: 'address', type: 'string', label: 'Address', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     contactPerson1: 'string',
     contactNo1: 'string',

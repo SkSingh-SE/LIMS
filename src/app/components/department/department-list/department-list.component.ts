@@ -21,7 +21,7 @@ export class DepartmentListComponent implements OnInit {
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
     { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     description: 'string',
     createdBy: 'string',

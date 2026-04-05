@@ -38,7 +38,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     { key: 'value', type: 'string', label: 'Value', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     aliasName: 'string',
     value: 'string',

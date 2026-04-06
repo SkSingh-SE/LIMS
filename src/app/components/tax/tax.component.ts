@@ -195,7 +195,7 @@ export class TaxComponent implements OnInit {
     if (!this.filterColumn || this.filterValue === '') return;
 
     const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    const filterData = { column: this.filterColumn, type: this.filterType, value: String(this.filterValue), value2: this.filterValue2 != null ? String(this.filterValue2) : this.filterValue2 };
 
     if (existingFilterIndex > -1) {
       this.filters[existingFilterIndex] = filterData;

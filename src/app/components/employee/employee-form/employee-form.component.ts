@@ -165,7 +165,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       designationID: [null, Validators.required],
       dateOfJoin: ['', Validators.required],
       // roleID derived from Designation → Role (not a form field)
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
       qualificationSummary: [''],
       experience: [''],

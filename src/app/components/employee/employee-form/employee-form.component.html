@@ -352,7 +352,7 @@
                   </div>
                   <div *ngIf="personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid">
                     <span *ngIf="personalInfoForm.get('password')?.hasError('required')" class="text-danger text-sm">Password is required.</span>
-                    <span *ngIf="personalInfoForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 6 characters.</span>
+                    <span *ngIf="personalInfoForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 8 characters.</span>
                   </div>
                 </div>
               </div>

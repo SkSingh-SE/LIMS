@@ -157,7 +157,8 @@ export class ChemicalParameterComponent implements OnInit {
         this.customerTypeObject = response;
         this.ParameterForm.patchValue({
           ...response,
-          elementType: (response.elementType || 'normal').toLowerCase()
+          elementType: (response.elementType || 'normal').toLowerCase(),
+          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
         });
       },
       error: (error) => {

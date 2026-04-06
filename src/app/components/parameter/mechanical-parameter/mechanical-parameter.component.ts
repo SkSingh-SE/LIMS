@@ -158,7 +158,10 @@ export class MechanicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
-        this.ParameterForm.patchValue(response);
+        this.ParameterForm.patchValue({
+          ...response,
+          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
+        });
         if (response.allowedOrientations?.length > 0) {
           const ids = response.allowedOrientations.map((o: any) => o.specimenOrientationID);
           this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);

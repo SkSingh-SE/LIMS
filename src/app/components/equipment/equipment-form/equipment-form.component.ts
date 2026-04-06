@@ -700,7 +700,33 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   deleteAttachment(attachment: { id: number; title: string; name: string; type: string; url: string }): void {
-    this.sopAttachments = this.sopAttachments.filter(item => item !== attachment);
+    const confirmed = confirm('Are you sure you want to delete this attachment?');
+    if (!confirmed) return;
+    const index = this.sopAttachmentsArray.controls.findIndex(
+      item => item.get('id')?.value === attachment.id
+    );
+    if (index > -1) {
+      const payload = this.sopAttachmentsArray.at(index).value;
+      const formData = new FormData();
+      formData.append('id', payload.id);
+      formData.append('equipmentID', payload.equipmentId);
+      formData.append('title', payload.title);
+      formData.append('fileName', payload.fileName);
+      formData.append('filePath', payload.filePath);
+      formData.append('file', payload.file);
+      formData.append('type', payload.type);
+      formData.append('uploadReferenceID', payload.uploadReferenceID);
+      this.equipmentService.deleteEquipmentSOP(formData).subscribe({
+        next: response => {
+          this.toastService.show(response.message, 'success');
+          this.sopAttachments = this.sopAttachments.filter(item => item.id !== attachment.id);
+          this.sopAttachmentsArray.removeAt(index);
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete attachment', 'error');
+        }
+      });
+    }
   }
 
   deleteVideo(video: { id: number, name: string; type: string; url: string }): void {
@@ -725,8 +751,10 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
         next: response => {
           this.toastService.show(response.message, 'success');
           this.sopVideos = this.sopVideos.filter(item => item.id !== video.id);
+          this.sopAttachmentsArray.removeAt(index);
         },
-        error: () => {
+        error: (err) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete video', 'error');
         }
       });
     }

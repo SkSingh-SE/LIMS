@@ -12,8 +12,8 @@ export class NonConformingWorkService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<NonConformingWork[]> {
-        return this.http.post<NonConformingWork[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<NonConformingWork | undefined> {

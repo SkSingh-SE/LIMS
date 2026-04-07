@@ -12,8 +12,8 @@ export class MasterDocumentService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<MasterDocument[]> {
-        return this.http.post<MasterDocument[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<MasterDocument | undefined> {

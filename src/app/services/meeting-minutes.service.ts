@@ -12,8 +12,8 @@ export class MeetingMinutesService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<MeetingMinutes[]> {
-        return this.http.post<MeetingMinutes[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<MeetingMinutes | undefined> {

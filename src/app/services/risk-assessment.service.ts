@@ -12,8 +12,8 @@ export class RiskAssessmentService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<RiskAssessment[]> {
-        return this.http.post<RiskAssessment[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<RiskAssessment | undefined> {

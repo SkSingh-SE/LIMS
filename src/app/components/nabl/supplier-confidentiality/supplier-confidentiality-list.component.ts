@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { SupplierConfidentialityService } from '../../../services/supplier-confidentiality.service';
 import { SupplierConfidentiality } from '../../../models/supplierConfidentialityModel';
 import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-table/nabl-register-table.component';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
     selector: 'app-supplier-confidentiality-list',
@@ -27,7 +28,8 @@ export class SupplierConfidentialityListComponent implements OnInit {
 
     constructor(
         private service: SupplierConfidentialityService,
-        private router: Router
+        private router: Router,
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
@@ -71,8 +73,13 @@ export class SupplierConfidentialityListComponent implements OnInit {
 
     onDelete(id: number): void {
         if (confirm('Are you sure you want to delete this agreement?')) {
-            this.service.delete(id).subscribe(() => {
-                this.loadRecords({ PageNumber: 1, PageSize: 10 });
+            this.service.delete(id).subscribe({
+                next: () => {
+                    this.loadRecords({ PageNumber: 1, PageSize: 10 });
+                },
+                error: (err) => {
+                    this.toastService.show(err?.error?.message || 'Failed to delete record', 'error');
+                }
             });
         }
     }

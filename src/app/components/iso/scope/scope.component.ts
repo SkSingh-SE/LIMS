@@ -86,6 +86,10 @@ export class ScopeComponent implements OnInit {
     this.scopeForm = this.fb.group({
       ID: [0],
       laboratoryTestID: ['', Validators.required],
+      validFrom: [null],
+      validUntil: [null],
+      nextReviewDate: [null],
+      scopeRemarks: [''],
       specifications: this.fb.array([]),
     });
   }
@@ -303,11 +307,12 @@ export class ScopeComponent implements OnInit {
 
     const paramForm = this.parameters(specIndex).at(paramIndex) as FormGroup;
     paramForm.patchValue({ groupID: +selectedGroupId, subGroupID: null });
+    this.subGroupOptionsPerParam[key] = [];
 
     if (selectedGroupId) {
-      this.groupService.getGroupById(+selectedGroupId).subscribe({
+      this.subGroupService.getDropdownByGroupId(+selectedGroupId).subscribe({
         next: (data) => {
-          this.subGroupOptionsPerParam[key] = data;
+          this.subGroupOptionsPerParam[key] = data || [];
         },
         error: (err) => {
           console.error('Error loading sub-groups:', err);
@@ -399,7 +404,18 @@ export class ScopeComponent implements OnInit {
       }
     }
     else {
-      this.toastService.show('Please fill all required fields.', 'warning');
+      const missing: string[] = [];
+      if (this.scopeForm.get('laboratoryTestID')?.invalid) missing.push('Laboratory Test');
+      this.specifications.controls.forEach((spec, si) => {
+        if (spec.get('testMethodSpecificationID')?.invalid) missing.push(`Spec ${si + 1}: Test Method`);
+        const params = spec.get('parameters') as FormArray;
+        params?.controls.forEach((p, pi) => {
+          if (p.get('parameterID')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Parameter`);
+          if (p.get('parameterUnitID')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Unit`);
+          if (p.get('qualitativeQuantitative')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Type`);
+        });
+      });
+      this.toastService.show(`Please fix: ${missing.length > 0 ? missing.join(', ') : 'required fields'}`, 'warning');
     }
   }
   loadScope(id: number) {
@@ -407,7 +423,11 @@ export class ScopeComponent implements OnInit {
       next: (data) => {
         this.scopeForm.patchValue({
           ID: data.id,
-          laboratoryTestID: data.laboratoryTestID
+          laboratoryTestID: data.laboratoryTestID,
+          validFrom: data.validFrom ? data.validFrom.split('T')[0] : null,
+          validUntil: data.validUntil ? data.validUntil.split('T')[0] : null,
+          nextReviewDate: data.nextReviewDate ? data.nextReviewDate.split('T')[0] : null,
+          scopeRemarks: data.scopeRemarks || '',
         });
         this.specifications.clear();
         data.specifications.forEach((spec: any) => {
@@ -458,6 +478,12 @@ export class ScopeComponent implements OnInit {
               }
             });
 
+            // G13: Apply initial Qualitative/Quantitative state (disable limits for Qualitative)
+            if (param.qualitativeQuantitative !== 'Quantitative') {
+              paramGroup.get('lowerLimit')?.disable({ emitEvent: false });
+              paramGroup.get('upperLimit')?.disable({ emitEvent: false });
+            }
+
             paramsArray.push(paramGroup);
 
             // Load group and sub-group dropdowns for edit mode
@@ -473,9 +499,9 @@ export class ScopeComponent implements OnInit {
               });
             }
             if (param.groupID) {
-              this.groupService.getGroupById(param.groupID).subscribe({
+              this.subGroupService.getDropdownByGroupId(param.groupID).subscribe({
                 next: (data) => {
-                  this.subGroupOptionsPerParam[key] = data;
+                  this.subGroupOptionsPerParam[key] = data || [];
                 },
               });
             }

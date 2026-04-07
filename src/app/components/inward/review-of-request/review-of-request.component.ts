@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { getActionConfig, ActionButtonConfig } from '../../../utility/workflow-action.helper';
+import { WorkflowService } from '../../../services/workflow.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-review-of-request',
@@ -20,14 +22,14 @@ export class ReviewOfRequestComponent  implements OnInit {
     { key: 'customerName', type: 'string', label: 'Customer', filter: true },
     { key: 'inwardStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
-    { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     inwardStatus: 'string',
     modifiedBy: 'string',
-    modifiedOn: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -59,7 +61,19 @@ export class ReviewOfRequestComponent  implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private inwardService: SampleInwardService) {
+  // Action remark modal state
+  pendingAction: any = null;
+  pendingItem: any = null;
+  actionRemark: string = '';
+  showRemarkModal: boolean = false;
+  isSubmittingAction: boolean = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private inwardService: SampleInwardService,
+    private workflowService: WorkflowService,
+    private toast: ToastService
+  ) {
   }
 
 
@@ -132,6 +146,17 @@ export class ReviewOfRequestComponent  implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -179,6 +204,8 @@ export class ReviewOfRequestComponent  implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -208,8 +235,56 @@ export class ReviewOfRequestComponent  implements OnInit {
     return getActionConfig(action);
   }
 
-  onActionClick(action: any) {
-   console.log('Action clicked:', action);
+  onActionClick(action: any, item: any) {
+    // 'Next' = Approve (no remark). 'Cancel'/'Back' = need remark.
+    if (action?.action?.toLowerCase() === 'next') {
+      const confirmed = window.confirm(`Are you sure you want to ${action.name}?`);
+      if (!confirmed) return;
+      this.performAction(action, '');
+    } else {
+      this.pendingAction = action;
+      this.pendingItem = item;
+      this.actionRemark = '';
+      this.showRemarkModal = true;
+    }
+  }
+
+  confirmRemarkAction(): void {
+    if (!this.pendingAction) return;
+    if (!this.actionRemark?.trim()) {
+      this.toast.show('Please enter remarks.', 'warning');
+      return;
+    }
+    this.performAction(this.pendingAction, this.actionRemark.trim());
+  }
+
+  closeRemarkModal(): void {
+    this.showRemarkModal = false;
+    this.pendingAction = null;
+    this.pendingItem = null;
+    this.actionRemark = '';
+  }
+
+  private performAction(action: any, remark: string): void {
+    const payload = {
+      id: action.id,
+      action: action.action,
+      name: action.name,
+      remarks: remark
+    };
+    this.isSubmittingAction = true;
+    this.workflowService.performWorkflowAction(payload).subscribe({
+      next: (response: any) => {
+        this.isSubmittingAction = false;
+        this.toast.show(response?.message || 'Action performed successfully', 'success');
+        this.closeRemarkModal();
+        this.fetchData();
+      },
+      error: (error: any) => {
+        this.isSubmittingAction = false;
+        this.toast.show(error?.error?.message || error?.errorMessage || 'Error performing action. Please try again.', 'error');
+      }
+    });
   }
 
 }

@@ -167,6 +167,45 @@
   font-size: 0.6rem;
 }
 
+/* ─── SM Mode ─── */
+.input-group.input-group-sm {
+  min-height: 30px;
+}
+
+.input-group.input-group-sm .form-control {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+  line-height: 1.4;
+}
+
+.input-group.input-group-sm .form-control::placeholder {
+  font-size: 0.76rem;
+}
+
+.input-group.input-group-sm .input-group-text.dropdown-toggle-icon {
+  padding: 0 0.35rem;
+}
+
+.input-group.input-group-sm .input-group-text.dropdown-toggle-icon i {
+  font-size: 0.55rem;
+}
+
+.input-group.input-group-sm .input-group-text.clear-icon {
+  padding: 0 0.2rem;
+}
+
+.input-group.input-group-sm .input-group-text.clear-icon i {
+  font-size: 0.5rem;
+}
+
+.input-group.input-group-sm .multi-select-display {
+  padding: 0 0.5rem;
+}
+
+.input-group.input-group-sm .multi-select-display .compact-label {
+  font-size: 0.78rem;
+}
+
 /* ─── Disabled State ─── */
 .input-group:has(.form-control:disabled) {
   background: #f8f9fa;

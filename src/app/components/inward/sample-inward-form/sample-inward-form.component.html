@@ -22,7 +22,8 @@
       </button>
     </li>
     <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
-      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">
+      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
+              (click)="planTabLoaded = true">
         <i class="bi bi-clipboard-check me-1"></i> Plan
       </button>
     </li>
@@ -369,10 +370,10 @@
                 [selectedItem]="sampleInwardForm.get('purchaseOrderId')?.value"
               ></app-searchable-dropdown>
               <div *ngIf="selectedPODetails" class="mt-1 small text-muted">
-                <span class="badge bg-info me-1">Amount: ₹{{ selectedPODetails.additionalValues?.poAmount || selectedPODetails.poAmount | number:'1.2-2' }}</span>
-                <span class="badge bg-success me-1">Remaining: ₹{{ selectedPODetails.additionalValues?.remainingAmount || selectedPODetails.remainingAmount | number:'1.2-2' }}</span>
-                <span *ngIf="selectedPODetails.additionalValues?.validUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
-                  Valid Until: {{ (selectedPODetails.additionalValues?.validUntil || selectedPODetails.validUntil) | date:'dd-MMM-yyyy' }}
+                <span class="badge bg-info me-1">Amount: ₹{{ (selectedPODetails.additionalValues?.POAmount || selectedPODetails.poAmount || 0) | number:'1.2-2' }}</span>
+                <span class="badge bg-success me-1">Remaining: ₹{{ (selectedPODetails.additionalValues?.RemainingAmount || selectedPODetails.remainingAmount || 0) | number:'1.2-2' }}</span>
+                <span *ngIf="selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
+                  Valid Until: {{ (selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil) | date:'dd-MMM-yyyy' }}
                 </span>
               </div>
             </div>
@@ -483,6 +484,11 @@
             Sample Details
           </legend>
 
+          <div class="alert alert-info py-1 px-2 small mb-2">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Note:</strong> If Metal Classification and Product Condition are selected, the Test Plan specification list will be filtered accordingly.
+            To see all specifications, either link them in Material Specification master or remove Metal Classification / Product Condition selection.
+          </div>
           <div class="table-responsive">
             <table class="table table-compact">
               <thead class="table-light">
@@ -492,6 +498,7 @@
                   <th class="fw-medium text-center">Metal Classification</th>
                   <th class="fw-medium text-center">Product Condition</th>
                   <th class="fw-medium text-center">Specimen Orientation</th>
+                  <th class="fw-medium text-center">Product Form</th>
                   <th class="fw-medium text-center">Thickness (mm)</th>
                   <th class="fw-medium text-center">Diameter (mm)</th>
                   <th class="fw-medium text-center">Width (mm)</th>
@@ -532,6 +539,16 @@
                       [fetchDataFn]="getSpecimenOrientationDrop(i)"
                       (itemSelected)="onSpecimenOrientationSelected($event,i)"
                       [selectedItem]="sample.get('specimenOrientationID')?.value"
+                      [isDisabled]="isViewMode"
+                    ></app-searchable-dropdown>
+                  </td>
+                  <td>
+                    <app-searchable-dropdown
+                      [placeholder]="'Product Form'"
+                      [hideLabel]="true"
+                      [fetchDataFn]="getProductFormDrop"
+                      (itemSelected)="onProductFormSelected($event,i)"
+                      [selectedItem]="sample.get('productFormID')?.value"
                       [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </td>
@@ -684,9 +701,9 @@
       </div>
 
 
-      <!-- TAB 3: PLAN (visible only after save) -->
+      <!-- TAB 3: PLAN (visible only after save, lazy-loaded on tab click) -->
       <div *ngIf="sampleId > 0" class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
-        <app-plan-form [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
+        <app-plan-form *ngIf="planTabLoaded" [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
       </div>
 
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->

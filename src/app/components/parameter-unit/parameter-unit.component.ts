@@ -20,13 +20,12 @@ export class ParameterUnitComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Unit Name', filter: true },
     { key: 'conversaionFactor', type: 'string', label: 'Base Factor', filter: true },
     { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     conversaionFactor: 'string',
   };
@@ -93,39 +92,40 @@ export class ParameterUnitComponent implements OnInit {
       conversionFactor2: [null],
       similarUnit3: [''],
       conversionFactor3: [null],
+      similarUnit4: [''],
+      conversionFactor4: [null],
+      similarUnit5: [''],
+      conversionFactor5: [null],
+      similarUnit6: [''],
+      conversionFactor6: [null],
+      similarUnit7: [''],
+      conversionFactor7: [null],
     });
   }
 
   detectSimilarUnitCount(): void {
     let count = 0;
-    if (this.parameterUnitForm.get('similarUnit1')?.value || this.parameterUnitForm.get('conversionFactor1')?.value) count = 1;
-    if (this.parameterUnitForm.get('similarUnit2')?.value || this.parameterUnitForm.get('conversionFactor2')?.value) count = 2;
-    if (this.parameterUnitForm.get('similarUnit3')?.value || this.parameterUnitForm.get('conversionFactor3')?.value) count = 3;
+    for (let i = 1; i <= 7; i++) {
+      if (this.parameterUnitForm.get(`similarUnit${i}`)?.value || this.parameterUnitForm.get(`conversionFactor${i}`)?.value) count = i;
+    }
     this.similarUnitCount = count;
   }
 
   addSimilarUnit(): void {
-    if (this.similarUnitCount < 3) this.similarUnitCount++;
+    if (this.similarUnitCount < 7) this.similarUnitCount++;
   }
 
   removeSimilarUnit(index: number): void {
-    if (index === 1) {
-      this.parameterUnitForm.patchValue({
-        similarUnit1: this.parameterUnitForm.get('similarUnit2')?.value || '',
-        conversionFactor1: this.parameterUnitForm.get('conversionFactor2')?.value,
-        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
-        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
-        similarUnit3: '', conversionFactor3: null,
-      });
-    } else if (index === 2) {
-      this.parameterUnitForm.patchValue({
-        similarUnit2: this.parameterUnitForm.get('similarUnit3')?.value || '',
-        conversionFactor2: this.parameterUnitForm.get('conversionFactor3')?.value,
-        similarUnit3: '', conversionFactor3: null,
-      });
-    } else if (index === 3) {
-      this.parameterUnitForm.patchValue({ similarUnit3: '', conversionFactor3: null });
+    // Shift all units above the removed index down by one
+    const patch: any = {};
+    for (let i = index; i < 7; i++) {
+      patch[`similarUnit${i}`] = this.parameterUnitForm.get(`similarUnit${i + 1}`)?.value || '';
+      patch[`conversionFactor${i}`] = this.parameterUnitForm.get(`conversionFactor${i + 1}`)?.value || null;
     }
+    // Clear the last slot
+    patch[`similarUnit7`] = '';
+    patch[`conversionFactor7`] = null;
+    this.parameterUnitForm.patchValue(patch);
     this.similarUnitCount--;
   }
 
@@ -202,6 +202,17 @@ export class ParameterUnitComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -241,6 +252,8 @@ export class ParameterUnitComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

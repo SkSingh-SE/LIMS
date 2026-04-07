@@ -26,6 +26,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { CurrencyService } from '../../../services/currency.service';
 
 
 @Component({
@@ -40,7 +41,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   areas: any[] = [];
   areaList: any[] = [];
   departments: any[] = [];
-  customerTypes: any[] = ['Walk in', 'Credit Customer', 'Relationship Credit Customer'];
+  customerTypes: any[] = ['Walk In', 'Credit Customer', 'Relationship Credit Customer'];
   companyCategory: any[] = [];
   dispatchModes: any[] = [];
   discountOptions = [
@@ -74,8 +75,9 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     private toastService: ToastService,
     private route: ActivatedRoute, private router: Router,
     private dispatchModeService: DispatchModeService,
-    private configService: ConfigService
-  , private unsavedChangesService: UnsavedChangesService) { }
+    private configService: ConfigService,
+    private unsavedChangesService: UnsavedChangesService,
+    private currencyService: CurrencyService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -106,13 +108,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       pinCode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
       customerType: ['', [Validators.required]],
       isBlock: [false],
-      industryID: [0],
+      currencyID: [0],
       gstNo: ['', [Validators.required,
       Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/)
       ]],
-      // panNo: ['', [Validators.required,
-      // Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
-      // ]],
+      panNo: ['', [Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       gstna: [false],
       dispatchModeIDs: [''],
       sampleReturn: [false],
@@ -127,16 +127,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       constantDiscountPercentage: [0],
       creditLimitAmount: [0],
       creditLimitTime: 0,
-      companyVerified: [false],
       remark: [''],
-      dTestoLoginId: [''],
-      dTestoPassword: [''],
-      dTestoActive: [false],
-      blockDTestoUser: [false],
       blockReason: [''],
       isVerified: [false],
       verifiedBy: [0],
-      verifiedOn: [''],
+      verifiedOn: [null],
       contactPersons: this.fb.array([]),
       customerCompanyCategories: this.fb.array([], Validators.required),
       customerDispatchModes: this.fb.array([], Validators.required),
@@ -147,12 +142,70 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     this.fetchDispatchModeDropdown();
     this.getCustomerTypes();
 
+    // Toggle GST validators when "GST not applicable" changes
+    this.customerForm.get('gstna')?.valueChanges.subscribe((gstNotApplicable: boolean) => {
+      const gstControl = this.customerForm.get('gstNo');
+      if (gstNotApplicable) {
+        gstControl?.clearValidators();
+        gstControl?.setValue('');
+      } else {
+        gstControl?.setValidators([
+          Validators.required,
+          Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/)
+        ]);
+      }
+      gstControl?.updateValueAndValidity();
+    });
+
+    // ── SpecialAccountingCase ↔ GSTNA sync ──
+    this.customerForm.get('specialAccountingCase')?.valueChanges.subscribe((val: string) => {
+      const gstnaControl = this.customerForm.get('gstna');
+      const gstControl = this.customerForm.get('gstNo');
+      if (val === 'SEZ' || val === 'No GST applicable') {
+        gstnaControl?.setValue(true, { emitEvent: false });
+        gstControl?.clearValidators();
+        gstControl?.setValue('');
+        gstControl?.updateValueAndValidity();
+      }
+    });
+
+    // Reverse sync: GSTNA checked → set specialAccountingCase
+    this.customerForm.get('gstna')?.valueChanges.subscribe((checked: boolean) => {
+      const specialCase = this.customerForm.get('specialAccountingCase')?.value;
+      if (checked && !specialCase) {
+        this.customerForm.get('specialAccountingCase')?.setValue('No GST applicable', { emitEvent: false });
+      } else if (!checked && (specialCase === 'SEZ' || specialCase === 'No GST applicable')) {
+        this.customerForm.get('specialAccountingCase')?.setValue('', { emitEvent: false });
+      }
+    });
+
+    // ── Walk-in: reset billing fields when customer type changes ──
+    this.customerForm.get('customerType')?.valueChanges.subscribe((type: string) => {
+      if (type.toLowerCase() === 'walk in' || type.toLowerCase() === 'walk-in') {
+        this.customerForm.patchValue({
+          creditLimitAmount: 0,
+          creditLimitTime: 0,
+          weeklyBillingCustomer: false,
+          monthlyBillingCustomer: false,
+          directTaxInvoiceNoPerforma: false,
+          billingEvery: false,
+          billingEveryDays: 0,
+          performaInvoiceRequiredBeforeTesting: false,
+        }, { emitEvent: false });
+      }
+    });
+
     if (this.isViewMode) {
       this.customerForm.disable();
     }
     if (this.customerId) {
       this.loadCustomer();
     }
+  }
+
+  get isWalkIn(): boolean {
+    const type = (this.customerForm.get('customerType')?.value || '').toLowerCase();
+    return type === 'walk in' || type === 'walk-in';
   }
 
   /* ===== FormArray Getters ===== */
@@ -202,9 +255,9 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       id: [0],
       key: [type],
       type: [type],
-      salutation: ['', isRequired ? Validators.required : []],
+      salutation: ['Mr.', isRequired ? Validators.required : []],
       name: ['', isRequired ? Validators.required : [Validators.required]],
-      departmentID: [0],
+      departmentID: [0, [Validators.required, Validators.min(1)]],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
       mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)] : [Validators.pattern(/^[+]?\d{10,13}$/)]],
       isWhatsappNo: [false],
@@ -250,8 +303,23 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.customerForm);
     if (!this.customerForm.valid) {
-      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
-      this.logInvalidControls(this.customerForm);
+      const missing = this.getInvalidFieldNames();
+      this.toastService.show(`Please fix: ${missing.join(', ')}`, 'warning');
+      return;
+    }
+
+    // Billing field conflict validation
+    const v = this.customerForm.value;
+    if (v.directTaxInvoiceNoPerforma && v.performaInvoiceRequiredBeforeTesting) {
+      this.toastService.show('Cannot require Proforma Invoice and skip it at the same time.', 'error');
+      return;
+    }
+    if (v.constantDiscount && (!v.constantDiscountPercentage || v.constantDiscountPercentage <= 0)) {
+      this.toastService.show('Please select a discount percentage when Constant Discount is enabled.', 'error');
+      return;
+    }
+    if (v.billingEvery && (!v.billingEveryDays || v.billingEveryDays <= 0)) {
+      this.toastService.show('Please select billing interval days when Billing Every is enabled.', 'error');
       return;
     }
     if (this.customerId > 0) {
@@ -364,6 +432,14 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       }
     });
   }
+  getCurrencies = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.currencyService.getDropdown(term, page, pageSize);
+  };
+
+  onCurrencySelect(item: any): void {
+    this.customerForm.patchValue({ currencyID: item?.id || 0 });
+  }
+
   copyCustomerNameToLedgerName(event: MouseEvent): void {
     const target = event.target as HTMLInputElement;
     if (target && target.type === 'checkbox') {
@@ -484,21 +560,76 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
-  logInvalidControls(formGroup: FormGroup, parentKey: string = ''): void {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      const fullKey = parentKey ? `${parentKey}.${key}` : key;
+  private fieldLabelMap: Record<string, string> = {
+    name: 'Customer Name',
+    tallyLedgerName: 'Tally Ledger Name',
+    address: 'Address',
+    city: 'City',
+    state: 'State',
+    country: 'Country',
+    pinCode: 'Pin Code',
+    customerType: 'Customer Type',
+    gstNo: 'GST No',
+    customerCompanyCategories: 'Company Category',
+    customerDispatchModes: 'Dispatch Mode',
+  };
 
-      if (control instanceof FormGroup) {
-        this.logInvalidControls(control, fullKey); // Recursive for nested groups
-      } else if (control instanceof FormArray) {
-        (control.controls as FormGroup[]).forEach((group, index) => {
-          this.logInvalidControls(group, `${fullKey}[${index}]`);
-        });
-      } else if (control && control.invalid) {
-        console.error(`Invalid field: ${fullKey}`, control.errors);
+  private contactLabelMap: Record<string, string> = {
+    salutation: 'Salutation',
+    name: 'Name',
+    departmentID: 'Department',
+    emailId: 'Email',
+    mobileNo: 'Mobile No',
+    address: 'Address',
+    pinCode: 'Pin Code',
+    areaID: 'Area',
+    city: 'City',
+    state: 'State',
+    country: 'Country',
+  };
+
+  private contactTypeLabel: Record<string, string> = {
+    contact1: 'Contact Person 1',
+    contact2: 'Contact Person 2',
+    accountant: 'Accountant',
+    dynamic: 'Additional Contact',
+  };
+
+  getInvalidFieldNames(): string[] {
+    const labels: string[] = [];
+
+    // Top-level fields
+    Object.keys(this.customerForm.controls).forEach(key => {
+      const control = this.customerForm.get(key);
+      if (!control || control.valid || control.disabled) return;
+      if (key === 'contactPersons') return; // handled below
+      if (control instanceof FormArray) {
+        labels.push(this.fieldLabelMap[key] || key);
+        return;
+      }
+      if (control.invalid) {
+        labels.push(this.fieldLabelMap[key] || key);
       }
     });
+
+    // Contact persons — group by contact type
+    this.contactPersonsArray.controls.forEach(c => {
+      const group = c as FormGroup;
+      const type = group.get('type')?.value || 'contact';
+      const invalidFields: string[] = [];
+      Object.keys(group.controls).forEach(field => {
+        const ctrl = group.get(field);
+        if (ctrl && ctrl.invalid && !ctrl.disabled) {
+          invalidFields.push(this.contactLabelMap[field] || field);
+        }
+      });
+      if (invalidFields.length > 0) {
+        const contactLabel = this.contactTypeLabel[type] || type;
+        labels.push(`${contactLabel} (${invalidFields.join(', ')})`);
+      }
+    });
+
+    return labels;
   }
 
   loadCustomer(): void {
@@ -544,11 +675,22 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         this.selectedCompanyCategoryIds = response.customerCompanyCategories.map((cat: any) => cat.companyCategoryID);
 
         if (response.contactPersons && response.contactPersons.length > 0) {
-          response.contactPersons.forEach(async (contact: any) => {
-            const formGroup = this.contactPersonsArray.controls.find(c => c.get('type')?.value === contact.type) as FormGroup;
+          let dynamicIndex = 0;
+          response.contactPersons.forEach((contact: any) => {
+            let formGroup: FormGroup | undefined;
+            if (contact.type === 'dynamic') {
+              // Find the Nth dynamic contact by counting, not by .find()
+              const dynamicGroups = this.contactPersonsArray.controls.filter(c => c.get('type')?.value === 'dynamic');
+              formGroup = dynamicGroups[dynamicIndex] as FormGroup;
+              dynamicIndex++;
+            } else {
+              formGroup = this.contactPersonsArray.controls.find(c => c.get('type')?.value === contact.type) as FormGroup;
+            }
             if (formGroup) {
               formGroup.patchValue(contact);
-              this.fetchContactAreaData(formGroup);
+              if (contact.pinCode && contact.pinCode.length === 6) {
+                this.fetchContactAreaData(formGroup);
+              }
             }
           });
         }

@@ -46,6 +46,7 @@
             [hideLabel]="false"
             [required]="true"
             [isDisabled]="isViewMode"
+            [isInvalid]="isFieldInvalid('departmentID')"
             [selectedItem]="equipmentForm.get('departmentID')?.value"
           ></app-searchable-dropdown>
         </div>
@@ -59,6 +60,7 @@
             [hideLabel]="false"
             [required]="true"
             [isDisabled]="isViewMode"
+            [isInvalid]="isFieldInvalid('equipmentTypeID')"
             [selectedItem]="equipmentForm.get('equipmentTypeID')?.value"
           ></app-searchable-dropdown>
         </div>
@@ -72,6 +74,7 @@
             [hideLabel]="false"
             [required]="true"
             [isDisabled]="isViewMode"
+            [isInvalid]="isFieldInvalid('oemID')"
             [selectedItem]="equipmentForm.get('oemID')?.value"
           ></app-searchable-dropdown>
         </div>
@@ -89,9 +92,9 @@
             class="form-control"
             formControlName="purchaseDate"
             placeholder="MMM, YYYY"
-            [class.is-invalid]="equipmentForm.get('purchaseDate')?.invalid && equipmentForm.get('purchaseDate')?.touched"
+            [class.is-invalid]="isFieldInvalid('purchaseDate')"
           />
-          <div *ngIf="equipmentForm.get('purchaseDate')?.invalid && equipmentForm.get('purchaseDate')?.touched" class="invalid-feedback">
+          <div *ngIf="isFieldInvalid('purchaseDate')" class="invalid-feedback">
             Purchase Date is a required field.
           </div>
         </div>
@@ -143,14 +146,14 @@
           <select
             class="form-select"
             formControlName="internalExternal"
-            [class.is-invalid]="equipmentForm.get('internalExternal')?.invalid && equipmentForm.get('internalExternal')?.touched"
+            [class.is-invalid]="isFieldInvalid('internalExternal')"
           >
             <option value="" disabled selected>Select option</option>
             <option>Internal</option>
             <option>External</option>
           </select>
           <div
-            *ngIf="equipmentForm.get('internalExternal')?.invalid && equipmentForm.get('internalExternal')?.touched"
+            *ngIf="isFieldInvalid('internalExternal')"
             class="invalid-feedback"
           >
             Internal / External is a required field.
@@ -511,9 +514,9 @@
           </div>
         </div>
       </ng-container>
-      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+      <div class="d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/equipment']" class="btn btn-cancel">Cancel</a>
-        <button type="submit" class="btn btn-save px-3">Save</button>
+        <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>

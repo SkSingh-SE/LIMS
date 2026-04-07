@@ -13,6 +13,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { ParameterService } from '../../../services/parameter.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
 import { HeatTreatmentService } from '../../../services/heat-treatment.service';
@@ -52,6 +53,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   MaterialSpecificationForm!: FormGroup;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  yearOptions: number[] = YearHelper.standardYears();
 
   standardOrganizations: any[] = [];
   parameterUnits: any[] = [];
@@ -225,8 +227,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       gradeID: [0],
       manualSelection: [false],
       parameterID: ['', Validators.required],
-      minValue: [null, Validators.required],
-      maxValue: [null, Validators.required],
+      minValue: [null],
+      maxValue: [null],
       notes: [''],
       parameterUnitID: [null],
       minValueEquation: [0],
@@ -345,16 +347,16 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     let code = '';
     const standardOrganizationName = this.selectedStandardOrganization?.name;
     if (standardOrganizationName) {
-      code = `${standardOrganizationName}`;
+      code = standardOrganizationName;
     }
     const part = this.MaterialSpecificationForm.get('part')?.value;
     if (part) {
-      code += `-${part}`;
+      code += ` ${part}`;
     }
     const standardYear =
       this.MaterialSpecificationForm.get('standardYear')?.value;
     if (standardYear) {
-      code += `-${standardYear}`;
+      code += `:${standardYear}`;
     }
 
     if (code.length > 0) {

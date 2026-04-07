@@ -59,6 +59,10 @@ export class AccountService {
     return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-proforma-invoice`, {});
   }
 
+  downloadPIPdf(piId: number): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/SampleInward/${piId}/pdf`, { responseType: 'blob' });
+  }
+
   /**
    * Generate Final Invoice for a case
    * POST /api/accounts/cases/{inwardId}/generate-invoice

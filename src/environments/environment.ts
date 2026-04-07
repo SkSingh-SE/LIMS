@@ -1,5 +1,5 @@
 export const environment = {
-    production:true,
-    apiUrl: 'http://dmspl91-001-site3.ntempurl.com/api',
-    baseUrl: 'http://dmspl91-001-site3.ntempurl.com/'
+    production: true,
+    apiUrl: 'http://192.168.1.200:5000/api',
+    baseUrl: 'http://192.168.1.200:5000/'
 };

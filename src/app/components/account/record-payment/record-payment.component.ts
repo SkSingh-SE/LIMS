@@ -19,7 +19,6 @@ export class RecordPaymentComponent implements OnInit {
   selectedCustomerId: number | null = null;
   outstandingInvoices: any[] = [];
   selectedInvoiceIds: number[] = [];
-  isLoading = false;
   isSubmitting = false;
   loadingInvoices = false;
   receiptNumber: string | null = null;

@@ -13,6 +13,8 @@ import { Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select
 import { LaboratoryTestService } from '../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
+import { YearHelper } from '../../utility/helper/year.helper';
+import { TestMethodStandardService } from '../../services/test-method-standard.service';
 import { ProductTestGroupService } from '../../services/product-test-group.service';
 import { ProductSpecificationGradeService } from '../../services/product-specification-grade.service';
 import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
@@ -31,15 +33,14 @@ export class ProductSpecificationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'specificationName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'materialSpecification', type: 'string', label: 'Material Specification', filter: true },
     { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specificationName: 'string',
     aliasName: 'string',
     materialSpecification: 'string',
@@ -87,7 +88,8 @@ export class ProductSpecificationComponent implements OnInit {
   activeTab = 'details';
   testGroups: any[] = [];
   specGrades: any[] = [];
-  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodStandardID: 0, testMethodStandardName: '', isPerBatch: false, year: null };
+  yearOptions: number[] = YearHelper.standardYears();
   newSpecGrade: any = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
 
   testMethods: any[] = [
@@ -98,7 +100,7 @@ export class ProductSpecificationComponent implements OnInit {
     { value: 5, label: 'Test Method 5' },
   ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private testMethodStandardService: TestMethodStandardService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
       if (this.productSpecificationId > 0) {
@@ -209,6 +211,17 @@ export class ProductSpecificationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -256,6 +269,8 @@ export class ProductSpecificationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -478,29 +493,40 @@ export class ProductSpecificationComponent implements OnInit {
     this.newTestGroup.laboratoryTestName = item.name;
   }
 
+  getTestMethodStandardDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.testMethodStandardService.getTestMethodStandardDropdown(term, page, pageSize);
+  };
+
   onTestGroupMethodSelected(item: any) {
-    this.newTestGroup.testMethodSpecificationID = item.id;
-    this.newTestGroup.testMethodSpecificationName = item.name;
+    this.newTestGroup.testMethodStandardID = item.id;
+    this.newTestGroup.testMethodStandardName = item.name;
   }
 
   addTestGroup() {
-    if (!this.newTestGroup.laboratoryTestID || !this.newTestGroup.testMethodSpecificationID) {
-      this.toastService.show('Please select Laboratory Test and Test Method Specification', 'error');
+    if (!this.newTestGroup.laboratoryTestID || !this.newTestGroup.testMethodStandardID) {
+      this.toastService.show('Please select Laboratory Test and Test Method Standard', 'error');
+      return;
+    }
+    const duplicate = this.testGroups.some((g: any) =>
+      g.laboratoryTestID === this.newTestGroup.laboratoryTestID && g.testMethodStandardID === this.newTestGroup.testMethodStandardID
+    );
+    if (duplicate) {
+      this.toastService.show('This test group combination already exists', 'warning');
       return;
     }
     const payload = {
       id: 0,
       productSpecificationID: this.productSpecificationId,
       laboratoryTestID: this.newTestGroup.laboratoryTestID,
-      testMethodStandardID: this.newTestGroup.testMethodSpecificationID,
+      testMethodStandardID: this.newTestGroup.testMethodStandardID,
       isPerBatch: this.newTestGroup.isPerBatch,
-      year: this.newTestGroup.year ? parseInt(this.newTestGroup.year, 10) : null
+      year: this.newTestGroup.year ?? null
     };
     this.productTestGroupService.create(payload).subscribe({
       next: (response) => {
         this.toastService.show(response.message || 'Test Group added', 'success');
         this.loadTestGroups(this.productSpecificationId);
-        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodStandardID: 0, testMethodStandardName: '', isPerBatch: false, year: null };
       },
       error: (error) => {
         this.toastService.show(error?.error?.message || 'Failed to add test group', 'error');

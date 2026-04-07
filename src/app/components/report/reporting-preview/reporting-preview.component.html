@@ -123,12 +123,26 @@
           </div>
         </div>
       </div>
+      <!-- Sample Properties -->
+      <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.productForm || reportData.specimenOrientation || reportData.heatTreatment">
+        <span *ngIf="reportData.productForm" class="dimension-tag"><i class="bi bi-box me-1"></i>Product Form: <strong>{{ reportData.productForm }}</strong></span>
+        <span *ngIf="reportData.specimenOrientation" class="dimension-tag"><i class="bi bi-compass me-1"></i>Orientation: <strong>{{ reportData.specimenOrientation }}</strong></span>
+        <span *ngIf="reportData.heatTreatment" class="dimension-tag"><i class="bi bi-thermometer-half me-1"></i>Heat Treatment: <strong>{{ reportData.heatTreatment }}</strong></span>
+      </div>
       <!-- Dimensions -->
       <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.thickness || reportData.diameter || reportData.width || reportData.length">
         <span *ngIf="reportData.thickness" class="dimension-tag"><i class="bi bi-rulers me-1"></i>Thickness: <strong>{{ reportData.thickness }} mm</strong></span>
         <span *ngIf="reportData.diameter" class="dimension-tag"><i class="bi bi-circle me-1"></i>Diameter: <strong>{{ reportData.diameter }} mm</strong></span>
         <span *ngIf="reportData.width" class="dimension-tag"><i class="bi bi-arrows me-1"></i>Width: <strong>{{ reportData.width }} mm</strong></span>
         <span *ngIf="reportData.length" class="dimension-tag"><i class="bi bi-arrows-expand me-1"></i>Length: <strong>{{ reportData.length }} mm</strong></span>
+        <span *ngIf="reportData.crossSectionArea" class="dimension-tag"><i class="bi bi-square me-1"></i>C/S Area: <strong>{{ reportData.crossSectionArea }} mm²</strong></span>
+        <span *ngIf="reportData.gaugeLength" class="dimension-tag"><i class="bi bi-distribute-vertical me-1"></i>G.L.: <strong>{{ reportData.gaugeLength }} mm</strong></span>
+      </div>
+      <!-- Test Conditions -->
+      <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.roomTemperature || reportData.roomHumidity || reportData.equipmentUsed">
+        <span *ngIf="reportData.roomTemperature" class="dimension-tag"><i class="bi bi-thermometer me-1"></i>Temp: <strong>{{ reportData.roomTemperature }} °C</strong></span>
+        <span *ngIf="reportData.roomHumidity" class="dimension-tag"><i class="bi bi-droplet me-1"></i>Humidity: <strong>{{ reportData.roomHumidity }} %</strong></span>
+        <span *ngIf="reportData.equipmentUsed" class="dimension-tag"><i class="bi bi-gear me-1"></i>Equipment: <strong>{{ reportData.equipmentUsed }}</strong></span>
       </div>
       <!-- Conformity -->
       <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="reportData.statementOfConformity || reportData.decisionRule">
@@ -220,16 +234,18 @@
           <div class="d-flex align-items-center gap-2">
             <i class="bi" [class.bi-chevron-down]="isMechanicalTestExpanded(test.testResultHeaderId)" [class.bi-chevron-right]="!isMechanicalTestExpanded(test.testResultHeaderId)"></i>
             <strong>{{ test.testName }}</strong>
-            <span class="text-muted small">Report: {{ test.reportNo }}</span>
+            <span class="text-muted small ms-2" *ngIf="test.testMethod">Method: {{ test.testMethod }}</span>
+            <span class="text-muted small ms-2">Report: {{ test.reportNo }}</span>
           </div>
           <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
         <div *ngIf="isMechanicalTestExpanded(test.testResultHeaderId)" class="test-content">
           <div class="mb-2" *ngIf="test.specification1Name">
-            <span class="text-muted small me-1">Specification:</span>
+            <span class="text-muted small me-1">Specification Grade 1:</span>
             <span class="badge bg-light text-dark border">{{ test.specification1Name }}</span>
-            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border ms-1">{{ test.specification2Name }}</span>
+            <span *ngIf="test.specification2Name" class="text-muted small ms-2 me-1">Grade 2:</span>
+            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border">{{ test.specification2Name }}</span>
           </div>
           <div class="table-responsive">
             <table class="table table-sm result-table mb-0">
@@ -249,10 +265,16 @@
                   [class.row-fail]="param.isWithinLimit === false"
                   [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
-                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td class="text-muted">{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? '-' }}</td>
+                  <td class="fw-semibold">
+                    {{ param.value != null ? (param.value | number:'1.2-4') : '-' }}
+                    <small *ngIf="param.convertedValue != null && param.convertedValue !== param.value"
+                      class="text-primary d-block" style="font-size: 10px;">
+                      ≈ {{ param.convertedValue | number:'1.2-4' }} {{ param.selectedUnit }}
+                    </small>
+                  </td>
+                  <td class="text-muted">{{ param.unit || '-' }}</td>
+                  <td>{{ param.minValue != null ? (param.minValue | number:'1.2-4') : '-' }}</td>
+                  <td>{{ param.maxValue != null ? (param.maxValue | number:'1.2-4') : '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
@@ -299,16 +321,18 @@
           <div class="d-flex align-items-center gap-2">
             <i class="bi" [class.bi-chevron-down]="isChemicalTestExpanded(test.testResultHeaderId)" [class.bi-chevron-right]="!isChemicalTestExpanded(test.testResultHeaderId)"></i>
             <strong>{{ test.testName }}</strong>
-            <span class="text-muted small">Report: {{ test.reportNo }}</span>
+            <span class="text-muted small ms-2" *ngIf="test.testMethod">Method: {{ test.testMethod }}</span>
+            <span class="text-muted small ms-2">Report: {{ test.reportNo }}</span>
           </div>
           <app-test-status-badge [status]="test.status"></app-test-status-badge>
         </div>
 
         <div *ngIf="isChemicalTestExpanded(test.testResultHeaderId)" class="test-content">
           <div class="mb-2" *ngIf="test.specification1Name">
-            <span class="text-muted small me-1">Specification:</span>
+            <span class="text-muted small me-1">Specification Grade 1:</span>
             <span class="badge bg-light text-dark border">{{ test.specification1Name }}</span>
-            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border ms-1">{{ test.specification2Name }}</span>
+            <span *ngIf="test.specification2Name" class="text-muted small ms-2 me-1">Grade 2:</span>
+            <span *ngIf="test.specification2Name" class="badge bg-light text-dark border">{{ test.specification2Name }}</span>
           </div>
           <div class="table-responsive">
             <table class="table table-sm result-table mb-0">
@@ -328,10 +352,16 @@
                   [class.row-fail]="param.isWithinLimit === false"
                   [class.row-marginal]="param.resultStatus === 'Marginal'">
                   <td class="fw-medium">{{ param.parameterName }}</td>
-                  <td class="fw-semibold">{{ param.value ?? '-' }}</td>
-                  <td class="text-muted">{{ param.unit }}</td>
-                  <td>{{ param.minValue ?? '-' }}</td>
-                  <td>{{ param.maxValue ?? '-' }}</td>
+                  <td class="fw-semibold">
+                    {{ param.value != null ? (param.value | number:'1.2-4') : '-' }}
+                    <small *ngIf="param.convertedValue != null && param.convertedValue !== param.value"
+                      class="text-primary d-block" style="font-size: 10px;">
+                      ≈ {{ param.convertedValue | number:'1.2-4' }} {{ param.selectedUnit }}
+                    </small>
+                  </td>
+                  <td class="text-muted">{{ param.unit || '-' }}</td>
+                  <td>{{ param.minValue != null ? (param.minValue | number:'1.2-4') : '-' }}</td>
+                  <td>{{ param.maxValue != null ? (param.maxValue | number:'1.2-4') : '-' }}</td>
                   <td class="text-center">
                     <span *ngIf="param.resultStatus" class="badge"
                       [ngClass]="{'bg-success': param.resultStatus === 'Pass' || param.resultStatus === 'Within Range',
@@ -444,7 +474,7 @@
       </div>
 
       <textarea
-        *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
+        *ngIf="selectedAction?.action !== 'Next'"
         class="form-control form-control-sm flex-grow-1"
         [(ngModel)]="actionRemark"
         rows="1"
@@ -453,7 +483,7 @@
       ></textarea>
 
       <button class="btn btn-primary btn-sm px-4"
-        [disabled]="!selectedAction || (selectedAction?.action?.toLowerCase() !== 'next' && !actionRemark)"
+        [disabled]="!selectedAction || (selectedAction?.action !== 'Next' && !actionRemark)"
         (click)="submitReview()">
         <i class="bi bi-send-check me-1"></i>Submit
       </button>

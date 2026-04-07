@@ -45,7 +45,14 @@
                     <tbody>
                         <tr *ngFor="let item of inspectionList; let i = index" class="text-sm">
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ item.sampleNumber }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/tpi-inspection/details', item.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + item.sampleNumber">
+                                    {{ item.sampleNumber }}
+                                </a>
+                            </td>
                             <td>
                                 <span class="badge" [ngClass]="stageBadgeClass[item.tpiStage] || 'bg-secondary'">
                                     {{ stageLabels[item.tpiStage] || 'Unknown' }}

@@ -80,10 +80,6 @@ export class AccountDashboardComponent implements OnInit {
     return date.toLocaleDateString();
   }
 
-  getSkeletonArray(count: number): number[] {
-    return Array(count).fill(0).map((_, i) => i);
-  }
-
   isEmpty(): boolean {
     return this.dashboardData.piPending === 0 && 
            this.dashboardData.invoicePending === 0 && 

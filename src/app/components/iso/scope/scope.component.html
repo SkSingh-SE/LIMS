@@ -39,6 +39,22 @@
                 </div>
                 <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test Method" [submitted]="submitted"/>
               </div>
+              <div class="col-md-2">
+                <label class="form-label">Valid From</label>
+                <input type="date" class="form-control" formControlName="validFrom" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Valid Until</label>
+                <input type="date" class="form-control" formControlName="validUntil" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Next Review Date</label>
+                <input type="date" class="form-control" formControlName="nextReviewDate" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Scope Remarks</label>
+                <textarea class="form-control" formControlName="scopeRemarks" rows="2" maxlength="500" placeholder="Remarks about scope coverage"></textarea>
+              </div>
             </div>
           </div>
         </div>

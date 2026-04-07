@@ -7,19 +7,19 @@
       <!-- Financial Year Input -->
       <div class="d-flex flex-row justify-content-between gap-2 mb-2">
         <div class="col">
-          <label for="financialYear" class="form-label fw-semibold">Financial Year <span
+          <label for="financialYearId" class="form-label fw-semibold">Financial Year <span
               class="text-danger">*</span></label>
-          <select id="financialYear" class="form-select" formControlName="financialYear"
-            [class.is-invalid]="invoiceCaseForm.get('financialYear')?.invalid && invoiceCaseForm.get('financialYear')?.touched">
-            <option value="" disabled selected>Select financial year</option>
-            <option *ngFor="let fy of financialYears" [value]="fy">{{ fy }}</option>
+          <select id="financialYearId" class="form-select" formControlName="financialYearId"
+            [class.is-invalid]="invoiceCaseForm.get('financialYearId')?.invalid && invoiceCaseForm.get('financialYearId')?.touched">
+            <option [ngValue]="null" disabled>Select financial year</option>
+            <option *ngFor="let fy of financialYears" [ngValue]="fy.id">{{ fy.year }}</option>
           </select>
           <div class="invalid-feedback">Financial Year is required.</div>
         </div>
         <div class="col">
           <app-searchable-dropdown id="laboratoryTest" [placeholder]="'Search Sub-Group'" [labelName]="'Sub Group Test'"
             [fetchDataFn]="getLaboratoryTest" (itemSelected)="onLaboratorySelected($event)" [hideLabel]="false"
-            [required]="true" [isDisabled]="isViewMode"
+            [required]="true" [isDisabled]="isViewMode || isEditMode"
             [selectedItem]="invoiceCaseForm.get('laboratoryTestID')?.value"></app-searchable-dropdown>
         </div>
         <!-- <div class="col d-flex align-items-center justify-content-end">
@@ -60,7 +60,7 @@
                   id="caseNameInput{{ i }}"
                   class="form-control"
                   placeholder="Case Name (e.g. '5 element')"
-                  
+
                   [attr.autocomplete]="'off'"
                   maxlength="20"
                   formControlName="name"
@@ -77,7 +77,7 @@
                   <li
                     class="list-group-item list-group-item-action"
                     *ngFor="let suggestion of filteredSuggestionsList[i]"
-                    
+
                     style="cursor: pointer"
                     role="option"
                     tabindex="0"
@@ -106,8 +106,8 @@
                 <input type="text" formControlName="price" class="form-control" placeholder="Price" appDecimalOnly
                   maxlength="10"
                   [ngClass]="{ 'is-invalid': case.get('price')?.invalid && (case.get('price')?.touched || case.get('price')?.dirty) }" />
-                
-                <div *ngIf="case.get('price')?.errors?.['min'] && 
+
+                <div *ngIf="case.get('price')?.errors?.['min'] &&
               (case.get('price')?.touched || case.get('price')?.dirty)" class="invalid-feedback">
                   Price must be greater than 0
                 </div>
@@ -118,9 +118,9 @@
       </div>
       <!-- Submit Button -->
 
-      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+      <div class="d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/invoice-case']" class="btn btn-cancel">Cancel</a>
-        <button type="submit" class="btn btn-save px-3">Save</button>
+        <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>

@@ -25,7 +25,7 @@ export class MetalClassificationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'hasChemicalParams', type: 'string', label: 'Chemical', filter: false },
@@ -33,8 +33,7 @@ export class MetalClassificationComponent implements OnInit {
     { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
     sortOrder: 'number',
@@ -179,6 +178,17 @@ export class MetalClassificationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -186,7 +196,7 @@ export class MetalClassificationComponent implements OnInit {
     if (!this.filterColumn || this.filterValue === '') return;
 
     const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    const filterData = { column: this.filterColumn, type: this.filterType, value: String(this.filterValue), value2: this.filterValue2 ? String(this.filterValue2) : undefined };
 
     if (existingFilterIndex > -1) {
       this.filters[existingFilterIndex] = filterData;
@@ -194,6 +204,7 @@ export class MetalClassificationComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -226,6 +237,8 @@ export class MetalClassificationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -326,6 +339,11 @@ export class MetalClassificationComponent implements OnInit {
 
   onCheckboxChange(): void {
     this.parameterReloadKey++;
+    const isChemical = this.MetalClassificationForm.get('hasChemicalParams')?.value;
+    const isMechanical = this.MetalClassificationForm.get('hasMechanicalParams')?.value;
+    if (!isChemical && !isMechanical) {
+      this.MetalClassificationForm.patchValue({ parameterIds: [] });
+    }
   }
 
   onParameterSelected(item: any[]) {
@@ -342,7 +360,7 @@ export class MetalClassificationComponent implements OnInit {
         })
       );
     })
-    this.MetalClassificationForm.patchValue({ parameterIDs: selectIds });
+    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
   }
 
   getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {

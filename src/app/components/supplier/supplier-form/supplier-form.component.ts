@@ -94,6 +94,9 @@ export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
     this.supplierService.getSupplierById(id).subscribe({
       next: (response) => {
         this.supplierForm.patchValue(response);
+        if (response.blacklistDate) {
+          this.supplierForm.patchValue({ blacklistDate: response.blacklistDate.split('T')[0] });
+        }
         if (this.isViewMode) {
           this.supplierForm.disable();
         }

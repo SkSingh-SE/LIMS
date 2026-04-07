@@ -1,57 +1,15 @@
 <div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Test Result Verification</label>
-    </div>
-
-    <!-- Loading Spinner -->
-    <div *ngIf="false" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <label class="text-md fw-medium ms-3">Test Result Verification</label>
     </div>
 
     <div class="card-body">
-      <!-- Filters Row: Date Range + Search -->
-      <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <!-- Date Range Filter -->
-        <div class="d-flex align-items-center gap-2">
-          <label class="form-label mb-0 text-muted small">From:</label>
-          <input
-            type="date"
-            class="form-control form-control-sm"
-            style="width: 160px;"
-            [(ngModel)]="dateFrom"
-            (change)="onDateFilter()"
-          />
-          <label class="form-label mb-0 text-muted small">To:</label>
-          <input
-            type="date"
-            class="form-control form-control-sm"
-            style="width: 160px;"
-            [(ngModel)]="dateTo"
-            (change)="onDateFilter()"
-          />
-          <button
-            *ngIf="dateFrom || dateTo"
-            class="btn btn-sm btn-cancel"
-            (click)="clearDateFilter()"
-            title="Clear date filter"
-          >
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-
-        <!-- Search -->
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-3">
         <div class="w-25 input-group custom-search">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="Search..."
-            [(ngModel)]="searchTerm"
-            (keydown.enter)="onSearch()"
-          />
-          <div class="input-group-text pe-auto cursor" (click)="onSearch()">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
             <i class="bi bi-search"></i>
           </div>
         </div>
@@ -59,146 +17,119 @@
 
       <!-- Table -->
       <div *ngIf="listData.length > 0" class="table-responsive">
-        <table class="table bordered-table align-middle w-100">
+        <table class="table bordered-table align-middle w-100 small">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="text-center" style="width: 40px;"></th>
-              <th class="text-start">Sample No</th>
-              <th class="text-start">Case No</th>
-              <th class="text-start">Test Name</th>
-              <th class="text-center">Parameters</th>
-              <th class="text-center">NABL</th>
-              <th class="text-start">Tester</th>
-              <th class="text-center">Completed Date</th>
-              <th class="text-center">Status</th>
-              <th class="text-center" style="width: 130px; min-width: 130px;">Actions</th>
+              <th style="width: 40px;"></th>
+              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+              <th *ngFor="let column of columns" class="fw-semibold">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-1">
+                    <i *ngIf="column.filter" class="bi bi-caret-up sorting-icon-up"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                       (click)="applySorting(column.key)"></i>
+                    <i *ngIf="column.filter" class="bi bi-caret-down sorting-icon-down"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                       (click)="applySorting(column.key)"></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                        (click)="openFilterModal(column.key, $event)">
+                    <i class="bi bi-funnel"></i>
+                  </span>
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                        (click)="resetFilter(column.key)">
+                    <i class="bi bi-x-lg text-danger"></i>
+                  </span>
+                </div>
+              </th>
             </tr>
           </thead>
 
           <tbody>
             <ng-container *ngFor="let item of listData">
-              <!-- Main Row -->
-              <tr class="align-middle cursor" (click)="toggleRow(item)">
+              <tr class="align-middle text-center cursor" (click)="toggleRow(item)">
                 <td class="text-center">
-                  <i
-                    class="bi"
-                    [ngClass]="isExpanded(item) ? 'bi-chevron-down' : 'bi-chevron-right'"
-                  ></i>
+                  <i class="bi" [ngClass]="isExpanded(item) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                </td>
+                <td class="text-center" style="width: 140px; min-width: 140px;">
+                  <div class="d-flex justify-content-center gap-2 align-items-center">
+                    <a class="icon-link" title="View" (click)="navigateToVerify(item, $event)">
+                      <img src="/icons/view.svg" alt="View" class="icon-svg">
+                    </a>
+                    <ng-container *ngIf="item.status === 'PendingVerification' && (item.canTakeAction || !item.workflowInstanceId)">
+                      <a role="button" class="icon-link action-icon-link" title="Approve" (click)="openApproveModal(item, $event)">
+                        <i class="bi action-icon" [ngClass]="[getActionCfg('Next').icon, getActionCfg('Next').textClass]"></i>
+                      </a>
+                      <a role="button" class="icon-link action-icon-link" title="Reject" (click)="openRejectModal(item, $event)">
+                        <i class="bi action-icon" [ngClass]="[getActionCfg('Cancel').icon, getActionCfg('Cancel').textClass]"></i>
+                      </a>
+                    </ng-container>
+                  </div>
                 </td>
                 <td class="fw-semibold">
-                  <a
-                    class="text-primary text-decoration-none cursor"
-                    (click)="navigateToVerify(item, $event)"
-                    [title]="'View test results for ' + item.sampleNo"
-                  >
+                  <a class="text-primary text-decoration-none cursor" (click)="navigateToVerify(item, $event)">
                     {{ item.sampleNo || '-' }}
                   </a>
                 </td>
                 <td>{{ item.caseNo || '-' }}</td>
-                <td>{{ item.testName || item.testMethodName || '-' }}</td>
-                <td class="text-center">{{ item.parametersCount || item.parameterCount || 0 }}</td>
+                <td>{{ item.testName || '-' }}</td>
+                <td class="text-center">{{ item.parametersCount || 0 }}</td>
                 <td class="text-center">
-                  <span
-                    class="badge"
-                    [ngClass]="item.isNabl || item.nablStatus ? 'bg-success' : 'bg-secondary'"
-                  >
-                    {{ item.isNabl || item.nablStatus ? 'NABL' : 'Non-NABL' }}
+                  <span class="badge" [ngClass]="item.isNabl ? 'bg-success' : 'bg-secondary'">
+                    {{ item.isNabl ? 'NABL' : 'Non-NABL' }}
                   </span>
                 </td>
-                <td>{{ item.testerName || item.testedBy || '-' }}</td>
+                <td>{{ item.performedBy || '-' }}</td>
+                <td class="text-center">{{ item.completedDate ? (item.completedDate | date: 'dd-MMM-yyyy') : '-' }}</td>
                 <td class="text-center">
-                  {{ item.completedDate ? (item.completedDate | date: 'dd-MMM-yyyy') : '-' }}
+                  <app-test-status-badge [status]="item.status"></app-test-status-badge>
                 </td>
                 <td class="text-center">
-                  <span class="badge" [ngClass]="getStatusBadgeClass(item.status || item.verificationStatus)">
-                    {{ getStatusLabel(item.status || item.verificationStatus) }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <div class="d-flex gap-1 justify-content-center flex-wrap">
-                    <button
-                      class="btn btn-sm btn-outline-info"
-                      (click)="navigateToVerify(item, $event)"
-                      title="View Test Results (Read-Only)"
-                    >
-                      <i class="bi bi-eye"></i>
-                      <span class="d-none d-sm-inline ms-1">View</span>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline-success"
-                      (click)="openApproveModal(item, $event)"
-                      title="Approve / Verify"
-                      [disabled]="(item.status || item.verificationStatus) === 'Verified'"
-                    >
-                      <i class="bi bi-check-circle"></i>
-                      <span class="d-none d-sm-inline ms-1">Approve</span>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-remove"
-                      (click)="openRejectModal(item, $event)"
-                      title="Reject"
-                      [disabled]="(item.status || item.verificationStatus) === 'Verified'"
-                    >
-                      <i class="bi bi-x-circle"></i>
-                      <span class="d-none d-sm-inline ms-1">Reject</span>
-                    </button>
-                  </div>
+                  <span class="text-muted small">{{ item.currentStep || '-' }}</span>
                 </td>
               </tr>
 
               <!-- Expanded Parameters Row -->
-              <tr *ngIf="isExpanded(item)" class="expanded-row">
-                <td [attr.colspan]="10" class="p-0">
+              <tr *ngIf="isExpanded(item)" class="expanded-panel">
+                <td [attr.colspan]="columns.length + 2" class="p-0">
                   <div class="p-3 bg-light border-top">
-                    <!-- Loading Parameters -->
                     <div *ngIf="isLoadingParameters()" class="text-center py-3">
-                      <div class="spinner-border spinner-border-sm text-danger" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      <span class="ms-2 text-muted">Loading parameters...</span>
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
                     </div>
-
-                    <!-- Parameters Table -->
                     <div *ngIf="!isLoadingParameters() && expandedParameters.length > 0">
-                      <h6 class="fw-semibold mb-2">
-                        <i class="bi bi-list-ul me-1"></i>Test Parameters
-                      </h6>
-                      <table class="table table-sm table-bordered mb-0 bg-white">
+                      <div class="d-flex gap-3 mb-2 small">
+                        <span class="badge bg-success">Pass: {{ getParamCount('Pass') }}</span>
+                        <span class="badge bg-danger">Fail: {{ getParamCount('Fail') }}</span>
+                        <span class="badge bg-secondary">Total: {{ expandedParameters.length }}</span>
+                      </div>
+                      <table class="table table-sm table-bordered mb-0 small">
                         <thead class="table-light">
                           <tr>
-                            <th>#</th>
-                            <th>Parameter Name</th>
-                            <th>Unit</th>
-                            <th>Specification</th>
-                            <th>Result Value</th>
-                            <th class="text-center">Pass/Fail</th>
+                            <th>Parameter</th><th>Unit</th><th>Spec Range</th><th>Result</th>
+                            <th>Status</th><th>NABL</th><th>Billable</th><th>Remarks</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr *ngFor="let param of expandedParameters; let i = index">
-                            <td>{{ i + 1 }}</td>
-                            <td>{{ param.parameterName || param.name || '-' }}</td>
-                            <td>{{ param.unit || '-' }}</td>
-                            <td>{{ param.specification || param.requirement || '-' }}</td>
-                            <td class="fw-semibold">{{ param.resultValue || param.value || '-' }}</td>
-                            <td class="text-center">
-                              <span
-                                *ngIf="param.passFail || param.result"
-                                class="badge"
-                                [ngClass]="(param.passFail || param.result) === 'Pass' ? 'bg-success' : 'bg-danger'"
-                              >
-                                {{ param.passFail || param.result }}
+                          <tr *ngFor="let p of expandedParameters" [class.table-danger]="!p.isWithinLimit">
+                            <td>{{ p.parameterName }}</td>
+                            <td>{{ p.unit || '-' }}</td>
+                            <td>{{ p.specification || '-' }}</td>
+                            <td class="fw-bold">{{ p.value != null ? p.value : '-' }}</td>
+                            <td>
+                              <span class="badge" [ngClass]="p.isWithinLimit ? 'bg-success' : 'bg-danger'">
+                                {{ p.isWithinLimit ? 'Pass' : 'Fail' }}
                               </span>
-                              <span *ngIf="!param.passFail && !param.result" class="text-muted">-</span>
                             </td>
+                            <td>{{ p.isWithinNablScope ? 'In Scope' : 'Out' }}</td>
+                            <td>{{ p.isBillable ? 'Yes' : 'No' }}</td>
+                            <td>{{ p.remarks || '-' }}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-
-                    <!-- No Parameters -->
-                    <div *ngIf="!isLoadingParameters() && expandedParameters.length === 0" class="text-center text-muted py-2">
-                      <i class="bi bi-info-circle me-1"></i>No parameters found for this test.
+                    <div *ngIf="!isLoadingParameters() && expandedParameters.length === 0" class="text-muted text-center py-2">
+                      No parameters found.
                     </div>
                   </div>
                 </td>
@@ -208,92 +139,103 @@
         </table>
       </div>
 
-      <!-- No Records -->
-      <div *ngIf="listData.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
-        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-          <div class="fw-semibold">No tests pending verification</div>
-        </div>
+      <!-- Empty State -->
+      <div *ngIf="listData.length === 0" class="alert alert-light border border-secondary text-center py-4">
+        <i class="bi bi-info-circle text-secondary"></i>
+        <p class="mb-0 text-secondary">No verification records found.</p>
       </div>
 
       <!-- Pagination -->
-      <div *ngIf="listData.length > 0" class="d-flex justify-content-between align-items-center mt-2">
-        <div class="d-flex align-items-center">
-          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <div>
+          <label class="me-2 fw-semibold small">Items per page:</label>
+          <select class="form-select form-select-sm d-inline-block w-auto border-secondary"
+                  [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+            <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
           </select>
         </div>
-
         <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-
-        <ul class="pagination mb-0 d-flex align-items-center">
-          <li class="page-item" [class.disabled]="pageNumber === 1">
-            <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
-          </li>
-          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-            <a class="page-link cursor" (click)="onPageChange(page)">{{ page }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="pageNumber === totalPagesCount">
-            <a class="page-link cursor" (click)="onPageChange(pageNumber + 1)">Next</a>
-          </li>
-        </ul>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
+              <a class="page-link cursor" (click)="onPageChange(1)">First</a>
+            </li>
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
+              <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
+            </li>
+            <li *ngFor="let page of [].constructor(totalPages); let i = index"
+                class="page-item" [ngClass]="{ active: pageNumber === i + 1 }">
+              <a class="page-link cursor" (click)="onPageChange(i + 1)">{{ i + 1 }}</a>
+            </li>
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
+              <a class="page-link cursor" (click)="onPageChange(pageNumber + 1)">Next</a>
+            </li>
+            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
+              <a class="page-link cursor" (click)="onPageChange(totalPages)">Last</a>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative border-0">
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+    <select class="form-select mb-2 border-secondary" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+    <input *ngIf="filterColumnTypes[filterColumn] === 'string'" type="text" class="form-control mb-2 border-secondary"
+           [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2 border-secondary"
+           [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+           class="form-control mb-2 border-secondary" [(ngModel)]="filterValue" />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue" />
+      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue2" />
+    </div>
+    <button class="btn btn-danger btn-sm mb-2 fw-semibold" (click)="applyFilter()">Apply</button>
   </div>
 </div>
 
 <!-- Approve Modal -->
 <div *ngIf="showApproveModal" class="modal-backdrop-custom" (click)="cancelApprove()"></div>
 <div *ngIf="showApproveModal" class="modal-custom">
-  <div class="card shadow p-4" style="width: 450px;">
-    <h5 class="fw-semibold mb-3">
-      <i class="bi bi-check-circle text-success me-2"></i>Verify Test Result
-    </h5>
-    <div class="mb-3">
-      <label class="form-label">Comments (optional)</label>
-      <textarea
-        class="form-control"
-        rows="3"
-        [(ngModel)]="approveComments"
-        placeholder="Enter verification comments..."
-      ></textarea>
-    </div>
-    <div class="d-flex justify-content-end gap-2">
-      <button class="btn btn-sm btn-secondary" (click)="cancelApprove()">Cancel</button>
-      <button class="btn btn-sm btn-save" (click)="confirmApprove()">
-        <i class="bi bi-check-lg me-1"></i>Verify
-      </button>
-    </div>
+  <h6 class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Approve Verification</h6>
+  <div class="mb-3">
+    <label class="form-label">Comments (Optional)</label>
+    <textarea class="form-control" rows="3" [(ngModel)]="approveComments" placeholder="Enter approval comments..."></textarea>
+  </div>
+  <div class="d-flex gap-2 justify-content-end">
+    <button class="btn btn-sm btn-secondary" (click)="cancelApprove()">Cancel</button>
+    <button class="btn btn-sm btn-save" (click)="confirmApprove()">
+      <i class="bi bi-check-circle me-1"></i>Approve
+    </button>
   </div>
 </div>
 
 <!-- Reject Modal -->
 <div *ngIf="showRejectModal" class="modal-backdrop-custom" (click)="cancelReject()"></div>
 <div *ngIf="showRejectModal" class="modal-custom">
-  <div class="card shadow p-4" style="width: 450px;">
-    <h5 class="fw-semibold mb-3">
-      <i class="bi bi-x-circle text-danger me-2"></i>Reject Verification
-    </h5>
-    <div class="mb-3">
-      <label class="form-label">Rejection Comments <span class="text-danger">*</span></label>
-      <textarea
-        class="form-control"
-        rows="3"
-        [(ngModel)]="rejectComments"
-        placeholder="Please provide reason for rejection..."
-        [ngClass]="{ 'is-invalid': rejectComments !== undefined && rejectComments.trim() === '' }"
-      ></textarea>
-      <div class="invalid-feedback">Rejection comments are required.</div>
-    </div>
-    <div class="d-flex justify-content-end gap-2">
-      <button class="btn btn-sm btn-secondary" (click)="cancelReject()">Cancel</button>
-      <button
-        class="btn btn-sm btn-danger"
-        (click)="confirmReject()"
-        [disabled]="!rejectComments.trim()"
-      >
-        <i class="bi bi-x-lg me-1"></i>Reject
-      </button>
-    </div>
+  <h6 class="mb-3"><i class="bi bi-x-circle text-danger me-2"></i>Reject Verification</h6>
+  <div class="mb-3">
+    <label class="form-label">Rejection Comments <span class="text-danger">*</span></label>
+    <textarea class="form-control" rows="3" [(ngModel)]="rejectComments" placeholder="Enter rejection reason..."
+              [class.is-invalid]="rejectComments.length === 0"></textarea>
+  </div>
+  <div class="d-flex gap-2 justify-content-end">
+    <button class="btn btn-sm btn-secondary" (click)="cancelReject()">Cancel</button>
+    <button class="btn btn-sm btn-danger" (click)="confirmReject()" [disabled]="!rejectComments.trim()">
+      <i class="bi bi-x-lg me-1"></i>Reject
+    </button>
   </div>
 </div>

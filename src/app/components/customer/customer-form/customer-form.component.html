@@ -112,6 +112,19 @@
             </div>
           </div>
 
+          <!-- PAN No -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">PAN No</label>
+            <input type="text" class="form-control text-uppercase" formControlName="panNo" placeholder="Enter PAN No."
+              maxlength="10"
+              [ngClass]="{ 'is-invalid': customerForm.get('panNo')?.touched && customerForm.get('panNo')?.invalid }" />
+            <span
+              *ngIf="customerForm.get('panNo')?.hasError('pattern') && customerForm.get('panNo')?.touched"
+              class="text-danger text-sm">
+              Invalid PAN format. Expected: ABCDE1234F
+            </span>
+          </div>
+
           <!-- Sample Return -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label d-block">Sample Return</label>
@@ -127,20 +140,8 @@
             </div>
           </div>
 
-          <!-- Is Block -->
-          <div class="col-auto col-md-4 col-lg-3" *ngIf="customerId > 0">
-            <label class="form-label d-block">Block Customer</label>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="true"
-                id="blockYes" />
-              <label class="form-check-label" for="blockYes">Yes</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="false"
-                id="blockNo" />
-              <label class="form-check-label" for="blockNo">No</label>
-            </div>
-          </div>
+          <!-- Block Customer — hidden, not implemented yet -->
+
         </div>
       </fieldset>
 
@@ -268,7 +269,7 @@
               <tr class="text-nowrap text-muted small">
                 <th class="fw-medium px-2">#</th>
                 <th class="fw-medium px-2">Contact Person</th>
-                <th class="fw-medium px-2">Department</th>
+                <th class="fw-medium px-2">Department <span class="text-danger">*</span></th>
                 <th class="fw-medium px-2">Email</th>
                 <th class="fw-medium px-2">Mobile</th>
                 <th class="fw-medium px-2">Address</th>
@@ -301,11 +302,13 @@
                       class="text-danger text-sm">Name is required.</span>
                   </td>
                   <td class="px-2">
-                    <app-searchable-dropdown class="w-100" [placeholder]="'Search department'"
+                    <app-searchable-dropdown class="w-100" size="sm" [placeholder]="'Search department'"
                       [labelName]="'Department'" [fetchDataFn]="getDepartments"
                       (itemSelected)="onDepartmentSelected($event, asFormGroup(contact))" [isDisabled]="isViewMode"
                       [hideLabel]="true" [selectedItem]="contact.get('departmentID')?.value"
                       [smallInput]="true"></app-searchable-dropdown>
+                    <span *ngIf="contact.get('departmentID')?.touched && contact.get('departmentID')?.invalid"
+                      class="text-danger text-sm">Required.</span>
                   </td>
                   <td class="px-2">
                     <input class="form-control form-control-sm" formControlName="emailId" placeholder="Enter Email"
@@ -363,11 +366,22 @@
             </select>
           </div>
           <div class="col-auto col-md-4 col-lg-3">
+            <app-searchable-dropdown
+              [smallInput]="true"
+              [placeholder]="'Search Currency'"
+              [labelName]="'Billing Currency'"
+              [fetchDataFn]="getCurrencies"
+              (itemSelected)="onCurrencySelect($event)"
+              [isDisabled]="isViewMode"
+              [selectedItem]="customerForm.get('currencyID')?.value"
+            ></app-searchable-dropdown>
+          </div>
+          <div *ngIf="!isWalkIn" class="col-auto col-md-4 col-lg-3">
             <label class="form-label">Credit Limit Amount</label>
             <input type="text" class="form-control" placeholder="Enter credit limit amount" appNumberOnly
               formControlName="creditLimitAmount" maxlength="20" />
           </div>
-          <div class="col-auto col-md-4 col-lg-3">
+          <div *ngIf="!isWalkIn" class="col-auto col-md-4 col-lg-3">
             <label class="form-label">Credit Limit Time</label>
             <select class="form-select" formControlName="creditLimitTime">
               <option value="0">Select Days</option>
@@ -388,7 +402,8 @@
           </div>
         </div>
 
-        <div class="row gy-1">
+        <!-- Billing options — hidden for Walk-in customers (they pay upfront) -->
+        <div *ngIf="!isWalkIn" class="row gy-1">
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
               <input class="form-check-input mt-1" type="checkbox" formControlName="weeklyBillingCustomer"
@@ -491,10 +506,13 @@
           </div>
 
           <div class="col-6 col-md-5">
-            <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
+            <app-searchable-dropdown size="sm" [placeholder]="'Search department'" [labelName]="'Department'"
               [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event, contactGroup)"
               [isDisabled]="isViewMode"
+              [required]="true"
               [selectedItem]="contactGroup.get('departmentID')?.value"></app-searchable-dropdown>
+            <span *ngIf="contactGroup.get('departmentID')?.touched && contactGroup.get('departmentID')?.invalid"
+              class="text-danger text-sm">Department is required.</span>
           </div>
 
           <div class="col-6 col-md-6">

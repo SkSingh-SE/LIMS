@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EnvironmentMonitoringService } from '../../services/environment-monitoring.service';
 import { QuillModule } from 'ngx-quill';
 import { NablFormsHelper } from '../../utility/nabl-helpers/nabl-forms.helper';
+import { YearHelper } from '../../utility/helper/year.helper';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../services/unsaved-changes.service';
@@ -25,6 +26,7 @@ export class EnvironmentMonitoringFormComponent implements CanComponentDeactivat
   isViewMode = false;
   formTitle = 'Create Environment Monitoring Record';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
+  yearOptions: number[] = YearHelper.planYears();
 
   openSections: { [key: string]: boolean } = {
     header: true,

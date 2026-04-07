@@ -1,0 +1,410 @@
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="fw-medium ms-3">{{ isEditMode ? 'Edit Report Format' : 'Create Report Format' }}</label>
+    </div>
+
+    <div class="card-body p-3">
+      <!-- Format Metadata -->
+      <fieldset class="border-start border-3 border-danger bg-light p-3 mb-3">
+        <legend class="fs-6 fw-semibold px-2">Format Details</legend>
+        <div class="row g-2">
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Format Code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" [formControl]="$any(formatForm.get('formatCode'))"
+              [class.is-invalid]="isFieldInvalid('formatCode')" placeholder="F-TC-MECH-01" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Format Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" [formControl]="$any(formatForm.get('formatName'))"
+              [class.is-invalid]="isFieldInvalid('formatName')" placeholder="Mechanical Test Certificate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <input type="text" class="form-control form-control-sm" [formControl]="$any(formatForm.get('description'))" placeholder="e.g. Standard format for all mechanical tests" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Page Layout</label>
+            <select class="form-select form-select-sm" [formControl]="$any(formatForm.get('pageLayout'))">
+              <option value="Portrait">Portrait</option>
+              <option value="Landscape">Landscape</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-semibold">Size</label>
+            <select class="form-select form-select-sm" [formControl]="$any(formatForm.get('pageSize'))">
+              <option value="A4">A4</option>
+              <option value="Letter">Letter</option>
+            </select>
+          </div>
+          <div class="col-md-1 d-flex align-items-end">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="isDefault" [formControl]="$any(formatForm.get('isDefault'))" />
+              <label class="form-check-label small" for="isDefault">Default</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'design'" (click)="activeTab = 'design'" style="cursor:pointer">
+            <i class="bi bi-layout-text-sidebar-reverse me-1"></i> Design
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'mappings'" (click)="activeTab = 'mappings'" style="cursor:pointer">
+            <i class="bi bi-link-45deg me-1"></i> Test Mappings
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isEditMode">
+          <a class="nav-link" [class.active]="activeTab === 'preview'" (click)="activeTab = 'preview'" style="cursor:pointer">
+            <i class="bi bi-eye me-1"></i> Preview
+          </a>
+        </li>
+      </ul>
+
+      <!-- ═══ DESIGN TAB ═══ -->
+      <div *ngIf="activeTab === 'design'" class="row g-3">
+
+        <!-- LEFT: Section Palette -->
+        <div class="col-md-2">
+          <div class="card h-100">
+            <div class="card-header py-2 small fw-semibold bg-light">Sections</div>
+            <div class="card-body p-2" style="max-height: 500px; overflow-y: auto;">
+              <div *ngFor="let item of sectionPalette"
+                class="d-flex align-items-center gap-2 p-2 mb-1 border rounded bg-white section-palette-item"
+                style="cursor: pointer; font-size: 0.78rem;"
+                (click)="addSection(item.type)">
+                <i class="bi {{ item.icon }}"></i>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: Canvas -->
+        <div class="col-md-5">
+          <div class="card h-100">
+            <div class="card-header py-2 small fw-semibold bg-light d-flex justify-content-between">
+              <span>Layout ({{ canvasSections.length }} sections)</span>
+            </div>
+            <div class="card-body p-2" style="min-height: 400px; max-height: 500px; overflow-y: auto;"
+              cdkDropList [cdkDropListData]="canvasSections" (cdkDropListDropped)="sectionDrop($event)">
+
+              <div *ngIf="canvasSections.length === 0" class="text-center py-5 text-muted">
+                <i class="bi bi-arrow-left fs-3"></i>
+                <p class="mt-2 small">Click sections from the palette to add them</p>
+              </div>
+
+              <div *ngFor="let section of canvasSections; let i = index" cdkDrag
+                class="d-flex align-items-center gap-2 p-2 mb-1 border rounded canvas-section"
+                [class.border-danger]="selectedSection === section"
+                [class.bg-light]="selectedSection === section"
+                [class.opacity-50]="!section.isVisible"
+                (click)="selectSection(section)"
+                style="cursor: pointer; font-size: 0.78rem;">
+
+                <i class="bi bi-grip-vertical text-muted" cdkDragHandle style="cursor: grab;"></i>
+                <i class="bi {{ SECTION_TYPE_ICONS[section.sectionType] }}"></i>
+                <span class="flex-grow-1">{{ SECTION_TYPE_LABELS[section.sectionType] }}</span>
+
+                <button class="btn btn-sm p-0" (click)="toggleVisibility(section); $event.stopPropagation()" title="Toggle visibility">
+                  <i class="bi" [ngClass]="section.isVisible ? 'bi-eye' : 'bi-eye-slash text-muted'"></i>
+                </button>
+                <button class="btn btn-sm p-0 text-danger" (click)="removeSection(i); $event.stopPropagation()" title="Remove">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Config Panel -->
+        <div class="col-md-5">
+          <div class="card h-100">
+            <div class="card-header py-2 small fw-semibold bg-light">
+              {{ selectedSection ? SECTION_TYPE_LABELS[selectedSection.sectionType] + ' Config' : 'Select a section' }}
+            </div>
+            <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
+
+              <div *ngIf="!selectedSection" class="text-center py-5 text-muted">
+                <i class="bi bi-gear fs-3"></i>
+                <p class="mt-2 small">Click a section on the canvas to configure it</p>
+              </div>
+
+              <ng-container *ngIf="selectedSection" [formGroup]="configForm">
+
+                <!-- Header Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 0">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Title</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="title" />
+                  </div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showCompanyLogo" id="showCompanyLogo" /><label class="form-check-label small" for="showCompanyLogo">Show Company Logo</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showNablLogo" id="showNablLogo" /><label class="form-check-label small" for="showNablLogo">Show NABL Logo + TC Number</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showUlr" id="showUlr" /><label class="form-check-label small" for="showUlr">Show ULR Number</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showCertIdentity" id="showCertIdentity" /><label class="form-check-label small" for="showCertIdentity">Show Certificate Identity (repeats every page)</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showFormatNo" id="showFormatNo" /><label class="form-check-label small" for="showFormatNo">Show Format No</label></div>
+
+                  <hr class="my-2" />
+                  <label class="form-label small fw-semibold text-danger">Footer Settings</label>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showFooterQr" id="showFooterQr" /><label class="form-check-label small" for="showFooterQr">Show QR Code in Footer</label></div>
+                  <div class="mb-2 mt-2">
+                    <label class="form-label small fw-semibold">Condition of Reporting</label>
+                    <quill-editor formControlName="footerConditionsText" [modules]="quillModules"
+                      placeholder="Enter reporting conditions... Leave empty to use default from Company Settings."
+                      style="min-height: 120px;"></quill-editor>
+                    <small class="text-muted d-block mt-1">Leave blank to use default conditions from Company Settings.</small>
+                  </div>
+                </ng-container>
+
+                <!-- CustomerInfo / SampleInfo Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 1 || selectedSection.sectionType === 2">
+                  <div class="mb-2" *ngIf="selectedSection.sectionType === 1">
+                    <label class="form-label small fw-semibold">Section Title</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="sectionTitle" />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Columns</label>
+                    <select class="form-select form-select-sm" formControlName="columns">
+                      <option [value]="1">1 Column</option>
+                      <option [value]="2">2 Columns</option>
+                      <option [value]="3">3 Columns</option>
+                    </select>
+                  </div>
+                  <label class="form-label small fw-semibold">Fields to Show</label>
+                  <div class="border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                    <div *ngFor="let field of (selectedSection.sectionType === 1 ? customerFields : sampleFields)"
+                      class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" [id]="'field_' + field.key"
+                        [checked]="isFieldSelected(field.key)" (change)="toggleField(field.key)" />
+                      <label class="form-check-label small" [for]="'field_' + field.key">{{ field.label }}</label>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- ResultTable Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 3">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Table Variant</label>
+                    <select class="form-select form-select-sm" formControlName="variant">
+                      <option value="simple">Simple Table</option>
+                      <option value="grouped">Grouped by Test</option>
+                    </select>
+                  </div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showSpecRow" id="showSpecRow" /><label class="form-check-label small" for="showSpecRow">Show Specification Row</label></div>
+                </ng-container>
+
+                <!-- ChemicalPivot Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 4">
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showSpecRow" id="chemShowSpec" /><label class="form-check-label small" for="chemShowSpec">Show Specification Row</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showUnit" id="chemShowUnit" /><label class="form-check-label small" for="chemShowUnit">Show Unit Column</label></div>
+                </ng-container>
+
+                <!-- Observation Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 5">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Default Text</label>
+                    <textarea class="form-control form-control-sm" rows="3" formControlName="defaultText"></textarea>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Font Size</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="fontSize" min="6" max="14" />
+                  </div>
+                </ng-container>
+
+                <!-- Conformity Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 6">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Pass Text</label>
+                    <textarea class="form-control form-control-sm" rows="2" formControlName="passText"></textarea>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Fail Text</label>
+                    <textarea class="form-control form-control-sm" rows="2" formControlName="failText"></textarea>
+                  </div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showDecisionRule" id="showDecRule" /><label class="form-check-label small" for="showDecRule">Show Decision Rule</label></div>
+                </ng-container>
+
+                <!-- ImageGallery Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 7">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Grid Columns</label>
+                    <select class="form-select form-select-sm" formControlName="gridColumns">
+                      <option [value]="1">1</option>
+                      <option [value]="2">2</option>
+                      <option [value]="3">3</option>
+                    </select>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Max Height (px)</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="maxHeight" />
+                  </div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showCaptions" id="showCaps" /><label class="form-check-label small" for="showCaps">Show Captions</label></div>
+                </ng-container>
+
+                <!-- CustomText Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 8">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Content</label>
+                    <textarea class="form-control form-control-sm" rows="4" formControlName="content"></textarea>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold">Font Size</label>
+                      <input type="number" class="form-control form-control-sm" formControlName="fontSize" min="6" max="14" />
+                    </div>
+                  </div>
+                  <div class="form-check mb-1 mt-2"><input type="checkbox" class="form-check-input" formControlName="bold" id="ctBold" /><label class="form-check-label small" for="ctBold">Bold</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="italic" id="ctItalic" /><label class="form-check-label small" for="ctItalic">Italic</label></div>
+                </ng-container>
+
+                <!-- SignatureBlock Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 9">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Number of Signatories</label>
+                    <select class="form-select form-select-sm" formControlName="count">
+                      <option [value]="1">1</option>
+                      <option [value]="2">2</option>
+                      <option [value]="3">3</option>
+                    </select>
+                  </div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showDesignation" id="showDesg" /><label class="form-check-label small" for="showDesg">Show Designation</label></div>
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="showStamp" id="showStamp" /><label class="form-check-label small" for="showStamp">Show Company Stamp</label></div>
+                </ng-container>
+
+                <!-- ScopeNote Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 10">
+                  <div class="form-check mb-1"><input type="checkbox" class="form-check-input" formControlName="autoGenerate" id="autoGen" /><label class="form-check-label small" for="autoGen">Auto-generate from NABL scope</label></div>
+                  <div class="mb-2 mt-2">
+                    <label class="form-label small fw-semibold">Custom Text</label>
+                    <textarea class="form-control form-control-sm" rows="2" formControlName="customText"></textarea>
+                  </div>
+                </ng-container>
+
+                <!-- QRCode Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 11">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">QR Size (px)</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="size" min="30" max="120" />
+                  </div>
+                </ng-container>
+
+                <!-- Divider Config -->
+                <ng-container *ngIf="selectedSection.sectionType === 12">
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Style</label>
+                    <select class="form-select form-select-sm" formControlName="style">
+                      <option value="line">Line</option>
+                      <option value="space">Space</option>
+                    </select>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Thickness</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="thickness" min="1" max="5" />
+                  </div>
+                </ng-container>
+
+                <!-- PageBreak - no config -->
+                <ng-container *ngIf="selectedSection.sectionType === 13">
+                  <p class="small text-muted">No configuration needed. Forces a page break at this point.</p>
+                </ng-container>
+
+                <!-- Apply Button -->
+                <button class="btn btn-sm btn-primary mt-3 w-100" (click)="applyConfig()">
+                  <i class="bi bi-check2 me-1"></i> Apply Config
+                </button>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ MAPPINGS TAB ═══ -->
+      <div *ngIf="activeTab === 'mappings'">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Add Laboratory Test</label>
+            <app-searchable-dropdown
+              [placeholder]="'Search test...'"
+              [labelName]="'Laboratory Test'"
+              [fetchDataFn]="getLabTests"
+              (itemSelected)="addMapping($event)"
+              [hideLabel]="true"
+            ></app-searchable-dropdown>
+          </div>
+        </div>
+
+        <div class="table-responsive mt-3" *ngIf="mappings.length > 0">
+          <table class="table bordered-table align-middle small">
+            <thead class="table-light">
+              <tr class="text-center">
+                <th>#</th>
+                <th>Test Name</th>
+                <th style="width: 100px">Priority</th>
+                <th style="width: 80px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of mappings; let i = index" class="text-center">
+                <td>{{ i + 1 }}</td>
+                <td class="text-start">{{ m.laboratoryTestName || m.testMethodName || '-' }}</td>
+                <td>
+                  <input type="number" class="form-control form-control-sm text-center" [(ngModel)]="m.priority" min="0" />
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" (click)="removeMapping(i)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="mappings.length === 0" class="text-center py-4 text-muted">
+          <p class="small">No tests mapped yet. Use the dropdown above to add tests.</p>
+        </div>
+      </div>
+
+      <!-- ═══ PREVIEW TAB ═══ -->
+      <div *ngIf="activeTab === 'preview'">
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <app-searchable-dropdown
+              [placeholder]="'Search verified sample...'"
+              [labelName]="'Sample (Verified)'"
+              [fetchDataFn]="getVerifiedSamples"
+              (itemSelected)="onPreviewSampleSelected($event)"
+            ></app-searchable-dropdown>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-sm btn-primary" (click)="loadPreview()" [disabled]="!previewSampleId">
+              <i class="bi bi-eye me-1"></i> Preview PDF
+            </button>
+          </div>
+          <div class="col-md-3 d-flex align-items-end" *ngIf="previewSampleId">
+            <span class="badge bg-secondary">Sample ID: {{ previewSampleId }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="previewUrl" class="border rounded">
+          <iframe [src]="previewUrl" style="width: 100%; height: 80vh; border: none;"></iframe>
+        </div>
+
+        <div *ngIf="!previewUrl" class="text-center py-5 text-muted">
+          <i class="bi bi-file-pdf fs-1"></i>
+          <p class="mt-2 small">Select a verified sample from dropdown and click Preview to see the PDF output.</p>
+        </div>
+      </div>
+
+      <!-- Sticky Action Bar -->
+      <div class="d-flex justify-content-end gap-2 mt-4" style="position: sticky; bottom: 0; background: #fff; padding: 12px 0; border-top: 2px solid var(--primary-color, #da261c); z-index: 10;">
+        <a class="btn btn-cancel" (click)="goBack()" style="cursor: pointer;">Cancel</a>
+        <button type="button" class="btn btn-save px-3" (click)="onSubmit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,7 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 export interface RegisterColumn {
     key: string;
     label: string;
-    type: 'string' | 'number' | 'date';
+    type: 'string' | 'number' | 'date' | 'bool';
     width?: string;
     filter?: boolean;
 }
@@ -109,6 +109,7 @@ export class NablRegisterTableComponent {
             case 'string': this.filterType = 'Contains'; break;
             case 'number': this.filterType = 'Equal'; break;
             case 'date': this.filterType = 'Between'; break;
+            case 'bool': this.filterType = 'Equal'; break;
             default: this.filterType = 'Contains';
         }
 
@@ -132,6 +133,17 @@ export class NablRegisterTableComponent {
                 const rect = target.getBoundingClientRect();
                 modal.style.top = `${rect.bottom + window.scrollY}px`;
                 modal.style.left = `${rect.left + window.scrollX}px`;
+
+                // Clamp to viewport so the popup doesn't overflow
+                requestAnimationFrame(() => {
+                  const modalRect = modal.getBoundingClientRect();
+                  if (modalRect.right > window.innerWidth) {
+                    modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+                  }
+                  if (modalRect.bottom > window.innerHeight) {
+                    modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+                  }
+                });
             }
         }
     }

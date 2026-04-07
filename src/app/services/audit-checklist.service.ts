@@ -12,8 +12,8 @@ export class AuditChecklistService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<AuditChecklist[]> {
-        return this.http.post<AuditChecklist[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<AuditChecklist | undefined> {

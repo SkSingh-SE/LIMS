@@ -100,6 +100,37 @@
   font-size: 0.6rem;
 }
 
+/* ─── SM Mode (when smallInput=true adds form-control-sm) ─── */
+.input-group:has(.form-control-sm) {
+  min-height: 30px;
+}
+
+.input-group:has(.form-control-sm) .form-control-sm {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+  line-height: 1.4;
+}
+
+.input-group:has(.form-control-sm) .form-control-sm::placeholder {
+  font-size: 0.76rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon {
+  padding: 0 0.35rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon i {
+  font-size: 0.55rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.clear-icon {
+  padding: 0 0.2rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.clear-icon i {
+  font-size: 0.5rem;
+}
+
 /* ─── Disabled State ─── */
 .input-group:has(.form-control:disabled) {
   background: var(--neutral-100, #f8f9fa);

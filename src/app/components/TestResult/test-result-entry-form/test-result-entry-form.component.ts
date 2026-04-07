@@ -35,6 +35,7 @@ export class TestResultEntryFormComponent implements OnInit {
 
   // Dismissed alert IDs
   dismissedAlerts: Set<string> = new Set();
+  cachedAlerts: { id: string; type: 'fail' | 'warn'; title: string; message: string }[] = [];
 
   // Plan tabs - active tab index
   activePlanIndex: number = 0;
@@ -165,19 +166,27 @@ export class TestResultEntryFormComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       this.sampleId = Number(params.get('id'));
     });
+    // View mode: check history.state first, then route path as fallback
     const state = history.state as { mode?: string };
-    if (state) {
-      if (state.mode === 'view') {
+    if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
+      this.isViewMode = true;
+    }
+    // Also check query params (for verification mode)
+    this.route.queryParams.subscribe(params => {
+      if (params['mode'] === 'view' || params['mode'] === 'verify') {
         this.isViewMode = true;
       }
-    }
-    this.loadDummyData();
+    });
     this.buildForm();
     this.buildMoveToLongTermForm();
     this.buildStandaloneParamForm();
     this.buildFromMethodForm();
-    if(this.sampleId)
-      this.loadFullResultPayload(this.sampleId); // Sample ID
+    if (this.sampleId) {
+      this.loadFullResultPayload(this.sampleId);
+    } else {
+      this.loadDummyData();
+      // loading handled by interceptor
+    }
   }
 
   private buildMoveToLongTermForm(): void {
@@ -234,6 +243,7 @@ export class TestResultEntryFormComponent implements OnInit {
     if (!sampleId) {
       console.warn('[TestResultEntry] No sample ID provided');
       this.toastService.show('Sample ID is required', 'warning');
+      // loading handled by interceptor
       return;
     }
 
@@ -292,10 +302,17 @@ export class TestResultEntryFormComponent implements OnInit {
         this.loadPreparationStatus(sampleId);
         this.loadUnifiedPriceSummary(sampleId);
         this.loadMachiningItems(sampleId);
+        this.refreshAlerts();
+
+        // Auto-set view mode if all tests are finalized (Verified/PendingVerification)
+        if (!this.canSaveAnyTest()) {
+          this.isViewMode = true;
+        }
       },
       error: (error) => {
         console.error("Error fetching full result payload:", error);
         this.toastService.show('Failed to load test result data. Please try again.', 'error');
+        // loading handled by interceptor
       }
     });
   }
@@ -319,6 +336,8 @@ export class TestResultEntryFormComponent implements OnInit {
           generalTestId: generalTest.generalTestId,
           testMethodId: generalTest.testMethodId,
           laboratoryTestId: generalTest.laboratoryTestId,
+          sequenceNo: generalTest.sequenceNo || 1,
+          totalSpecimens: generalTest.totalSpecimens || 1,
           specification1: generalTest.specification1,
           specification2: generalTest.specification2,
           parameters: generalTest.parameters || []
@@ -374,16 +393,22 @@ export class TestResultEntryFormComponent implements OnInit {
           generalTest.specfication2Name
         );
 
+        const totalSpecimens = generalTest.totalSpecimens || 1;
+        const sequenceNo = generalTest.sequenceNo || 1;
+        const baseName = generalTest.laboratoryTest || 'General Test';
+        const testName = totalSpecimens > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
+
         const genPlan: any = {
           type: 'General',
           specification: specification,
           grade: '',
           headerId: generalTest.headerId,
+          specimenLabel: totalSpecimens > 1 ? `Specimen ${sequenceNo} of ${totalSpecimens}` : null,
           tests: [
             {
               id: `gen-${generalTest.headerId}`,
               headerId: generalTest.headerId,
-              name: generalTest.laboratoryTest || 'General Test',
+              name: testName,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
               parameters: (generalTest.parameters || []).map((param: any) => ({
@@ -746,7 +771,27 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   removeParameter(planIndex: number, testIndex: number, paramIndex: number): void {
-    this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+    const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const paramId = paramGroup?.value?.id;
+    const paramName = paramGroup?.value?.parameterName || `Row ${paramIndex + 1}`;
+
+    // If parameter exists in DB (has ID), delete from backend first, then remove from UI
+    if (paramId && paramId > 0) {
+      if (!confirm(`Delete parameter "${paramName}"? This cannot be undone.`)) return;
+
+      this.testResultService.deleteParameter(paramId).subscribe({
+        next: () => {
+          this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+          this.toastService.show('Parameter removed', 'success');
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete parameter from server', 'error');
+        }
+      });
+    } else {
+      // New unsaved parameter — just remove from UI
+      this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+    }
   }
 
   loadParametersFromSpec(planIndex: number, testIndex: number): void {
@@ -792,13 +837,23 @@ export class TestResultEntryFormComponent implements OnInit {
   // 4. UI Helpers
   // ----------------------------------------------------------------
   isValueOutOfRange(param: any): boolean {
-    if (param.minValue == null || param.maxValue == null || param.value == null) return false;
-    return param.value < param.minValue || param.value > param.maxValue;
+    const min = param.specMinValue ?? param.minValue;
+    const max = param.specMaxValue ?? param.maxValue;
+    if (min == null && max == null) return false;
+    if (param.value == null) return false;
+    const val = Number(param.value) * (Number(param.conversionFactor) || 1);
+    if (min != null && val < Number(min)) return true;
+    if (max != null && val > Number(max)) return true;
+    return false;
   }
 
   isValueWithinRange(param: any): boolean {
-    if (param.minValue == null || param.maxValue == null || param.value == null) return false;
-    return param.value >= param.minValue && param.value <= param.maxValue;
+    const min = param.specMinValue ?? param.minValue;
+    const max = param.specMaxValue ?? param.maxValue;
+    if (min == null && max == null) return false;
+    if (param.value == null) return false;
+    const val = Number(param.value) * (Number(param.conversionFactor) || 1);
+    return (!min || val >= Number(min)) && (!max || val <= Number(max));
   }
 
   // ----------------------------------------------------------------
@@ -813,13 +868,13 @@ export class TestResultEntryFormComponent implements OnInit {
         plan.tests.forEach((test: any, testIdx: number) => {
           test.parameters.forEach((param: any, paramIdx: number) => {
             if (param.parameterID) {
-              if (param.minValue === 0 || param.minValue === null) {
+              if (param.minValue === null || param.minValue === undefined || param.minValue === '') {
                 invalidParams.push(`${param.parameterName} - Min Value is required`);
               }
-              if (param.maxValue === 0 || param.maxValue === null) {
+              if (param.maxValue === null || param.maxValue === undefined || param.maxValue === '') {
                 invalidParams.push(`${param.parameterName} - Max Value is required`);
               }
-              if (param.value === 0 || param.value === null) {
+              if (param.value === null || param.value === undefined || param.value === '') {
                 invalidParams.push(`${param.parameterName} - Value is required`);
               }
             }
@@ -843,7 +898,8 @@ export class TestResultEntryFormComponent implements OnInit {
   // ----------------------------------------------------------------
   saveResults(): void {
     if (!this.resultForm.valid) {
-      this.toastService.show("Please fill all required fields", 'error');
+      const issues = this.getFormValidationErrors();
+      this.toastService.show(issues || 'Please fill all required fields', 'error');
       return;
     }
 
@@ -868,31 +924,49 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
-  completeResults(): void {
-    if (!this.resultForm.valid) {
-      this.toastService.show("Please fill all required fields before completing", 'error');
-      return;
-    }
+  // completeResults() removed — use per-test completeTest(planIndex, testIndex) instead
+  // Each test is completed individually via POST /api/TestResults/complete-test/{headerId}
 
-    // Validate chemical parameters
-    const validation = this.validateChemicalParameters();
-    if (!validation.isValid) {
-      this.toastService.show(validation.message, 'error');
-      return;
-    }
+  // ----------------------------------------------------------------
+  // Get specific validation errors for user-friendly messages
+  // ----------------------------------------------------------------
+  getFormValidationErrors(): string {
+    const errors: string[] = [];
+    const plansArray = this.resultForm.get('plans') as FormArray;
+    if (!plansArray) return '';
 
-    const payload = this.buildCompletePayload();
-    console.log("COMPLETE Payload:", payload);
+    for (let p = 0; p < plansArray.length; p++) {
+      const planGroup = plansArray.at(p) as FormGroup;
+      const planName = this.plans[p]?.tests?.[0]?.name || `Test ${p + 1}`;
+      const testsArray = planGroup.get('tests') as FormArray;
+      if (!testsArray) continue;
 
-    this.testResultService.completeTestResult(payload).subscribe({
-      next: (response) => {
-        this.toastService.show(response.message, 'success');
-      },
-      error: (error) => {
-        console.error("Error completing results:", error);
-        this.toastService.show("Error completing test results", 'error');
+      for (let t = 0; t < testsArray.length; t++) {
+        const testGroup = testsArray.at(t) as FormGroup;
+        const paramsArray = testGroup.get('parameters') as FormArray;
+        if (!paramsArray) continue;
+
+        for (let r = 0; r < paramsArray.length; r++) {
+          const paramGroup = paramsArray.at(r) as FormGroup;
+          if (paramGroup.valid) continue;
+
+          const paramName = paramGroup.get('parameterName')?.value || `Row ${r + 1}`;
+          const fieldErrors: string[] = [];
+
+          if (paramGroup.get('parameterID')?.errors) fieldErrors.push('Parameter not selected');
+          if (paramGroup.get('minValue')?.errors) fieldErrors.push('Min value required');
+          if (paramGroup.get('maxValue')?.errors) fieldErrors.push('Max value required');
+
+          if (fieldErrors.length > 0) {
+            errors.push(`${planName} → ${paramName}: ${fieldErrors.join(', ')}`);
+          }
+        }
       }
-    });
+    }
+
+    if (errors.length === 0) return 'Form has validation errors. Please check all fields.';
+    if (errors.length <= 3) return errors.join('\n');
+    return `${errors.slice(0, 3).join('\n')}\n...and ${errors.length - 3} more error(s)`;
   }
 
   // ----------------------------------------------------------------
@@ -917,12 +991,17 @@ export class TestResultEntryFormComponent implements OnInit {
         const apiGeneral = this.apiMetadata.generalTests.find((gt: any) => gt.headerId === headerId);
         const apiChemical = this.apiMetadata.chemicalTests.find((ct: any) => ct.headerId === headerId);
 
+        // Get equipment for this header
+        const equipmentIds = this.selectedEquipmentMap[headerId] || [];
+        const equipmentIdsJson = equipmentIds.length > 0 ? JSON.stringify(equipmentIds.map((e: any) => e.id || e)) : null;
+
         if (apiGeneral) {
           payload.generalTests.push({
             headerId: headerId,
             generalTestId: apiGeneral.generalTestId,
             testMethodId: apiGeneral.testMethodId,
             laboratoryTestId: apiGeneral.laboratoryTestId,
+            equipmentIdsJson: equipmentIdsJson,
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -944,8 +1023,9 @@ export class TestResultEntryFormComponent implements OnInit {
         } else if (apiChemical) {
           payload.chemicalTests.push({
             headerId: headerId,
-            chemicalTestId: apiChemical.chemicalTestId,
-            labTestId: apiChemical.labTestId,
+            generalTestId: apiChemical.chemicalTestId,
+            laboratoryTestId: apiChemical.labTestId,
+            equipmentIdsJson: equipmentIdsJson,
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -1051,6 +1131,9 @@ export class TestResultEntryFormComponent implements OnInit {
 
     // Recalculate converted value for selected equivalent unit
     this.onUnitChanged(planIndex, testIndex, paramIndex);
+
+    // Refresh alert banners
+    this.refreshAlerts();
   }
 
   /**
@@ -1230,6 +1313,8 @@ export class TestResultEntryFormComponent implements OnInit {
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
 
+    if (!confirm(`Start test "${test.name}"? This will record the start time and performer.`)) return;
+
     this.testResultService.startTest(headerId).subscribe({
       next: (response) => {
         test.status = 'Started';
@@ -1313,21 +1398,8 @@ export class TestResultEntryFormComponent implements OnInit {
           nextValueInput.focus();
         }
       }, 0);
-    } else {
-      // Auto-add new parameter row if on last and it's not empty
-      const currentValue = parametersArray.at(paramIndex).get('value')?.value;
-      if (currentValue !== null && currentValue !== '') {
-        this.addParameter(planIndex, testIndex);
-        setTimeout(() => {
-          const newInput = document.querySelector(
-            `[data-param-input="${planIndex}-${testIndex}-${nextParamIndex}"]`
-          ) as HTMLInputElement;
-          if (newInput) {
-            newInput.focus();
-          }
-        }, 100);
-      }
     }
+    // Removed auto-add on Enter at last row — user should explicitly click "Add Parameter"
   }
 
   /**
@@ -1405,18 +1477,77 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   isTestFinalized(status: string): boolean {
-    return ['Completed', 'PendingVerification', 'Verified'].includes(status);
+    return ['PendingVerification', 'Verified'].includes(status);
+  }
+
+  // ================================================================
+  // Sample-Level Verification (NABL ISO 17025 Clause 7.7)
+  // ================================================================
+  isSubmittingVerification = false;
+
+  getVerificationBannerState(): { state: string; message: string } | null {
+    const allTests = this.plans.flatMap((p: any) => p.tests || []);
+    if (!allTests.length) return null;
+
+    const statuses = allTests.map((t: any) => t.status);
+    const allVerified = statuses.every((s: string) => s === 'Verified');
+    const allPending = statuses.every((s: string) => s === 'PendingVerification');
+    const allCompleted = statuses.every((s: string) => s === 'Completed');
+    const anyPending = statuses.some((s: string) => s === 'PendingVerification');
+    const anyIncomplete = statuses.some((s: string) =>
+      s !== 'Completed' && s !== 'PendingVerification' && s !== 'Verified');
+
+    if (allVerified) {
+      return { state: 'verified', message: 'All tests verified successfully.' };
+    }
+    if (allPending || (anyPending && !anyIncomplete)) {
+      return { state: 'pending', message: 'All tests submitted for verification. Awaiting reviewer approval.' };
+    }
+    if (allCompleted) {
+      return { state: 'ready', message: `All ${allTests.length} test(s) completed. Ready to submit for verification.` };
+    }
+    if (anyIncomplete) {
+      const completed = statuses.filter((s: string) => s === 'Completed' || s === 'PendingVerification' || s === 'Verified').length;
+      return { state: 'partial', message: `${completed} of ${allTests.length} test(s) completed. Complete all tests before submitting for verification.` };
+    }
+    return null;
   }
 
   submitForVerification(planIndex: number, testIndex: number): void {
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
+    if (!headerId) return;
+
     this.testResultService.submitForVerification(headerId).subscribe({
       next: () => {
         test.status = 'PendingVerification';
         this.toastService.show('Test submitted for verification', 'success');
       },
       error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
+      }
+    });
+  }
+
+  submitSampleForVerification(): void {
+    if (this.isSubmittingVerification) return;
+    this.isSubmittingVerification = true;
+
+    this.testResultService.submitSampleForVerification(this.sampleId).subscribe({
+      next: (res: any) => {
+        this.isSubmittingVerification = false;
+        // Update all completed test statuses to PendingVerification
+        this.plans.forEach((plan: any) => {
+          (plan.tests || []).forEach((test: any) => {
+            if (test.status === 'Completed') {
+              test.status = 'PendingVerification';
+            }
+          });
+        });
+        this.toastService.show(res?.message || 'All tests submitted for verification', 'success');
+      },
+      error: (err: any) => {
+        this.isSubmittingVerification = false;
         this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
       }
     });
@@ -1779,6 +1910,8 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        // Refresh the unified price summary (Preparation & Pricing tab + badge)
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         if (summary.message) {
           this.toastService.show(summary.message, 'warning');
         } else {
@@ -1801,6 +1934,7 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.toastService.show('Pricing method updated', 'success');
       },
       error: (err: any) => {
@@ -1861,6 +1995,7 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.toastService.show(`Applied: ${rec.displayName} pricing`, 'success');
       },
       error: (err: any) => {
@@ -1915,6 +2050,7 @@ export class TestResultEntryFormComponent implements OnInit {
       next: (summary) => {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.closePriceOverrideModal();
         this.toastService.show('Price overridden successfully', 'success');
       },
@@ -2048,8 +2184,7 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   openPreparationForm(): void {
-    const url = this.preparationStatus?.cuttingEditUrl || '/sample/cutting';
-    window.open(url, '_blank');
+    window.open(`/sample/preparation/create/${this.sampleId}`, '_blank');
   }
 
   refreshPreparationData(): void {
@@ -2132,12 +2267,15 @@ export class TestResultEntryFormComponent implements OnInit {
   // Alert Banners — Failed / Marginal Parameters
   // ================================================================
   get parameterAlerts(): { id: string; type: 'fail' | 'warn'; title: string; message: string }[] {
+    return this.cachedAlerts.filter(a => !this.dismissedAlerts.has(a.id));
+  }
+
+  refreshAlerts(): void {
     const alerts: { id: string; type: 'fail' | 'warn'; title: string; message: string }[] = [];
     this.plans.forEach((plan, pIdx) => {
       (plan.tests || []).forEach((test: any, tIdx: number) => {
         (test.parameters || []).forEach((param: any) => {
           const alertId = `${pIdx}-${tIdx}-${param.parameterID || param.id}`;
-          if (this.dismissedAlerts.has(alertId)) return;
           if (param.resultStatus === 'Fail' || (param.isWithinLimit === false && param.value != null)) {
             alerts.push({
               id: alertId,
@@ -2156,7 +2294,7 @@ export class TestResultEntryFormComponent implements OnInit {
         });
       });
     });
-    return alerts;
+    this.cachedAlerts = alerts;
   }
 
   dismissAlert(alertId: string): void {
@@ -2168,6 +2306,13 @@ export class TestResultEntryFormComponent implements OnInit {
     if (allTests.every((t: any) => t.status === 'Completed')) return 'Completed';
     if (allTests.some((t: any) => t.status === 'Started' || t.status === 'In Progress')) return 'In Progress';
     return 'Pending';
+  }
+
+  /** Returns true if at least one test can accept saves (not verified/pending verification) */
+  canSaveAnyTest(): boolean {
+    const blockedStatuses = ['Verified', 'PendingVerification'];
+    const allTests = this.plans.flatMap((p: any) => p.tests || []);
+    return allTests.some((t: any) => !blockedStatuses.includes(t.status));
   }
 
   // ================================================================

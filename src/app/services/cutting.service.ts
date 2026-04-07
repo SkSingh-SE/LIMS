@@ -20,6 +20,10 @@ export class CuttingService {
       return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
 
+    getCuttingByInward(inwardId: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/by-inward/${inwardId}`);
+    }
+
     createCutting(payload: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/create`, payload);
     }

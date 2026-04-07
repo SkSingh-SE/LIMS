@@ -65,7 +65,10 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label">Year <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" formControlName="checkYear" (change)="generateDailyRows()">
+                <select class="form-control" formControlName="checkYear" (change)="generateDailyRows()">
+                  <option [ngValue]="null">Select Year</option>
+                  <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                </select>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Location <span class="text-danger">*</span></label>

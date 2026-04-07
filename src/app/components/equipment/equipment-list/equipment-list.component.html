@@ -77,7 +77,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ data.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/equipment/details', data.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + data.name">
+                                    {{ data.name }}
+                                </a>
+                            </td>
                             <td>{{ data.equipmentNo }}</td>
                             <td>{{ data.departmentName }}</td>
                             <td>{{data.equipmentType}}</td>

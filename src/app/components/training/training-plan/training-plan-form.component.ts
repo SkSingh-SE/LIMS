@@ -10,6 +10,7 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
@@ -29,6 +30,7 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
   isViewMode = false;
   formTitle = 'Create Training Plan';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
+  yearOptions: number[] = YearHelper.planYears();
 
   openSections: { [key: string]: boolean } = {
     header: true,

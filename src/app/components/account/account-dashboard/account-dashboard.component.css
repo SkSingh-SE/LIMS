@@ -1,40 +1,3 @@
-/* Account Dashboard Container */
-.account-dashboard-container {
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: calc(100vh - 80px);
-}
-
-/* Dashboard Header */
-.dashboard-header {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-title {
-  color: #2c3e50;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.dashboard-subtitle {
-  color: #6c757d;
-  margin-bottom: 0;
-}
-
-/* Loading Animation */
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* Refresh Status */
 .refresh-status {
   text-align: right;
@@ -293,19 +256,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .account-dashboard-container {
-    padding: 15px;
-  }
-  
-  .dashboard-header {
-    padding: 15px;
-    margin-bottom: 20px;
-  }
-  
-  .dashboard-title {
-    font-size: 1.5rem;
-  }
-  
   .card-count {
     font-size: 2rem;
   }
@@ -330,18 +280,6 @@
 }
 
 @media (max-width: 576px) {
-  .account-dashboard-container {
-    padding: 10px;
-  }
-  
-  .dashboard-header .row {
-    text-align: center;
-  }
-  
-  .dashboard-header .col-md-4 {
-    margin-top: 15px;
-  }
-  
   .card-count {
     font-size: 1.8rem;
   }

@@ -15,7 +15,7 @@ export class TpiInspectionListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'sampleNumber', type: 'string', label: 'Sample #', filter: true },
     { key: 'tpiStage', type: 'number', label: 'Stage', filter: false },
     { key: 'tpiAgencyName', type: 'string', label: 'TPI Agency', filter: true },
@@ -23,8 +23,7 @@ export class TpiInspectionListComponent implements OnInit {
     { key: 'scheduledDate', type: 'date', label: 'Scheduled Date', filter: true },
     { key: 'inspectorName', type: 'string', label: 'Inspector', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     sampleNumber: 'string',
     tpiAgencyName: 'string',
     scheduledDate: 'date',
@@ -176,6 +175,17 @@ export class TpiInspectionListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -223,6 +233,8 @@ export class TpiInspectionListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

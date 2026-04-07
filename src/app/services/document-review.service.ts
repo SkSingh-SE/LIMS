@@ -12,8 +12,8 @@ export class DocumentReviewService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<DocumentReview[]> {
-        return this.http.post<DocumentReview[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<DocumentReview | undefined> {

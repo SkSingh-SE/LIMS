@@ -116,6 +116,12 @@ export class ReportingPreviewComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading report preview:', error);
+        const status = error?.status;
+        if (status === 404) {
+          this.toast.show('Report not yet generated for this sample. Please complete testing and verification first.', 'warning');
+        } else {
+          this.toast.show(error?.error?.message || 'Error loading report preview.', 'error');
+        }
       }
     });
   }

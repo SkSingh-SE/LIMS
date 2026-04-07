@@ -1,21 +1,19 @@
 <div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
+  <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-receipt"></i>
-        Invoice Preview
-      </label>
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-light me-2" (click)="printInvoice()">
-          <i class="bi bi-printer"></i> Print
+      <label class="text-md fw-medium ms-3">Invoice Preview</label>
+      <div class="d-flex gap-2 me-3">
+        <button class="btn btn-outline-light btn-sm" (click)="printInvoice()">
+          <i class="bi bi-printer me-1"></i> Print
         </button>
-        <button class="btn btn-outline-light" (click)="goBack()">
-          <i class="bi bi-arrow-left"></i> Back
+        <button class="btn btn-outline-light btn-sm" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> Back
         </button>
       </div>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <!-- Content -->
+    <div class="card-body" *ngIf="!isLoading()">
       <div class="alert alert-info">
         <i class="bi bi-info-circle me-2"></i>
         Invoice preview functionality. In a production system, this would display the actual invoice PDF or formatted invoice.
@@ -23,7 +21,7 @@
 
       <div class="d-flex justify-content-center gap-3 mt-4">
         <button
-          class="btn btn-save btn-lg"
+          class="btn btn-primary btn-lg"
           (click)="sendInvoice('email')"
           [disabled]="isSendingInvoice()"
         >
@@ -32,7 +30,7 @@
           {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
         </button>
         <button
-          class="btn btn-save btn-lg"
+          class="btn btn-primary btn-lg"
           (click)="sendInvoice('whatsapp')"
           [disabled]="isSendingInvoice()"
         >
@@ -51,4 +49,3 @@
     </div>
   </div>
 </div>
-

@@ -6,6 +6,7 @@ import { IntermediateCheckService } from '../../../services/intermediate-check.s
 import { EquipmentService } from '../../../services/equipment.service';
 import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { YearHelper } from '../../../utility/helper/year.helper';
 
 import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
@@ -28,6 +29,7 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
     isViewMode = false;
     formTitle = 'Create Intermediate Check Record';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
+    yearOptions: number[] = YearHelper.planYears();
     equipments: any[] = [];
 
     months = [

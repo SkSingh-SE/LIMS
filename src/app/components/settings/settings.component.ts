@@ -73,6 +73,11 @@ export class SettingsComponent implements OnInit {
   signatories: any[] = [];
   editingSignatoryIndex: number = -1;
 
+  // Financial Year management
+  financialYearsList: any[] = [];
+  showFYForm = false;
+  editingFYId: number | null = null;
+
   // GST Rate options
   gstRateOptions = [0, 5, 12, 18, 28];
 
@@ -84,6 +89,7 @@ export class SettingsComponent implements OnInit {
     this.initializeForm();
     this.setupConditionalValidation();
     this.loadSettingsFromApi();
+    this.loadFinancialYears();
     this.initTabDirtyTracking();
   }
 
@@ -504,6 +510,80 @@ export class SettingsComponent implements OnInit {
     return this.settingsForm.get('authorizedSignatory') as FormGroup;
   }
 
+  // =====================
+  // Financial Year Management
+  // =====================
+
+  loadFinancialYears(): void {
+    this.settingsService.getFinancialYears().subscribe({
+      next: (list) => this.financialYearsList = list,
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load financial years', 'error')
+    });
+  }
+
+  openAddFY(): void {
+    this.editingFYId = null;
+    this.financialYear.reset();
+    this.showFYForm = true;
+  }
+
+  editFY(fy: any): void {
+    this.editingFYId = fy.id;
+    this.financialYear.patchValue({
+      startDate: fy.startDate?.split('T')[0],
+      endDate: fy.endDate?.split('T')[0]
+    });
+    this.showFYForm = true;
+  }
+
+  cancelFYForm(): void {
+    this.showFYForm = false;
+    this.editingFYId = null;
+    this.financialYear.reset();
+  }
+
+  saveFY(): void {
+    if (this.financialYear.invalid) {
+      this.markFormGroupTouched(this.financialYear);
+      return;
+    }
+    const payload = {
+      id: this.editingFYId,
+      startDate: this.financialYear.value.startDate,
+      endDate: this.financialYear.value.endDate,
+      isCurrent: false
+    };
+    this.settingsService.saveFinancialYear(payload).subscribe({
+      next: () => {
+        this.toastService.show(this.editingFYId ? 'Financial Year updated' : 'Financial Year added', 'success');
+        this.cancelFYForm();
+        this.loadFinancialYears();
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to save financial year', 'error')
+    });
+  }
+
+  setDefaultFY(fy: any): void {
+    this.settingsService.setDefaultFinancialYear(fy.id).subscribe({
+      next: () => {
+        this.toastService.show(`${fy.year} set as default`, 'success');
+        this.loadFinancialYears();
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to set default', 'error')
+    });
+  }
+
+  deleteFY(fy: any): void {
+    if (!confirm(`Delete Financial Year ${fy.year}?`)) return;
+    this.settingsService.deleteFinancialYear(fy.id).subscribe({
+      next: () => {
+        this.toastService.show('Financial Year deleted', 'success');
+        this.loadFinancialYears();
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to delete', 'error')
+    });
+  }
+
   // Computed properties
   get isNablEnabled(): boolean {
     return this.nablAccreditation.get('nablEnabled')?.value === true;
@@ -719,10 +799,12 @@ export class SettingsComponent implements OnInit {
     }
 
     if (tabKey === 4) {
-      if (this.gstConfig.invalid || this.financialYear.invalid) {
+      if (this.gstConfig.invalid) {
         this.markFormGroupTouched(this.gstConfig);
-        this.markFormGroupTouched(this.financialYear);
-        this.toastService.show('Please fix GST/financial details.', 'warning');
+        const fields = Object.keys(this.gstConfig.controls)
+          .filter(k => this.gstConfig.get(k)?.invalid)
+          .map(k => k.replace(/([A-Z])/g, ' $1').trim());
+        this.toastService.show(`GST: Please fill ${fields.join(', ')}`, 'warning');
         return;
       }
       const gst = { ...this.gstConfig.value, organizationId: this.organizationId };
@@ -808,29 +890,39 @@ export class SettingsComponent implements OnInit {
       { key: 3, group: this.numbering },
       { key: 4, group: this.gstConfig }
     ];
-    const hasCoreErrors = coreGroups.some(g => g.group.invalid) || this.financialYear.invalid;
+    const hasCoreErrors = coreGroups.some(g => g.group.invalid);
     const noSignatories = !this.signatories || this.signatories.length === 0;
 
     if (hasCoreErrors || noSignatories) {
       if (hasCoreErrors) {
         coreGroups.forEach(g => this.markFormGroupTouched(g.group));
-        this.markFormGroupTouched(this.financialYear);
         for (const tg of coreGroups) {
           if (tg.group.invalid) {
             this.activeTab = tg.key;
             break;
           }
         }
-        if (this.financialYear.invalid && this.activeTab !== 4) {
-          this.activeTab = 4;
-        }
       }
       if (noSignatories && !hasCoreErrors) {
         this.activeTab = 5;
       }
+
+      // Build specific error message
+      const errorSections: string[] = [];
+      const tabNames: Record<number, string> = { 1: 'Organization', 2: 'Accreditation', 3: 'Numbering', 4: 'GST' };
+      for (const tg of coreGroups) {
+        if (tg.group.invalid) {
+          const invalidFields = Object.keys(tg.group.controls)
+            .filter(k => tg.group.get(k)?.invalid)
+            .map(k => k.replace(/([A-Z])/g, ' $1').trim());
+          errorSections.push(`${tabNames[tg.key]}: ${invalidFields.join(', ')}`);
+        }
+      }
+      if (noSignatories) errorSections.push('At least one Authorized Signatory required');
+
       this.toastService.show(
-        noSignatories && !hasCoreErrors
-          ? 'Please add at least one signatory before saving.'
+        errorSections.length > 0
+          ? `Please fix: ${errorSections.join(' | ')}`
           : 'Please fix all validation errors before saving.',
         'warning'
       );
@@ -1022,7 +1114,7 @@ export class SettingsComponent implements OnInit {
       case 3:
         return this.numbering.invalid;
       case 4:
-        return this.gstConfig.invalid || this.financialYear.invalid;
+        return this.gstConfig.invalid;
       case 5:
         return this.signatories.length === 0; // error only when no signatories added
       default:

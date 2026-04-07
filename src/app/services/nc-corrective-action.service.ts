@@ -12,8 +12,8 @@ export class NcCorrectiveActionService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<NcCorrectiveAction[]> {
-        return this.http.post<NcCorrectiveAction[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<NcCorrectiveAction | undefined> {

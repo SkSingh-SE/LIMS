@@ -12,8 +12,8 @@ export class ComplaintService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<Complaint[]> {
-        return this.http.post<Complaint[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<Complaint | undefined> {

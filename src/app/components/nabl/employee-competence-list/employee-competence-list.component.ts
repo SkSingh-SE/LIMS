@@ -33,7 +33,7 @@ export class EmployeeCompetenceListComponent implements OnInit {
     filterValue: string = '';
     filterValue2: string = '';
     filterColumnTypes: { [key: string]: string } = {
-        'id': 'number',
+        'documentNo': 'string',
         'employeeName': 'string',
         'designationName': 'string',
         'evaluationDate': 'date',
@@ -43,7 +43,7 @@ export class EmployeeCompetenceListComponent implements OnInit {
 
     columns = [
         { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-        { key: 'id', label: 'ID', type: 'number', width: '60px' },
+        { key: 'id', label: 'ID', type: 'number', width: '60px', filter: false },
         { key: 'employeeName', label: 'Employee Name', type: 'string', filter: true },
         { key: 'designationName', label: 'Designation', type: 'string' },
         { key: 'evaluationDate', label: 'Evaluation Date', type: 'date', filter: true },

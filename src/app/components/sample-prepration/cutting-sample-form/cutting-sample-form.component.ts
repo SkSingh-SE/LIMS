@@ -152,14 +152,26 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
       id = Number(params.get('id'));
     });
 
-    const state = history.state as { mode?: string };
-    if (state?.mode === 'view') {
+    // Detect mode from URL path first (for direct URL navigation / new tab)
+    const urlPath = this.router.url;
+    let mode: string | undefined;
+    if (urlPath.includes('/cutting/edit/')) mode = 'edit';
+    else if (urlPath.includes('/cutting/details/')) mode = 'view';
+    else if (urlPath.includes('/cutting/create/')) mode = 'create';
+
+    // Fallback to history state
+    if (!mode) {
+      const state = history.state as { mode?: string };
+      mode = state?.mode;
+    }
+
+    if (mode === 'view') {
       this.isViewMode = true;
       this.cuttingChargeId = id;
-    } else if (state?.mode === 'edit') {
+    } else if (mode === 'edit') {
       this.isEditMode = true;
       this.cuttingChargeId = id;
-    } else if (state?.mode === 'create') {
+    } else if (mode === 'create') {
       this.selectedInwardId = id;
     }
 
@@ -369,7 +381,12 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
             sampleNo: s.sampleNo,
             details: s.details,
             quantity: s.quantity,
-            metalClassificationID: s.metalClassificationID
+            metalClassificationID: s.metalClassificationID,
+            length: s.length,
+            width: s.width,
+            thickness: s.thickness,
+            diameter: s.diameter,
+            specimenOrientationID: s.specimenOrientationID
           }));
 
         this.samplesFA.clear();
@@ -432,12 +449,12 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
       details: [sample.details],
       quantity: [sample.quantity],
       metalClassificationID: [sample.metalClassificationID, Validators.required],
-      specimenTypeId: [null],
-      length: [null],
-      width: [null],
-      thickness: [null],
-      diameter: [null],
-      orientation: [null],
+      specimenTypeId: [(sample as any).specimenTypeId ?? null],
+      length: [(sample as any).length ?? null],
+      width: [(sample as any).width ?? null],
+      thickness: [(sample as any).thickness ?? null],
+      diameter: [(sample as any).diameter ?? null],
+      orientation: [(sample as any).orientation ?? null],
       preparationInstructions: [''],
       preparationStatus: ['Pending'],
       photoUrl: [''],
@@ -510,7 +527,7 @@ export class CuttingSampleFormComponent implements CanComponentDeactivate, OnIni
 
     const samplesData = this.samplesFA.getRawValue();
     const payload: CuttingChargePayload = {
-      id: 0,
+      id: this.isEditMode && this.cuttingChargeId ? this.cuttingChargeId : 0,
       inwardId: this.selectedInwardId,
       samples: samplesData,
       grandTotal: this.grandTotal()

@@ -19,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
@@ -64,6 +65,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   isEditMode: boolean = false;
   sampleId: number = 0;
   currentInwardStatus: InwardStatus | string = '';
+  planTabLoaded: boolean = false;
 
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
@@ -84,6 +86,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private router: Router,
     private prodCondService: ProductConditionService,
     private specimenOrientationService: SpecimenOrientationService,
+    private productFormService: ProductFormService,
     private unsavedChangesService: UnsavedChangesService,
     private customerPOService: CustomerPOService,
     private accountService: AccountService) { }
@@ -122,7 +125,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       city: [''],
       pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
       country: ['India'],
-      gstNo: ['', Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/)],
+      gstNo: [''],
       dispatchModes: this.fb.array([], Validators.required),
       purchaseOrderId: [null],
       advancePayment: [''],
@@ -283,10 +286,13 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
         this.customerData = data;
         this.selectedCustomerType = (data.customerType || '').toLowerCase();
-        // PO is available for any customer type — check if customer has active POs
-        this.selectedPODetails = null;
-        this.sampleInwardForm.patchValue({ purchaseOrderId: null });
-        this.checkCustomerHasPOs(data.id);
+
+        // Only reset PO if user is actively changing customer (not during edit mode auto-resolve)
+        const currentPO = this.sampleInwardForm.get('purchaseOrderId')?.value;
+        if (!currentPO) {
+          this.selectedPODetails = null;
+          this.checkCustomerHasPOs(data.id);
+        }
 
         // Credit limit advisory check for credit-type customers
         if (this.selectedCustomerType.includes('credit') || this.selectedCustomerType.includes('relationship')) {
@@ -379,7 +385,13 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
             if (customer) {
               this.customerData = customer;
               this.selectedCustomerType = (customer.customerType || '').toLowerCase();
-              this.checkCustomerHasPOs(customer.id);
+
+              // In edit mode: if PO was saved, show dropdown directly; otherwise check if customer has POs
+              if (data.purchaseOrderId) {
+                this.showPODropdown = true;
+              } else {
+                this.checkCustomerHasPOs(customer.id);
+              }
 
               this.sampleInwardForm.patchValue({
                 caseNo: data.caseNumber,
@@ -430,6 +442,28 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               status: data.status,
               collectionTime: data.collectionTime || this.getCurrentTime()
             });
+
+            // Restore PO in edit mode
+            if (data.purchaseOrderId) {
+              this.showPODropdown = true;
+              // Load PO details for badge display
+              this.customerPOService.getById(data.purchaseOrderId).subscribe({
+                next: (po: any) => {
+                  if (po) {
+                    this.selectedPODetails = {
+                      id: po.id,
+                      name: po.poNumber || po.PONumber,
+                      additionalValues: {
+                        POAmount: po.poAmount || po.POAmount,
+                        RemainingAmount: po.remainingAmount || po.RemainingAmount,
+                        ValidUntil: po.validUntil || po.ValidUntil
+                      }
+                    };
+                  }
+                },
+                error: () => { }
+              });
+            }
 
             // Override Dispatch Modes
             if (Array.isArray(data.dispatchModes)) {
@@ -635,7 +669,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
   onCustomerSelect(item: any): void {
     if (!item) {
-      this.sampleInwardForm.patchValue({ customerID: null });
+      this.sampleInwardForm.patchValue({ customerID: null, purchaseOrderId: null });
+      this.showPODropdown = false;
+      this.selectedPODetails = null;
+      this.selectedCustomerType = '';
       return;
     }
     this.sampleInwardForm.patchValue({
@@ -723,6 +760,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
       file: [null],
+      productFormID: [existingSample?.productFormID || null],
       thickness: [existingSample?.thickness || null],
       diameter: [existingSample?.diameter || null],
       width: [existingSample?.width || null],
@@ -886,6 +924,15 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     });
   }
 
+  getProductFormDrop = (term: string, page: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  };
+
+  onProductFormSelected(item: any, sampleIndex: number): void {
+    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({ productFormID: item?.id || null });
+  }
+
   // File Handling
   private validateFile(file: File, allowedTypes: string[], maxSizeMB = 5): boolean {
     const maxSize = maxSizeMB * 1024 * 1024;
@@ -983,7 +1030,6 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       city: value.city,
       pinCode: value.pinCode,
       country: value.country,
-      gstNo: value.gstNo,
       purchaseOrderId: value.purchaseOrderId || '',
       advancePayment: value.advancePayment || '0',
       billRequired: value.billRequired || 'false',
@@ -1057,8 +1103,13 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
       formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
+      formData.append(`sampleDetails[${i}].productFormID`, s.productFormID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
       formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
+      formData.append(`sampleDetails[${i}].thickness`, s.thickness != null ? String(s.thickness) : '');
+      formData.append(`sampleDetails[${i}].diameter`, s.diameter != null ? String(s.diameter) : '');
+      formData.append(`sampleDetails[${i}].width`, s.width != null ? String(s.width) : '');
+      formData.append(`sampleDetails[${i}].length`, s.length != null ? String(s.length) : '');
       formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
       formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
       if (s.file instanceof File) {

@@ -54,10 +54,22 @@
                                 <span *ngIf="item.similarUnit2" class="badge bg-light text-dark border me-1">
                                     {{ item.similarUnit2 }} <small class="text-muted">(×{{ item.conversionFactor2 }})</small>
                                 </span>
-                                <span *ngIf="item.similarUnit3" class="badge bg-light text-dark border">
+                                <span *ngIf="item.similarUnit3" class="badge bg-light text-dark border me-1">
                                     {{ item.similarUnit3 }} <small class="text-muted">(×{{ item.conversionFactor3 }})</small>
                                 </span>
-                                <span *ngIf="!item.similarUnit1 && !item.similarUnit2 && !item.similarUnit3" class="text-muted">—</span>
+                                <span *ngIf="item.similarUnit4" class="badge bg-light text-dark border me-1">
+                                    {{ item.similarUnit4 }} <small class="text-muted">(×{{ item.conversionFactor4 }})</small>
+                                </span>
+                                <span *ngIf="item.similarUnit5" class="badge bg-light text-dark border me-1">
+                                    {{ item.similarUnit5 }} <small class="text-muted">(×{{ item.conversionFactor5 }})</small>
+                                </span>
+                                <span *ngIf="item.similarUnit6" class="badge bg-light text-dark border me-1">
+                                    {{ item.similarUnit6 }} <small class="text-muted">(×{{ item.conversionFactor6 }})</small>
+                                </span>
+                                <span *ngIf="item.similarUnit7" class="badge bg-light text-dark border">
+                                    {{ item.similarUnit7 }} <small class="text-muted">(×{{ item.conversionFactor7 }})</small>
+                                </span>
+                                <span *ngIf="!item.similarUnit1 && !item.similarUnit2 && !item.similarUnit3 && !item.similarUnit4 && !item.similarUnit5 && !item.similarUnit6 && !item.similarUnit7" class="text-muted">—</span>
                             </td>                        </tr>
                     </tbody>
                 </table>
@@ -155,7 +167,7 @@
                                 <span class="fw-semibold text-dark">Equivalent Units</span>
                             </div>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-outline-success btn-sm"
-                                (click)="addSimilarUnit()" [disabled]="similarUnitCount >= 3">
+                                (click)="addSimilarUnit()" [disabled]="similarUnitCount >= 7">
                                 <i class="bi bi-plus-lg me-1"></i> Add Unit
                             </button>
                         </div>
@@ -212,6 +224,25 @@
                                 </div>
                                 <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(3)" title="Remove"><i class="bi bi-trash"></i></button>
                             </div>
+                        </div>
+
+                        <div *ngFor="let idx of [4,5,6,7]">
+                          <div *ngIf="similarUnitCount >= idx" class="row align-items-end mb-2">
+                            <div class="col-md-5">
+                                <label class="form-label">Equivalent Unit {{ idx }}</label>
+                                <input type="text" class="form-control" [formControlName]="'similarUnit' + idx" [placeholder]="'e.g. Unit ' + idx" [attr.disabled]="isViewMode ? true : null" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Conversion Factor</label>
+                                <input type="number" class="form-control" [formControlName]="'conversionFactor' + idx" placeholder="e.g. 1.0" step="any" [attr.disabled]="isViewMode ? true : null" />
+                            </div>
+                            <div class="col-md-3 d-flex align-items-center gap-2">
+                                <div *ngIf="parameterUnitForm.get('similarUnit' + idx)?.value && parameterUnitForm.get('conversionFactor' + idx)?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
+                                    <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ parameterUnitForm.get('conversionFactor' + idx)?.value }} {{ parameterUnitForm.get('similarUnit' + idx)?.value }}</small>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(idx)" title="Remove"><i class="bi bi-trash"></i></button>
+                            </div>
+                          </div>
                         </div>
 
                         <div *ngIf="similarUnitCount === 0" class="text-center text-muted py-2">

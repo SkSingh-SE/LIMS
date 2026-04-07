@@ -66,8 +66,8 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a  class="icon-link"
-                                        title="Delete">
+                                    <a class="icon-link cursor-pointer"
+                                        title="Delete" (click)="deleteCustomer(employee.id, employee.name)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -75,7 +75,14 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ employee.name }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/customer/details', employee.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + employee.name">
+                                    {{ employee.name }}
+                                </a>
+                            </td>
                             <td>{{ employee.customerType }}</td>
                             <td>{{ employee.pinCode }}</td>
                             <td>{{ employee.gstNo }}</td>
@@ -138,7 +145,12 @@
             <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
         </select>
 
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+        <select *ngIf="filterColumn === 'SampleReturn'" class="form-select mb-2" [(ngModel)]="filterValue">
+            <option value="">Select...</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+        <input *ngIf="filterColumnTypes[filterColumn!] === 'string' && filterColumn !== 'SampleReturn'" type="text" class="form-control mb-2"
             [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
         <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
             [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />

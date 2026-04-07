@@ -35,8 +35,8 @@ export class MeetingMinutesListComponent implements OnInit {
     fetchData(params: any = {}) {
         this.service.getAll().subscribe({
             next: (resp) => {
-                this.data.set(resp);
-                this.totalItems.set(resp.length);
+                this.data.set(resp.items || []);
+                this.totalItems.set(resp.totalRecords || 0);
             },
             error: (err) => {
                 console.error('Error fetching meeting minutes:', err);

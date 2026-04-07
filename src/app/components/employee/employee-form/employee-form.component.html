@@ -352,7 +352,7 @@
                   </div>
                   <div *ngIf="personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid">
                     <span *ngIf="personalInfoForm.get('password')?.hasError('required')" class="text-danger text-sm">Password is required.</span>
-                    <span *ngIf="personalInfoForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 6 characters.</span>
+                    <span *ngIf="personalInfoForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 8 characters.</span>
                   </div>
                 </div>
               </div>
@@ -480,9 +480,11 @@
                         class="text-danger text-sm">Required.</span>
                     </td>
                     <td class="px-2">
-                      <input type="text" class="form-control" formControlName="passingYear" placeholder="Year"
-                        maxlength="4" appNumberOnly minlength="4"
-                        [ngClass]="{ 'is-invalid': group.get('passingYear')?.touched && group.get('passingYear')?.invalid }" />
+                      <select class="form-control" formControlName="passingYear"
+                        [ngClass]="{ 'is-invalid': group.get('passingYear')?.touched && group.get('passingYear')?.invalid }">
+                        <option [ngValue]="null">Select Year</option>
+                        <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                      </select>
                       <span *ngIf="group.get('passingYear')?.touched && group.get('passingYear')?.invalid"
                         class="text-danger text-sm">Valid year required.</span>
                     </td>

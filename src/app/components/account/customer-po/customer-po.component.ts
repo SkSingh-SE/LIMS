@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CustomerPOService } from '../../../services/customer-po.service';
 import { CustomerService } from '../../../services/customer.service';
@@ -13,20 +13,50 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
   styleUrl: './customer-po.component.css',
 })
 export class CustomerPOComponent implements OnInit {
+  @ViewChild('filterModal') filterModal!: ElementRef;
+
+  columns = [
+    { key: 'PONumber', type: 'string', label: 'PO No', filter: true },
+    { key: 'CustomerName', type: 'string', label: 'Customer', filter: true },
+    { key: 'PODate', type: 'date', label: 'Date', filter: true },
+    { key: 'POAmount', type: 'number', label: 'Amount (₹)', filter: true },
+    { key: 'UtilizedAmount', type: 'number', label: 'Utilized (₹)', filter: false },
+    { key: 'RemainingAmount', type: 'number', label: 'Remaining (₹)', filter: false },
+    { key: 'Status', type: 'string', label: 'Status', filter: true },
+  ];
+
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    PONumber: 'string',
+    CustomerName: 'string',
+    PODate: 'date',
+    POAmount: 'number',
+    UtilizedAmount: 'number',
+    RemainingAmount: 'number',
+    Status: 'string',
+  };
+
+  filters: { column: string; type: string; value: any; value2?: any }[] = [];
+  filterColumn = '';
+  filterColumnTitle = '';
+  filterType = 'Contains';
+  filterValue = '';
+  filterValue2 = '';
+
   poList: any[] = [];
-  isLoading = false;
   isSubmitting = false;
   showForm = false;
   editingId: number | null = null;
   poForm!: FormGroup;
 
   // Pagination
-  currentPage = 1;
+  pageNumber = 1;
   pageSize = 10;
-  totalRecords = 0;
-  totalPages = 0;
+  totalItems = 0;
+  pageSizes = [5, 10, 20, 50];
 
-  // Search
+  // Sort
+  sortByColumn = 'ID';
+  sortOrder = 'desc';
   searchTerm = '';
 
   // PO Items Detail
@@ -47,7 +77,7 @@ export class CustomerPOComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.loadPOList();
+    this.fetchData();
   }
 
   initForm(): void {
@@ -55,56 +85,149 @@ export class CustomerPOComponent implements OnInit {
       poNumber: ['', Validators.required],
       poDate: ['', Validators.required],
       validUntil: [''],
-      amount: [null, [Validators.required, Validators.min(0.01)]],
+      poAmount: [null, [Validators.required, Validators.min(0.01)]],
       terms: [''],
       customerId: [null, Validators.required],
     });
   }
 
-  loadPOList(): void {
-    this.isLoading = true;
-    const filter = {
+  fetchData(): void {
+    const payload = {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
       searchTerm: this.searchTerm,
-      pageNo: this.currentPage - 1,
-      pageSize: this.pageSize,
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: this.filters ?? null
     };
 
-    this.customerPOService.getAll(filter).subscribe({
+    this.customerPOService.getAll(payload).subscribe({
       next: (res) => {
         this.poList = res?.items || res?.data || res || [];
-        this.totalRecords = res?.totalCount || res?.total || this.poList.length;
-        this.totalPages = Math.ceil(this.totalRecords / this.pageSize);
-        this.isLoading = false;
+        this.totalItems = res?.totalRecords || res?.totalCount || res?.total || this.poList.length;
+        this.pageSize = res?.pageSize || this.pageSize;
+        this.pageNumber = res?.pageNumber || this.pageNumber;
       },
       error: (err) => {
         console.error('Error loading PO list:', err);
         this.toastService.show('Failed to load purchase orders', 'error');
-        this.isLoading = false;
+        this.poList = [];
       },
     });
   }
 
   onSearch(): void {
-    this.currentPage = 1;
-    this.loadPOList();
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  applySorting(column: string): void {
+    if (this.sortByColumn === column) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortByColumn = column;
+      this.sortOrder = 'asc';
+    }
+    this.fetchData();
   }
 
   onPageChange(page: number): void {
-    if (page < 1 || page > this.totalPages) return;
-    this.currentPage = page;
-    this.loadPOList();
-  }
-
-  getPages(): number[] {
-    const pages: number[] = [];
-    const start = Math.max(1, this.currentPage - 2);
-    const end = Math.min(this.totalPages, start + 4);
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
+    if (page >= 1 && page <= this.totalPages) {
+      this.pageNumber = page;
+      this.fetchData();
     }
-    return pages;
   }
 
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.pageSize);
+  }
+
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
+  // ===== Filter Modal =====
+  openFilterModal(column: string, event: MouseEvent): void {
+    this.filterColumn = column;
+    this.columns.forEach(col => {
+      if (col.key === column) this.filterColumnTitle = col.label;
+    });
+    this.filterValue = '';
+    this.filterValue2 = '';
+
+    const columnType = this.filterColumnTypes[column];
+    switch (columnType) {
+      case 'string': this.filterType = 'Contains'; break;
+      case 'number': this.filterType = 'Equal'; break;
+      case 'date': this.filterType = 'Between'; break;
+      default: this.filterType = 'Contains';
+    }
+
+    const target = event.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    if (this.filterModal) {
+      const modal = this.filterModal.nativeElement;
+      modal.style.display = 'block';
+      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
+      modal.style.left = `${rect.left + window.scrollX}px`;
+
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
+    }
+  }
+
+  applyFilter(): void {
+    if (!this.filterColumn || this.filterValue === '') return;
+    const existingIndex = this.filters.findIndex(f => f.column === this.filterColumn);
+    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    if (existingIndex > -1) {
+      this.filters[existingIndex] = filterData;
+    } else {
+      this.filters.push(filterData);
+    }
+    this.fetchData();
+    this.closeFilterModal();
+  }
+
+  resetFilter(column: string): void {
+    this.filters = this.filters.filter(f => f.column !== column);
+    this.fetchData();
+  }
+
+  closeFilterModal(): void {
+    if (this.filterModal) {
+      this.filterModal.nativeElement.style.display = 'none';
+    }
+  }
+
+  hasFilter(column: string): boolean {
+    return this.filters?.some(f => f.column === column) ?? false;
+  }
+
+  getColumnType(columnKey: string): string | undefined {
+    const column = this.columns.find(col => col.key === columnKey);
+    return column ? column.type : undefined;
+  }
+
+  // ===== CRUD =====
   openCreateForm(): void {
     this.editingId = null;
     this.poForm.reset();
@@ -117,7 +240,7 @@ export class CustomerPOComponent implements OnInit {
       poNumber: po.poNumber,
       poDate: po.poDate ? po.poDate.split('T')[0] : '',
       validUntil: po.validUntil ? po.validUntil.split('T')[0] : '',
-      amount: po.amount,
+      poAmount: po.poAmount || po.amount,
       terms: po.terms,
       customerId: po.customerId,
     });
@@ -150,7 +273,7 @@ export class CustomerPOComponent implements OnInit {
           this.toastService.show('Purchase order updated successfully', 'success');
           this.isSubmitting = false;
           this.cancelForm();
-          this.loadPOList();
+          this.fetchData();
         },
         error: (err) => {
           console.error('Error updating PO:', err);
@@ -164,7 +287,7 @@ export class CustomerPOComponent implements OnInit {
           this.toastService.show('Purchase order created successfully', 'success');
           this.isSubmitting = false;
           this.cancelForm();
-          this.loadPOList();
+          this.fetchData();
         },
         error: (err) => {
           console.error('Error creating PO:', err);
@@ -181,7 +304,7 @@ export class CustomerPOComponent implements OnInit {
     this.customerPOService.delete(po.id).subscribe({
       next: () => {
         this.toastService.show('Purchase order deleted successfully', 'success');
-        this.loadPOList();
+        this.fetchData();
       },
       error: (err) => {
         console.error('Error deleting PO:', err);
@@ -230,13 +353,5 @@ export class CustomerPOComponent implements OnInit {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  }
-
-  getStartRecord(): number {
-    return this.totalRecords === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.currentPage * this.pageSize, this.totalRecords);
   }
 }

@@ -107,7 +107,7 @@ export class LaboratoryTestComponent implements OnInit {
       testCaption: [''],
       invoiceCaption: [''],
       testDuration: [null],
-      invoiceCaseIDs: [''],
+      invoiceCaseIDs: ['', Validators.required],
       invoiceCases: this.fb.array([]),
       equation: ['']
     });

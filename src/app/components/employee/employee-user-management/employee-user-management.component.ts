@@ -74,7 +74,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       // Login Details
       userName: [{ value: '', disabled: true }], // Read-only
       email: [{ value: '', disabled: true }],
-      password: [''], // Only for reset
+      password: ['', [Validators.required, Validators.minLength(8)]], // Only for reset
       isLoginEnabled: [true],
       lastLoginDate: [{ value: '', disabled: true }],
       accountStatus: [{ value: '', disabled: true }],

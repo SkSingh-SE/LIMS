@@ -1,8 +1,6 @@
-/* Component-specific styles if needed */
 @media print {
-  .card-header,
+  .card-form-header,
   button {
     display: none !important;
   }
 }
-

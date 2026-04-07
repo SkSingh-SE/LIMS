@@ -1,24 +1,16 @@
 <div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
+  <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-file-text"></i>
-        Reporting Dashboard
-      </label>
+      <label class="text-center text-md fw-medium ms-3">Reporting Dashboard</label>
     </div>
 
     <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-3">
         <div class="w-25 input-group custom-search">
-          <input
-            type="text"
-            class="form-control border-secondary"
-            placeholder="Search..."
-            [(ngModel)]="searchTerm"
-            (keydown.enter)="onSearch()"
-          />
-          <div class="input-group-text pe-auto border-secondary cursor-pointer" (click)="onSearch()">
+          <input type="text" class="form-control" placeholder="Search..."
+            [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
             <i class="bi bi-search"></i>
           </div>
         </div>
@@ -51,7 +43,7 @@
                     class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)"
                   >
-                    <i class="bi bi-funnel text-muted"></i>
+                    <i class="bi bi-funnel"></i>
                   </span>
                   <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>

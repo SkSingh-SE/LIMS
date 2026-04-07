@@ -15,25 +15,24 @@ export class EquipmentListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'equipmentNo', type: 'string', label: 'Equipment Number', filter: false },
-    { key: 'departmentName', type: 'number', label: 'Department', filter: true },
+    { key: 'equipmentNo', type: 'string', label: 'Equipment Number', filter: true },
+    { key: 'departmentName', type: 'string', label: 'Department', filter: true },
     { key: 'equipmentType', type: 'string', label: 'Equipment Type', filter: true },
     { key: 'oemName', type: 'string', label: 'OEM Name', filter: true },
-    { key: 'nextCalibrationDueDate', type: 'string', label: 'Calibration', filter: true },
-    { key: 'nextMaintenanceDueDate', type: 'string', label: 'Maintenance', filter: true },
+    { key: 'nextCalibrationDueDate', type: 'date', label: 'Calibration', filter: true },
+    { key: 'nextMaintenanceDueDate', type: 'date', label: 'Maintenance', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     equipmentNo: 'string',
     departmentName: 'string',
     equipmentType: 'string',
     oemName: 'string',
-    nextCalibrationDueDate: 'string',
-    nextMaintenanceDueDate: 'string',
+    nextCalibrationDueDate: 'date',
+    nextMaintenanceDueDate: 'date',
     modifiedOn: 'date',
   };
 
@@ -139,6 +138,17 @@ export class EquipmentListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -154,6 +164,7 @@ export class EquipmentListComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -186,6 +197,8 @@ export class EquipmentListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

@@ -40,14 +40,13 @@ export class MechanicalParameterComponent implements OnInit {
   smartErrors: string[] = [];
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     unitName: 'string',
     factor: 'string',
@@ -117,7 +116,7 @@ export class MechanicalParameterComponent implements OnInit {
       conversionFactor: [1, [Validators.required, Validators.min(0.000001)]],
       defaultTestMethodID: [null],
       parameterCategoryID: [null],
-      parameterUnitID: [0, [Validators.required, Validators.min(1)]],
+      parameterUnitID: [null],
       note: [''],
       elementType: ['normal'],
       parameterType: ['Mechanical', Validators.required],
@@ -159,7 +158,10 @@ export class MechanicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
-        this.ParameterForm.patchValue(response);
+        this.ParameterForm.patchValue({
+          ...response,
+          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
+        });
         if (response.allowedOrientations?.length > 0) {
           const ids = response.allowedOrientations.map((o: any) => o.specimenOrientationID);
           this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
@@ -217,6 +219,17 @@ export class MechanicalParameterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -264,6 +277,8 @@ export class MechanicalParameterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -600,6 +615,14 @@ export class MechanicalParameterComponent implements OnInit {
   getOrientationDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
     return this.specimenOrientationService.getSpecimenOrientationDropdown(searchTerm, pageNo, pageSize);
   };
+
+  getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  onParameterUnitSelected(item: any) {
+    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+  }
 
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');

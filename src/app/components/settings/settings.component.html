@@ -413,33 +413,89 @@
           </div>
 
           <!-- Financial Year Section -->
-          <div [formGroup]="financialYear" class="compact-form mt-3">
-            <div class="form-title-small">Financial Year</div>
-            <div class="form-row">
-              <div class="form-col">
-                <label class="form-label">
-                  Start Date <span class="required">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="startDate"
-                  [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'startDate') }" />
-                <div class="invalid-feedback" *ngIf="isFieldInvalid('financialYear', 'startDate')">
-                  {{ getFieldError('financialYear', 'startDate') }}
+          <div class="compact-form mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="form-title-small mb-0">Financial Year Management</div>
+              <button type="button" class="btn btn-sm btn-primary" (click)="openAddFY()" *ngIf="!showFYForm">
+                <i class="bi bi-plus-lg me-1"></i> Add
+              </button>
+            </div>
+
+            <!-- Add/Edit FY Form -->
+            <div *ngIf="showFYForm" class="fy-form-card" [formGroup]="financialYear">
+              <div class="fy-form-title">{{ editingFYId ? 'Edit Financial Year' : 'New Financial Year' }}</div>
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label class="form-label">Start Date <span class="required">*</span></label>
+                  <input type="date" class="form-control" formControlName="startDate"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'startDate') }" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">End Date <span class="required">*</span></label>
+                  <input type="date" class="form-control" formControlName="endDate"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'endDate') }" />
+                </div>
+                <div class="col-md-4 d-flex gap-2 align-items-end">
+                  <button type="button" class="btn btn-sm btn-save" (click)="saveFY()">
+                    <i class="bi" [ngClass]="editingFYId ? 'bi-check-lg' : 'bi-plus-lg'"></i>
+                    {{ editingFYId ? 'Update' : 'Save' }}
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelFYForm()">
+                    Cancel
+                  </button>
                 </div>
               </div>
-              <div class="form-col">
-                <label class="form-label">
-                  End Date <span class="required">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="endDate"
-                  [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'endDate') }" />
-                <div class="invalid-feedback" *ngIf="isFieldInvalid('financialYear', 'endDate')">
-                  {{ getFieldError('financialYear', 'endDate') }}
-                </div>
+              <div class="group-error mt-1" *ngIf="getGroupError('financialYear')">
+                <i class="bi bi-exclamation-triangle"></i> {{ getGroupError('financialYear') }}
               </div>
             </div>
-            <!-- Cross-field FY validation errors -->
-            <div class="group-error" *ngIf="getGroupError('financialYear')">
-              <i class="bi bi-exclamation-triangle"></i> {{ getGroupError('financialYear') }}
+
+            <!-- FY Table -->
+            <div class="table-responsive" *ngIf="financialYearsList.length > 0">
+              <table class="table table-sm table-hover align-middle mb-0 fy-table">
+                <thead>
+                  <tr>
+                    <th style="width: 25%">Financial Year</th>
+                    <th style="width: 22%">Start Date</th>
+                    <th style="width: 22%">End Date</th>
+                    <th style="width: 16%" class="text-center">Status</th>
+                    <th style="width: 15%" class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let fy of financialYearsList" [class.fy-row-active]="fy.isCurrent">
+                    <td>
+                      <span class="fw-semibold">{{ fy.year }}</span>
+                    </td>
+                    <td>{{ fy.startDate | date:'dd-MMM-yyyy' }}</td>
+                    <td>{{ fy.endDate | date:'dd-MMM-yyyy' }}</td>
+                    <td class="text-center">
+                      <span *ngIf="fy.isCurrent" class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Default
+                      </span>
+                      <button *ngIf="!fy.isCurrent" type="button"
+                        class="btn btn-sm btn-outline-secondary py-0 px-2"
+                        style="font-size: 0.75rem"
+                        (click)="setDefaultFY(fy)">
+                        Set Default
+                      </button>
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-primary border-0 p-1" (click)="editFY(fy)"
+                        title="Edit"><i class="bi bi-pencil-square"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" (click)="deleteFY(fy)"
+                        title="Delete" [disabled]="fy.isCurrent"
+                        [class.opacity-25]="fy.isCurrent"><i class="bi bi-trash3"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty state -->
+            <div *ngIf="financialYearsList.length === 0" class="fy-empty-state">
+              <i class="bi bi-calendar3 d-block mb-1" style="font-size: 1.5rem; opacity: 0.4"></i>
+              <span>No financial years configured yet.</span>
             </div>
           </div>
         </div>

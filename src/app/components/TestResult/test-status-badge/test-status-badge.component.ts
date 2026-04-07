@@ -118,6 +118,11 @@ export class TestStatusBadgeComponent {
     'Send Back':                      { bg: '#FF8A65', fg: '#FFFFFF', label: 'Sent Back' },
     'Approved':                       { bg: '#388E3C', fg: '#FFFFFF', label: 'Approved' },
 
+    // ==================== PreparationStatus ====================
+    'Assigned':                       { bg: '#B3E5FC', fg: '#01579B', label: 'Assigned' },
+    'InProgress':                     { bg: '#90CAF9', fg: '#0D47A1', label: 'In Progress' },
+    'QCVerified':                     { bg: '#2E7D32', fg: '#FFFFFF', label: 'QC Verified' },
+
     // ==================== PlanStatus ====================
     'Draft':                          { bg: '#E0E0E0', fg: '#424242', label: 'Draft' },
     'Submitted':                      { bg: '#81D4FA', fg: '#01579B', label: 'Submitted' },

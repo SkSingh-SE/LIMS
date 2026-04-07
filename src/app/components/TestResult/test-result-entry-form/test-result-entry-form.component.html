@@ -37,6 +37,18 @@
       <div class="info-label">Condition</div>
       <div class="info-value">{{ sample?.productCondition || '-' }}</div>
     </div>
+    <div class="info-card" *ngIf="sample?.productForm">
+      <div class="info-label">Product Form</div>
+      <div class="info-value">{{ sample.productForm }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.specimenOrientation">
+      <div class="info-label">Orientation</div>
+      <div class="info-value">{{ sample.specimenOrientation }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.heatTreatment">
+      <div class="info-label">Heat Treatment</div>
+      <div class="info-value">{{ sample.heatTreatment }}</div>
+    </div>
     <div class="info-card">
       <div class="info-label">Batch No</div>
       <div class="info-value">{{ sample?.batchNo || '-' }}</div>
@@ -51,7 +63,9 @@
         <span *ngIf="sample?.thickness">T:{{sample.thickness}}mm </span>
         <span *ngIf="sample?.diameter">D:{{sample.diameter}}mm </span>
         <span *ngIf="sample?.width">W:{{sample.width}}mm </span>
-        <span *ngIf="sample?.length">L:{{sample.length}}mm</span>
+        <span *ngIf="sample?.length">L:{{sample.length}}mm </span>
+        <span *ngIf="sample?.crossSectionArea">CSA:{{sample.crossSectionArea}}mm² </span>
+        <span *ngIf="sample?.gaugeLength">GL:{{sample.gaugeLength}}mm</span>
       </div>
     </div>
   </div>
@@ -111,7 +125,8 @@
               (click)="activePlanIndex = p">
               <span class="plan-tab-type">{{ plans[p].type }}</span>
               <span class="plan-tab-spec">{{ plans[p].specification }}</span>
-              <span class="plan-tab-count">{{ plans[p].tests.length }}</span>
+              <span class="badge bg-info ms-1" *ngIf="plans[p].specimenLabel">{{ plans[p].specimenLabel }}</span>
+              <span class="plan-tab-count" *ngIf="!plans[p].specimenLabel">{{ plans[p].tests.length }}</span>
             </button>
           </li>
         </ul>
@@ -211,13 +226,13 @@
                       <i class="bi bi-check-circle me-1"></i>Complete Test
                     </button>
 
-                    <!-- Submit for Verification (after Completed, before Verified) -->
+                    <!-- Submit for Verification (per test — after Completed) -->
                     <button
                       *ngIf="plans[p].tests[t].status === 'Completed'"
                       type="button"
                       class="btn btn-outline-primary btn-sm"
                       (click)="submitForVerification(p, t)"
-                      title="Submit test results for Lab Manager verification">
+                      title="Submit this test for reviewer verification">
                       <i class="bi bi-send-check me-1"></i>Submit for Verification
                     </button>
 
@@ -324,7 +339,7 @@
                       <tr>
                         <th>Parameter</th>
                         <th style="width: 70px">Unit</th>
-                        <th style="width: 130px">Spec Range</th>
+                        <th *ngIf="plans[p].type !== 'Chemical'" style="width: 130px">Spec Range</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Min</th>
                         <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Max</th>
                         <th style="width: 140px">Value</th>
@@ -355,7 +370,7 @@
                               (itemSelected)="onParameterSelected(p, t, r, $event)"
                               [hideLabel]="true"
                               [selectedItem]="row.get('parameterID')?.value"
-                              [isDisabled]="isParameterCalculated(row.value)"
+                              [isDisabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)"
                             ></app-searchable-dropdown>
                           </div>
                         </td>
@@ -365,7 +380,7 @@
                           <ng-container *ngIf="getUnitOptions(row).length > 1; else plainUnit">
                             <select class="form-select form-select-sm" formControlName="selectedUnit"
                               (change)="onUnitChanged(p, t, r)"
-                              [attr.disabled]="isViewMode ? true : null">
+                              [attr.disabled]="isViewMode || isTestFinalized(plans[p].tests[t].status) ? true : null">
                               <option *ngFor="let opt of getUnitOptions(row)" [value]="opt.unitName">
                                 {{ opt.unitName }}
                               </option>
@@ -377,8 +392,8 @@
                           </ng-template>
                         </td>
 
-                        <!-- Spec Range -->
-                        <td class="text-center small">
+                        <!-- Spec Range (General tests only — Chemical uses Min/Max columns) -->
+                        <td *ngIf="plans[p].type !== 'Chemical'" class="text-center small">
                           <ng-container *ngIf="(row.value.specMinValue != null && row.value.specMinValue !== '') || (row.value.specMaxValue != null && row.value.specMaxValue !== ''); else specEditTpl">
                             <span class="text-muted"
                               [title]="row.value.acceptanceCriteria ? 'Acceptance: ' + row.value.acceptanceCriteria : ''">
@@ -397,22 +412,23 @@
                           </ng-template>
                         </td>
 
-                        <!-- Chemical Only: Min -->
+                        <!-- Chemical Only: Min (editable — user enters if not auto-populated from spec) -->
                         <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
                           <input type="text" class="form-control form-control-sm" formControlName="minValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)" appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''" />
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Min"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter minimum value'" />
                         </td>
 
-                        <!-- Chemical Only: Max -->
+                        <!-- Chemical Only: Max (editable — user enters if not auto-populated from spec) -->
                         <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input type="text" class="form-control form-control-sm"
-                            [ngClass]="{ 'is-invalid': plans[p].type === 'Chemical' && row.get('maxValue')?.invalid && row.get('maxValue')?.touched && row.get('maxValue')?.errors && row.get('altered')?.value }"
-                            formControlName="maxValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)" appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''" />
-                          <span *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">
-                            Max is required
+                          <input type="text" class="form-control form-control-sm" formControlName="maxValue"
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Max"
+                            [ngClass]="{ 'is-invalid': row.get('maxValue')?.invalid && row.get('maxValue')?.touched }"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter maximum value'" />
+                          <span *ngIf="row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">
+                            Required
                           </span>
                         </td>
 
@@ -421,7 +437,7 @@
                           <ng-container *ngIf="row.value.parameterType === 'Qualitative'; else quantitativeInput">
                             <select class="form-select form-select-sm" formControlName="value"
                               (change)="onValueChanged(p, t, r)"
-                              [disabled]="isParameterCalculated(row.value)">
+                              [disabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)">
                               <option value="">-- Select --</option>
                               <option value="Pass">Pass</option>
                               <option value="Fail">Fail</option>
@@ -430,6 +446,12 @@
                             </select>
                           </ng-container>
                           <ng-template #quantitativeInput>
+                            <ng-container *ngIf="isTestFinalized(plans[p].tests[t].status); else editableValue">
+                              <span class="form-control form-control-sm bg-light" style="border:none;">
+                                {{ row.value.value != null ? (row.value.value | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2)) : '-' }}
+                              </span>
+                            </ng-container>
+                            <ng-template #editableValue>
                             <input type="text" class="form-control form-control-sm"
                               [ngClass]="{ 'bg-primary-subtle': row.value.formulaExpression }"
                               [attr.data-param-input]="p + '-' + t + '-' + r"
@@ -439,6 +461,7 @@
                               [readOnly]="isParameterCalculated(row.value)"
                               [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
                               appDecimalOnly />
+                            </ng-template>
                             <span *ngIf="row.value.formulaExpression" class="formula-tag" title="{{ row.value.formulaExpression }}">
                               <i class="bi bi-calculator me-1"></i>{{ getReadableFormula(row.value.formulaExpression, p, t) }}
                               <button *ngIf="!isViewMode" type="button" class="formula-clear" (click)="clearParameterFormula(p, t, r)" title="Clear formula">
@@ -447,7 +470,7 @@
                             </span>
                             <small *ngIf="row.value.convertedValue != null && row.value.selectedUnit !== row.value.unit"
                               class="text-primary d-block" style="font-size: 10px;">
-                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue }} {{ row.value.selectedUnit }}
+                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2) }} {{ row.value.selectedUnit }}
                             </small>
                           </ng-template>
                         </td>
@@ -527,27 +550,30 @@
                             [hideLabel]="true"
                             [selectedItem]="row.get('testMethodUsed')?.value"
                             [smallInput]="true"
-                            [isDisabled]="isViewMode"
+                            [isDisabled]="isViewMode || isTestFinalized(plans[p].tests[t].status)"
                           ></app-searchable-dropdown>
                         </td>
 
                         <!-- Remarks -->
                         <td>
                           <input type="text" class="form-control form-control-sm" formControlName="remarks"
-                            placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value)" />
+                            placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)" />
                         </td>
 
                         <!-- Billable -->
                         <td class="text-center" style="vertical-align: middle;">
-                          <div class="form-check d-flex justify-content-center m-0">
+                          <div class="form-check d-flex justify-content-center m-0"
+                            [class.pe-none]="isTestFinalized(plans[p].tests[t].status)"
+                            [style.opacity]="isTestFinalized(plans[p].tests[t].status) ? '0.6' : '1'">
                             <input type="checkbox" class="form-check-input" formControlName="isBillable"
-                              style="width: 18px; height: 18px; cursor: pointer;" />
+                              style="width: 18px; height: 18px;"
+                              [style.cursor]="isTestFinalized(plans[p].tests[t].status) ? 'not-allowed' : 'pointer'" />
                           </div>
                         </td>
 
-                        <!-- Actions -->
+                        <!-- Actions (hidden for finalized tests) -->
                         <td class="text-center">
-                          <div class="d-flex align-items-center justify-content-center gap-1">
+                          <div *ngIf="!isTestFinalized(plans[p].tests[t].status)" class="d-flex align-items-center justify-content-center gap-1">
                             <button type="button" class="btn btn-outline-info btn-sm"
                               (click)="updateParameterInline(p, t, r)"
                               [disabled]="isParameterCalculated(row.value) || !row.get('parameterID')?.value"
@@ -566,6 +592,7 @@
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
+                          <span *ngIf="isTestFinalized(plans[p].tests[t].status)" class="text-muted">—</span>
                         </td>
                       </tr>
                     </tbody>
@@ -573,6 +600,7 @@
 
                   <!-- Parameter action buttons (removed duplicate standalone param button) -->
                   <div class="d-flex flex-wrap gap-2 mb-2">
+                    <ng-container *ngIf="!isTestFinalized(plans[p].tests[t].status)">
                     <button class="btn btn-sm btn-outline-primary" type="button"
                       (click)="loadParametersFromSpec(p, t)"
                       [disabled]="loadingParams[plans[p].tests[t].headerId]"
@@ -583,14 +611,14 @@
                     <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)">
                       <i class="bi bi-plus-circle-dotted"></i> Add Parameter
                     </button>
-                    <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)"
-                      *ngIf="!isViewMode">
+                    <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)">
                       <i class="bi bi-box-arrow-in-down"></i> Add From Test Method
                     </button>
                     <button class="btn btn-sm btn-outline-success" type="button" (click)="calculateParameters(p, t)"
-                      *ngIf="!isViewMode" title="Auto-calculate formula-based parameters">
+                      title="Auto-calculate formula-based parameters">
                       <i class="bi bi-calculator"></i> Auto-Calculate
                     </button>
+                    </ng-container>
                   </div>
 
                   <!-- PRICE CALCULATION SECTION -->
@@ -797,8 +825,8 @@
       </div>
     </div>
 
-    <!-- Action Bar -->
-    <div class="action-bar">
+    <!-- Action Bar (hidden when all tests are finalized) -->
+    <div class="action-bar" *ngIf="!isViewMode && canSaveAnyTest()">
       <button class="btn btn-secondary action-btn" type="button" (click)="cancel()">Cancel</button>
       <button class="btn action-btn action-btn-primary" type="button" (click)="saveResults()">
         <i class="bi bi-check-circle me-1"></i>Save Results
@@ -875,7 +903,8 @@
                     </tr>
                   </tfoot>
                 </table>
-                <!-- Add new machining line -->
+                <!-- Add new machining line (hidden in view mode) -->
+                <ng-container *ngIf="!isViewMode">
                 <div class="d-flex gap-2 align-items-end">
                   <div class="flex-grow-1">
                     <input type="text" class="form-control form-control-sm" placeholder="Description..." [(ngModel)]="newMachiningDesc" />
@@ -887,6 +916,7 @@
                     <i class="bi bi-plus-lg"></i>
                   </button>
                 </div>
+              </ng-container>
               </div>
             </div>
 
@@ -1223,7 +1253,7 @@
             <div class="d-flex flex-wrap gap-2">
               <button *ngFor="let param of formulaAvailableParams" type="button"
                 class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
-                [title]="param.parameterName + ' (' + param.unit + ')'">
+                [title]="param.parameterName + (param.unit ? ' (' + param.unit + ')' : '')">
                 <span class="formula-param-ref">{{ param.ref }}</span>
                 <span class="formula-param-name">{{ param.parameterName }}</span>
               </button>

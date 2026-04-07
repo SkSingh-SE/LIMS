@@ -12,8 +12,8 @@ export class InternalAuditorService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<InternalAuditor[]> {
-        return this.http.post<InternalAuditor[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<InternalAuditor | undefined> {

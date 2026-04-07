@@ -1,49 +1,23 @@
-<div class="account-dashboard-container">
-  <!-- Dashboard Header -->
-  <div class="dashboard-header">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h2 class="dashboard-title">
-          <i class="bi bi-calculator me-2"></i>
-          Account Dashboard
-        </h2>
-        <p class="dashboard-subtitle">Manage your account-related activities and track financial status</p>
-      </div>
-      <div class="col-md-4 text-end">
-        <button 
-          class="btn btn-add btn-sm" 
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Account Dashboard</label>
+      <div class="d-flex align-items-center me-3">
+        <button
+          class="btn btn-outline-light btn-sm"
           (click)="loadDashboard()"
           [disabled]="false">
           <i class="bi bi-arrow-clockwise" [class.spin]="false"></i>
           Refresh
         </button>
-        <div class="refresh-status" *ngIf="lastUpdated">
-          <small class="text-muted d-block">
+        <div class="refresh-status ms-2" *ngIf="lastUpdated">
+          <small class="d-block">
             Last updated: {{ formatTimestamp(lastUpdated) }}
           </small>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="false" class="loading-container">
-    <div class="dashboard-section">
-      <h4 class="section-title">Account Overview</h4>
-      <div class="row">
-        <!-- Card Skeletons -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" *ngFor="let item of getSkeletonArray(4)">
-          <div class="account-card skeleton-card">
-            <div class="card-loading">
-              <div class="skeleton-header"></div>
-              <div class="skeleton-count"></div>
-              <div class="skeleton-description"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div class="card-body">
 
   <!-- Dashboard Content -->
   <div class="dashboard-content">
@@ -194,6 +168,8 @@
           Refresh Dashboard
         </button>
       </div>
+    </div>
+  </div>
     </div>
   </div>
 </div>

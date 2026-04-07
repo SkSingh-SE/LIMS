@@ -23,6 +23,9 @@ export class CustomerLedgerComponent implements OnInit {
   openingBalance = 0;
   closingBalance = 0;
 
+  sortField = 'date';
+  sortDir: 'asc' | 'desc' = 'asc';
+
   periodStart = '';
   periodEnd = '';
   periodSummary: any = null;
@@ -85,6 +88,7 @@ export class CustomerLedgerComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading balance:', err);
+        this.toastService.show('Failed to load customer balance', 'error');
       },
     });
   }
@@ -112,6 +116,38 @@ export class CustomerLedgerComponent implements OnInit {
     if (this.selectedCustomerId) {
       this.loadLedger();
     }
+  }
+
+  sortBy(field: string): void {
+    if (this.sortField === field) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDir = 'asc';
+    }
+    this.sortLedgerData();
+  }
+
+  sortLedgerData(): void {
+    this.ledgerEntries.sort((a, b) => {
+      let aVal = a[this.sortField];
+      let bVal = b[this.sortField];
+      if (this.sortField === 'date') {
+        aVal = new Date(aVal || 0).getTime();
+        bVal = new Date(bVal || 0).getTime();
+      }
+      aVal = aVal || 0;
+      bVal = bVal || 0;
+      if (typeof aVal === 'string') {
+        return this.sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return this.sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }
+
+  getSortIcon(field: string): string {
+    if (this.sortField !== field) return 'bi-arrow-down-up';
+    return this.sortDir === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
   }
 
   getEntryRowClass(entry: any): string {

@@ -12,8 +12,8 @@ export class FeedbackAnalysisService {
 
     constructor(private http: HttpClient) {}
 
-    getAll(): Observable<FeedbackAnalysis[]> {
-        return this.http.post<FeedbackAnalysis[]>(this.apiUrl + '/list', {});
+    getAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
 
     getById(id: number): Observable<FeedbackAnalysis | undefined> {

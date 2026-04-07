@@ -6,6 +6,7 @@ import { CrmConsumptionService } from '../../../services/crm-consumption.service
 import { ReferenceMaterialService } from '../../../services/reference-material.service';
 import { ToastService } from '../../../services/toast.service';
 import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper';
+import { YearHelper } from '../../../utility/helper/year.helper';
 
 import { QuillModule } from 'ngx-quill';
 import { Observable } from 'rxjs';
@@ -28,6 +29,7 @@ export class CrmConsumptionFormComponent implements CanComponentDeactivate, OnIn
     isViewMode = false;
     formTitle = 'Add CRM Consumption Record';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
+    yearOptions: number[] = YearHelper.planYears();
     materials: any[] = [];
 
     months = [

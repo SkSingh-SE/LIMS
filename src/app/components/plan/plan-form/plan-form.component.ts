@@ -11,6 +11,8 @@ import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { ProductFormService } from '../../../services/product-form.service';
 import { CommonModule } from '@angular/common';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
@@ -68,6 +70,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     private activeroute: ActivatedRoute,
     private router: Router,
     private productService: ProductConditionService,
+    private specimenOrientationService: SpecimenOrientationService,
+    private productFormService: ProductFormService,
     private tpiService: TPIService,
     private testAutoSuggestService: TestAutoSuggestService,
    private unsavedChangesService: UnsavedChangesService) { }
@@ -445,9 +449,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             details: s.details,
             metalClassificationID: s.metalClassificationID,
             productConditionID: s.productConditionID,
+            specimenOrientationID: s.specimenOrientationID,
+            productFormID: s.productFormID,
             tpiAgencyID: s.tpiAgencyID,
             remarks: s.remarks,
             quantity: s.quantity,
+            thickness: s.thickness,
+            diameter: s.diameter,
+            width: s.width,
+            length: s.length,
             preparationRequired: s.preparationRequired ?? false,
             machiningRequired: s.machiningRequired ?? false,
             machiningAmount: s.machiningAmount ?? 0,
@@ -612,6 +622,33 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleDetailGroup) return;
     sampleDetailGroup.patchValue({ tpiAgencyID: item?.id ?? null });
+  }
+
+  getSpecimenOrientationDrop = (sampleIndex: number) => {
+    return (term: string, page: number, pageSize: number): Observable<any[]> => {
+      const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+      const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+      if (metalClassificationID) {
+        return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+      }
+      return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+    };
+  };
+
+  onSpecimenOrientationSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleDetailGroup) return;
+    sampleDetailGroup.patchValue({ specimenOrientationID: item?.id ?? null });
+  }
+
+  getProductFormDrop = (term: string, page: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  };
+
+  onProductFormSelected(item: any, sampleIndex: number) {
+    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleDetailGroup) return;
+    sampleDetailGroup.patchValue({ productFormID: item?.id ?? null });
   }
 
   onSpecificationGradeSelected(
@@ -897,6 +934,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         details: [sample.details],
         metalClassificationID: [sample.metalClassificationID],
         productConditionID: [sample.productConditionID],
+        specimenOrientationID: [sample.specimenOrientationID],
+        productFormID: [sample.productFormID],
         tpiAgencyID: [sample.tpiAgencyID],
         remarks: [sample.remarks],
         quantity: [sample.quantity],
@@ -1007,9 +1046,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         details: s.details || '',
         productConditionID: s.productConditionID || null,
         metalClassificationID: s.metalClassificationID || null,
+        specimenOrientationID: s.specimenOrientationID || null,
+        productFormID: s.productFormID || null,
         tpiAgencyID: s.tpiAgencyID || null,
         remarks: s.remarks || '',
         quantity: s.quantity || 0,
+        thickness: s.thickness ?? null,
+        diameter: s.diameter ?? null,
+        width: s.width ?? null,
+        length: s.length ?? null,
         disabled: s.disabled || false,
         preparationRequired: s.preparationRequired || false,
         machiningRequired: s.machiningRequired || false,

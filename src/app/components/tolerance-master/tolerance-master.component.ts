@@ -21,7 +21,7 @@ export class ToleranceMasterComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'standardName', type: 'string', label: 'Standard Name', filter: true },
     { key: 'parameterName', type: 'string', label: 'Parameter', filter: true },
     { key: 'valueRangeStart', type: 'number', label: 'Range Start', filter: true },
@@ -29,8 +29,7 @@ export class ToleranceMasterComponent implements OnInit {
     { key: 'toleranceValue', type: 'number', label: 'Tolerance', filter: true },
     { key: 'toleranceType', type: 'string', label: 'Type', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     standardName: 'string',
     parameterName: 'string',
     valueRangeStart: 'number',
@@ -176,6 +175,17 @@ export class ToleranceMasterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -223,6 +233,8 @@ export class ToleranceMasterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }

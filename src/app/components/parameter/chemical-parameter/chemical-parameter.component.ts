@@ -37,14 +37,13 @@ export class ChemicalParameterComponent implements OnInit {
   smartErrors: string[] = [];
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     unitName: 'string',
     factor: 'string',
@@ -116,7 +115,7 @@ export class ChemicalParameterComponent implements OnInit {
       minReportableLimit: [null],
       defaultTestMethodID: [null],
       parameterCategoryID: [null],
-      parameterUnitID: [0, [Validators.required, Validators.min(1)]],
+      parameterUnitID: [null],
       note: [''],
       elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
@@ -158,7 +157,8 @@ export class ChemicalParameterComponent implements OnInit {
         this.customerTypeObject = response;
         this.ParameterForm.patchValue({
           ...response,
-          elementType: (response.elementType || 'normal').toLowerCase()
+          elementType: (response.elementType || 'normal').toLowerCase(),
+          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
         });
       },
       error: (error) => {
@@ -213,6 +213,17 @@ export class ChemicalParameterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -260,6 +271,8 @@ export class ChemicalParameterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -589,6 +602,14 @@ export class ChemicalParameterComponent implements OnInit {
   getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
     return this.parameterCategoryService.getParameterCategoryDropdown(searchTerm, pageNo, pageSize);
   };
+
+  getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  onParameterUnitSelected(item: any) {
+    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+  }
 
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');

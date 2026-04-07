@@ -13,6 +13,7 @@ import { LaboratoryTestService } from '../../../services/laboratory-test.service
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { ProductTestGroupService } from '../../../services/product-test-group.service';
 import { ProductSpecificationGradeService } from '../../../services/product-specification-grade.service';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
@@ -29,14 +30,13 @@ export class CustomProductSpecificationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'specificationName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specificationName: 'string',
     aliasName: 'string',
     specificationCode: 'string',
@@ -81,7 +81,8 @@ export class CustomProductSpecificationComponent implements OnInit {
   activeTab = 'details';
   testGroups: any[] = [];
   specGrades: any[] = [];
-  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: null };
+  yearOptions: number[] = YearHelper.standardYears();
   newSpecGrade: any = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
 
   constructor(
@@ -183,6 +184,17 @@ export class CustomProductSpecificationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -225,6 +237,8 @@ export class CustomProductSpecificationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -398,13 +412,13 @@ export class CustomProductSpecificationComponent implements OnInit {
       laboratoryTestID: this.newTestGroup.laboratoryTestID,
       testMethodStandardID: null,
       isPerBatch: this.newTestGroup.isPerBatch,
-      year: this.newTestGroup.year ? parseInt(this.newTestGroup.year, 10) : null
+      year: this.newTestGroup.year ?? null
     };
     this.productTestGroupService.create(payload).subscribe({
       next: (response) => {
         this.toastService.show(response.message || 'Test Group added', 'success');
         this.loadTestGroups(this.productSpecificationId);
-        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', isPerBatch: false, year: '' };
+        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', isPerBatch: false, year: null };
       },
       error: () => {}
     });

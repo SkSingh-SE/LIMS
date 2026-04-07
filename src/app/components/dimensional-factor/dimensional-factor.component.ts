@@ -47,8 +47,8 @@ export class DimensionalFactorComponent implements OnInit {
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
+  filterColumn: string = '';
+  filterColumnTitle: string = '';
   filterType: string = 'Contains';
   filterValue: string = '';
   filterValue2: string = '';

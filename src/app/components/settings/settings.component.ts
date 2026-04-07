@@ -890,21 +890,17 @@ export class SettingsComponent implements OnInit {
       { key: 3, group: this.numbering },
       { key: 4, group: this.gstConfig }
     ];
-    const hasCoreErrors = coreGroups.some(g => g.group.invalid) || this.financialYear.invalid;
+    const hasCoreErrors = coreGroups.some(g => g.group.invalid);
     const noSignatories = !this.signatories || this.signatories.length === 0;
 
     if (hasCoreErrors || noSignatories) {
       if (hasCoreErrors) {
         coreGroups.forEach(g => this.markFormGroupTouched(g.group));
-        this.markFormGroupTouched(this.financialYear);
         for (const tg of coreGroups) {
           if (tg.group.invalid) {
             this.activeTab = tg.key;
             break;
           }
-        }
-        if (this.financialYear.invalid && this.activeTab !== 4) {
-          this.activeTab = 4;
         }
       }
       if (noSignatories && !hasCoreErrors) {
@@ -921,12 +917,6 @@ export class SettingsComponent implements OnInit {
             .map(k => k.replace(/([A-Z])/g, ' $1').trim());
           errorSections.push(`${tabNames[tg.key]}: ${invalidFields.join(', ')}`);
         }
-      }
-      if (this.financialYear.invalid) {
-        const fyFields = Object.keys(this.financialYear.controls)
-          .filter(k => this.financialYear.get(k)?.invalid)
-          .map(k => k.replace(/([A-Z])/g, ' $1').trim());
-        errorSections.push(`Financial Year: ${fyFields.join(', ')}`);
       }
       if (noSignatories) errorSections.push('At least one Authorized Signatory required');
 
@@ -1124,7 +1114,7 @@ export class SettingsComponent implements OnInit {
       case 3:
         return this.numbering.invalid;
       case 4:
-        return this.gstConfig.invalid || this.financialYear.invalid;
+        return this.gstConfig.invalid;
       case 5:
         return this.signatories.length === 0; // error only when no signatories added
       default:

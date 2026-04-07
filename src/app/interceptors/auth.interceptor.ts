@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpEventType, HttpInterceptorFn } from '@angular/co
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
-import { catchError, switchMap, tap, throwError } from 'rxjs';
+import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { LoaderService } from '../services/loader.service';
 import { ToastService } from '../services/toast.service';
 
@@ -84,16 +84,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       loaderService.show();
     }
 
+    let responseReceived = false;
     return next(modifiedReq).pipe(
       tap(event => {
         if (event.type === HttpEventType.Response) {
+          responseReceived = true;
           unauthorizedCount = 0;
-          loaderService.hide();
           console.log(modifiedReq.url, 'returned a response with status', event.status);
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        loaderService.hide();
+        responseReceived = true;
         if (error.status === 401) {
           unauthorizedCount++;
           if (unauthorizedCount >= unauthorizedLimit) {
@@ -104,13 +105,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
         const message = getErrorMessage(error);
         showErrorToast(error, message);
-        // Normalize message on the error so component-level handlers get the same string
-        // and ToastService dedup prevents duplicate toasts
         if (error.error && typeof error.error === 'object') {
           error.error.message = message;
         }
         const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
+      }),
+      finalize(() => {
+        // Always hide loader: covers success, error, AND cancel
+        loaderService.hide();
       })
     );
   }
@@ -130,16 +133,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }),
       switchMap(() => handleRequest(token!)),
       catchError((error: HttpErrorResponse) => {
-        loaderService.hide();
         const message = getErrorMessage(error);
         showErrorToast(error, message);
-        // Normalize message on the error so component-level handlers get the same string
-        // and ToastService dedup prevents duplicate toasts
         if (error.error && typeof error.error === 'object') {
           error.error.message = message;
         }
         const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
+      }),
+      finalize(() => {
+        loaderService.hide();
       })
     );
   }
@@ -156,17 +159,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     tap(event => {
-      // Log only final response
       if (event.type === HttpEventType.Response) {
         unauthorizedCount = 0;
-        loaderService.hide();
         console.log(req.url, 'returned a response with status', event.status);
       }
     }),
     catchError((error: HttpErrorResponse) => {
-      loaderService.hide();
       if (error.status === 401) {
-        unauthorizedCount++; // Increment on 401 Unauthorized
+        unauthorizedCount++;
         if (unauthorizedCount >= unauthorizedLimit) {
           unauthorizedCount = 0;
           authService.logout();
@@ -175,13 +175,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
       const message = getErrorMessage(error);
       showErrorToast(error, message);
-      // Normalize message on the error so component-level handlers get the same string
-      // and ToastService dedup prevents duplicate toasts
       if (error.error && typeof error.error === 'object') {
         error.error.message = message;
       }
       const enhancedError = Object.assign(error, { errorMessage: message, message });
       return throwError(() => enhancedError);
+    }),
+    finalize(() => {
+      loaderService.hide();
     })
   );
 };

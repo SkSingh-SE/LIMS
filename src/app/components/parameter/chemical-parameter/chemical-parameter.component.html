@@ -248,8 +248,8 @@
             <small class="text-muted">Entered value × factor = compared value (default: 1)</small>
           </div>
 
-          <!-- Min Reportable Limit -->
-          <div class="mb-1">
+          <!-- Min Reportable Limit — hidden until linked to test results/reporting -->
+          <!-- <div class="mb-1">
             <label for="minReportableLimit" class="form-label">Min Reportable Limit</label>
             <input
               type="number"
@@ -260,7 +260,7 @@
               step="any"
               [attr.disabled]="isViewMode ? true : null"
             />
-          </div>
+          </div> -->
 
           <!-- Parameter Category -->
           <div class="mb-1">
@@ -288,39 +288,31 @@
             </div>
           </div>
 
-          <!--Parameter Unit Selection-->
+          <!--Parameter Unit Selection (optional — some parameters like HRC, grain size have no unit)-->
           <div class="mb-1">
-            <label for="unit" class="form-label">
-              Parameter Unit
-              <span class="text-danger">*</span>
-            </label>
-            <div class="d-flex align-items-center gap-1">
-              <select
-                id="unit"
-                class="form-select flex-grow-1"
-                formControlName="parameterUnitID"
-                [ngClass]="{ 'is-invalid': ParameterForm.get('parameterUnitID')?.touched && ParameterForm.get('parameterUnitID')?.invalid }"
-                [attr.disabled]="isViewMode ? true : null"
-              >
-                <option value="0" disabled selected>Select Parameter Unit</option>
-                <option *ngFor="let unit of ParameterUnits" [value]="unit.id">{{ unit.name }}</option>
-              </select>
+            <div class="d-flex align-items-start gap-1">
+              <div class="flex-grow-1">
+                <app-searchable-dropdown
+                  [placeholder]="'Search Unit'"
+                  [labelName]="'Parameter Unit'"
+                  [fetchDataFn]="getParameterUnitDropdown"
+                  (itemSelected)="onParameterUnitSelected($event)"
+                  [hideLabel]="false"
+                  [required]="false"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="ParameterForm.get('parameterUnitID')?.value"
+                ></app-searchable-dropdown>
+              </div>
               <button
                 *ngIf="!isViewMode"
                 type="button"
-                class="btn btn-outline-primary btn-sm"
+                class="btn btn-outline-primary btn-sm mt-1"
                 title="Add New Unit"
                 (click)="openLinkedMaster('/parameter-unit')"
               >
                 <i class="bi bi-plus-lg"></i>
               </button>
             </div>
-            <span
-              *ngIf="ParameterForm.get('parameterUnitID')?.invalid && ParameterForm.get('parameterUnitID')?.touched"
-              class="text-danger text-sm"
-            >
-              Parameter Unit is required.
-            </span>
           </div>
 
           <div class="d-flex gap-3 mt-3">

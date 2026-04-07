@@ -7,6 +7,7 @@ import { FormValidationHelper } from '../../../utility/helper/form-validation.he
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { ParameterService } from '../../../services/parameter.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
 import { HeatTreatmentService } from '../../../services/heat-treatment.service';
@@ -42,6 +43,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   MaterialSpecificationForm!: FormGroup;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  yearOptions: number[] = YearHelper.standardYears();
   isCopyMode: boolean = false;
   standardOrganizations: any[] = [];
   parameterUnits: any[] = [];

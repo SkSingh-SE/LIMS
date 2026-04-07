@@ -13,6 +13,7 @@ import { LaboratoryTestService } from '../../../services/laboratory-test.service
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { ProductTestGroupService } from '../../../services/product-test-group.service';
 import { ProductSpecificationGradeService } from '../../../services/product-specification-grade.service';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
@@ -80,7 +81,8 @@ export class CustomProductSpecificationComponent implements OnInit {
   activeTab = 'details';
   testGroups: any[] = [];
   specGrades: any[] = [];
-  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: '' };
+  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodSpecificationID: 0, testMethodSpecificationName: '', isPerBatch: false, year: null };
+  yearOptions: number[] = YearHelper.standardYears();
   newSpecGrade: any = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
 
   constructor(
@@ -410,13 +412,13 @@ export class CustomProductSpecificationComponent implements OnInit {
       laboratoryTestID: this.newTestGroup.laboratoryTestID,
       testMethodStandardID: null,
       isPerBatch: this.newTestGroup.isPerBatch,
-      year: this.newTestGroup.year ? parseInt(this.newTestGroup.year, 10) : null
+      year: this.newTestGroup.year ?? null
     };
     this.productTestGroupService.create(payload).subscribe({
       next: (response) => {
         this.toastService.show(response.message || 'Test Group added', 'success');
         this.loadTestGroups(this.productSpecificationId);
-        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', isPerBatch: false, year: '' };
+        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', isPerBatch: false, year: null };
       },
       error: () => {}
     });

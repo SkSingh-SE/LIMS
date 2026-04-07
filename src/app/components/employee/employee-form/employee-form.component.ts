@@ -18,6 +18,7 @@ import { EmployeeUserManagementComponent } from '../employee-user-management/emp
 import { EmployeeJobTrainingComponent } from '../employee-job-training/employee-job-training.component';
 import { EmployeePerformanceRecordComponent } from '../employee-performance-record/employee-performance-record.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { YearHelper } from '../../../utility/helper/year.helper';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { EmployeeAuthorizationService } from '../../../services/employee-authorization.service';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
@@ -38,6 +39,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   showPassword = signal(false);
   employeeId!: number;
   isViewMode: boolean = false;
+  yearOptions: number[] = YearHelper.educationYears();
   formHeaders: { key: number, label: string }[] = [
     { key: 1, label: 'Basic Details' },
     { key: 2, label: 'Qualification' },
@@ -459,7 +461,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       employeeId: [data?.employeeID || this.employeeId || 0],
       qualification: [data?.qualification || '', Validators.required],
       schoolOrUniversity: [data?.schoolOrUniversity || '', Validators.required],
-      passingYear: [data?.passingYear || '', [Validators.required, Validators.min(1900)]],
+      passingYear: [data?.passingYear || null, Validators.required],
     });
     if (this.isViewMode) {
       group.disable(); // Disable the new group if in view mode

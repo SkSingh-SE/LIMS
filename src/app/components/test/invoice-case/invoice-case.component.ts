@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { InvoiceCaseService } from '../../../services/invoice-case.service';
 import { ToastService } from '../../../services/toast.service';
+import { SettingsService } from '../../../services/settings.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
 
 @Component({
@@ -38,7 +39,7 @@ export class InvoiceCaseComponent implements OnInit {
 
   caseNameInputs: string[] = [];
   filteredSuggestionsList: string[][] = [];
-  financialYears: string[] = [];
+  financialYears: any[] = [];
 
   pricingTypeOptions = [
     { value: 'Element', label: 'Parameter Count' },
@@ -47,7 +48,7 @@ export class InvoiceCaseComponent implements OnInit {
     { value: 'FlatRate', label: 'Flat Rate' },
   ];
 
-  constructor(private fb: FormBuilder, private labTestService: LaboratoryTestService, private invoiceService: InvoiceCaseService, private toastService: ToastService, private route: ActivatedRoute, private router: Router) { }
+  constructor(private fb: FormBuilder, private labTestService: LaboratoryTestService, private invoiceService: InvoiceCaseService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private settingsService: SettingsService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -64,7 +65,7 @@ export class InvoiceCaseComponent implements OnInit {
     }
 
     this.initForm();
-    this.generateFinancialYears();
+    this.loadFinancialYears();
     if (this.invoiceId > 0) {
       this.getInvoiceCase(this.invoiceId);
       
@@ -75,34 +76,26 @@ export class InvoiceCaseComponent implements OnInit {
   initForm(): void {
     this.invoiceCaseForm = this.fb.group({
       id: [0],
-      financialYear: ['', Validators.required],
+      financialYearId: [null, Validators.required],
       laboratoryTestID: [null],
       defaultPricingType: [null],
       invoiceCasePrices: this.fb.array([])
     });
   }
-  generateFinancialYears(): void {
-    const startYear = 2020;
-    const currentYear = new Date().getFullYear(); // Adjust to next year for financial year calculation
-    const currentMonth = new Date().getMonth() + 1;
-
-    const endYear = currentMonth >= 4 ? currentYear : currentYear - 1;
-
-    for (let year = startYear; year <= endYear + 1; year++) {
-      const fy = `${year}-${year + 1}`;
-      this.financialYears.push(fy);
-
-      // Set default selected financial year
-      if (
-        (currentMonth >= 4 && year === currentYear) ||
-        (currentMonth < 4 && year === currentYear - 1)
-      ) {
-        if (this.invoiceId == 0)
-          this.invoiceCaseForm.patchValue({ financialYear: fy });
-      }
-    }
-
-
+  loadFinancialYears(): void {
+    this.settingsService.getFinancialYearsDropdown().subscribe({
+      next: (list) => {
+        this.financialYears = list;
+        // Auto-select current FY for new records
+        if (this.invoiceId === 0) {
+          const current = list.find((fy: any) => fy.isCurrent);
+          if (current) {
+            this.invoiceCaseForm.patchValue({ financialYearId: current.id });
+          }
+        }
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load financial years', 'error')
+    });
   }
   get invoiceCases(): FormArray {
     return this.invoiceCaseForm.get('invoiceCasePrices') as FormArray;
@@ -222,9 +215,9 @@ export class InvoiceCaseComponent implements OnInit {
 
   submit(): void {
     if (this.invoiceCaseForm.valid) {
-      console.log(this.invoiceCaseForm.value);
+      const payload = this.invoiceCaseForm.getRawValue();
       if (this.invoiceId > 0) {
-        this.invoiceService.updateInvoiceCase(this.invoiceCaseForm.value).subscribe({
+        this.invoiceService.updateInvoiceCase(payload).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.invoiceCaseForm.reset();
@@ -235,7 +228,7 @@ export class InvoiceCaseComponent implements OnInit {
           }
         })
       } else {
-        this.invoiceService.createInvoiceCase(this.invoiceCaseForm.value).subscribe({
+        this.invoiceService.createInvoiceCase(payload).subscribe({
           next: (response) => {
             this.toastService.show(response.message, 'success');
             this.invoiceCaseForm.reset();
@@ -318,6 +311,10 @@ export class InvoiceCaseComponent implements OnInit {
         });
         if(this.isViewMode){
           this.invoiceCaseForm.disable();
+        }
+        if(this.isEditMode){
+          this.invoiceCaseForm.get('financialYearId')?.disable();
+          this.invoiceCaseForm.get('laboratoryTestID')?.disable();
         }
       },
       error: (error) => {

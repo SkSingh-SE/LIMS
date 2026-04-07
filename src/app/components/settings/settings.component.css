@@ -1100,3 +1100,64 @@ input::placeholder {
   opacity: 0.55 !important;
   box-shadow: none !important;
 }
+
+/* ============================================
+   FINANCIAL YEAR MANAGEMENT
+   ============================================ */
+
+.fy-form-card {
+  border: 1px solid #dee2e6;
+  border-left: 3px solid var(--primary-color, #da261c);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: #fafbfc;
+  margin-bottom: 0.75rem;
+}
+
+.fy-form-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.fy-table {
+  font-size: 0.82rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.fy-table thead th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.fy-table tbody td {
+  padding: 0.45rem 0.75rem;
+  vertical-align: middle;
+}
+
+.fy-row-active {
+  background: #f0fdf4 !important;
+}
+
+.fy-row-active:hover {
+  background: #e8fbe8 !important;
+}
+
+.fy-empty-state {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: #6c757d;
+  font-size: 0.85rem;
+  border: 1px dashed #ced4da;
+  border-radius: 6px;
+  background: #fafbfc;
+}

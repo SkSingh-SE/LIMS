@@ -47,8 +47,11 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Planning Year <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" formControlName="planningYear" placeholder="2025"
+                <select class="form-control" formControlName="planningYear"
                        [ngClass]="{'is-invalid': isFieldInvalid('planningYear')}">
+                  <option [ngValue]="null">Select Year</option>
+                  <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                </select>
                 <app-field-error [control]="planForm.get('planningYear')" label="Planning Year" [submitted]="submitted"/>
               </div>
               <div class="col-md-3">

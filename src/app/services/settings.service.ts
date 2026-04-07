@@ -64,4 +64,21 @@ export class SettingsService {
   deleteSignatory(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/signatory/${id}`);
   }
+
+  // Financial Year management
+  getFinancialYears(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/financial-years`);
+  }
+
+  getFinancialYearsDropdown(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/financial-years/dropdown`);
+  }
+
+  setDefaultFinancialYear(id: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/financial-years/${id}/set-default`, {});
+  }
+
+  deleteFinancialYear(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/financial-years/${id}`);
+  }
 }

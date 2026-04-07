@@ -9,6 +9,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { VersionStatus } from '../../../utility/status_flow/enums/version-status.enum';
+import { YearHelper } from '../../../utility/helper/year.helper';
 
 @Component({
   selector: 'app-test-method-specification',
@@ -20,6 +21,7 @@ export class TestMethodSpecificationComponent implements OnInit {
   testSpecificationForm!: FormGroup;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  yearOptions: number[] = YearHelper.standardYears();
   selectedStandardOrganization: any = {};
   testMethodSpecificationID: number = 0;
   VersionStatus = VersionStatus;
@@ -129,6 +131,7 @@ export class TestMethodSpecificationComponent implements OnInit {
             standardOrganizationID: response.standardOrganizationID,
             testMethodStandard: response.testMethodStandard,
             name: response.name,
+            part: response.part || '',
             isDisabled: response.isDisabled,
           });
           this.versions.clear();
@@ -141,7 +144,7 @@ export class TestMethodSpecificationComponent implements OnInit {
               testMethodSpecificationID: version.testMethodSpecificationID,
               status: version.status,
               version: version.version,
-              year: version.year,
+              year: version.year != null ? +version.year : null,
               effectiveDate: version.effectiveDate ? version.effectiveDate.split('T')[0] : null,
               supersededDate: version.supersededDate ? version.supersededDate.split('T')[0] : null,
               reviewDate: version.reviewDate ? version.reviewDate.split('T')[0] : null,
@@ -222,7 +225,7 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', file: null });
   }
 
-  getCaption(year: number): string {
+  getCaption(year: any): string {
     const org = this.selectedStandardOrganization?.name;
     const std = this.testSpecificationForm.get('testMethodStandard')?.value;
     return org && std && year ? `${org} ${std} - ${year}` : '';
@@ -332,6 +335,7 @@ export class TestMethodSpecificationComponent implements OnInit {
       formData.append('standardOrganizationID', raw.standardOrganizationID);
       formData.append('testMethodStandard', raw.testMethodStandard);
       formData.append('name', raw.name);
+      formData.append('part', raw.part || '');
       formData.append('isDisabled', raw.isDisabled ? 'true' : 'false');
 
       const versionsArray: any[] = [];

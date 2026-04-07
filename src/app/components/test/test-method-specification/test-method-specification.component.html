@@ -180,15 +180,14 @@
 
             <div>
               <label class="form-label">Year</label>
-              <input
-                type="number"
+              <select
                 class="form-control"
-                placeholder="e.g., 2024"
                 formControlName="year"
                 [attr.disabled]="isVersionReadOnly(i) ? true : null"
-                min="1900"
-                max="2100"
-              />
+              >
+                <option [ngValue]="null">Select Year</option>
+                <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+              </select>
             </div>
 
             <div>

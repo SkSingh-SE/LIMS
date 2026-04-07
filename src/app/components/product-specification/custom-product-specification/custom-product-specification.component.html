@@ -247,8 +247,10 @@
                         </div>
                         <div>
                             <label class="form-label">Year</label>
-                            <input type="text" class="form-control" [(ngModel)]="newTestGroup.year"
-                                placeholder="Enter Year" maxlength="4">
+                            <select class="form-control" [(ngModel)]="newTestGroup.year">
+                              <option [ngValue]="null">Select Year</option>
+                              <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                            </select>
                         </div>
                         <div class="d-flex align-items-end gap-2">
                             <div class="form-check mt-2">

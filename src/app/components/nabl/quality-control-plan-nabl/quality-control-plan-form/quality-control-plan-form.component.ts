@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QualityControlPlanService } from '../../../../services/quality-control-plan.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { YearHelper } from '../../../../utility/helper/year.helper';
 import { ToastService } from '../../../../services/toast.service';
 
 import { QuillModule } from 'ngx-quill';
@@ -28,6 +29,7 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
     isViewMode = false;
     formTitle = 'Add Quality Control Plan (F-37)';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
+    yearOptions: number[] = YearHelper.planYears();
 
     openSections: { [key: string]: boolean } = {
         header: true,
@@ -80,7 +82,6 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
 
     initForm(): void {
         const today = new Date().toISOString().split('T')[0];
-        const currentYear = new Date().getFullYear().toString();
         this.qcpForm = this.fb.group({
             id: [0],
             formatNo: ['F-37'],
@@ -88,7 +89,7 @@ export class QualityControlPlanFormComponent implements CanComponentDeactivate, 
             revNo: ['00'],
             date: [today, Validators.required],
             documentNo: [''],
-            planYear: [currentYear, Validators.required],
+            planYear: [new Date().getFullYear(), Validators.required],
             discipline: ['', Validators.required],
             materialProductGroup: ['', Validators.required],
             labIncharge: ['', Validators.required],

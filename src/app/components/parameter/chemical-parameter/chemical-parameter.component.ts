@@ -115,7 +115,7 @@ export class ChemicalParameterComponent implements OnInit {
       minReportableLimit: [null],
       defaultTestMethodID: [null],
       parameterCategoryID: [null],
-      parameterUnitID: [0, [Validators.required, Validators.min(1)]],
+      parameterUnitID: [null],
       note: [''],
       elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
@@ -602,6 +602,14 @@ export class ChemicalParameterComponent implements OnInit {
   getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
     return this.parameterCategoryService.getParameterCategoryDropdown(searchTerm, pageNo, pageSize);
   };
+
+  getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  onParameterUnitSelected(item: any) {
+    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+  }
 
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');

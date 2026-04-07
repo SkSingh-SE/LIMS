@@ -196,7 +196,7 @@ export class MetalClassificationComponent implements OnInit {
     if (!this.filterColumn || this.filterValue === '') return;
 
     const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    const filterData = { column: this.filterColumn, type: this.filterType, value: String(this.filterValue), value2: this.filterValue2 ? String(this.filterValue2) : undefined };
 
     if (existingFilterIndex > -1) {
       this.filters[existingFilterIndex] = filterData;
@@ -204,6 +204,7 @@ export class MetalClassificationComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -338,6 +339,11 @@ export class MetalClassificationComponent implements OnInit {
 
   onCheckboxChange(): void {
     this.parameterReloadKey++;
+    const isChemical = this.MetalClassificationForm.get('hasChemicalParams')?.value;
+    const isMechanical = this.MetalClassificationForm.get('hasMechanicalParams')?.value;
+    if (!isChemical && !isMechanical) {
+      this.MetalClassificationForm.patchValue({ parameterIds: [] });
+    }
   }
 
   onParameterSelected(item: any[]) {
@@ -354,7 +360,7 @@ export class MetalClassificationComponent implements OnInit {
         })
       );
     })
-    this.MetalClassificationForm.patchValue({ parameterIDs: selectIds });
+    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
   }
 
   getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {

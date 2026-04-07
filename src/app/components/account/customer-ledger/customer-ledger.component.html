@@ -145,27 +145,29 @@
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="text-muted mt-2">Loading ledger entries...</p>
-  </div>
-
   <!-- Ledger Table -->
   <div class="card shadow-sm" *ngIf="selectedCustomerId">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table bordered-table align-middle w-100 mb-0">
           <thead class="table-light">
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Reference</th>
+            <tr class="align-middle">
+              <th class="sortable" (click)="sortBy('date')">
+                Date <i class="bi ms-1" [ngClass]="getSortIcon('date')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('transactionType')">
+                Type <i class="bi ms-1" [ngClass]="getSortIcon('transactionType')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('referenceNo')">
+                Reference <i class="bi ms-1" [ngClass]="getSortIcon('referenceNo')"></i>
+              </th>
               <th>Description</th>
-              <th class="text-end">Debit (&#8377;)</th>
-              <th class="text-end">Credit (&#8377;)</th>
+              <th class="text-end sortable" (click)="sortBy('debit')">
+                Debit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('debit')"></i>
+              </th>
+              <th class="text-end sortable" (click)="sortBy('credit')">
+                Credit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('credit')"></i>
+              </th>
               <th class="text-end">Balance (&#8377;)</th>
             </tr>
           </thead>

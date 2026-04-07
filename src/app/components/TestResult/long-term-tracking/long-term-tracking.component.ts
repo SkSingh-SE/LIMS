@@ -255,6 +255,7 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
 
   saveReading(): void {
     if (!this.recordForm.valid) {
+      this.recordForm.markAllAsTouched();
       this.toastService.show('Please fill in all required fields', 'warning');
       return;
     }

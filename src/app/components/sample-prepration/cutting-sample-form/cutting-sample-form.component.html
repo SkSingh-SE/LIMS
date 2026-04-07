@@ -68,14 +68,23 @@
                     ></app-searchable-dropdown>
                   </div>
                   <div class="col-md-6">
-                    <app-searchable-dropdown
-                      [placeholder]="'Specimen Type'"
-                      [hideLabel]="true"
-                      [fetchDataFn]="fetchSpecimenTypeDropdown"
-                      (itemSelected)="onSpecimenTypeSelected($event, i)"
-                      [selectedItem]="sCtrl.get('specimenTypeId')?.value"
-                      [isDisabled]="isViewMode"
-                    ></app-searchable-dropdown>
+                    <div class="d-flex gap-1 align-items-start">
+                      <div class="flex-grow-1">
+                        <app-searchable-dropdown
+                          [placeholder]="'Specimen Type'"
+                          [hideLabel]="true"
+                          [fetchDataFn]="fetchSpecimenTypeDropdown"
+                          (itemSelected)="onSpecimenTypeSelected($event, i)"
+                          [selectedItem]="sCtrl.get('specimenTypeId')?.value"
+                          [isDisabled]="isViewMode"
+                        ></app-searchable-dropdown>
+                      </div>
+                      <a *ngIf="!isViewMode" class="btn btn-sm btn-outline-danger"
+                        href="/specimen-type" target="_blank" rel="noopener"
+                        title="Add Specimen Type in Master">
+                        <i class="bi bi-plus-lg"></i>
+                      </a>
+                    </div>
                   </div>
                 </div>
 

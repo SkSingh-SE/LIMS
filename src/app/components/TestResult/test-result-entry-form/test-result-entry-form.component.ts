@@ -1910,6 +1910,8 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        // Refresh the unified price summary (Preparation & Pricing tab + badge)
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         if (summary.message) {
           this.toastService.show(summary.message, 'warning');
         } else {
@@ -1932,6 +1934,7 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.toastService.show('Pricing method updated', 'success');
       },
       error: (err: any) => {
@@ -1992,6 +1995,7 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
         this.priceLoadingMap[headerId] = false;
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.toastService.show(`Applied: ${rec.displayName} pricing`, 'success');
       },
       error: (err: any) => {
@@ -2046,6 +2050,7 @@ export class TestResultEntryFormComponent implements OnInit {
       next: (summary) => {
         this.priceSummaryMap[headerId] = summary;
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
         this.closePriceOverrideModal();
         this.toastService.show('Price overridden successfully', 'success');
       },
@@ -2179,8 +2184,7 @@ export class TestResultEntryFormComponent implements OnInit {
   }
 
   openPreparationForm(): void {
-    const url = this.preparationStatus?.cuttingEditUrl || '/sample/cutting';
-    window.open(url, '_blank');
+    window.open(`/sample/preparation/create/${this.sampleId}`, '_blank');
   }
 
   refreshPreparationData(): void {

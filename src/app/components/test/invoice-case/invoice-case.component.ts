@@ -246,6 +246,11 @@ export class InvoiceCaseComponent implements OnInit {
   };
 
   onLaboratorySelected(item: any) {
+    if (!item) {
+      this.invoiceCaseForm.patchValue({ laboratoryTestID: null });
+      this.invoiceCases.clear();
+      return;
+    }
     this.invoiceCaseForm.patchValue({ laboratoryTestID: item.id });
     this.getLabTestById(item.id);
   };

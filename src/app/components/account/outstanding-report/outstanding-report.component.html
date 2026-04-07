@@ -14,7 +14,7 @@
       <div class="card shadow-sm border-start border-primary border-4">
         <div class="card-body text-center">
           <h6 class="text-muted mb-1">Total Invoiced</h6>
-          <h4 class="text-primary mb-0">{{ getTotalInvoiced() | number:'1.2-2' }}</h4>
+          <h4 class="text-primary mb-0">&#8377; {{ getTotalInvoiced() | number:'1.2-2' }}</h4>
         </div>
       </div>
     </div>
@@ -22,7 +22,7 @@
       <div class="card shadow-sm border-start border-success border-4">
         <div class="card-body text-center">
           <h6 class="text-muted mb-1">Total Paid</h6>
-          <h4 class="text-success mb-0">{{ getTotalPaid() | number:'1.2-2' }}</h4>
+          <h4 class="text-success mb-0">&#8377; {{ getTotalPaid() | number:'1.2-2' }}</h4>
         </div>
       </div>
     </div>
@@ -30,7 +30,7 @@
       <div class="card shadow-sm border-start border-danger border-4">
         <div class="card-body text-center">
           <h6 class="text-muted mb-1">Total Outstanding</h6>
-          <h4 class="text-danger mb-0">{{ getTotalOutstanding() | number:'1.2-2' }}</h4>
+          <h4 class="text-danger mb-0">&#8377; {{ getTotalOutstanding() | number:'1.2-2' }}</h4>
         </div>
       </div>
     </div>
@@ -44,14 +44,6 @@
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="text-muted mt-2">Loading outstanding report...</p>
-  </div>
-
   <!-- Report Table -->
   <div class="card shadow-sm" >
     <div class="card-body p-0">
@@ -63,21 +55,17 @@
                 Customer
                 <i class="bi ms-1" [ngClass]="getSortIcon('customerName')"></i>
               </th>
-              <th class="sortable" (click)="sortBy('customerType')">
-                Customer Type
-                <i class="bi ms-1" [ngClass]="getSortIcon('customerType')"></i>
-              </th>
-              <th class="text-end sortable" (click)="sortBy('totalInvoiced')">
+              <th class="text-end sortable" (click)="sortBy('totalDebit')">
                 Total Invoiced (&#8377;)
-                <i class="bi ms-1" [ngClass]="getSortIcon('totalInvoiced')"></i>
+                <i class="bi ms-1" [ngClass]="getSortIcon('totalDebit')"></i>
               </th>
-              <th class="text-end sortable" (click)="sortBy('totalPaid')">
+              <th class="text-end sortable" (click)="sortBy('totalCredit')">
                 Total Paid (&#8377;)
-                <i class="bi ms-1" [ngClass]="getSortIcon('totalPaid')"></i>
+                <i class="bi ms-1" [ngClass]="getSortIcon('totalCredit')"></i>
               </th>
-              <th class="text-end sortable" (click)="sortBy('totalOutstanding')">
+              <th class="text-end sortable" (click)="sortBy('outstanding')">
                 Outstanding (&#8377;)
-                <i class="bi ms-1" [ngClass]="getSortIcon('totalOutstanding')"></i>
+                <i class="bi ms-1" [ngClass]="getSortIcon('outstanding')"></i>
               </th>
               <th class="text-end sortable" (click)="sortBy('lastPaymentDate')">
                 Last Payment Date
@@ -88,21 +76,17 @@
           <tbody>
             <tr *ngFor="let row of reportData">
               <td class="fw-semibold">{{ row.customerName }}</td>
-              <td>
-                <span class="badge bg-info text-dark" *ngIf="row.customerType">{{ row.customerType }}</span>
-                <span *ngIf="!row.customerType">-</span>
-              </td>
-              <td class="text-end">{{ (row.totalInvoiced || 0) | number:'1.2-2' }}</td>
-              <td class="text-end text-success">{{ (row.totalPaid || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (row.totalDebit || 0) | number:'1.2-2' }}</td>
+              <td class="text-end text-success">{{ (row.totalCredit || 0) | number:'1.2-2' }}</td>
               <td class="text-end">
-                <span class="fw-bold" [class.text-danger]="(row.totalOutstanding || 0) > 0">
-                  {{ (row.totalOutstanding || 0) | number:'1.2-2' }}
+                <span class="fw-bold" [class.text-danger]="(row.outstanding || 0) > 0">
+                  {{ (row.outstanding || 0) | number:'1.2-2' }}
                 </span>
               </td>
               <td class="text-end">{{ formatDate(row.lastPaymentDate) }}</td>
             </tr>
             <tr *ngIf="!reportData.length">
-              <td colspan="6" class="text-center py-4 text-muted">
+              <td colspan="5" class="text-center py-4 text-muted">
                 <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
                 No outstanding amounts found.
               </td>
@@ -110,7 +94,7 @@
           </tbody>
           <tfoot *ngIf="reportData.length">
             <tr class="table-warning fw-bold">
-              <td colspan="2">Grand Total</td>
+              <td>Grand Total</td>
               <td class="text-end">{{ getTotalInvoiced() | number:'1.2-2' }}</td>
               <td class="text-end">{{ getTotalPaid() | number:'1.2-2' }}</td>
               <td class="text-end">{{ getTotalOutstanding() | number:'1.2-2' }}</td>

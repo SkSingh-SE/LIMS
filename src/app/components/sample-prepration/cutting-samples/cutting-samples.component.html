@@ -51,7 +51,7 @@
                         <tr *ngFor="let item of listData; let i = index" class="text-sm">
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
-                                    <a *ngIf="item.id == 0" [routerLink]="['/sample/cutting/create', item.inwardId]"
+                                    <a *ngIf="item.id == 0 && !item.isInvoiced" [routerLink]="['/sample/cutting/create', item.inwardId]"
                                     [state]="{ mode: 'create' }"
                                      class="icon-link"
                                         title="Create">
@@ -63,7 +63,7 @@
                                         title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a *ngIf="item.id > 0 && item.preparationStatus !== 'Completed'" [routerLink]="['/sample/cutting/edit', item.id]"
+                                    <a *ngIf="item.id > 0 && !item.isInvoiced" [routerLink]="['/sample/cutting/edit', item.id]"
                                     [state]="{ mode: 'edit' }"
                                     class="icon-link"
                                         title="Edit">

@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 260px; min-width: 260px;">Actions</th>
+                            <th class="align-middle text-center" style="width: 140px; min-width: 140px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -62,16 +62,15 @@
                     <img src="/icons/view.svg" alt="Review" class="icon-svg">
                   </a>
                   <ng-container *ngIf="item.canTakeAction">
-                    <button
+                    <a
                       *ngFor="let action of item.actions"
-                      type="button"
-                      class="btn btn-sm"
-                      [ngClass]="getActionCfg(action.action).btnClass"
+                      role="button"
+                      class="icon-link action-icon-link"
                       [title]="action.name"
-                      (click)="onActionClick(action)"
+                      (click)="onActionClick(action, item)"
                     >
-                      <i class="bi me-1" [ngClass]="getActionCfg(action.action).icon"></i>{{ action.name }}
-                    </button>
+                      <i class="bi action-icon" [ngClass]="[getActionCfg(action.action).icon, getActionCfg(action.action).textClass]"></i>
+                    </a>
                   </ng-container>
                 </div>
               </td>
@@ -101,7 +100,7 @@
                 <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
               </td>
               <td>{{ item.modifiedBy }}</td>
-              <td>{{ item.modifiedOn | date : "dd MMM, yyyy" }}</td>
+              <td>{{ item.modifiedOn | date : "dd MMM, yyyy hh:mm a" }}</td>
             </tr>
           </tbody>
         </table>
@@ -185,5 +184,38 @@
     </div>
 
     <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>
+
+<!-- Remark Modal for Reject / Send Back actions -->
+<div class="modal-backdrop-custom" *ngIf="showRemarkModal" (click)="closeRemarkModal()"></div>
+<div class="modal-custom" *ngIf="showRemarkModal" role="dialog" aria-modal="true">
+  <div class="modal-header card-form-header text-white d-flex justify-content-between align-items-center">
+    <label class="modal-title fw-medium">
+      <i class="bi me-2" [ngClass]="getActionCfg(pendingAction?.action).icon"></i>
+      {{ pendingAction?.name }} - Case {{ pendingItem?.caseNo }}
+    </label>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeRemarkModal()"></button>
+  </div>
+  <div class="modal-body">
+    <label class="form-label">Remarks <span class="text-danger">*</span></label>
+    <textarea
+      class="form-control"
+      rows="4"
+      [(ngModel)]="actionRemark"
+      placeholder="Enter remarks..."
+      maxlength="1000"
+    ></textarea>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-cancel" (click)="closeRemarkModal()" [disabled]="isSubmittingAction">Cancel</button>
+    <button
+      type="button"
+      class="btn btn-save"
+      [disabled]="!actionRemark?.trim() || isSubmittingAction"
+      (click)="confirmRemarkAction()"
+    >
+      <i class="bi bi-send-check me-1"></i>Submit
+    </button>
   </div>
 </div>

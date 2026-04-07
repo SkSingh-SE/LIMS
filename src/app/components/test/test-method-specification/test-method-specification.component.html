@@ -280,9 +280,9 @@
         </div>
       </div>
 
-      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+      <div class="d-flex justify-content-end gap-2 mt-4">
         <a class="btn btn-cancel" routerLink="/test-specification">Cancel</a>
-        <button [disabled]="testSpecificationForm.invalid" type="submit" class="btn btn-save px-3">Save</button>
+        <button *ngIf="!isViewMode" [disabled]="testSpecificationForm.invalid || testSpecificationForm.get('isDisabled')?.value" type="submit" class="btn btn-save px-3">Save</button>
       </div>
     </form>
   </div>

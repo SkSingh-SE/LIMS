@@ -37,6 +37,18 @@
       <div class="info-label">Condition</div>
       <div class="info-value">{{ sample?.productCondition || '-' }}</div>
     </div>
+    <div class="info-card" *ngIf="sample?.productForm">
+      <div class="info-label">Product Form</div>
+      <div class="info-value">{{ sample.productForm }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.specimenOrientation">
+      <div class="info-label">Orientation</div>
+      <div class="info-value">{{ sample.specimenOrientation }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.heatTreatment">
+      <div class="info-label">Heat Treatment</div>
+      <div class="info-value">{{ sample.heatTreatment }}</div>
+    </div>
     <div class="info-card">
       <div class="info-label">Batch No</div>
       <div class="info-value">{{ sample?.batchNo || '-' }}</div>
@@ -51,7 +63,9 @@
         <span *ngIf="sample?.thickness">T:{{sample.thickness}}mm </span>
         <span *ngIf="sample?.diameter">D:{{sample.diameter}}mm </span>
         <span *ngIf="sample?.width">W:{{sample.width}}mm </span>
-        <span *ngIf="sample?.length">L:{{sample.length}}mm</span>
+        <span *ngIf="sample?.length">L:{{sample.length}}mm </span>
+        <span *ngIf="sample?.crossSectionArea">CSA:{{sample.crossSectionArea}}mm² </span>
+        <span *ngIf="sample?.gaugeLength">GL:{{sample.gaugeLength}}mm</span>
       </div>
     </div>
   </div>

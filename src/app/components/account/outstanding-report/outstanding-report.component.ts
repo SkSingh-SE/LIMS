@@ -12,7 +12,8 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class OutstandingReportComponent implements OnInit {
   reportData: any[] = [];
-  sortField = 'totalOutstanding';
+  summaryTotalOutstanding = 0;
+  sortField = 'outstanding';
   sortDir: 'asc' | 'desc' = 'desc';
 
   constructor(
@@ -27,7 +28,8 @@ export class OutstandingReportComponent implements OnInit {
   loadReport(): void {
     this.customerLedgerService.getOutstandingReport().subscribe({
       next: (data) => {
-        this.reportData = data || [];
+        this.reportData = data?.customers || [];
+        this.summaryTotalOutstanding = data?.totalOutstanding || 0;
         this.sortData();
       },
       error: (err) => {
@@ -60,19 +62,19 @@ export class OutstandingReportComponent implements OnInit {
 
   getSortIcon(field: string): string {
     if (this.sortField !== field) return 'bi-arrow-down-up';
-    return this.sortDir === 'asc' ? 'bi-sort-up' : 'bi-sort-down';
+    return this.sortDir === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
   }
 
   getTotalInvoiced(): number {
-    return this.reportData.reduce((sum, row) => sum + (row.totalInvoiced || 0), 0);
+    return this.reportData.reduce((sum, row) => sum + (row.totalDebit || 0), 0);
   }
 
   getTotalPaid(): number {
-    return this.reportData.reduce((sum, row) => sum + (row.totalPaid || 0), 0);
+    return this.reportData.reduce((sum, row) => sum + (row.totalCredit || 0), 0);
   }
 
   getTotalOutstanding(): number {
-    return this.reportData.reduce((sum, row) => sum + (row.totalOutstanding || 0), 0);
+    return this.reportData.reduce((sum, row) => sum + (row.outstanding || 0), 0);
   }
 
   formatDate(dateStr: string): string {

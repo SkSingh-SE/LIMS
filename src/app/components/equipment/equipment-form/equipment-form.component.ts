@@ -244,6 +244,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           });
         }
         if (data.soPs && data.soPs.length > 0) {
+          this.sopAttachments = [];
+          this.sopVideos = [];
           data.soPs.forEach((sop: any) => {
             this.sopAttachmentsArray.push(
               this.fb.group({

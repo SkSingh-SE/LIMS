@@ -108,11 +108,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       pinCode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
       customerType: ['', [Validators.required]],
       isBlock: [false],
-      industryID: [0],
       currencyID: [0],
       gstNo: ['', [Validators.required,
       Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/)
       ]],
+      panNo: ['', [Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       gstna: [false],
       dispatchModeIDs: [''],
       sampleReturn: [false],
@@ -127,12 +127,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       constantDiscountPercentage: [0],
       creditLimitAmount: [0],
       creditLimitTime: 0,
-      companyVerified: [false],
       remark: [''],
-      dTestoLoginId: [''],
-      dTestoPassword: [''],
-      dTestoActive: [false],
-      blockDTestoUser: [false],
       blockReason: [''],
       isVerified: [false],
       verifiedBy: [0],
@@ -260,7 +255,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       id: [0],
       key: [type],
       type: [type],
-      salutation: ['', isRequired ? Validators.required : []],
+      salutation: ['Mr.', isRequired ? Validators.required : []],
       name: ['', isRequired ? Validators.required : [Validators.required]],
       departmentID: [0, [Validators.required, Validators.min(1)]],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
@@ -680,11 +675,22 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         this.selectedCompanyCategoryIds = response.customerCompanyCategories.map((cat: any) => cat.companyCategoryID);
 
         if (response.contactPersons && response.contactPersons.length > 0) {
-          response.contactPersons.forEach(async (contact: any) => {
-            const formGroup = this.contactPersonsArray.controls.find(c => c.get('type')?.value === contact.type) as FormGroup;
+          let dynamicIndex = 0;
+          response.contactPersons.forEach((contact: any) => {
+            let formGroup: FormGroup | undefined;
+            if (contact.type === 'dynamic') {
+              // Find the Nth dynamic contact by counting, not by .find()
+              const dynamicGroups = this.contactPersonsArray.controls.filter(c => c.get('type')?.value === 'dynamic');
+              formGroup = dynamicGroups[dynamicIndex] as FormGroup;
+              dynamicIndex++;
+            } else {
+              formGroup = this.contactPersonsArray.controls.find(c => c.get('type')?.value === contact.type) as FormGroup;
+            }
             if (formGroup) {
               formGroup.patchValue(contact);
-              this.fetchContactAreaData(formGroup);
+              if (contact.pinCode && contact.pinCode.length === 6) {
+                this.fetchContactAreaData(formGroup);
+              }
             }
           });
         }

@@ -60,10 +60,10 @@
                   <a
                     *ngIf="item.actionStatus === 'CAN_TEST' || item.sampleStatus === 'In Progress' || item.sampleStatus === 'Pending'"
                     [routerLink]="['/testing/perform', item.sampleId]"
-                    class="btn btn-sm btn-success"
+                    class="icon-link action-icon-link"
                     title="Perform Testing"
                   >
-                    <i class="bi bi-play-fill me-1"></i>Test
+                    <i class="bi bi-play-circle-fill text-success action-icon"></i>
                   </a>
                   <a
                     [routerLink]="['/testing/results', item.sampleId]"

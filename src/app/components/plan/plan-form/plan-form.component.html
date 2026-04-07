@@ -131,6 +131,26 @@
                       [isDisabled]="isViewMode"
                     ></app-searchable-dropdown>
                   </div>
+                  <div class="col-12 col-md-6">
+                    <app-searchable-dropdown
+                      [placeholder]="'Specimen Orientation'"
+                      [labelName]="'Specimen Orientation'"
+                      [fetchDataFn]="getSpecimenOrientationDrop(sampleIdx)"
+                      (itemSelected)="onSpecimenOrientationSelected($event, sampleIdx)"
+                      [selectedItem]="sample.get('specimenOrientationID')?.value"
+                      [isDisabled]="isViewMode"
+                    ></app-searchable-dropdown>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <app-searchable-dropdown
+                      [placeholder]="'Product Form'"
+                      [labelName]="'Product Form'"
+                      [fetchDataFn]="getProductFormDrop"
+                      (itemSelected)="onProductFormSelected($event, sampleIdx)"
+                      [selectedItem]="sample.get('productFormID')?.value"
+                      [isDisabled]="isViewMode"
+                    ></app-searchable-dropdown>
+                  </div>
                 </div>
               </div>
             </div>

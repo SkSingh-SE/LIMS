@@ -112,8 +112,9 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 42, title: 'Review', route: '/sample/review', parentMenuID: 5, permissions: ['CanReadReview'], children: [], color: getRandomColor() },
         {
           id: 500, title: 'Sample Preparation', route: '', parentMenuID: 5, permissions: [], children: [
-            { id: 43, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 500, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
-            { id: 46, title: 'Machining Charges', route: '/sample/machining', parentMenuID: 500, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() },
+            { id: 130, title: 'Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
+            // { id: 43, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 500, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
+            // { id: 46, title: 'Machining Charges', route: '/sample/machining', parentMenuID: 500, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() },
             { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         }
@@ -311,7 +312,8 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-file-text',
       color: '',
       children: [
-        { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() }
+        { id: 66, title: 'Reporting Dashboard', route: '/reporting/dashboard', parentMenuID: 11, permissions: ['CanReadReporting'], children: [], color: getRandomColor() },
+        { id: 67, title: 'Report Formats', route: '/report-format', parentMenuID: 11, permissions: ['CanReadReportFormat'], children: [], color: getRandomColor() }
       ]
     },
     {

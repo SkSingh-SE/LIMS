@@ -112,6 +112,19 @@
             </div>
           </div>
 
+          <!-- PAN No -->
+          <div class="col-auto col-md-4 col-lg-3">
+            <label class="form-label">PAN No</label>
+            <input type="text" class="form-control text-uppercase" formControlName="panNo" placeholder="Enter PAN No."
+              maxlength="10"
+              [ngClass]="{ 'is-invalid': customerForm.get('panNo')?.touched && customerForm.get('panNo')?.invalid }" />
+            <span
+              *ngIf="customerForm.get('panNo')?.hasError('pattern') && customerForm.get('panNo')?.touched"
+              class="text-danger text-sm">
+              Invalid PAN format. Expected: ABCDE1234F
+            </span>
+          </div>
+
           <!-- Sample Return -->
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label d-block">Sample Return</label>
@@ -127,20 +140,8 @@
             </div>
           </div>
 
-          <!-- Is Block -->
-          <div class="col-auto col-md-4 col-lg-3" *ngIf="customerId > 0">
-            <label class="form-label d-block">Block Customer</label>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="true"
-                id="blockYes" />
-              <label class="form-check-label" for="blockYes">Yes</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="isBlock" [value]="false"
-                id="blockNo" />
-              <label class="form-check-label" for="blockNo">No</label>
-            </div>
-          </div>
+          <!-- Block Customer — hidden, not implemented yet -->
+
         </div>
       </fieldset>
 

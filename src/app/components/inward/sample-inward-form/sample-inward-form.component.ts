@@ -19,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
@@ -64,6 +65,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   isEditMode: boolean = false;
   sampleId: number = 0;
   currentInwardStatus: InwardStatus | string = '';
+  planTabLoaded: boolean = false;
 
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
@@ -84,6 +86,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private router: Router,
     private prodCondService: ProductConditionService,
     private specimenOrientationService: SpecimenOrientationService,
+    private productFormService: ProductFormService,
     private unsavedChangesService: UnsavedChangesService,
     private customerPOService: CustomerPOService,
     private accountService: AccountService) { }
@@ -757,6 +760,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
       file: [null],
+      productFormID: [existingSample?.productFormID || null],
       thickness: [existingSample?.thickness || null],
       diameter: [existingSample?.diameter || null],
       width: [existingSample?.width || null],
@@ -918,6 +922,15 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       specimenOrientationID: item?.id || null,
       specimenOrientationName: item?.name || '',
     });
+  }
+
+  getProductFormDrop = (term: string, page: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  };
+
+  onProductFormSelected(item: any, sampleIndex: number): void {
+    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sampleDetailGroup.patchValue({ productFormID: item?.id || null });
   }
 
   // File Handling
@@ -1090,8 +1103,13 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
       formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
+      formData.append(`sampleDetails[${i}].productFormID`, s.productFormID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
       formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
+      formData.append(`sampleDetails[${i}].thickness`, s.thickness != null ? String(s.thickness) : '');
+      formData.append(`sampleDetails[${i}].diameter`, s.diameter != null ? String(s.diameter) : '');
+      formData.append(`sampleDetails[${i}].width`, s.width != null ? String(s.width) : '');
+      formData.append(`sampleDetails[${i}].length`, s.length != null ? String(s.length) : '');
       formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
       formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
       if (s.file instanceof File) {

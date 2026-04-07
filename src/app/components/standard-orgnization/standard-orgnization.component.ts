@@ -67,7 +67,7 @@ export class StandardOrgnizationComponent implements OnInit {
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  formTitle = 'Specimen Orientation Form';
+  formTitle = 'Standard Organization Form';
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private standardOrgService: StandardOrgnizationService, private toastService: ToastService) {
 
@@ -275,11 +275,11 @@ export class StandardOrgnizationComponent implements OnInit {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.formTitle = 'Specimen Orientation Form';
+      this.formTitle = 'Standard Organization Form';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Specimen Orientation Form';
+      this.formTitle = 'Standard Organization Form';
       this.StandardOrganizationForm.enable();
 
     }

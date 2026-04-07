@@ -30,6 +30,6 @@ export class ProductSpecificationGradeService {
   }
 
   getByProductSpec(productSpecId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/by-product-spec/${productSpecId}`);
+    return this.http.get<any>(`${this.apiUrl}/by-product/${productSpecId}`);
   }
 }

@@ -54,6 +54,7 @@ export interface TestImage {
 export interface MechanicalTest {
   testResultHeaderId: string;
   testName: string;
+  testMethod?: string;
   reportNo: string;
   specification1Name: string;
   specification2Name?: string;
@@ -65,6 +66,7 @@ export interface MechanicalTest {
 export interface ChemicalTest {
   testResultHeaderId: string;
   testName: string;
+  testMethod?: string;
   reportNo: string;
   specification1Name: string;
   specification2Name?: string;
@@ -132,6 +134,15 @@ export interface ReportingPreview {
   decisionRule?: string;
   ulrNo?: string;
   ulr?: string;
+  // NABL compliance fields
+  productForm?: string;
+  specimenOrientation?: string;
+  heatTreatment?: string;
+  roomTemperature?: number;
+  roomHumidity?: number;
+  equipmentUsed?: string;
+  crossSectionArea?: number;
+  gaugeLength?: number;
 }
 
 @Injectable({

@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { CustomerService } from '../../../services/customer.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -60,7 +61,7 @@ export class CustomerListComponent  implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private customerService: CustomerService) {
+  constructor(private fb: FormBuilder, private customerService: CustomerService, private toastService: ToastService) {
     this.customerForm = this.fb.group({
       searchTerm: '',
       sortByColumn: '',
@@ -168,6 +169,7 @@ export class CustomerListComponent  implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -218,6 +220,19 @@ export class CustomerListComponent  implements OnInit {
     return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
+
+  deleteCustomer(id: number, name: string): void {
+    if (!confirm(`Are you sure you want to delete customer "${name}"?`)) return;
+    this.customerService.deleteCustomer(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message, 'success');
+        this.fetchData();
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to delete customer.', 'error');
+      }
+    });
+  }
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;

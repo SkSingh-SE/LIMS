@@ -1,91 +1,95 @@
 <div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">Aging Report</label>
-      <button class="btn btn-outline-light btn-sm me-3" (click)="loadReport()" [disabled]="false">
-        <i class="bi bi-arrow-clockwise me-1" [class.spin]="false"></i> Refresh
+      <button class="btn btn-outline-light btn-sm me-3" (click)="loadReport()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
       </button>
     </div>
     <div class="card-body">
 
   <!-- Filter -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row g-3 align-items-end">
-        <div class="col-md-6">
-          <label class="form-label">Filter by Customer</label>
-          <input type="text" class="form-control" [(ngModel)]="customerFilter"
-                 placeholder="Type customer name to filter..."
-                 (input)="onFilterChange()" />
-        </div>
-        <div class="col-md-6 text-end pt-4">
-          <small class="text-muted">
-            Showing {{ filteredData.length }} of {{ reportData.length }} customers
-          </small>
-        </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <small class="text-muted">
+      Showing {{ filteredData.length }} of {{ reportData.length }} customers
+    </small>
+    <div class="w-25 input-group custom-search">
+      <input type="text" class="form-control" placeholder="Search customer..."
+             [(ngModel)]="customerFilter" (input)="onFilterChange()" />
+      <div class="input-group-text">
+        <i class="bi bi-search"></i>
       </div>
     </div>
-  </div>
-
-  <!-- Loading -->
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="text-muted mt-2">Loading aging report...</p>
   </div>
 
   <!-- Report Table -->
-  <div class="card shadow-sm" >
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table bordered-table align-middle w-100 mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Customer</th>
-              <th class="text-end">Current (0-30)</th>
-              <th class="text-end">30 Days</th>
-              <th class="text-end">60 Days</th>
-              <th class="text-end">90 Days</th>
-              <th class="text-end">90+ Days</th>
-              <th class="text-end">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of filteredData">
-              <td class="fw-semibold">{{ row.customerName }}</td>
-              <td class="text-end">{{ (row.current || 0) | number:'1.2-2' }}</td>
-              <td class="text-end">{{ (row.days30 || 0) | number:'1.2-2' }}</td>
-              <td class="text-end">{{ (row.days60 || 0) | number:'1.2-2' }}</td>
-              <td class="text-end">{{ (row.days90 || 0) | number:'1.2-2' }}</td>
-              <td class="text-end">
-                <span [class.text-danger]="(row.days90Plus || 0) > 0" [class.fw-bold]="(row.days90Plus || 0) > 0">
-                  {{ (row.days90Plus || 0) | number:'1.2-2' }}
-                </span>
-              </td>
-              <td class="text-end fw-bold">{{ (row.total || 0) | number:'1.2-2' }}</td>
-            </tr>
-            <tr *ngIf="!filteredData.length">
-              <td colspan="7" class="text-center py-4 text-muted">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                No aging data available.
-              </td>
-            </tr>
-          </tbody>
-          <tfoot *ngIf="filteredData.length">
-            <tr class="table-warning fw-bold">
-              <td>Grand Total</td>
-              <td class="text-end">{{ getTotal('current') | number:'1.2-2' }}</td>
-              <td class="text-end">{{ getTotal('days30') | number:'1.2-2' }}</td>
-              <td class="text-end">{{ getTotal('days60') | number:'1.2-2' }}</td>
-              <td class="text-end">{{ getTotal('days90') | number:'1.2-2' }}</td>
-              <td class="text-end">{{ getTotal('days90Plus') | number:'1.2-2' }}</td>
-              <td class="text-end">{{ getGrandTotal() | number:'1.2-2' }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
+  <div *ngIf="filteredData.length > 0" class="table-responsive">
+    <table class="table bordered-table align-middle w-100 small mb-0">
+      <thead class="table-light">
+        <tr class="align-middle">
+          <th class="sortable" (click)="sortBy('customerName')">
+            Customer
+            <i class="bi ms-1" [ngClass]="getSortIcon('customerName')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('current')">
+            Current (0-30)
+            <i class="bi ms-1" [ngClass]="getSortIcon('current')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days30')">
+            30 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days30')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days60')">
+            60 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days60')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days90')">
+            90 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days90')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days90Plus')">
+            90+ Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days90Plus')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('total')">
+            Total
+            <i class="bi ms-1" [ngClass]="getSortIcon('total')"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of filteredData">
+          <td class="fw-semibold">{{ row.customerName }}</td>
+          <td class="text-end">{{ (row.current || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days30 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days60 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days90 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">
+            <span [class.text-danger]="(row.days90Plus || 0) > 0" [class.fw-bold]="(row.days90Plus || 0) > 0">
+              {{ (row.days90Plus || 0) | number:'1.2-2' }}
+            </span>
+          </td>
+          <td class="text-end fw-bold">{{ (row.total || 0) | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="table-warning fw-bold">
+          <td>Grand Total</td>
+          <td class="text-end">{{ getTotal('current') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days30') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days60') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days90') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days90Plus') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getGrandTotal() | number:'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredData.length === 0" class="alert alert-light border border-secondary text-center py-4">
+    <i class="bi bi-info-circle text-secondary"></i>
+    <p class="mb-0 text-secondary">No aging data available.</p>
   </div>
 
     </div>

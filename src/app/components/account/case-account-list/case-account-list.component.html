@@ -63,24 +63,16 @@
 
           <tbody>
             <tr *ngFor="let item of dataList" class="align-middle text-center">
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
-                  <button
-                    class="btn btn-sm btn-add fw-semibold"
-                    title="Open"
-                    (click)="openCaseDetail(item.inwardId || item.id, 'edit')"
-                  >
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span class="d-none d-sm-inline"> Open</span>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-cancel fw-semibold"
-                    title="View"
-                    (click)="openCaseDetail(item.inwardId || item.id, 'view')"
-                  >
-                    <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline"> View</span>
-                  </button>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-3">
+                  <a class="icon-link" title="View"
+                    (click)="openCaseDetail(item.inwardId || item.id, 'view')">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                  </a>
+                  <a class="icon-link" title="Open"
+                    (click)="openCaseDetail(item.inwardId || item.id, 'edit')">
+                    <img src="/icons/edit.svg" alt="Open" class="icon-svg">
+                  </a>
                 </div>
               </td>
               <td class="fw-semibold">
@@ -162,12 +154,6 @@
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="false" class="card-body text-center py-4">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
   </div>
 </div>
 

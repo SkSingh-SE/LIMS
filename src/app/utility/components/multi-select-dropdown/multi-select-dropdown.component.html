@@ -19,6 +19,7 @@
     [typeahead]="typeahead"
     (change)="onChange($event)"
     [readonly]="isDisabled"
+    dropdownPosition="auto"
   >
   </ng-select>
   <div *ngIf="multiForm.get('search')?.errors?.['required'] && multiForm.get('search')?.touched" class="text-danger small">

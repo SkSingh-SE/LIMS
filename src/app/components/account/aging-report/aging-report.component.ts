@@ -15,6 +15,9 @@ export class AgingReportComponent implements OnInit {
   filteredData: any[] = [];
   customerFilter = '';
 
+  sortField = 'total';
+  sortDir: 'asc' | 'desc' = 'desc';
+
   constructor(
     private customerLedgerService: CustomerLedgerService,
     private toastService: ToastService
@@ -46,10 +49,37 @@ export class AgingReportComponent implements OnInit {
         (row) => (row.customerName || '').toLowerCase().includes(term)
       );
     }
+    this.sortData();
   }
 
   onFilterChange(): void {
     this.applyFilter();
+  }
+
+  sortBy(field: string): void {
+    if (this.sortField === field) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDir = 'desc';
+    }
+    this.sortData();
+  }
+
+  sortData(): void {
+    this.filteredData.sort((a, b) => {
+      const aVal = a[this.sortField] || 0;
+      const bVal = b[this.sortField] || 0;
+      if (typeof aVal === 'string') {
+        return this.sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return this.sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }
+
+  getSortIcon(field: string): string {
+    if (this.sortField !== field) return 'bi-arrow-down-up';
+    return this.sortDir === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
   }
 
   getTotal(field: string): number {

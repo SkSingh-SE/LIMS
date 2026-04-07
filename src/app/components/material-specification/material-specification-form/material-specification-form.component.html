@@ -289,11 +289,8 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': (group.get('minValue')?.touched && group.get('minValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
-                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
-                                Min value is required
-                              </small>
                             </td>
                             <td>
                               <input
@@ -302,11 +299,8 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': (group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
-                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
-                                Max value is required
-                              </small>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -584,11 +578,8 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': (group.get('minValue')?.touched && group.get('minValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
-                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
-                                Min value is required
-                              </small>
                             </td>
                             <td>
                               <input
@@ -597,11 +588,8 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': (group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')) || (group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value)}"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
-                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
-                                Max value is required
-                              </small>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -870,11 +858,7 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.touched && group.get('minValue')?.hasError('required')}"
                               />
-                              <small *ngIf="group.get('minValue')?.touched && group.get('minValue')?.hasError('required')" class="text-danger">
-                                Min value is required
-                              </small>
                             </td>
                             <td>
                               <input
@@ -883,11 +867,7 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
-                                [ngClass]="{'is-invalid': group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')}"
                               />
-                              <small *ngIf="group.get('maxValue')?.touched && group.get('maxValue')?.hasError('required')" class="text-danger">
-                                Max value is required
-                              </small>
                             </td>
                             <td>
                               <input class="form-control wide-input" formControlName="notes" placeholder="Enter note" />

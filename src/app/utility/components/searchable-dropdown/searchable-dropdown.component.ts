@@ -84,19 +84,28 @@ export class SearchableDropdownComponent {
         this.hasValidSelection = false;
         return;
       }
-      const matched = this.dropdownData.find(x => x.id === this.selectedItem);
+      const matched = this.dropdownData.find(x => +x.id === +(typeof val === 'object' ? val?.id : val));
       if (matched) {
         if (this.selectedLabel.length === 0) {
           this.selectedLabel = matched.name;
           this.hasValidSelection = true;
           this.selectItem(matched);
         }
+      } else if (typeof val === 'object' && val !== null && val.id !== undefined) {
+        // Full object passed — use directly for rebind
+        this.selectedLabel = val.name ?? val.label ?? String(val.id);
+        this.hasValidSelection = true;
+        this.dropdownData = [val, ...this.dropdownData];
+        this.cdr.markForCheck();
       } else {
-        this.fetchDataFn(this.selectedItem, 0, 1).subscribe({
+        // Only ID passed — search by ID string (backend supports numeric ID lookup)
+        const idToFind = typeof val === 'object' ? val?.id : val;
+        this.fetchDataFn(String(idToFind), 0, 20).subscribe({
           next: (data: any[]) => {
-            const found = data.find(x => x.id === this.selectedItem);
+            // Use loose equality to handle number/string mismatch
+            const found = data.find(x => +x.id === +idToFind);
             if (found) {
-              this.dropdownData = [found, ...this.dropdownData];
+              this.dropdownData = [found, ...this.dropdownData.filter(x => x.id !== found.id)];
               this.selectedLabel = found.name;
               this.hasValidSelection = true;
               this.cdr.markForCheck();

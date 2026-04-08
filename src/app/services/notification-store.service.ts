@@ -17,10 +17,6 @@ export class NotificationStoreService {
   ) {
     // subscribe to SignalR updates
     this.signalR.notifications$.subscribe(n => {
-      // merge but avoid duplicates by id
-      // const current = this.notifications$.value;
-      // const merged = [ ...n, ...current.filter(c => !n.some(x => x.id === c.id)) ];
-      // this.notifications$.next(merged);
       this.prependNotification(n);
     });
   }

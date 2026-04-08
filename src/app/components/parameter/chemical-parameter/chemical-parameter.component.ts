@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
@@ -59,7 +59,6 @@ export class ChemicalParameterComponent implements OnInit {
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
   ParameterList: any[] = [];
-  ParameterUnits: any[] = [];
 
   pageNumber = 1;
   pageSize = 10;
@@ -83,7 +82,6 @@ export class ChemicalParameterComponent implements OnInit {
   ParameterForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
-  customerTypeObject: any = null;
   parameterId: number = 0;
   formTitle = 'Parameter Form';
 
@@ -101,7 +99,6 @@ export class ChemicalParameterComponent implements OnInit {
   ngOnInit() {
     this.initForm();
     this.fetchData();
-    this.fetchParameterUnits();
     this.fetchParameterDropdown();
   }
 
@@ -138,23 +135,11 @@ export class ChemicalParameterComponent implements OnInit {
     }
     );
   }
-  fetchParameterUnits() {
-    this.parameterUnitService.getParameterUnitDropdown("", 0, 100).subscribe({
-      next: (response) => {
-        this.ParameterUnits = response || [];
-      },
-      error: (error) => {
-        console.error('Error fetching parameter units:', error);
-      }
-    });
-  }
-
   getDetails(): void {
     const requestId = this.parameterId;
     this.parameterService.getParameterById(requestId).subscribe({
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
-        this.customerTypeObject = response;
         this.ParameterForm.patchValue({
           ...response,
           elementType: (response.elementType || 'normal').toLowerCase(),
@@ -614,10 +599,6 @@ export class ChemicalParameterComponent implements OnInit {
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
   }
-
-
-  @HostListener('window:focus')
-  onWindowFocus(): void {}
 }
 
 

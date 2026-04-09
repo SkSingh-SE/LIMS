@@ -190,7 +190,7 @@
                                     <app-searchable-dropdown
                                         [labelName]="'Category'"
                                         [fetchDataFn]="getCategoryDropdown"
-                                        [selectedItem]="customerTypeObject?.heatTreatmentCategoryID"
+                                        [selectedItem]="HeatTreatmentForm.get('heatTreatmentCategoryID')?.value"
                                         [isDisabled]="isViewMode"
                                         (itemSelected)="HeatTreatmentForm.get('heatTreatmentCategoryID')?.setValue($event?.id)">
                                     </app-searchable-dropdown>
@@ -207,7 +207,7 @@
                                     <app-searchable-dropdown
                                         [labelName]="'Cooling Medium'"
                                         [fetchDataFn]="getCoolingMediumDropdown"
-                                        [selectedItem]="customerTypeObject?.coolingMediumID"
+                                        [selectedItem]="HeatTreatmentForm.get('coolingMediumID')?.value"
                                         [isDisabled]="isViewMode"
                                         (itemSelected)="HeatTreatmentForm.get('coolingMediumID')?.setValue($event?.id)">
                                     </app-searchable-dropdown>

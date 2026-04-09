@@ -288,6 +288,7 @@ export class HeatTreatmentComponent implements OnInit {
 
   openModal(type: string, id: number): void {
     this.initForm();
+    this.customerTypeObject = null;
     this.heatTreatmentId = 0;
     if (id > 0) {
       this.heatTreatmentId = id;

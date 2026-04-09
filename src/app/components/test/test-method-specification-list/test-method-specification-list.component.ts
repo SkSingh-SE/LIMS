@@ -20,8 +20,8 @@ export class TestMethodSpecificationListComponent implements OnInit {
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
     { key: 'testMethodStandard', type: 'string', label: 'Standard', filter: true },
     { key: 'currentVersion', type: 'string', label: 'Current Version', filter: true },
-    { key: 'currentVersionYear', type: 'number', label: 'Year', filter: true },
-    { key: 'isDisabled', type: 'number', label: 'Disabled', filter: true },
+    { key: 'currentVersionYear', type: 'string', label: 'Year', filter: true },
+    { key: 'isDisabled', type: 'bool', label: 'Disabled', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -29,8 +29,8 @@ export class TestMethodSpecificationListComponent implements OnInit {
     standardOrganizationName: 'string',
     testMethodStandard: 'string',
     currentVersion: 'string',
-    currentVersionYear: 'number',
-    isDisabled: 'number',
+    currentVersionYear: 'string',
+    isDisabled: 'bool',
     modifiedOn: 'date',
   };
 

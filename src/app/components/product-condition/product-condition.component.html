@@ -67,7 +67,7 @@
 
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td><span class="text-primary fw-medium">{{ customerType.code }}</span></td>
+                            <td><a class="text-primary fw-medium cursor-pointer" (click)="openModal('view', customerType.id)">{{ customerType.code }}</a></td>
                             <td>{{ customerType.name }}</td>
                             <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>

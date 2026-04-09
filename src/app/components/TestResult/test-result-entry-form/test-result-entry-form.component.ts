@@ -924,8 +924,70 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
-  // completeResults() removed — use per-test completeTest(planIndex, testIndex) instead
-  // Each test is completed individually via POST /api/TestResults/complete-test/{headerId}
+  saveTestWise(planIndex: number, testIndex: number): void {
+    const planGroup = (this.resultForm.get('plans') as FormArray).at(planIndex) as FormGroup;
+    const testGroup = (planGroup.get('tests') as FormArray).at(testIndex) as FormGroup;
+    const testParams = testGroup.get('parameters') as FormArray;
+
+    if (!testParams || testParams.length === 0) {
+      this.toastService.show('No parameters to save', 'warning');
+      return;
+    }
+
+    const headerId = this.plans[planIndex].tests[testIndex].headerId;
+    const equipmentIds = this.selectedEquipmentMap[headerId] || [];
+    const equipmentIdsJson = equipmentIds.length > 0 ? JSON.stringify(equipmentIds.map((e: any) => e.id || e)) : null;
+
+    const apiGeneral = this.apiMetadata.generalTests.find((gt: any) => gt.headerId === headerId);
+    const apiChemical = this.apiMetadata.chemicalTests.find((ct: any) => ct.headerId === headerId);
+
+    const payload: any = {
+      inwardId: this.apiMetadata.inwardId,
+      sampleId: this.apiMetadata.sampleId,
+      planId: this.apiMetadata.planId,
+      generalTests: [],
+      chemicalTests: []
+    };
+
+    const params = testParams.value;
+    if (apiGeneral) {
+      payload.generalTests.push({
+        headerId, generalTestId: apiGeneral.generalTestId, testMethodId: apiGeneral.testMethodId,
+        laboratoryTestId: apiGeneral.laboratoryTestId, equipmentIdsJson,
+        parameters: params.map((p: any) => ({
+          id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
+          value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
+          isWithinLimit: p.isWithinLimit, altered: p.altered || false,
+          formula: p.formulaExpression || '', testMethodUsed: p.testMethodUsed || '',
+          convertedValue: p.convertedValue ?? null, selectedUnit: p.selectedUnit || '',
+          isBillable: p.isBillable ?? true
+        }))
+      });
+    } else if (apiChemical) {
+      payload.chemicalTests.push({
+        headerId, chemicalTestId: apiChemical.chemicalTestId, testMethodId: apiChemical.testMethodId,
+        laboratoryTestId: apiChemical.laboratoryTestId, equipmentIdsJson,
+        parameters: params.map((p: any) => ({
+          id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
+          value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
+          isWithinLimit: p.isWithinLimit, altered: p.altered || false,
+          formula: p.formulaExpression || '', testMethodUsed: p.testMethodUsed || '',
+          convertedValue: p.convertedValue ?? null, selectedUnit: p.selectedUnit || '',
+          isBillable: p.isBillable ?? true
+        }))
+      });
+    }
+
+    const testName = this.plans[planIndex].tests[testIndex].name || 'Test';
+    this.testResultService.saveTestResult(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(`${testName} — saved successfully`, 'success');
+      },
+      error: (error) => {
+        this.toastService.show(`Error saving ${testName}`, 'error');
+      }
+    });
+  }
 
   // ----------------------------------------------------------------
   // Get specific validation errors for user-friendly messages

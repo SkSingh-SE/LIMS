@@ -79,7 +79,16 @@
                                     {{ item.caseNo }}
                                 </a>
                             </td>
-                            <td>{{ item.customerName }}</td>
+                            <td>
+                                <a *ngIf="item.customerID"
+                                   [routerLink]="['/customer/details', item.customerID]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View customer: ' + item.customerName">
+                                    {{ item.customerName }}
+                                </a>
+                                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+                            </td>
                             <td>{{ item.contactPersonName }}</td>
                             <td>{{ item.contactEmail }}</td>
                             <td>{{ item.contactPhone }}</td>

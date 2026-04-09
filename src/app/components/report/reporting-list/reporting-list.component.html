@@ -66,7 +66,16 @@
                 </a>
               </td>
               <td>{{ item.caseNo }}</td>
-              <td>{{ item.customer }}</td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + item.customer">
+                  {{ item.customer }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customer }}</span>
+              </td>
               <td>{{ item.material || '-' }}</td>
               <td>{{ item.condition || '-' }}</td>
               <td class="text-center">

@@ -217,6 +217,15 @@
                     </button>
 
                     <button
+                      *ngIf="!isTestFinalized(plans[p].tests[t].status) && (plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'In Progress' || plans[p].tests[t].status === 'Long-Term')"
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      (click)="saveTestWise(p, t)"
+                      title="Save all parameters for this test">
+                      <i class="bi bi-floppy me-1"></i>Save
+                    </button>
+
+                    <button
                       *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId) && (plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'In Progress' || plans[p].tests[t].status === 'Long-Term')"
                       type="button"
                       class="btn btn-save btn-sm"

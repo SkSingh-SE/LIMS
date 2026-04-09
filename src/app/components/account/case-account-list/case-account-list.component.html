@@ -83,7 +83,16 @@
                   {{ item.caseNo || item.case_no }}
                 </a>
               </td>
-              <td>{{ item.customerName || item.customer_name }}</td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + (item.customerName || item.customer_name)">
+                  {{ item.customerName || item.customer_name }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName || item.customer_name }}</span>
+              </td>
               <td>{{ item.customerType || item.customer_type }}</td>
               <td>
                 <span [ngClass]="getStatusBadgeClass(item.piStatus || item.pi_status)">

@@ -33,6 +33,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
   const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/DepartmentMaster/dropdown', '/api/DesignationMaster/dropdown', '/api/EmployeeMaster/dropdown'];
 
+  const isDropdownCall = req.url.includes('/dropdown');
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
   const getErrorMessage = (error: HttpErrorResponse): string => {
@@ -80,7 +81,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       setHeaders: { Authorization: `Bearer ${accessToken}` }
     });
 
-    if (!excludeLoaderUrl.some(url => req.url.includes(url))) {
+    if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
       loaderService.show();
     }
 
@@ -153,7 +154,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // No token or excluded — show loader for non-excluded URLs
-  if (!excludeLoaderUrl.some(url => req.url.includes(url))) {
+  if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
     loaderService.show();
   }
 

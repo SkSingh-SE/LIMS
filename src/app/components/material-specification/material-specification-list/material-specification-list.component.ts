@@ -19,7 +19,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
     { key: 'metalClassificationName', type: 'string', label: 'Metal Classification', filter: true },
-    { key: 'standardYear', type: 'number', label: 'StandardYear', filter: true },
+    { key: 'standardYear', type: 'string', label: 'StandardYear', filter: true },
     { key: 'grade', type: 'string', label: 'Grade', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
@@ -27,7 +27,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     aliasName: 'string',
     metalClassificationName: 'string',
     standardOrganizationName: 'string',
-    standardYear: 'number',
+    standardYear: 'string',
     grade: 'string',
     modifiedOn: 'date',
   };
@@ -160,6 +160,7 @@ export class MaterialSpecificationListComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }

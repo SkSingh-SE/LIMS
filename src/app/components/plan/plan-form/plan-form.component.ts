@@ -117,7 +117,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       }
     }
 
-    this.loadChemicalTestTypes();
     this.initForm();
 
     // If in view mode and form is initialized, disable it immediately
@@ -125,7 +124,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.disableFormRecursively(this.planForm);
     }
 
-    if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
+    // Load chemical test types first, then fetch details (testTypeList must be ready for rebind)
+    this.loadChemicalTestTypes(() => {
+      if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
+    });
   }
 
   // Form Initialization
@@ -248,22 +250,32 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   // Check if at least one plan exists with at least one test (general or chemical)
   hasValidPlans(): boolean {
-    // Check all samples
     for (let i = 0; i < this.samples.length; i++) {
       const testPlans = this.getTestPlans(i);
-      // Check each plan in this sample
       for (let j = 0; j < testPlans.length; j++) {
         const plan = testPlans.at(j) as FormGroup;
         const generalTests = plan.get('generalTests') as FormArray;
         const chemicalTests = plan.get('chemicalTests') as FormArray;
 
-        // Plan is valid if it has at least one general test or one chemical test
-        if (generalTests.length > 0 || chemicalTests.length > 0) {
-          return true; // Found at least one valid plan
+        // General test is valid only if it has at least one method row
+        for (let g = 0; g < generalTests.length; g++) {
+          const gt = generalTests.at(g) as FormGroup;
+          const methods = gt.get('methods') as FormArray;
+          if (methods && methods.length > 0) return true;
+        }
+
+        // Chemical test is valid if it has at least one test type selected OR at least one element
+        for (let c = 0; c < chemicalTests.length; c++) {
+          const ct = chemicalTests.at(c) as FormGroup;
+          const testTypes = ct.get('testTypes') as FormGroup;
+          const elements = ct.get('elements') as FormArray;
+          const hasSelectedType = testTypes && Object.values(testTypes.value).some(v => !!v);
+          const hasElements = elements && elements.length > 0;
+          if (hasSelectedType || hasElements) return true;
         }
       }
     }
-    return false; // No valid plans found
+    return false;
   }
 
   getTestArray(sampleIndex: number, planIndex: number, type: 'generalTests' | 'chemicalTests'): FormArray {
@@ -872,13 +884,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) => {
             const testTypesGroup: any = {};
 
+            // Start with all test types from master as false
+            this.testTypeList.forEach(t => {
+              testTypesGroup[t.id] = [false];
+            });
+
+            // Overlay saved values from backend (keyed by LaboratoryTestID)
             if (ct.testTypes && typeof ct.testTypes === 'object') {
               Object.keys(ct.testTypes).forEach(typeKey => {
                 testTypesGroup[typeKey] = [ct.testTypes[typeKey] ?? false];
-              });
-            } else {
-              this.testTypeList.forEach(t => {
-                testTypesGroup[t.id] = [false];
               });
             }
 
@@ -1397,14 +1411,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
   };
 
-  loadChemicalTestTypes() {
+  loadChemicalTestTypes(callback?: () => void) {
     this.laboratoryTestService.getLaboratoryTestDropdownForChemicals('', 0, 100).subscribe({
       next: (data) => {
         this.testTypeList = data || [];
+        if (callback) callback();
       },
       error: (err) => {
         console.error("Failed to load dynamic chemical test types", err);
         this.testTypeList = [];
+        if (callback) callback();
       }
     });
   }

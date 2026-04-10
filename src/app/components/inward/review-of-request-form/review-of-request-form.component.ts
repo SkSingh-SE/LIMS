@@ -132,6 +132,11 @@ export class ReviewOfRequestFormComponent implements OnInit {
               const testPlans = (data.sampleTestPlans || [])
                 .filter((tp: any) => tp.sampleID === s.id)
                 .map((tp: any) => ({
+                  id: tp.id,
+                  version: tp.version,
+                  planStatus: tp.planStatus,
+                  approvedByName: tp.approvedByName,
+                  approvedAt: tp.approvedAt,
                   generalTests: (tp.generalTests || []).map((gt: any) => ({
                     sampleNo: gt.sampleNo,
                     specification1: gt.specification1,
@@ -171,8 +176,10 @@ export class ReviewOfRequestFormComponent implements OnInit {
               return {
                 sampleNo: s.sampleNo,
                 details: s.details,
-                category: this.metalClassificationMap[s.metalClassificationID] || s.category || '-',
-                nature: this.productConditionMap[s.productConditionID] || s.nature || '-',
+                metalClassificationID: s.metalClassificationID,
+                metalClassificationName: s.metalClassificationName,
+                productConditionID: s.productConditionID,
+                productConditionName: s.productConditionName,
                 remarks: s.remarks,
                 quantity: s.quantity,
                 preparationRequired: s.preparationRequired ?? false,

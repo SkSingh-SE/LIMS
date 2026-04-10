@@ -33,10 +33,17 @@ export class InvoicePreviewComponent implements OnInit {
   }
 
   loadInvoiceData(): void {
-    // Since we don't have a direct GET invoice endpoint, we'll show summary
-    // In a real scenario, you might have GET /api/accounts/invoices/{id}
-    // For now, we'll use the case summary or show a placeholder
-    this.isLoading.set(false);
+    this.isLoading.set(true);
+    this.accountService.getInvoiceDetails(this.invoiceId).subscribe({
+      next: (data) => {
+        this.invoiceData = data;
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'Failed to load invoice details', 'error');
+        this.isLoading.set(false);
+      }
+    });
   }
 
   sendInvoice(method: 'email' | 'whatsapp' = 'email'): void {

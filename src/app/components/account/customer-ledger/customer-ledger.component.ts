@@ -151,8 +151,8 @@ export class CustomerLedgerComponent implements OnInit {
   }
 
   getEntryRowClass(entry: any): string {
-    if (entry.transactionType === 'Invoice' || entry.debit > 0) return 'row-debit';
-    if (entry.transactionType === 'Payment' || entry.credit > 0) return 'row-credit';
+    if (entry.transactionType === 'Invoice' || entry.debitAmount > 0) return 'row-debit';
+    if (entry.transactionType === 'Payment' || entry.creditAmount > 0) return 'row-credit';
     return '';
   }
 
@@ -210,11 +210,11 @@ export class CustomerLedgerComponent implements OnInit {
   }
 
   getDebitTotal(): number {
-    return this.ledgerEntries.reduce((sum, e) => sum + (e.debit || 0), 0);
+    return this.ledgerEntries.reduce((sum, e) => sum + (e.debitAmount || 0), 0);
   }
 
   getCreditTotal(): number {
-    return this.ledgerEntries.reduce((sum, e) => sum + (e.credit || 0), 0);
+    return this.ledgerEntries.reduce((sum, e) => sum + (e.creditAmount || 0), 0);
   }
 
   private formatDate(date: Date): string {

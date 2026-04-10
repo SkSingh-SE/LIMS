@@ -25,6 +25,7 @@ export interface ReportingListItem {
   price?: number;
   pricing?: any;
   customerID?: number;
+  inwardId?: number;
 }
 
 export interface TestParameter {

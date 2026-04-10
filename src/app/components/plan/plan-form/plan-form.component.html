@@ -605,7 +605,7 @@
                               [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(sampleIdx)"
                               (itemSelected)="onSpecificationGradeSelected(sampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
                               [hideLabel]="false"
-                              [required]="true"
+                              [required]="false"
                               [isDisabled]="isViewMode"
                               [selectedItem]="chemTest.get('specification1')?.value"
                             ></app-searchable-dropdown>

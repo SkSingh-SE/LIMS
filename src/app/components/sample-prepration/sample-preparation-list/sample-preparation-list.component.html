@@ -67,7 +67,16 @@
                    class="text-primary text-decoration-none">{{ item.caseNo }}</a>
               </td>
               <td>{{ item.sampleNo }}</td>
-              <td>{{ item.customerName }}</td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + item.customerName">
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
               <td>{{ item.sampleDescription || '-' }}</td>
               <td>
                 <app-test-status-badge [status]="item.status"></app-test-status-badge>

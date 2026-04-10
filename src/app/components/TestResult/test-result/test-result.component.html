@@ -90,8 +90,26 @@
                   {{ item.sampleNo }}
                 </a>
               </td>
-              <td>{{ item.caseNo }}</td>
-              <td>{{ item.customerName }}</td>
+              <td class="fw-semibold">
+                <a *ngIf="item.inwardId"
+                   [routerLink]="['/sample/inward/details', item.inwardId]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View inward for ' + item.caseNo">
+                  {{ item.caseNo }}
+                </a>
+                <span *ngIf="!item.inwardId">{{ item.caseNo }}</span>
+              </td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + item.customerName">
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
               <td>{{ item.material }}</td>
               <td>{{ item.condition }}</td>
               <td>

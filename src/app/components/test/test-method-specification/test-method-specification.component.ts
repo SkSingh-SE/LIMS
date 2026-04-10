@@ -80,7 +80,7 @@ export class TestMethodSpecificationComponent implements OnInit {
       status: [VersionStatus.Draft],
       version: ['', Validators.required],
       year: [null],
-      effectiveDate: [null],
+      effectiveDate: [new Date().toISOString().split('T')[0]],
       supersededDate: [null],
       reviewDate: [null],
       changeReason: [''],
@@ -222,7 +222,7 @@ export class TestMethodSpecificationComponent implements OnInit {
     }
   }
   removeFile(index: number): void {
-    this.versions.at(index).patchValue({ standardFile: '', file: null });
+    this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
   getCaption(year: any): string {

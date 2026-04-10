@@ -72,7 +72,16 @@
                     {{ item.sampleNo || '-' }}
                   </a>
                 </td>
-                <td>{{ item.caseNo || '-' }}</td>
+                <td class="fw-semibold">
+                  <a *ngIf="item.inwardId"
+                     [routerLink]="['/sample/inward/details', item.inwardId]"
+                     [state]="{ mode: 'view' }"
+                     class="text-primary text-decoration-none cursor-pointer"
+                     [title]="'View inward for ' + item.caseNo">
+                    {{ item.caseNo || '-' }}
+                  </a>
+                  <span *ngIf="!item.inwardId">{{ item.caseNo || '-' }}</span>
+                </td>
                 <td>{{ item.testName || '-' }}</td>
                 <td class="text-center">{{ item.parametersCount || 0 }}</td>
                 <td class="text-center">
@@ -94,14 +103,14 @@
               <tr *ngIf="isExpanded(item)" class="expanded-panel">
                 <td [attr.colspan]="columns.length + 2" class="p-0">
                   <div class="p-3 bg-light border-top">
-                    <div *ngIf="isLoadingParameters()" class="text-center py-3">
+                    <div *ngIf="isLoadingRow(item)" class="text-center py-3">
                       <div class="spinner-border spinner-border-sm text-primary"></div>
                     </div>
-                    <div *ngIf="!isLoadingParameters() && expandedParameters.length > 0">
+                    <div *ngIf="!isLoadingRow(item) && (parametersCache[item.headerId] || []).length > 0">
                       <div class="d-flex gap-3 mb-2 small">
-                        <span class="badge bg-success">Pass: {{ getParamCount('Pass') }}</span>
-                        <span class="badge bg-danger">Fail: {{ getParamCount('Fail') }}</span>
-                        <span class="badge bg-secondary">Total: {{ expandedParameters.length }}</span>
+                        <span class="badge bg-success">Pass: {{ getParamCount(item.headerId, 'Pass') }}</span>
+                        <span class="badge bg-danger">Fail: {{ getParamCount(item.headerId, 'Fail') }}</span>
+                        <span class="badge bg-secondary">Total: {{ (parametersCache[item.headerId] || []).length }}</span>
                       </div>
                       <table class="table table-sm table-bordered mb-0 small">
                         <thead class="table-light">
@@ -111,7 +120,7 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr *ngFor="let p of expandedParameters" [class.table-danger]="!p.isWithinLimit">
+                          <tr *ngFor="let p of parametersCache[item.headerId]" [class.table-danger]="!p.isWithinLimit">
                             <td>{{ p.parameterName }}</td>
                             <td>{{ p.unit || '-' }}</td>
                             <td>{{ p.specification || '-' }}</td>
@@ -128,7 +137,7 @@
                         </tbody>
                       </table>
                     </div>
-                    <div *ngIf="!isLoadingParameters() && expandedParameters.length === 0" class="text-muted text-center py-2">
+                    <div *ngIf="!isLoadingRow(item) && (!parametersCache[item.headerId] || parametersCache[item.headerId].length === 0)" class="text-muted text-center py-2">
                       No parameters found.
                     </div>
                   </div>

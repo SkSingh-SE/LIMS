@@ -559,6 +559,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   openCalibrationModal(): void {
+    this.calibrationForm.reset({ id: 0, equipmentID: this.equipmentId, calibrationDate: '', calibrationDueDate: '', certificate: '', certificatePath: '', agency: '', calibrationAgencyID: null });
     const modalElement = document.getElementById('calibrationModal');
     if (modalElement) {
       const modal = new Modal(modalElement);
@@ -567,6 +568,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   openMaintenanceModal(): void {
+    this.maintenanceForm.reset({ id: 0, equipmentID: this.equipmentId, maintenanceDate: '', certificate: '', certificatePath: '', file: null });
     const modalElement = document.getElementById('maintenanceModal');
     if (modalElement) {
       const modal = new Modal(modalElement);
@@ -686,6 +688,9 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   openAttachmentModal(): void {
+    this.sopAttachmentForm.reset({ id: 0, equipmentID: this.equipmentId, title: '', fileName: '', filePath: '', file: null, type: 'attachment' });
+    const fileInputs = document.querySelectorAll<HTMLInputElement>('#attachmentModal input[type="file"]');
+    fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('attachmentModal');
     if (modalElement) {
       const modal = new Modal(modalElement);
@@ -694,6 +699,9 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   openVideoModal(): void {
+    this.sopVideoForm.reset({ id: 0, equipmentID: this.equipmentId, title: '', fileName: '', filePath: '', file: null, type: 'video' });
+    const fileInputs = document.querySelectorAll<HTMLInputElement>('#videoModal input[type="file"]');
+    fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('videoModal');
     if (modalElement) {
       const modal = new Modal(modalElement);

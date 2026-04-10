@@ -142,7 +142,7 @@
               <div class="col-md-3">
                 <div class="review-field">
                   <label class="review-label">Metal Classification</label>
-                  <div class="review-value">{{ sample.category || '-' }}</div>
+                  <div class="review-value">{{ sample.metalClassificationName || getMetalClassificationName(sample.metalClassificationID) || '-' }}</div>
                 </div>
               </div>
               <div class="col-md-3">
@@ -154,7 +154,7 @@
               <div class="col-md-3">
                 <div class="review-field">
                   <label class="review-label">Product Condition</label>
-                  <div class="review-value">{{ sample.nature || '-' }}</div>
+                  <div class="review-value">{{ sample.productConditionName || productConditionMap[sample.productConditionID] || '-' }}</div>
                 </div>
               </div>
               <div class="col-md-3" *ngIf="sample.remarks">
@@ -215,6 +215,27 @@
           <div class="col-md-2 d-flex align-items-start justify-content-center" *ngIf="sample.sampleFilePath">
             <div class="preview-box cursor-pointer" (click)="openFileInNewTab(sample.sampleFilePath)">
               <img [src]="baseUrl + sample.sampleFilePath" [alt]="sample.fileName" class="img-fluid rounded" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Plan Info -->
+        <div *ngIf="getTestPlansArray(sample).length > 0" class="test-section mt-3">
+          <div class="test-section-title">
+            <i class="bi bi-clipboard-check me-1"></i>Test Plan
+          </div>
+          <div *ngFor="let tp of getTestPlansArray(sample); let tpIdx = index" class="px-3 py-2">
+            <div class="d-flex gap-3 flex-wrap small text-muted mb-1">
+              <span><strong>Version:</strong> {{ tp.version || 1 }}</span>
+              <span><strong>Status:</strong>
+                <span class="badge ms-1"
+                  [ngClass]="tp.planStatus === 'Approved' ? 'bg-success-subtle text-success' :
+                             tp.planStatus === 'Submitted' ? 'bg-warning-subtle text-warning' :
+                             'bg-secondary-subtle text-secondary'">
+                  {{ tp.planStatus || '-' }}
+                </span>
+              </span>
+              <span *ngIf="tp.approvedByName"><strong>Approved by:</strong> {{ tp.approvedByName }} on {{ tp.approvedAt | date:'dd-MMM-yyyy hh:mm a' }}</span>
             </div>
           </div>
         </div>

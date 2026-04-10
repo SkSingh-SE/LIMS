@@ -89,8 +89,11 @@ export class CaseAccountListComponent implements OnInit {
 
     if (filterMap[filterType]) {
       this.filters = [filterMap[filterType]];
-      this.payload.filter = this.filters;
+    } else {
+      // Customer type filter (e.g., "Walk In", "Credit Customer", "Relationship Credit")
+      this.filters = [{ column: 'customerType', type: 'Equal', value: filterType, value2: filterType }];
     }
+    this.payload.filter = this.filters;
     this.fetchData();
   }
 

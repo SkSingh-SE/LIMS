@@ -170,8 +170,12 @@
 
       <!-- Advance Payment Section -->
       <div *ngIf="advancePayments.length > 0 || proformaInvoice" class="card mb-4 border-0 shadow-sm">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Advance Payment</h5>
+          <button *ngIf="proformaInvoice && !invoice" class="btn btn-outline-warning btn-sm"
+            (click)="goToRecordPayment()">
+            <i class="bi bi-plus-circle me-1"></i> Record Advance Payment
+          </button>
         </div>
         <div class="card-body">
           <div *ngIf="advancePayments.length > 0" class="table-responsive">
@@ -180,15 +184,15 @@
                 <tr>
                   <th>Date</th>
                   <th>Amount</th>
-                  <th>Reference</th>
+                  <th>Mode</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let advance of advancePayments">
                   <td>{{ advance.date | date: 'dd-MMM-yyyy' }}</td>
-                  <td>{{ advance.amount | currency: 'INR' }}</td>
-                  <td>{{ advance.reference }}</td>
+                  <td class="fw-semibold">&#8377;{{ advance.amount | number:'1.2-2' }}</td>
+                  <td>{{ advance.paymentMode }}</td>
                   <td>
                     <span [ngClass]="getPaymentStatusBadgeClass(advance.status)">
                       {{ advance.status }}
@@ -196,10 +200,17 @@
                   </td>
                 </tr>
               </tbody>
+              <tfoot *ngIf="advancePayments.length > 1">
+                <tr class="table-light">
+                  <td class="fw-bold">Total</td>
+                  <td class="fw-bold text-success">&#8377;{{ getTotalAdvance() | number:'1.2-2' }}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
-          <div *ngIf="advancePayments.length === 0" class="text-muted">
-            <i class="bi bi-info-circle"></i> No advance payments recorded yet.
+          <div *ngIf="advancePayments.length === 0" class="text-muted small">
+            <i class="bi bi-info-circle me-1"></i> No advance payments recorded yet. Click "Record Advance Payment" to pay against the PI.
           </div>
         </div>
       </div>
@@ -471,8 +482,8 @@
         </div>
       </div>
 
-      <!-- Close Case Section -->
-      <div class="card mt-4 border-0 shadow-sm" *ngIf="!isReadOnly">
+      <!-- Close Case Section — only show when invoice is generated -->
+      <div class="card mt-4 border-0 shadow-sm" *ngIf="!isReadOnly && invoice">
         <div class="card-body d-flex justify-content-between align-items-center">
           <div>
             <span *ngIf="!canClose && closeReason" class="text-muted small">

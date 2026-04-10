@@ -32,12 +32,14 @@
 .alert-banner .btn-close { font-size:.6rem; padding:.35rem; }
 
 /* Plan Sub-Tabs */
-.plan-tabs { display:flex; gap:.25rem; padding:0; margin:0 0 1rem; list-style:none; border-bottom:2px solid #E9ECEF; overflow-x:auto; overflow-y:hidden; }
-.plan-tab-link { display:inline-flex; align-items:center; gap:.4rem; padding:.5rem .85rem; font-size:.8rem; font-weight:500; color:#6C757D; background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; transition:all .2s; max-width:380px; }
+.plan-tabs { display:flex; gap:.25rem; padding:0; margin:0 0 1rem; list-style:none; border-bottom:3px solid #E9ECEF; overflow-x:auto; scrollbar-width:thin; }
+.plan-tabs li { flex-shrink:0; }
+.plan-tab-link { display:inline-flex; align-items:center; gap:.4rem; padding:.55rem .85rem .6rem; font-size:.8rem; font-weight:500; color:#6C757D; background:transparent; border:none; cursor:pointer; transition:all .2s; max-width:380px; box-shadow:inset 0 -3px 0 transparent; }
 .plan-tab-link:hover { color:var(--primary-color, #da261c); background:#fef8f8; }
-.plan-tab-link.active { color:var(--primary-color, #da261c); font-weight:600; border-bottom-color:var(--primary-color, #da261c); }
+.plan-tab-link.active { color:var(--primary-color, #da261c); font-weight:600; box-shadow:inset 0 -3px 0 var(--primary-color, #da261c); background:#fef8f8; }
 .plan-tab-type { font-weight:600; flex-shrink:0; }
 .plan-tab-spec { color:#ADB5BD; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; display:inline-block; vertical-align:middle; }
+.plan-tab-link.active .plan-tab-spec { color:var(--primary-color, #da261c); opacity:.75; }
 .plan-tab-count { background:#E9ECEF; color:#495057; font-size:.68rem; padding:.15em .4em; border-radius:10px; font-weight:600; }
 .plan-tab-link.active .plan-tab-count { background:var(--primary-50, #fdeaea); color:var(--primary-color, #da261c); }
 
@@ -80,6 +82,7 @@
 .formula-tag > i + span, .formula-tag > i ~ * { overflow:hidden; text-overflow:ellipsis; }
 .formula-clear { background:none; border:none; color:#93C5FD; padding:0; margin:0 0 0 2px; cursor:pointer; font-size:12px; line-height:1; flex-shrink:0; }
 .formula-clear:hover { color:#dc2626; }
+.formula-warning-tag { display:inline-flex; align-items:center; gap:2px; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; border-radius:4px; padding:1px 6px; font-size:10px; margin-top:2px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:help; }
 
 /* Row Status */
 .row-error { background-color:#fff5f5; border-left:3px solid var(--danger-color, #dc3545); }

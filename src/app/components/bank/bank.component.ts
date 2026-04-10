@@ -343,7 +343,8 @@ export class BankComponent implements OnInit {
           this.closeModal();
           this.fetchData();
         },
-        error: () => {
+        error: (error) => {
+          this.toastService.show(error?.error?.message || 'Failed to update bank', 'error');
         }
       });
     } else {
@@ -354,7 +355,8 @@ export class BankComponent implements OnInit {
           this.closeModal();
           this.fetchData();
         },
-        error: () => {
+        error: (error) => {
+          this.toastService.show(error?.error?.message || 'Failed to create bank', 'error');
         }
       });
     }

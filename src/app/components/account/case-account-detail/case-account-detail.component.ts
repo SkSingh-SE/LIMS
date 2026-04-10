@@ -296,17 +296,21 @@ export class CaseAccountDetailComponent implements OnInit {
   }
 
   loadLineItems(): void {
-    const invoiceHeaderId = this.invoice?.invoiceId || this.invoice?.invoice_id || this.caseSummary?.invoiceHeaderId;
-    if (!invoiceHeaderId) return;
-    this.accountService.getInvoiceLineItems(invoiceHeaderId).subscribe({
-      next: (items) => {
-        this.lineItems = items || [];
-      },
-      error: (err) => {
-        console.error('Error loading line items:', err);
-        this.toastService.show('Failed to load line items', 'error');
-      }
-    });
+    // Try TaxInvoice ID first (final invoice), fall back to ProformaInvoice ID
+    const taxInvoiceId = this.invoice?.invoiceId || this.invoice?.invoice_id;
+    const piHeaderId = this.proformaInvoice?.id || this.proformaInvoice?.piId || this.caseSummary?.invoiceHeaderId;
+
+    if (taxInvoiceId) {
+      this.accountService.getLineItemsByTaxInvoiceId(taxInvoiceId).subscribe({
+        next: (items) => { this.lineItems = items || []; },
+        error: () => { this.toastService.show('Failed to load line items', 'error'); }
+      });
+    } else if (piHeaderId) {
+      this.accountService.getInvoiceLineItems(piHeaderId).subscribe({
+        next: (items) => { this.lineItems = items || []; },
+        error: () => { this.toastService.show('Failed to load line items', 'error'); }
+      });
+    }
   }
 
   saveLineItem(): void {
@@ -471,12 +475,16 @@ export class CaseAccountDetailComponent implements OnInit {
   }
 
   goToRecordPayment(): void {
-    this.router.navigate(['/account/record-payment'], {
+    this.router.navigate(['/accounts/record-payment'], {
       queryParams: {
         customerId: this.caseSummary?.customerId || this.caseSummary?.customer_id,
         inwardId: this.inwardId
       }
     });
+  }
+
+  getTotalAdvance(): number {
+    return (this.advancePayments || []).reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
   }
 
   goBack(): void {

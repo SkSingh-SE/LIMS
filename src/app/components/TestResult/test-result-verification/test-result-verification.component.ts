@@ -50,10 +50,10 @@ export class TestResultVerificationComponent implements OnInit {
   sortOrder = 'desc';
   searchTerm = '';
 
-  // Expanded row
-  expandedHeaderId: number | null = null;
-  expandedParameters: any[] = [];
-  isLoadingParameters = signal(false);
+  // Expanded rows — multiple can be open, cached to avoid re-fetch
+  expandedMap: Record<number, boolean> = {};
+  parametersCache: Record<number, any[]> = {};
+  loadingMap: Record<number, boolean> = {};
 
   // Modals
   rejectHeaderId: number | null = null;
@@ -152,25 +152,26 @@ export class TestResultVerificationComponent implements OnInit {
   hasFilter(column: string): boolean { return this.filters?.some(f => f.column === column) ?? false; }
   getColumnType(columnKey: string): string | undefined { return this.columns.find(c => c.key === columnKey)?.type; }
 
-  // ── Expanded Row ──
+  // ── Expanded Row (multiple open, cached) ──
   toggleRow(item: any): void {
-    if (this.expandedHeaderId === item.headerId) {
-      this.expandedHeaderId = null;
-      this.expandedParameters = [];
-      return;
+    const hId = item.headerId;
+    this.expandedMap[hId] = !this.expandedMap[hId];
+    // Only fetch if expanding and not cached
+    if (this.expandedMap[hId] && !this.parametersCache[hId]) {
+      this.loadingMap[hId] = true;
+      this.testResultService.getParametersForHeader(hId).subscribe({
+        next: (params: any[]) => { this.parametersCache[hId] = params || []; this.loadingMap[hId] = false; },
+        error: () => { this.parametersCache[hId] = []; this.loadingMap[hId] = false; },
+      });
     }
-    this.expandedHeaderId = item.headerId;
-    this.isLoadingParameters.set(true);
-    this.testResultService.getParametersForHeader(item.headerId).subscribe({
-      next: (params: any[]) => { this.expandedParameters = params || []; this.isLoadingParameters.set(false); },
-      error: () => { this.expandedParameters = []; this.isLoadingParameters.set(false); },
-    });
   }
 
-  isExpanded(item: any): boolean { return this.expandedHeaderId === item.headerId; }
+  isExpanded(item: any): boolean { return !!this.expandedMap[item.headerId]; }
+  isLoadingRow(item: any): boolean { return !!this.loadingMap[item.headerId]; }
 
-  getParamCount(status: string): number {
-    return this.expandedParameters.filter(p => p.resultStatus === status || (status === 'Pass' && p.isWithinLimit)).length;
+  getParamCount(headerId: number, status: string): number {
+    const params = this.parametersCache[headerId] || [];
+    return params.filter(p => p.resultStatus === status || (status === 'Pass' && p.isWithinLimit)).length;
   }
 
   // ── Navigation ──

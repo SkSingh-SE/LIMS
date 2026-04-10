@@ -477,6 +477,10 @@
                                 <i class="bi bi-x"></i>
                               </button>
                             </span>
+                            <span *ngIf="getFormulaDependencyWarning(p, t, r)" class="formula-warning-tag"
+                              [title]="getFormulaDependencyWarning(p, t, r)!">
+                              <i class="bi bi-exclamation-triangle me-1"></i>{{ getFormulaDependencyWarning(p, t, r) }}
+                            </span>
                             <small *ngIf="row.value.convertedValue != null && row.value.selectedUnit !== row.value.unit"
                               class="text-primary d-block" style="font-size: 10px;">
                               <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2) }} {{ row.value.selectedUnit }}

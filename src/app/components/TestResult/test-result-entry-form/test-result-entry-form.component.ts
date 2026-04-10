@@ -49,6 +49,9 @@ export class TestResultEntryFormComponent implements OnInit {
   formulaOperators = ['+', '-', '*', '/', '(', ')'];
   formulaFunctions = ['MEAN', 'MAX', 'MIN', 'SUM', 'COUNT', 'STDEV'];
 
+  // Formula dependency warnings: key = "planIdx-testIdx-paramIdx", value = warning message
+  formulaDependencyWarnings: Record<string, string> = {};
+
   // Smart formula input
   smartFormulaInput = '';
   smartFormulaMode = false;
@@ -303,6 +306,9 @@ export class TestResultEntryFormComponent implements OnInit {
         this.loadUnifiedPriceSummary(sampleId);
         this.loadMachiningItems(sampleId);
         this.refreshAlerts();
+
+        // Auto-evaluate formulas and validate dependencies on first load
+        this.autoEvaluateAllFormulas();
 
         // Auto-set view mode if all tests are finalized (Verified/PendingVerification)
         if (!this.canSaveAnyTest()) {
@@ -1254,6 +1260,73 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
+  /**
+   * Auto-evaluate all formulas across all plans/tests on initial data load.
+   * Also validates dependencies and shows warnings for missing parameters.
+   */
+  autoEvaluateAllFormulas(): void {
+    this.formulaDependencyWarnings = {};
+    const warnings: string[] = [];
+
+    this.plansFA.controls.forEach((planCtrl, pIdx) => {
+      const testsFA = planCtrl.get('tests') as FormArray;
+      if (!testsFA) return;
+
+      testsFA.controls.forEach((testCtrl, tIdx) => {
+        const params = this.getParameters(pIdx, tIdx);
+        if (!params || params.length === 0) return;
+
+        // Build parameter ID set for this test
+        const paramIdSet = new Set<number>();
+        const paramNameMap: Record<string, string> = {};
+        params.controls.forEach(row => {
+          const pid = row.get('parameterID')?.value;
+          const pname = row.get('ParameterName')?.value || row.get('parameterName')?.value || '';
+          if (pid) {
+            paramIdSet.add(Number(pid));
+            paramNameMap[`P${pid}`] = pname;
+          }
+        });
+
+        // Check each formula parameter for missing dependencies
+        params.controls.forEach((row, rIdx) => {
+          const formula = row.get('formulaExpression')?.value;
+          if (!formula) return;
+
+          // Extract all P-references from formula
+          const pRefs = formula.match(/P(\d+)/g) || [];
+          const missingNames: string[] = [];
+
+          for (const ref of pRefs) {
+            const refId = Number(ref.replace('P', ''));
+            if (!paramIdSet.has(refId)) {
+              missingNames.push(ref);
+            }
+          }
+
+          if (missingNames.length > 0) {
+            const paramName = row.get('ParameterName')?.value || row.get('parameterName')?.value || 'Parameter';
+            const key = `${pIdx}-${tIdx}-${rIdx}`;
+            this.formulaDependencyWarnings[key] = `Missing: ${missingNames.join(', ')}`;
+            warnings.push(`${paramName}: depends on ${missingNames.join(', ')} which are not in this test`);
+          }
+        });
+
+        // Run formula calculation for this test
+        this.recalculateFormulas(pIdx, tIdx);
+      });
+    });
+
+    if (warnings.length > 0) {
+      this.toastService.show(`${warnings.length} formula dependency warning(s) found`, 'warning');
+    }
+  }
+
+  /** Get formula dependency warning for a specific parameter row */
+  getFormulaDependencyWarning(planIndex: number, testIndex: number, paramIndex: number): string | null {
+    return this.formulaDependencyWarnings[`${planIndex}-${testIndex}-${paramIndex}`] || null;
+  }
+
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
 
@@ -2075,7 +2148,26 @@ export class TestResultEntryFormComponent implements OnInit {
         this.priceBreakdownMap[headerId] = summary.breakdown || [];
       },
       error: () => {
-        // No price data yet — that's fine
+        // No price data yet — auto-calculate on first load
+        this.autoCalculatePriceForHeader(headerId);
+      }
+    });
+  }
+
+  /** Auto-calculate price for a header if no price exists yet */
+  private autoCalculatePriceForHeader(headerId: number): void {
+    if (this.isViewMode || headerId <= 0) return;
+    this.priceLoadingMap[headerId] = true;
+    this.testResultService.calculatePrice(headerId).subscribe({
+      next: (summary) => {
+        this.priceSummaryMap[headerId] = summary;
+        this.priceBreakdownMap[headerId] = summary.breakdown || [];
+        this.priceLoadingMap[headerId] = false;
+        if (this.sampleId) this.loadUnifiedPriceSummary(this.sampleId);
+      },
+      error: () => {
+        this.priceLoadingMap[headerId] = false;
+        // Silent fail — user can manually click Calculate
       }
     });
   }

@@ -71,9 +71,10 @@ export class StatusHelperService {
     const billingUpper = (billingStatus || '').toUpperCase();
     const reportUpper = (reportStatus || '').toUpperCase();
 
-    // Invoice can only be generated after report approval AND when advance is paid
-    return billingUpper === BillingStatus.ADVANCE_PAID &&
-           reportUpper === ReportStatus.FINAL_REPORT_APPROVED;
+    // Invoice can be generated after report approval AND billing at ADVANCE_PAID or PRICE_SNAPSHOT stage
+    const billingReady = billingUpper === BillingStatus.ADVANCE_PAID
+      || billingUpper === BillingStatus.PRICE_SNAPSHOT;
+    return billingReady && reportUpper === ReportStatus.FINAL_REPORT_APPROVED;
   }
 
   /**

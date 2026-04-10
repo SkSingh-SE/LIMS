@@ -71,16 +71,20 @@ export class AccountService {
     return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-invoice`, {});
   }
 
-  /**
-   * Send invoice
-   * POST /api/accounts/invoices/{invoiceId}/send
-   */
+  getInvoiceDetails(invoiceId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/invoices/${invoiceId}`);
+  }
+
   sendInvoice(invoiceId: number, method?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/invoices/${invoiceId}/send`, { method: method || 'email' });
   }
 
   getInvoiceLineItems(invoiceHeaderId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/invoice-line-items/${invoiceHeaderId}`);
+  }
+
+  getLineItemsByTaxInvoiceId(taxInvoiceId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tax-invoice-line-items/${taxInvoiceId}`);
   }
 
   addInvoiceLineItem(payload: any): Observable<any> {

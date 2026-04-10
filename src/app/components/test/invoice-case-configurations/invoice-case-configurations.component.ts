@@ -81,6 +81,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   rangeError: string = '';
 
   selectionTypes = [
+    { label: 'Flat Rate',          value: 'FlatRate',          group: 'Fixed',        hint: 'Fixed price per test, no parameters needed' },
     { label: 'Element',            value: 'Element',           group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
     { label: 'Hours',              value: 'Hours',             group: 'Single Value', hint: 'e.g. 24hr, 672hr' },
     { label: 'Size',               value: 'Size',              group: 'Single Value', hint: 'e.g. 10mm, 32mm' },
@@ -101,6 +102,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
    * To support a new type, add one entry here — no other code changes needed.
    */
   typeConfig: Record<string, TypeConfig> = {
+    FlatRate:           { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'Flat',   startPlaceholder: '', endPlaceholder: '', defaultValue: 'Flat' },
     Element:           { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'e.g. Ag, Fe, 10 Element',   startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     Hours:             { isRange: false, inputType: 'number', unit: 'hr', valuePlaceholder: 'Enter hours (e.g. 24, 672)', startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     Size:              { isRange: false, inputType: 'number', unit: 'mm', valuePlaceholder: 'Enter size in mm',           startPlaceholder: '', endPlaceholder: '', defaultValue: '' },

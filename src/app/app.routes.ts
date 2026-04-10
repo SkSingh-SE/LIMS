@@ -652,10 +652,10 @@ export const routes: Routes = [
             { path: 'accounts/cases', component: CaseAccountListComponent },
             { path: 'accounts/cases/:id', component: CaseAccountDetailComponent },
             { path: 'accounts/invoices/:id/preview', component: InvoicePreviewComponent },
-            { path: 'account/ledger', component: CustomerLedgerComponent },
-            { path: 'account/record-payment', component: RecordPaymentComponent },
-            { path: 'account/aging-report', component: AgingReportComponent },
-            { path: 'account/outstanding-report', component: OutstandingReportComponent },
+            { path: 'accounts/ledger', component: CustomerLedgerComponent },
+            { path: 'accounts/record-payment', component: RecordPaymentComponent },
+            { path: 'accounts/aging-report', component: AgingReportComponent },
+            { path: 'accounts/outstanding-report', component: OutstandingReportComponent },
             { path: 'accounts/purchase-orders', loadComponent: () => import('./components/account/customer-po/customer-po.component').then(m => m.CustomerPOComponent) },
 
             // NABL Dashboard & Audit

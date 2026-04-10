@@ -119,7 +119,7 @@
           <div class="card border-start border-danger border-4">
             <div class="card-body text-center py-2">
               <h6 class="text-muted mb-1">Total Debits</h6>
-              <h5 class="text-danger mb-0">{{ (periodSummary.totalDebits || 0) | number:'1.2-2' }}</h5>
+              <h5 class="text-danger mb-0">{{ (periodSummary.totalDebit || 0) | number:'1.2-2' }}</h5>
             </div>
           </div>
         </div>
@@ -127,7 +127,7 @@
           <div class="card border-start border-success border-4">
             <div class="card-body text-center py-2">
               <h6 class="text-muted mb-1">Total Credits</h6>
-              <h5 class="text-success mb-0">{{ (periodSummary.totalCredits || 0) | number:'1.2-2' }}</h5>
+              <h5 class="text-success mb-0">{{ (periodSummary.totalCredit || 0) | number:'1.2-2' }}</h5>
             </div>
           </div>
         </div>
@@ -162,11 +162,11 @@
                 Reference <i class="bi ms-1" [ngClass]="getSortIcon('referenceNo')"></i>
               </th>
               <th>Description</th>
-              <th class="text-end sortable" (click)="sortBy('debit')">
-                Debit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('debit')"></i>
+              <th class="text-end sortable" (click)="sortBy('debitAmount')">
+                Debit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('debitAmount')"></i>
               </th>
-              <th class="text-end sortable" (click)="sortBy('credit')">
-                Credit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('credit')"></i>
+              <th class="text-end sortable" (click)="sortBy('creditAmount')">
+                Credit (&#8377;) <i class="bi ms-1" [ngClass]="getSortIcon('creditAmount')"></i>
               </th>
               <th class="text-end">Balance (&#8377;)</th>
             </tr>
@@ -176,15 +176,15 @@
               <td>{{ formatDisplayDate(entry.date) }}</td>
               <td>
                 <span class="badge"
-                      [class.bg-danger]="entry.transactionType === 'Invoice' || entry.debit > 0"
-                      [class.bg-success]="entry.transactionType === 'Payment' || entry.credit > 0">
+                      [class.bg-danger]="entry.transactionType === 'Invoice' || entry.debitAmount > 0"
+                      [class.bg-success]="entry.transactionType === 'Payment' || entry.creditAmount > 0">
                   {{ entry.transactionType }}
                 </span>
               </td>
               <td>{{ entry.referenceNo || '-' }}</td>
               <td>{{ entry.description || '-' }}</td>
-              <td class="text-end">{{ entry.debit ? (entry.debit | number:'1.2-2') : '-' }}</td>
-              <td class="text-end">{{ entry.credit ? (entry.credit | number:'1.2-2') : '-' }}</td>
+              <td class="text-end">{{ entry.debitAmount ? (entry.debitAmount | number:'1.2-2') : '-' }}</td>
+              <td class="text-end">{{ entry.creditAmount ? (entry.creditAmount | number:'1.2-2') : '-' }}</td>
               <td class="text-end fw-bold">{{ (entry.runningBalance || entry.balance || 0) | number:'1.2-2' }}</td>
             </tr>
             <tr *ngIf="!ledgerEntries.length">

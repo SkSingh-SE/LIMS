@@ -17,12 +17,16 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 export class RecordPaymentComponent implements OnInit {
   paymentForm!: FormGroup;
   selectedCustomerId: number | null = null;
+  inwardId: number | null = null;
   outstandingInvoices: any[] = [];
   selectedInvoiceIds: number[] = [];
   isSubmitting = false;
   loadingInvoices = false;
   receiptNumber: string | null = null;
   showSuccessPanel = false;
+
+  // PI context — shown when paying advance against PI
+  piInfo: any = null;
 
   paymentModes = [
     { value: 'Cash', label: 'Cash' },
@@ -54,6 +58,31 @@ export class RecordPaymentComponent implements OnInit {
         this.selectedCustomerId = +params['customerId'];
         this.loadOutstandingInvoices();
       }
+      if (params['inwardId']) {
+        this.inwardId = +params['inwardId'];
+        this.loadPIInfo();
+      }
+    });
+  }
+
+  loadPIInfo(): void {
+    if (!this.inwardId) return;
+    this.accountService.getCaseSummary(this.inwardId).subscribe({
+      next: (summary) => {
+        const pi = summary?.proformaInvoice || summary?.pi;
+        const hasInvoice = summary?.finalInvoice || summary?.invoice;
+        if (pi && !hasInvoice) {
+          this.piInfo = {
+            piNo: pi.piNo ?? pi.piNumber ?? pi.invoiceNo ?? '',
+            amount: pi.grandTotal ?? pi.amount ?? pi.piAmount ?? 0,
+            caseNo: summary.caseNo ?? summary.case_no ?? '',
+            customerName: summary.customerName ?? summary.customer_name ?? '',
+            alreadyPaid: summary.advancePayments?.reduce((s: number, p: any) => s + (p.amount ?? 0), 0) ?? 0
+          };
+          this.piInfo.balance = Math.max(0, this.piInfo.amount - this.piInfo.alreadyPaid);
+        }
+      },
+      error: () => { /* PI info not available — that's okay */ }
     });
   }
 
@@ -183,7 +212,7 @@ export class RecordPaymentComponent implements OnInit {
 
     this.isSubmitting = true;
     const formVal = this.paymentForm.value;
-    const payload = {
+    const payload: any = {
       customerId: this.selectedCustomerId,
       amount: formVal.amount,
       paymentMode: formVal.paymentMode,
@@ -193,6 +222,7 @@ export class RecordPaymentComponent implements OnInit {
       transactionRef: formVal.transactionRef || null,
       invoiceIds: this.selectedInvoiceIds,
       remarks: formVal.remarks || null,
+      inwardId: this.inwardId || null,
     };
 
     this.customerLedgerService.recordPayment(payload).subscribe({

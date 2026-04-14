@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PriceDimensionTypeService } from '../../../services/price-dimension-type.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 declare var bootstrap: any;
 
 @Component({
   selector: 'app-price-dimension-type',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent ],
   templateUrl: './price-dimension-type.component.html',
   styleUrl: './price-dimension-type.component.css',
 })
@@ -49,7 +50,7 @@ export class PriceDimensionTypeComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'ID';
   sortOrder: string = 'desc';

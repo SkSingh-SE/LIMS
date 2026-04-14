@@ -8,6 +8,7 @@ import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-
 import { concat, distinctUntilChanged, merge, Observable, Subject, switchMap, tap } from 'rxjs';
 import { of } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 interface TypeConfig {
   isRange: boolean;
@@ -22,7 +23,7 @@ interface TypeConfig {
 
 @Component({
   selector: 'app-invoice-case-configurations',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, PaginationComponent ],
   templateUrl: './invoice-case-configurations.component.html',
   styleUrl: './invoice-case-configurations.component.css'
 })
@@ -57,7 +58,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

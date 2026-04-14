@@ -212,8 +212,34 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       productConditionID2: [null],
       laboratoryTests: this.fb.array([]),
       laboratoryTestIDs: this.fb.control([]),
-      type: [tab]
+      type: [tab],
+      // Parameter metadata from ParameterMaster (not submitted — UI helpers only)
+      decimalPrecision: [2],
+      parameterSymbol: [''],
+      minReportableLimit: [null]
     }, { validators: this.minMaxValidator });
+  }
+
+  /** Returns HTML input step attribute based on parameter decimal precision. */
+  getStep(group: AbstractControl | null): string {
+    const precision = Number(group?.get('decimalPrecision')?.value ?? 2);
+    if (precision <= 0) return '1';
+    return (1 / Math.pow(10, precision)).toFixed(precision);
+  }
+
+  /** Rounds the given numeric control to the parameter's decimal precision on blur. */
+  roundToPrecision(group: AbstractControl | null, field: string): void {
+    if (!group) return;
+    const ctrl = group.get(field);
+    const raw = ctrl?.value;
+    if (raw === null || raw === '' || raw === undefined) return;
+    const num = Number(raw);
+    if (isNaN(num)) return;
+    const precision = Number(group.get('decimalPrecision')?.value ?? 2);
+    const rounded = Number(num.toFixed(precision));
+    if (rounded !== num) {
+      ctrl?.setValue(rounded, { emitEvent: false });
+    }
   }
 
   addSpecificationLine(gradeIndex: number, tab: 'chemical' | 'mechanical' | 'other') {
@@ -285,7 +311,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
                 heatTreatmentID: line.heatTreatmentID,
                 productConditionID1: line.productConditionID1,
                 productConditionID2: line.productConditionID2,
-                laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || []
+                laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || [],
+                // Parameter metadata from joined Parameter navigation (for precision/UI only)
+                decimalPrecision: line.parameter?.decimalPrecision ?? 2,
+                parameterSymbol: line.parameter?.symbol ?? '',
+                minReportableLimit: line.parameter?.minReportableLimit ?? null
               });
               if (line.parameterID) {
                 lineGroup.get('parameterUnitID')?.disable();
@@ -431,11 +461,24 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       return;
     }
     const specificationLine = lines.at(index) as FormGroup;
-    const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
+    const additional = item?.additionalValues || {};
+    const unitID = additional.UnitID || additional.unitID || '';
+    const decimalPrecision = Number(additional.DecimalPrecision ?? additional.decimalPrecision ?? 2);
+    const parameterSymbol = additional.Symbol || additional.symbol || '';
+    const minReportableLimit = additional.MinReportableLimit ?? additional.minReportableLimit ?? null;
+
     specificationLine.patchValue({
       parameterID: item.id,
-      parameterUnitID: unitID
+      parameterUnitID: unitID,
+      decimalPrecision,
+      parameterSymbol,
+      minReportableLimit
     });
+
+    // Round any existing values to new precision
+    ['minValue', 'maxValue', 'minValueEquation', 'maxValueEquation', 'minTolerance', 'maxTolerance']
+      .forEach(f => this.roundToPrecision(specificationLine, f));
+
     // Disable unit dropdown after parameter auto-fills it
     const unitControl = specificationLine.get('parameterUnitID');
     if (unitID) {

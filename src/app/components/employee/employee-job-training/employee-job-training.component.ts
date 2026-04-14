@@ -36,7 +36,7 @@ export class EmployeeJobTrainingComponent implements OnInit, OnChanges {
     trainingPlanTotalItems = 0;
 
     // Shared pagination options
-    pageSizes = [5, 10, 20];
+    pageSizes = [10, 25, 50, 100, 200, 500];
 
     // Search and Filter (shared for active section)
     searchTerm: string = '';

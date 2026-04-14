@@ -11,7 +11,7 @@ import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge
 @Component({
   selector: 'app-long-term-tracking',
 
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, TestStatusBadgeComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, TestStatusBadgeComponent ],
   templateUrl: './long-term-tracking.component.html',
   styleUrls: ['./long-term-tracking.component.css']
 })

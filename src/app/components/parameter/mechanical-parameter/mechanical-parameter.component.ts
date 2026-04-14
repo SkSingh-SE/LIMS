@@ -11,10 +11,11 @@ import { SpecimenOrientationService } from '../../../services/specimen-orientati
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-mechanical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, SymbolPickerComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, SymbolPickerComponent, PaginationComponent ],
   templateUrl: './mechanical-parameter.component.html',
   styleUrl: './mechanical-parameter.component.css'
 })
@@ -67,7 +68,7 @@ export class MechanicalParameterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

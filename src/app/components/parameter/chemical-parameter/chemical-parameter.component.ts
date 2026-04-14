@@ -9,10 +9,11 @@ import { ParameterUnitService } from '../../../services/parameter-unit.service';
 import { ParameterCategoryService } from '../../../services/parameter-category.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-chemical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, SymbolPickerComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, SymbolPickerComponent, PaginationComponent],
   templateUrl: './chemical-parameter.component.html',
   styleUrl: './chemical-parameter.component.css'
 })
@@ -63,7 +64,7 @@ export class ChemicalParameterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

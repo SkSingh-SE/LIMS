@@ -289,6 +289,8 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
                             </td>
@@ -299,6 +301,8 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
@@ -324,6 +328,8 @@
                                 formControlName="minValueEquation"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValueEquation')"
                               />
                             </td>
                             <td>
@@ -333,6 +339,8 @@
                                 formControlName="maxValueEquation"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValueEquation')"
                               />
                             </td>
                             <td>
@@ -342,6 +350,8 @@
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
                               />
                             </td>
                             <td>
@@ -351,6 +361,8 @@
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
                               />
                             </td>
                             <td>
@@ -578,6 +590,8 @@
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
                             </td>
@@ -588,6 +602,8 @@
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
@@ -613,6 +629,8 @@
                                 formControlName="minValueEquation"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValueEquation')"
                               />
                             </td>
                             <td>
@@ -622,6 +640,8 @@
                                 formControlName="maxValueEquation"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValueEquation')"
                               />
                             </td>
                             <td>
@@ -631,6 +651,8 @@
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
                               />
                             </td>
                             <td>
@@ -640,6 +662,8 @@
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
                               />
                             </td>
                             <td>
@@ -887,6 +911,8 @@
                                 formControlName="minValueEquation"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValueEquation')"
                               />
                             </td>
                             <td>
@@ -896,6 +922,8 @@
                                 formControlName="maxValueEquation"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValueEquation')"
                               />
                             </td>
                             <td>
@@ -905,6 +933,8 @@
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
                               />
                             </td>
                             <td>
@@ -914,6 +944,8 @@
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
                                 maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
                               />
                             </td>
                             <td>

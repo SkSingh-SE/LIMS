@@ -5,10 +5,11 @@ import { Modal } from 'bootstrap';
 import { Observable } from 'rxjs';
 import { ToastService } from '../../services/toast.service';
 import { ConfigService } from '../../services/config.service';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-configuration',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [ CommonModule, ReactiveFormsModule, FormsModule, PaginationComponent ],
   templateUrl: './configuration.component.html',
   styleUrl: './configuration.component.css'
 })
@@ -42,7 +43,7 @@ export class ConfigManagerComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

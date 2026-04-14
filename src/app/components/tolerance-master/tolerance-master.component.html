@@ -76,25 +76,15 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-                <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
         </div>
     </div>
 </div>
@@ -174,6 +164,7 @@
                         <label class="form-label">Value Range Start <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" formControlName="valueRangeStart"
                             placeholder="Enter Range Start"
+                            [attr.step]="getToleranceStep()" (blur)="roundToleranceField('valueRangeStart')"
                             [ngClass]="{'is-invalid': toleranceMasterForm.get('valueRangeStart')?.touched && toleranceMasterForm.get('valueRangeStart')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
                         <span *ngIf="toleranceMasterForm.get('valueRangeStart')?.invalid && toleranceMasterForm.get('valueRangeStart')?.touched"
@@ -184,6 +175,7 @@
                         <label class="form-label">Value Range End <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" formControlName="valueRangeEnd"
                             placeholder="Enter Range End"
+                            [attr.step]="getToleranceStep()" (blur)="roundToleranceField('valueRangeEnd')"
                             [ngClass]="{'is-invalid': toleranceMasterForm.get('valueRangeEnd')?.touched && toleranceMasterForm.get('valueRangeEnd')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
                         <span *ngIf="toleranceMasterForm.get('valueRangeEnd')?.invalid && toleranceMasterForm.get('valueRangeEnd')?.touched"
@@ -191,9 +183,15 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Tolerance Value <span class="text-danger">*</span></label>
+                        <label class="form-label">
+                            Tolerance Value <span class="text-danger">*</span>
+                            <small *ngIf="toleranceMasterForm.get('parameterSymbol')?.value" class="text-muted ms-1">
+                                ({{ toleranceMasterForm.get('parameterSymbol')?.value }})
+                            </small>
+                        </label>
                         <input type="number" class="form-control" formControlName="toleranceValue"
                             placeholder="Enter Tolerance Value"
+                            [attr.step]="getToleranceStep()" (blur)="roundToleranceField('toleranceValue')"
                             [ngClass]="{'is-invalid': toleranceMasterForm.get('toleranceValue')?.touched && toleranceMasterForm.get('toleranceValue')?.invalid}"
                             [attr.disabled]="isViewMode ? true : null" />
                         <span *ngIf="toleranceMasterForm.get('toleranceValue')?.invalid && toleranceMasterForm.get('toleranceValue')?.touched"

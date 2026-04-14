@@ -5,10 +5,11 @@ import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-material-specification-list',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
    templateUrl: './custom-material-specification-list.component.html',
   styleUrl: './custom-material-specification-list.component.css'
 })
@@ -41,7 +42,7 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

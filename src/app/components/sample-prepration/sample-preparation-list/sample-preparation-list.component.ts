@@ -5,10 +5,11 @@ import { Router, RouterModule } from '@angular/router';
 import { SamplePreparationService } from '../../../services/sample-preparation.service';
 import { ToastService } from '../../../services/toast.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-sample-preparation-list',
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, PaginationComponent ],
   templateUrl: './sample-preparation-list.component.html',
   styleUrl: './sample-preparation-list.component.css',
 })
@@ -46,7 +47,7 @@ export class SamplePreparationListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20, 50];
+  pageSizes = [10, 25, 50, 100, 200, 500];
   sortByColumn = 'InwardID';
   sortOrder = 'desc';
   searchTerm = '';

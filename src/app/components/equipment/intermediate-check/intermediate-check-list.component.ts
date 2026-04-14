@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { IntermediateCheckService } from '../../../services/intermediate-check.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-intermediate-check-list',
 
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './intermediate-check-list.component.html',
   styleUrl: './intermediate-check-list.component.css'
 })
@@ -19,7 +20,7 @@ export class IntermediateCheckListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   searchTerm = '';
   sortByColumn = 'checkYear';

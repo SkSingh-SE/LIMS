@@ -11,10 +11,11 @@ import { FormValidationHelper } from '../../utility/helper/form-validation.helpe
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../services/unsaved-changes.service';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-product-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './product-form.component.html',
   styleUrl: './product-form.component.css'
 })
@@ -47,7 +48,7 @@ export class ProductFormComponent implements CanComponentDeactivate, OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

@@ -122,47 +122,14 @@
       </div>
 
       <!-- Pagination -->
-      <div
-        *ngIf="totalRecords > 0"
-        class="d-flex justify-content-between align-items-center mt-3"
-      >
-        <div class="d-flex align-items-center gap-2">
-          <label class="small">Rows:</label>
-          <select
-            class="form-select form-select-sm"
-            style="width: 70px"
-            [(ngModel)]="pageSize"
-            (change)="onPageSizeChange()"
-          >
-            <option *ngFor="let size of pageSizes" [value]="size">
-              {{ size }}
-            </option>
-          </select>
-          <span class="small text-muted"
-            >{{ (pageNumber - 1) * pageSize + 1 }} -
-            {{ pageNumber * pageSize > totalRecords ? totalRecords : pageNumber * pageSize }} of
-            {{ totalRecords }}</span
-          >
-        </div>
-
-        <nav>
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" [class.disabled]="pageNumber === 1">
-              <a class="page-link" (click)="onPageChange(pageNumber - 1)"
-                >&laquo;</a
-              >
-            </li>
-            <li class="page-item active">
-              <span class="page-link">{{ pageNumber }} / {{ totalPages }}</span>
-            </li>
-            <li class="page-item" [class.disabled]="pageNumber >= totalPages">
-              <a class="page-link" (click)="onPageChange(pageNumber + 1)"
-                >&raquo;</a
-              >
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalRecords"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+      </app-pagination>
     </div>
   </div>
 </div>

@@ -8,12 +8,13 @@ import { ToastService } from '../../../services/toast.service';
 import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective]
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective, PaginationComponent ]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -57,7 +58,7 @@ export class ReportingListComponent implements OnInit {
   // Pagination
   pageNumber: number = 1;
   pageSize: number = 10;
-  pageSizes = [5, 10, 20, 50];
+  pageSizes = [10, 25, 50, 100, 200, 500];
   totalRecords: number = 0;
 
   totalItems = 0;

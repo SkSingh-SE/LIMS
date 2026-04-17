@@ -21,8 +21,8 @@
                 <div class="d-flex align-items-end gap-1">
                   <div class="flex-grow-1">
                     <app-searchable-dropdown
-                      [placeholder]="'Search Laboratory Test Method'"
-                      [labelName]="'Laboratory Test Method'"
+                      [placeholder]="'Search Laboratory Test'"
+                      [labelName]="'Laboratory Test'"
                       [fetchDataFn]="getLaboratoryTest"
                       (itemSelected)="onLaboratorySelected($event)"
                       [hideLabel]="false"
@@ -39,7 +39,7 @@
                 </div>
                 <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test Method" [submitted]="submitted"/>
               </div>
-              <div class="col-md-2">
+              <!-- <div class="col-md-2">
                 <label class="form-label">Valid From</label>
                 <input type="date" class="form-control" formControlName="validFrom" />
               </div>
@@ -50,7 +50,7 @@
               <div class="col-md-2">
                 <label class="form-label">Next Review Date</label>
                 <input type="date" class="form-control" formControlName="nextReviewDate" />
-              </div>
+              </div> -->
               <div class="col-md-6">
                 <label class="form-label">Scope Remarks</label>
                 <textarea class="form-control" formControlName="scopeRemarks" rows="2" maxlength="500" placeholder="Remarks about scope coverage"></textarea>

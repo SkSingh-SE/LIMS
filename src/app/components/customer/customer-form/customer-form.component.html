@@ -63,26 +63,15 @@
 
           <!-- Company Categories -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Company Categories <span class="text-danger">*</span></label>
-            <div class="dropdown">
-              <button class="form-control dropdown-toggle d-flex justify-content-between align-items-center"
-                type="button" data-bs-toggle="dropdown" aria-expanded="false" [disabled]="isViewMode">
-                {{ getSelectedCategoriesText() || "Select Company Categories" }}
-              </button>
-              <ul class="dropdown-menu w-100 shadow p-2" [class.disabled]="isViewMode"
-                style="max-height: 250px; overflow-y: auto">
-                <li class="hover-bg" *ngFor="let cat of companyCategory">
-                  <div class="form-check">
-                    <input class="form-check-input mt-1" type="checkbox" [id]="'cat-' + cat.id" [value]="cat.id"
-                      (change)="onCategoryToggle($event)" [checked]="isCategorySelected(cat.id)"
-                      [disabled]="isViewMode" />
-                    <label class="form-check-label ms-2" [for]="'cat-' + cat.id" (click)="$event.stopPropagation()">
-                      {{ cat.name }}
-                    </label>
-                  </div>
-                </li>
-              </ul>
-            </div>
+            <app-multi-select-dropdown
+              [labelName]="'Company Categories'"
+              [placeholder]="'Select Company Categories'"
+              [required]="true"
+              [isDisabled]="isViewMode"
+              [fetchDataFn]="fetchCategoryDropdown"
+              [selectedValues]="selectedCategoryIds"
+              (itemsSelected)="onCategoriesSelected($event)">
+            </app-multi-select-dropdown>
             <span
               *ngIf="customerCompanyCategoriesArray.touched && customerCompanyCategoriesArray.invalid"
               class="text-danger text-sm">
@@ -269,7 +258,7 @@
               <tr class="text-nowrap text-muted small">
                 <th class="fw-medium px-2">#</th>
                 <th class="fw-medium px-2">Contact Person</th>
-                <th class="fw-medium px-2">Department <span class="text-danger">*</span></th>
+                <th class="fw-medium px-2">Department</th>
                 <th class="fw-medium px-2">Email</th>
                 <th class="fw-medium px-2">Mobile</th>
                 <th class="fw-medium px-2">Address</th>
@@ -296,19 +285,11 @@
                   <td class="align-middle px-2">{{ getDynamicIndex(i) | number : "2.0" }}</td>
                   <td class="px-2">
                     <input class="form-control form-control-sm" formControlName="name"
-                      placeholder="Enter Contact Person"
-                      [ngClass]="{ 'is-invalid': contact.get('name')?.touched && contact.get('name')?.invalid }" />
-                    <span *ngIf="contact.get('name')?.touched && contact.get('name')?.invalid"
-                      class="text-danger text-sm">Name is required.</span>
+                      placeholder="Enter Contact Person" />
                   </td>
                   <td class="px-2">
-                    <app-searchable-dropdown class="w-100" size="sm" [placeholder]="'Search department'"
-                      [labelName]="'Department'" [fetchDataFn]="getDepartments"
-                      (itemSelected)="onDepartmentSelected($event, asFormGroup(contact))" [isDisabled]="isViewMode"
-                      [hideLabel]="true" [selectedItem]="contact.get('departmentID')?.value"
-                      [smallInput]="true"></app-searchable-dropdown>
-                    <span *ngIf="contact.get('departmentID')?.touched && contact.get('departmentID')?.invalid"
-                      class="text-danger text-sm">Required.</span>
+                    <input type="text" class="form-control form-control-sm" formControlName="department"
+                      placeholder="Department" [readonly]="isViewMode" />
                   </td>
                   <td class="px-2">
                     <input class="form-control form-control-sm" formControlName="emailId" placeholder="Enter Email"
@@ -478,13 +459,23 @@
 <!-- ======================== Contact Fieldset Template ======================== -->
 <ng-template #contactFieldset let-contactGroup let-title="title">
   <fieldset [formGroup]="contactGroup" class="border rounded p-3 mb-3 position-relative">
-    <legend class="w-auto px-2 fw-semibold theme-color">{{ title }}</legend>
+    <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center gap-2">
+      {{ title }}
+      <button type="button" class="btn btn-link btn-sm p-0 text-primary"
+              *ngIf="!isViewMode && contactGroup.get('type')?.value !== 'contact1'"
+              (click)="copyContact1ToContact(contactGroup)">
+        <i class="bi bi-files me-1"></i>Copy from Contact 1
+      </button>
+    </legend>
     <div class="row">
       <!-- LEFT SIDE: Contact Details -->
       <div class="col-12 col-md-6">
         <div class="row g-2">
           <div class="col-6 col-md-2">
-            <label class="form-label">Salutation <span class="text-danger">*</span></label>
+            <label class="form-label">
+              Salutation
+              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+            </label>
             <select class="form-select" formControlName="salutation"
               [ngClass]="{ 'is-invalid': contactGroup.get('salutation')?.touched && contactGroup.get('salutation')?.invalid }">
               <option value="">Select</option>
@@ -498,7 +489,10 @@
           </div>
 
           <div class="col-6 col-md-5">
-            <label class="form-label">Contact Person <span class="text-danger">*</span></label>
+            <label class="form-label">
+              Contact Person
+              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+            </label>
             <input type="text" class="form-control" placeholder="Enter Contact Person" formControlName="name"
               [ngClass]="{ 'is-invalid': contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid }" />
             <span *ngIf="contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid"
@@ -506,17 +500,16 @@
           </div>
 
           <div class="col-6 col-md-5">
-            <app-searchable-dropdown size="sm" [placeholder]="'Search department'" [labelName]="'Department'"
-              [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event, contactGroup)"
-              [isDisabled]="isViewMode"
-              [required]="true"
-              [selectedItem]="contactGroup.get('departmentID')?.value"></app-searchable-dropdown>
-            <span *ngIf="contactGroup.get('departmentID')?.touched && contactGroup.get('departmentID')?.invalid"
-              class="text-danger text-sm">Department is required.</span>
+            <label class="form-label">Department</label>
+            <input type="text" class="form-control" placeholder="Enter Department" formControlName="department"
+              [readonly]="isViewMode" />
           </div>
 
           <div class="col-6 col-md-6">
-            <label class="form-label mb-1">Mobile No <span class="text-danger">*</span></label>
+            <label class="form-label mb-1">
+              Mobile No
+              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+            </label>
             <input type="text" class="form-control" placeholder="Enter Mobile No." formControlName="mobileNo"
               maxlength="13" appNumberOnly
               [ngClass]="{ 'is-invalid': contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid }" />
@@ -529,7 +522,10 @@
           </div>
 
           <div class="col-6 col-md-6">
-            <label class="form-label mb-1">Email ID <span class="text-danger">*</span></label>
+            <label class="form-label mb-1">
+              Email ID
+              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+            </label>
             <input type="email" class="form-control" placeholder="Enter Email" formControlName="emailId"
               [ngClass]="{ 'is-invalid': contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid }" />
             <div *ngIf="contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid">
@@ -567,7 +563,17 @@
       <div class="col-12 col-md-6">
         <div class="row g-2">
           <div class="col-6 col-md-6">
-            <label class="form-label mb-1">Address <span class="text-danger">*</span></label>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0">
+                Address
+                <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              </label>
+              <button type="button" class="btn btn-link btn-sm p-0 text-primary"
+                      *ngIf="!isViewMode"
+                      (click)="copyCustomerAddressToContact(contactGroup)">
+                <i class="bi bi-copy me-1"></i>Same as Customer
+              </button>
+            </div>
             <textarea rows="4" class="form-control" placeholder="Enter Address" formControlName="address"
               [ngClass]="{ 'is-invalid': contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid }"></textarea>
             <span *ngIf="contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid"
@@ -576,7 +582,10 @@
 
           <div class="col-6 col-md-6">
             <div class="col-md-12">
-              <label class="form-label mb-1">Pin Code <span class="text-danger">*</span></label>
+              <label class="form-label mb-1">
+                Pin Code
+                <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              </label>
               <input type="text" class="form-control" formControlName="pinCode" placeholder="Enter Pin Code"
                 appNumberOnly maxlength="6" (input)="fetchContactAreaData(contactGroup)"
                 [ngClass]="{ 'is-invalid': contactGroup.get('pinCode')?.touched && contactGroup.get('pinCode')?.invalid }" />
@@ -584,7 +593,7 @@
                 class="text-danger text-sm">Pin Code is required.</span>
             </div>
             <div class="col-md-12 mt-1">
-              <label class="form-label mb-1">Area <span class="text-danger">*</span></label>
+              <label class="form-label mb-1">Area</label>
               <select class="form-select" formControlName="areaID"
                 (change)="fetchLocationDataForContact(contactGroup)">
                 <option value="0">Select</option>
@@ -596,19 +605,19 @@
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">City <span class="text-danger">*</span></label>
+            <label class="form-label mb-1">City</label>
             <input type="text" class="form-control" placeholder="Auto Select" formControlName="city" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('city')?.touched && contactGroup.get('city')?.invalid }" />
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">State <span class="text-danger">*</span></label>
+            <label class="form-label mb-1">State</label>
             <input type="text" class="form-control" placeholder="Auto Select" formControlName="state" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('state')?.touched && contactGroup.get('state')?.invalid }" />
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">Country <span class="text-danger">*</span></label>
+            <label class="form-label mb-1">Country</label>
             <input type="text" class="form-control" placeholder="Auto Select" formControlName="country" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('country')?.touched && contactGroup.get('country')?.invalid }" />
           </div>

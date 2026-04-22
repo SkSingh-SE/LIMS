@@ -6,6 +6,12 @@
 
 :host ::ng-deep .ng-select .ng-value {
   font-size: var(--font-sm);
+  overflow: hidden;
+}
+
+:host ::ng-deep .ng-select .ng-value-icon.left {
+  border-radius: 2px 0 0 2px;
+  padding: 0 5px;
 }
 
 :host ::ng-deep .ng-select .ng-input > input {

@@ -9,12 +9,11 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { EmployeeService } from '../../../services/employee.service';
 import { CustomerService } from '../../../services/customer.service';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
-import { DepartmentService } from '../../../services/department.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { CompanyCategoryService } from '../../../services/company-category.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -31,7 +30,7 @@ import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-customer-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, RouterLink, FormFieldErrorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, MultiSelectDropdownComponent, RouterLink, FormFieldErrorComponent],
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
 })
@@ -40,9 +39,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   customerForm!: FormGroup;
   areas: any[] = [];
   areaList: any[] = [];
-  departments: any[] = [];
   customerTypes: any[] = ['Walk In', 'Credit Customer', 'Relationship Credit Customer'];
-  companyCategory: any[] = [];
   dispatchModes: any[] = [];
   discountOptions = [
     { name: '5%', value: 5 },
@@ -62,15 +59,12 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     { value: 'Govt X% GST', name: 'Govt X% GST' },
   ];
   isViewMode: boolean = false;
-  selectedCompanyCategoryIds: number[] = [];
   customerId: number = 0;
   submitted = false;
   constructor(
     private fb: FormBuilder,
-    private employeeService: EmployeeService,
     private areaService: AreaService,
     private customerService: CustomerService,
-    private departmentService: DepartmentService,
     private companyCategoryService: CompanyCategoryService,
     private toastService: ToastService,
     private route: ActivatedRoute, private router: Router,
@@ -138,7 +132,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     });
 
     this.initFixedContacts();
-    this.fetchCompanyCategoryDropdown();
     this.fetchDispatchModeDropdown();
     this.getCustomerTypes();
 
@@ -249,15 +242,15 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
   /* ===== Contact Factory ===== */
   private createContact(type: string): FormGroup {
-    const isRequired = ['contact1', 'contact2', 'accountant'].includes(type);
+    const isRequired = type === 'contact1';
 
     const contact = this.fb.group({
       id: [0],
       key: [type],
       type: [type],
       salutation: ['Mr.', isRequired ? Validators.required : []],
-      name: ['', isRequired ? Validators.required : [Validators.required]],
-      departmentID: [0, [Validators.required, Validators.min(1)]],
+      name: ['', isRequired ? Validators.required : []],
+      department: [''],
       emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
       mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)] : [Validators.pattern(/^[+]?\d{10,13}$/)]],
       isWhatsappNo: [false],
@@ -266,7 +259,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       sendReport: [false],
       customerID: [0],
 
-      address: ['', isRequired ? Validators.required : [Validators.required]],
+      address: ['', isRequired ? Validators.required : []],
       pinCode: ['', isRequired ? [Validators.required, Validators.pattern('^[0-9]{6}$')] : [Validators.pattern('^[0-9]{6}$')]],
       areaID: [0, isRequired ? Validators.required : []],
       city: ['', isRequired ? Validators.required : []],
@@ -412,15 +405,29 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       });
     }
   }
-  fetchCompanyCategoryDropdown(): void {
-    this.companyCategoryService.getCompanyCategoryDropdown('', 0, 100).subscribe({
-      next: resp => {
-        this.companyCategory = resp;
-      },
-      error: err => {
-        console.error('Error fetching customer types', err);
-      }
+  fetchCategoryDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.companyCategoryService.getCompanyCategoryDropdown(term, page, pageSize);
+  };
+
+  get selectedCategoryIds(): number[] {
+    return this.customerCompanyCategoriesArray.controls.map(
+      ctrl => ctrl.get('companyCategoryID')?.value
+    ).filter(Boolean);
+  }
+
+  onCategoriesSelected(items: any[]): void {
+    const formArray = this.customerCompanyCategoriesArray;
+    const existingMap = new Map<number, any>(
+      formArray.controls.map(ctrl => [ctrl.get('companyCategoryID')?.value, ctrl.get('id')?.value])
+    );
+    formArray.clear();
+    items.forEach(item => {
+      formArray.push(this.createCompanyCategory({
+        id: existingMap.get(item.id) || 0,
+        companyCategoryID: item.id
+      }));
     });
+    formArray.markAsTouched();
   }
   fetchDispatchModeDropdown(): void {
     this.dispatchModeService.getDispatchModeDropdown('', 0, 100).subscribe({
@@ -451,17 +458,38 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       });
     }
   }
-  getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.departmentService.getDepartmentDropdown(term, page, pageSize);
-  };
-
-  onDepartmentSelected(item: any, targetFormGroup: FormGroup) {
-    if (!item) {
-      targetFormGroup.patchValue({ departmentID: null });
-      return;
-    }
-    targetFormGroup.patchValue({ departmentID: item.id });
+  copyCustomerAddressToContact(contact: FormGroup): void {
+    contact.patchValue({
+      address: this.customerForm.get('address')?.value,
+      pinCode: this.customerForm.get('pinCode')?.value,
+      areaID: this.customerForm.get('areaID')?.value,
+      city: this.customerForm.get('city')?.value,
+      state: this.customerForm.get('state')?.value,
+      country: this.customerForm.get('country')?.value,
+      areaOptions: this.areas
+    });
   }
+
+  copyContact1ToContact(target: FormGroup): void {
+    const src = this.contact1;
+    if (!src) return;
+    target.patchValue({
+      salutation: src.get('salutation')?.value,
+      name: src.get('name')?.value,
+      department: src.get('department')?.value,
+      emailId: src.get('emailId')?.value,
+      mobileNo: src.get('mobileNo')?.value,
+      telephoneNo: src.get('telephoneNo')?.value,
+      address: src.get('address')?.value,
+      pinCode: src.get('pinCode')?.value,
+      areaID: src.get('areaID')?.value,
+      city: src.get('city')?.value,
+      state: src.get('state')?.value,
+      country: src.get('country')?.value,
+      areaOptions: src.get('areaOptions')?.value
+    });
+  }
+
   asFormGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
   }
@@ -474,26 +502,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       }
     }
     return dynamicCount + 1;
-  }
-
-  onCategoryToggle(event: Event): void {
-    const checkbox = event.target as HTMLInputElement;
-    const id = +checkbox.value;
-
-    const formArray = this.customerCompanyCategoriesArray;
-
-    if (checkbox.checked) {
-      const exists = formArray.controls.some(ctrl => ctrl.get('companyCategoryID')?.value === id);
-      if (!exists) {
-        formArray.push(this.createCompanyCategory({ companyCategoryID: id }));
-      }
-    } else {
-      const index = formArray.controls.findIndex(ctrl => ctrl.get('companyCategoryID')?.value === id);
-      if (index !== -1) {
-        formArray.removeAt(index);
-      }
-    }
-    formArray.markAsTouched();
   }
 
   onDispatchModeToggle(event: Event) {
@@ -517,33 +525,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   }
 
 
-  isCategorySelected(id: number): boolean {
-    const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
-    return formArray.controls.some(ctrl => ctrl.get('companyCategoryID')?.value === id);
-  }
-
   isDispatchModeSelected(id: number): boolean {
     return this.customerDispatchModesArray.controls
       .some(ctrl => ctrl.get('dispatchModeID')?.value === id);
   }
 
-
-  getSelectedCategories() {
-    const formArray = this.customerForm.get('customerCompanyCategories') as FormArray;
-    const selectedIds = formArray.controls.map(ctrl => ctrl.get('companyCategoryID')?.value);
-    return this.companyCategory.filter(cat => selectedIds.includes(cat.id));
-  }
-
-  getSelectedCategoriesText(): string {
-    const selected = this.getSelectedCategories();
-
-    if (selected.length === 1) {
-      return selected[0].name;
-    } else if (selected.length > 1) {
-      return `Selected ${selected.length} items`;
-    }
-    return '';
-  }
 
   createCompanyCategory(companyCategory?: any): FormGroup {
     return this.fb.group({
@@ -577,7 +563,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   private contactLabelMap: Record<string, string> = {
     salutation: 'Salutation',
     name: 'Name',
-    departmentID: 'Department',
+    department: 'Department',
     emailId: 'Email',
     mobileNo: 'Mobile No',
     address: 'Address',
@@ -672,8 +658,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
         this.customerForm.patchValue(response);
         this.fetchAreaData('pinCode', true);
-        this.selectedCompanyCategoryIds = response.customerCompanyCategories.map((cat: any) => cat.companyCategoryID);
-
         if (response.contactPersons && response.contactPersons.length > 0) {
           let dynamicIndex = 0;
           response.contactPersons.forEach((contact: any) => {

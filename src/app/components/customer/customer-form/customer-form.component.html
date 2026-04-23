@@ -23,7 +23,7 @@
               [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
             <app-field-error [control]="customerForm.get('name')" label="Customer Name" [submitted]="submitted"/>
             <div class="form-check mt-1" *ngIf="customerId > 0">
-              <input type="checkbox" class="form-check-input mt-1" formControlName="isVerified" id="isVerified"
+              <input type="checkbox" class="form-check-input" formControlName="isVerified" id="isVerified"
                 (click)="verifyCustomer($event)" />
               <label class="form-check-label form-label mb-0" for="isVerified">Verified</label>
             </div>
@@ -43,7 +43,7 @@
               placeholder="Enter Tally Ledger Name"
               [ngClass]="{ 'is-invalid': isFieldInvalid('tallyLedgerName') }" />
             <div class="form-check mt-1">
-              <input type="checkbox" class="form-check-input mt-1" formControlName="sameAsCustomerName"
+              <input type="checkbox" class="form-check-input" formControlName="sameAsCustomerName"
                 id="sameAsCustomerName" (click)="copyCustomerNameToLedgerName($event)" />
               <label class="form-check-label form-label mb-0" for="sameAsCustomerName">Same as Customer Name</label>
             </div>
@@ -96,7 +96,7 @@
               Invalid GST format. Expected: 22AAAAA0000A1Z5
             </span>
             <div class="form-check mt-1">
-              <input type="checkbox" class="form-check-input mt-1" formControlName="gstna" id="gstna" />
+              <input type="checkbox" class="form-check-input" formControlName="gstna" id="gstna" />
               <label class="form-check-label form-label mb-0" for="gstna">GST not applicable</label>
             </div>
           </div>
@@ -118,12 +118,12 @@
           <div class="col-auto col-md-4 col-lg-3">
             <label class="form-label d-block">Sample Return</label>
             <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn" [value]="true"
+              <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="true"
                 id="sampleYes" />
               <label class="form-check-label" for="sampleYes">Yes</label>
             </div>
             <div class="form-check form-check-inline">
-              <input class="form-check-input mt-1" type="radio" formControlName="sampleReturn" [value]="false"
+              <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="false"
                 id="sampleNo" />
               <label class="form-check-label" for="sampleNo">No</label>
             </div>
@@ -371,7 +371,7 @@
           </div>
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="constantDiscount"
+              <input class="form-check-input" type="checkbox" formControlName="constantDiscount"
                 id="constantDiscount" />
               <label class="form-check-label form-label" for="constantDiscount">Constant Discount</label>
             </div>
@@ -387,28 +387,28 @@
         <div *ngIf="!isWalkIn" class="row gy-1">
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="weeklyBillingCustomer"
+              <input class="form-check-input" type="checkbox" formControlName="weeklyBillingCustomer"
                 id="weeklyBilling" />
               <label class="form-check-label form-label" for="weeklyBilling">Weekly Billing Customer</label>
             </div>
           </div>
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="monthlyBillingCustomer"
+              <input class="form-check-input" type="checkbox" formControlName="monthlyBillingCustomer"
                 id="monthlyBilling" />
               <label class="form-check-label form-label" for="monthlyBilling">Monthly Billing Customer</label>
             </div>
           </div>
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="directTaxInvoiceNoPerforma"
+              <input class="form-check-input" type="checkbox" formControlName="directTaxInvoiceNoPerforma"
                 id="directTaxInvoice" />
               <label class="form-check-label form-label" for="directTaxInvoice">Direct Tax Invoice, No Proforma</label>
             </div>
           </div>
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="billingEvery" id="billingEvery" />
+              <input class="form-check-input" type="checkbox" formControlName="billingEvery" id="billingEvery" />
               <label class="form-check-label form-label" for="billingEvery">Billing Days</label>
             </div>
             <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select mt-1"
@@ -419,7 +419,7 @@
           </div>
           <div class="col-auto col-md-4 col-lg-3">
             <div class="form-check">
-              <input class="form-check-input mt-1" type="checkbox"
+              <input class="form-check-input" type="checkbox"
                 formControlName="performaInvoiceRequiredBeforeTesting" id="performaRequired" />
               <label class="form-check-label form-label" for="performaRequired">Proforma Invoice Required Before
                 Testing</label>
@@ -538,21 +538,21 @@
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="sendBill" />
+              <input class="form-check-input" type="checkbox" formControlName="sendBill" />
               <label class="form-check-label form-label mb-0">Send Bill</label>
             </div>
           </div>
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="sendReport" />
+              <input class="form-check-input" type="checkbox" formControlName="sendReport" />
               <label class="form-check-label form-label mb-0">Send Report</label>
             </div>
           </div>
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input mt-1" type="checkbox" formControlName="isWhatsappNo" />
+              <input class="form-check-input" type="checkbox" formControlName="isWhatsappNo" />
               <label class="form-check-label form-label mb-0">WhatsApp</label>
             </div>
           </div>

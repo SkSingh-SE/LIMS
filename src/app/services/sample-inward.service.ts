@@ -80,4 +80,12 @@ export class SampleInwardService {
   rejectReplan(requestId: number, remarks?: string): Observable<any> {
     return this.http.post<any>(`${this.planApiUrl}/reject-replan/${requestId}`, { remarks: remarks || '' });
   }
+
+  cancelSample(sampleDetailId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cancel-sample`, { sampleDetailId, reason });
+  }
+
+  deleteSample(sampleDetailId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete-sample/${sampleDetailId}`);
+  }
 }

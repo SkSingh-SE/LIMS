@@ -61,6 +61,7 @@ export class ReportingListComponent implements OnInit {
   pageSizes = [10, 25, 50, 100, 200, 500];
   totalRecords: number = 0;
 
+  isSubmitting = false;
   totalItems = 0;
   payload = {
     PageNumber: this.pageNumber,
@@ -198,14 +199,16 @@ export class ReportingListComponent implements OnInit {
       remarks: comments || ''
     };
 
+    this.isSubmitting = true;
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
+        this.isSubmitting = false;
         this.toast.show('Action completed successfully.', 'success');
         this.fetchData();
       },
       error: (err) => {
-        console.error('Workflow action failed:', err);
-        this.toast.show('Action failed. See console for details.', 'error');
+        this.isSubmitting = false;
+        this.toast.show(err?.error?.message || 'Action failed. Please try again.', 'error');
       }
     });
   }

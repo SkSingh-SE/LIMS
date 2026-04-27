@@ -129,6 +129,7 @@
                         'btn-outline-secondary': action.action.toLowerCase().includes('back')
                       }"
                       [title]="action.name"
+                      [disabled]="isSubmitting"
                       (click)="performWorkflowAction(item, action.action)">
                       <i class="bi"
                         [class.bi-check-circle]="action.action.toLowerCase().includes('next')"

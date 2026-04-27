@@ -292,10 +292,32 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   /* ===== Form Submission ===== */
+  private isFormValidForSubmit(): boolean {
+    // Validate all top-level controls except contactPersons
+    for (const key of Object.keys(this.customerForm.controls)) {
+      if (key === 'contactPersons') continue;
+      const ctrl = this.customerForm.get(key);
+      if (ctrl && ctrl.invalid && !ctrl.disabled) return false;
+    }
+    // contact1 is always required
+    if (this.contact1 && this.contact1.invalid && !this.contact1.disabled) return false;
+    // contact2, accountant, dynamic — only validate if name is filled in
+    const optionalContacts = [
+      ...(this.contact2 ? [this.contact2] : []),
+      ...(this.accountant ? [this.accountant] : []),
+      ...this.dynamicContacts,
+    ];
+    for (const contact of optionalContacts) {
+      const hasData = !!contact.get('name')?.value?.trim();
+      if (hasData && contact.invalid && !contact.disabled) return false;
+    }
+    return true;
+  }
+
   onSubmit(): void {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.customerForm);
-    if (!this.customerForm.valid) {
+    if (!this.isFormValidForSubmit()) {
       const missing = this.getInvalidFieldNames();
       this.toastService.show(`Please fix: ${missing.join(', ')}`, 'warning');
       return;
@@ -598,10 +620,13 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       }
     });
 
-    // Contact persons — group by contact type
+    // Contact persons — always validate contact1; skip optional contacts if name is empty
     this.contactPersonsArray.controls.forEach(c => {
       const group = c as FormGroup;
       const type = group.get('type')?.value || 'contact';
+      const isRequired = type === 'contact1';
+      const hasData = !!group.get('name')?.value?.trim();
+      if (!isRequired && !hasData) return; // skip empty optional contacts
       const invalidFields: string[] = [];
       Object.keys(group.controls).forEach(field => {
         const ctrl = group.get(field);

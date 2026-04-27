@@ -66,8 +66,9 @@
                       *ngFor="let action of item.actions"
                       role="button"
                       class="icon-link action-icon-link"
+                      [class.disabled]="isSubmittingAction"
                       [title]="action.name"
-                      (click)="onActionClick(action, item)"
+                      (click)="!isSubmittingAction && onActionClick(action, item)"
                     >
                       <i class="bi action-icon" [ngClass]="[getActionCfg(action.action).icon, getActionCfg(action.action).textClass]"></i>
                     </a>

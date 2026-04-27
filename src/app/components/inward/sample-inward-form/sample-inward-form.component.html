@@ -23,7 +23,7 @@
     </li>
     <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
       <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
-              (click)="planTabLoaded = true">
+              (click)="switchToPlanTab()">
         <i class="bi bi-clipboard-check me-1"></i> Plan
       </button>
     </li>
@@ -37,7 +37,7 @@
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Customer Details
           </legend>
@@ -162,7 +162,7 @@
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Contacts
           </legend>
@@ -348,7 +348,7 @@
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Payment Info
           </legend>
@@ -427,7 +427,7 @@
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Document
           </legend>
@@ -479,7 +479,7 @@
         <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Sample Details
           </legend>
@@ -491,6 +491,21 @@
           </div>
           <div class="table-responsive">
             <table class="table table-compact">
+              <colgroup>
+                <col style="width:110px" />
+                <col style="width:150px" />
+                <col style="width:160px" />
+                <col style="width:150px" />
+                <col style="width:160px" />
+                <col style="width:130px" />
+                <col style="width:90px" />
+                <col style="width:90px" />
+                <col style="width:90px" />
+                <col style="width:90px" />
+                <col style="width:100px" />
+                <col style="width:220px" />
+                <col style="width:60px" />
+              </colgroup>
               <thead class="table-light">
                 <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center">Auto-Generated</th>
@@ -503,73 +518,102 @@
                   <th class="fw-medium text-center">Diameter (mm)</th>
                   <th class="fw-medium text-center">Width (mm)</th>
                   <th class="fw-medium text-center">Length (mm)</th>
-                  <th class="fw-medium text-center">Quantity</th>
+                  <th class="fw-medium text-center">Qty</th>
                   <th class="fw-medium text-center">Image</th>
                   <th class="fw-medium text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
-                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly /></td>
-                  <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
+                <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i"
+                    [class.table-secondary]="sample.get('isCancelled')?.value"
+                    [class.opacity-75]="sample.get('isCancelled')?.value">
+                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly />
+                  <span *ngIf="sample.get('isCancelled')?.value"
+                          class="badge bg-secondary mt-1"
+                          style="font-size:0.7rem"
+                          [title]="'Cancellation reason: ' + sample.get('cancellationReason')?.value">
+                      Cancelled
+                    </span>
+                  </td>
+                  <td>
+                    <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required />
+
+                  </td>
                   <td>
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Metal Classification'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getMetalClassification"
                       (itemSelected)="onMetalClassificationSelected($event,i)"
                       [selectedItem]="sample.get('metalClassificationID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
                   <td>
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Product Condition'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
                       [selectedItem]="sample.get('productConditionID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
                   <td>
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Specimen Orientation'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getSpecimenOrientationDrop(i)"
                       (itemSelected)="onSpecimenOrientationSelected($event,i)"
                       [selectedItem]="sample.get('specimenOrientationID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
                   <td>
                     <app-searchable-dropdown
                       [placeholder]="'Product Form'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getProductFormDrop"
                       (itemSelected)="onProductFormSelected($event,i)"
                       [selectedItem]="sample.get('productFormID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:75px" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
                   <td>
-                    <ng-container *ngIf="sample.get('sampleFilePath')?.value; else uploadField">
-                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                    <div class="d-flex align-items-center gap-1">
+                      <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:60px"
+                             (keydown.enter)="$event.preventDefault(); sample.get('quantity')?.value > 1 && applyQty(i)" />
+                      <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value && sample.get('quantity')?.value > 1"
+                              type="button"
+                              class="btn btn-sm btn-outline-primary p-1 lh-1"
+                              title="Expand into {{ sample.get('quantity')?.value }} rows"
+                              (click)="applyQty(i)">
+                        <i class="bi bi-layers-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <ng-container *ngIf="sample.get('sampleFilePath')?.value || sample.get('fileName')?.value; else uploadField">
+                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded" style="min-width:0">
                         <span
-                          class="text-truncate me-2"
-                          type="button"
-                          (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
+                          class="text-truncate me-1"
+                          style="max-width:140px; display:inline-block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle;"
+                          [class.cursor-pointer]="sample.get('sampleFilePath')?.value"
+                          (click)="sample.get('sampleFilePath')?.value && openFileInNewTab(sample.get('sampleFilePath')?.value)"
                           title="{{ sample.get('fileName')?.value }}"
                         >
-                          <i class="bi bi-file-earmark-fill"></i>
+                          <i class="bi bi-file-earmark-image-fill text-success"></i>
                           {{ sample.get("fileName")?.value }}
                         </span>
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
+                        <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
                           <i class="bi bi-trash-fill fs-6 me-1"></i>
                         </button>
                       </div>
@@ -580,15 +624,25 @@
                         class="form-control form-control-sm input-file"
                         type="file"
                         accept=".jpg,.jpeg,.png"
-                        [disabled]="isViewMode"
+                        [disabled]="isViewMode || !!sample.get('isCancelled')?.value"
                         (change)="onUploadSampleImage(i, $event)"
                       />
                     </ng-template>
                   </td>
                   <td class="text-center">
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="removeSample(i)">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                      <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value"
+                              type="button" class="btn btn-sm btn-remove" title="Delete sample"
+                              (click)="removeSample(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                      <button *ngIf="canCancelThisSample(sample) && !sample.get('isCancelled')?.value && sample.get('id')?.value > 0"
+                              type="button" class="btn btn-sm btn-outline-danger p-1 lh-1"
+                              title="Cancel this sample"
+                              (click)="openCancelDialog(i)">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    </div>
                 </tr>
               </tbody>
             </table>
@@ -598,11 +652,39 @@
             Add Sample
           </button>
         </fieldset>
+
+        <!-- Cancel Sample Confirmation Dialog -->
+        <div *ngIf="showCancelDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1050">
+          <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+            <div class="modal-content shadow">
+              <div class="modal-header py-2 bg-danger text-white">
+                <h6 class="modal-title mb-0"><i class="bi bi-x-circle me-1"></i> Cancel Sample</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" (click)="showCancelDialog = false"></button>
+              </div>
+              <div class="modal-body py-3">
+                <p class="small text-muted mb-2">Provide a reason for cancellation (required):</p>
+                <textarea class="form-control form-control-sm" rows="3"
+                          [(ngModel)]="cancelReason"
+                          [ngModelOptions]="{standalone: true}"
+                          placeholder="Enter reason..."></textarea>
+              </div>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" (click)="showCancelDialog = false">Close</button>
+                <button type="button" class="btn btn-sm btn-danger"
+                        [disabled]="!cancelReason?.trim()"
+                        (click)="confirmCancelSample()">
+                  <i class="bi bi-x-circle me-1"></i> Confirm Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- SECTION 2: CASE DETAILS + IDENTIFICATION INFO -->
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Case & Sample Identification
           </legend>
@@ -652,7 +734,7 @@
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            
+
           >
             Additional Information
           </legend>

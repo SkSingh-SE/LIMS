@@ -377,6 +377,7 @@ export class TestResultEntryFormComponent implements OnInit {
     const sampleData = apiData.sample;
     this.sample = {
       sampleNo: sampleData.sampleNo || '',
+      sampleStatus: sampleData.sampleStatus || '',
       material: sampleData.details || '',
       metalClassification: sampleData.metalClassification || '',
       productCondition: sampleData.productCondition || '',
@@ -1619,6 +1620,7 @@ export class TestResultEntryFormComponent implements OnInit {
   // Sample-Level Verification (NABL ISO 17025 Clause 7.7)
   // ================================================================
   isSubmittingVerification = false;
+  isSubmittingReport = false;
 
   getVerificationBannerState(): { state: string; message: string } | null {
     const allTests = this.plans.flatMap((p: any) => p.tests || []);
@@ -1684,6 +1686,22 @@ export class TestResultEntryFormComponent implements OnInit {
       error: (err: any) => {
         this.isSubmittingVerification = false;
         this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
+      }
+    });
+  }
+
+  submitForReportReview(): void {
+    if (this.isSubmittingReport) return;
+    this.isSubmittingReport = true;
+    this.testResultService.submitForReportReview(this.sampleId).subscribe({
+      next: () => {
+        this.isSubmittingReport = false;
+        this.sample.sampleStatus = 'REPORT_UNDER_REVIEW';
+        this.toastService.show('Submitted for report review successfully.', 'success');
+      },
+      error: (err: any) => {
+        this.isSubmittingReport = false;
+        this.toastService.show(err?.error?.message || 'Failed to submit for report review.', 'error');
       }
     });
   }

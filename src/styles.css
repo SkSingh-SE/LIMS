@@ -963,11 +963,11 @@ select:focus option:checked {
 }
 
 .btn-cancel {
-  --bs-btn-bg: #ffc107;
-  --bs-btn-border-color: #ffc107;
+  --bs-btn-bg: #ffc107 !important;
+  --bs-btn-border-color: #ffc107 !important;
   --bs-btn-color: #000;
   --bs-btn-hover-bg: #e0a800;
-  --bs-btn-hover-border-color: #d39e00;
+  --bs-btn-hover-border-color: #d39e00 !important;
   --bs-btn-hover-color: #000;
   font-weight: 500;
   min-width: 90px;
@@ -2141,7 +2141,7 @@ textarea.form-control {
   border: 1px solid #e5e7eb;
   border-top: none;
   border-radius: 0 0 var(--radius-md) var(--radius-md);
-  padding: 1.25rem;
+  padding: 0.75rem;
 }
 
 /* ── nav-fill equal-width tabs (sample-inward-form) ── */

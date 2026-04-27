@@ -94,9 +94,14 @@ fieldset legend {
 }
 
 .table-compact td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0.4rem;
   vertical-align: middle;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact th {
+  padding: 0.4rem 0.4rem;
+  white-space: nowrap;
 }
 
 .table-compact tbody tr:hover {

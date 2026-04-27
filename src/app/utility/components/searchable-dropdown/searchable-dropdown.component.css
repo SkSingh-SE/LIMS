@@ -82,7 +82,7 @@
 .input-group .input-group-text.clear-icon {
   border: none !important;
   background: transparent;
-  padding: 0 0.3rem;
+  padding: 0 0.5rem;
   color: #adb5bd;
   cursor: pointer;
   transition: color 0.15s ease;
@@ -93,11 +93,11 @@
 }
 
 .input-group .input-group-text.clear-icon:hover {
-  color: #dc3545;
+  color: #dc0e23;
 }
 
 .input-group .input-group-text.clear-icon i {
-  font-size: 0.6rem;
+  font-size: 0.9rem;
 }
 
 /* ─── SM Mode (when smallInput=true adds form-control-sm) ─── */

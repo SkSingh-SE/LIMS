@@ -1,19 +1,4 @@
-:host ::ng-deep .ng-select .ng-placeholder {
-  font-weight: 400;
-  font-size: var(--font-sm);
-  color: #94a3b8;
-}
-
-:host ::ng-deep .ng-select .ng-value {
-  font-size: var(--font-sm);
-  overflow: hidden;
-}
-
-:host ::ng-deep .ng-select .ng-value-icon.left {
-  border-radius: 2px 0 0 2px;
-  padding: 0 5px;
-}
-
-:host ::ng-deep .ng-select .ng-input > input {
-  font-size: var(--font-sm) !important;
+:host {
+  display: block;
+  width: 100%;
 }

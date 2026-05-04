@@ -61,6 +61,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   isViewMode: boolean = false;
   customerId: number = 0;
   submitted = false;
+  defaultCurrency: any = null;
   constructor(
     private fb: FormBuilder,
     private areaService: AreaService,
@@ -88,7 +89,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     this.customerForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      legalName: [''],
       tallyLedgerName: ['', [Validators.required, noWhitespaceValidator()]],
       sameAsCustomerName: [false],
       address: ['', [Validators.required, Validators.maxLength(500), noWhitespaceValidator()]],
@@ -102,11 +102,11 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       pinCode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
       customerType: ['', [Validators.required]],
       isBlock: [false],
+      lastBillingDate: [null],
       currencyID: [0],
       gstNo: ['', [Validators.required,
       Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/)
       ]],
-      panNo: ['', [Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       gstna: [false],
       dispatchModeIDs: [''],
       sampleReturn: [false],
@@ -134,6 +134,9 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     this.initFixedContacts();
     this.fetchDispatchModeDropdown();
     this.getCustomerTypes();
+    if (this.customerId === 0) {
+      this.setDefaultCurrency();
+    }
 
     // Toggle GST validators when "GST not applicable" changes
     this.customerForm.get('gstna')?.valueChanges.subscribe((gstNotApplicable: boolean) => {
@@ -211,11 +214,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       .find(c => c.get('type')?.value === 'contact1') as FormGroup;
   }
 
-  get contact2(): FormGroup | null {
-    return this.contactPersonsArray.controls
-      .find(c => c.get('type')?.value === 'contact2') as FormGroup;
-  }
-
   get accountant(): FormGroup | null {
     return this.contactPersonsArray.controls
       .find(c => c.get('type')?.value === 'accountant') as FormGroup;
@@ -224,6 +222,12 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   get dynamicContacts(): FormGroup[] {
     return this.contactPersonsArray.controls
       .filter(c => c.get('type')?.value === 'dynamic') as FormGroup[];
+  }
+
+  getContactTitle(arrayIndex: number): string {
+    if (arrayIndex === 0) return 'Contact Info 1';
+    if (arrayIndex === 1) return 'Account Info';
+    return `Contact Info ${arrayIndex}`;
   }
 
   get customerCompanyCategoriesArray(): FormArray {
@@ -236,7 +240,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   /* ===== Initialize Fixed Contacts ===== */
   private initFixedContacts() {
     this.contactPersonsArray.push(this.createContact('contact1'));
-    this.contactPersonsArray.push(this.createContact('contact2'));
     this.contactPersonsArray.push(this.createContact('accountant'));
   }
 
@@ -251,7 +254,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       salutation: ['Mr.', isRequired ? Validators.required : []],
       name: ['', isRequired ? Validators.required : []],
       department: [''],
-      emailId: ['', isRequired ? [Validators.required, Validators.email] : [Validators.email]],
+      emailId: ['', isRequired ? [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)] : [Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)]],
       mobileNo: ['', isRequired ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)] : [Validators.pattern(/^[+]?\d{10,13}$/)]],
       isWhatsappNo: [false],
       telephoneNo: ['', [Validators.pattern(/^[+]?\d{10,13}$/)]],
@@ -301,9 +304,8 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     }
     // contact1 is always required
     if (this.contact1 && this.contact1.invalid && !this.contact1.disabled) return false;
-    // contact2, accountant, dynamic — only validate if name is filled in
+    // accountant and dynamic contacts — only validate if name is filled in
     const optionalContacts = [
-      ...(this.contact2 ? [this.contact2] : []),
       ...(this.accountant ? [this.accountant] : []),
       ...this.dynamicContacts,
     ];
@@ -467,6 +469,19 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
   onCurrencySelect(item: any): void {
     this.customerForm.patchValue({ currencyID: item?.id || 0 });
+    if (item) this.defaultCurrency = item;
+  }
+
+  private setDefaultCurrency(): void {
+    this.currencyService.getDefault().subscribe({
+      next: (currency) => {
+        if (currency) {
+          this.defaultCurrency = currency;
+          this.customerForm.patchValue({ currencyID: currency.id });
+        }
+      },
+      error: () => {}
+    });
   }
 
   copyCustomerNameToLedgerName(event: MouseEvent): void {
@@ -514,16 +529,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
   asFormGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
-  }
-
-  getDynamicIndex(arrayIndex: number): number {
-    let dynamicCount = 0;
-    for (let i = 0; i < arrayIndex; i++) {
-      if (this.contactPersonsArray.controls[i].get('type')?.value === 'dynamic') {
-        dynamicCount++;
-      }
-    }
-    return dynamicCount + 1;
   }
 
   onDispatchModeToggle(event: Event) {
@@ -598,7 +603,6 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
 
   private contactTypeLabel: Record<string, string> = {
     contact1: 'Contact Person 1',
-    contact2: 'Contact Person 2',
     accountant: 'Accountant',
     dynamic: 'Additional Contact',
   };
@@ -650,7 +654,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         this.contactPersonsArray.clear();
 
 
-        // Add fixed contacts (contact1, contact2, accountant)
+        // Add fixed contacts (contact1, accountant)
         this.initFixedContacts();
 
         // Add dynamic contacts
@@ -682,13 +686,23 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         }
 
         this.customerForm.patchValue(response);
+        // Rebind currency dropdown for edit/view mode
+        if (response.currencyID) {
+          this.currencyService.getDropdown('', 0, 100).subscribe({
+            next: (list) => {
+              const match = list.find((c: any) => c.id === response.currencyID);
+              if (match) this.defaultCurrency = match;
+            },
+            error: () => {}
+          });
+        }
         this.fetchAreaData('pinCode', true);
         if (response.contactPersons && response.contactPersons.length > 0) {
           let dynamicIndex = 0;
           response.contactPersons.forEach((contact: any) => {
+            if (contact.type === 'contact2') return; // contact2 no longer used — skip
             let formGroup: FormGroup | undefined;
             if (contact.type === 'dynamic') {
-              // Find the Nth dynamic contact by counting, not by .find()
               const dynamicGroups = this.contactPersonsArray.controls.filter(c => c.get('type')?.value === 'dynamic');
               formGroup = dynamicGroups[dynamicIndex] as FormGroup;
               dynamicIndex++;

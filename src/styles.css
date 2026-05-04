@@ -1604,6 +1604,25 @@ label .text-danger {
   color: #fff !important;
 }
 
+/* ─── ng-select SM (smallInput=true) — compact 30px height ─── */
+.ng-select-sm .ng-select-container {
+  min-height: 30px !important;
+  font-size: 0.78rem !important;
+}
+.ng-select-sm .ng-placeholder {
+  font-size: 0.76rem !important;
+}
+.ng-select-sm .ng-value {
+  font-size: 0.72rem !important;
+}
+.ng-select-sm .ng-input > input {
+  font-size: 0.76rem !important;
+}
+.ng-select-sm .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  font-size: 0.76rem !important;
+  padding: 5px 10px !important;
+}
+
 /* ════════════════════════════════════════════════════════════════
    UTILITY CLASSES
 ════════════════════════════════════════════════════════════════ */

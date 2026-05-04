@@ -1,11 +1,11 @@
 <form [formGroup]="multiForm">
-  <label *ngIf="!hideLabel" class="form-label">
+  <label *ngIf="!hideLabel" class="form-label" [ngClass]="{ 'mb-1': smallInput }">
     {{ labelName }} <span *ngIf="required" class="text-danger">*</span>
   </label>
 
   <ng-select
     [items]="items"
-    class="w-full "
+    [ngClass]="{ 'ng-select-sm': smallInput }"
     bindLabel="name"
     bindValue="id"
     [multiple]="true"

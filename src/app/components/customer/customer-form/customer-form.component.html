@@ -13,33 +13,49 @@
 
       <!-- ======================== Basic Information ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">Basic Information</legend>
-        <div class="row gy-1">
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          <i class="bi bi-person-vcard-fill"></i> Basic Information
+        </legend>
+        <div class="row g-2 align-items-start">
           <!-- Customer Name -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Customer Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
+            <label for="name" class="form-label">Customer Name <span class="text-danger">*</span></label>
+            <input id="name" type="text" class="form-control" formControlName="name" placeholder="Enter Customer Name"
               maxlength="100"
               [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
             <app-field-error [control]="customerForm.get('name')" label="Customer Name" [submitted]="submitted"/>
-            <div class="form-check mt-1" *ngIf="customerId > 0">
-              <input type="checkbox" class="form-check-input" formControlName="isVerified" id="isVerified"
-                (click)="verifyCustomer($event)" />
-              <label class="form-check-label form-label mb-0" for="isVerified">Verified</label>
-            </div>
           </div>
 
-          <!-- Legal Name -->
+          <!-- Customer Verification Status -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Legal Name</label>
-            <input type="text" class="form-control" formControlName="legalName" placeholder="Enter Legal Name"
-              maxlength="100" />
+            <label class="form-label d-block">Verification Status</label>
+            <ng-container *ngIf="customerId > 0; else newCustomerStatus">
+              <div class="d-flex align-items-center gap-2 mt-1">
+                <span class="badge px-2 py-1"
+                  [ngClass]="customerForm.get('isVerified')?.value ? 'bg-success' : 'bg-warning text-dark'">
+                  {{ customerForm.get('isVerified')?.value ? 'Verified' : 'Unverified' }}
+                </span>
+                <div *ngIf="!isViewMode" class="form-check mb-0">
+                  <input type="checkbox" class="form-check-input" formControlName="isVerified" id="isVerified"
+                    (click)="verifyCustomer($event)" />
+                  <label class="form-check-label form-label mb-0" for="isVerified">
+                    {{ customerForm.get('isVerified')?.value ? 'Mark Unverified' : 'Mark Verified' }}
+                  </label>
+                </div>
+              </div>
+              <small *ngIf="customerForm.get('verifiedOn')?.value" class="text-muted d-block mt-1">
+                Verified on {{ customerForm.get('verifiedOn')?.value | date:'dd/MM/yyyy' }}
+              </small>
+            </ng-container>
+            <ng-template #newCustomerStatus>
+              <span class="badge bg-secondary px-2 py-1">New — Unverified</span>
+            </ng-template>
           </div>
 
           <!-- Tally Ledger Name -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Tally Ledger Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="tallyLedgerName" maxlength="100"
+            <label for="tallyLedgerName" class="form-label">Tally Ledger Name <span class="text-danger">*</span></label>
+            <input id="tallyLedgerName" type="text" class="form-control" formControlName="tallyLedgerName" maxlength="100"
               placeholder="Enter Tally Ledger Name"
               [ngClass]="{ 'is-invalid': isFieldInvalid('tallyLedgerName') }" />
             <div class="form-check mt-1">
@@ -52,8 +68,8 @@
 
           <!-- Customer Type -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Customer Type <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="customerType"
+            <label for="customerType" class="form-label">Customer Type <span class="text-danger">*</span></label>
+            <select id="customerType" class="form-select" formControlName="customerType"
               [ngClass]="{ 'is-invalid': isFieldInvalid('customerType') }">
               <option value="">Select Type</option>
               <option *ngFor="let type of customerTypes" [value]="type">{{ type }}</option>
@@ -68,6 +84,7 @@
               [placeholder]="'Select Company Categories'"
               [required]="true"
               [isDisabled]="isViewMode"
+              [smallInput]="true"
               [fetchDataFn]="fetchCategoryDropdown"
               [selectedValues]="selectedCategoryIds"
               (itemsSelected)="onCategoriesSelected($event)">
@@ -81,8 +98,8 @@
 
           <!-- GST No -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">GST No <span *ngIf="!customerForm.get('gstna')?.value" class="text-danger">*</span></label>
-            <input type="text" class="form-control text-uppercase" formControlName="gstNo" placeholder="Enter GST No."
+            <label for="gstNo" class="form-label">GST No <span *ngIf="!customerForm.get('gstna')?.value" class="text-danger">*</span></label>
+            <input id="gstNo" type="text" class="form-control text-uppercase" formControlName="gstNo" placeholder="Enter GST No."
               maxlength="15"
               [ngClass]="{ 'is-invalid': customerForm.get('gstNo')?.touched && customerForm.get('gstNo')?.invalid && !customerForm.get('gstna')?.value }" />
             <span
@@ -101,34 +118,6 @@
             </div>
           </div>
 
-          <!-- PAN No -->
-          <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">PAN No</label>
-            <input type="text" class="form-control text-uppercase" formControlName="panNo" placeholder="Enter PAN No."
-              maxlength="10"
-              [ngClass]="{ 'is-invalid': customerForm.get('panNo')?.touched && customerForm.get('panNo')?.invalid }" />
-            <span
-              *ngIf="customerForm.get('panNo')?.hasError('pattern') && customerForm.get('panNo')?.touched"
-              class="text-danger text-sm">
-              Invalid PAN format. Expected: ABCDE1234F
-            </span>
-          </div>
-
-          <!-- Sample Return -->
-          <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label d-block">Sample Return</label>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="true"
-                id="sampleYes" />
-              <label class="form-check-label" for="sampleYes">Yes</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="false"
-                id="sampleNo" />
-              <label class="form-check-label" for="sampleNo">No</label>
-            </div>
-          </div>
-
           <!-- Block Customer — hidden, not implemented yet -->
 
         </div>
@@ -136,12 +125,14 @@
 
       <!-- ======================== Address Details ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">Address Details</legend>
-        <div class="row gy-1">
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          <i class="bi bi-geo-alt-fill"></i> Address Details
+        </legend>
+        <div class="row g-2">
           <!-- Address -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Address <span class="text-danger">*</span></label>
-            <textarea class="form-control" formControlName="address" rows="2" maxlength="500"
+            <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+            <textarea id="address" class="form-control" formControlName="address" rows="2" maxlength="500"
               placeholder="Enter Address"
               [ngClass]="{'is-invalid': isFieldInvalid('address')}"></textarea>
             <app-field-error [control]="customerForm.get('address')" label="Address" [submitted]="submitted"/>
@@ -149,8 +140,8 @@
 
           <!-- PIN Code -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">PIN Code <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="pinCode" maxlength="6" appNumberOnly
+            <label for="pinCode" class="form-label">PIN Code <span class="text-danger">*</span></label>
+            <input id="pinCode" type="text" class="form-control" formControlName="pinCode" maxlength="6" appNumberOnly
               (input)="fetchAreaData('pinCode', true)" placeholder="Enter PIN Code"
               [ngClass]="{ 'is-invalid': customerForm.get('pinCode')?.touched && customerForm.get('pinCode')?.invalid }" />
             <span *ngIf="customerForm.get('pinCode')?.hasError('required') && customerForm.get('pinCode')?.touched"
@@ -166,8 +157,8 @@
 
           <!-- Area -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Area <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="areaID"
+            <label for="areaID" class="form-label">Area <span class="text-danger">*</span></label>
+            <select id="areaID" class="form-select" formControlName="areaID"
               (change)="fetchLocationData('areaID', 'city', 'state', 'country')"
               [ngClass]="{ 'is-invalid': customerForm.get('areaID')?.touched && customerForm.get('areaID')?.invalid }">
               <option value="0">Select Area</option>
@@ -177,24 +168,24 @@
 
           <!-- City -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">City <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="city" placeholder="Auto Select" readonly
+            <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+            <input id="city" type="text" class="form-control" formControlName="city" placeholder="Auto Select" readonly
               [ngClass]="{ 'is-invalid': isFieldInvalid('city') }" />
             <app-field-error [control]="customerForm.get('city')" label="City" [submitted]="submitted"/>
           </div>
 
           <!-- State -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">State <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="state" placeholder="Auto Select" readonly
+            <label for="state" class="form-label">State <span class="text-danger">*</span></label>
+            <input id="state" type="text" class="form-control" formControlName="state" placeholder="Auto Select" readonly
               [ngClass]="{ 'is-invalid': isFieldInvalid('state') }" />
             <app-field-error [control]="customerForm.get('state')" label="State" [submitted]="submitted"/>
           </div>
 
           <!-- Country -->
           <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Country <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" formControlName="country" placeholder="Auto Select" readonly
+            <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
+            <input id="country" type="text" class="form-control" formControlName="country" placeholder="Auto Select" readonly
               [ngClass]="{ 'is-invalid': isFieldInvalid('country') }" />
             <app-field-error [control]="customerForm.get('country')" label="Country" [submitted]="submitted"/>
           </div>
@@ -203,7 +194,9 @@
 
       <!-- ======================== Dispatch Modes ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">Dispatch Modes</legend>
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          <i class="bi bi-truck"></i> Dispatch Modes
+        </legend>
         <div class="d-flex flex-wrap gap-4">
           <div class="form-check" *ngFor="let mode of dispatchModes; index as modeIndex">
             <input [id]="'dispatchMode-' + modeIndex" type="checkbox" class="form-check-input" [value]="mode.id"
@@ -220,133 +213,34 @@
 
       <!-- ======================== Contact Persons ======================== -->
       <div formArrayName="contactPersons">
-
-        <!-- Contact Info 1 -->
-        <ng-container *ngIf="contact1">
+        <ng-container *ngFor="let contact of contactPersonsArray.controls; let i = index">
           <ng-container
-            *ngTemplateOutlet="contactFieldset; context: { $implicit: contact1, title: 'Contact Info 1' }">
+            *ngTemplateOutlet="contactFieldset; context: { $implicit: asFormGroup(contact), title: getContactTitle(i), index: i }">
           </ng-container>
         </ng-container>
-
-        <!-- Contact Info 2 -->
-        <ng-container *ngIf="contact2">
-          <ng-container
-            *ngTemplateOutlet="contactFieldset; context: { $implicit: contact2, title: 'Contact Info 2' }">
-          </ng-container>
-        </ng-container>
-
-        <!-- Account Info -->
-        <ng-container *ngIf="accountant">
-          <ng-container
-            *ngTemplateOutlet="contactFieldset; context: { $implicit: accountant, title: 'Account Info' }">
-          </ng-container>
-        </ng-container>
-      </div>
-
-      <!-- ======================== Multiple Contacts (Dynamic) ======================== -->
-      <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">
-          Additional Contacts
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add ms-2" (click)="addContact()">
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end mb-3">
+          <button type="button" class="btn btn-sm btn-add" (click)="addContact()">
             <i class="bi bi-plus-circle-dotted me-1"></i> Add Contact
           </button>
-        </legend>
-
-        <div class="table-responsive" formArrayName="contactPersons">
-          <table class="table table-sm table-compact">
-            <thead class="table-light">
-              <tr class="text-nowrap text-muted small">
-                <th class="fw-medium px-2">#</th>
-                <th class="fw-medium px-2">Contact Person</th>
-                <th class="fw-medium px-2">Department</th>
-                <th class="fw-medium px-2">Email</th>
-                <th class="fw-medium px-2">Mobile</th>
-                <th class="fw-medium px-2">Address</th>
-                <th class="fw-medium px-2">Pin Code</th>
-                <th class="fw-medium px-2">Area</th>
-                <th *ngIf="!isViewMode" class="fw-medium text-center px-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Empty State -->
-              <tr *ngIf="dynamicContacts.length === 0">
-                <td [attr.colspan]="isViewMode ? 8 : 9">
-                  <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-people fs-2 mb-2"></i>
-                    <div class="fw-semibold">No additional contacts found</div>
-                    <small *ngIf="!isViewMode" class="text-muted">Click "Add Contact" to add more contacts.</small>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Data Rows -->
-              <ng-container *ngFor="let contact of contactPersonsArray.controls; let i = index">
-                <tr [formGroupName]="i" *ngIf="contact.get('type')?.value === 'dynamic'" class="align-content-center">
-                  <td class="align-middle px-2">{{ getDynamicIndex(i) | number : "2.0" }}</td>
-                  <td class="px-2">
-                    <input class="form-control form-control-sm" formControlName="name"
-                      placeholder="Enter Contact Person" />
-                  </td>
-                  <td class="px-2">
-                    <input type="text" class="form-control form-control-sm" formControlName="department"
-                      placeholder="Department" [readonly]="isViewMode" />
-                  </td>
-                  <td class="px-2">
-                    <input class="form-control form-control-sm" formControlName="emailId" placeholder="Enter Email"
-                      [ngClass]="{ 'is-invalid': contact.get('emailId')?.touched && contact.get('emailId')?.invalid }" />
-                    <span *ngIf="contact.get('emailId')?.touched && contact.get('emailId')?.hasError('email')"
-                      class="text-danger text-sm">Invalid email format.</span>
-                  </td>
-                  <td class="px-2">
-                    <input class="form-control form-control-sm" formControlName="mobileNo" appNumberOnly maxlength="13"
-                      placeholder="Enter Mobile No"
-                      [ngClass]="{ 'is-invalid': contact.get('mobileNo')?.touched && contact.get('mobileNo')?.invalid }" />
-                    <span *ngIf="contact.get('mobileNo')?.touched && contact.get('mobileNo')?.hasError('pattern')"
-                      class="text-danger text-sm">Invalid Mobile No.</span>
-                  </td>
-                  <td class="px-2">
-                    <textarea class="form-control form-control-sm" formControlName="address" placeholder="Enter Address"
-                      rows="1" maxlength="500"></textarea>
-                  </td>
-                  <td class="px-2">
-                    <input type="text" class="form-control form-control-sm" formControlName="pinCode"
-                      placeholder="Enter Pin Code" appNumberOnly maxlength="6"
-                      (input)="fetchContactAreaData(asFormGroup(contact))" />
-                  </td>
-                  <td class="px-2">
-                    <select class="form-select form-select-sm" formControlName="areaID"
-                      (change)="fetchLocationDataForContact(asFormGroup(contact))">
-                      <option value="0">Select</option>
-                      <option *ngFor="let area of contact.get('areaOptions')?.value" [value]="area.areaId">
-                        {{ area.areaName }}
-                      </option>
-                    </select>
-                  </td>
-                  <td *ngIf="!isViewMode" class="text-center align-middle">
-                    <button type="button" class="btn btn-link text-danger p-0"
-                      (click)="removeDynamicContact(contact)" title="Delete">
-                      <i class="bi bi-trash-fill fs-5"></i>
-                    </button>
-                  </td>
-                </tr>
-              </ng-container>
-            </tbody>
-          </table>
         </div>
-      </fieldset>
+      </div>
 
       <!-- ======================== Account Section ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">Account</legend>
-        <div class="row gy-1 mb-2">
-          <div class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Special Accounting Case</label>
-            <select class="form-select" formControlName="specialAccountingCase">
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          <i class="bi bi-credit-card-2-front-fill"></i> Account
+        </legend>
+
+        <!-- Row 1: Labeled input fields — align-items-end keeps inputs bottom-aligned regardless of label wrap -->
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-12 col-md-3">
+            <label for="specialAccountingCase" class="form-label mb-1">Special Accounting Case</label>
+            <select id="specialAccountingCase" class="form-select" formControlName="specialAccountingCase">
               <option value="">Select Accounting Case</option>
               <option *ngFor="let option of specialAccountingCases" [value]="option.value">{{ option.name }}</option>
             </select>
           </div>
-          <div class="col-auto col-md-4 col-lg-3">
+          <div class="col-12 col-md-3">
             <app-searchable-dropdown
               [smallInput]="true"
               [placeholder]="'Search Currency'"
@@ -354,87 +248,119 @@
               [fetchDataFn]="getCurrencies"
               (itemSelected)="onCurrencySelect($event)"
               [isDisabled]="isViewMode"
-              [selectedItem]="customerForm.get('currencyID')?.value"
+              [selectedItem]="defaultCurrency"
             ></app-searchable-dropdown>
           </div>
-          <div *ngIf="!isWalkIn" class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Credit Limit Amount</label>
-            <input type="text" class="form-control" placeholder="Enter credit limit amount" appNumberOnly
-              formControlName="creditLimitAmount" maxlength="20" />
+          <div *ngIf="!isWalkIn" class="col-12 col-md-3">
+            <label for="creditLimitAmount" class="form-label mb-1">Credit Limit Amount</label>
+            <input id="creditLimitAmount" type="text" class="form-control" placeholder="Enter credit limit amount"
+              appNumberOnly formControlName="creditLimitAmount" maxlength="20" />
           </div>
-          <div *ngIf="!isWalkIn" class="col-auto col-md-4 col-lg-3">
-            <label class="form-label">Credit Limit Time</label>
-            <select class="form-select" formControlName="creditLimitTime">
+          <div *ngIf="!isWalkIn" class="col-12 col-md-3">
+            <label for="creditLimitTime" class="form-label mb-1">Credit Limit Time</label>
+            <select id="creditLimitTime" class="form-select" formControlName="creditLimitTime">
               <option value="0">Select Days</option>
               <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
-            </select>
-          </div>
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" formControlName="constantDiscount"
-                id="constantDiscount" />
-              <label class="form-check-label form-label" for="constantDiscount">Constant Discount</label>
-            </div>
-            <select *ngIf="customerForm.get('constantDiscount')?.value" class="form-select mt-1"
-              formControlName="constantDiscountPercentage">
-              <option value="0">Select Discount</option>
-              <option *ngFor="let d of discountOptions" [value]="d.value">{{ d.name }}</option>
             </select>
           </div>
         </div>
 
-        <!-- Billing options — hidden for Walk-in customers (they pay upfront) -->
-        <div *ngIf="!isWalkIn" class="row gy-1">
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" formControlName="weeklyBillingCustomer"
-                id="weeklyBilling" />
-              <label class="form-check-label form-label" for="weeklyBilling">Weekly Billing Customer</label>
+        <!-- Row 2: Billing options (checkboxes) -->
+        <div class="billing-opts-box">
+          <div class="billing-opts-label">
+            <i class="bi bi-toggles"></i> Billing Options
+          </div>
+          <div class="row g-2">
+            <div class="col-12 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" formControlName="constantDiscount" id="constantDiscount" />
+                <label class="form-check-label form-label mb-0" for="constantDiscount">Constant Discount</label>
+              </div>
+              <select *ngIf="customerForm.get('constantDiscount')?.value" class="form-select form-select-sm mt-1"
+                formControlName="constantDiscountPercentage">
+                <option value="0">Select Discount %</option>
+                <option *ngFor="let d of discountOptions" [value]="d.value">{{ d.name }}</option>
+              </select>
+            </div>
+            <ng-container *ngIf="!isWalkIn">
+              <div class="col-12 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="weeklyBillingCustomer" id="weeklyBilling" />
+                  <label class="form-check-label form-label mb-0" for="weeklyBilling">Weekly Billing Customer</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="monthlyBillingCustomer" id="monthlyBilling" />
+                  <label class="form-check-label form-label mb-0" for="monthlyBilling">Monthly Billing Customer</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="directTaxInvoiceNoPerforma" id="directTaxInvoice" />
+                  <label class="form-check-label form-label mb-0" for="directTaxInvoice">Direct Tax Invoice, No Proforma</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="billingEvery" id="billingEvery" />
+                  <label class="form-check-label form-label mb-0" for="billingEvery">Billing Days</label>
+                </div>
+                <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select form-select-sm mt-1"
+                  formControlName="billingEveryDays">
+                  <option value="0">Select Days</option>
+                  <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="performaInvoiceRequiredBeforeTesting" id="performaRequired" />
+                  <label class="form-check-label form-label mb-0" for="performaRequired">Proforma Invoice Required Before Testing</label>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Row 3: Sample Return + Last Billing Date + Block Customer -->
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3">
+            <label class="form-label mb-1 d-block">Sample Return</label>
+            <div class="d-flex gap-3 pt-1">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="true" id="sampleYes" />
+                <label class="form-check-label" for="sampleYes">Yes</label>
+              </div>
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" formControlName="sampleReturn" [value]="false" id="sampleNo" />
+                <label class="form-check-label" for="sampleNo">No</label>
+              </div>
             </div>
           </div>
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" formControlName="monthlyBillingCustomer"
-                id="monthlyBilling" />
-              <label class="form-check-label form-label" for="monthlyBilling">Monthly Billing Customer</label>
-            </div>
+          <div *ngIf="customerId > 0" class="col-12 col-md-3">
+            <label for="lastBillingDate" class="form-label mb-1">Last Billing Date</label>
+            <input id="lastBillingDate" type="date" class="form-control" formControlName="lastBillingDate" readonly />
           </div>
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" formControlName="directTaxInvoiceNoPerforma"
-                id="directTaxInvoice" />
-              <label class="form-check-label form-label" for="directTaxInvoice">Direct Tax Invoice, No Proforma</label>
+          <div class="col-12 col-md-3">
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="checkbox" formControlName="isBlock" id="isBlock" />
+              <label class="form-check-label form-label mb-0" for="isBlock">Block Customer</label>
             </div>
-          </div>
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" formControlName="billingEvery" id="billingEvery" />
-              <label class="form-check-label form-label" for="billingEvery">Billing Days</label>
-            </div>
-            <select *ngIf="customerForm.get('billingEvery')?.value" class="form-select mt-1"
-              formControlName="billingEveryDays">
-              <option value="0">Select Days</option>
-              <option *ngFor="let day of creditLimitDays" [value]="day.value">{{ day.name }}</option>
-            </select>
-          </div>
-          <div class="col-auto col-md-4 col-lg-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox"
-                formControlName="performaInvoiceRequiredBeforeTesting" id="performaRequired" />
-              <label class="form-check-label form-label" for="performaRequired">Proforma Invoice Required Before
-                Testing</label>
-            </div>
+            <input *ngIf="customerForm.get('isBlock')?.value" id="blockReason" type="text" class="form-control"
+              formControlName="blockReason" placeholder="Enter reason for blocking" maxlength="250" />
           </div>
         </div>
       </fieldset>
 
       <!-- ======================== Remark ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
-        <legend class="w-auto px-2 fw-semibold theme-color">Remarks</legend>
-        <div class="row gy-1">
+        <legend class="w-auto px-2 fw-semibold theme-color">
+          <i class="bi bi-chat-left-text-fill"></i> Remarks
+        </legend>
+        <div class="row g-2">
           <div class="col-12 col-md-6">
-            <label class="form-label">Remark</label>
-            <textarea class="form-control" formControlName="remark" rows="3" maxlength="500"
+            <label for="remark" class="form-label">Remark</label>
+            <textarea id="remark" class="form-control" formControlName="remark" rows="3" maxlength="500"
               placeholder="Enter any remarks..."></textarea>
           </div>
         </div>
@@ -457,14 +383,19 @@
 </div>
 
 <!-- ======================== Contact Fieldset Template ======================== -->
-<ng-template #contactFieldset let-contactGroup let-title="title">
-  <fieldset [formGroup]="contactGroup" class="border rounded p-3 mb-3 position-relative">
+<ng-template #contactFieldset let-contactGroup let-title="title" let-idx="index">
+  <fieldset [formGroup]="contactGroup" class="border rounded p-3 mb-3 position-relative contact-fieldset">
     <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center gap-2">
-      {{ title }}
+      <i class="bi bi-person-fill"></i> {{ title }}
       <button type="button" class="btn btn-link btn-sm p-0 text-primary"
-              *ngIf="!isViewMode && contactGroup.get('type')?.value !== 'contact1'"
+              *ngIf="!isViewMode && idx > 0"
               (click)="copyContact1ToContact(contactGroup)">
         <i class="bi bi-files me-1"></i>Copy from Contact 1
+      </button>
+      <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-auto"
+              *ngIf="!isViewMode && idx > 1"
+              (click)="removeDynamicContact(contactGroup)">
+        <i class="bi bi-trash-fill"></i> Remove
       </button>
     </legend>
     <div class="row">
@@ -472,11 +403,11 @@
       <div class="col-12 col-md-6">
         <div class="row g-2">
           <div class="col-6 col-md-2">
-            <label class="form-label">
+            <label [for]="'salutation-' + idx" class="form-label">
               Salutation
-              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              <span class="text-danger" *ngIf="idx === 0">*</span>
             </label>
-            <select class="form-select" formControlName="salutation"
+            <select [id]="'salutation-' + idx" class="form-select" formControlName="salutation"
               [ngClass]="{ 'is-invalid': contactGroup.get('salutation')?.touched && contactGroup.get('salutation')?.invalid }">
               <option value="">Select</option>
               <option value="Mr.">Mr.</option>
@@ -489,71 +420,69 @@
           </div>
 
           <div class="col-6 col-md-5">
-            <label class="form-label">
+            <label [for]="'contactName-' + idx" class="form-label">
               Contact Person
-              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              <span class="text-danger" *ngIf="idx === 0">*</span>
             </label>
-            <input type="text" class="form-control" placeholder="Enter Contact Person" formControlName="name"
+            <input [id]="'contactName-' + idx" type="text" class="form-control" placeholder="Enter Contact Person"
+              formControlName="name"
               [ngClass]="{ 'is-invalid': contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid }" />
             <span *ngIf="contactGroup.get('name')?.touched && contactGroup.get('name')?.invalid"
               class="text-danger text-sm">Contact Person is required.</span>
           </div>
 
           <div class="col-6 col-md-5">
-            <label class="form-label">Department</label>
-            <input type="text" class="form-control" placeholder="Enter Department" formControlName="department"
-              [readonly]="isViewMode" />
+            <label [for]="'department-' + idx" class="form-label">Department</label>
+            <input [id]="'department-' + idx" type="text" class="form-control" placeholder="Enter Department"
+              formControlName="department" [readonly]="isViewMode" />
           </div>
 
           <div class="col-6 col-md-6">
-            <label class="form-label mb-1">
+            <label [for]="'mobileNo-' + idx" class="form-label mb-1">
               Mobile No
-              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              <span class="text-danger" *ngIf="idx === 0">*</span>
             </label>
-            <input type="text" class="form-control" placeholder="Enter Mobile No." formControlName="mobileNo"
-              maxlength="13" appNumberOnly
+            <input [id]="'mobileNo-' + idx" type="text" class="form-control" placeholder="Enter Mobile No."
+              formControlName="mobileNo" maxlength="13" appNumberOnly
               [ngClass]="{ 'is-invalid': contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid }" />
             <div *ngIf="contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid">
-              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['required']" class="text-danger text-sm">Mobile No is
-                required.</span>
-              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['pattern']" class="text-danger text-sm">Mobile No
-                must be 10-13 digits.</span>
+              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['required']" class="text-danger text-sm">Mobile No is required.</span>
+              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['pattern']" class="text-danger text-sm">Mobile No must be 10-13 digits.</span>
             </div>
           </div>
 
           <div class="col-6 col-md-6">
-            <label class="form-label mb-1">
+            <label [for]="'emailId-' + idx" class="form-label mb-1">
               Email ID
-              <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+              <span class="text-danger" *ngIf="idx === 0">*</span>
             </label>
-            <input type="email" class="form-control" placeholder="Enter Email" formControlName="emailId"
+            <input [id]="'emailId-' + idx" type="email" class="form-control" placeholder="Enter Email"
+              formControlName="emailId"
               [ngClass]="{ 'is-invalid': contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid }" />
             <div *ngIf="contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid">
-              <span *ngIf="contactGroup.get('emailId')?.errors?.['required']" class="text-danger text-sm">Email is
-                required.</span>
-              <span *ngIf="contactGroup.get('emailId')?.errors?.['email']" class="text-danger text-sm">Invalid email
-                format.</span>
+              <span *ngIf="contactGroup.get('emailId')?.errors?.['required']" class="text-danger text-sm">Email is required.</span>
+              <span *ngIf="contactGroup.get('emailId')?.errors?.['pattern']" class="text-danger text-sm">Invalid email format.</span>
             </div>
           </div>
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input" type="checkbox" formControlName="sendBill" />
-              <label class="form-check-label form-label mb-0">Send Bill</label>
+              <input [id]="'sendBill-' + idx" class="form-check-input" type="checkbox" formControlName="sendBill" />
+              <label [for]="'sendBill-' + idx" class="form-check-label form-label mb-0">Send Bill</label>
             </div>
           </div>
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input" type="checkbox" formControlName="sendReport" />
-              <label class="form-check-label form-label mb-0">Send Report</label>
+              <input [id]="'sendReport-' + idx" class="form-check-input" type="checkbox" formControlName="sendReport" />
+              <label [for]="'sendReport-' + idx" class="form-check-label form-label mb-0">Send Report</label>
             </div>
           </div>
 
           <div class="col-6 col-md-4 d-flex align-items-center">
             <div class="form-check mt-3">
-              <input class="form-check-input" type="checkbox" formControlName="isWhatsappNo" />
-              <label class="form-check-label form-label mb-0">WhatsApp</label>
+              <input [id]="'isWhatsappNo-' + idx" class="form-check-input" type="checkbox" formControlName="isWhatsappNo" />
+              <label [for]="'isWhatsappNo-' + idx" class="form-check-label form-label mb-0">WhatsApp</label>
             </div>
           </div>
         </div>
@@ -564,9 +493,9 @@
         <div class="row g-2">
           <div class="col-6 col-md-6">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0">
+              <label [for]="'contactAddress-' + idx" class="form-label mb-0">
                 Address
-                <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+                <span class="text-danger" *ngIf="idx === 0">*</span>
               </label>
               <button type="button" class="btn btn-link btn-sm p-0 text-primary"
                       *ngIf="!isViewMode"
@@ -574,7 +503,8 @@
                 <i class="bi bi-copy me-1"></i>Same as Customer
               </button>
             </div>
-            <textarea rows="4" class="form-control" placeholder="Enter Address" formControlName="address"
+            <textarea [id]="'contactAddress-' + idx" rows="4" class="form-control" placeholder="Enter Address"
+              formControlName="address"
               [ngClass]="{ 'is-invalid': contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid }"></textarea>
             <span *ngIf="contactGroup.get('address')?.touched && contactGroup.get('address')?.invalid"
               class="text-danger text-sm">Address is required.</span>
@@ -582,19 +512,20 @@
 
           <div class="col-6 col-md-6">
             <div class="col-md-12">
-              <label class="form-label mb-1">
+              <label [for]="'contactPinCode-' + idx" class="form-label mb-1">
                 Pin Code
-                <span class="text-danger" *ngIf="contactGroup.get('type')?.value === 'contact1'">*</span>
+                <span class="text-danger" *ngIf="idx === 0">*</span>
               </label>
-              <input type="text" class="form-control" formControlName="pinCode" placeholder="Enter Pin Code"
-                appNumberOnly maxlength="6" (input)="fetchContactAreaData(contactGroup)"
+              <input [id]="'contactPinCode-' + idx" type="text" class="form-control" formControlName="pinCode"
+                placeholder="Enter Pin Code" appNumberOnly maxlength="6"
+                (input)="fetchContactAreaData(contactGroup)"
                 [ngClass]="{ 'is-invalid': contactGroup.get('pinCode')?.touched && contactGroup.get('pinCode')?.invalid }" />
               <span *ngIf="contactGroup.get('pinCode')?.touched && contactGroup.get('pinCode')?.invalid"
                 class="text-danger text-sm">Pin Code is required.</span>
             </div>
             <div class="col-md-12 mt-1">
-              <label class="form-label mb-1">Area</label>
-              <select class="form-select" formControlName="areaID"
+              <label [for]="'contactAreaID-' + idx" class="form-label mb-1">Area</label>
+              <select [id]="'contactAreaID-' + idx" class="form-select" formControlName="areaID"
                 (change)="fetchLocationDataForContact(contactGroup)">
                 <option value="0">Select</option>
                 <option *ngFor="let area of contactGroup.get('areaOptions')?.value" [value]="area.areaId">
@@ -605,20 +536,23 @@
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">City</label>
-            <input type="text" class="form-control" placeholder="Auto Select" formControlName="city" readonly
+            <label [for]="'contactCity-' + idx" class="form-label mb-1">City</label>
+            <input [id]="'contactCity-' + idx" type="text" class="form-control" placeholder="Auto Select"
+              formControlName="city" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('city')?.touched && contactGroup.get('city')?.invalid }" />
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">State</label>
-            <input type="text" class="form-control" placeholder="Auto Select" formControlName="state" readonly
+            <label [for]="'contactState-' + idx" class="form-label mb-1">State</label>
+            <input [id]="'contactState-' + idx" type="text" class="form-control" placeholder="Auto Select"
+              formControlName="state" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('state')?.touched && contactGroup.get('state')?.invalid }" />
           </div>
 
           <div class="col-6 col-md-4">
-            <label class="form-label mb-1">Country</label>
-            <input type="text" class="form-control" placeholder="Auto Select" formControlName="country" readonly
+            <label [for]="'contactCountry-' + idx" class="form-label mb-1">Country</label>
+            <input [id]="'contactCountry-' + idx" type="text" class="form-control" placeholder="Auto Select"
+              formControlName="country" readonly
               [ngClass]="{ 'is-invalid': contactGroup.get('country')?.touched && contactGroup.get('country')?.invalid }" />
           </div>
         </div>

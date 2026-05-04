@@ -184,11 +184,12 @@ export class CaseAccountDetailComponent implements OnInit {
     const reportStatus = this.caseSummary.reportStatus || this.caseSummary.report_status || '';
     const piStatus = (this.caseSummary.piStatus || this.caseSummary.pi_status || '').toUpperCase();
 
-    // DirectTaxInvoice customers skip PI — allow invoice from PRICE_SNAPSHOT
+    // PI not required (DirectTaxInvoice customer or AdvancePIRequired=false) — allow invoice once pricing is done and reports are approved
     if (piStatus === 'NOT_REQUIRED') {
       const billingUpper = billingStatus.toUpperCase();
-      return (billingUpper === 'PRICE_SNAPSHOT' || billingUpper === 'ADVANCE_PAID')
-        && this.roleHelper.canGenerateInvoice();
+      const reportUpper = (reportStatus || '').toUpperCase();
+      const billingReady = billingUpper === 'PRICE_DRAFTED' || billingUpper === 'PRICE_SNAPSHOT' || billingUpper === 'ADVANCE_PAID';
+      return billingReady && reportUpper === 'FINAL_REPORT_APPROVED' && this.roleHelper.canGenerateInvoice();
     }
 
     return this.statusHelper.canGenerateInvoice(billingStatus, reportStatus) && this.roleHelper.canGenerateInvoice();

@@ -248,7 +248,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       next: (data) => {
         this.caseNumber = data.caseNo || 'DMSPL-000001';
         this.sampleNumber = data.sampleNo;
-        this.lastSampleNumber = +this.sampleNumber.split('-')[1];
+        // API returns the NEXT number to assign; subtract 1 so the first addSample() generates it correctly
+        this.lastSampleNumber = +this.sampleNumber.split('-')[1] - 1;
       },
       error: (error) => console.error('Error fetching case number:', error)
     });

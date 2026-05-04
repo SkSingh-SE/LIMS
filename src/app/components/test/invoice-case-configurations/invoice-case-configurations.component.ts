@@ -5,15 +5,19 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../../services/toast.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
+import { ParameterService } from '../../../services/parameter.service';
 import { concat, distinctUntilChanged, merge, Observable, Subject, switchMap, tap } from 'rxjs';
 import { of } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 
 interface TypeConfig {
   isRange: boolean;
   isSizeLoad?: boolean;
-  inputType: 'text' | 'number';
+  inputType: 'text' | 'number' | 'select';
+  selectOptions?: { label: string; value: string }[];
+  dimensionHint?: string;
   unit: string;
   valuePlaceholder: string;
   startPlaceholder: string;
@@ -23,7 +27,7 @@ interface TypeConfig {
 
 @Component({
   selector: 'app-invoice-case-configurations',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, PaginationComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, PaginationComponent, MultiSelectDropdownComponent ],
   templateUrl: './invoice-case-configurations.component.html',
   styleUrl: './invoice-case-configurations.component.css'
 })
@@ -82,20 +86,26 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   rangeError: string = '';
 
   selectionTypes = [
-    { label: 'Flat Rate',          value: 'FlatRate',          group: 'Fixed',        hint: 'Fixed price per test, no parameters needed' },
-    { label: 'Element',            value: 'Element',           group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
-    { label: 'Hours',              value: 'Hours',             group: 'Single Value', hint: 'e.g. 24hr, 672hr' },
-    { label: 'Size',               value: 'Size',              group: 'Single Value', hint: 'e.g. 10mm, 32mm' },
-    { label: 'Weight',             value: 'Weight',            group: 'Single Value', hint: 'e.g. 600kN, 1000kN' },
-    { label: 'Temperature',        value: 'Temprature',        group: 'Single Value', hint: 'e.g. RT, 0°C, -20°C' },
-    { label: 'Hours Range',        value: 'HoursRange',        group: 'Range',        hint: 'From – To hours' },
-    { label: 'Size Range',         value: 'SizeRange',         group: 'Range',        hint: 'From – To mm' },
-    { label: 'Weight Range',       value: 'WeightRange',       group: 'Range',        hint: 'From – To kN' },
-    { label: 'Temperature Range',  value: 'TempratureRange',   group: 'Range',        hint: 'From – To °C' },
-    { label: 'Size + Load',        value: 'SizeLoad',          group: 'Combo',        hint: 'Size range + Max load capacity' },
-    { label: 'Size + Load Range',  value: 'SizeAndLoad',       group: 'Combo',        hint: 'Size range + Load range' },
-    { label: 'Spectro Combination',value: 'SpectroCombination',group: 'Special',      hint: 'e.g. Full + N + B' },
-    { label: 'Other',              value: 'Other',             group: 'Special',      hint: 'Custom value' }
+    { label: 'Flat Rate',             value: 'FlatRate',           group: 'Fixed',        hint: 'Fixed price per test, no parameters needed' },
+    { label: 'Element',               value: 'Element',            group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
+    { label: 'Hours',                 value: 'Hours',              group: 'Single Value', hint: 'e.g. 24hr, 672hr' },
+    { label: 'Size',                  value: 'Size',               group: 'Single Value', hint: 'e.g. 10mm, 32mm' },
+    { label: 'Load',                  value: 'Load',               group: 'Single Value', hint: 'e.g. 100kN, 500ton' },
+    { label: 'Temperature',           value: 'Temperature',        group: 'Single Value', hint: 'e.g. RT, 0°C, -20°C' },
+    { label: 'Day Wise',              value: 'DayWise',            group: 'Single Value', hint: 'e.g. 1 day, 7 days' },
+    { label: 'Hours Range',           value: 'HoursRange',         group: 'Range',        hint: 'From – To hours' },
+    { label: 'Size Range',            value: 'SizeRange',          group: 'Range',        hint: 'From – To mm' },
+    { label: 'Load Range',            value: 'LoadRange',          group: 'Range',        hint: 'From – To kN/ton' },
+    { label: 'Temperature Range',     value: 'TemperatureRange',   group: 'Range',        hint: 'From – To °C' },
+    { label: 'Size + Load',           value: 'SizeLoad',           group: 'Combo',        hint: 'Size range + Max load capacity' },
+    { label: 'Size + Load Range',     value: 'SizeAndLoad',        group: 'Combo',        hint: 'Size range + Load range' },
+    { label: 'Spectro Combination',   value: 'SpectroCombination', group: 'Special',      hint: 'Full + extra elements (linked via parameter IDs)' },
+    { label: 'Per Indent',            value: 'PerIndent',          group: 'Quantity',     hint: 'HV 3 Readings, HV 5 Readings, Vickers 10 Values' },
+    { label: 'Per Location',          value: 'PerLocation',        group: 'Quantity',     hint: '3 Locations, 5 Locations, 10 Locations' },
+    { label: 'Per Field',             value: 'PerField',           group: 'Quantity',     hint: '5 Fields, 10 Fields, 30 Fields' },
+    { label: 'Per Dolly',             value: 'PerDolly',           group: 'Quantity',     hint: '1 Dolly, 3 Dollies, 5 Dollies' },
+    { label: 'With Image',            value: 'WithImage',          group: 'Conditional',  hint: 'Additional charge when test includes image capture' },
+    { label: 'With Extensometer',     value: 'WithExtenso',        group: 'Conditional',  hint: 'Additional charge when extensometer is used' },
   ];
 
   /**
@@ -103,20 +113,32 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
    * To support a new type, add one entry here — no other code changes needed.
    */
   typeConfig: Record<string, TypeConfig> = {
-    FlatRate:           { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'Flat',   startPlaceholder: '', endPlaceholder: '', defaultValue: 'Flat' },
-    Element:           { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'e.g. Ag, Fe, 10 Element',   startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
-    Hours:             { isRange: false, inputType: 'number', unit: 'hr', valuePlaceholder: 'Enter hours (e.g. 24, 672)', startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
-    Size:              { isRange: false, inputType: 'number', unit: 'mm', valuePlaceholder: 'Enter size in mm',           startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
-    Weight:            { isRange: false, inputType: 'number', unit: 'kn', valuePlaceholder: 'Enter weight in kN',         startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
-    Temprature:        { isRange: false, inputType: 'text',   unit: '°C', valuePlaceholder: 'e.g. RT, 0, -20',           startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
-    HoursRange:        { isRange: true,  inputType: 'number', unit: 'hr', valuePlaceholder: '', startPlaceholder: 'From (hr)', endPlaceholder: 'To (hr)', defaultValue: '' },
-    SizeRange:         { isRange: true,  inputType: 'number', unit: 'mm', valuePlaceholder: '', startPlaceholder: 'From (mm)', endPlaceholder: 'To (mm)', defaultValue: '' },
-    WeightRange:       { isRange: true,  inputType: 'number', unit: 'kn', valuePlaceholder: '', startPlaceholder: 'From (kN)', endPlaceholder: 'To (kN)', defaultValue: '' },
-    TempratureRange:   { isRange: true,  inputType: 'text',   unit: '°C', valuePlaceholder: '', startPlaceholder: 'From (°C)', endPlaceholder: 'To (°C)', defaultValue: '' },
-    SpectroCombination:{ isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'e.g. Full + N + B',          startPlaceholder: '', endPlaceholder: '', defaultValue: 'Full' },
-    SizeLoad:          { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
-    SizeAndLoad:       { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
-    Other:             { isRange: false, inputType: 'text',   unit: '',   valuePlaceholder: 'Enter value',                startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    FlatRate:            { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'Flat',                        startPlaceholder: '', endPlaceholder: '', defaultValue: 'Flat' },
+    Element:             { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'e.g. Ag, Fe, 10 Element',     startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Hours:               { isRange: false, inputType: 'number', unit: 'hr',   valuePlaceholder: 'Enter hours (e.g. 24, 672)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Size:                { isRange: false, inputType: 'number', unit: 'mm',   valuePlaceholder: 'Enter size in mm',            startPlaceholder: '', endPlaceholder: '', defaultValue: '', dimensionHint: 'Value auto-detected from sample diameter (SampleDetail)' },
+    Load:                { isRange: false, inputType: 'number', unit: 'kN',   valuePlaceholder: 'Enter load (e.g. 100, 500)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    Temperature:         { isRange: false, inputType: 'text',   unit: '°C',   valuePlaceholder: 'e.g. RT, 0, -20',            startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    DayWise:             { isRange: false, inputType: 'number', unit: 'days', valuePlaceholder: 'Enter days (e.g. 1, 7)',      startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    HoursRange:          { isRange: true,  inputType: 'number', unit: 'hr',   valuePlaceholder: '', startPlaceholder: 'From (hr)', endPlaceholder: 'To (hr)', defaultValue: '' },
+    SizeRange:           { isRange: true,  inputType: 'number', unit: 'mm',   valuePlaceholder: '', startPlaceholder: 'From (mm)', endPlaceholder: 'To (mm)', defaultValue: '', dimensionHint: 'Value auto-detected from sample diameter (SampleDetail)' },
+    LoadRange:           { isRange: true,  inputType: 'number', unit: 'kN',   valuePlaceholder: '', startPlaceholder: 'From (kN)', endPlaceholder: 'To (kN)', defaultValue: '' },
+    TemperatureRange:    { isRange: true,  inputType: 'text',   unit: '°C',   valuePlaceholder: '', startPlaceholder: 'From (°C)', endPlaceholder: 'To (°C)', defaultValue: '' },
+    SizeLoad:            { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
+    SizeAndLoad:         { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
+    SpectroCombination:  { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'e.g. Full + N + B',           startPlaceholder: '', endPlaceholder: '', defaultValue: 'Full' },
+    PerIndent:           { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of test readings (e.g. 3, 5, 10)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    PerLocation:         { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of locations (e.g. 3, 5, 10)',      startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    PerField:            { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of fields (e.g. 5, 10, 30)',        startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    PerDolly:            { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of dollies (e.g. 1, 3, 5)',         startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    WithImage:           { isRange: false, inputType: 'select', unit: '',     valuePlaceholder: 'Select',                      startPlaceholder: '', endPlaceholder: '', defaultValue: '1', selectOptions: [{ label: 'With Image', value: '1' }, { label: 'Without Image', value: '0' }] },
+    WithExtenso:         { isRange: false, inputType: 'select', unit: '',     valuePlaceholder: 'Select',                      startPlaceholder: '', endPlaceholder: '', defaultValue: '1', selectOptions: [{ label: 'With Extensometer', value: '1' }, { label: 'Without Extensometer', value: '0' }] },
+    // Legacy aliases — kept so existing DB records still render correctly
+    Weight:              { isRange: false, inputType: 'number', unit: 'kN',   valuePlaceholder: 'Enter load (kN)',             startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    WeightRange:         { isRange: true,  inputType: 'number', unit: 'kN',   valuePlaceholder: '', startPlaceholder: 'From (kN)', endPlaceholder: 'To (kN)', defaultValue: '' },
+    Temprature:          { isRange: false, inputType: 'text',   unit: '°C',   valuePlaceholder: 'e.g. RT, 0, -20',            startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
+    TempratureRange:     { isRange: true,  inputType: 'text',   unit: '°C',   valuePlaceholder: '', startPlaceholder: 'From (°C)', endPlaceholder: 'To (°C)', defaultValue: '' },
+    Other:               { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'Enter value',                 startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
   };
 
   /** Returns true when the current type needs Start + End + Value (3+ fields). */
@@ -228,14 +250,61 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'SizeAndLoad', name: 'Size 0-25mm, Load 600-1000kN', start: '0', end: '25', value: '600', value2: '1000', unit: '' },
       { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 600-1000kN', start: '25', end: '50', value: '600', value2: '1000', unit: '' },
       { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 1000-2000kN', start: '25', end: '50', value: '1000', value2: '2000', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full', value: 'Full', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + N', value: 'Full + N', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + B', value: 'Full + B', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + Ca', value: 'Full + Ca', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + N + B', value: 'Full + N + B', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + N + Ca', value: 'Full + N + Ca', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + B + Ca', value: 'Full + B + Ca', unit: '' },
-      { selectionType: 'SpectroCombination', name: 'Full + B + N + Ca', value: 'Full + B + N + Ca', unit: '' },
+      // Load / LoadRange (replaces legacy Weight/WeightRange)
+      { selectionType: 'Load', name: 'Up to 100kN', value: '100', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 300kN', value: '300', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 600kN', value: '600', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 1000kN', value: '1000', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 2000kN', value: '2000', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '100kN to 300kN', start: '100', end: '300', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '300kN to 600kN', start: '300', end: '600', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '600kN to 1000kN', start: '600', end: '1000', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '1000kN to 2000kN', start: '1000', end: '2000', unit: 'kN' },
+      // Temperature / TemperatureRange
+      { selectionType: 'Temperature', name: 'RT', value: 'RT', unit: '°C' },
+      { selectionType: 'Temperature', name: '0°C', value: '0', unit: '°C' },
+      { selectionType: 'Temperature', name: '-20°C', value: '-20', unit: '°C' },
+      { selectionType: 'Temperature', name: '-40°C', value: '-40', unit: '°C' },
+      { selectionType: 'Temperature', name: '-60°C', value: '-60', unit: '°C' },
+      { selectionType: 'Temperature', name: '-80°C', value: '-80', unit: '°C' },
+      { selectionType: 'Temperature', name: '-100°C', value: '-100', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-1°C to -20°C', start: '-1', end: '-20', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-20°C to -40°C', start: '-20', end: '-40', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-40°C to -60°C', start: '-40', end: '-60', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-60°C to -100°C', start: '-60', end: '-100', unit: '°C' },
+      // DayWise
+      { selectionType: 'DayWise', name: '1 Day', value: '1', unit: 'day' },
+      { selectionType: 'DayWise', name: '3 Days', value: '3', unit: 'days' },
+      { selectionType: 'DayWise', name: '7 Days', value: '7', unit: 'days' },
+      { selectionType: 'DayWise', name: '14 Days', value: '14', unit: 'days' },
+      { selectionType: 'DayWise', name: '28 Days', value: '28', unit: 'days' },
+      { selectionType: 'DayWise', name: '56 Days', value: '56', unit: 'days' },
+      { selectionType: 'DayWise', name: '90 Days', value: '90', unit: 'days' },
+      { selectionType: 'DayWise', name: '180 Days', value: '180', unit: 'days' },
+      // PerIndent — number of test readings/values given in the report per sample
+      { selectionType: 'PerIndent', name: '3 Test Values', value: '3', unit: '' },
+      { selectionType: 'PerIndent', name: '5 Test Values', value: '5', unit: '' },
+      { selectionType: 'PerIndent', name: '10 Test Values', value: '10', unit: '' },
+      { selectionType: 'PerIndent', name: '15 Test Values', value: '15', unit: '' },
+      // PerLocation
+      { selectionType: 'PerLocation', name: '1 Location', value: '1', unit: '' },
+      { selectionType: 'PerLocation', name: '3 Locations', value: '3', unit: '' },
+      { selectionType: 'PerLocation', name: '5 Locations', value: '5', unit: '' },
+      { selectionType: 'PerLocation', name: '10 Locations', value: '10', unit: '' },
+      // PerField
+      { selectionType: 'PerField', name: '5 Fields', value: '5', unit: '' },
+      { selectionType: 'PerField', name: '10 Fields', value: '10', unit: '' },
+      { selectionType: 'PerField', name: '15 Fields', value: '15', unit: '' },
+      { selectionType: 'PerField', name: '30 Fields', value: '30', unit: '' },
+      // PerDolly
+      { selectionType: 'PerDolly', name: '1 Dolly', value: '1', unit: '' },
+      { selectionType: 'PerDolly', name: '3 Dollies', value: '3', unit: '' },
+      { selectionType: 'PerDolly', name: '5 Dollies', value: '5', unit: '' },
+      // WithImage / WithExtenso
+      { selectionType: 'WithImage', name: 'With Image', value: '1', unit: '' },
+      { selectionType: 'WithImage', name: 'Without Image', value: '0', unit: '' },
+      { selectionType: 'WithExtenso', name: 'With Extensometer', value: '1', unit: '' },
+      { selectionType: 'WithExtenso', name: 'Without Extensometer', value: '0', unit: '' },
     ];
 
   nameInput$ = new Subject<string>();
@@ -243,10 +312,105 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   filteredSuggestions$!: Observable<any[]>;
   nameLoading = false;
 
+  // ─── Parameter picker state ──────────────────────────────────────────────────
+
+  /** Category filter for the parameter picker. SpectroCombination is always Chemical. */
+  parameterCategory: 'Chemical' | 'Mechanical' | 'All' = 'Chemical';
+
+  /** Bumped on type/category change to force MultiSelectDropdown to reload. */
+  paramPickerReloadKey = 0;
+
+  /** Pre-selected parameter IDs for edit rebind (array of numeric IDs). */
+  selectedParamIds: number[] = [];
+
+  /** Full selected items (with names) — used to auto-generate SpectroCombination name. */
+  selectedParamItems: any[] = [];
+
+  /** Types that need the parameter multi-select picker.
+   *  WithImage/WithExtenso excluded — ValueSource=UserInputAtEntry, user confirms at test entry, no parameter linking needed.
+   *  SizeLoad/SizeAndLoad included — load dimension resolved from linked parameter. */
+  private readonly paramPickerTypes = new Set([
+    'SpectroCombination',
+    'Hours', 'HoursRange',
+    'Load', 'LoadRange',
+    'Temperature', 'TemperatureRange',
+    'DayWise',
+    'SizeLoad', 'SizeAndLoad',
+    'PerLocation', 'PerField', 'PerDolly',
+  ]);
+
+  /** Returns true when the selected type needs the parameter picker. */
+  get showParamPicker(): boolean {
+    const type = this.invoiceForm?.get('selectionType')?.value;
+    return !!type && this.paramPickerTypes.has(type);
+  }
+
+  /** Returns true when SpectroCombination is selected (chemical-only picker, no category toggle). */
+  get isSpectroType(): boolean {
+    return this.invoiceForm?.get('selectionType')?.value === 'SpectroCombination';
+  }
+
+  /** Returns the default parameter category for a given selection type. */
+  private defaultCategoryForType(type: string | null): 'Chemical' | 'Mechanical' | 'All' {
+    if (!type || type === 'SpectroCombination') return 'Chemical';
+    if (['Load', 'LoadRange', 'Weight', 'WeightRange', 'SizeLoad', 'SizeAndLoad'].includes(type)) return 'Mechanical';
+    return 'All';
+  }
+
+  /** Returns true when IsBaseConfig toggle is on (Full base tier). */
+  get isBaseConfig(): boolean {
+    return !!this.invoiceForm?.get('isBaseConfig')?.value;
+  }
+
+  /** Called when IsBaseConfig toggle changes — reset name to match the new tier. */
+  onBaseConfigToggle(): void {
+    this.invoiceForm.patchValue({ name: '', value: '', sourceParameterIDs: '' });
+    this.selectedParamIds = [];
+    this.selectedParamItems = [];
+    this.paramPickerReloadKey++;
+  }
+
+  /** fetchDataFn for MultiSelectDropdownComponent — switches based on category. */
+  getLinkedParamsFn = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    const cat = this.isSpectroType ? 'Chemical' : this.parameterCategory;
+    if (cat === 'Chemical') return this.parameterService.getChemicalParameterDropdown(searchTerm, page, pageSize);
+    if (cat === 'Mechanical') return this.parameterService.getMechanicalParameterDropdown(searchTerm, page, pageSize);
+    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+  };
+
+  onParamSelected(items: any[]): void {
+    this.selectedParamItems = items || [];
+    const ids = this.selectedParamItems.map((i: any) => i.id).join(',');
+    this.invoiceForm.patchValue({ sourceParameterIDs: ids });
+
+    // SpectroCombination: auto-generate name (and value) from selected parameter names
+    if (this.isSpectroType) {
+      const paramNames = this.selectedParamItems.map((i: any) => i.name?.trim()).filter(Boolean);
+      let generatedName: string;
+      if (this.isBaseConfig) {
+        // Base tier: name is always "Full" regardless of how many standard elements are selected
+        generatedName = 'Full';
+      } else {
+        // Extra tier: "Full + Param1 + Param2..."
+        generatedName = paramNames.length > 0 ? 'Full + ' + paramNames.join(' + ') : '';
+      }
+      this.invoiceForm.patchValue({ name: generatedName, value: generatedName });
+      this.selectedSuggestion = { name: generatedName };
+    }
+  }
+
+  onCategoryChange(): void {
+    this.paramPickerReloadKey++;
+    this.selectedParamIds = [];
+    this.selectedParamItems = [];
+    this.invoiceForm.patchValue({ sourceParameterIDs: '' });
+  }
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private invoiceCaseConfig: InvoiceCaseConfigurationService,
+    private parameterService: ParameterService,
     private toastService: ToastService
   ) {
     this.route.params.subscribe(params => {
@@ -274,7 +438,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       value2: [''],
       start: [''],
       end: [''],
-      unit: ['']
+      unit: [''],
+      sourceParameterIDs: [''],
+      isBaseConfig: [false],
+      fallbackToUserInput: [false]
     });
   }
 
@@ -336,10 +503,21 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       value2: '',
       start: '',
       end: '',
-      name: ''
+      name: '',
+      sourceParameterIDs: '',
+      isBaseConfig: false,
+      fallbackToUserInput: false
     });
     this.selectedSuggestion = null;
+    this.selectedParamIds = [];
+    this.selectedParamItems = [];
+    this.parameterCategory = this.defaultCategoryForType(type);
+    this.paramPickerReloadKey++;
     this.applyValidatorsForType(config.isRange);
+    // For select types with a defaultValue, auto-generate name from the default option label
+    if (config.inputType === 'select' && config.defaultValue) {
+      this.autoGenerateName();
+    }
     // Emit type change so Name suggestions auto-filter for this type
     this.typeChange$.next(type || '');
   }
@@ -444,7 +622,13 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     } else {
       const value = (this.invoiceForm.get('value')?.value ?? '').toString().trim();
       if (!value) return;
-      const name = config.unit ? `${value}${config.unit}` : value;
+      // For select-type inputs (e.g. WithImage, WithExtenso), use the option label, not raw value
+      let displayValue = value;
+      if (config.inputType === 'select' && config.selectOptions) {
+        const opt = config.selectOptions.find(o => o.value === value);
+        if (opt) displayValue = opt.label;
+      }
+      const name = config.unit ? `${displayValue}${config.unit}` : displayValue;
       this.invoiceForm.patchValue({ name });
       this.selectedSuggestion = { name };
     }
@@ -577,8 +761,25 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           value2: loadValue2,
           start: res.start,
           end: res.end,
-          unit: res.unit
+          unit: res.unit,
+          sourceParameterIDs: res.sourceParameterIDs || '',
+          isBaseConfig: res.isBaseConfig || false,
+          fallbackToUserInput: res.fallbackToUserInput || false
         });
+
+        // Restore parameter category for the picker
+        this.parameterCategory = this.defaultCategoryForType(res.selectionType);
+
+        // Restore multi-select picker pre-selection from comma-separated IDs
+        if (res.sourceParameterIDs) {
+          this.selectedParamIds = res.sourceParameterIDs
+            .split(',')
+            .map((s: string) => parseInt(s.trim(), 10))
+            .filter((id: number) => !isNaN(id) && id > 0);
+        } else {
+          this.selectedParamIds = [];
+        }
+        this.paramPickerReloadKey++;
         this.invoiceForm.setControl('aliasNames', aliasArray);
 
         // Restore ng-select display with the saved name
@@ -679,6 +880,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.rangeError = '';
     this.isEditMode = false;
     this.isViewMode = false;
+    this.selectedParamIds = [];
+    this.selectedParamItems = [];
+    this.parameterCategory = 'Chemical';
+    this.paramPickerReloadKey++;
   }
 
   // ─── Table helpers ────────────────────────────────────────────────────────────

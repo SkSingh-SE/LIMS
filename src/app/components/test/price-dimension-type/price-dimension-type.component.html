@@ -68,8 +68,11 @@
                                     {{ item.isRange ? 'Yes' : 'No' }}
                                 </span>
                             </td>
+                            <td>{{ item.valueSource || 'ParameterLinked' }}</td>
+                            <td>{{ item.sampleField || '-' }}</td>
                             <td>{{ item.description || '-' }}</td>
-                            <td class="text-center">{{ item.sortOrder }}</td>                        </tr>
+                            <td class="text-center">{{ item.sortOrder }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -129,6 +132,21 @@
                                 id="isRangeSwitch">
                             <label class="form-check-label fw-medium" for="isRangeSwitch">Is Range</label>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Value Source</label>
+                        <select class="form-select" formControlName="valueSource">
+                            <option *ngFor="let vs of valueSources" [value]="vs.value">{{ vs.label }}</option>
+                        </select>
+                        <div class="text-muted small mt-1">How the engine reads the dimension value at pricing time.</div>
+                    </div>
+                    <div class="mb-3" *ngIf="showSampleField">
+                        <label class="form-label fw-medium">Sample Field</label>
+                        <select class="form-select" formControlName="sampleField">
+                            <option [value]="null">-- Select Field --</option>
+                            <option *ngFor="let f of sampleFields" [value]="f">{{ f }}</option>
+                        </select>
+                        <div class="text-muted small mt-1">Which SampleDetail field to read when Value Source is Sample Dimension.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium">Description</label>

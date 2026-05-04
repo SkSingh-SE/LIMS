@@ -1060,8 +1060,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     }
 
-    // Auto-trigger test suggestions when a specification grade is selected
-    if (newId) {
+    // Auto-trigger test suggestions only on create (not edit — user must click manually)
+    const isEditing = this.isEditMode || (this.inwardID != null && this.inwardID > 0);
+    if (newId && !isEditing) {
       this.loadSuggestedTests(sampleIndex, planIndex);
     }
   }

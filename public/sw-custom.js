@@ -5,9 +5,9 @@ self.addEventListener('push', event => {
   const options = {
     body,
     icon: payload.icon || '/assets/icons/images/favicon.png',
-    data: { url: data.url },
+    data: { url: payload.url || '/' },
   };
- console.log('Push received', event.data ? event.data.json() : {});
+  console.log('Push received', payload);
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(title, options),

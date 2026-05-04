@@ -234,10 +234,19 @@
               </div>
             </ng-container>
 
-            <!-- Single-value types -->
-            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType">
+            <!-- Single-value types (hidden for SpectroCombination — value is auto-set from name) -->
+            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType">
               <label class="form-label">Value <span class="text-danger">*</span></label>
-              <div class="input-group">
+              <!-- Select type (e.g. WithImage, WithExtenso) -->
+              <select *ngIf="currentConfig.inputType === 'select'"
+                      class="form-select"
+                      formControlName="value"
+                      (change)="autoGenerateName()">
+                <option value="">-- Select --</option>
+                <option *ngFor="let opt of currentConfig.selectOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+              <!-- Text / Number input -->
+              <div *ngIf="currentConfig.inputType !== 'select'" class="input-group">
                 <input class="form-control"
                        [type]="currentConfig.inputType"
                        formControlName="value"
@@ -245,6 +254,10 @@
                        (input)="autoGenerateName()" />
                 <span class="input-group-text" *ngIf="currentConfig.unit">{{ currentConfig.unit }}</span>
               </div>
+              <!-- Dimension auto-detect hint -->
+              <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+              </small>
               <span *ngIf="invoiceForm.get('value')?.invalid && invoiceForm.get('value')?.touched"
                     class="text-danger text-sm">Value is required.</span>
             </div>
@@ -270,6 +283,10 @@
                   <span class="input-group-text" *ngIf="currentConfig.unit">{{ currentConfig.unit }}</span>
                 </div>
               </div>
+              <!-- Dimension auto-detect hint for range types (e.g. SizeRange) -->
+              <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+              </small>
               <!-- Range validation errors -->
               <span *ngIf="rangeError" class="text-danger text-sm">{{ rangeError }}</span>
               <span *ngIf="!rangeError && (invoiceForm.get('start')?.invalid || invoiceForm.get('end')?.invalid) && (invoiceForm.get('start')?.touched || invoiceForm.get('end')?.touched)"
@@ -277,9 +294,18 @@
             </div>
 
             <!-- Name (auto-generated or picked from suggestions) -->
-            <div [ngClass]="isSizeLoadType ? 'col-12' : 'col-6'">
+            <div [ngClass]="isSizeLoadType || isSpectroType ? 'col-12' : 'col-6'">
               <label class="form-label">Name <span class="text-danger">*</span></label>
-              <ng-select
+
+              <!-- SpectroCombination: name is auto-generated from linked parameters -->
+              <input *ngIf="isSpectroType"
+                     class="form-control"
+                     [value]="invoiceForm.get('name')?.value || ''"
+                     placeholder="Select parameters below to auto-generate name"
+                     readonly />
+
+              <!-- All other types: suggestion dropdown -->
+              <ng-select *ngIf="!isSpectroType"
                 [items]="filteredSuggestions$ | async"
                 bindLabel="name"
                 [addTag]="true"
@@ -295,6 +321,7 @@
                 [placeholder]="namePlaceholder"
                 [disabled]="isViewMode"
               ></ng-select>
+
               <span *ngIf="invoiceForm.get('name')?.invalid && invoiceForm.get('name')?.touched"
                     class="text-danger text-sm">Name is required.</span>
             </div>
@@ -303,6 +330,98 @@
 
           <!-- Hidden unit field — keeps the form value in sync for submission -->
           <input type="hidden" formControlName="unit" />
+          <input type="hidden" formControlName="sourceParameterIDs" />
+
+          <!-- Linked Parameter Picker (shown for types that auto-detect from parameters) -->
+          <div class="row g-2 mb-2" *ngIf="showParamPicker">
+            <div class="col-12">
+
+              <!-- SpectroCombination: Base Config toggle -->
+              <div *ngIf="isSpectroType" class="d-flex align-items-center gap-2 mb-2 p-2 rounded border"
+                   style="background:#fff8f8; border-color: var(--primary-color) !important;">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         id="isBaseConfigToggle"
+                         formControlName="isBaseConfig"
+                         (change)="onBaseConfigToggle()"
+                         [attr.disabled]="isViewMode ? true : null" />
+                  <label class="form-check-label fw-medium" for="isBaseConfigToggle">
+                    Base Configuration (Full)
+                  </label>
+                </div>
+                <small class="text-muted">
+                  <ng-container *ngIf="isBaseConfig">
+                    Select the <strong>standard elements</strong> that define the "Full" spectro analysis.
+                    Name stays <strong>"Full"</strong>.
+                  </ng-container>
+                  <ng-container *ngIf="!isBaseConfig">
+                    Select the <strong>extra elements</strong> (e.g. N, B, Ca) added on top of Full.
+                    Name auto-generates as <strong>"Full + N + B..."</strong>.
+                  </ng-container>
+                </small>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                <label class="form-label mb-0">
+                  <ng-container *ngIf="isSpectroType && isBaseConfig">Standard Elements (Full)</ng-container>
+                  <ng-container *ngIf="isSpectroType && !isBaseConfig">Extra Elements</ng-container>
+                  <ng-container *ngIf="!isSpectroType">Linked Parameters</ng-container>
+                  <small class="text-muted ms-1">
+                    <i class="bi bi-info-circle"
+                       title="The pricing engine reads the value of these parameters from test results for auto price detection."></i>
+                  </small>
+                </label>
+                <!-- Category toggle (hidden for SpectroCombination — always Chemical) -->
+                <div *ngIf="!isSpectroType" class="d-flex align-items-center gap-3">
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catChemical" name="paramCat"
+                           [value]="'Chemical'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catChemical">Chemical</label>
+                  </div>
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catMechanical" name="paramCat"
+                           [value]="'Mechanical'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catMechanical">Mechanical</label>
+                  </div>
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catAll" name="paramCat"
+                           [value]="'All'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catAll">All</label>
+                  </div>
+                </div>
+              </div>
+              <app-multi-select-dropdown
+                [fetchDataFn]="getLinkedParamsFn"
+                [selectedValues]="selectedParamIds"
+                [reloadKey]="paramPickerReloadKey"
+                [isDisabled]="isViewMode"
+                [hideLabel]="true"
+                placeholder="Search and select parameters..."
+                (itemsSelected)="onParamSelected($event)">
+              </app-multi-select-dropdown>
+
+              <!-- FallbackToUserInput: shown for non-Spectro param picker types (e.g. Load, Hours) -->
+              <div *ngIf="!isSpectroType" class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="fallbackToUserInputToggle"
+                       formControlName="fallbackToUserInput"
+                       [attr.disabled]="isViewMode ? true : null" />
+                <label class="form-check-label" for="fallbackToUserInputToggle">
+                  Fallback to User Input
+                  <small class="text-muted ms-1">
+                    <i class="bi bi-info-circle"
+                       title="If the linked parameter is not found in test results, ask the user to enter the value manually at test result entry."></i>
+                  </small>
+                </label>
+              </div>
+            </div>
+          </div>
 
           <!-- Alias Names -->
           <div class="row g-2">

@@ -236,7 +236,13 @@
               </button>
             </ng-container>
             <p *ngIf="!canGenerateInvoice()" class="text-muted small">
-              <i class="bi bi-info-circle"></i> Final Invoice can only be generated after report approval and advance payment is completed.
+              <i class="bi bi-info-circle"></i>
+              <ng-container *ngIf="(caseSummary?.piStatus || caseSummary?.pi_status) === 'NOT_REQUIRED'; else piRequiredHint">
+                Final Invoice can only be generated after report approval and pricing is calculated.
+              </ng-container>
+              <ng-template #piRequiredHint>
+                Final Invoice can only be generated after report approval and advance payment is completed.
+              </ng-template>
             </p>
           </div>
 

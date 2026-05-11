@@ -22,6 +22,11 @@
             <i class="bi bi-clipboard-check me-1"></i> Plan
           </button>
         </li>
+        <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+          <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
+            <i class="bi bi-credit-card me-1"></i> Payment Info
+          </button>
+        </li>
       </ul>
 
       <!-- Right: Status Badge + Actions -->
@@ -230,6 +235,9 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light">Reporting To</div>
               <div class="card-body small">
+                <div class="mb-2 text-center fw-bold" *ngIf="customerData?.name">
+                  {{ customerData.name }}
+                </div>
                 <div formGroupName="reportingTo" class="mb-3">
                   <label class="form-label">
                     Contact Person
@@ -300,6 +308,9 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light d-flex justify-content-between align-items-center">Billing To</div>
               <div class="card-body small">
+                <div class="mb-2 text-center fw-bold" *ngIf="customerData?.name">
+                  {{ customerData.name }}
+                </div>
                 <div formGroupName="billingTo" class="mb-3">
                   <label class="form-label">
                     Contact Person
@@ -318,7 +329,7 @@
                 <!-- Show Details if Contact Person is selected -->
                 <ng-container *ngIf="billingTo">
                   <div class="row row-cols-1 row-cols-md-2 g-2">
-                    <div>Customer Nam
+                    <div>
                       <strong>Address:</strong>
                       {{ billingTo.get("address")?.value }}
                     </div>
@@ -366,85 +377,6 @@
           </div>
         </div>
 
-        <fieldset class="border rounded p-3 mb-4 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-
-          >
-            Payment Info
-          </legend>
-          <div class="row row-cols-1 row-cols-md-4 mb-3">
-            <div>
-              <label class="form-label">Advance Payment</label>
-              <div class="input-group">
-                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
-                <span class="input-group-text">Rs</span>
-              </div>
-            </div>
-            <div *ngIf="showPODropdown">
-              <app-searchable-dropdown
-                [placeholder]="'Search Purchase Order'"
-                [labelName]="'Purchase Order'"
-                [fetchDataFn]="getPurchaseOrders"
-                (itemSelected)="onPOSelect($event)"
-                [isDisabled]="isViewMode"
-                [selectedItem]="sampleInwardForm.get('purchaseOrderId')?.value"
-              ></app-searchable-dropdown>
-              <div *ngIf="selectedPODetails" class="mt-1 small text-muted">
-                <span class="badge bg-info me-1">Amount: ₹{{ (selectedPODetails.additionalValues?.POAmount || selectedPODetails.poAmount || 0) | number:'1.2-2' }}</span>
-                <span class="badge bg-success me-1">Remaining: ₹{{ (selectedPODetails.additionalValues?.RemainingAmount || selectedPODetails.remainingAmount || 0) | number:'1.2-2' }}</span>
-                <span *ngIf="selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
-                  Valid Until: {{ (selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil) | date:'dd-MMM-yyyy' }}
-                </span>
-              </div>
-            </div>
-            <div>
-              <label class="form-label d-block">Bill Required</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
-                <label class="form-label" for="billRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
-                <label class="form-label" for="billRequiredNo">No</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label d-block">Advance PI Required</label>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="radio"
-                  id="advancePIRequiredYes"
-                  formControlName="advancePIRequired"
-                  [value]="true"
-                />
-                <label class="form-label" for="advancePIRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="radio"
-                  id="advancePIRequiredNo"
-                  formControlName="advancePIRequired"
-                  [value]="false"
-                />
-                <label class="form-label" for="advancePIRequiredNo">No</label>
-              </div>
-            </div>
-            <div class="d-flex align-items-center">
-              <div class="form-check">
-                <input
-                  class="form-check-input mt-1"
-                  type="checkbox"
-                  id="holdTestingUntilPIApproved"
-                  formControlName="holdTestingUntilPIApproved"
-                />
-                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI approved</label>
-              </div>
-            </div>
-          </div>
-        </fieldset>
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
@@ -810,6 +742,75 @@
         <app-plan-form *ngIf="planTabLoaded" [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
       </div>
 
+      <!-- TAB 4: PAYMENT INFO (visible only after inward is saved) -->
+      <div *ngIf="sampleId > 0" class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
+        <fieldset class="border rounded p-3 mb-4 position-relative">
+          <legend class="w-auto px-2 fw-semibold theme-color">Payment Info</legend>
+          <div class="row row-cols-1 row-cols-md-4 mb-3">
+            <div>
+              <label class="form-label">Advance Payment</label>
+              <div class="input-group">
+                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
+                <span class="input-group-text">Rs</span>
+              </div>
+            </div>
+            <div *ngIf="showPODropdown">
+              <app-searchable-dropdown
+                [placeholder]="'Search Purchase Order'"
+                [labelName]="'Purchase Order'"
+                [fetchDataFn]="getPurchaseOrders"
+                (itemSelected)="onPOSelect($event)"
+                [isDisabled]="isViewMode"
+                [selectedItem]="sampleInwardForm.get('purchaseOrderId')?.value"
+              ></app-searchable-dropdown>
+              <div *ngIf="selectedPODetails" class="mt-1 small text-muted">
+                <span class="badge bg-info me-1">Amount: ₹{{ (selectedPODetails.additionalValues?.POAmount || selectedPODetails.poAmount || 0) | number:'1.2-2' }}</span>
+                <span class="badge bg-success me-1">Remaining: ₹{{ (selectedPODetails.additionalValues?.RemainingAmount || selectedPODetails.remainingAmount || 0) | number:'1.2-2' }}</span>
+                <span *ngIf="selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
+                  Valid Until: {{ (selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil) | date:'dd-MMM-yyyy' }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Bill Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
+                <label class="form-label" for="billRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
+                <label class="form-label" for="billRequiredNo">No</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Advance PI Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredYes" formControlName="advancePIRequired" [value]="true" />
+                <label class="form-label" for="advancePIRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredNo" formControlName="advancePIRequired" [value]="false" />
+                <label class="form-label" for="advancePIRequiredNo">No</label>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="form-check">
+                <input class="form-check-input mt-1" type="checkbox" id="holdTestingUntilPIApproved" formControlName="holdTestingUntilPIApproved" />
+                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI Approved</label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-save px-4" (click)="savePaymentInfo()">
+            <i class="bi bi-check-circle me-1"></i> Save
+          </button>
+        </div>
+      </div>
+
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>
   </form>
@@ -851,37 +852,37 @@
             <th>Sample No</th>
             <th>Description</th>
             <th>Qty</th>
-            <th>Metal Classification</th>
-            <th>Product Condition</th>
-            <th>Specimen Orientation</th>
-            <th>Remarks</th>
+            <th *ngIf="jcHasMetalClassification">Metal Classification</th>
+            <th *ngIf="jcHasProductCondition">Product Condition</th>
+            <th *ngIf="jcHasSpecimenOrientation">Specimen Orientation</th>
+            <th *ngIf="jcHasRemarks">Remarks</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let sample of sampleDetails.controls; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ sample.get('sampleNo')?.value }}</td>
-            <td>{{ sample.get('details')?.value || '-' }}</td>
+            <td>{{ sample.get('details')?.value }}</td>
             <td>{{ sample.get('quantity')?.value }}</td>
-            <td>{{ sample.get('metalClassificationName')?.value || '-' }}</td>
-            <td>{{ sample.get('productConditionName')?.value || '-' }}</td>
-            <td>{{ sample.get('specimenOrientationName')?.value || '-' }}</td>
-            <td>{{ sample.get('remarks')?.value || '-' }}</td>
+            <td *ngIf="jcHasMetalClassification">{{ sample.get('metalClassificationName')?.value }}</td>
+            <td *ngIf="jcHasProductCondition">{{ sample.get('productConditionName')?.value }}</td>
+            <td *ngIf="jcHasSpecimenOrientation">{{ sample.get('specimenOrientationName')?.value }}</td>
+            <td *ngIf="jcHasRemarks">{{ sample.get('remarks')?.value }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="jc-section">
+    <div class="jc-section" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value || sampleInwardForm.get('sampleReceiptNote')?.value">
       <div class="jc-section-title">Additional Information</div>
       <table class="jc-info-table">
-        <tr>
-          <td><strong>Urgent:</strong> {{ sampleInwardForm.get('urgent')?.value ? 'Yes' : 'No' }}</td>
-          <td><strong>Return Sample:</strong> {{ sampleInwardForm.get('returnSample')?.value ? 'Yes' : 'No' }}</td>
-          <td><strong>Not to be Destroyed:</strong> {{ sampleInwardForm.get('notDestroyed')?.value ? 'Yes' : 'No' }}</td>
+        <tr *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value">
+          <td *ngIf="sampleInwardForm.get('urgent')?.value"><strong>Urgent</strong></td>
+          <td *ngIf="sampleInwardForm.get('returnSample')?.value"><strong>Return Sample</strong></td>
+          <td *ngIf="sampleInwardForm.get('notDestroyed')?.value"><strong>Not to be Destroyed</strong></td>
         </tr>
-        <tr>
-          <td colspan="3"><strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value || '-' }}</td>
+        <tr *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value">
+          <td colspan="3"><strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value }}</td>
         </tr>
       </table>
     </div>

@@ -42,7 +42,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   sampleNumber: string = '25-000001';
   lastSampleNumber: number = +this.sampleNumber.split('-')[1];
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
-  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
+  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Description', 'Sealed By', 'Witness By', 'Stamp By'];
   readonly testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
   // Data
@@ -217,6 +217,20 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
   get sampleAdditionalDetails(): FormArray {
     return this.sampleInwardForm.get('sampleAdditionalDetails') as FormArray;
+  }
+
+  // Job card column visibility — only show a column if at least one sample has data
+  get jcHasMetalClassification(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('metalClassificationName')?.value);
+  }
+  get jcHasProductCondition(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('productConditionName')?.value);
+  }
+  get jcHasSpecimenOrientation(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('specimenOrientationName')?.value);
+  }
+  get jcHasRemarks(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('remarks')?.value);
   }
 
   // Utility
@@ -1373,6 +1387,35 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     const now = new Date();
     formData.append('collectionTime', this.getCurrentTime());
     formData.append('collectionDate', now.toISOString().split('T')[0]);
+  }
+
+  savePaymentInfo(): void {
+    if (!this.sampleId) {
+      this.toastService.show('Please save the inward first before updating payment info.', 'warning');
+      return;
+    }
+    const v = this.sampleInwardForm.getRawValue();
+    const payload = {
+      purchaseOrderId: v.purchaseOrderId || null,
+      advancePayment: v.advancePayment || 0,
+      billRequired: v.billRequired ?? true,
+      advancePIRequired: v.advancePIRequired ?? false,
+      holdTestingUntilPIApproved: v.holdTestingUntilPIApproved ?? false,
+    };
+    this.inwardService.updatePaymentInfo(this.sampleId, payload).subscribe({
+      next: (res) => {
+        this.sampleInwardForm.patchValue({
+          purchaseOrderId: res.purchaseOrderId ?? null,
+          advancePayment: res.advancePayment,
+          billRequired: res.billRequired,
+          advancePIRequired: res.advancePIRequired,
+          holdTestingUntilPIApproved: res.holdTestingUntilPIApproved,
+        });
+        this.sampleInwardForm.markAsPristine();
+        this.toastService.show('Payment info saved successfully.', 'success');
+      },
+      error: () => this.toastService.show('Failed to save payment info. Please try again.', 'error'),
+    });
   }
 
   goToSampleTab(): void {

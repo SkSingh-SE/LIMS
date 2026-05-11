@@ -23,13 +23,14 @@ import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -151,7 +152,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       contacts: this.fb.array([]),
       reportingTo: this.fb.group({
         id: [0],
-        contactPersonID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -165,7 +166,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       }),
       billingTo: this.fb.group({
         id: [0],
-        contactPersonID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -583,9 +584,28 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   // Event Handlers
-  onAddressCustomerChange(section: 'reportingTo' | 'billingTo', event: Event): void {
+  onAddressContactPersonChange(section: 'reportingTo' | 'billingTo', event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedValue = +target.value;
+    const group = section === 'reportingTo' ? this.reportingTo : this.billingTo;
+
+    if (!selectedValue || isNaN(selectedValue)) {
+      group.patchValue({
+        contactPersonID: null,
+        contactPersonName: '',
+        address: '',
+        pinCode: '',
+        area: '',
+        city: '',
+        state: '',
+        country: '',
+        mobileNo: '',
+        emailId: ''
+      });
+      group.get('contactPersonID')?.markAsTouched();
+      return;
+    }
+
     const selectedCustomer = this.contactPersons.find(c => c.contactID === selectedValue);
     this.updateAddressHelper(selectedCustomer, section);
   }

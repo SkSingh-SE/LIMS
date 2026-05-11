@@ -496,7 +496,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       maxValue: [null],
       parameterUnitID: [null],
       parameterUnit: [''],
-      selected: [false]
+      selected: [true]
     });
   }
 
@@ -519,34 +519,43 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     return arr ? arr.controls : [];
   }
 
-  // Check if at least one plan exists with at least one test (general or chemical)
-  hasValidPlans(): boolean {
-    for (let i = 0; i < this.samples.length; i++) {
-      const testPlans = this.getTestPlans(i);
-      for (let j = 0; j < testPlans.length; j++) {
-        const plan = testPlans.at(j) as FormGroup;
-        const generalTests = plan.get('generalTests') as FormArray;
-        const chemicalTests = plan.get('chemicalTests') as FormArray;
+  private sampleHasValidTest(sampleIdx: number): boolean {
+    const testPlans = this.getTestPlans(sampleIdx);
+    for (let j = 0; j < testPlans.length; j++) {
+      const plan = testPlans.at(j) as FormGroup;
+      const generalTests = plan.get('generalTests') as FormArray;
+      const chemicalTests = plan.get('chemicalTests') as FormArray;
 
-        // General test is valid only if it has at least one method row
-        for (let g = 0; g < generalTests.length; g++) {
-          const gt = generalTests.at(g) as FormGroup;
-          const methods = gt.get('methods') as FormArray;
-          if (methods && methods.length > 0) return true;
-        }
+      for (let g = 0; g < (generalTests?.length ?? 0); g++) {
+        const methods = generalTests.at(g).get('methods') as FormArray;
+        if (methods?.controls.some(m => !!m.get('testMethodID')?.value)) return true;
+      }
 
-        // Chemical test is valid if it has at least one test type selected OR at least one element
-        for (let c = 0; c < chemicalTests.length; c++) {
-          const ct = chemicalTests.at(c) as FormGroup;
-          const testTypes = ct.get('testTypes') as FormGroup;
-          const elements = ct.get('elements') as FormArray;
-          const hasSelectedType = testTypes && Object.values(testTypes.value).some(v => !!v);
-          const hasElements = elements && elements.length > 0;
-          if (hasSelectedType || hasElements) return true;
-        }
+      for (let c = 0; c < (chemicalTests?.length ?? 0); c++) {
+        const ct = chemicalTests.at(c) as FormGroup;
+        const testTypes = ct.get('testTypes') as FormGroup;
+        const elements = ct.get('elements') as FormArray;
+        if (Object.values(testTypes?.value ?? {}).some(v => !!v)) return true;
+        if ((elements?.length ?? 0) > 0) return true;
       }
     }
     return false;
+  }
+
+  getSamplesWithoutTests(): string[] {
+    const missing: string[] = [];
+    for (let i = 0; i < this.samples.length; i++) {
+      if (!this.sampleHasValidTest(i)) {
+        missing.push(this.samples.at(i).get('sampleNo')?.value || `Sample ${i + 1}`);
+      }
+    }
+    return missing;
+  }
+
+  // Check if every sample has at least one test with a lab test selected
+  hasValidPlans(): boolean {
+    if (this.samples.length === 0) return false;
+    return this.getSamplesWithoutTests().length === 0;
   }
 
   getTestArray(sampleIndex: number, planIndex: number, type: 'generalTests' | 'chemicalTests'): FormArray {
@@ -1036,7 +1045,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
                     maxValue: [el.maxValue ?? null],
                     parameterUnitID: [el.parameterUnitID || 0],
                     parameterUnit: [el.parameterUnit || ''],
-                    selected: [false],
+                    selected: [true],
                   })
                 );
               }
@@ -1305,8 +1314,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.toastService.show('Please fix form validation errors.', 'warning');
       return;
     }
-    if (!this.hasValidPlans()) {
-      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+    const missingSamples = this.getSamplesWithoutTests();
+    if (missingSamples.length > 0) {
+      this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
     if (!this.checkEmptyTabsAndProceed(() => this.proceedSave())) return;
@@ -1339,8 +1349,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.toastService.show('Please fix form validation errors.', 'warning');
       return;
     }
-    if (!this.hasValidPlans()) {
-      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+    const missingSamples = this.getSamplesWithoutTests();
+    if (missingSamples.length > 0) {
+      this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
     if (!this.checkEmptyTabsAndProceed(() => this.proceedSendForReview())) return;
@@ -1741,7 +1752,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getParameterDrop = this.getChemicalParameter;
 
   getLabTestDropdown = (term: string, page: number, pageSize: number) => {
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+    return this.laboratoryTestService.getLaboratoryTestDropdownForGeneral(term, page, pageSize);
   };
 
   loadChemicalTestTypes(callback?: () => void) {

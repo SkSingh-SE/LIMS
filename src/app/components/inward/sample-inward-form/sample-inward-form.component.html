@@ -1,33 +1,46 @@
 <div class="m-2">
-  <!-- Top Toolbar -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
-      <i class="bi bi-arrow-left me-1"></i> Back to List
-    </button>
-    <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-add btn-sm" (click)="printJobCard()">
-      <i class="bi bi-printer me-1"></i> Print Job Card
-    </button>
-  </div>
+  <!-- Main Card -->
+  <div class="card shadow-sm inward-main-card">
 
-  <!-- Nav Tabs -->
-  <ul class="nav nav-tabs mb-3" id="formTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
-        <i class="bi bi-person-lines-fill me-1"></i> Customer & Company Info
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
-        <i class="bi bi-box-seam me-1"></i> Sample Details
-      </button>
-    </li>
-    <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
-      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
-              (click)="switchToPlanTab()">
-        <i class="bi bi-clipboard-check me-1"></i> Plan
-      </button>
-    </li>
-  </ul>
+    <!-- ── Card Header: Tabs + Status + Actions ── -->
+    <div class="card-header inward-header d-flex align-items-stretch justify-content-between p-0 ps-1">
+      <!-- Nav Tabs -->
+      <ul class="nav nav-tabs card-header-tabs ps-2 mb-0 border-0" id="formTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+            <i class="bi bi-person-lines-fill me-1"></i> Customer & Company Info
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
+            <i class="bi bi-box-seam me-1"></i> Sample Details
+          </button>
+        </li>
+        <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+          <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
+                  (click)="switchToPlanTab()">
+            <i class="bi bi-clipboard-check me-1"></i> Plan
+          </button>
+        </li>
+      </ul>
+
+      <!-- Right: Status Badge + Actions -->
+      <div class="d-flex align-items-center gap-2 px-3">
+        <app-test-status-badge
+          *ngIf="sampleId > 0 && currentInwardStatus"
+          [status]="currentInwardStatus">
+        </app-test-status-badge>
+        <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-outline-danger btn-sm" (click)="printJobCard()">
+          <i class="bi bi-printer me-1"></i> Print Job Card
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Card Body ── -->
+    <div class="card-body p-3">
 
   <!-- removed global ngSubmit to avoid accidental nested submissions -->
   <form [formGroup]="sampleInwardForm" class="needs-validation" novalidate>
@@ -141,7 +154,7 @@
                       (change)="onDispatchModeToggle($event)"
                       [disabled]="isViewMode"
                     />
-                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label">{{ mode.name }}</label>
+                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label mt-1">{{ mode.name }}</label>
                   </div>
                 </div>
                 <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger">
@@ -152,12 +165,12 @@
           </div>
         </fieldset>
 
-        <div class="billing-note">
+        <!-- <div class="billing-note">
           <i class="bi bi-info-circle-fill me-1"></i>
           <strong>Billing Note:</strong>
           All invoices will be generated as of 06:07 PM IST on Friday, July 25, 2025. Please ensure payment is cleared within 15 days from
           the invoice date to avoid late fees.
-        </div>
+        </div> -->
 
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
@@ -219,16 +232,20 @@
               <div class="card-body small">
                 <div formGroupName="reportingTo" class="mb-3">
                   <label class="form-label">
-                    Customer Name
+                    Contact Person
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('reportingTo', $event)">
-                    <option value="">Select Customer</option>
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('reportingTo', $event)"
+                    [ngClass]="{'is-invalid': reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)}">
+                    <option value="null">Select Contact Person</option>
                     <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
                   </select>
+                  <div *ngIf="reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
+                    Contact Person is required.
+                  </div>
                 </div>
 
-                <!-- Show Details if Customer is selected -->
+                <!-- Show Details if Contact Person is selected -->
                 <ng-container *ngIf="reportingTo">
                   <div class="row row-cols-1 row-cols-md-2 g-2">
                     <div>
@@ -285,19 +302,23 @@
               <div class="card-body small">
                 <div formGroupName="billingTo" class="mb-3">
                   <label class="form-label">
-                    Customer Name
+                    Contact Person
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('billingTo', $event)">
-                    <option value="">Select Customer</option>
-                    <option *ngFor="let customer of billingToContactPerson" [value]="customer.contactID">{{ customer.name }}</option>
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('billingTo', $event)"
+                    [ngClass]="{'is-invalid': billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)}">
+                    <option value="null">Select Contact Person</option>
+                    <option *ngFor="let contactPerson of billingToContactPerson" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
                   </select>
+                  <div *ngIf="billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
+                    Contact Person is required.
+                  </div>
                 </div>
 
-                <!-- Show Details if Customer is selected -->
+                <!-- Show Details if Contact Person is selected -->
                 <ng-container *ngIf="billingTo">
                   <div class="row row-cols-1 row-cols-md-2 g-2">
-                    <div>
+                    <div>Customer Nam
                       <strong>Address:</strong>
                       {{ billingTo.get("address")?.value }}
                     </div>
@@ -536,7 +557,8 @@
                     </span>
                   </td>
                   <td>
-                    <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required />
+                    <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details"
+                      [ngClass]="{'is-invalid': sample.get('details')?.invalid && (sample.get('details')?.touched || submitted)}" />
 
                   </td>
                   <td>
@@ -791,6 +813,9 @@
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>
   </form>
+
+    </div><!-- /card-body -->
+  </div><!-- /inward-main-card -->
 
   <!-- ═══════ JOB CARD PRINT SECTION (hidden on screen, visible on print) ═══════ -->
   <div class="job-card-print" id="jobCardPrint">

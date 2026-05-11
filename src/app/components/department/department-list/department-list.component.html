@@ -79,6 +79,11 @@
                                 </a>
                             </td>
                             <td>{{ department.description }}</td>
+                            <td>
+                              <span class="badge" [ngClass]="department.isChemical ? 'bg-warning text-dark' : 'bg-secondary'">
+                                {{ department.isChemical ? 'Chemical' : 'General' }}
+                              </span>
+                            </td>
                             <td>{{ department.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
                             <td>{{department.createdBy}}</td>
                         </tr>

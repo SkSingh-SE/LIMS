@@ -6,7 +6,7 @@
 
     <div class="card-body">
       <!-- Search -->
-      <div class="d-flex justify-content-end mb-3">
+      <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
           <input type="text" class="form-control" placeholder="Search..."
             [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
@@ -18,9 +18,11 @@
 
       <!-- Table View -->
       <div *ngIf="filteredData.length > 0" class="table-responsive">
-        <table class="table bordered-table align-middle w-100 small">
+        <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
+              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+              <th class="fw-semibold">#</th>
               <th *ngFor="let column of columns; let i = index" class="fw-semibold">
                 <div class="d-flex align-items-center justify-content-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -50,13 +52,52 @@
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center fw-semibold">Pricing</th>
-              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+              <th class="align-middle text-center fw-semibold">Report No</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let item of filteredData" class="align-middle text-center">
+            <tr *ngFor="let item of filteredData; let i = index" class="text-sm align-middle text-center">
+              <!-- Actions — first column -->
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-1 align-items-center">
+                  <a [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]"
+                    class="btn btn-sm btn-outline-info" title="Preview Report">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <button *ngIf="item.reportHeaderId"
+                    class="btn btn-sm btn-outline-danger"
+                    title="Generate PDF"
+                    (click)="generatePdf(item, $event)"
+                    [disabled]="pdfGeneratingId === item.reportHeaderId">
+                    <i *ngIf="pdfGeneratingId !== item.reportHeaderId" class="bi bi-file-earmark-pdf"></i>
+                    <span *ngIf="pdfGeneratingId === item.reportHeaderId" class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>
+                  </button>
+                  <button *ngIf="canAmend(item.status)"
+                    class="btn btn-sm btn-outline-warning" title="Amend Report"
+                    (click)="openAmendment(item)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <ng-container *ngIf="item.canTakeAction && item.actions">
+                    <button *ngFor="let action of item.actions" class="icon-action-btn"
+                      [class.text-success]="action.action.toLowerCase().includes('next')"
+                      [class.text-danger]="action.action.toLowerCase().includes('cancel')"
+                      [class.text-secondary]="action.action.toLowerCase().includes('back')"
+                      [title]="action.name"
+                      [disabled]="isSubmitting"
+                      (click)="performWorkflowAction(item, action.action)">
+                      <i *ngIf="action.action.toLowerCase().includes('next')" class="bi bi-check-circle"></i>
+                      <i *ngIf="action.action.toLowerCase().includes('back')" class="bi bi-arrow-left-circle"></i>
+                      <i *ngIf="action.action.toLowerCase().includes('cancel')" class="bi bi-x-circle"></i>
+                    </button>
+                  </ng-container>
+                </div>
+              </td>
+
+              <!-- Sr. No. -->
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+
+              <!-- Data columns -->
               <td class="fw-semibold">
                 <a
                   [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]"
@@ -74,7 +115,7 @@
                   {{ item.caseNo }}
                 </a>
               </td>
-              <td>
+              <td class="fw-semibold">
                 <a *ngIf="item.customerID"
                    [routerLink]="['/customer/details', item.customerID]"
                    [state]="{ mode: 'view' }"
@@ -89,68 +130,20 @@
               <td class="text-center">
                 <app-test-status-badge [status]="item.status"></app-test-status-badge>
               </td>
-              <td class="text-end">
-                <span *ngIf="canViewPricing(item)" class="text-muted small">
-                  <i class="bi bi-currency-rupee"></i>{{ getItemPrice(item) }}
-                </span>
-                <span *ngIf="!canViewPricing(item)" class="text-muted small">-</span>
-              </td>
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-nowrap">
-                  <!-- Preview -->
-                  <button class="btn btn-sm btn-outline-info"
-                    [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]" title="Preview Report">
-                    <i class="bi bi-eye"></i>
-                  </button>
-
-                  <!-- PDF -->
-                  <button *ngIf="item.reportHeaderId"
-                    class="btn btn-sm btn-outline-danger"
-                    title="Generate PDF"
-                    (click)="generatePdf(item, $event)"
-                    [disabled]="pdfGeneratingId === item.reportHeaderId">
-                    <i *ngIf="pdfGeneratingId !== item.reportHeaderId" class="bi bi-file-pdf"></i>
-                    <span *ngIf="pdfGeneratingId === item.reportHeaderId" class="spinner-border spinner-border-sm"></span>
-                  </button>
-
-                  <!-- Amend -->
-                  <button *ngIf="canAmend(item.status)"
-                    class="btn btn-sm btn-outline-warning" title="Amend Report"
-                    (click)="openAmendment(item)">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-
-                  <!-- Workflow Actions -->
-                  <ng-container *ngIf="item.canTakeAction && item.actions">
-                    <button *ngFor="let action of item.actions" class="btn btn-sm"
-                      [ngClass]="{
-                        'btn-outline-success': action.action.toLowerCase().includes('next'),
-                        'btn-outline-danger': action.action.toLowerCase().includes('cancel'),
-                        'btn-outline-secondary': action.action.toLowerCase().includes('back')
-                      }"
-                      [title]="action.name"
-                      [disabled]="isSubmitting"
-                      (click)="performWorkflowAction(item, action.action)">
-                      <i class="bi"
-                        [class.bi-check-circle]="action.action.toLowerCase().includes('next')"
-                        [class.bi-arrow-return-left]="action.action.toLowerCase().includes('back')"
-                        [class.bi-x-circle]="action.action.toLowerCase().includes('cancel')"></i>
-                    </button>
-                  </ng-container>
-                </div>
-              </td>
+              <td class="text-center text-muted small">{{ item.reportNo || '-' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="filteredData.length === 0" class="alert alert-light border border-secondary text-center py-4">
-        <i class="bi bi-info-circle text-secondary"></i>
-        <p class="mb-0 text-secondary">No records found matching your criteria.</p>
+      <div *ngIf="filteredData.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+          <div class="fw-semibold">No records found</div>
+        </div>
       </div>
 
-      <!-- Pagination -->
       <!-- Pagination -->
       <app-pagination
         [currentPage]="pageNumber"
@@ -161,24 +154,17 @@
         (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
       </app-pagination>
     </div>
-
-    <!-- Loading State -->
-    <div *ngIf="false" class="card-body text-center py-4">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
   </div>
 </div>
+
 <!-- Filter Modal -->
 <div #filterModal class="filter-modal">
-  <div class="card py-2 px-3 shadow position-relative border-0">
-    <!-- Close Button in the Top-Right Corner -->
+  <div class="card py-2 px-3 shadow position-relative">
     <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
 
     <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
 
-    <select class="form-select mb-2 border-secondary" [(ngModel)]="filterType">
+    <select class="form-select mb-2" [(ngModel)]="filterType">
       <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
       <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
       <option value="Equal">Equal</option>
@@ -190,7 +176,7 @@
     <input
       *ngIf="filterColumnTypes[filterColumn!] === 'string'"
       type="text"
-      class="form-control mb-2 border-secondary"
+      class="form-control mb-2"
       [(ngModel)]="filterValue"
       placeholder="Enter value"
       (keydown.enter)="applyFilter()"
@@ -198,7 +184,7 @@
     <input
       *ngIf="filterColumnTypes[filterColumn] === 'number'"
       type="number"
-      class="form-control mb-2 border-secondary"
+      class="form-control mb-2"
       [(ngModel)]="filterValue"
       placeholder="Enter number"
       (keydown.enter)="applyFilter()"
@@ -206,14 +192,14 @@
     <input
       *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
       type="date"
-      class="form-control mb-2 border-secondary"
+      class="form-control mb-2"
       [(ngModel)]="filterValue"
     />
     <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue" placeholder="Start date" />
-      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue2" placeholder="End date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
     </div>
 
-    <button class="btn btn-danger btn-sm mb-2 fw-semibold" (click)="applyFilter()">Apply</button>
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
   </div>
 </div>

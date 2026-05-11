@@ -36,6 +36,9 @@ export class CaseAccountDetailComponent implements OnInit {
   isClosing = signal(false);
   paymentGatewayEnabled = false;
 
+  showExchangeRateModal = false;
+  exchangeRateInput: number | null = null;
+
   lineItems: any[] = [];
   showAddLineItem = false;
   newLineItem = { description: '', amount: 0, taxPercent: 18 };
@@ -137,7 +140,8 @@ export class CaseAccountDetailComponent implements OnInit {
   }
 
   /**
-   * Generate Final Invoice - Only after report approval and advance payment
+   * Generate Final Invoice - Only after report approval and advance payment.
+   * For non-INR customers, shows an exchange rate modal before proceeding.
    */
   generateInvoice(): void {
     if (!this.canGenerateInvoice()) {
@@ -145,13 +149,32 @@ export class CaseAccountDetailComponent implements OnInit {
       return;
     }
 
+    if (!this.caseSummary?.customerCurrencyIsDefault) {
+      this.exchangeRateInput = null;
+      this.showExchangeRateModal = true;
+      return;
+    }
+
     if (!confirm('Are you sure you want to generate a Final Invoice for this case?')) {
       return;
     }
 
+    this.doGenerateInvoice(null);
+  }
+
+  confirmExchangeRate(): void {
+    if (!this.exchangeRateInput || this.exchangeRateInput <= 0) {
+      this.toastService.show('Please enter a valid exchange rate greater than 0.', 'warning');
+      return;
+    }
+    this.showExchangeRateModal = false;
+    this.doGenerateInvoice(this.exchangeRateInput);
+  }
+
+  private doGenerateInvoice(exchangeRate: number | null): void {
     this.isGeneratingInvoice.set(true);
-    this.accountService.generateInvoice(this.inwardId).subscribe({
-      next: (response) => {
+    this.accountService.generateInvoice(this.inwardId, exchangeRate ?? undefined).subscribe({
+      next: () => {
         this.toastService.show('Final Invoice generated successfully', 'success');
         this.loadCaseSummary();
         this.isGeneratingInvoice.set(false);
@@ -179,6 +202,7 @@ export class CaseAccountDetailComponent implements OnInit {
    * Check if Final Invoice can be generated
    */
   canGenerateInvoice(): boolean {
+    debugger;
     if (!this.caseSummary) return false;
     const billingStatus = this.caseSummary.billingStatus || this.caseSummary.billing_status || '';
     const reportStatus = this.caseSummary.reportStatus || this.caseSummary.report_status || '';

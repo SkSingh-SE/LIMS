@@ -659,7 +659,7 @@
                                   <app-searchable-dropdown class="w-100" [placeholder]="'Type & Search Parameter'" [labelName]="'Parameter'" [fetchDataFn]="getParameterDrop" (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)" [isDisabled]="true" [hideLabel]="true" [selectedItem]="el.get('parameterID')?.value"></app-searchable-dropdown>
                                 </td>
                                 <td class="text-center">
-                                  <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="!el.get('minValue')?.value" />
+                                  <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="true" />
                                 </td>
                                 <td class="text-center">
                                   <input type="number" class="form-control form-control-sm text-center" formControlName="maxValue" [readonly]="true" />

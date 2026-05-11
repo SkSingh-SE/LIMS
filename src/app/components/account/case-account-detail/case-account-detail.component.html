@@ -509,3 +509,41 @@
   </div>
 </div>
 
+<!-- Exchange Rate Modal (shown for non-INR customers before generating final invoice) -->
+<div *ngIf="showExchangeRateModal" class="modal-backdrop-custom" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;">
+  <div class="card shadow-lg" style="max-width:380px;width:100%;border-top:3px solid var(--primary-color);">
+    <div class="card-header card-form-header text-white">
+      <strong>Exchange Rate Required</strong>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-2" style="font-size:0.85rem;">
+        Customer billing currency: <strong>{{ caseSummary?.customerCurrencyCode }}</strong><br>
+        Enter today's exchange rate (1 {{ caseSummary?.customerCurrencyCode }} = ? ₹):
+      </p>
+      <div class="input-group input-group-sm mb-3">
+        <span class="input-group-text">1 {{ caseSummary?.customerCurrencyCode }} =</span>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="exchangeRateInput"
+          placeholder="e.g. 83.45"
+          min="0.0001"
+          step="0.01"
+          [ngClass]="{ 'is-invalid': exchangeRateInput !== null && exchangeRateInput <= 0 }"
+        />
+        <span class="input-group-text">₹</span>
+      </div>
+      <div *ngIf="exchangeRateInput !== null && exchangeRateInput <= 0">
+        <span class="text-danger" style="font-size:0.8rem;">Exchange rate must be greater than 0.</span>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 justify-content-end">
+      <button class="btn btn-sm btn-cancel" (click)="showExchangeRateModal = false">Cancel</button>
+      <button class="btn btn-sm btn-save" (click)="confirmExchangeRate()" [disabled]="isGeneratingInvoice()">
+        <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-1"></span>
+        Confirm &amp; Generate
+      </button>
+    </div>
+  </div>
+</div>
+

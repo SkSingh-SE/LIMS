@@ -2,3 +2,36 @@
   display: block;
   width: 100%;
 }
+
+/* ─── Reset <form> wrapper — eliminates any UA margin/padding that diverges from a plain <div> ─── */
+:host form {
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* ─── Label — mirrors global sets across the encapsulation boundary ─── */
+:host .form-label {
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 500;
+  color: var(--neutral-700, #374151);
+  margin-bottom: 0.28rem;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.5;
+  display: block;
+}
+
+:host .form-label.form-label-sm {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+/* ─── ng-select container — match Bootstrap form-select line-height ─── */
+:host ::ng-deep .ng-select .ng-select-container {
+  line-height: 1.5;
+}
+
+:host ::ng-deep .ng-select .ng-value-container {
+  line-height: 1.5;
+}

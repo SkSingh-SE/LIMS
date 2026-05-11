@@ -258,8 +258,6 @@ export class TestResultEntryFormComponent implements OnInit {
           return;
         }
 
-        console.log("Full Result Payload:", data);
-
         // Validate critical fields
         if (!data.inward) {
           console.warn('[TestResultEntry] Missing inward data in payload');
@@ -1657,8 +1655,8 @@ export class TestResultEntryFormComponent implements OnInit {
 
     this.testResultService.submitForVerification(headerId).subscribe({
       next: () => {
-        test.status = 'PendingVerification';
         this.toastService.show('Test submitted for verification', 'success');
+        this.loadFullResultPayload(this.sampleId);
       },
       error: (err: any) => {
         this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
@@ -1673,15 +1671,8 @@ export class TestResultEntryFormComponent implements OnInit {
     this.testResultService.submitSampleForVerification(this.sampleId).subscribe({
       next: (res: any) => {
         this.isSubmittingVerification = false;
-        // Update all completed test statuses to PendingVerification
-        this.plans.forEach((plan: any) => {
-          (plan.tests || []).forEach((test: any) => {
-            if (test.status === 'Completed') {
-              test.status = 'PendingVerification';
-            }
-          });
-        });
         this.toastService.show(res?.message || 'All tests submitted for verification', 'success');
+        this.loadFullResultPayload(this.sampleId);
       },
       error: (err: any) => {
         this.isSubmittingVerification = false;
@@ -1690,14 +1681,21 @@ export class TestResultEntryFormComponent implements OnInit {
     });
   }
 
+  canSubmitForReportReview(): boolean {
+    const status = this.sample?.sampleStatus;
+    // Only show when tests are verified and report has not been submitted/reviewed/approved
+    const hiddenStatuses = ['REPORT_UNDER_REVIEW', 'FINAL_REPORT_APPROVED', 'REPORT_APPROVED', 'COMPLETED', 'REPORT_DISPATCHED'];
+    return status === 'TESTING_VERIFIED' && !hiddenStatuses.includes(status);
+  }
+
   submitForReportReview(): void {
     if (this.isSubmittingReport) return;
     this.isSubmittingReport = true;
     this.testResultService.submitForReportReview(this.sampleId).subscribe({
       next: () => {
         this.isSubmittingReport = false;
-        this.sample.sampleStatus = 'REPORT_UNDER_REVIEW';
         this.toastService.show('Submitted for report review successfully.', 'success');
+        this.loadFullResultPayload(this.sampleId);
       },
       error: (err: any) => {
         this.isSubmittingReport = false;

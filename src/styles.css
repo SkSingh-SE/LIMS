@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 @import "quill/dist/quill.snow.css";
 
 /* You can add global styles to this file, and also import other style files */
@@ -24,7 +24,10 @@
 
 body {
   margin: 0;
-  font-family: var(--bs-font-sans-serif);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #1F2937;
 }
 
 .content-container {
@@ -258,6 +261,22 @@ body {
         zoom: 1;
       }
   } */
+
+/* ── Global is-invalid override ──
+   Component-scoped CSS (Angular emulated encapsulation) has higher specificity
+   than Bootstrap's .form-select.is-invalid, so we must restore it globally. */
+.form-control.is-invalid,
+.form-select.is-invalid,
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+  border-color: var(--danger-main, #dc3545) !important;
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15) !important;
+}
+
+.invalid-feedback,
+.text-danger.text-sm {
+  color: var(--danger-main, #dc3545) !important;
+}
 
 .input-group-text.is-invalid {
   border: 1px solid #dc3545 !important;
@@ -846,11 +865,18 @@ select:focus option:checked {
   --brand: var(--primary-600);
 
   /* ── Font size scale ─────────────────────────────────── */
-  --font-xs:  0.75rem;
-  --font-sm:  0.8125rem;
-  --font-md:  0.9375rem;
-  --font-lg:  1.0625rem;
-  --font-xl:  1.25rem;
+  --font-xxs: 0.6875rem;  /* 11px */
+  --font-xs:  0.75rem;    /* 12px */
+  --font-sm:  0.8125rem;  /* 13px — base UI size */
+  --font-md:  0.9375rem;  /* 15px */
+  --font-lg:  1.0625rem;  /* 17px */
+  --font-xl:  1.25rem;    /* 20px */
+  --font-2xl: 1.125rem;   /* 18px — page/section headers */
+
+  /* ── Line height scale ───────────────────────────────── */
+  --line-height-tight:  1.2;
+  --line-height-normal: 1.5;
+  --line-height-loose:  1.7;
 
   /* ── Shadows ─────────────────────────────────────────── */
   --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -1280,26 +1306,58 @@ select:focus option:checked {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   FORM ENHANCEMENTS
+   FORM ENHANCEMENTS — Two canonical sets
+   Normal  → .form-label  + .form-control  / .form-select   (36px)
+   Compact → .form-label-sm + .form-control-sm / .form-select-sm (30px)
 ════════════════════════════════════════════════════════════════ */
+
+/* ── Normal label ── */
 .form-label {
+  /* display: block; */
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--neutral-700);
   margin-bottom: 0.28rem;
+  font-family: 'Poppins', sans-serif;
 }
 
+/* ── Compact label (use alongside form-control-sm) ── */
+.form-label-sm {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: 0.15rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Normal controls (36px) ── */
 .form-control,
 .form-select {
   font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-300);
   color: var(--neutral-900);
   min-height: 36px;
 }
 
+/* ── Compact controls (30px) ── */
+.form-control-sm,
+.form-select-sm {
+  font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-300);
+  color: var(--neutral-900);
+  min-height: 30px !important;
+  padding: 0.2rem 0.5rem !important;
+}
+
 .form-control::placeholder,
-.form-select::placeholder {
+.form-select::placeholder,
+.form-control-sm::placeholder,
+.form-select-sm::placeholder {
   color: var(--neutral-400);
   font-size: var(--font-sm);
 }
@@ -1499,6 +1557,7 @@ label .text-danger {
   border-radius: var(--radius-sm) !important;
   min-height: 36px !important;
   font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
   background-color: #fff !important;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1604,22 +1663,80 @@ label .text-danger {
   color: #fff !important;
 }
 
-/* ─── ng-select SM (smallInput=true) — compact 30px height ─── */
+/* ─── ng-select SM (smallInput=true) — matches Bootstrap form-control-sm ─── */
 .ng-select-sm .ng-select-container {
   min-height: 30px !important;
-  font-size: 0.78rem !important;
+  height: 30px !important;
+  font-size: var(--font-sm, 0.8125rem) !important;
+  padding: 0 0.5rem !important;
+  align-items: center !important;
+}
+/* Multi-select: allow container to grow only when tags wrap */
+.ng-select-sm.ng-select-multiple .ng-select-container {
+  height: auto !important;
+  min-height: 30px !important;
+  padding: 0 0.25rem !important;
+  align-items: center !important;
+}
+.ng-select-sm .ng-select-container .ng-value-container {
+  padding: 0 !important;
+  align-items: center !important;
+}
+.ng-select-sm.ng-select-multiple .ng-select-container .ng-value-container {
+  padding: 2px 4px !important;
+  gap: 2px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
 }
 .ng-select-sm .ng-placeholder {
-  font-size: 0.76rem !important;
+  font-size: 0.8rem !important;
+  line-height: 1.5 !important;
+  padding: 0 !important;
 }
 .ng-select-sm .ng-value {
+  font-size: 0.8rem !important;
+}
+/* Compact tags for multi-select-sm */
+.ng-select-sm.ng-select-multiple .ng-value {
   font-size: 0.72rem !important;
+  padding: 0 4px !important;
+  margin: 1px 2px 1px 0 !important;
+  line-height: 20px !important;
+  height: 20px !important;
+}
+.ng-select-sm.ng-select-multiple .ng-value .ng-value-label {
+  padding: 0 2px !important;
+  line-height: 20px !important;
+}
+.ng-select-sm.ng-select-multiple .ng-value .ng-value-icon {
+  padding: 0 4px !important;
+  line-height: 20px !important;
+}
+.ng-select-sm .ng-input {
+  padding: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 .ng-select-sm .ng-input > input {
-  font-size: 0.76rem !important;
+  font-size: 0.8rem !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
+}
+.ng-select-sm .ng-arrow-wrapper {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 4px !important;
+}
+.ng-select-sm .ng-clear-wrapper {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
 }
 .ng-select-sm .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
-  font-size: 0.76rem !important;
+  font-size: 0.8rem !important;
   padding: 5px 10px !important;
 }
 
@@ -1627,10 +1744,27 @@ label .text-danger {
    UTILITY CLASSES
 ════════════════════════════════════════════════════════════════ */
 /* Text sizes */
+.text-xxs { font-size: var(--font-xxs) !important; }
 .text-xs  { font-size: var(--font-xs) !important; }
 .text-sm  { font-size: var(--font-sm) !important; }
 .text-md  { font-size: var(--font-md) !important; }
 .text-lg  { font-size: var(--font-lg) !important; }
+.text-xl  { font-size: var(--font-xl) !important; }
+
+/* Page / section header — replaces hardcoded 18px in list components */
+.page-header-title {
+  font-size: var(--font-2xl);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  color: var(--neutral-800);
+}
+
+/* Font weight utilities */
+.fw-light   { font-weight: 300 !important; }
+.fw-normal  { font-weight: 400 !important; }
+.fw-medium  { font-weight: 500 !important; }
+.fw-semi    { font-weight: 600 !important; }
+.fw-bold    { font-weight: 700 !important; }
 
 /* Cursor */
 .cursor         { cursor: pointer; }
@@ -1717,7 +1851,7 @@ label .text-danger {
 .form-check-sm .form-check-input {
   width: 14px !important;
   height: 14px !important;
-  margin-top: 0.22rem;
+  margin-top: 0.22rem !important;
 }
 .form-check-sm .form-check-label {
   font-size: var(--font-xs);

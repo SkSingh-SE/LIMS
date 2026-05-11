@@ -10,6 +10,10 @@
     <div class="header-meta">
       <span class="badge">{{ inward?.caseNo }}</span>
       <span class="badge" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" [title]="inward?.customerName">{{ inward?.customerName }}</span>
+      <app-test-status-badge *ngIf="sample?.sampleStatus" [status]="sample.sampleStatus"></app-test-status-badge>
+      <button class="btn btn-sm btn-outline-light ms-2" type="button" (click)="cancel()">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+      </button>
     </div>
   </div>
 
@@ -846,8 +850,8 @@
       </button>
     </div>
 
-    <!-- Submit for Report Review — shown only when sample is TESTING_VERIFIED -->
-    <div class="action-bar" *ngIf="sample?.sampleStatus === 'TESTING_VERIFIED'">
+    <!-- Submit for Report Review — shown only when tests are verified and report not yet submitted/reviewed/approved -->
+    <div class="action-bar" *ngIf="canSubmitForReportReview()">
       <button class="btn btn-primary action-btn"
               type="button"
               [disabled]="isSubmittingReport"

@@ -19,6 +19,7 @@ export class DepartmentListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
+    { key: 'isChemical', type: 'string', label: 'Type', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
     { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];

@@ -16,7 +16,12 @@
         <span class="fw-bold">Report Preview</span>
         <span class="text-white-50 ms-1">{{ reportData.reportNo }}</span>
       </div>
-      <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
+      <div class="d-flex align-items-center gap-2">
+        <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
+        <button class="btn btn-sm btn-outline-light" type="button" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i>Back to List
+        </button>
+      </div>
     </div>
     <div class="rh-body">
       <div class="row g-3">
@@ -225,7 +230,7 @@
   <div *ngIf="reportData && reportData.mechanicalTests && reportData.mechanicalTests.length > 0" class="section-card mb-3">
     <div class="section-header" style="background: #fef2f2; border-left: 4px solid var(--primary-color, #da261c);">
       <i class="bi bi-gear me-2" style="color: var(--primary-color, #da261c)"></i>
-      <span class="fw-semibold">Mechanical Tests</span>
+      <span class="fw-semibold">General Tests</span>
       <span class="badge bg-light text-dark border ms-2">{{ reportData.mechanicalTests.length }}</span>
     </div>
     <div class="section-body p-0">
@@ -490,12 +495,22 @@
     </div>
   </div>
 
-  <!-- Back button when no actions -->
+  <!-- Back button (and optional Submit for Report Approval) when no workflow actions -->
   <div *ngIf="reportData && !reportData?.actions?.length" class="review-action-bar">
-    <div class="d-flex justify-content-end">
+    <div class="d-flex align-items-center justify-content-between">
       <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
         <i class="bi bi-arrow-left me-1"></i>Back
       </button>
+      <ng-container *ngIf="reportData.canSubmitForReportApproval">
+        <button *hasPermission="'CanPerformTesting'"
+          type="button"
+          class="btn btn-primary btn-sm fw-semibold px-4"
+          (click)="submitForReportApproval()"
+          [disabled]="submittingForApproval">
+          <i class="bi me-1" [class.bi-send-check]="!submittingForApproval" [class.bi-hourglass-split]="submittingForApproval"></i>
+          {{ submittingForApproval ? 'Submitting...' : 'Submit for Report Approval' }}
+        </button>
+      </ng-container>
     </div>
   </div>
 </div>

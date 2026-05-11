@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { HardnessEquivalenceService } from '../../services/hardness-equivalence.service';
 import { ToastService } from '../../services/toast.service';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-hardness-equivalence',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent ],
   templateUrl: './hardness-equivalence.component.html',
   styleUrl: './hardness-equivalence.component.css',
 })
@@ -53,7 +54,7 @@ export class HardnessEquivalenceComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

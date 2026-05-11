@@ -8,10 +8,11 @@ import { ToastService } from '../../services/toast.service';
 import { MaterialSpecificationService } from '../../services/material-specification.service';
 import { ParameterService } from '../../services/parameter.service';
 import { SearchableDropdownModalComponent } from '../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-tolerance-master',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent],
+  imports: [ CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, PaginationComponent ],
   templateUrl: './tolerance-master.component.html',
   styleUrl: './tolerance-master.component.css',
 })
@@ -51,7 +52,7 @@ export class ToleranceMasterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
@@ -98,7 +99,32 @@ export class ToleranceMasterComponent implements OnInit {
       toleranceValue: [null, Validators.required],
       toleranceType: ['Absolute', Validators.required],
       remark: [''],
+      // Parameter metadata (UI only — not submitted)
+      decimalPrecision: [2],
+      parameterSymbol: [''],
+      minReportableLimit: [null],
     });
+  }
+
+  /** Step attribute for numeric inputs, based on selected parameter's decimal precision. */
+  getToleranceStep(): string {
+    const precision = Number(this.toleranceMasterForm?.get('decimalPrecision')?.value ?? 2);
+    if (precision <= 0) return '1';
+    return (1 / Math.pow(10, precision)).toFixed(precision);
+  }
+
+  /** Round a numeric control to the parameter's decimal precision on blur. */
+  roundToleranceField(field: string): void {
+    const ctrl = this.toleranceMasterForm?.get(field);
+    const raw = ctrl?.value;
+    if (raw === null || raw === '' || raw === undefined) return;
+    const num = Number(raw);
+    if (isNaN(num)) return;
+    const precision = Number(this.toleranceMasterForm?.get('decimalPrecision')?.value ?? 2);
+    const rounded = Number(num.toFixed(precision));
+    if (rounded !== num) {
+      ctrl?.setValue(rounded, { emitEvent: false });
+    }
   }
 
   fetchData() {
@@ -361,9 +387,23 @@ export class ToleranceMasterComponent implements OnInit {
 
   onParameterSelected(item: any) {
     if (!item) {
-      this.toleranceMasterForm.patchValue({ parameterID: null });
+      this.toleranceMasterForm.patchValue({
+        parameterID: null,
+        decimalPrecision: 2,
+        parameterSymbol: '',
+        minReportableLimit: null
+      });
       return;
     }
-    this.toleranceMasterForm.patchValue({ parameterID: item.id });
+    const additional = item?.additionalValues || {};
+    this.toleranceMasterForm.patchValue({
+      parameterID: item.id,
+      decimalPrecision: Number(additional.DecimalPrecision ?? additional.decimalPrecision ?? 2),
+      parameterSymbol: additional.Symbol || additional.symbol || '',
+      minReportableLimit: additional.MinReportableLimit ?? additional.minReportableLimit ?? null
+    });
+
+    // Round any existing numeric values to new precision
+    ['valueRangeStart', 'valueRangeEnd', 'toleranceValue'].forEach(f => this.roundToleranceField(f));
   }
 }

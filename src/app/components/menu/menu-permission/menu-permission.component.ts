@@ -6,10 +6,11 @@ import { ToastService } from '../../../services/toast.service';
 import { MenuService } from '../../../services/menu.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-menu-permission',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownModalComponent],
+  imports: [ CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownModalComponent, PaginationComponent ],
   templateUrl: './menu-permission.component.html',
   styleUrl: './menu-permission.component.css'
 })
@@ -39,7 +40,7 @@ export class MenuPermissionComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';

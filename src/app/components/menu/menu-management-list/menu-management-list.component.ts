@@ -3,10 +3,11 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MenuService } from '../../../services/menu.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-menu-management-list',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './menu-management-list.component.html',
   styleUrl: './menu-management-list.component.css'
 })
@@ -39,7 +40,7 @@ export class MenuManagementListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'id';
   sortOrder: string = 'desc';

@@ -48,6 +48,13 @@
     </div>
   </div>
 
+  <!-- Copy Plan Toolbar -->
+  <div *ngIf="!isViewMode && samples.length > 1" class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-sm btn-outline-primary" (click)="openCopyPlanModal()">
+      <i class="bi bi-copy me-1"></i> Copy Plan
+    </button>
+  </div>
+
   <!-- Samples Section -->
   <div formArrayName="samples">
     <div
@@ -115,6 +122,7 @@
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Metal Classification'"
                       [labelName]="'Metal Classification'"
+                      [smallInput]="true"
                       [fetchDataFn]="getMetalDrop"
                       (itemSelected)="onMetalClassificationSelected($event, sampleIdx)"
                       [selectedItem]="sample.get('metalClassificationID')?.value"
@@ -125,6 +133,7 @@
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Product Condition'"
                       [labelName]="'Product Condition'"
+                      [smallInput]="true"
                       [fetchDataFn]="getProductConditionDrop"
                       (itemSelected)="onProductConditionSelected($event, sampleIdx)"
                       [selectedItem]="sample.get('productConditionID')?.value"
@@ -135,6 +144,7 @@
                     <app-searchable-dropdown
                       [placeholder]="'Specimen Orientation'"
                       [labelName]="'Specimen Orientation'"
+                      [smallInput]="true"
                       [fetchDataFn]="getSpecimenOrientationDrop(sampleIdx)"
                       (itemSelected)="onSpecimenOrientationSelected($event, sampleIdx)"
                       [selectedItem]="sample.get('specimenOrientationID')?.value"
@@ -145,6 +155,7 @@
                     <app-searchable-dropdown
                       [placeholder]="'Product Form'"
                       [labelName]="'Product Form'"
+                      [smallInput]="true"
                       [fetchDataFn]="getProductFormDrop"
                       (itemSelected)="onProductFormSelected($event, sampleIdx)"
                       [selectedItem]="sample.get('productFormID')?.value"
@@ -445,6 +456,7 @@
                               [placeholder]="'Search Lab Test'"
                               [labelName]="'Laboratory Test'"
                               [hideLabel]="true"
+                              [smallInput]="true"
                               (itemSelected)="onLaboratoryTestSelected($event, sampleIdx, planIdx, methodIdx)"
                               [selectedItem]="method.get('testMethodID')?.value"
                               [isDisabled]="isViewMode"
@@ -460,9 +472,9 @@
                             <input type="number" class="form-control form-control-sm" formControlName="quantity" placeholder="Qty" />
                           </td>
                           <td>
-                            <div>{{ method.get("reportNo")?.value }}</div>
+                            <div>{{ displayUlr(method.get("reportNo")?.value) }}</div>
                             <div class="d-flex justify-content-center gap-3">
-                              {{ method.get("ulrNo")?.value }}
+                              {{ displayUlr(method.get("ulrNo")?.value) }}
                               <div class="form-check mt-0">
                                 <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
                               </div>
@@ -579,9 +591,12 @@
                           <label class="form-label fw-semibold mb-0">
                             <i class="bi bi-flask me-1"></i> Chemical Test - Sample No: {{ testPlan.get("sampleNo")?.value }}
                           </label>
-                          <div class="d-flex gap-3">
-                            <span class="text-muted small">Report No: <strong>{{ chemTest.get("reportNo")?.value }}</strong></span>
-                            <span class="text-muted small">ULR: <strong>{{ chemTest.get("ulrNo")?.value }}</strong></span>
+                          <div class="d-flex gap-3 align-items-center">
+                            <span class="text-muted small">Report No: <strong>{{ displayUlr(chemTest.get("reportNo")?.value) }}</strong></span>
+                            <span class="text-muted small">ULR: <strong>{{ displayUlr(chemTest.get("ulrNo")?.value) }}</strong></span>
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel" (click)="removeChemicalTest(sampleIdx, planIdx, chemIdx)" title="Remove this Chemical Test">
+                              <i class="bi bi-trash me-1"></i>Remove Chemical Test
+                            </button>
                           </div>
                         </div>
                         <div formGroupName="testTypes" class="row my-1">
@@ -644,7 +659,7 @@
                                   <app-searchable-dropdown class="w-100" [placeholder]="'Type & Search Parameter'" [labelName]="'Parameter'" [fetchDataFn]="getParameterDrop" (itemSelected)="onParameterSelected($event, sampleIdx, planIdx, chemIdx, elIdx)" [isDisabled]="true" [hideLabel]="true" [selectedItem]="el.get('parameterID')?.value"></app-searchable-dropdown>
                                 </td>
                                 <td class="text-center">
-                                  <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="!el.get('minValue')?.value" />
+                                  <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="true" />
                                 </td>
                                 <td class="text-center">
                                   <input type="number" class="form-control form-control-sm text-center" formControlName="maxValue" [readonly]="true" />
@@ -693,6 +708,88 @@
     <button *ngIf="canSendForReview()" type="button" class="btn btn-info" (click)="onSendForReview()">
       <i class="bi bi-send me-1"></i> Send for Review
     </button>
+  </div>
+</div>
+
+<!-- Copy Plan Modal -->
+<div *ngIf="showCopyPlanModal" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1050">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:460px">
+    <div class="modal-content shadow">
+      <div class="modal-header py-2 bg-primary text-white">
+        <h6 class="modal-title mb-0"><i class="bi bi-copy me-1"></i> Copy Plan to Another Sample</h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" (click)="showCopyPlanModal = false"></button>
+      </div>
+      <div class="modal-body py-3">
+
+        <!-- Source Sample -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Copy From (Source Sample) <span class="text-danger">*</span></label>
+          <select class="form-select form-select-sm"
+                  [(ngModel)]="copySourceIdx"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onCopySourceChange($event)">
+            <option [ngValue]="null" disabled>— Select source sample —</option>
+            <option *ngFor="let s of copySampleList; trackBy: trackBySampleIdx" [ngValue]="s.idx">{{ s.sampleNo }}</option>
+          </select>
+        </div>
+
+        <!-- Target Samples (multi-select via checkboxes) -->
+        <div>
+          <label class="form-label fw-semibold small">Copy To (Target Samples) <span class="text-danger">*</span></label>
+          <p class="text-muted small mb-2">Existing plans on selected targets will be replaced.</p>
+          <div *ngIf="copySourceIdx !== null; else selectSourceFirst">
+            <div *ngFor="let s of copyTargetOptions; trackBy: trackBySampleIdx" class="form-check mb-1">
+              <input type="checkbox" class="form-check-input"
+                     [id]="'copyTarget-' + s.idx"
+                     [(ngModel)]="copyTargetIdxs[s.idx]"
+                     [ngModelOptions]="{standalone: true}" />
+              <label class="form-check-label small" [for]="'copyTarget-' + s.idx">{{ s.sampleNo }}</label>
+            </div>
+          </div>
+          <ng-template #selectSourceFirst>
+            <p class="text-muted small fst-italic">Select a source sample first.</p>
+          </ng-template>
+        </div>
+
+      </div>
+      <div class="modal-footer py-2 gap-2">
+        <button type="button" class="btn btn-sm btn-secondary" (click)="showCopyPlanModal = false">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" (click)="confirmCopyPlan()">
+          <i class="bi bi-copy me-1"></i> Copy Plan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Empty Tabs Confirmation Dialog -->
+<div *ngIf="showEmptyTabsDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1050">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+    <div class="modal-content shadow">
+      <div class="modal-header py-2 bg-warning text-dark">
+        <h6 class="modal-title mb-0"><i class="bi bi-exclamation-triangle me-1"></i> Empty Test Tabs Detected</h6>
+        <button type="button" class="btn-close btn-sm" (click)="showEmptyTabsDialog = false"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="small mb-2">The following test tabs have no content. Remove them before submitting?</p>
+        <ul class="list-group list-group-flush small mb-0">
+          <li *ngFor="let t of emptyTabsList" class="list-group-item px-0 py-1 d-flex align-items-center gap-1">
+            <i class="bi bi-x-circle text-danger"></i>
+            <strong>{{ t.sampleNo }}</strong>&nbsp;— {{ t.label }}
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer py-2 gap-2">
+        <button type="button" class="btn btn-sm btn-secondary" (click)="showEmptyTabsDialog = false">
+          <i class="bi bi-pencil me-1"></i> Go Back & Fill
+        </button>
+        <button type="button" class="btn btn-sm btn-warning" (click)="removeEmptyTabsAndContinue()">
+          <i class="bi bi-trash me-1"></i> Delete Empty & Continue
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

@@ -35,6 +35,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   @Input() labelName: string = 'Select Item';
   @Input() hideLabel: boolean = false;
   @Input() reloadKey: any;
+  @Input() smallInput: boolean = false;
 
   selectedItems: any[] = [];
   multiForm: FormGroup;

@@ -5,11 +5,12 @@ import { RouterModule } from '@angular/router';
 import { DesignationService } from '../../../services/designation.service';
 import { Designation } from '../../../models/designationModel';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-list-designation',
 
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './list-designation.component.html',
   styleUrl: './list-designation.component.css'
 })
@@ -44,7 +45,7 @@ export class ListDesignationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

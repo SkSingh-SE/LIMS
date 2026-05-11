@@ -68,8 +68,11 @@
                                     {{ item.isRange ? 'Yes' : 'No' }}
                                 </span>
                             </td>
+                            <td>{{ item.valueSource || 'ParameterLinked' }}</td>
+                            <td>{{ item.sampleField || '-' }}</td>
                             <td>{{ item.description || '-' }}</td>
-                            <td class="text-center">{{ item.sortOrder }}</td>                        </tr>
+                            <td class="text-center">{{ item.sortOrder }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -83,29 +86,15 @@
             </div>
 
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center">
-                <!-- Page Size Selector -->
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-
-                <!-- Pagination Controls -->
-                <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
         </div>
     </div>
 </div>
@@ -143,6 +132,21 @@
                                 id="isRangeSwitch">
                             <label class="form-check-label fw-medium" for="isRangeSwitch">Is Range</label>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Value Source</label>
+                        <select class="form-select" formControlName="valueSource">
+                            <option *ngFor="let vs of valueSources" [value]="vs.value">{{ vs.label }}</option>
+                        </select>
+                        <div class="text-muted small mt-1">How the engine reads the dimension value at pricing time.</div>
+                    </div>
+                    <div class="mb-3" *ngIf="showSampleField">
+                        <label class="form-label fw-medium">Sample Field</label>
+                        <select class="form-select" formControlName="sampleField">
+                            <option [value]="null">-- Select Field --</option>
+                            <option *ngFor="let f of sampleFields" [value]="f">{{ f }}</option>
+                        </select>
+                        <div class="text-muted small mt-1">Which SampleDetail field to read when Value Source is Sample Dimension.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium">Description</label>

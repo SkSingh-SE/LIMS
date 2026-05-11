@@ -49,9 +49,280 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList: { id: number, name: string }[] = [];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
-  // Track IDs of existing general tests removed from form so backend can delete them
-  deletedGeneralTestIds: number[] = [];
-  deletedPlanIds: number[] = [];
+
+  // Copy Plan modal
+  showCopyPlanModal = false;
+  copySourceIdx: number | null = null;
+  copyTargetIdxs: boolean[] = [];
+  // Stable cached lists — rebuilt only on open/source-change, never on every CD cycle
+  copySampleList: { idx: number; sampleNo: string }[] = [];
+  copyTargetOptions: { idx: number; sampleNo: string }[] = [];
+
+
+  openCopyPlanModal(): void {
+    this.copySourceIdx = null;
+    this.copyTargetIdxs = this.samples.controls.map(() => false);
+    this.copySampleList = this.buildSampleList();
+    this.copyTargetOptions = [];
+    this.showCopyPlanModal = true;
+  }
+
+  onCopySourceChange(newIdx: number): void {
+    this.copyTargetIdxs = this.copyTargetIdxs.map((v, i) => i === +newIdx ? false : v);
+    this.copyTargetOptions = this.copySampleList.filter(s => s.idx !== +newIdx);
+  }
+
+  private buildSampleList(): { idx: number; sampleNo: string }[] {
+    return this.samples.controls.map((s, idx) => ({
+      idx,
+      sampleNo: s.get('sampleNo')?.value || `Sample ${idx + 1}`
+    }));
+  }
+
+  trackBySampleIdx(_: number, item: { idx: number }): number {
+    return item.idx;
+  }
+
+  displayUlr(value: string | null | undefined): string {
+    return value?.trim() ? value : 'Auto Generate';
+  }
+
+  confirmCopyPlan(): void {
+    if (this.copySourceIdx === null) {
+      this.toastService.show('Please select a source sample.', 'warning');
+      return;
+    }
+    const targets = this.copyTargetIdxs
+      .map((checked, idx) => (checked ? idx : -1))
+      .filter(idx => idx !== -1);
+    if (targets.length === 0) {
+      this.toastService.show('Please select at least one target sample.', 'warning');
+      return;
+    }
+    const sourcePlans = this.getTestPlans(this.copySourceIdx);
+    if (!sourcePlans || sourcePlans.length === 0) {
+      this.toastService.show('Source sample has no plan to copy.', 'warning');
+      return;
+    }
+
+    for (const targetIdx of targets) {
+      const targetPlans = this.getTestPlans(targetIdx);
+      const targetSampleNo = this.samples.at(targetIdx).get('sampleNo')?.value || '';
+      const hasExistingPlan = targetPlans.length > 0;
+
+      if (!hasExistingPlan) {
+        // ── No existing plan → full fresh copy (id=0, Auto Generate URLs) ──
+        for (let p = 0; p < sourcePlans.length; p++) {
+          const srcPlan = sourcePlans.at(p) as FormGroup;
+          targetPlans.push(this.fb.group({
+            id: [0],
+            sampleNo: [targetSampleNo],
+            generalTests: this.copyGeneralTestsFresh(srcPlan, targetSampleNo),
+            chemicalTests: this.copyChemicalTestsFresh(srcPlan, targetSampleNo),
+          }));
+          const srcTab = this.activeTabs[`${this.copySourceIdx}-${p}`];
+          this.activeTabs[`${targetIdx}-${p}`] = srcTab || 'general';
+        }
+      } else {
+        // ── Plan exists → merge: keep existing IDs and URLs, update content ──
+        for (let p = 0; p < sourcePlans.length; p++) {
+          const srcPlan = sourcePlans.at(p) as FormGroup;
+          const existingPlan = targetPlans.at(p) as FormGroup | null;
+
+          if (!existingPlan) {
+            // Source has more plan versions than target → append fresh
+            targetPlans.push(this.fb.group({
+              id: [0],
+              sampleNo: [targetSampleNo],
+              generalTests: this.copyGeneralTestsFresh(srcPlan, targetSampleNo),
+              chemicalTests: this.copyChemicalTestsFresh(srcPlan, targetSampleNo),
+            }));
+          } else {
+            // Merge into existing plan — keep plan's own id and sampleNo
+            const mergedGeneral = this.mergeGeneralTests(srcPlan, existingPlan, targetSampleNo);
+            const mergedChemical = this.mergeChemicalTests(srcPlan, existingPlan, targetSampleNo);
+
+            // Replace the FormArrays in place
+            existingPlan.setControl('generalTests', mergedGeneral);
+            existingPlan.setControl('chemicalTests', mergedChemical);
+          }
+
+          const srcTab = this.activeTabs[`${this.copySourceIdx}-${p}`];
+          this.activeTabs[`${targetIdx}-${p}`] = srcTab || 'general';
+        }
+      }
+    }
+
+    this.showCopyPlanModal = false;
+    this.toastService.show(`Plan copied to ${targets.length} sample(s).`, 'success');
+  }
+
+  // ── Fresh copy helpers (no existing plan on target) ──────────────────────
+
+  private copyGeneralTestsFresh(srcPlan: FormGroup, targetSampleNo: string): FormArray {
+    const srcGeneral = srcPlan.get('generalTests') as FormArray;
+    const arr = this.fb.array<FormGroup>([]);
+    for (let g = 0; g < srcGeneral.length; g++) {
+      const srcGt = srcGeneral.at(g) as FormGroup;
+      const srcMethods = srcGt.get('methods') as FormArray;
+      const newGroup = this.createGeneralTestGroup();
+      newGroup.patchValue({
+        sampleNo: targetSampleNo,
+        specification1: srcGt.get('specification1')?.value,
+        specification2: srcGt.get('specification2')?.value,
+      });
+      for (let m = 0; m < srcMethods.length; m++) {
+        const src = srcMethods.at(m).value;
+        const row = this.createTestMethodRow('', '');
+        row.patchValue({ testMethodID: src.testMethodID, quantity: src.quantity });
+        (newGroup.get('methods') as FormArray).push(row);
+      }
+      arr.push(newGroup);
+    }
+    return arr;
+  }
+
+  private copyChemicalTestsFresh(srcPlan: FormGroup, targetSampleNo: string): FormArray {
+    const srcChemical = srcPlan.get('chemicalTests') as FormArray;
+    const arr = this.fb.array<FormGroup>([]);
+    for (let c = 0; c < srcChemical.length; c++) {
+      const srcCt = srcChemical.at(c) as FormGroup;
+      const srcElements = srcCt.get('elements') as FormArray;
+      const newChem = this.createChemicalTestGroup('', '');
+      newChem.patchValue({
+        sampleNo: targetSampleNo,
+        specification1: srcCt.get('specification1')?.value,
+        specification2: srcCt.get('specification2')?.value,
+      });
+      (newChem.get('testTypes') as FormGroup)?.patchValue(srcCt.get('testTypes')?.value || {});
+      for (let e = 0; e < srcElements.length; e++) {
+        const row = this.createElementRow();
+        row.patchValue(srcElements.at(e).value);
+        (newChem.get('elements') as FormArray).push(row);
+      }
+      arr.push(newChem);
+    }
+    return arr;
+  }
+
+  // ── Merge helpers (existing plan on target — preserve IDs and URLs) ───────
+
+  private mergeGeneralTests(srcPlan: FormGroup, existingPlan: FormGroup, targetSampleNo: string): FormArray {
+    const srcGeneral = srcPlan.get('generalTests') as FormArray;
+    const existingGeneral = existingPlan.get('generalTests') as FormArray;
+
+    // Source has no general tests → keep existing target general tests unchanged (preserve ULRs)
+    if (!srcGeneral || srcGeneral.length === 0) {
+      return existingGeneral ?? this.fb.array([]);
+    }
+
+    const arr = this.fb.array<FormGroup>([]);
+
+    for (let g = 0; g < srcGeneral.length; g++) {
+      const srcGt = srcGeneral.at(g) as FormGroup;
+      const srcMethods = srcGt.get('methods') as FormArray;
+      const existingGt = existingGeneral?.at(g) as FormGroup | undefined;
+      // Position-based: existing methods array for this GT group
+      const existingMethods = existingGt ? existingGt.get('methods') as FormArray : null;
+
+      const newGroup = this.createGeneralTestGroup();
+      newGroup.patchValue({
+        sampleNo: targetSampleNo,
+        specification1: srcGt.get('specification1')?.value,
+        specification2: srcGt.get('specification2')?.value,
+      });
+
+      if (existingGt?.get('id')?.value) {
+        newGroup.addControl('id', this.fb.control(existingGt.get('id')!.value));
+      }
+
+      for (let m = 0; m < srcMethods.length; m++) {
+        const src = srcMethods.at(m).value;
+
+        // Match by POSITION — ULR is tied to sample+slot, not the test method itself.
+        // Slot m of source → slot m of target. Preserve target's reportNo/ulrNo for that slot.
+        const existingMethod = existingMethods?.at(m);
+        const existingReportNo = existingMethod?.get('reportNo')?.value || '';
+        const existingUlrNo   = existingMethod?.get('ulrNo')?.value   || '';
+        const existingId      = existingMethod?.get('id')?.value       || 0;
+
+        const row = this.createTestMethodRow(existingReportNo, existingUlrNo);
+        row.patchValue({
+          testMethodID: src.testMethodID,
+          quantity:     src.quantity,
+          cancel:       src.cancel ?? false,
+        });
+        if (existingId > 0) row.addControl('id', this.fb.control(existingId));
+        (newGroup.get('methods') as FormArray).push(row);
+      }
+      arr.push(newGroup);
+    }
+    return arr;
+  }
+
+  private mergeChemicalTests(srcPlan: FormGroup, existingPlan: FormGroup, targetSampleNo: string): FormArray {
+    const srcChemical = srcPlan.get('chemicalTests') as FormArray;
+    const existingChemical = existingPlan.get('chemicalTests') as FormArray;
+
+    // Source has no chemical tests → keep existing target chemical tests unchanged (preserve ULRs)
+    if (!srcChemical || srcChemical.length === 0) {
+      return existingChemical ?? this.fb.array([]);
+    }
+
+    const arr = this.fb.array<FormGroup>([]);
+
+    for (let c = 0; c < srcChemical.length; c++) {
+      const srcCt = srcChemical.at(c) as FormGroup;
+      const srcElements = srcCt.get('elements') as FormArray;
+      const existingCt = existingChemical?.at(c) as FormGroup | null;
+
+      // Build a map of existing elements: parameterID → {id, reportNo, ulrNo}
+      const existingElementMap = new Map<number, { id: number }>();
+      if (existingCt) {
+        const existingElements = existingCt.get('elements') as FormArray;
+        existingElements?.controls.forEach(el => {
+          const parameterID = el.get('parameterID')?.value;
+          if (parameterID) existingElementMap.set(+parameterID, { id: el.get('id')?.value || 0 });
+        });
+      }
+
+      const newChem = this.createChemicalTestGroup(
+        existingCt?.get('reportNo')?.value || '',
+        existingCt?.get('ulrNo')?.value || ''
+      );
+      newChem.patchValue({
+        sampleNo: targetSampleNo,
+        specification1: srcCt.get('specification1')?.value,
+        specification2: srcCt.get('specification2')?.value,
+      });
+
+      // Carry existing CT group id if present
+      if (existingCt?.get('id')?.value) {
+        newChem.addControl('id', this.fb.control(existingCt.get('id')!.value));
+      }
+
+      // Update test types from source
+      (newChem.get('testTypes') as FormGroup)?.patchValue(srcCt.get('testTypes')?.value || {});
+
+      // Merge elements: keep existing id where parameterID matches
+      for (let e = 0; e < srcElements.length; e++) {
+        const srcEl = srcElements.at(e).value;
+        const existing = srcEl.parameterID ? existingElementMap.get(+srcEl.parameterID) : null;
+        const row = this.createElementRow();
+        row.patchValue(srcEl);
+        if (existing?.id) row.addControl('id', this.fb.control(existing.id));
+        (newChem.get('elements') as FormArray).push(row);
+      }
+      arr.push(newChem);
+    }
+    return arr;
+  }
+
+  // Empty-tab confirmation dialog
+  showEmptyTabsDialog = false;
+  emptyTabsList: { sampleNo: string; label: string }[] = [];
+  private pendingEmptyTabs: { sampleIdx: number; planIdx: number; type: 'generalTests' | 'chemicalTests' }[] = [];
+  private pendingSubmitAction: (() => void) | null = null;
 
   // Auto-Suggest
   suggestedTests: any[] = [];
@@ -171,7 +442,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   // ────────────── Form Building Methods ──────────────
   createTestPlan(sampleNo: string): FormGroup {
     const generalTestGroup = this.createGeneralTestGroup();
-    (generalTestGroup.get('methods') as FormArray).push(this.createTestMethodRow('Auto Generate', 'Auto Generate'));
+    (generalTestGroup.get('methods') as FormArray).push(this.createTestMethodRow('', ''));
     return this.fb.group({
       id: [0],
       sampleNo: [sampleNo],
@@ -197,8 +468,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
     return this.fb.group({
       sampleNo: [''],
-      reportNo: [reportNo || 'Auto Generate'],
-      ulrNo: [ulrNo || 'Auto Generate'],
+      reportNo: [reportNo || ''],
+      ulrNo: [ulrNo || ''],
       testTypes: this.fb.group(testTypesGroup),
       specification1: [null],
       specification2: [null],
@@ -225,7 +496,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       maxValue: [null],
       parameterUnitID: [null],
       parameterUnit: [''],
-      selected: [false]
+      selected: [true]
     });
   }
 
@@ -248,34 +519,43 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     return arr ? arr.controls : [];
   }
 
-  // Check if at least one plan exists with at least one test (general or chemical)
-  hasValidPlans(): boolean {
-    for (let i = 0; i < this.samples.length; i++) {
-      const testPlans = this.getTestPlans(i);
-      for (let j = 0; j < testPlans.length; j++) {
-        const plan = testPlans.at(j) as FormGroup;
-        const generalTests = plan.get('generalTests') as FormArray;
-        const chemicalTests = plan.get('chemicalTests') as FormArray;
+  private sampleHasValidTest(sampleIdx: number): boolean {
+    const testPlans = this.getTestPlans(sampleIdx);
+    for (let j = 0; j < testPlans.length; j++) {
+      const plan = testPlans.at(j) as FormGroup;
+      const generalTests = plan.get('generalTests') as FormArray;
+      const chemicalTests = plan.get('chemicalTests') as FormArray;
 
-        // General test is valid only if it has at least one method row
-        for (let g = 0; g < generalTests.length; g++) {
-          const gt = generalTests.at(g) as FormGroup;
-          const methods = gt.get('methods') as FormArray;
-          if (methods && methods.length > 0) return true;
-        }
+      for (let g = 0; g < (generalTests?.length ?? 0); g++) {
+        const methods = generalTests.at(g).get('methods') as FormArray;
+        if (methods?.controls.some(m => !!m.get('testMethodID')?.value)) return true;
+      }
 
-        // Chemical test is valid if it has at least one test type selected OR at least one element
-        for (let c = 0; c < chemicalTests.length; c++) {
-          const ct = chemicalTests.at(c) as FormGroup;
-          const testTypes = ct.get('testTypes') as FormGroup;
-          const elements = ct.get('elements') as FormArray;
-          const hasSelectedType = testTypes && Object.values(testTypes.value).some(v => !!v);
-          const hasElements = elements && elements.length > 0;
-          if (hasSelectedType || hasElements) return true;
-        }
+      for (let c = 0; c < (chemicalTests?.length ?? 0); c++) {
+        const ct = chemicalTests.at(c) as FormGroup;
+        const testTypes = ct.get('testTypes') as FormGroup;
+        const elements = ct.get('elements') as FormArray;
+        if (Object.values(testTypes?.value ?? {}).some(v => !!v)) return true;
+        if ((elements?.length ?? 0) > 0) return true;
       }
     }
     return false;
+  }
+
+  getSamplesWithoutTests(): string[] {
+    const missing: string[] = [];
+    for (let i = 0; i < this.samples.length; i++) {
+      if (!this.sampleHasValidTest(i)) {
+        missing.push(this.samples.at(i).get('sampleNo')?.value || `Sample ${i + 1}`);
+      }
+    }
+    return missing;
+  }
+
+  // Check if every sample has at least one test with a lab test selected
+  hasValidPlans(): boolean {
+    if (this.samples.length === 0) return false;
+    return this.getSamplesWithoutTests().length === 0;
   }
 
   getTestArray(sampleIndex: number, planIndex: number, type: 'generalTests' | 'chemicalTests'): FormArray {
@@ -337,12 +617,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     if (type === 'generalTests') {
       array.push(this.createGeneralTestGroup());
     } else {
-      array.push(this.createChemicalTestGroup('Auto Generate', 'Auto Generate'));
+      array.push(this.createChemicalTestGroup('', ''));
     }
   }
 
   addMethodRow(sampleIndex: number, planIndex: number): void {
-    this.getMethodRows(sampleIndex, planIndex).push(this.createTestMethodRow('Auto Generate', 'Auto Generate'));
+    this.getMethodRows(sampleIndex, planIndex).push(this.createTestMethodRow('', ''));
   }
 
   addElementRow(sampleIndex: number, planIndex: number): void {
@@ -353,55 +633,26 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.getElementRows(sampleIndex, planIndex).removeAt(elementIndex);
   }
 
-  /**
-   * Remove a General Test group safely.
-   * - Prompts the user for confirmation
-   * - If the group has an existing `id` (persisted on server) its id is recorded in `deletedGeneralTestIds`
-   * - Removes the FormGroup and updates validity/errors on parent plan
-   * - Blocked when form is in view/locked mode
-   */
   removeGeneralTest(sampleIndex: number, planIndex: number, generalIndex = 0): void {
-    // Block when not editable
     if (this.isViewMode) return;
 
     const genArray = this.getTestArray(sampleIndex, planIndex, 'generalTests');
     if (!genArray || genArray.length === 0) return;
     if (generalIndex < 0 || generalIndex >= genArray.length) return;
 
-    // Confirmation (optional but preferred)
     const confirmed = window.confirm('Remove this General Test? This action can be undone before saving.');
     if (!confirmed) return;
 
-    const group = genArray.at(generalIndex) as FormGroup;
-    // If this group represents an existing persisted general test (has id), record its id
-    const existingId = group.get('id')?.value ?? null;
-    if (existingId) {
-      // Avoid duplicates
-      const idNum = +existingId;
-      if (idNum > 0 && this.deletedGeneralTestIds.indexOf(idNum) === -1) {
-        this.deletedGeneralTestIds.push(idNum);
-      }
-    }
-
-    // Remove the FormGroup (this also removes nested formarrays like methods)
     genArray.removeAt(generalIndex);
 
-    // Update parent testPlan validity: ensure at least one test remains or mark error
     const testPlansArray = this.getTestPlans(sampleIndex);
     const testPlanGroup = testPlansArray.at(planIndex) as FormGroup;
     const remainingGeneral = (testPlanGroup.get('generalTests') as FormArray)?.length || 0;
     const remainingChemical = (testPlanGroup.get('chemicalTests') as FormArray)?.length || 0;
 
     if (remainingGeneral === 0 && remainingChemical === 0) {
-      // Optional: track deleted plan id if persisted
-      const planId = testPlanGroup.get('id')?.value;
-      if (planId && planId > 0) {
-        this.deletedPlanIds?.push(planId);
-      }
-
       testPlansArray.removeAt(planIndex);
     } else {
-      // Clear the specific error if present
       const currentErrors = testPlanGroup.errors;
       if (currentErrors) {
         delete currentErrors['noTests'];
@@ -410,7 +661,31 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       }
     }
 
-    // Propagate validation updates
+    testPlanGroup.updateValueAndValidity({ onlySelf: true, emitEvent: true });
+    this.planForm.updateValueAndValidity();
+  }
+
+  removeChemicalTest(sampleIndex: number, planIndex: number, chemIndex: number): void {
+    if (this.isViewMode) return;
+
+    const chemArray = this.getTestArray(sampleIndex, planIndex, 'chemicalTests');
+    if (!chemArray || chemArray.length === 0) return;
+    if (chemIndex < 0 || chemIndex >= chemArray.length) return;
+
+    const confirmed = window.confirm('Remove this Chemical Test? This action can be undone before saving.');
+    if (!confirmed) return;
+
+    chemArray.removeAt(chemIndex);
+
+    const testPlansArray = this.getTestPlans(sampleIndex);
+    const testPlanGroup = testPlansArray.at(planIndex) as FormGroup;
+    const remainingGeneral = (testPlanGroup.get('generalTests') as FormArray)?.length || 0;
+    const remainingChemical = (testPlanGroup.get('chemicalTests') as FormArray)?.length || 0;
+
+    if (remainingGeneral === 0 && remainingChemical === 0) {
+      testPlansArray.removeAt(planIndex);
+    }
+
     testPlanGroup.updateValueAndValidity({ onlySelf: true, emitEvent: true });
     this.planForm.updateValueAndValidity();
   }
@@ -425,6 +700,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       generalTests: this.fb.array([]),
       chemicalTests: this.fb.array([])
     }));
+    // No tab pre-selected — user clicks a tab to begin
   }
 
   /** Auto-create a default plan for each sample that has no test plans yet */
@@ -455,7 +731,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           notDestroyed: data.notDestroyed,
           statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
           decisionRule: data.decisionRule ?? 'Not Applicable',
-          sampleDetails: (data.sampleDetails || []).map((s: any) => ({
+          sampleDetails: (data.sampleDetails || []).filter((s: any) => !s.isCancelled).map((s: any) => ({
             id: s.id,
             sampleNo: s.sampleNo,
             details: s.details,
@@ -504,6 +780,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               specification2: gt.specification2,
               parameter: gt.parameter,
               methods: (gt.methods || []).map((m: any) => ({
+                id: m.id,
                 testMethodID: m.testMethodID,
                 quantity: m.quantity,
                 reportNo: m.reportNo,
@@ -768,7 +1045,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
                     maxValue: [el.maxValue ?? null],
                     parameterUnitID: [el.parameterUnitID || 0],
                     parameterUnit: [el.parameterUnit || ''],
-                    selected: [false],
+                    selected: [true],
                   })
                 );
               }
@@ -792,8 +1069,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     }
 
-    // Auto-trigger test suggestions when a specification grade is selected
-    if (newId) {
+    // Auto-trigger test suggestions only on create (not edit — user must click manually)
+    const isEditing = this.isEditMode || (this.inwardID != null && this.inwardID > 0);
+    if (newId && !isEditing) {
       this.loadSuggestedTests(sampleIndex, planIndex);
     }
   }
@@ -974,23 +1252,78 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     });
   }
+  // ────────────── Empty-tab detection ──────────────
+  private findEmptyTabs(): { sampleIdx: number; planIdx: number; type: 'generalTests' | 'chemicalTests'; sampleNo: string; label: string }[] {
+    const result: { sampleIdx: number; planIdx: number; type: 'generalTests' | 'chemicalTests'; sampleNo: string; label: string }[] = [];
+    for (let i = 0; i < this.samples.length; i++) {
+      const plans = this.getTestPlans(i);
+      for (let j = 0; j < plans.length; j++) {
+        const plan = plans.at(j) as FormGroup;
+        const sampleNo = plan.get('sampleNo')?.value || `Sample ${i + 1}`;
+
+        const generalTests = plan.get('generalTests') as FormArray;
+        if (generalTests && generalTests.length > 0) {
+          const allBlank = (generalTests.controls as FormGroup[]).every(
+            gt => ((gt.get('methods') as FormArray)?.length ?? 0) === 0
+          );
+          if (allBlank) result.push({ sampleIdx: i, planIdx: j, type: 'generalTests', sampleNo, label: 'General Test' });
+        }
+
+        const chemicalTests = plan.get('chemicalTests') as FormArray;
+        if (chemicalTests && chemicalTests.length > 0) {
+          const allBlank = (chemicalTests.controls as FormGroup[]).every(ct => {
+            const elements = ct.get('elements') as FormArray;
+            const testTypes = ct.get('testTypes') as FormGroup;
+            return (elements?.length ?? 0) === 0 && !Object.values(testTypes?.value ?? {}).some(v => !!v);
+          });
+          if (allBlank) result.push({ sampleIdx: i, planIdx: j, type: 'chemicalTests', sampleNo, label: 'Chemical Test' });
+        }
+      }
+    }
+    return result;
+  }
+
+  private checkEmptyTabsAndProceed(action: () => void): boolean {
+    const emptyTabs = this.findEmptyTabs();
+    if (emptyTabs.length > 0) {
+      this.emptyTabsList = emptyTabs.map(t => ({ sampleNo: t.sampleNo, label: t.label }));
+      this.pendingEmptyTabs = emptyTabs;
+      this.pendingSubmitAction = action;
+      this.showEmptyTabsDialog = true;
+      return false;
+    }
+    return true;
+  }
+
+  removeEmptyTabsAndContinue(): void {
+    for (const item of this.pendingEmptyTabs) {
+      const arr = this.getTestArray(item.sampleIdx, item.planIdx, item.type);
+      while (arr.length > 0) arr.removeAt(0);
+    }
+    this.showEmptyTabsDialog = false;
+    const action = this.pendingSubmitAction;
+    this.pendingSubmitAction = null;
+    this.pendingEmptyTabs = [];
+    action?.();
+  }
+
   // ────────────── Submission ──────────────
   onSave(): void {
-    // Mark form as touched to show validation errors
     this.planForm.markAllAsTouched();
-
-    // Check if form is valid
     if (!this.planForm.valid) {
       this.toastService.show('Please fix form validation errors.', 'warning');
       return;
     }
-
-    // Check if at least one valid plan exists
-    if (!this.hasValidPlans()) {
-      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+    const missingSamples = this.getSamplesWithoutTests();
+    if (missingSamples.length > 0) {
+      this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
+    if (!this.checkEmptyTabsAndProceed(() => this.proceedSave())) return;
+    this.proceedSave();
+  }
 
+  private proceedSave(): void {
     const payload = this.buildPayload(SampleStatus.UNDER_PLANNING);
     this.inwardService.testPlanSave(payload).subscribe({
       next: () => {
@@ -1011,21 +1344,21 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   onSendForReview(): void {
-    // Mark form as touched to show validation errors
     this.planForm.markAllAsTouched();
-
-    // Check if form is valid
     if (!this.planForm.valid) {
       this.toastService.show('Please fix form validation errors.', 'warning');
       return;
     }
-
-    // Check if at least one valid plan exists
-    if (!this.hasValidPlans()) {
-      this.toastService.show('At least one plan with at least one test (General or Chemical) is required.', 'warning');
+    const missingSamples = this.getSamplesWithoutTests();
+    if (missingSamples.length > 0) {
+      this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
+    if (!this.checkEmptyTabsAndProceed(() => this.proceedSendForReview())) return;
+    this.proceedSendForReview();
+  }
 
+  private proceedSendForReview(): void {
     const payload = this.buildPayload(SampleStatus.UNDER_REVIEW_REQUEST);
     this.inwardService.sendTestPlanForReview(payload).subscribe({
       next: () => {
@@ -1050,9 +1383,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       statementOfConformity: raw.statementOfConformity || 'Not Applicable',
       decisionRule: raw.decisionRule || 'Not Applicable',
       status: status || 'PLAN_DRAFT',
-      // send IDs of removed general tests so backend can delete them if necessary
-      deletedGeneralTestIds: this.deletedGeneralTestIds || [],
-      deletedPlanIds: this.deletedPlanIds || [],
 
       sampleDetails: (raw.samples || []).map((s: any) => ({
         id: s.id || 0,
@@ -1227,6 +1557,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       Approved: 'Approved',
       ReplanRequested: 'Replan Requested',
       ReplanApproved: 'Replan Approved',
+      Cancelled: 'Cancelled',
     };
     return labels[status] || status;
   }
@@ -1239,6 +1570,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       Approved: 'bg-success',
       ReplanRequested: 'bg-danger',
       ReplanApproved: 'bg-primary',
+      Cancelled: 'bg-secondary text-white opacity-75',
     };
     return classes[status] || 'bg-secondary';
   }
@@ -1348,7 +1680,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     selected.forEach(test => {
       const testId = test.laboratoryTestID || test.testMethodId || test.laboratoryTestId || test.id;
       if (testId && !existingIds.has(+testId)) {
-        const row = this.createTestMethodRow('Auto Generate', 'Auto Generate');
+        const row = this.createTestMethodRow('', '');
         row.patchValue({ testMethodID: +testId, quantity: test.isPerBatch ? 1 : 1 });
         methodsArray.push(row);
         existingIds.add(+testId);
@@ -1399,6 +1731,18 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical') {
     this.activeTabs[`${sampleIdx}-${planIdx}`] = tab;
+
+    if (!this.isViewMode) {
+      const type = tab === 'general' ? 'generalTests' : 'chemicalTests';
+      const arr = this.getTestArray(sampleIdx, planIdx, type);
+      if (arr && arr.length === 0) {
+        this.addTestBlock(sampleIdx, planIdx, type);
+        // For General Test: also add one blank method row inside the new group
+        if (tab === 'general') {
+          this.addMethodRow(sampleIdx, planIdx);
+        }
+      }
+    }
   }
 
   // Dropdown functions for template
@@ -1408,7 +1752,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getParameterDrop = this.getChemicalParameter;
 
   getLabTestDropdown = (term: string, page: number, pageSize: number) => {
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+    return this.laboratoryTestService.getLaboratoryTestDropdownForGeneral(term, page, pageSize);
   };
 
   loadChemicalTestTypes(callback?: () => void) {

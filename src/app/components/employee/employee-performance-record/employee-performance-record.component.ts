@@ -3,10 +3,11 @@ import { Component, ElementRef, Input, OnChanges, OnInit, signal, SimpleChanges,
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeePerformanceService } from '../../../services/employee-performance.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
     selector: 'app-employee-performance-record',
-    imports: [CommonModule, ReactiveFormsModule, FormsModule],
+    imports: [ CommonModule, ReactiveFormsModule, FormsModule, PaginationComponent ],
     templateUrl: './employee-performance-record.component.html',
     styleUrl: './employee-performance-record.component.css',
 })
@@ -25,7 +26,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     pageNumber = 1;
     pageSize = 10;
     totalItems = 0;
-    pageSizes = [5, 10, 20];
+    pageSizes = [10, 25, 50, 100, 200, 500];
 
     // Search and Filter
     searchTerm: string = '';

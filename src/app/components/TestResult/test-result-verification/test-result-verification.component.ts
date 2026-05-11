@@ -6,12 +6,13 @@ import { TestResultService } from '../../../services/test-result.service';
 import { ToastService } from '../../../services/toast.service';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { getActionConfig, ActionButtonConfig } from '../../../utility/workflow-action.helper';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-test-result-verification',
   templateUrl: './test-result-verification.component.html',
   styleUrls: ['./test-result-verification.component.css'],
-  imports: [CommonModule, FormsModule, RouterModule, TestStatusBadgeComponent],
+  imports: [ CommonModule, FormsModule, RouterModule, TestStatusBadgeComponent, PaginationComponent ],
 })
 export class TestResultVerificationComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -45,7 +46,7 @@ export class TestResultVerificationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20, 50];
+  pageSizes = [10, 25, 50, 100, 200, 500];
   sortByColumn = 'CompletedAt';
   sortOrder = 'desc';
   searchTerm = '';

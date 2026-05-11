@@ -4,10 +4,11 @@ import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DepartmentService } from '../../../services/department.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-department-list',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './department-list.component.html',
   styleUrl: './department-list.component.css'
 })
@@ -18,6 +19,7 @@ export class DepartmentListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
+    { key: 'isChemical', type: 'string', label: 'Type', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
     { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
@@ -43,7 +45,7 @@ export class DepartmentListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

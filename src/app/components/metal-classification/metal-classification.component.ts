@@ -12,10 +12,11 @@ import { SearchableDropdownComponent } from '../../utility/components/searchable
 import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-metal-classification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent, FormFieldErrorComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './metal-classification.component.html',
   styleUrl: './metal-classification.component.css'
 })
@@ -30,13 +31,15 @@ export class MetalClassificationComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'hasChemicalParams', type: 'string', label: 'Chemical', filter: false },
     { key: 'hasMechanicalParams', type: 'string', label: 'Mechanical', filter: false },
-    { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
+    { key: 'metalType', type: 'string', label: 'Metal Type', filter: true },
+    // { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
-    sortOrder: 'number',
+    metalType: 'string',
+    // sortOrder: 'number',
     modifiedOn: 'date',
   };
 
@@ -53,7 +56,7 @@ export class MetalClassificationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
@@ -94,7 +97,8 @@ export class MetalClassificationComponent implements OnInit {
       parentID: [null],
       hasChemicalParams: [false],
       hasMechanicalParams: [false],
-      sortOrder: [0],
+      sortOrder: [1],
+      metalType: ['Normal'],
       parameterIds: [[]],
       parameters: this.fb.array([]),
     });

@@ -9,10 +9,11 @@ import { CuttingPriceMasterService } from '../../../services/cutting-price-maste
 import { SpecimenTypeService } from '../../../services/specimen-type.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { Observable } from 'rxjs';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-cutting-price-master',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective, SearchableDropdownComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective, SearchableDropdownComponent, PaginationComponent ],
   templateUrl: './cutting-price-master.component.html',
   styleUrl: './cutting-price-master.component.css'
 })
@@ -48,7 +49,7 @@ export class CuttingPriceMasterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

@@ -3,10 +3,11 @@ import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-workflow-list',
-   imports: [CommonModule, RouterModule, FormsModule],
+   imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './workflow-list.component.html',
   styleUrl: './workflow-list.component.css'
 })
@@ -41,7 +42,7 @@ export class WorkflowListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

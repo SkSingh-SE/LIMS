@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, AfterViewChecked, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, signal } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationStart, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { NotificationBellComponent } from './notification-bell/notification-bell.component';
@@ -58,6 +58,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   navbarHeight: number = 64;
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
+  private routerSub: any = null;
 
   loggedInUserName: string = '';
   loggedInUserRole: string = '';
@@ -98,6 +99,12 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngOnInit(): void {
+    this.routerSub = this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        this.closeAllMenus();
+      }
+    });
+
     const userData = this.authService.getUserData();
     if (userData) {
       this.loggedInUserName = userData.userName || '';
@@ -464,6 +471,14 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     setTimeout(() => this.updateNavbarHeight(), 300);
   }
 
+  closeAllMenus(): void {
+    this.isSubMenuOpen.set(false);
+    this.hoveredSubmenuId.set(null);
+    this.hoveredGroupId.set(null);
+    this.isMenu2Open.set(false);
+    setTimeout(() => this.updateNavbarHeight(), 300);
+  }
+
   setActiveSubMenu(submenu: MenuItem) {
     this.activeSubmenu.set(submenu.title);
     this.isMenu2Open.set(false);
@@ -639,6 +654,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (this.resizeObserver) { this.resizeObserver.disconnect(); }
     if (this.submenuTimer)   { clearTimeout(this.submenuTimer); }
     if (this.groupTimer)     { clearTimeout(this.groupTimer); }
+    this.routerSub?.unsubscribe();
     this.stopCameraStream();
   }
 }

@@ -5,10 +5,11 @@ import { LabScopeService } from '../../../services/lab-scope.service';
 import { RouterModule } from '@angular/router';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-scope-list',
-  imports: [CommonModule, RouterModule, FormsModule, HasPermissionDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, HasPermissionDirective, PaginationComponent ],
   templateUrl: './scope-list.component.html',
   styleUrl: './scope-list.component.css'
 })
@@ -44,7 +45,7 @@ export class ScopeListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

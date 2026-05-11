@@ -195,10 +195,12 @@
                             </td>
                             <td>
                               <input type="number" class="form-control wide-input" formControlName="minValue" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}" />
                             </td>
                             <td>
                               <input type="number" class="form-control wide-input" formControlName="maxValue" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}" />
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">Max must be &ge; Min</small>
                             </td>
@@ -212,16 +214,20 @@
                               </select>
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="minValueEquation" placeholder="Enter min value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="minValueEquation" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minValueEquation')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="maxValueEquation" placeholder="Enter max value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="maxValueEquation" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxValueEquation')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="minTolerance" placeholder="Enter min value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="minTolerance" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minTolerance')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="maxTolerance" placeholder="Enter max value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="maxTolerance" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxTolerance')" />
                             </td>
                             <td>
                               <select class="form-select wide-input" formControlName="specimenOrientationID">
@@ -400,10 +406,12 @@
                             </td>
                             <td>
                               <input type="number" class="form-control wide-input" formControlName="minValue" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}" />
                             </td>
                             <td>
                               <input type="number" class="form-control wide-input" formControlName="maxValue" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}" />
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">Max must be &ge; Min</small>
                             </td>
@@ -417,16 +425,20 @@
                               </select>
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="minValueEquation" placeholder="Enter min value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="minValueEquation" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minValueEquation')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="maxValueEquation" placeholder="Enter max value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="maxValueEquation" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxValueEquation')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="minTolerance" placeholder="Enter min value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="minTolerance" placeholder="Enter min value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'minTolerance')" />
                             </td>
                             <td>
-                              <input type="number" class="form-control wide-input" formControlName="maxTolerance" placeholder="Enter max value" maxlength="10" />
+                              <input type="number" class="form-control wide-input" formControlName="maxTolerance" placeholder="Enter max value" maxlength="10"
+                                [attr.step]="getStep(group)" (blur)="roundToPrecision(group, 'maxTolerance')" />
                             </td>
                             <td>
                               <select class="form-select wide-input" formControlName="specimenOrientationID">

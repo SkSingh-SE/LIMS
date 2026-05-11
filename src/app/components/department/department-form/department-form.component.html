@@ -25,6 +25,13 @@
               placeholder="Enter Department Description"
               [attr.disabled]="isViewMode ? true : null" />
           </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" id="isChemical" class="form-check-input" formControlName="isChemical"
+              [attr.disabled]="isViewMode ? true : null" />
+            <label for="isChemical" class="form-check-label">Chemical Department
+              <small class="text-muted">(enables Chemical test dropdown in Test Plan)</small>
+            </label>
+          </div>
         </div>
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>

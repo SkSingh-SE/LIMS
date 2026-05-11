@@ -76,7 +76,13 @@
                                 <span *ngIf="customerType.hasMechanicalParams" class="badge bg-success">Yes</span>
                                 <span *ngIf="!customerType.hasMechanicalParams" class="badge bg-secondary">No</span>
                             </td>
-                            <td>{{ customerType.sortOrder }}</td>
+                            <td class="text-center">
+                                <span *ngIf="customerType.metalType === 'Hard'" class="badge bg-danger">Hard</span>
+                                <span *ngIf="customerType.metalType === 'Normal'" class="badge bg-secondary">Normal</span>
+                                <span *ngIf="customerType.metalType && customerType.metalType !== 'Hard' && customerType.metalType !== 'Normal'" class="badge bg-secondary">{{ customerType.metalType }}</span>
+                                <span *ngIf="!customerType.metalType" class="text-muted">—</span>
+                            </td>
+                            <!-- <td>{{ customerType.sortOrder }}</td> -->
                             <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
@@ -92,29 +98,15 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center">
-                <!-- Page Size Selector -->
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-
-                <!-- Pagination Controls -->
-                <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
 
 
         </div>
@@ -192,6 +184,9 @@
                         </div>
                     </div>
                     <div class="row">
+                       
+                    </div>
+                    <div class="row">
                         <!-- Parent Classification -->
                         <div class="col-md-6 mb-1">
                             <label class="form-label">Parent Classification</label>
@@ -213,13 +208,30 @@
                                 </button>
                             </div>
                         </div>
-                        <!-- Sort Order -->
-                        <div class="col-md-6 mb-1">
+                         <!-- Metal Type -->
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Metal Type</label>
+                            <div class="d-flex gap-4 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeNormal"
+                                        formControlName="metalType" value="Normal"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeNormal">Normal</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeHard"
+                                        formControlName="metalType" value="Hard"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeHard">Hard</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- <div class="col-md-6 mb-1">
                             <label for="sortOrder" class="form-label">Sort Order</label>
                             <input type="number" id="sortOrder" class="form-control" formControlName="sortOrder"
                                 placeholder="Enter Sort Order"
                                 [attr.disabled]="isViewMode ? true : null" />
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <!-- Has Chemical Params -->

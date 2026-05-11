@@ -1,0 +1,31 @@
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <!-- Page Size Selector -->
+  <div class="d-flex align-items-center">
+    <select [ngModel]="pageSize" class="form-select form-select-sm w-auto" (change)="onSizeChange($event)">
+      <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+    </select>
+  </div>
+
+  <!-- Record Count -->
+  <div class="text-muted small">
+    Showing {{ startRecord }} to {{ endRecord }} of {{ totalItems }} records
+  </div>
+
+  <!-- Windowed Page Buttons -->
+  <ul class="pagination pagination-sm mb-0 d-flex align-items-center flex-wrap">
+    <li class="page-item" [class.disabled]="currentPage === 1">
+      <a class="page-link" (click)="onPrev()">Previous</a>
+    </li>
+
+    <li *ngFor="let page of visiblePages; trackBy: trackByPage"
+        class="page-item"
+        [class.active]="page === currentPage"
+        [class.disabled]="page === '...'">
+      <a class="page-link" (click)="onPageClick(page)">{{ page }}</a>
+    </li>
+
+    <li class="page-item" [class.disabled]="isLastPage">
+      <a class="page-link" (click)="onNext()">Next</a>
+    </li>
+  </ul>
+</div>

@@ -257,67 +257,77 @@ export class InvoiceCaseComponent implements OnInit {
   getLabTestById(id: number) {
     this.labTestService.getLaboratoryTestById(id).subscribe({
       next: (response) => {
-        if (response?.invoiceCases) {
-          if (this.invoiceId == 0) {
-            const invoiceCaseArray = this.invoiceCases;
-            invoiceCaseArray.clear();
-            response?.invoiceCases?.forEach((item: any) => {
-              invoiceCaseArray.push(
-                this.fb.group({
-                  id: [0],
-                  name: [`${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`],
-                  aliasName:['',Validators.required],
-                  price: [0,[Validators.required, Validators.min(0.01)]],
-                  invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-                })
-              );
-            });
-          } else {
-            const existingNames = this.invoiceCases.controls.map(ctrl =>
-              ctrl.get('name')?.value?.trim().toLowerCase()
-            );
-            response.invoiceCases.forEach((item: any) => {
-              const newName = `${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`.trim().toLowerCase();
+        if (!response?.invoiceCases) return;
 
-              if (!existingNames.includes(newName)) {
-                this.invoiceCases.push(
-                  this.fb.group({
-                    id: [0],
-                    name: [newName],
-                    aliasName: ['', Validators.required],
-                    price: [0, [Validators.required, Validators.min(0.01)]],
-                    invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-                  })
-                );
-              }
-            });
+        const activeConfigIds = new Set<number>(
+          response.invoiceCases.map((c: any) => c.invoiceCaseConfigID)
+        );
+
+        if (this.invoiceId === 0) {
+          // CREATE — build fresh rows from lab test configs
+          this.invoiceCases.clear();
+          response.invoiceCases.forEach((item: any) => {
+            this.invoiceCases.push(this.fb.group({
+              id: [0],
+              name: [`${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`],
+              aliasName: ['', Validators.required],
+              price: [0, [Validators.required, Validators.min(0.01)]],
+              invoiceCaseConfigID: [item?.invoiceCaseConfigID]
+            }));
+          });
+        } else {
+          // EDIT — reconcile: remove rows no longer in lab test, add newly added ones
+          for (let i = this.invoiceCases.length - 1; i >= 0; i--) {
+            const configId = this.invoiceCases.at(i).get('invoiceCaseConfigID')?.value;
+            if (configId && !activeConfigIds.has(configId)) {
+              this.invoiceCases.removeAt(i);
+            }
           }
+
+          const existingConfigIds = new Set<number>(
+            this.invoiceCases.controls
+              .map(c => c.get('invoiceCaseConfigID')?.value)
+              .filter(Boolean)
+          );
+
+          response.invoiceCases.forEach((item: any) => {
+            if (!existingConfigIds.has(item.invoiceCaseConfigID)) {
+              this.invoiceCases.push(this.fb.group({
+                id: [0],
+                name: [`${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`],
+                aliasName: ['', Validators.required],
+                price: [0, [Validators.required, Validators.min(0.01)]],
+                invoiceCaseConfigID: [item?.invoiceCaseConfigID]
+              }));
+            }
+          });
         }
       },
-      error: (error) => {
-        console.error(error);
-      }
+      error: (error) => console.error(error)
     });
   }
+
   getInvoiceCase(id: number) {
     this.invoiceService.getInvoiceCaseById(id).subscribe({
       next: (response) => {
         this.invoiceCaseForm.patchValue(response);
         response?.invoiceCasePrices?.forEach((item: any) => {
-          this.invoiceCases.push(
-            this.fb.group({
-              id: [item.id],
-              name: [item.name],
-              aliasName:[item.aliasName],
-              price: [item.price],
-              invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-            })
-          );
+          this.invoiceCases.push(this.fb.group({
+            id: [item.id],
+            name: [item.name],
+            aliasName: [item.aliasName],
+            price: [item.price],
+            invoiceCaseConfigID: [item?.invoiceCaseConfigID]
+          }));
         });
-        if(this.isViewMode){
-          this.invoiceCaseForm.disable();
+
+        // Reconcile saved price rows against the lab test's current active configs
+        if (response.laboratoryTestID) {
+          this.getLabTestById(response.laboratoryTestID);
         }
-        if(this.isEditMode){
+
+        if (this.isViewMode) this.invoiceCaseForm.disable();
+        if (this.isEditMode) {
           this.invoiceCaseForm.get('financialYearId')?.disable();
           this.invoiceCaseForm.get('laboratoryTestID')?.disable();
         }
@@ -326,6 +336,5 @@ export class InvoiceCaseComponent implements OnInit {
         this.toastService.show(error.error.message, 'error');
       }
     });
-
   }
 }

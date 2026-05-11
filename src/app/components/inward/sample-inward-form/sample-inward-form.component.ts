@@ -23,13 +23,14 @@ import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -41,7 +42,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   sampleNumber: string = '25-000001';
   lastSampleNumber: number = +this.sampleNumber.split('-')[1];
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
-  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
+  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Description', 'Sealed By', 'Witness By', 'Stamp By'];
   readonly testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
   // Data
@@ -66,6 +67,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   sampleId: number = 0;
   currentInwardStatus: InwardStatus | string = '';
   planTabLoaded: boolean = false;
+  private planLastSampleCount = 0;
+
+  // Cancel sample dialog state
+  showCancelDialog = false;
+  cancelTargetIndex = -1;
+  cancelReason = '';
 
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
@@ -145,7 +152,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       contacts: this.fb.array([]),
       reportingTo: this.fb.group({
         id: [0],
-        contactPersonID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -159,7 +166,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       }),
       billingTo: this.fb.group({
         id: [0],
-        contactPersonID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -212,6 +219,20 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     return this.sampleInwardForm.get('sampleAdditionalDetails') as FormArray;
   }
 
+  // Job card column visibility — only show a column if at least one sample has data
+  get jcHasMetalClassification(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('metalClassificationName')?.value);
+  }
+  get jcHasProductCondition(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('productConditionName')?.value);
+  }
+  get jcHasSpecimenOrientation(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('specimenOrientationName')?.value);
+  }
+  get jcHasRemarks(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('remarks')?.value);
+  }
+
   // Utility
   getCurrentTime(): string {
     const now = new Date();
@@ -242,7 +263,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       next: (data) => {
         this.caseNumber = data.caseNo || 'DMSPL-000001';
         this.sampleNumber = data.sampleNo;
-        this.lastSampleNumber = +this.sampleNumber.split('-')[1];
+        // API returns the NEXT number to assign; subtract 1 so the first addSample() generates it correctly
+        this.lastSampleNumber = +this.sampleNumber.split('-')[1] - 1;
       },
       error: (error) => console.error('Error fetching case number:', error)
     });
@@ -531,10 +553,21 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
                 additionalDetails: additionalSampleDetail
               };
               this.addSample(normalizedSample);
-
+              // Disable the row if it's cancelled
+              if (normalizedSample.isCancelled) {
+                const lastIdx = this.sampleDetails.length - 1;
+                (this.sampleDetails.at(lastIdx) as FormGroup).disable();
+              }
             });
-            // Disable form if not in SAMPLE_INWARD_REGISTERED status
-            if (data?.status !== InwardStatus.INWARD_REGISTERED && data?.status !== SampleStatus.INWARD_COMPLETED) {
+            // Full edit allowed during registration, intake-complete, and planning phases.
+            // From UNDER_REVIEW onward, form is view-only but cancel button
+            // stays enabled per-sample until testing is completed.
+            const editableStatuses: string[] = [
+              InwardStatus.INWARD_REGISTERED,
+              InwardStatus.INWARD_COMPLETED,
+              InwardStatus.UNDER_PLANNING,
+            ];
+            if (!editableStatuses.includes(data?.status)) {
               this.isViewMode = true;
               this.disableFormRecursively(this.sampleInwardForm);
             }
@@ -565,9 +598,28 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   // Event Handlers
-  onAddressCustomerChange(section: 'reportingTo' | 'billingTo', event: Event): void {
+  onAddressContactPersonChange(section: 'reportingTo' | 'billingTo', event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedValue = +target.value;
+    const group = section === 'reportingTo' ? this.reportingTo : this.billingTo;
+
+    if (!selectedValue || isNaN(selectedValue)) {
+      group.patchValue({
+        contactPersonID: null,
+        contactPersonName: '',
+        address: '',
+        pinCode: '',
+        area: '',
+        city: '',
+        state: '',
+        country: '',
+        mobileNo: '',
+        emailId: ''
+      });
+      group.get('contactPersonID')?.markAsTouched();
+      return;
+    }
+
     const selectedCustomer = this.contactPersons.find(c => c.contactID === selectedValue);
     this.updateAddressHelper(selectedCustomer, section);
   }
@@ -764,7 +816,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       thickness: [existingSample?.thickness || null],
       diameter: [existingSample?.diameter || null],
       width: [existingSample?.width || null],
-      length: [existingSample?.length || null]
+      length: [existingSample?.length || null],
+      sampleStatus: [existingSample?.sampleStatus || ''],
+      isCancelled: [existingSample?.isCancelled || false],
+      cancellationReason: [existingSample?.cancellationReason || '']
     });
 
     this.sampleDetails.push(sampleForm);
@@ -829,22 +884,179 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
 
+  applyQty(index: number): void {
+    const sample = this.sampleDetails.at(index) as FormGroup;
+    const qty = Number(sample.get('quantity')?.value || 1);
+    if (qty <= 1) return;
+
+    // Capture all field values to replicate
+    const data = sample.getRawValue();
+
+    // Reset original row to qty=1
+    sample.patchValue({ quantity: 1 });
+
+    // Add qty-1 identical copies (addSample generates new sampleNos)
+    for (let i = 1; i < qty; i++) {
+      this.addSample({
+        id: 0,
+        sampleNo: '',
+        details: data.details,
+        metalClassificationID: data.metalClassificationID,
+        metalClassificationName: data.metalClassificationName,
+        productConditionID: data.productConditionID,
+        productConditionName: data.productConditionName,
+        specimenOrientationID: data.specimenOrientationID,
+        specimenOrientationName: data.specimenOrientationName,
+        remarks: data.remarks,
+        quantity: 1,
+        fileName: '',
+        sampleFilePath: '',
+        file: null,
+        productFormID: data.productFormID,
+        thickness: data.thickness,
+        diameter: data.diameter,
+        width: data.width,
+        length: data.length,
+      });
+    }
+  }
+
   removeSample(index: number): void {
     if (this.isViewMode) return;
 
-    const removedSampleNo = this.sampleDetails.at(index).get('sampleNo')?.value;
+    const sample = this.sampleDetails.at(index) as FormGroup;
+    const sampleId = sample.get('id')?.value;
+    const removedSampleNo = sample.get('sampleNo')?.value;
 
+    if (sampleId && sampleId > 0) {
+      // Saved row — call API to soft-delete on backend
+      this.inwardService.deleteSample(sampleId).subscribe({
+        next: () => {
+          this.sampleDetails.removeAt(index);
+          this.manageSampleNumber('remove', index);
+          if (removedSampleNo && this.bufferedAdditionalDetails[removedSampleNo]) {
+            delete this.bufferedAdditionalDetails[removedSampleNo];
+          }
+          this.sampleAdditionalDetails.controls.forEach(row => {
+            const valuesArray = row.get('values') as FormArray;
+            valuesArray.removeAt(index);
+          });
+          this.toastService.show('Sample deleted successfully.', 'success');
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete sample.', 'error');
+        }
+      });
+      return;
+    }
+
+    // Unsaved new row — remove from FormArray directly
     this.sampleDetails.removeAt(index);
     this.manageSampleNumber('remove', index);
-
-    // Remove from buffered additional details if exists
     if (removedSampleNo && this.bufferedAdditionalDetails[removedSampleNo]) {
       delete this.bufferedAdditionalDetails[removedSampleNo];
     }
-
     this.sampleAdditionalDetails.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
       valuesArray.removeAt(index);
+    });
+  }
+
+  // Cancel button is shown per-sample when the form is locked (not editable)
+  // and the sample has not yet reached TESTING_COMPLETED.
+  // During INWARD_REGISTERED / UNDER_PLANNING the user can delete the row instead.
+  canCancelThisSample(sample: AbstractControl): boolean {
+    const status = sample.get('sampleStatus')?.value as string;
+    if (!status) return false;
+
+    // Too early — form is still editable, delete is the right action
+    const editableStatuses = new Set([
+      SampleStatus.SAMPLE_INWARD_REGISTERED,
+      SampleStatus.AWAITING_MISSING_INFORMATION,
+      SampleStatus.INWARD_COMPLETED,
+      SampleStatus.UNDER_PLANNING,
+    ]);
+    // Too late — testing done or already cancelled, cannot reverse
+    const nonCancellableStatuses = new Set([
+      SampleStatus.TESTING_COMPLETED,
+      SampleStatus.TESTING_UNDER_VERIFICATION,
+      SampleStatus.TESTING_VERIFICATION_REJECTED,
+      SampleStatus.TESTING_VERIFIED,
+      SampleStatus.REPORT_GENERATION_IN_PROGRESS,
+      SampleStatus.REPORT_GENERATED,
+      SampleStatus.REPORT_UNDER_REVIEW,
+      SampleStatus.REPORT_REJECTED_BY_INTERNAL,
+      SampleStatus.REPORT_AMENDED_BY_INTERNAL,
+      SampleStatus.REPORT_AMENDED_REJECTED,
+      SampleStatus.REPORT_AMENDMENT_APPROVED,
+      SampleStatus.REPORT_SENT_FOR_CUSTOMER_REVIEW,
+      SampleStatus.CUSTOMER_REQUESTED_AMENDMENT,
+      SampleStatus.AMENDMENT_IN_PROGRESS,
+      SampleStatus.AMENDMENT_COMPLETED,
+      SampleStatus.PAYMENT_PENDING,
+      SampleStatus.PAYMENT_COMPLETED,
+      SampleStatus.FINAL_REPORT_APPROVED,
+      SampleStatus.REPORT_DISPATCHED,
+      SampleStatus.CASE_CLOSED,
+      SampleStatus.SAMPLE_CANCELLED,
+    ]);
+
+    return !editableStatuses.has(status as SampleStatus) && !nonCancellableStatuses.has(status as SampleStatus);
+  }
+
+  switchToPlanTab(): void {
+    if (this.sampleInwardForm.dirty) {
+      this.toastService.show('Please save your changes before viewing the plan.', 'warning');
+      return;
+    }
+
+    const activeSampleCount = this.sampleDetails.controls.filter(
+      s => !s.get('isCancelled')?.value
+    ).length;
+
+    const needsReload = !this.planTabLoaded || activeSampleCount !== this.planLastSampleCount;
+
+    if (needsReload) {
+      this.planTabLoaded = false;
+      this.planLastSampleCount = activeSampleCount;
+      setTimeout(() => (this.planTabLoaded = true), 0);
+    }
+  }
+
+  openCancelDialog(index: number): void {
+    this.cancelTargetIndex = index;
+    this.cancelReason = '';
+    this.showCancelDialog = true;
+  }
+
+  confirmCancelSample(): void {
+    const sample = this.sampleDetails.at(this.cancelTargetIndex) as FormGroup;
+    const sampleId = sample.get('id')?.value;
+
+    if (!sampleId || sampleId === 0) {
+      // Unsaved new row — just remove from FormArray directly
+      this.sampleDetails.removeAt(this.cancelTargetIndex);
+      this.manageSampleNumber('remove', this.cancelTargetIndex);
+      this.showCancelDialog = false;
+      return;
+    }
+
+    this.inwardService.cancelSample(sampleId, this.cancelReason).subscribe({
+      next: () => {
+        sample.patchValue({
+          sampleStatus: SampleStatus.SAMPLE_CANCELLED,
+          isCancelled: true,
+          cancellationReason: this.cancelReason
+        });
+        sample.disable();
+        this.showCancelDialog = false;
+        this.planLastSampleCount = 0; // force plan tab to reload — cancelled sample must be excluded
+        this.toastService.show('Sample cancelled successfully.', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to cancel sample.', 'error');
+        this.showCancelDialog = false;
+      }
     });
   }
 
@@ -1160,6 +1372,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         } else {
           // Already in edit mode, reload to refresh data
           this.sampleId = value.id;
+          this.planLastSampleCount = 0; // force plan tab to reload after next save
           this.fetchSampleInwardDetails(this.sampleId);
           this.sampleInwardForm.markAsPristine();
         }
@@ -1174,6 +1387,35 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     const now = new Date();
     formData.append('collectionTime', this.getCurrentTime());
     formData.append('collectionDate', now.toISOString().split('T')[0]);
+  }
+
+  savePaymentInfo(): void {
+    if (!this.sampleId) {
+      this.toastService.show('Please save the inward first before updating payment info.', 'warning');
+      return;
+    }
+    const v = this.sampleInwardForm.getRawValue();
+    const payload = {
+      purchaseOrderId: v.purchaseOrderId || null,
+      advancePayment: v.advancePayment || 0,
+      billRequired: v.billRequired ?? true,
+      advancePIRequired: v.advancePIRequired ?? false,
+      holdTestingUntilPIApproved: v.holdTestingUntilPIApproved ?? false,
+    };
+    this.inwardService.updatePaymentInfo(this.sampleId, payload).subscribe({
+      next: (res) => {
+        this.sampleInwardForm.patchValue({
+          purchaseOrderId: res.purchaseOrderId ?? null,
+          advancePayment: res.advancePayment,
+          billRequired: res.billRequired,
+          advancePIRequired: res.advancePIRequired,
+          holdTestingUntilPIApproved: res.holdTestingUntilPIApproved,
+        });
+        this.sampleInwardForm.markAsPristine();
+        this.toastService.show('Payment info saved successfully.', 'success');
+      },
+      error: () => this.toastService.show('Failed to save payment info. Please try again.', 'error'),
+    });
   }
 
   goToSampleTab(): void {

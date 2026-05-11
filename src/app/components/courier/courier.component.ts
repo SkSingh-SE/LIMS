@@ -9,10 +9,11 @@ import { NumberOnlyDirective } from '../../utility/directives/number-only.direct
 import { noWhitespaceValidator, phoneValidator } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-courier',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './courier.component.html',
   styleUrl: './courier.component.css'
 })
@@ -46,7 +47,7 @@ export class CourierComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

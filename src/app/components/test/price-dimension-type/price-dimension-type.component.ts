@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PriceDimensionTypeService } from '../../../services/price-dimension-type.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 declare var bootstrap: any;
 
 @Component({
   selector: 'app-price-dimension-type',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent ],
   templateUrl: './price-dimension-type.component.html',
   styleUrl: './price-dimension-type.component.css',
 })
@@ -21,13 +22,29 @@ export class PriceDimensionTypeComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'unit', type: 'string', label: 'Unit', filter: true },
     { key: 'isRange', type: 'string', label: 'Is Range', filter: false },
+    { key: 'valueSource', type: 'string', label: 'Value Source', filter: true },
+    { key: 'sampleField', type: 'string', label: 'Sample Field', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
     { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
   ];
 
+  valueSources = [
+    { value: 'ParameterLinked', label: 'Parameter Linked' },
+    { value: 'SampleDimension', label: 'Sample Dimension' },
+    { value: 'TestDuration', label: 'Test Duration' },
+    { value: 'ParameterCount', label: 'Parameter Count' },
+    { value: 'ParameterPresence', label: 'Parameter Presence' },
+    { value: 'UserInputAtEntry', label: 'User Input at Entry' },
+    { value: 'UserInput', label: 'User Input (Legacy)' },
+  ];
+
+  sampleFields = ['Diameter', 'Thickness', 'Width', 'Length'];
+
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     unit: 'string',
+    valueSource: 'string',
+    sampleField: 'string',
     description: 'string',
     sortOrder: 'number',
   };
@@ -49,7 +66,7 @@ export class PriceDimensionTypeComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'ID';
   sortOrder: string = 'desc';
@@ -82,9 +99,15 @@ export class PriceDimensionTypeComponent implements OnInit {
       name: ['', [Validators.required]],
       unit: [''],
       isRange: [false],
+      valueSource: ['ParameterLinked'],
+      sampleField: [null],
       description: [''],
       sortOrder: [0],
     });
+  }
+
+  get showSampleField(): boolean {
+    return this.dimensionForm.get('valueSource')?.value === 'SampleDimension';
   }
 
   fetchData() {
@@ -105,7 +128,7 @@ export class PriceDimensionTypeComponent implements OnInit {
   openAddModal() {
     this.isEditing = false;
     this.editingId = null;
-    this.dimensionForm.reset({ name: '', unit: '', isRange: false, description: '', sortOrder: 0 });
+    this.dimensionForm.reset({ name: '', unit: '', isRange: false, valueSource: 'ParameterLinked', sampleField: null, description: '', sortOrder: 0 });
     this.showModal();
   }
 
@@ -116,6 +139,8 @@ export class PriceDimensionTypeComponent implements OnInit {
       name: item.name,
       unit: item.unit,
       isRange: item.isRange,
+      valueSource: item.valueSource || 'ParameterLinked',
+      sampleField: item.sampleField || null,
       description: item.description,
       sortOrder: item.sortOrder,
     });

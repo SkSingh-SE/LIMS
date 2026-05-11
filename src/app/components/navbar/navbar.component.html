@@ -178,34 +178,36 @@
   </div>
 
   <!-- submenu: show when subMenus signal has items and submenu open -->
-  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()" (mouseleave)="closeSubMenu()">
+  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()"> <!-- (mouseleave)="closeSubMenu()" -->
+    <!-- (mouseleave)="onSubmenuLeave()" -->
     <div
       *ngFor="let subMenuItem of subMenus()"
       class="submenu-item"
       (click)="setActiveSubMenu(subMenuItem)"
       (mouseenter)="onSubmenuEnter(subMenuItem.id)"
-      (mouseleave)="onSubmenuLeave()"
+
       [ngClass]="{ active: activeSubmenu() === subMenuItem.title }"
     >
+
       <ng-container *ngIf="subMenuItem.children && subMenuItem.children.length > 0; else leafLink">
         <div class="dropdown">
           <span class="submenu-label dropdown-toggle">{{ subMenuItem.title }}</span>
           <ul class="dropdown-menu"
               [class.show]="hoveredSubmenuId() === subMenuItem.id"
-              (mouseenter)="onDropdownEnter(subMenuItem.id)"
-              (mouseleave)="onDropdownLeave()">
+              (mouseenter)="onDropdownEnter(subMenuItem.id)">
+              <!-- (mouseleave)="onDropdownLeave()" -->
             <ng-container *ngFor="let nestedSubMenu of subMenuItem.children">
               <!-- Group with children: fly-out panel -->
               <ng-container *ngIf="nestedSubMenu.children && nestedSubMenu.children.length > 0; else singleNestedItem">
                 <li class="dropdown-submenu"
                     [ngClass]="{ 'active-group': activeNestedItemId() === nestedSubMenu.id }"
-                    (mouseenter)="onGroupEnter(nestedSubMenu.id)"
-                    (mouseleave)="onGroupLeave()">
+                    (mouseenter)="onGroupEnter(nestedSubMenu.id)">
+                    <!-- (mouseleave)="onGroupLeave()" -->
                   <a class="has-submenu">{{ nestedSubMenu.title }}</a>
                   <ul class="dropdown-menu submenu-panel"
                       [class.show]="hoveredGroupId() === nestedSubMenu.id"
-                      (mouseenter)="onGroupEnter(nestedSubMenu.id)"
-                      (mouseleave)="onGroupLeave()">
+                      (mouseenter)="onGroupEnter(nestedSubMenu.id)">
+                      <!-- (mouseleave)="onGroupLeave()" -->
                     <li *ngFor="let deepItem of nestedSubMenu.children"
                         [ngClass]="{ 'active-deep': activeDeepItemId() === deepItem.id }">
                       <a [routerLink]="deepItem.route"

@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { EmployeeCompetenceService } from '../../../services/employee-competence.service';
 import { EmployeeCompetenceReport } from '../../../models/employeeCompetenceModel';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
     selector: 'app-employee-competence-list',
 
-    imports: [CommonModule, RouterModule, FormsModule],
+    imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
     templateUrl: './employee-competence-list.component.html',
     styleUrl: './employee-competence-list.component.css'
 })
@@ -19,7 +20,7 @@ export class EmployeeCompetenceListComponent implements OnInit {
     searchTerm = '';
     pageNumber = 1;
     pageSize = 10;
-    pageSizes = [5, 10, 25, 50, 100];
+    pageSizes = [10, 25, 50, 100, 200, 500];
     totalPages: number[] = [];
     sortByColumn = '';
     sortOrder = 'asc';

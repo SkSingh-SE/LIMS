@@ -1,0 +1,13 @@
+/* Pagination uses a pointer cursor on clickable items and a not-allowed cursor when disabled. */
+.page-link {
+  cursor: pointer;
+  user-select: none;
+}
+.page-item.disabled .page-link {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.page-item.active .page-link {
+  font-weight: 600;
+}

@@ -6,6 +6,7 @@ import { TruncatePipe } from '../../../utility/pipe/truncate.pipe';
 import { NablWorkflowService } from '../../../services/nabl-workflow.service';
 import { NablRevisionDialogComponent, RevisionDialogResult } from '../nabl-revision-dialog/nabl-revision-dialog.component';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 export interface RegisterColumn {
     key: string;
@@ -18,7 +19,7 @@ export interface RegisterColumn {
 @Component({
     selector: 'app-nabl-register-table',
 
-    imports: [CommonModule, FormsModule, RouterModule, TruncatePipe, NablRevisionDialogComponent],
+    imports: [ CommonModule, FormsModule, RouterModule, TruncatePipe, NablRevisionDialogComponent, PaginationComponent ],
     templateUrl: './nabl-register-table.component.html',
     styleUrl: './nabl-register-table.component.css'
 })
@@ -59,7 +60,7 @@ export class NablRegisterTableComponent {
     // --- Pagination State ---
     pageNumber = 1;
     pageSize = 10;
-    pageSizes = [5, 10, 20];
+    pageSizes = [10, 25, 50, 100, 200, 500];
     sortByColumn: string = '';
     sortOrder: string = 'desc';
     searchTerm: string = '';

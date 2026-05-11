@@ -36,6 +36,7 @@ export class DepartmentFormComponent implements CanComponentDeactivate, OnInit, 
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       description: ['', [Validators.maxLength(500)]],
+      isChemical: [false],
     });
 
     this.route.paramMap.subscribe(params => {

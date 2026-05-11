@@ -5,18 +5,19 @@ import { Router, RouterModule } from '@angular/router';
 import { ReportFormatService } from '../../../services/report-format.service';
 import { ToastService } from '../../../services/toast.service';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-report-format-list',
   templateUrl: './report-format-list.component.html',
-  imports: [CommonModule, FormsModule, RouterModule, HasPermissionDirective],
+  imports: [ CommonModule, FormsModule, RouterModule, HasPermissionDirective, PaginationComponent ],
 })
 export class ReportFormatListComponent implements OnInit {
   formats: any[] = [];
   totalRecords = 0;
   pageNumber = 1;
   pageSize = 10;
-  pageSizes = [5, 10, 20, 50];
+  pageSizes = [10, 25, 50, 100, 200, 500];
   searchTerm = '';
   sortByColumn = 'ID';
   sortOrder = 'desc';

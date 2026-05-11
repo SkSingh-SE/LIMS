@@ -11,13 +11,15 @@
 }
 
 .rh-title-bar {
-  background: linear-gradient(135deg, var(--primary-color, #da261c), #b91c14);
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
   color: white;
-  padding: 10px 16px;
+  padding: 0.65rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.95rem;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
 }
 
 .rh-body {

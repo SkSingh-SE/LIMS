@@ -88,9 +88,8 @@ const SYMBOL_GROUPS: SymbolGroup[] = [
       { char: '\u00B0', name: 'Degree °' },
       { char: '\u2103', name: 'Degree Celsius ℃' },
       { char: '\u2109', name: 'Degree Fahrenheit ℉' },
-      { char: '\u00B5', name: 'Micro sign µ' },
-      { char: '\u212B', name: 'Angstrom Å' },
       { char: '\u2126', name: 'Ohm Ω' },
+      { char: '\u212B', name: 'Angstrom Å' },
       { char: '\u0025', name: 'Percent %' },
       { char: '\u2030', name: 'Per mille ‰' },
       { char: '\u2031', name: 'Per ten thousand ‱' },
@@ -111,7 +110,6 @@ const SYMBOL_GROUPS: SymbolGroup[] = [
       { char: '\u221E', name: 'Infinity ∞' },
       { char: '\u221A', name: 'Square root √' },
       { char: '\u221B', name: 'Cube root ∛' },
-      { char: '\u2211', name: 'Summation Σ' },
       { char: '\u220F', name: 'Product Π' },
       { char: '\u222B', name: 'Integral ∫' },
       { char: '\u2202', name: 'Partial differential ∂' },
@@ -194,7 +192,179 @@ const SYMBOL_GROUPS: SymbolGroup[] = [
       { char: '\u2717', name: 'Ballot X ✗' },
     ],
   },
+
+  // NABL Domain Categories (no duplicate symbols)
+
+  {
+    label: 'Hardness Testing (NABL)',
+    symbols: [
+      { char: 'HV', name: 'Vickers Hardness' },
+      { char: 'HB', name: 'Brinell Hardness' },
+      { char: 'HRC', name: 'Rockwell Hardness C' },
+      { char: 'HRA', name: 'Rockwell Hardness A' },
+      { char: 'HRB', name: 'Rockwell Hardness B' },
+      { char: 'HRD', name: 'Rockwell Hardness D' },
+      { char: 'HRE', name: 'Rockwell Hardness E' },
+      { char: 'HRF', name: 'Rockwell Hardness F' },
+      { char: 'HRG', name: 'Rockwell Hardness G' },
+      { char: 'HRH', name: 'Rockwell Hardness H' },
+      { char: 'HRK', name: 'Rockwell Hardness K' },
+      { char: 'HS', name: 'Shore Hardness' },
+      { char: 'HM', name: 'Micro Vickers Hardness' },
+      { char: 'KHN', name: 'Knoop Hardness Number' },
+    ],
+  },
+
+  {
+    label: 'Tensile Testing (NABL)',
+    symbols: [
+      { char: 'MPa', name: 'Megapascal' },
+      { char: 'UTS', name: 'Ultimate Tensile Strength' },
+      { char: 'YS', name: 'Yield Strength' },
+      { char: '%El', name: 'Percentage Elongation' },
+      { char: '%RA', name: 'Percentage Reduction of Area' },
+      { char: 'E', name: 'Youngs Modulus' },
+      { char: 'N/mm²', name: 'Newton per square millimeter' },
+      { char: 'kN', name: 'Kilonewton' },
+      { char: 'mm²', name: 'Square millimeter' },
+      { char: 'Rp', name: 'Proof Strength' },
+      { char: 'Rm', name: 'Tensile Strength' },
+    ],
+  },
+
+  {
+    label: 'Impact Testing (NABL)',
+    symbols: [
+      { char: 'J/cm²', name: 'Joules per square centimeter' },
+      { char: 'ft-lbf', name: 'Foot-pounds force' },
+      { char: 'CVN', name: 'Charpy V-Notch' },
+      { char: 'IZOD', name: 'Izod Impact Test' },
+      { char: 'KV', name: 'Charpy V Energy' },
+      { char: 'KU', name: 'Charpy U Energy' },
+      { char: 'Fbr', name: 'Fibrous Fracture' },
+      { char: 'J', name: 'Joules' },
+    ],
+  },
+
+  {
+    label: 'Microstructure & Grain (NABL)',
+    symbols: [
+      { char: 'ASTM', name: 'ASTM Grain Size Number' },
+      { char: 'μm', name: 'Micrometer' },
+      { char: 'nm', name: 'Nanometer' },
+      { char: 'G.S.', name: 'Grain Size' },
+      { char: 'F', name: 'Ferrite' },
+      { char: 'A', name: 'Austenite' },
+      { char: 'C', name: 'Cementite' },
+      { char: 'P', name: 'Pearlite' },
+      { char: 'M', name: 'Martensite' },
+      { char: 'B', name: 'Bainite' },
+      { char: 'δ', name: 'Delta Ferrite' },
+      { char: 'vol%', name: 'Volume %' },
+      { char: 'wt%', name: 'Weight %' },
+    ],
+  },
+
+  {
+    label: 'Chemical Composition (NABL)',
+    symbols: [
+      { char: 'C', name: 'Carbon' },
+      { char: 'Si', name: 'Silicon' },
+      { char: 'Mn', name: 'Manganese' },
+      { char: 'P', name: 'Phosphorus' },
+      { char: 'S', name: 'Sulfur' },
+      { char: 'Cr', name: 'Chromium' },
+      { char: 'Mo', name: 'Molybdenum' },
+      { char: 'Ni', name: 'Nickel' },
+      { char: 'V', name: 'Vanadium' },
+      { char: 'W', name: 'Tungsten' },
+      { char: 'Co', name: 'Cobalt' },
+      { char: 'Al', name: 'Aluminum' },
+      { char: 'Ti', name: 'Titanium' },
+      { char: 'Cu', name: 'Copper' },
+      { char: 'Fe', name: 'Iron' },
+      { char: 'ppm', name: 'Parts per million' },
+    ],
+  },
+
+  {
+    label: 'Heat Treatment (NABL)',
+    symbols: [
+      { char: 'A', name: 'Annealing' },
+      { char: 'Q', name: 'Quenching' },
+      { char: 'T', name: 'Tempering' },
+      { char: 'N', name: 'Normalizing' },
+      { char: 'AC', name: 'Air Cooling' },
+      { char: 'WC', name: 'Water Cooling' },
+      { char: 'OC', name: 'Oil Cooling' },
+      { char: 'FC', name: 'Furnace Cooling' },
+      { char: 'ST', name: 'Solution Treatment' },
+      { char: 'Pa', name: 'Precipitation Aging' },
+    ],
+  },
+
+  {
+    label: 'Corrosion & Oxidation',
+    symbols: [
+      { char: 'mm/year', name: 'Millimeter per year' },
+      { char: 'mg/cm²/day', name: 'Milligram per area per day' },
+      { char: 'mdd', name: 'Milligrams per square decimeter per day' },
+      { char: 'IACS', name: 'International Annealed Copper Standard' },
+      { char: '%IACS', name: 'Percentage IACS' },
+      { char: 'mV', name: 'Millivolt' },
+      { char: 'μA', name: 'Microampere' },
+      { char: 'OCP', name: 'Open Circuit Potential' },
+      { char: 'pH', name: 'pH Value' },
+    ],
+  },
+
+  {
+    label: 'Fatigue & Stress (NABL)',
+    symbols: [
+      { char: 'N', name: 'Number of Cycles' },
+      { char: 'S-N', name: 'Stress-Number Curve' },
+      { char: 'Δσ', name: 'Stress Range' },
+      { char: 'S', name: 'Stress Amplitude' },
+      { char: 'Sf', name: 'Fatigue Strength' },
+      { char: 'Nc', name: 'Cycles to Failure' },
+      { char: 'R', name: 'Stress Ratio' },
+      { char: 'Kt', name: 'Stress Concentration Factor' },
+      { char: 'Kf', name: 'Fatigue Notch Factor' },
+      { char: 'FOS', name: 'Factor of Safety' },
+    ],
+  },
+
+  {
+    label: 'Dimensional & Tolerance (NABL)',
+    symbols: [
+      { char: 'mm', name: 'Millimeter' },
+      { char: 'cm', name: 'Centimeter' },
+      { char: 'm', name: 'Meter' },
+      { char: 'μm', name: 'Micrometer' },
+      { char: '∅', name: 'Diameter' },
+      { char: 'R', name: 'Radius' },
+      { char: 'Ra', name: 'Roughness Average' },
+      { char: 'Rz', name: 'Roughness Max Height' },
+      { char: 'ISO', name: 'ISO Tolerance' },
+    ],
+  },
+
+  {
+    label: 'Statistical & Quality (NABL)',
+    symbols: [
+      { char: 'x̄', name: 'Mean' },
+      { char: 's', name: 'Standard Deviation' },
+      { char: 'n', name: 'Sample Size' },
+      { char: 'N', name: 'Population Size' },
+      { char: 'CV', name: 'Coefficient of Variation' },
+      { char: 'p', name: 'Probability' },
+      { char: 'PPM', name: 'Parts Per Million' },
+      { char: 'Cpk', name: 'Process Capability' },
+      { char: 'RSD', name: 'Relative Std Dev' },
+    ],
+  },
 ];
+
 
 const RECENT_STORAGE_KEY = 'lims_recent_symbols';
 const FAVORITES_STORAGE_KEY = 'lims_favorite_symbols';

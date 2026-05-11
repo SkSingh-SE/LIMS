@@ -4,10 +4,11 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-plan-list',
-  imports: [CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent],
+  imports: [ CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent, PaginationComponent ],
   templateUrl: './plan-list.component.html',
   styleUrls: ['./plan-list.component.css']
 })
@@ -51,7 +52,7 @@ export class PlanListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

@@ -6,10 +6,11 @@ import { Modal } from 'bootstrap';
 import { TPIService } from '../../services/tpi.service';
 import { ToastService } from '../../services/toast.service';
 import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-tpi',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, PaginationComponent ],
   templateUrl: './tpi.component.html',
   styleUrl: './tpi.component.css'
 })
@@ -45,7 +46,7 @@ export class TPIComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';

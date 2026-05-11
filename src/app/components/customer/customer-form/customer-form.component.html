@@ -245,16 +245,6 @@
             <span *ngIf="submitted && customerForm.get('currencyID')?.invalid"
               class="text-danger text-sm">Billing Currency is required.</span>
           </div>
-           <div class="col-auto col-md-4 col-lg-3">
-            <app-multi-select-dropdown [labelName]="'Company Categories'" [smallInput]="true" [placeholder]="'Select Company Categories'"
-              [required]="true" [isDisabled]="isViewMode" [fetchDataFn]="fetchCategoryDropdown"
-              [selectedValues]="selectedCategoryIds" (itemsSelected)="onCategoriesSelected($event)">
-            </app-multi-select-dropdown>
-            <span *ngIf="customerCompanyCategoriesArray.touched && customerCompanyCategoriesArray.invalid"
-              class="text-danger text-sm">
-              At least one Company Category is required.
-            </span>
-          </div>
 
           <!-- FIX #1: appDecimalOnly instead of appNumberOnly — credit limit can be decimal (model: decimal?) -->
           <div *ngIf="!isWalkIn" class="col-12 col-md-3">

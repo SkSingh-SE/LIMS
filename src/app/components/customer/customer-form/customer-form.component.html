@@ -94,6 +94,11 @@
             </select>
             <app-field-error [control]="customerForm.get('customerType')" label="Customer Type"
               [submitted]="submitted" />
+            <div *ngIf="customerId > 0 && pendingChange?.newValues?.customerType" class="mt-1">
+              <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+                <i class="bi bi-clock-history me-1"></i>Pending Type: {{ pendingChange.newValues.customerType }}
+              </span>
+            </div>
           </div>
 
           <!-- Company Categories -->
@@ -259,6 +264,11 @@
               <span *ngIf="customerForm.get('creditLimitAmount')?.hasError('required')" class="text-danger text-sm">Credit Limit Amount is required.</span>
               <span *ngIf="customerForm.get('creditLimitAmount')?.hasError('min')" class="text-danger text-sm">Must be greater than 0.</span>
             </div>
+            <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
+              <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+                <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('creditLimitAmount') ?? '—' }}
+              </span>
+            </div>
           </div>
 
           <!-- FIX #2: [attr.min] dynamic — Relationship Credit Customer requires min 1 day -->
@@ -277,6 +287,11 @@
             <div *ngIf="customerForm.get('creditLimitTime')?.touched && customerForm.get('creditLimitTime')?.invalid">
               <span *ngIf="customerForm.get('creditLimitTime')?.hasError('required')" class="text-danger text-sm">Credit Limit Time is required.</span>
               <span *ngIf="customerForm.get('creditLimitTime')?.hasError('min')" class="text-danger text-sm">Must be greater than 0.</span>
+            </div>
+            <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
+              <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+                <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('creditLimitTime') ?? '—' }} Days
+              </span>
             </div>
           </div>
         </div>
@@ -298,6 +313,14 @@
                     <input class="form-check-input" type="checkbox" formControlName="constantDiscount"
                       id="constantDiscount" />
                     <label class="form-check-label form-label-sm mb-0" for="constantDiscount">Constant Discount</label>
+                  </div>
+                  <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
+                    <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+                      <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('constantDiscount') ? 'Yes' : 'No' }}
+                      <ng-container *ngIf="getPendingNewValue('constantDiscountPercentage') != null">
+                        ({{ getPendingNewValue('constantDiscountPercentage') }}%)
+                      </ng-container>
+                    </span>
                   </div>
                   <div *ngIf="customerForm.get('constantDiscount')?.value" class="mt-2" style="max-width: 240px;">
                     <div class="input-group input-group-sm">
@@ -371,8 +394,17 @@
                       <label class="form-check-label form-label-sm mb-0" for="noBillingFreq">None</label>
                     </div>
                   </div>
+                  <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
+                    <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+                      <i class="bi bi-clock-history me-1"></i>Pending:
+                      <ng-container *ngIf="getPendingNewValue('weeklyBillingCustomer')">Weekly</ng-container>
+                      <ng-container *ngIf="getPendingNewValue('monthlyBillingCustomer')">Monthly</ng-container>
+                      <ng-container *ngIf="getPendingNewValue('billingEvery')">Every {{ getPendingNewValue('billingEveryDays') ?? '?' }} Days</ng-container>
+                      <ng-container *ngIf="!getPendingNewValue('weeklyBillingCustomer') && !getPendingNewValue('monthlyBillingCustomer') && !getPendingNewValue('billingEvery')">None</ng-container>
+                    </span>
+                  </div>
 
-                  <div *ngIf="customerForm.get('billingEvery')?.value" class="mt-3" style="max-width: 220px;">
+                  <div *ngIf="customerForm.get('billingEvery')?.value || (customerId > 0 && hasPendingChange() && getPendingNewValue('billingEvery'))" class="mt-3" style="max-width: 220px;">
                     <label for="billingEveryDays" class="form-label-sm">Billing Interval (Days) <span class="text-danger">*</span></label>
                     <div class="input-group input-group-sm">
                       <input id="billingEveryDays" type="number" class="form-control form-control-sm"
@@ -441,6 +473,48 @@
             <textarea id="remark" class="form-control form-control-sm" formControlName="remark" rows="3" maxlength="500"
               placeholder="Enter any remarks..."></textarea>
           </div>
+        </div>
+      </fieldset>
+
+      <!-- ======================== Change Request History ======================== -->
+      <fieldset *ngIf="customerId > 0 && changeHistory.length > 0" class="border rounded p-3 mb-3 position-relative">
+        <legend class="w-auto px-2 fw-semibold theme-color" (click)="showHistory = !showHistory" style="cursor:pointer;">
+          <i class="bi bi-clock-history"></i> Change Request History
+          <i class="bi ms-1" [ngClass]="showHistory ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </legend>
+        <div *ngIf="showHistory" class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="white-space:nowrap;">Date</th>
+                <th style="white-space:nowrap;">Requested By</th>
+                <th>Field</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Status</th>
+                <th style="white-space:nowrap;">Reviewed By</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let req of changeHistory">
+                <tr *ngFor="let field of getChangedFields(req)">
+                  <td style="white-space:nowrap; font-size:0.78rem;">{{ req.createdOn | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td style="font-size:0.78rem;">{{ req.requestedByName ?? '—' }}</td>
+                  <td style="font-size:0.78rem;">{{ field.label }}</td>
+                  <td style="font-size:0.78rem;">{{ field.oldValue }}</td>
+                  <td style="font-size:0.78rem;">{{ field.newValue }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="getRequestStatusClass(req.status)" style="font-size:0.7rem;">
+                      {{ req.status }}
+                    </span>
+                  </td>
+                  <td style="font-size:0.78rem;">{{ req.reviewedByName ?? '—' }}</td>
+                  <td style="font-size:0.78rem;">{{ req.rejectionReason ?? '—' }}</td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
         </div>
       </fieldset>
 

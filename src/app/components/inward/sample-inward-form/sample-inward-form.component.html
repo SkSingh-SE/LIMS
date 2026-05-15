@@ -444,36 +444,34 @@
             To see all specifications, either link them in Material Specification master or remove Metal Classification / Product Condition selection.
           </div>
           <div class="table-responsive">
-            <table class="table table-compact">
+            <table class="table table-compact w-100" style="table-layout: auto;">
               <colgroup>
-                <col style="width:110px" />
-                <col style="width:150px" />
-                <col style="width:160px" />
-                <col style="width:150px" />
-                <col style="width:160px" />
-                <col style="width:130px" />
-                <col style="width:90px" />
-                <col style="width:90px" />
-                <col style="width:90px" />
-                <col style="width:90px" />
-                <col style="width:100px" />
-                <col style="width:220px" />
-                <col style="width:60px" />
+                <col style="width:105px" />   <!-- Auto-Generated -->
+                <col />                        <!-- Sample Identification — flexible -->
+                <col />                        <!-- Metal Classification — flexible -->
+                <col />                        <!-- Product Condition — flexible -->
+                <col style="width:72px" />     <!-- Thickness -->
+                <col style="width:72px" />     <!-- Diameter -->
+                <col style="width:72px" />     <!-- Width -->
+                <col style="width:72px" />     <!-- Length -->
+                <col style="width:88px" />     <!-- Qty -->
+                <col style="width:110px" />    <!-- Image -->
+                <col style="width:44px" />     <!-- Action -->
               </colgroup>
               <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Auto-Generated</th>
-                  <th class="fw-medium text-center">Sample Identification</th>
-                  <th class="fw-medium text-center">Metal Classification</th>
-                  <th class="fw-medium text-center">Product Condition</th>
-                  <th class="fw-medium text-center">Specimen Orientation</th>
-                  <th class="fw-medium text-center">Product Form</th>
-                  <th class="fw-medium text-center">Thickness (mm)</th>
-                  <th class="fw-medium text-center">Diameter (mm)</th>
-                  <th class="fw-medium text-center">Width (mm)</th>
-                  <th class="fw-medium text-center">Length (mm)</th>
-                  <th class="fw-medium text-center">Qty</th>
-                  <th class="fw-medium text-center">Image</th>
+                <tr class="text-muted small">
+                  <th class="fw-medium text-center text-nowrap">Auto-Generated</th>
+                  <th class="fw-medium text-center text-nowrap">Sample Identification</th>
+                  <th class="fw-medium text-center text-nowrap">Metal Classification</th>
+                  <th class="fw-medium text-center text-nowrap">Product Condition</th>
+                  <!-- <th class="fw-medium text-center">Specimen Orientation</th> -->
+                  <!-- <th class="fw-medium text-center">Product Form</th> -->
+                  <th class="fw-medium text-center" style="white-space:normal">Thickness (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Diameter (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Width (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Length (mm)</th>
+                  <th class="fw-medium text-center text-nowrap">Qty</th>
+                  <th class="fw-medium text-center text-nowrap">Image</th>
                   <th class="fw-medium text-center">Action</th>
                 </tr>
               </thead>
@@ -516,7 +514,7 @@
                       [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
-                  <td>
+                  <!-- <td>
                     <app-searchable-dropdown
                       [placeholder]="'Type & Search Specimen Orientation'"
                       [hideLabel]="true"
@@ -537,14 +535,14 @@
                       [selectedItem]="sample.get('productFormID')?.value"
                       [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
-                  </td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:100%" /></td>
+                  </td> -->
+                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
                   <td>
                     <div class="d-flex align-items-center gap-1">
-                      <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:60px"
+                      <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:48px;min-width:0"
                              (keydown.enter)="$event.preventDefault(); sample.get('quantity')?.value > 1 && applyQty(i)" />
                       <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value && sample.get('quantity')?.value > 1"
                               type="button"
@@ -821,6 +819,8 @@
 
   <!-- ═══════ JOB CARD PRINT SECTION (hidden on screen, visible on print) ═══════ -->
   <div class="job-card-print" id="jobCardPrint">
+
+    <!-- ── Header ── -->
     <div class="jc-header">
       <h2 class="jc-title">Job Card</h2>
       <div class="jc-meta">
@@ -830,6 +830,7 @@
       </div>
     </div>
 
+    <!-- ── Customer Details ── -->
     <div class="jc-section">
       <div class="jc-section-title">Customer Details</div>
       <table class="jc-info-table">
@@ -839,71 +840,130 @@
         </tr>
         <tr>
           <td><strong>Address:</strong> {{ sampleInwardForm.get('address')?.value || '-' }}, {{ sampleInwardForm.get('city')?.value || '' }}</td>
-          <td><strong>GST No:</strong> {{ sampleInwardForm.get('gstNo')?.value || '-' }}</td>
+          <td *ngIf="sampleInwardForm.get('gstNo')?.value"><strong>GST No:</strong> {{ sampleInwardForm.get('gstNo')?.value }}</td>
         </tr>
       </table>
     </div>
 
+    <!-- ── Case Flags (only if any flag or receipt note is set) ── -->
+    <div class="jc-section" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value || sampleInwardForm.get('sampleReceiptNote')?.value">
+      <div class="jc-section-title">Case Information</div>
+      <div class="jc-flag-row" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value">
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('urgent')?.value">URGENT</span>
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('returnSample')?.value">RETURN SAMPLE</span>
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('notDestroyed')?.value">NOT TO BE DESTROYED</span>
+      </div>
+      <div class="jc-receipt-note" *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value">
+        <strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value }}
+      </div>
+    </div>
+
+    <!-- ── Conformity & Decision (only if not "Not Applicable") ── -->
+    <div class="jc-section">
+      <div class="jc-section-title">Conformity &amp; Decision Rule</div>
+      <table class="jc-kv-table">
+        <tr>
+          <td class="jc-kv-key">Statement of Conformity</td>
+          <td class="jc-kv-val">{{ sampleInwardForm.get('statementOfConformity')?.value }}</td>
+        </tr>
+        <tr >
+          <td class="jc-kv-key">Decision Rule</td>
+          <td class="jc-kv-val">{{ sampleInwardForm.get('decisionRule')?.value }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── Sample Details (one block per sample) ── -->
     <div class="jc-section">
       <div class="jc-section-title">Sample Details</div>
-      <table class="jc-table">
-        <thead>
+      <div *ngFor="let sample of sampleDetails.controls; let i = index" class="jc-sample-block">
+
+        <!-- Sample block header: Sample No + Qty -->
+        <div class="jc-sample-header">
+          <span><strong>#{{ i + 1 }}</strong>&nbsp;&nbsp;{{ sample.get('sampleNo')?.value }}</span>
+          <span>Qty: <strong>{{ sample.get('quantity')?.value }}</strong></span>
+        </div>
+
+        <!-- Key-Value table — only rows with values are rendered -->
+        <table class="jc-kv-table">
+          <!-- Description (always shown) -->
           <tr>
-            <th>#</th>
-            <th>Sample No</th>
-            <th>Description</th>
-            <th>Qty</th>
-            <th *ngIf="jcHasMetalClassification">Metal Classification</th>
-            <th *ngIf="jcHasProductCondition">Product Condition</th>
-            <th *ngIf="jcHasSpecimenOrientation">Specimen Orientation</th>
-            <th *ngIf="jcHasRemarks">Remarks</th>
+            <td class="jc-kv-key">Description</td>
+            <td class="jc-kv-val">{{ sample.get('details')?.value || '-' }}</td>
           </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let sample of sampleDetails.controls; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ sample.get('sampleNo')?.value }}</td>
-            <td>{{ sample.get('details')?.value }}</td>
-            <td>{{ sample.get('quantity')?.value }}</td>
-            <td *ngIf="jcHasMetalClassification">{{ sample.get('metalClassificationName')?.value }}</td>
-            <td *ngIf="jcHasProductCondition">{{ sample.get('productConditionName')?.value }}</td>
-            <td *ngIf="jcHasSpecimenOrientation">{{ sample.get('specimenOrientationName')?.value }}</td>
-            <td *ngIf="jcHasRemarks">{{ sample.get('remarks')?.value }}</td>
+          <!-- Metal Classification -->
+          <tr *ngIf="sample.get('metalClassificationName')?.value">
+            <td class="jc-kv-key">Metal Classification</td>
+            <td class="jc-kv-val">{{ sample.get('metalClassificationName')?.value }}</td>
           </tr>
-        </tbody>
-      </table>
+          <!-- Product Condition -->
+          <tr *ngIf="sample.get('productConditionName')?.value">
+            <td class="jc-kv-key">Product Condition</td>
+            <td class="jc-kv-val">{{ sample.get('productConditionName')?.value }}</td>
+          </tr>
+          <!-- Specimen Orientation — commented out per client requirement
+          <tr *ngIf="sample.get('specimenOrientationName')?.value">
+            <td class="jc-kv-key">Specimen Orientation</td>
+            <td class="jc-kv-val">{{ sample.get('specimenOrientationName')?.value }}</td>
+          </tr> -->
+          <!-- Dimensions -->
+          <tr *ngIf="sample.get('thickness')?.value || sample.get('diameter')?.value || sample.get('width')?.value || sample.get('length')?.value">
+            <td class="jc-kv-key">Dimensions</td>
+            <td class="jc-kv-val">
+              <ng-container *ngIf="sample.get('thickness')?.value">T: {{ sample.get('thickness')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('diameter')?.value">D: {{ sample.get('diameter')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('width')?.value">W: {{ sample.get('width')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('length')?.value">L: {{ sample.get('length')?.value }}mm</ng-container>
+            </td>
+          </tr>
+          <!-- Additional Details (Heat No, Batch No, etc.) -->
+          <tr *ngFor="let ad of getJobCardAdditionalDetails(i)">
+            <td class="jc-kv-key">{{ ad.label }}</td>
+            <td class="jc-kv-val">{{ ad.value }}</td>
+          </tr>
+          <!-- Remarks -->
+          <tr *ngIf="sample.get('remarks')?.value">
+            <td class="jc-kv-key">Remarks</td>
+            <td class="jc-kv-val">{{ sample.get('remarks')?.value }}</td>
+          </tr>
+          <!-- Sample Preparation -->
+          <tr *ngIf="sample.get('preparationRequired')?.value">
+            <td class="jc-kv-key">Sample Preparation</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- Machining -->
+          <tr *ngIf="sample.get('machiningRequired')?.value">
+            <td class="jc-kv-key">Machining</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- Specimen (shown when machining is required) -->
+          <tr *ngIf="sample.get('machiningRequired')?.value && sample.get('specimen')?.value">
+            <td class="jc-kv-key">Specimen</td>
+            <td class="jc-kv-val">{{ sample.get('specimen')?.value }}</td>
+          </tr>
+          <!-- Other Preparation -->
+          <tr *ngIf="sample.get('otherPreparation')?.value">
+            <td class="jc-kv-key">Other Preparation</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- TPI -->
+          <tr *ngIf="sample.get('tpiRequired')?.value">
+            <td class="jc-kv-key">TPI</td>
+            <td class="jc-kv-val">
+              Required
+              <ng-container *ngIf="sample.get('tpiAgencyName')?.value">&nbsp;· Agency: {{ sample.get('tpiAgencyName')?.value }}</ng-container>
+            </td>
+          </tr>
+          <!-- Test Instructions -->
+          <tr *ngIf="sample.get('testInstructions')?.value">
+            <td class="jc-kv-key">Test Instructions</td>
+            <td class="jc-kv-val">{{ sample.get('testInstructions')?.value }}</td>
+          </tr>
+        </table>
+      </div>
     </div>
 
-    <div class="jc-section" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value || sampleInwardForm.get('sampleReceiptNote')?.value">
-      <div class="jc-section-title">Additional Information</div>
-      <table class="jc-info-table">
-        <tr *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value">
-          <td *ngIf="sampleInwardForm.get('urgent')?.value"><strong>Urgent</strong></td>
-          <td *ngIf="sampleInwardForm.get('returnSample')?.value"><strong>Return Sample</strong></td>
-          <td *ngIf="sampleInwardForm.get('notDestroyed')?.value"><strong>Not to be Destroyed</strong></td>
-        </tr>
-        <tr *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value">
-          <td colspan="3"><strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value }}</td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="jc-section"
-      *ngIf="(sampleInwardForm.get('statementOfConformity')?.value && sampleInwardForm.get('statementOfConformity')?.value !== 'Not Applicable') ||
-             (sampleInwardForm.get('decisionRule')?.value && sampleInwardForm.get('decisionRule')?.value !== 'Not Applicable')">
-      <div class="jc-section-title">Conformity & Decision</div>
-      <table class="jc-info-table">
-        <tr>
-          <td *ngIf="sampleInwardForm.get('statementOfConformity')?.value && sampleInwardForm.get('statementOfConformity')?.value !== 'Not Applicable'">
-            <strong>Statement of Conformity:</strong> {{ sampleInwardForm.get('statementOfConformity')?.value }}
-          </td>
-          <td *ngIf="sampleInwardForm.get('decisionRule')?.value && sampleInwardForm.get('decisionRule')?.value !== 'Not Applicable'">
-            <strong>Decision Rule:</strong> {{ sampleInwardForm.get('decisionRule')?.value }}
-          </td>
-        </tr>
-      </table>
-    </div>
-
+    <!-- ── Signatures ── -->
     <div class="jc-footer">
       <div class="jc-sign-block">
         <div class="jc-sign-line"></div>

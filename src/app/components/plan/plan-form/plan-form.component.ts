@@ -926,32 +926,33 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     }
   }
 
-  getSpecimenOrientationDrop = (sampleIndex: number) => {
-    return (term: string, page: number, pageSize: number): Observable<any[]> => {
-      const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
-      const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
-      if (metalClassificationID) {
-        return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
-      }
-      return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
-    };
-  };
+  // Specimen Orientation & Product Form — commented out per client requirement
+  // getSpecimenOrientationDrop = (sampleIndex: number) => {
+  //   return (term: string, page: number, pageSize: number): Observable<any[]> => {
+  //     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+  //     const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+  //     if (metalClassificationID) {
+  //       return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+  //     }
+  //     return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  //   };
+  // };
 
-  onSpecimenOrientationSelected(item: any, sampleIndex: number) {
-    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
-    if (!sampleDetailGroup) return;
-    sampleDetailGroup.patchValue({ specimenOrientationID: item?.id ?? null });
-  }
+  // onSpecimenOrientationSelected(item: any, sampleIndex: number) {
+  //   const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+  //   if (!sampleDetailGroup) return;
+  //   sampleDetailGroup.patchValue({ specimenOrientationID: item?.id ?? null });
+  // }
 
-  getProductFormDrop = (term: string, page: number, pageSize: number) => {
-    return this.productFormService.getProductFormDropdown(term, page, pageSize);
-  };
+  // getProductFormDrop = (term: string, page: number, pageSize: number) => {
+  //   return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  // };
 
-  onProductFormSelected(item: any, sampleIndex: number) {
-    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
-    if (!sampleDetailGroup) return;
-    sampleDetailGroup.patchValue({ productFormID: item?.id ?? null });
-  }
+  // onProductFormSelected(item: any, sampleIndex: number) {
+  //   const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+  //   if (!sampleDetailGroup) return;
+  //   sampleDetailGroup.patchValue({ productFormID: item?.id ?? null });
+  // }
 
   onSpecificationGradeSelected(
     sampleIndex: number,

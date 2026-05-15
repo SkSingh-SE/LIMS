@@ -146,6 +146,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       returnSample: [false],
       notDestroyed: [false],
       sampleReceiptNote: [''],
+      statementOfConformity: ['Not Applicable'],
+      decisionRule: ['Not Applicable'],
       requestFilePath: [''],
       requestFileName: [''],
       file: [null],
@@ -458,6 +460,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               returnSample: data.returnSample,
               notDestroyed: data.notDestroyed,
               sampleReceiptNote: data.sampleReceiptNote,
+              statementOfConformity: data.statementOfConformity || 'Not Applicable',
+              decisionRule: data.decisionRule || 'Not Applicable',
               requestFileName: data.requestFileName,
               requestFilePath: data.requestFilePath,
               uploadReferenceId: data.uploadReferenceID,
@@ -819,7 +823,16 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       length: [existingSample?.length || null],
       sampleStatus: [existingSample?.sampleStatus || ''],
       isCancelled: [existingSample?.isCancelled || false],
-      cancellationReason: [existingSample?.cancellationReason || '']
+      cancellationReason: [existingSample?.cancellationReason || ''],
+      preparationRequired: [existingSample?.preparationRequired ?? false],
+      machiningRequired: [existingSample?.machiningRequired ?? false],
+      machiningAmount: [existingSample?.machiningAmount ?? null],
+      specimen: [existingSample?.specimen || ''],
+      otherPreparation: [existingSample?.otherPreparation ?? false],
+      otherPreparationCharge: [existingSample?.otherPreparationCharge ?? null],
+      tpiRequired: [existingSample?.tpiRequired ?? false],
+      tpiAgencyName: [existingSample?.tpiAgencyName || ''],
+      testInstructions: [existingSample?.testInstructions || '']
     });
 
     this.sampleDetails.push(sampleForm);
@@ -1117,33 +1130,34 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     });
   }
 
-  getSpecimenOrientationDrop = (sampleIndex: number) => {
-    return (term: string, page: number, pageSize: number): Observable<any[]> => {
-      const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-      const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
-      if (metalClassificationID) {
-        return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
-      }
-      return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
-    };
-  };
+  // Specimen Orientation & Product Form — commented out per client requirement
+  // getSpecimenOrientationDrop = (sampleIndex: number) => {
+  //   return (term: string, page: number, pageSize: number): Observable<any[]> => {
+  //     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //     const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+  //     if (metalClassificationID) {
+  //       return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+  //     }
+  //     return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  //   };
+  // };
 
-  onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
-    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({
-      specimenOrientationID: item?.id || null,
-      specimenOrientationName: item?.name || '',
-    });
-  }
+  // onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({
+  //     specimenOrientationID: item?.id || null,
+  //     specimenOrientationName: item?.name || '',
+  //   });
+  // }
 
-  getProductFormDrop = (term: string, page: number, pageSize: number) => {
-    return this.productFormService.getProductFormDropdown(term, page, pageSize);
-  };
+  // getProductFormDrop = (term: string, page: number, pageSize: number) => {
+  //   return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  // };
 
-  onProductFormSelected(item: any, sampleIndex: number): void {
-    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({ productFormID: item?.id || null });
-  }
+  // onProductFormSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({ productFormID: item?.id || null });
+  // }
 
   // File Handling
   private validateFile(file: File, allowedTypes: string[], maxSizeMB = 5): boolean {
@@ -1432,6 +1446,17 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
   printJobCard(): void {
     window.print();
+  }
+
+  getJobCardAdditionalDetails(sampleIdx: number): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = [];
+    (this.sampleAdditionalDetails as FormArray).controls.forEach(row => {
+      const label = row.get('label')?.value;
+      const valuesArray = row.get('values') as FormArray;
+      const value = valuesArray.at(sampleIdx)?.value;
+      if (label && value) result.push({ label, value });
+    });
+    return result;
   }
 
   // Custom method to check if inward is completed

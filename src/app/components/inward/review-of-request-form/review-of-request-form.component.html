@@ -195,7 +195,7 @@
             <!-- Preparation Flags -->
             <div class="d-flex flex-wrap gap-2 mt-2">
               <span *ngIf="sample.preparationRequired" class="prep-chip prep-chip--cutting">
-                <i class="bi bi-scissors me-1"></i>Cutting Required
+                <i class="bi bi-scissors me-1"></i>Sample Preparation Required
               </span>
               <span *ngIf="sample.machiningRequired" class="prep-chip prep-chip--machining">
                 <i class="bi bi-gear me-1"></i>Machining Required
@@ -206,8 +206,106 @@
                 <small *ngIf="sample.otherPreparationCharge" class="ms-1">({{ sample.otherPreparationCharge | currency:'INR':'symbol':'1.0-0' }})</small>
               </span>
               <span *ngIf="sample.tpiRequired" class="prep-chip prep-chip--tpi">
-                <i class="bi bi-eye me-1"></i>TPI Required
+                <i class="bi bi-eye me-1"></i>TPI: {{ getTpiAgencyName(sample.tpiAgencyID) }}
               </span>
+              <span *ngIf="!sample.preparationRequired && !sample.machiningRequired && !sample.otherPreparation && !sample.tpiRequired"
+                    class="text-muted small fst-italic">No preparation required</span>
+            </div>
+
+            <!-- Collapsible Prep Edit Section -->
+            <div class="prep-toggle" (click)="togglePrepSection(sample.id)">
+              <span class="fw-semibold small">
+                <i class="bi bi-tools me-1"></i> Sample Preparation Details
+                <span class="ms-2 text-muted small fw-normal">
+                  Prep: <span [class]="sample.preparationRequired ? 'text-success' : 'text-danger'">{{ sample.preparationRequired ? 'Yes' : 'No' }}</span>
+                  &nbsp;| Machining: <span [class]="sample.machiningRequired ? 'text-success' : 'text-danger'">{{ sample.machiningRequired ? 'Yes' : 'No' }}</span>
+                  &nbsp;| Other: <span [class]="sample.otherPreparation ? 'text-success' : 'text-danger'">{{ sample.otherPreparation ? 'Yes' : 'No' }}</span>
+                  &nbsp;| TPI: <span [class]="sample.tpiRequired ? 'text-success' : 'text-danger'">{{ sample.tpiRequired ? 'Yes' : 'No' }}</span>
+                </span>
+              </span>
+              <i class="bi" [ngClass]="openPrepSections[sample.id] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div *ngIf="openPrepSections[sample.id] && prepForms[sample.id]" [formGroup]="prepForms[sample.id]" class="ps-2 pe-2 pb-2">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Sample Preparation Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="preparationRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="preparationRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Machining Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="machiningRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="machiningRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <ng-container *ngIf="prepForms[sample.id]?.get('machiningRequired')?.value === true">
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Machining Amount</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="machiningAmount" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Specimen</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="specimen" />
+                  </div>
+                </ng-container>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Other Preparation</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="otherPreparation" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="otherPreparation" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-3" *ngIf="prepForms[sample.id]?.get('otherPreparation')?.value === true">
+                  <label class="form-label small mb-1">Other Prep Charge</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="otherPreparationCharge" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">TPI Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="tpiRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="tpiRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-6" *ngIf="prepForms[sample.id]?.get('tpiRequired')?.value === true">
+                  <label class="form-label small mb-1">TPI Agency</label>
+                  <app-searchable-dropdown
+                    placeholder="Select TPI Agency"
+                    [fetchDataFn]="getTPIAgencies"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [selectedItem]="prepForms[sample.id]?.get('tpiAgencyID')?.value ? { id: prepForms[sample.id]?.get('tpiAgencyID')?.value, name: getTpiAgencyName(prepForms[sample.id]?.get('tpiAgencyID')?.value) } : null"
+                    (itemSelected)="onTPIAgencySelected($event, sample.id)">
+                  </app-searchable-dropdown>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">Test Instructions</label>
+                  <textarea class="form-control form-control-sm" rows="2" formControlName="testInstructions"></textarea>
+                </div>
+                <div class="col-12 text-end">
+                  <button type="button" class="btn btn-sm btn-save px-3" (click)="savePrepForSample(sample.id)">
+                    <i class="bi bi-check-circle me-1"></i> Save Prep
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -254,6 +352,7 @@
                   <th>Specification 1</th>
                   <th>Specification 2</th>
                   <th>Lab Test</th>
+                  <th>Standard</th>
                   <th class="text-center">Qty</th>
                   <th>Report No</th>
                   <th>ULR No</th>
@@ -269,6 +368,7 @@
                       {{ testMethodName }}
                     </ng-container>
                   </td>
+                  <td>{{ test.standardName || '-' }}</td>
                   <td class="text-center">{{ test.quantity }}</td>
                   <td>{{ test.reportNo || '-' }}</td>
                   <td>{{ test.ulrNo || '-' }}</td>

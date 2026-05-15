@@ -67,6 +67,7 @@
                 [placeholder]="'Type & Search Customer'"
                 [labelName]="'Select Customer'"
                 [fetchDataFn]="getCustomers"
+                [smallInput]="true"
                 (itemSelected)="onCustomerSelect($event)"
                 [required]="true"
                 [isDisabled]="isViewMode"
@@ -883,6 +884,22 @@
         </tr>
         <tr *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value">
           <td colspan="3"><strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="jc-section"
+      *ngIf="(sampleInwardForm.get('statementOfConformity')?.value && sampleInwardForm.get('statementOfConformity')?.value !== 'Not Applicable') ||
+             (sampleInwardForm.get('decisionRule')?.value && sampleInwardForm.get('decisionRule')?.value !== 'Not Applicable')">
+      <div class="jc-section-title">Conformity & Decision</div>
+      <table class="jc-info-table">
+        <tr>
+          <td *ngIf="sampleInwardForm.get('statementOfConformity')?.value && sampleInwardForm.get('statementOfConformity')?.value !== 'Not Applicable'">
+            <strong>Statement of Conformity:</strong> {{ sampleInwardForm.get('statementOfConformity')?.value }}
+          </td>
+          <td *ngIf="sampleInwardForm.get('decisionRule')?.value && sampleInwardForm.get('decisionRule')?.value !== 'Not Applicable'">
+            <strong>Decision Rule:</strong> {{ sampleInwardForm.get('decisionRule')?.value }}
+          </td>
         </tr>
       </table>
     </div>

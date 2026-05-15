@@ -85,6 +85,10 @@ export class SampleInwardService {
     return this.http.patch<any>(`${this.apiUrl}/${id}/payment`, payload);
   }
 
+  updateSamplePrep(sampleId: number, dto: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/update-prep/${sampleId}`, dto);
+  }
+
   cancelSample(sampleDetailId: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/cancel-sample`, { sampleDetailId, reason });
   }

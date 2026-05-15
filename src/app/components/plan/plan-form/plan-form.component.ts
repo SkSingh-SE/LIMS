@@ -49,6 +49,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   yearCode = new Date().getFullYear().toString().slice(-2);
   testTypeList: { id: number, name: string }[] = [];
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
+  tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
 
   // Copy Plan modal
   showCopyPlanModal = false;
@@ -483,7 +484,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       quantity: ['1'],
       reportNo: [reportNo],
       ulrNo: [ulrNo],
-      cancel: [false]
+      cancel: [false],
+      standardID: [null],
+      standardName: ['']
     });
   }
 
@@ -700,7 +703,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       generalTests: this.fb.array([]),
       chemicalTests: this.fb.array([])
     }));
-    // No tab pre-selected — user clicks a tab to begin
+    const newPlanIdx = testPlans.length - 1;
+    this.setActiveTab(sampleIdx, newPlanIdx, 'general');
   }
 
   /** Auto-create a default plan for each sample that has no test plans yet */
@@ -785,7 +789,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
                 quantity: m.quantity,
                 reportNo: m.reportNo,
                 ulrNo: m.ulrNo,
-                cancel: m.cancel
+                cancel: m.cancel,
+                standardID: m.standardID || null
               }))
             })),
             chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
@@ -911,6 +916,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleDetailGroup) return;
     sampleDetailGroup.patchValue({ tpiAgencyID: item?.id ?? null });
+    if (item?.additionalValues) {
+      this.tpiAgencyDetails[sampleIndex] = {
+        emailId: item.additionalValues['emailId'] ?? '',
+        contactNo: item.additionalValues['contactNo'] ?? ''
+      };
+    } else {
+      delete this.tpiAgencyDetails[sampleIndex];
+    }
   }
 
   getSpecimenOrientationDrop = (sampleIndex: number) => {
@@ -1154,7 +1167,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
                 quantity: [m.quantity || 1],
                 reportNo: [m.reportNo || ''],
                 ulrNo: [m.ulrNo || ''],
-                cancel: [m.cancel || false]
+                cancel: [m.cancel || false],
+                standardID: [m.standardID || null],
+                standardName: [m.standardName || '']
               })))
             })
           );
@@ -1754,6 +1769,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getLabTestDropdown = (term: string, page: number, pageSize: number) => {
     return this.laboratoryTestService.getLaboratoryTestDropdownForGeneral(term, page, pageSize);
   };
+
+  getTestMethodStandardDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+  onStandardSelected(item: any, si: number, pi: number, mi: number): void {
+    this.getMethodRows(si, pi).at(mi).patchValue({
+      standardID: item?.id ?? null,
+      standardName: item?.name ?? ''
+    });
+  }
 
   loadChemicalTestTypes(callback?: () => void) {
     this.laboratoryTestService.getLaboratoryTestDropdownForChemicals('', 0, 100).subscribe({

@@ -1,10 +1,10 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Cutting Price Master List</label>
+      <label class="text-center text-md fw-medium ms-3">Machining Charge Master List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
         <i class="bi bi-plus-lg"></i>
-        Create Cutting Price Master
+        Create Machining Charge Master
       </a>
     </div>
 
@@ -24,20 +24,16 @@
           <thead class="table-light">
             <tr class="text-center align-middle">
               <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-              <th *ngFor="let column of columns; let i = index">
+              <th *ngFor="let column of columns">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
                   <span class="d-flex flex-column ms-2 mt-2">
-                    <i
-                      class="bi bi-caret-up sorting-icon-up"
+                    <i class="bi bi-caret-up sorting-icon-up"
                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
-                      (click)="applySorting(column.key)"
-                    ></i>
-                    <i
-                      class="bi bi-caret-down sorting-icon-down"
+                      (click)="applySorting(column.key)"></i>
+                    <i class="bi bi-caret-down sorting-icon-down"
                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
-                      (click)="applySorting(column.key)"
-                    ></i>
+                      (click)="applySorting(column.key)"></i>
                   </span>
                   <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
@@ -65,17 +61,12 @@
                 </div>
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="wide-input">{{ row.specimenTypeName || '-' }}</td>
-              <td class="wide-input">{{ row.cuttingType }}</td>
-              <td class="wide-input">{{ row.unitType }}</td>
-              <td class="text-center">
-                <span *ngIf="row.sizeRangeMin != null || row.sizeRangeMax != null">
-                  {{ row.sizeRangeMin ?? '0' }} – {{ row.sizeRangeMax ?? '∞' }}
-                </span>
-                <span *ngIf="row.sizeRangeMin == null && row.sizeRangeMax == null">-</span>
-              </td>
-              <td class="text-end">{{ row.currentRatePerUnit ?? '-' }}</td>
-              <td class="text-end">{{ row.currentRatePerUnitHard ?? '-' }}</td>
+              <td class="wide-input">{{ row.laboratoryTestName || '-' }}</td>
+              <td class="wide-input">{{ row.testMethodSpecificationName || '-' }}</td>
+              <td class="wide-input">{{ row.specimenRawMaterialSize || '-' }}</td>
+              <td class="wide-input">{{ row.specimenSize }}</td>
+              <td class="text-end">{{ row.currentPriceGeneralMetal ?? '-' }}</td>
+              <td class="text-end">{{ row.currentPriceHardMetal ?? '-' }}</td>
               <td class="text-center">{{ row.versionCount }}</td>
             </tr>
           </tbody>
@@ -87,7 +78,6 @@
           <div class="fw-semibold">No records found</div>
         </div>
       </div>
-      <!-- Pagination -->
       <app-pagination
         [currentPage]="pageNumber"
         [pageSize]="pageSize"
@@ -102,124 +92,127 @@
 
 <!-- Filter Modal -->
 <div #filterModal class="filter-modal">
-
   <div class="card py-2 px-3 shadow position-relative">
     <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
-
     <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
     <select class="form-select mb-2" [(ngModel)]="filterType">
       <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
       <option value="Equal">Equal</option>
       <option value="NotEqual">Not Equal</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
     </select>
-
     <input
-      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
       type="text"
       class="form-control mb-2"
       [(ngModel)]="filterValue"
       placeholder="Enter value"
       (keydown.enter)="applyFilter()"
     />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'number'"
-      type="number"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-      placeholder="Enter number"
-      (keydown.enter)="applyFilter()"
-    />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
-      type="date"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-    />
-    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
-    </div>
-
     <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
   </div>
 </div>
 
-<!-- Modal for Add/Edit/View Cutting Price Master -->
+<!-- Modal for Add/Edit/View Machining Charge Master -->
 <div
-  id="customerTypeModal"
+  id="machiningChargeModal"
   class="modal fade modal-fade modal-lg"
   #modalRef
   tabindex="-1"
   data-bs-backdrop="static" data-bs-keyboard="false"
-  aria-labelledby="customerTypeModalLabel"
   aria-modal="true"
   role="dialog"
 >
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fw-medium" id="customerTypeModalLabel">
-          {{ formTitle }}
-        </label>
+        <label class="modal-title fw-medium">{{ formTitle }}</label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
-      <form [formGroup]="cuttingPriceForm" (ngSubmit)="onSubmit()">
-        <!-- use small input for dropdowns in modal -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <!-- use small input for dropdowns, normal for text and textarea, and form-select-sm  -->
         <div class="modal-body row row-cols-2 row-gap-2 position-relative">
-          <!-- Cutting Type -->
+          <!-- Laboratory Test -->
           <div>
-            <label for="cuttingType" class="form-label form-label-sm">
-              Cutting Type
+            <app-searchable-dropdown-modal
+              [labelName]="'Laboratory Test'"
+              [fetchDataFn]="getLaboratoryTest"
+              placeholder="Search Laboratory Test"
+              [required]="true"
+              [smallInput]="true"
+              [isDisabled]="isViewMode"
+              (itemSelected)="onLaboratoryTestSelected($event)"
+              [selectedItem]="selectedLabTestId"
+            ></app-searchable-dropdown-modal>
+            <div *ngIf="form.get('laboratoryTestID')?.touched && form.get('laboratoryTestID')?.invalid">
+              <span *ngIf="form.get('laboratoryTestID')?.hasError('required')" class="text-danger text-sm">Laboratory Test is required.</span>
+            </div>
+          </div>
+
+          <!-- Test Method Standard -->
+          <div>
+            <app-searchable-dropdown-modal
+              [labelName]="'Test Method Standard'"
+              [fetchDataFn]="getTestMethodSpecification"
+              placeholder="Search Test Method Standard"
+              [required]="true"
+              [smallInput]="true"
+              [isDisabled]="isViewMode"
+              (itemSelected)="onTestMethodSpecificationSelected($event)"
+              [selectedItem]="selectedStandardId"
+            ></app-searchable-dropdown-modal>
+            <div *ngIf="form.get('testMethodStandardID')?.touched && form.get('testMethodStandardID')?.invalid">
+              <span *ngIf="form.get('testMethodStandardID')?.hasError('required')" class="text-danger text-sm">Test Method Standard is required.</span>
+            </div>
+          </div>
+
+          <!-- Specimen Raw Material Size -->
+          <div>
+            <label for="specimenRawMaterialSize" class="form-label form-label-sm">Specimen Raw Material Size</label>
+            <input
+              id="specimenRawMaterialSize"
+              formControlName="specimenRawMaterialSize"
+              class="form-control form-control-sm"
+              placeholder="e.g. Ø8mm × 120mm"
+            />
+          </div>
+
+          <!-- Specimen Size -->
+          <div>
+            <label for="specimenSize" class="form-label form-label-sm">
+              Specimen Size
               <span class="text-danger">*</span>
             </label>
             <input
-              id="cuttingType"
-              formControlName="cuttingType"
+              id="specimenSize"
+              formControlName="specimenSize"
               class="form-control form-control-sm"
-              placeholder="e.g. ≤ 12 mm, Water Jet, Gas Cutting, etc."
-              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('cuttingType')?.touched && cuttingPriceForm.get('cuttingType')?.invalid }"
+              placeholder="e.g. A370-6.25mm-R5-M8"
+              [ngClass]="{ 'is-invalid': form.get('specimenSize')?.touched && form.get('specimenSize')?.invalid }"
             />
-            <div *ngIf="cuttingPriceForm.get('cuttingType')?.touched && cuttingPriceForm.get('cuttingType')?.invalid">
-              <span *ngIf="cuttingPriceForm.get('cuttingType')?.hasError('required')" class="text-danger text-sm">Cutting Type is required.</span>
+            <div *ngIf="form.get('specimenSize')?.touched && form.get('specimenSize')?.invalid">
+              <span *ngIf="form.get('specimenSize')?.hasError('required')" class="text-danger text-sm">Specimen Size is required.</span>
             </div>
           </div>
-          <!-- Specimen Type -->
-          <div>
-            <app-searchable-dropdown-modal
-              [labelName]="'Specimen Type'"
-              [fetchDataFn]="fetchSpecimenTypeDropdown"
-              placeholder="Search Specimen Type"
-              [required]="false"
-              [smallInput]="true"
-              [isDisabled]="isViewMode"
-              (itemSelected)="onSpecimenTypeSelected($event)"
-              [selectedItem]="selectedSpecimenTypeId"
-            ></app-searchable-dropdown-modal>
-          </div>
 
-          
-
-          <!-- Unit Type -->
+          <!-- Dimension Drawing -->
           <div>
-            <label for="unitType" class="form-label form-label-sm">
-              Unit Type
-              <span class="text-danger">*</span>
-            </label>
-            <select
-              formControlName="unitType"
-              class="form-control form-select form-select-sm"
-              id="unitType"
-              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('unitType')?.touched && cuttingPriceForm.get('unitType')?.invalid }"
-            >
-              <option value="" disabled>Select Option</option>
-              <option *ngFor="let unit of unitTypes" [value]="unit">{{ unit }}</option>
-            </select>
-            <div *ngIf="cuttingPriceForm.get('unitType')?.touched && cuttingPriceForm.get('unitType')?.invalid">
-              <span *ngIf="cuttingPriceForm.get('unitType')?.hasError('required')" class="text-danger text-sm">Unit Type is required.</span>
+            <label class="form-label form-label-sm">Dimension Drawing</label>
+            <input
+              *ngIf="!isViewMode"
+              #fileInput
+              type="file"
+              class="form-control form-control-sm"
+              accept=".pdf,.png,.jpg,.jpeg"
+              (change)="onFileSelected($event)"
+            />
+            <div class="text-sm mt-1">
+              <span *ngIf="selectedFile" class="text-success">
+                <i class="bi bi-paperclip"></i> {{ selectedFile.name }}
+              </span>
+              <span *ngIf="!selectedFile && existingFilePath">
+                <a [href]="existingFilePath" target="_blank"><i class="bi bi-file-earmark-text"></i> {{ existingFileName || 'View drawing' }}</a>
+                <a *ngIf="!isViewMode" class="text-danger ms-2 cursor" (click)="removeFile()" title="Remove"><i class="bi bi-x-lg"></i></a>
+              </span>
+              <span *ngIf="!selectedFile && !existingFilePath" class="text-muted">No drawing attached.</span>
             </div>
           </div>
 
@@ -229,52 +222,18 @@
             <textarea id="remark" formControlName="remark" rows="1" class="form-control form-control-sm" placeholder="add remark"></textarea>
           </div>
 
-          <!-- Size Range Min -->
-          <div>
-            <label for="sizeRangeMin" class="form-label form-label-sm">Size Range Min (mm)</label>
-            <input
-              id="sizeRangeMin"
-              type="text"
-              formControlName="sizeRangeMin"
-              class="form-control form-control-sm"
-              placeholder="e.g. 13 (leave blank for Water Jet / Gas / EDM)"
-              appDecimalOnly
-              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('sizeRangeMin')?.touched && cuttingPriceForm.get('sizeRangeMin')?.invalid }"
-            />
-            <div *ngIf="cuttingPriceForm.get('sizeRangeMin')?.touched && cuttingPriceForm.get('sizeRangeMin')?.invalid">
-              <span *ngIf="cuttingPriceForm.get('sizeRangeMin')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
-            </div>
-          </div>
-
-          <!-- Size Range Max -->
-          <div>
-            <label for="sizeRangeMax" class="form-label form-label-sm">Size Range Max (mm)</label>
-            <input
-              id="sizeRangeMax"
-              type="text"
-              formControlName="sizeRangeMax"
-              class="form-control form-control-sm"
-              placeholder="e.g. 25 (leave blank for Water Jet / Gas / EDM)"
-              appDecimalOnly
-              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('sizeRangeMax')?.touched && cuttingPriceForm.get('sizeRangeMax')?.invalid }"
-            />
-            <div *ngIf="cuttingPriceForm.get('sizeRangeMax')?.touched && cuttingPriceForm.get('sizeRangeMax')?.invalid">
-              <span *ngIf="cuttingPriceForm.get('sizeRangeMax')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
-            </div>
-          </div>
-
-          <!-- Year-wise Rates -->
+          <!-- Year-wise Prices -->
           <div class="col-12">
             <fieldset class="fieldset-block p-2 mt-1">
-              <legend class="fieldset-legend">Year-wise Rates <span class="text-danger">*</span></legend>
+              <legend class="fieldset-legend">Year-wise Prices <span class="text-danger">*</span></legend>
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-2">
                   <thead class="table-light">
                     <tr class="text-sm">
                       <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
                       <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
-                      <th style="min-width: 120px;">Normal Rate (₹) <span class="text-danger">*</span></th>
-                      <th style="min-width: 120px;">Hard Rate (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">General Metal (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Hard Metal (₹) <span class="text-danger">*</span></th>
                       <th style="width: 40px;"></th>
                     </tr>
                   </thead>
@@ -310,27 +269,27 @@
                       <td>
                         <input
                           type="text"
-                          formControlName="ratePerUnit"
+                          formControlName="priceGeneralMetal"
                           class="form-control form-control-sm text-end"
                           appDecimalOnly
-                          [ngClass]="{ 'is-invalid': v.get('ratePerUnit')?.touched && v.get('ratePerUnit')?.invalid }"
+                          [ngClass]="{ 'is-invalid': v.get('priceGeneralMetal')?.touched && v.get('priceGeneralMetal')?.invalid }"
                         />
-                        <div *ngIf="v.get('ratePerUnit')?.touched && v.get('ratePerUnit')?.invalid">
-                          <span *ngIf="v.get('ratePerUnit')?.hasError('required')" class="text-danger text-sm">Required.</span>
-                          <span *ngIf="v.get('ratePerUnit')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        <div *ngIf="v.get('priceGeneralMetal')?.touched && v.get('priceGeneralMetal')?.invalid">
+                          <span *ngIf="v.get('priceGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('priceGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
                         </div>
                       </td>
                       <td>
                         <input
                           type="text"
-                          formControlName="ratePerUnitHard"
+                          formControlName="priceHardMetal"
                           class="form-control form-control-sm text-end"
                           appDecimalOnly
-                          [ngClass]="{ 'is-invalid': v.get('ratePerUnitHard')?.touched && v.get('ratePerUnitHard')?.invalid }"
+                          [ngClass]="{ 'is-invalid': v.get('priceHardMetal')?.touched && v.get('priceHardMetal')?.invalid }"
                         />
-                        <div *ngIf="v.get('ratePerUnitHard')?.touched && v.get('ratePerUnitHard')?.invalid">
-                          <span *ngIf="v.get('ratePerUnitHard')?.hasError('required')" class="text-danger text-sm">Required.</span>
-                          <span *ngIf="v.get('ratePerUnitHard')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        <div *ngIf="v.get('priceHardMetal')?.touched && v.get('priceHardMetal')?.invalid">
+                          <span *ngIf="v.get('priceHardMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('priceHardMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
                         </div>
                       </td>
                       <td class="text-center">
@@ -357,10 +316,8 @@
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-save" [disabled]="cuttingPriceForm.invalid">
+          <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="form.invalid">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>

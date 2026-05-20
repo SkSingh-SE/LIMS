@@ -427,12 +427,24 @@ export class CaseAccountDetailComponent implements OnInit {
    * Recalculate pricing — deletes existing DRAFT ChargeEvents and creates fresh ones.
    * Only available when billing status is PRICE_DRAFTED (not SNAPSHOT/INVOICED).
    */
-  recalculatePricing(): void {
-    if (!confirm('This will delete existing draft prices and recalculate. Continue?')) return;
+  recalculatePricing(confirmed: boolean = false): void {
+    if (!confirmed && !confirm('This will delete existing draft prices and recalculate. Continue?')) return;
 
     this.isRecalculating.set(true);
-    this.accountService.calculatePricing(this.inwardId).subscribe({
+    this.accountService.calculatePricing(this.inwardId, confirmed).subscribe({
       next: (response) => {
+        // FY mismatch — sample's inward FY differs from the current FY.
+        // Confirm with the user, then re-run applying the older price list.
+        if (response?.requiresConfirmation) {
+          this.isRecalculating.set(false);
+          const message = response.confirmationMessage
+            || `Sample is from FY ${response.inwardFY} — the ${response.inwardFY} price list will be applied. Proceed?`;
+          if (confirm(message)) {
+            this.recalculatePricing(true);
+          }
+          return;
+        }
+
         const warnings = response?.warnings || [];
         const total = response?.totalAmount || 0;
         const failures = response?.failureCount || 0;

@@ -1,123 +1,139 @@
 <div class="card shadow-lg m-2">
-  <div class="card-header card-form-header text-white text-center">
+  <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between">
+    <span></span>
     <label class="fw-medium">Invoice Case Form</label>
+    <a [routerLink]="['/invoice-case']" class="btn btn-outline-light btn-sm me-3">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
   </div>
   <div class="card-body">
     <form [formGroup]="invoiceCaseForm" (ngSubmit)="submit()" novalidate>
-      <!-- Financial Year Input -->
-      <div class="d-flex flex-row justify-content-between gap-2 mb-2">
-        <div class="col">
-          <label for="financialYearId" class="form-label fw-semibold">Financial Year <span
-              class="text-danger">*</span></label>
-          <select id="financialYearId" class="form-select" formControlName="financialYearId"
-            [class.is-invalid]="invoiceCaseForm.get('financialYearId')?.invalid && invoiceCaseForm.get('financialYearId')?.touched">
-            <option [ngValue]="null" disabled>Select financial year</option>
-            <option *ngFor="let fy of financialYears" [ngValue]="fy.id">{{ fy.year }}</option>
-          </select>
-          <div class="invalid-feedback">Financial Year is required.</div>
-        </div>
-        <div class="col">
+
+      <!-- Sub Group Test -->
+      <div class="row mb-3">
+        <div class="col-md-5">
           <app-searchable-dropdown id="laboratoryTest" [placeholder]="'Search Sub-Group'" [labelName]="'Sub Group Test'"
             [fetchDataFn]="getLaboratoryTest" (itemSelected)="onLaboratorySelected($event)" [hideLabel]="false"
-            [required]="true" [isDisabled]="isViewMode || isEditMode"
+            [required]="true" [isDisabled]="isViewMode || isEditMode || invoiceId > 0"
             [selectedItem]="invoiceCaseForm.get('laboratoryTestID')?.value"></app-searchable-dropdown>
-        </div>
-        <!-- <div class="col d-flex align-items-center justify-content-end">
-          <button type="button" class="btn btn-sm btn-add" (click)="addCase()">
-            <i class="bi bi-plus-circle-dotted"></i>
-            Add Invoice Case
-          </button>
-        </div> -->
-      </div>
-
-      <!-- Default Pricing Type -->
-      <div class="row mb-3" *ngIf="invoiceCases.length > 0">
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Default Pricing Type</label>
-          <select class="form-select" formControlName="defaultPricingType">
-            <option [ngValue]="null">Auto-detect (system decides)</option>
-            <option *ngFor="let pt of pricingTypeOptions" [value]="pt.value">{{ pt.label }}</option>
-          </select>
-          <small class="text-muted">Sets the default pricing method used at test result entry.</small>
+          <div *ngIf="invoiceCaseForm.get('laboratoryTestID')?.touched && invoiceCaseForm.get('laboratoryTestID')?.invalid">
+            <span class="text-danger text-sm">Sub Group Test is required.</span>
+          </div>
         </div>
       </div>
 
-      <div formArrayName="invoiceCasePrices" class="table-responsive mb-3 custom-scroll">
-        <table class="table table-borderless align-middle mb-1" style="min-width: 900px">
-          <thead class="table-light">
-            <tr class="text-nowrap text-muted small">
-              <th class="fw-medium px-2 wide-input">Invoice Case</th>
-              <th class="fw-medium px-2 wide-input">Alias Name</th>
-              <th class="fw-medium px-2 wide-input">Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let case of invoiceCases.controls; let i = index" [formGroupName]="i">
-              <!-- <td>
-                <label for="caseNameInput{{ i }}" class="form-label visually-hidden">Case Name</label>
-                <input
-                  type="text"
-                  id="caseNameInput{{ i }}"
-                  class="form-control"
-                  placeholder="Case Name (e.g. '5 element')"
+      <!-- Year-wise version tabs -->
+      <ng-container *ngIf="invoiceCaseForm.get('laboratoryTestID')?.value">
+        <label class="form-label fw-semibold">Year-wise Prices <span class="text-danger">*</span></label>
 
-                  [attr.autocomplete]="'off'"
-                  maxlength="20"
-                  formControlName="name"
-                  attr.aria-expanded="{{ filteredSuggestionsList[i].length > 0 }}"
-                  aria-haspopup="listbox"
-                />
+        <ul class="nav nav-tabs fy-tabs mb-0">
+          <li class="nav-item" *ngFor="let v of versions.controls; let i = index">
+            <button type="button" class="nav-link"
+              [class.active]="activeVersionIndex === i"
+              [class.current-fy]="isCurrentVersion(i)"
+              (click)="selectVersion(i)">
+              {{ getVersionFyLabel(i) }}
+              <span *ngIf="isCurrentVersion(i)" class="badge bg-success ms-1" title="Current default financial year">&#9733; Current</span>
+            </button>
+          </li>
+          <li class="nav-item" *ngIf="!isViewMode">
+            <button type="button" class="nav-link add-year-tab" (click)="addYear()">
+              <i class="bi bi-plus-circle-dotted"></i> Add Year
+            </button>
+          </li>
+        </ul>
 
-                <ul
-                  class="list-group position-absolute w-100"
-                  *ngIf="(filteredSuggestionsList[i] || []).length > 0"
-                  style="max-height: 200px; overflow-y: auto; z-index: 1000"
-                  role="listbox"
-                >
-                  <li
-                    class="list-group-item list-group-item-action"
-                    *ngFor="let suggestion of filteredSuggestionsList[i]"
+        <!-- Version panels — all rendered, only the active one shown. Each keeps its own
+             formGroupName index so tab switches never desync the bound controls. -->
+        <div class="version-panel border border-top-0 p-3" formArrayName="versions"
+          *ngIf="versions.length > 0">
+          <ng-container *ngFor="let v of versions.controls; let i = index">
+          <div [formGroupName]="i" [hidden]="activeVersionIndex !== i">
 
-                    style="cursor: pointer"
-                    role="option"
-                    tabindex="0"
-                  >
-                    {{ suggestion }}
-                  </li>
-                </ul>
-              </td> -->
-
-              <td>
-                <input type="text" formControlName="name" class="form-control" readonly>
-              </td>
-              <td>
-                <input type="text" formControlName="aliasName" class="form-control"
-                  [ngClass]="{ 'is-invalid': case.get('aliasName')?.invalid && (case.get('aliasName')?.touched || case.get('aliasName')?.dirty) }"
-                  placeholder="Alias Name">
-
-                <div
-                  *ngIf="case.get('aliasName')?.invalid && (case.get('aliasName')?.touched || case.get('aliasName')?.dirty)"
-                  class="invalid-feedback">
-                  Alias Name is required
+            <div class="row mb-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Financial Year <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="financialYearId"
+                  (change)="onVersionFyChange(i)"
+                  [ngClass]="{ 'is-invalid': v.get('financialYearId')?.touched && v.get('financialYearId')?.invalid }">
+                  <option [ngValue]="null" disabled>Select financial year</option>
+                  <option *ngFor="let fy of financialYears" [ngValue]="fy.id">
+                    {{ fy.year }}<span *ngIf="fy.isCurrent"> &#9733;</span>
+                  </option>
+                </select>
+                <div *ngIf="v.get('financialYearId')?.touched && v.get('financialYearId')?.invalid">
+                  <span class="text-danger text-sm">Financial Year is required.</span>
                 </div>
-              </td>
-
-              <td>
-                <input type="text" formControlName="price" class="form-control" placeholder="Price" appDecimalOnly
-                  maxlength="10"
-                  [ngClass]="{ 'is-invalid': case.get('price')?.invalid && (case.get('price')?.touched || case.get('price')?.dirty) }" />
-
-                <div *ngIf="case.get('price')?.errors?.['min'] &&
-              (case.get('price')?.touched || case.get('price')?.dirty)" class="invalid-feedback">
-                  Price must be greater than 0
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Effective From <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="effectiveFrom"
+                  [ngClass]="{ 'is-invalid': v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid }">
+                <div *ngIf="v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid">
+                  <span class="text-danger text-sm">Effective From date is required.</span>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!-- Submit Button -->
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Default Pricing Type</label>
+                <select class="form-select" formControlName="defaultPricingType">
+                  <option [ngValue]="null">Auto-detect (system decides)</option>
+                  <option *ngFor="let pt of pricingTypeOptions" [value]="pt.value">{{ pt.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-3 text-end" *ngIf="!isViewMode">
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeYear(i)">
+                  <i class="bi bi-trash"></i> Remove Year
+                </button>
+              </div>
+            </div>
 
+            <!-- Price rows -->
+            <div formArrayName="prices" class="table-responsive custom-scroll">
+              <table class="table table-borderless align-middle mb-1" style="min-width: 700px">
+                <thead class="table-light">
+                  <tr class="text-nowrap text-muted small">
+                    <th class="fw-medium px-2 wide-input">Invoice Case</th>
+                    <th class="fw-medium px-2 wide-input">Alias Name</th>
+                    <th class="fw-medium px-2 wide-input">Price (&#8377;)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of pricesOf(i).controls; let pi = index" [formGroupName]="pi">
+                    <td>
+                      <input type="text" formControlName="name" class="form-control" readonly>
+                    </td>
+                    <td>
+                      <input type="text" formControlName="aliasName" class="form-control" placeholder="Alias Name"
+                        [ngClass]="{ 'is-invalid': p.get('aliasName')?.touched && p.get('aliasName')?.invalid }">
+                      <div *ngIf="p.get('aliasName')?.touched && p.get('aliasName')?.invalid">
+                        <span class="text-danger text-sm">Alias Name is required.</span>
+                      </div>
+                    </td>
+                    <td>
+                      <input type="text" formControlName="price" class="form-control" placeholder="Price" appDecimalOnly
+                        maxlength="10"
+                        [ngClass]="{ 'is-invalid': p.get('price')?.touched && p.get('price')?.invalid }">
+                      <div *ngIf="p.get('price')?.touched && p.get('price')?.invalid">
+                        <span *ngIf="p.get('price')?.hasError('required')" class="text-danger text-sm">Price is required.</span>
+                        <span *ngIf="p.get('price')?.hasError('min')" class="text-danger text-sm">Price must be greater than 0.</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="pricesOf(i).length === 0">
+                    <td colspan="3" class="text-center text-muted py-3">
+                      No prices set for this year — select the Sub Group Test or add price rows.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+          </ng-container>
+        </div>
+      </ng-container>
+
+      <!-- Action bar -->
       <div class="d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/invoice-case']" class="btn btn-cancel">Cancel</a>
         <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>

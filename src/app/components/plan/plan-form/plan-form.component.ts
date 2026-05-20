@@ -1,4 +1,4 @@
-import { Component, Input, OnInit , HostListener } from '@angular/core';
+import { Component, Input, OnInit, HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -51,272 +51,240 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
 
-  // Copy Plan modal
-  showCopyPlanModal = false;
-  copySourceIdx: number | null = null;
-  copyTargetIdxs: boolean[] = [];
-  // Stable cached lists — rebuilt only on open/source-change, never on every CD cycle
-  copySampleList: { idx: number; sampleNo: string }[] = [];
-  copyTargetOptions: { idx: number; sampleNo: string }[] = [];
+  // ── Split Panel State ──
+  activeSampleIdx = 0;
+  combinedIdxs: Set<number> = new Set();
+  isCombinedMode = false;
+  selectAllChecked = false;
+  combinedActiveTab: 'general' | 'chemical' = 'general';
+  combinedPlanForm!: FormGroup;
 
+  sampleInfoCollapsed: { [key: number]: boolean } = {};
+  // ── Split Panel Methods ──
 
-  openCopyPlanModal(): void {
-    this.copySourceIdx = null;
-    this.copyTargetIdxs = this.samples.controls.map(() => false);
-    this.copySampleList = this.buildSampleList();
-    this.copyTargetOptions = [];
-    this.showCopyPlanModal = true;
+  getActiveSampleGroup(): FormGroup {
+    return this.samples.at(this.activeSampleIdx) as FormGroup;
   }
 
-  onCopySourceChange(newIdx: number): void {
-    this.copyTargetIdxs = this.copyTargetIdxs.map((v, i) => i === +newIdx ? false : v);
-    this.copyTargetOptions = this.copySampleList.filter(s => s.idx !== +newIdx);
+  getActiveSample(): AbstractControl {
+    return this.samples.at(this.activeSampleIdx);
+  }
+  toggleSampleInfoCollapse(sampleIdx: number): void {
+    if (!this.sampleInfoCollapsed[sampleIdx]) {
+      this.sampleInfoCollapsed[sampleIdx] = false;
+    }
+    this.sampleInfoCollapsed[sampleIdx] = !this.sampleInfoCollapsed[sampleIdx];
   }
 
-  private buildSampleList(): { idx: number; sampleNo: string }[] {
-    return this.samples.controls.map((s, idx) => ({
-      idx,
-      sampleNo: s.get('sampleNo')?.value || `Sample ${idx + 1}`
-    }));
+  initSampleCollapseState(): void {
+    // Initialize: closed if no metal/product data, open if has data
+    this.samples.controls.forEach((sample, idx) => {
+      const metalId = sample.get('metalClassificationID')?.value;
+      const productId = sample.get('productConditionID')?.value;
+      this.sampleInfoCollapsed[idx] = !metalId && !productId; // true = collapsed
+    });
+  }
+  onPreparationRequiredToggle(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const activeSample = this.getActiveSampleGroup();
+    if (activeSample) {
+      activeSample.patchValue({ preparationRequired: checked });
+    }
   }
 
-  trackBySampleIdx(_: number, item: { idx: number }): number {
-    return item.idx;
+  onSampleCardClick(idx: number): void {
+    if (this.isCombinedMode) return;
+    this.activeSampleIdx = idx;
+  }
+
+  toggleCombined(idx: number, checked: boolean): void {
+    if (checked) {
+      this.combinedIdxs.add(idx);
+    } else {
+      this.combinedIdxs.delete(idx);
+    }
+    this.isCombinedMode = this.combinedIdxs.size >= 2;
+    if (!this.isCombinedMode && this.combinedIdxs.size === 1) {
+      this.activeSampleIdx = Array.from(this.combinedIdxs)[0];
+    }
+    if (this.combinedIdxs.size === 0) this.selectAllChecked = false;
+  }
+
+  toggleSelectAll(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.selectAllChecked = checked;
+    this.combinedIdxs.clear();
+    if (checked) {
+      this.samples.controls.forEach((_, i) => this.combinedIdxs.add(i));
+    }
+    this.isCombinedMode = this.combinedIdxs.size >= 2;
+  }
+
+  removeFromCombined(idx: number): void {
+    this.combinedIdxs.delete(idx);
+    this.isCombinedMode = this.combinedIdxs.size >= 2;
+    if (this.combinedIdxs.size === 0) this.selectAllChecked = false;
+  }
+
+  getSamplePlanStatus(sampleIdx: number): string {
+    const plans = this.getTestPlans(sampleIdx);
+    if (!plans || plans.length === 0) return 'No Plan';
+    return plans.at(0).get('planStatus')?.value || 'Draft';
+  }
+
+  isCombinedSelected(idx: number): boolean {
+    return this.combinedIdxs.has(idx);
+  }
+
+  getCombinedIdxsArray(): number[] {
+    return Array.from(this.combinedIdxs);
+  }
+
+  initCombinedPlanForm(): void {
+    const testTypesGroup: { [key: string]: any } = {};
+    this.testTypeList.forEach(t => { testTypesGroup[t.id] = this.fb.control(false); });
+    this.combinedPlanForm = this.fb.group({
+      metalClassificationID: [null],
+      genSpec1: [null],
+      genSpec2: [null],
+      chemSpec1: [null],
+      chemSpec2: [null],
+      testTypes: this.fb.group(testTypesGroup),
+      methods: this.fb.array([this.createTestMethodRow('', '')]),
+      elements: this.fb.array([])
+    });
+  }
+
+  getCombinedMethods(): FormArray {
+    return this.combinedPlanForm.get('methods') as FormArray;
+  }
+
+  getCombinedElements(): FormArray {
+    return this.combinedPlanForm.get('elements') as FormArray;
+  }
+
+  addCombinedMethodRow(): void {
+    this.getCombinedMethods().push(this.createTestMethodRow('', ''));
+  }
+
+  getCombinedSpecWrapper() {
+    return (term: string, page: number, pageSize: number) => {
+      const metalId = this.combinedPlanForm.get('metalClassificationID')?.value || 0;
+      return this.materialSpecificationService.getGradeDropdownByMetalId(term, page, pageSize, metalId ? +metalId : 0);
+    };
+  }
+
+  onCombinedMetalSelected(item: any): void {
+    this.combinedPlanForm.patchValue({ metalClassificationID: item?.id ?? null });
+  }
+
+  onCombinedGenSpecSelected(item: any, field: 'genSpec1' | 'genSpec2'): void {
+    this.combinedPlanForm.patchValue({ [field]: item?.id ?? null });
+  }
+
+  onCombinedChemSpecSelected(item: any, field: 'chemSpec1' | 'chemSpec2'): void {
+    const newId = item?.id !== undefined ? +item.id : null;
+    this.combinedPlanForm.patchValue({ [field]: newId });
+    const spec1 = field === 'chemSpec1' ? newId : this.combinedPlanForm.get('chemSpec1')?.value;
+    const spec2 = field === 'chemSpec2' ? newId : this.combinedPlanForm.get('chemSpec2')?.value;
+    if (spec1) {
+      this.materialSpecificationService
+        .getChemicalElementsBySpecifications(spec1 || 0, spec2 || 0)
+        .subscribe({
+          next: (elements: any[]) => {
+            const arr = this.combinedPlanForm.get('elements') as FormArray;
+            while (arr.length) arr.removeAt(0);
+            if (!elements || elements.length === 0) {
+              this.toastService.show('No chemical elements found.', 'info');
+              return;
+            }
+            elements.forEach(el => {
+              const row = this.createElementRow();
+              row.patchValue({
+                parameterID: el.parameterID || el.id || 0,
+                parameterUnit: el.unit || el.parameterUnit || '',
+                parameterUnitID: el.unitID || el.parameterUnitID || 0,
+                specificationLineID: el.specificationLineID || 0,
+                minValue: el.minValue ?? null,
+                maxValue: el.maxValue ?? null,
+                selected: true
+              });
+              arr.push(row);
+            });
+          }
+        });
+    }
+  }
+
+  onCombinedLabTestSelected(item: any, methodIdx: number): void {
+    const m = this.getCombinedMethods().at(methodIdx);
+    if (m) m.patchValue({ testMethodID: item?.id ?? null });
+  }
+
+  onCombinedStandardSelected(item: any, methodIdx: number): void {
+    const m = this.getCombinedMethods().at(methodIdx);
+    if (m) m.patchValue({ standardID: item?.id ?? null, standardName: item?.name ?? null });
+  }
+
+  applyCombinedPlan(): void {
+    if (this.combinedIdxs.size === 0) return;
+    const methods = this.getCombinedMethods();
+    const combinedTestTypes = this.combinedPlanForm.get('testTypes')?.value;
+    const hasChemical = Object.values(combinedTestTypes || {}).some(v => !!v);
+    const combinedElements = this.getCombinedElements();
+
+    for (const sampleIdx of this.combinedIdxs) {
+      const sampleNo = this.samples.at(sampleIdx).get('sampleNo')?.value || '';
+      const testPlans = this.getTestPlans(sampleIdx);
+
+      let plan: FormGroup;
+      if (testPlans.length === 0) {
+        plan = this.fb.group({ id: [0], sampleNo: [sampleNo], generalTests: this.fb.array([]), chemicalTests: this.fb.array([]) });
+        testPlans.push(plan);
+        this.setActiveTab(sampleIdx, 0, 'general');
+      } else {
+        plan = testPlans.at(0) as FormGroup;
+      }
+
+      const generalTests = plan.get('generalTests') as FormArray;
+      while (generalTests.length) generalTests.removeAt(0);
+      if (methods.length > 0) {
+        const gtGroup = this.createGeneralTestGroup();
+        gtGroup.patchValue({ sampleNo, specification1: this.combinedPlanForm.get('genSpec1')?.value, specification2: this.combinedPlanForm.get('genSpec2')?.value });
+        for (let m = 0; m < methods.length; m++) {
+          const srcM = methods.at(m).value;
+          const row = this.createTestMethodRow('', '');
+          row.patchValue({ testMethodID: srcM.testMethodID, quantity: srcM.quantity, standardID: srcM.standardID, standardName: srcM.standardName });
+          (gtGroup.get('methods') as FormArray).push(row);
+        }
+        generalTests.push(gtGroup);
+      }
+
+      if (hasChemical || combinedElements.length > 0) {
+        const chemTests = plan.get('chemicalTests') as FormArray;
+        while (chemTests.length) chemTests.removeAt(0);
+        const newChem = this.createChemicalTestGroup('', '');
+        newChem.patchValue({ sampleNo, specification1: this.combinedPlanForm.get('chemSpec1')?.value, specification2: this.combinedPlanForm.get('chemSpec2')?.value });
+        (newChem.get('testTypes') as FormGroup)?.patchValue(combinedTestTypes);
+        for (let e = 0; e < combinedElements.length; e++) {
+          const row = this.createElementRow();
+          row.patchValue(combinedElements.at(e).value);
+          (newChem.get('elements') as FormArray).push(row);
+        }
+        chemTests.push(newChem);
+      }
+    }
+
+    this.toastService.show(`Combined plan applied to ${this.combinedIdxs.size} samples.`, 'success');
+    const firstIdx = Array.from(this.combinedIdxs)[0];
+    this.combinedIdxs = new Set();
+    this.isCombinedMode = false;
+    this.selectAllChecked = false;
+    this.activeSampleIdx = firstIdx;
   }
 
   displayUlr(value: string | null | undefined): string {
     return value?.trim() ? value : 'Auto Generate';
-  }
-
-  confirmCopyPlan(): void {
-    if (this.copySourceIdx === null) {
-      this.toastService.show('Please select a source sample.', 'warning');
-      return;
-    }
-    const targets = this.copyTargetIdxs
-      .map((checked, idx) => (checked ? idx : -1))
-      .filter(idx => idx !== -1);
-    if (targets.length === 0) {
-      this.toastService.show('Please select at least one target sample.', 'warning');
-      return;
-    }
-    const sourcePlans = this.getTestPlans(this.copySourceIdx);
-    if (!sourcePlans || sourcePlans.length === 0) {
-      this.toastService.show('Source sample has no plan to copy.', 'warning');
-      return;
-    }
-
-    for (const targetIdx of targets) {
-      const targetPlans = this.getTestPlans(targetIdx);
-      const targetSampleNo = this.samples.at(targetIdx).get('sampleNo')?.value || '';
-      const hasExistingPlan = targetPlans.length > 0;
-
-      if (!hasExistingPlan) {
-        // ── No existing plan → full fresh copy (id=0, Auto Generate URLs) ──
-        for (let p = 0; p < sourcePlans.length; p++) {
-          const srcPlan = sourcePlans.at(p) as FormGroup;
-          targetPlans.push(this.fb.group({
-            id: [0],
-            sampleNo: [targetSampleNo],
-            generalTests: this.copyGeneralTestsFresh(srcPlan, targetSampleNo),
-            chemicalTests: this.copyChemicalTestsFresh(srcPlan, targetSampleNo),
-          }));
-          const srcTab = this.activeTabs[`${this.copySourceIdx}-${p}`];
-          this.activeTabs[`${targetIdx}-${p}`] = srcTab || 'general';
-        }
-      } else {
-        // ── Plan exists → merge: keep existing IDs and URLs, update content ──
-        for (let p = 0; p < sourcePlans.length; p++) {
-          const srcPlan = sourcePlans.at(p) as FormGroup;
-          const existingPlan = targetPlans.at(p) as FormGroup | null;
-
-          if (!existingPlan) {
-            // Source has more plan versions than target → append fresh
-            targetPlans.push(this.fb.group({
-              id: [0],
-              sampleNo: [targetSampleNo],
-              generalTests: this.copyGeneralTestsFresh(srcPlan, targetSampleNo),
-              chemicalTests: this.copyChemicalTestsFresh(srcPlan, targetSampleNo),
-            }));
-          } else {
-            // Merge into existing plan — keep plan's own id and sampleNo
-            const mergedGeneral = this.mergeGeneralTests(srcPlan, existingPlan, targetSampleNo);
-            const mergedChemical = this.mergeChemicalTests(srcPlan, existingPlan, targetSampleNo);
-
-            // Replace the FormArrays in place
-            existingPlan.setControl('generalTests', mergedGeneral);
-            existingPlan.setControl('chemicalTests', mergedChemical);
-          }
-
-          const srcTab = this.activeTabs[`${this.copySourceIdx}-${p}`];
-          this.activeTabs[`${targetIdx}-${p}`] = srcTab || 'general';
-        }
-      }
-    }
-
-    this.showCopyPlanModal = false;
-    this.toastService.show(`Plan copied to ${targets.length} sample(s).`, 'success');
-  }
-
-  // ── Fresh copy helpers (no existing plan on target) ──────────────────────
-
-  private copyGeneralTestsFresh(srcPlan: FormGroup, targetSampleNo: string): FormArray {
-    const srcGeneral = srcPlan.get('generalTests') as FormArray;
-    const arr = this.fb.array<FormGroup>([]);
-    for (let g = 0; g < srcGeneral.length; g++) {
-      const srcGt = srcGeneral.at(g) as FormGroup;
-      const srcMethods = srcGt.get('methods') as FormArray;
-      const newGroup = this.createGeneralTestGroup();
-      newGroup.patchValue({
-        sampleNo: targetSampleNo,
-        specification1: srcGt.get('specification1')?.value,
-        specification2: srcGt.get('specification2')?.value,
-      });
-      for (let m = 0; m < srcMethods.length; m++) {
-        const src = srcMethods.at(m).value;
-        const row = this.createTestMethodRow('', '');
-        row.patchValue({ testMethodID: src.testMethodID, quantity: src.quantity });
-        (newGroup.get('methods') as FormArray).push(row);
-      }
-      arr.push(newGroup);
-    }
-    return arr;
-  }
-
-  private copyChemicalTestsFresh(srcPlan: FormGroup, targetSampleNo: string): FormArray {
-    const srcChemical = srcPlan.get('chemicalTests') as FormArray;
-    const arr = this.fb.array<FormGroup>([]);
-    for (let c = 0; c < srcChemical.length; c++) {
-      const srcCt = srcChemical.at(c) as FormGroup;
-      const srcElements = srcCt.get('elements') as FormArray;
-      const newChem = this.createChemicalTestGroup('', '');
-      newChem.patchValue({
-        sampleNo: targetSampleNo,
-        specification1: srcCt.get('specification1')?.value,
-        specification2: srcCt.get('specification2')?.value,
-      });
-      (newChem.get('testTypes') as FormGroup)?.patchValue(srcCt.get('testTypes')?.value || {});
-      for (let e = 0; e < srcElements.length; e++) {
-        const row = this.createElementRow();
-        row.patchValue(srcElements.at(e).value);
-        (newChem.get('elements') as FormArray).push(row);
-      }
-      arr.push(newChem);
-    }
-    return arr;
-  }
-
-  // ── Merge helpers (existing plan on target — preserve IDs and URLs) ───────
-
-  private mergeGeneralTests(srcPlan: FormGroup, existingPlan: FormGroup, targetSampleNo: string): FormArray {
-    const srcGeneral = srcPlan.get('generalTests') as FormArray;
-    const existingGeneral = existingPlan.get('generalTests') as FormArray;
-
-    // Source has no general tests → keep existing target general tests unchanged (preserve ULRs)
-    if (!srcGeneral || srcGeneral.length === 0) {
-      return existingGeneral ?? this.fb.array([]);
-    }
-
-    const arr = this.fb.array<FormGroup>([]);
-
-    for (let g = 0; g < srcGeneral.length; g++) {
-      const srcGt = srcGeneral.at(g) as FormGroup;
-      const srcMethods = srcGt.get('methods') as FormArray;
-      const existingGt = existingGeneral?.at(g) as FormGroup | undefined;
-      // Position-based: existing methods array for this GT group
-      const existingMethods = existingGt ? existingGt.get('methods') as FormArray : null;
-
-      const newGroup = this.createGeneralTestGroup();
-      newGroup.patchValue({
-        sampleNo: targetSampleNo,
-        specification1: srcGt.get('specification1')?.value,
-        specification2: srcGt.get('specification2')?.value,
-      });
-
-      if (existingGt?.get('id')?.value) {
-        newGroup.addControl('id', this.fb.control(existingGt.get('id')!.value));
-      }
-
-      for (let m = 0; m < srcMethods.length; m++) {
-        const src = srcMethods.at(m).value;
-
-        // Match by POSITION — ULR is tied to sample+slot, not the test method itself.
-        // Slot m of source → slot m of target. Preserve target's reportNo/ulrNo for that slot.
-        const existingMethod = existingMethods?.at(m);
-        const existingReportNo = existingMethod?.get('reportNo')?.value || '';
-        const existingUlrNo   = existingMethod?.get('ulrNo')?.value   || '';
-        const existingId      = existingMethod?.get('id')?.value       || 0;
-
-        const row = this.createTestMethodRow(existingReportNo, existingUlrNo);
-        row.patchValue({
-          testMethodID: src.testMethodID,
-          quantity:     src.quantity,
-          cancel:       src.cancel ?? false,
-        });
-        if (existingId > 0) row.addControl('id', this.fb.control(existingId));
-        (newGroup.get('methods') as FormArray).push(row);
-      }
-      arr.push(newGroup);
-    }
-    return arr;
-  }
-
-  private mergeChemicalTests(srcPlan: FormGroup, existingPlan: FormGroup, targetSampleNo: string): FormArray {
-    const srcChemical = srcPlan.get('chemicalTests') as FormArray;
-    const existingChemical = existingPlan.get('chemicalTests') as FormArray;
-
-    // Source has no chemical tests → keep existing target chemical tests unchanged (preserve ULRs)
-    if (!srcChemical || srcChemical.length === 0) {
-      return existingChemical ?? this.fb.array([]);
-    }
-
-    const arr = this.fb.array<FormGroup>([]);
-
-    for (let c = 0; c < srcChemical.length; c++) {
-      const srcCt = srcChemical.at(c) as FormGroup;
-      const srcElements = srcCt.get('elements') as FormArray;
-      const existingCt = existingChemical?.at(c) as FormGroup | null;
-
-      // Build a map of existing elements: parameterID → {id, reportNo, ulrNo}
-      const existingElementMap = new Map<number, { id: number }>();
-      if (existingCt) {
-        const existingElements = existingCt.get('elements') as FormArray;
-        existingElements?.controls.forEach(el => {
-          const parameterID = el.get('parameterID')?.value;
-          if (parameterID) existingElementMap.set(+parameterID, { id: el.get('id')?.value || 0 });
-        });
-      }
-
-      const newChem = this.createChemicalTestGroup(
-        existingCt?.get('reportNo')?.value || '',
-        existingCt?.get('ulrNo')?.value || ''
-      );
-      newChem.patchValue({
-        sampleNo: targetSampleNo,
-        specification1: srcCt.get('specification1')?.value,
-        specification2: srcCt.get('specification2')?.value,
-      });
-
-      // Carry existing CT group id if present
-      if (existingCt?.get('id')?.value) {
-        newChem.addControl('id', this.fb.control(existingCt.get('id')!.value));
-      }
-
-      // Update test types from source
-      (newChem.get('testTypes') as FormGroup)?.patchValue(srcCt.get('testTypes')?.value || {});
-
-      // Merge elements: keep existing id where parameterID matches
-      for (let e = 0; e < srcElements.length; e++) {
-        const srcEl = srcElements.at(e).value;
-        const existing = srcEl.parameterID ? existingElementMap.get(+srcEl.parameterID) : null;
-        const row = this.createElementRow();
-        row.patchValue(srcEl);
-        if (existing?.id) row.addControl('id', this.fb.control(existing.id));
-        (newChem.get('elements') as FormArray).push(row);
-      }
-      arr.push(newChem);
-    }
-    return arr;
   }
 
   // Empty-tab confirmation dialog
@@ -346,7 +314,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     private productFormService: ProductFormService,
     private tpiService: TPIService,
     private testAutoSuggestService: TestAutoSuggestService,
-   private unsavedChangesService: UnsavedChangesService) { }
+    private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
     let isRouted = false;
@@ -398,6 +366,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     // Load chemical test types first, then fetch details (testTypeList must be ready for rebind)
     this.loadChemicalTestTypes(() => {
+      this.initCombinedPlanForm();
       if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
     });
   }
@@ -697,12 +666,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const sampleGroup = this.samples.at(sampleIdx) as FormGroup;
     const testPlans = sampleGroup.get('testPlans') as FormArray;
     const sampleNo = sampleGroup.get('sampleNo')?.value || '';
-    testPlans.push(this.fb.group({
-      id: [0],
-      sampleNo: [sampleNo],
-      generalTests: this.fb.array([]),
-      chemicalTests: this.fb.array([])
-    }));
+    testPlans.push(this.createTestPlan(sampleNo));
     const newPlanIdx = testPlans.length - 1;
     this.setActiveTab(sampleIdx, newPlanIdx, 'general');
   }
@@ -740,6 +704,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             sampleNo: s.sampleNo,
             details: s.details,
             metalClassificationID: s.metalClassificationID,
+            metalClassificationName: s.metalClassificationName ?? '',
             productConditionID: s.productConditionID,
             specimenOrientationID: s.specimenOrientationID,
             productFormID: s.productFormID,
@@ -909,7 +874,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   onMetalClassificationSelected(item: any, sampleIndex: number) {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleDetailGroup) return;
-    sampleDetailGroup.patchValue({ metalClassificationID: item?.id ?? null });
+    sampleDetailGroup.patchValue({
+      metalClassificationID: item?.id ?? null,
+      metalClassificationName: item?.name ?? ''
+    });
   }
 
   onTPISelected(item: any, sampleIndex: number) {
@@ -1241,6 +1209,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         sampleNo: [sample.sampleNo],
         details: [sample.details],
         metalClassificationID: [sample.metalClassificationID],
+        metalClassificationName: [sample.metalClassificationName ?? ''],
         productConditionID: [sample.productConditionID],
         specimenOrientationID: [sample.specimenOrientationID],
         productFormID: [sample.productFormID],
@@ -1580,15 +1549,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   getPlanStatusClass(status: string): string {
     const classes: Record<string, string> = {
-      Draft: 'bg-secondary',
-      Submitted: 'bg-info',
-      UnderReview: 'bg-warning',
-      Approved: 'bg-success',
-      ReplanRequested: 'bg-danger',
-      ReplanApproved: 'bg-primary',
-      Cancelled: 'bg-secondary text-white opacity-75',
+      Draft: 'badge-draft',
+      Submitted: 'bg-info text-white',
+      UnderReview: 'bg-warning text-dark',
+      Approved: 'bg-success text-white',
+      ReplanRequested: 'bg-danger text-white',
+      ReplanApproved: 'bg-primary text-white',
+      Cancelled: 'bg-light text-secondary border',
+      'No Plan': 'badge-no-plan',
     };
-    return classes[status] || 'bg-secondary';
+    return classes[status] || 'badge-draft';
   }
 
   // ────────────── Auto-Suggest Tests ──────────────
@@ -1809,3 +1779,4 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     }
   }
 }
+

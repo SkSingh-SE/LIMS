@@ -13,10 +13,7 @@
   font-size: var(--font-sm, 0.8125rem);
   font-weight: 500;
   color: var(--neutral-700, #374151);
-  margin-bottom: 0.28rem;
   font-family: 'Poppins', sans-serif;
-  line-height: 1.5;
-  display: block;
 }
 
 :host .form-label.form-label-sm {

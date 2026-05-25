@@ -25,12 +25,12 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'specimenTypeName', type: 'string', label: 'Specimen Type', filter: true },
     { key: 'cuttingType', type: 'string', label: 'Cutting Type', filter: true },
     { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
+    { key: 'specimenTypeName', type: 'string', label: 'Specimen Type', filter: true },
     { key: 'sizeRange', type: 'string', label: 'Size Range (mm)', filter: false },
-    { key: 'currentRatePerUnit', type: 'number', label: 'Normal Rate (₹)', filter: true },
-    { key: 'currentRatePerUnitHard', type: 'number', label: 'Hard Rate (₹)', filter: true },
+    // { key: 'currentRatePerUnit', type: 'number', label: 'Normal Rate (₹)', filter: true },
+    // { key: 'currentRatePerUnitHard', type: 'number', label: 'Hard Rate (₹)', filter: true },
     { key: 'versionCount', type: 'number', label: 'Years', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {

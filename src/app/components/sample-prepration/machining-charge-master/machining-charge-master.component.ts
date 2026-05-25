@@ -27,12 +27,12 @@ export class MachiningChargeMasterComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'specimenSize', type: 'string', label: 'Specimen Size', filter: true },
+    { key: 'specimenRawMaterialSize', type: 'string', label: 'Raw Material Size', filter: true },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
     { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Standard', filter: true },
-    { key: 'specimenRawMaterialSize', type: 'string', label: 'Raw Material Size', filter: true },
-    { key: 'specimenSize', type: 'string', label: 'Specimen Size', filter: true },
-    { key: 'currentPriceGeneralMetal', type: 'number', label: 'General Price (₹)', filter: false },
-    { key: 'currentPriceHardMetal', type: 'number', label: 'Hard Price (₹)', filter: false },
+    // { key: 'currentPriceGeneralMetal', type: 'number', label: 'Normal Price (₹)', filter: false },
+    // { key: 'currentPriceHardMetal', type: 'number', label: 'Hard Price (₹)', filter: false },
     { key: 'versionCount', type: 'number', label: 'Years', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {

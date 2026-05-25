@@ -61,12 +61,12 @@
                 </div>
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="wide-input">{{ row.specimenSize }}</td>
+              <td class="wide-input">{{ row.specimenRawMaterialSize || '-' }}</td>
               <td class="wide-input">{{ row.laboratoryTestName || '-' }}</td>
               <td class="wide-input">{{ row.testMethodSpecificationName || '-' }}</td>
-              <td class="wide-input">{{ row.specimenRawMaterialSize || '-' }}</td>
-              <td class="wide-input">{{ row.specimenSize }}</td>
-              <td class="text-end">{{ row.currentPriceGeneralMetal ?? '-' }}</td>
-              <td class="text-end">{{ row.currentPriceHardMetal ?? '-' }}</td>
+              <!-- <td class="text-end">{{ row.currentPriceGeneralMetal ?? '-' }}</td>
+              <td class="text-end">{{ row.currentPriceHardMetal ?? '-' }}</td> -->
               <td class="text-center">{{ row.versionCount }}</td>
             </tr>
           </tbody>
@@ -232,7 +232,7 @@
                     <tr class="text-sm">
                       <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
                       <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
-                      <th style="min-width: 130px;">General Metal (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Normal Rate (₹) <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Hard Metal (₹) <span class="text-danger">*</span></th>
                       <th style="width: 40px;"></th>
                     </tr>

@@ -65,17 +65,17 @@
                 </div>
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="wide-input">{{ row.specimenTypeName || '-' }}</td>
               <td class="wide-input">{{ row.cuttingType }}</td>
               <td class="wide-input">{{ row.unitType }}</td>
+              <td class="wide-input">{{ row.specimenTypeName || '-' }}</td>
               <td class="text-center">
                 <span *ngIf="row.sizeRangeMin != null || row.sizeRangeMax != null">
                   {{ row.sizeRangeMin ?? '0' }} – {{ row.sizeRangeMax ?? '∞' }}
                 </span>
                 <span *ngIf="row.sizeRangeMin == null && row.sizeRangeMax == null">-</span>
               </td>
-              <td class="text-end">{{ row.currentRatePerUnit ?? '-' }}</td>
-              <td class="text-end">{{ row.currentRatePerUnitHard ?? '-' }}</td>
+              <!-- <td class="text-end">{{ row.currentRatePerUnit ?? '-' }}</td>
+              <td class="text-end">{{ row.currentRatePerUnitHard ?? '-' }}</td> -->
               <td class="text-center">{{ row.versionCount }}</td>
             </tr>
           </tbody>

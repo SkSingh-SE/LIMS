@@ -236,8 +236,18 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light">Reporting To</div>
               <div class="card-body small">
-                <div class="mb-2 text-center fw-bold" *ngIf="customerData?.name">
-                  {{ customerData.name }}
+                <!-- Override customer selector -->
+                <div class="mb-2">
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getCustomers"
+                    [selectedItem]="reportingTo.get('customerID')?.value"
+                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
+                    [labelName]="'Customer'"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode"
+                    (itemSelected)="onReportingToCustomerChange($event)">
+                  </app-searchable-dropdown>
                 </div>
                 <div formGroupName="reportingTo" class="mb-3">
                   <label class="form-label">
@@ -247,7 +257,12 @@
                   <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('reportingTo', $event)"
                     [ngClass]="{'is-invalid': reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)}">
                     <option value="null">Select Contact Person</option>
-                    <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                    <ng-container *ngIf="reportingToOverrideContacts.length > 0; else primaryReportingContacts">
+                      <option *ngFor="let cPerson of reportingToOverrideContacts" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                    </ng-container>
+                    <ng-template #primaryReportingContacts>
+                      <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                    </ng-template>
                   </select>
                   <div *ngIf="reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
                     Contact Person is required.
@@ -309,8 +324,18 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light d-flex justify-content-between align-items-center">Billing To</div>
               <div class="card-body small">
-                <div class="mb-2 text-center fw-bold" *ngIf="customerData?.name">
-                  {{ customerData.name }}
+                <!-- Override customer selector -->
+                <div class="mb-2">
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getCustomers"
+                    [selectedItem]="billingTo.get('customerID')?.value"
+                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
+                    [labelName]="'Customer'"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode"
+                    (itemSelected)="onBillingToCustomerChange($event)">
+                  </app-searchable-dropdown>
                 </div>
                 <div formGroupName="billingTo" class="mb-3">
                   <label class="form-label">
@@ -320,7 +345,12 @@
                   <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('billingTo', $event)"
                     [ngClass]="{'is-invalid': billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)}">
                     <option value="null">Select Contact Person</option>
-                    <option *ngFor="let contactPerson of billingToContactPerson" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
+                    <ng-container *ngIf="billingToOverrideContacts.length > 0; else primaryBillingContacts">
+                      <option *ngFor="let contactPerson of billingToOverrideContacts" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
+                    </ng-container>
+                    <ng-template #primaryBillingContacts>
+                      <option *ngFor="let contactPerson of billingToContactPerson" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
+                    </ng-template>
                   </select>
                   <div *ngIf="billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
                     Contact Person is required.

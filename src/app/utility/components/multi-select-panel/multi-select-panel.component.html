@@ -1,0 +1,51 @@
+<div class="ms-panel-container">
+
+  <!-- Search bar -->
+  <div class="ms-panel-search-wrap">
+    <i class="bi bi-search ms-panel-search-icon"></i>
+    <input
+      #panelSearchRef
+      type="text"
+      class="ms-panel-search-input"
+      [(ngModel)]="searchInput"
+      (input)="onSearchChange()"
+      placeholder="Type to search..."
+      autocomplete="off"
+    />
+    <button *ngIf="searchInput" type="button" class="ms-panel-clear-search" (click)="clearSearch()" tabindex="-1">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+
+  <!-- Items list -->
+  <ul class="ms-panel-list" (scroll)="onScrollEvent($event)">
+    <li
+      *ngFor="let item of items; trackBy: trackById"
+      class="ms-panel-item"
+      [class.ms-panel-item--selected]="isSelected(item.id)"
+      (click)="toggleItem(item)"
+    >
+      <span class="ms-checkbox" [class.ms-checkbox--checked]="isSelected(item.id)"></span>
+      <span class="ms-item-label">{{ item.name }}</span>
+    </li>
+
+    <!-- Loading more (appended at bottom) -->
+    <li *ngIf="loading" class="ms-panel-state">
+      <span class="spinner-border spinner-border-sm text-danger me-2" role="status"></span>
+      <span class="text-muted small">Loading...</span>
+    </li>
+
+    <!-- Empty state -->
+    <li *ngIf="!loading && items.length === 0" class="ms-panel-state ms-panel-empty">
+      <i class="bi bi-inbox me-2"></i>
+      <span>No records found</span>
+    </li>
+  </ul>
+
+  <!-- Footer: selected count -->
+  <div class="ms-panel-footer" *ngIf="selectedIds.length > 0">
+    <i class="bi bi-check-circle-fill me-1"></i>
+    {{ selectedIds.length }} item{{ selectedIds.length !== 1 ? 's' : '' }} selected
+  </div>
+
+</div>

@@ -667,16 +667,16 @@
                                   </button>
                                 </div>
                               </div>
-                              <div formGroupName="testTypes" class="row my-1">
-                                <div class="col-md-2" *ngFor="let test of testTypeList">
-                                  <div class="form-check">
-                                    <input type="checkbox" [formControlName]="test.id" class="form-check-input mt-1"
-                                      id="{{ test.id }}-{{ activeSampleIdx }}-{{ planIdx }}-{{ chemIdx }}" />
-                                    <label class="form-label"
-                                      [for]="test.id + '-' + activeSampleIdx + '-' + planIdx + '-' + chemIdx">{{
-                                      test.name }}</label>
-                                  </div>
-                                </div>
+                              <div class=" mb-2">
+                                <app-multi-select-dropdown
+                                  [labelName]="'Laboratory Test Types'"
+                                  [placeholder]="'Select chemical test types...'" 
+                                  [fetchDataFn]="getChemicalTestTypeDrop"
+                                  [selectedValues]="chemTest.get('testTypeIds')?.value"
+                                  (itemsSelected)="onChemicalTestTypesSelected($event, activeSampleIdx, planIdx, chemIdx)"
+                                  [isDisabled]="isViewMode"
+                                  [smallInput]="true">
+                                </app-multi-select-dropdown>
                               </div>
                               <div class="row mt-2 spec-row">
                                 <div class="col-md-3">
@@ -876,14 +876,15 @@
                 (itemSelected)="onCombinedMetalSelected($event)" [smallInput]="true"
                 [selectedItem]="combinedPlanForm.get('metalClassificationID')?.value"></app-searchable-dropdown>
             </div>
-            <div formGroupName="testTypes" class="row my-1">
-              <div class="col-md-2" *ngFor="let test of testTypeList">
-                <div class="form-check">
-                  <input type="checkbox" [formControlName]="test.id" class="form-check-input mt-1"
-                    id="combined-{{ test.id }}" />
-                  <label class="form-label" [for]="'combined-' + test.id">{{ test.name }}</label>
-                </div>
-              </div>
+            <div class="col-md-6 mb-2">
+              <app-multi-select-dropdown
+                [labelName]="'Laboratory Test Types'"
+                [placeholder]="'Select chemical test types...'"
+                [fetchDataFn]="getChemicalTestTypeDrop"
+                [selectedValues]="combinedPlanForm.get('testTypeIds')?.value"
+                (itemsSelected)="onCombinedChemicalTestTypesSelected($event)"
+                [smallInput]="true">
+              </app-multi-select-dropdown>
             </div>
             <div class="row mt-2 spec-row">
               <div class="col-md-3">

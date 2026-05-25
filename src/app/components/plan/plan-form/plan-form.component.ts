@@ -15,6 +15,7 @@ import { SpecimenOrientationService } from '../../../services/specimen-orientati
 import { ProductFormService } from '../../../services/product-form.service';
 import { CommonModule } from '@angular/common';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { TPIService } from '../../../services/tpi.service';
@@ -26,7 +27,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
   selector: 'app-plan-form',
   templateUrl: './plan-form.component.html',
   styleUrls: ['./plan-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent]
 })
 export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
@@ -47,7 +48,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   replanPlanId: number | null = null;
 
   yearCode = new Date().getFullYear().toString().slice(-2);
-  testTypeList: { id: number, name: string }[] = [];
+  getChemicalTestTypeDrop = (term: string, page: number, pageSize: number) =>
+    this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize);
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
 
@@ -141,15 +143,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   initCombinedPlanForm(): void {
-    const testTypesGroup: { [key: string]: any } = {};
-    this.testTypeList.forEach(t => { testTypesGroup[t.id] = this.fb.control(false); });
     this.combinedPlanForm = this.fb.group({
       metalClassificationID: [null],
       genSpec1: [null],
       genSpec2: [null],
       chemSpec1: [null],
       chemSpec2: [null],
-      testTypes: this.fb.group(testTypesGroup),
+      testTypeIds: [[]],
       methods: this.fb.array([this.createTestMethodRow('', '')]),
       elements: this.fb.array([])
     });
@@ -229,8 +229,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   applyCombinedPlan(): void {
     if (this.combinedIdxs.size === 0) return;
     const methods = this.getCombinedMethods();
-    const combinedTestTypes = this.combinedPlanForm.get('testTypes')?.value;
-    const hasChemical = Object.values(combinedTestTypes || {}).some(v => !!v);
+    const combinedTestTypeIds: number[] = this.combinedPlanForm.get('testTypeIds')?.value || [];
+    const hasChemical = combinedTestTypeIds.length > 0;
     const combinedElements = this.getCombinedElements();
 
     for (const sampleIdx of this.combinedIdxs) {
@@ -265,7 +265,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         while (chemTests.length) chemTests.removeAt(0);
         const newChem = this.createChemicalTestGroup('', '');
         newChem.patchValue({ sampleNo, specification1: this.combinedPlanForm.get('chemSpec1')?.value, specification2: this.combinedPlanForm.get('chemSpec2')?.value });
-        (newChem.get('testTypes') as FormGroup)?.patchValue(combinedTestTypes);
+        newChem.get('testTypeIds')?.setValue([...combinedTestTypeIds]);
         for (let e = 0; e < combinedElements.length; e++) {
           const row = this.createElementRow();
           row.patchValue(combinedElements.at(e).value);
@@ -364,11 +364,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.disableFormRecursively(this.planForm);
     }
 
-    // Load chemical test types first, then fetch details (testTypeList must be ready for rebind)
-    this.loadChemicalTestTypes(() => {
-      this.initCombinedPlanForm();
-      if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
-    });
+    this.initCombinedPlanForm();
+    if (this.inwardID) this.fetchSampleInwardDetails(this.inwardID);
   }
 
   // Form Initialization
@@ -432,15 +429,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   createChemicalTestGroup(reportNo: string, ulrNo: string): FormGroup {
-    const testTypesGroup: { [key: string]: any } = {};
-    this.testTypeList.forEach(t => {
-      testTypesGroup[t.id] = this.fb.control(false);
-    });
     return this.fb.group({
       sampleNo: [''],
       reportNo: [reportNo || ''],
       ulrNo: [ulrNo || ''],
-      testTypes: this.fb.group(testTypesGroup),
+      testTypeIds: [[]],
       specification1: [null],
       specification2: [null],
       elements: this.fb.array([])
@@ -505,9 +498,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
       for (let c = 0; c < (chemicalTests?.length ?? 0); c++) {
         const ct = chemicalTests.at(c) as FormGroup;
-        const testTypes = ct.get('testTypes') as FormGroup;
         const elements = ct.get('elements') as FormArray;
-        if (Object.values(testTypes?.value ?? {}).some(v => !!v)) return true;
+        if ((ct.get('testTypeIds')?.value?.length ?? 0) > 0) return true;
         if ((elements?.length ?? 0) > 0) return true;
       }
     }
@@ -763,7 +755,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               sampleNo: ct.sampleNo,
               reportNo: ct.reportNo,
               ulrNo: ct.ulrNo,
-              testTypes: ct.testTypes,
+              testTypeIds: ct.testTypeIds || [],
               specification1: ct.specification1,
               specification2: ct.specification2,
               elements: (ct.elements || []).map((el: any) => ({
@@ -1144,26 +1136,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           );
 
           const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) => {
-            const testTypesGroup: any = {};
-
-            // Start with all test types from master as false
-            this.testTypeList.forEach(t => {
-              testTypesGroup[t.id] = [false];
-            });
-
-            // Overlay saved values from backend (keyed by LaboratoryTestID)
-            if (ct.testTypes && typeof ct.testTypes === 'object') {
-              Object.keys(ct.testTypes).forEach(typeKey => {
-                testTypesGroup[typeKey] = [ct.testTypes[typeKey] ?? false];
-              });
-            }
+            const testTypeIds: number[] = (ct.testTypeIds || []).map((id: any) => +id);
 
             return this.fb.group({
               id: [ct.id || 0],
               sampleNo: [sample.sampleNo],
               reportNo: [ct.reportNo],
               ulrNo: [ct.ulrNo],
-              testTypes: this.fb.group(testTypesGroup),
+              testTypeIds: [testTypeIds],
               specification1: [
                 ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null
               ],
@@ -1258,8 +1238,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         if (chemicalTests && chemicalTests.length > 0) {
           const allBlank = (chemicalTests.controls as FormGroup[]).every(ct => {
             const elements = ct.get('elements') as FormArray;
-            const testTypes = ct.get('testTypes') as FormGroup;
-            return (elements?.length ?? 0) === 0 && !Object.values(testTypes?.value ?? {}).some(v => !!v);
+            return (elements?.length ?? 0) === 0 && !(ct.get('testTypeIds')?.value?.length > 0);
           });
           if (allBlank) result.push({ sampleIdx: i, planIdx: j, type: 'chemicalTests', sampleNo, label: 'Chemical Test' });
         }
@@ -1433,7 +1412,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             sampleNo: c.sampleNo || '',
             reportNo: c.reportNo === 'Auto Generate' ? '' : c.reportNo || '',
             ulrNo: c.ulrNo === 'Auto Generate' ? '' : c.ulrNo || '',
-            testTypes: c.testTypes || {},
+            testTypeIds: c.testTypeIds || [],
             specification1: c.specification1 || 0,
             specification2: c.specification2 || null,
             elements: (c.elements || []).map((e: any) => ({
@@ -1751,18 +1730,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
-  loadChemicalTestTypes(callback?: () => void) {
-    this.laboratoryTestService.getLaboratoryTestDropdownForChemicals('', 0, 100).subscribe({
-      next: (data) => {
-        this.testTypeList = data || [];
-        if (callback) callback();
-      },
-      error: (err) => {
-        console.error("Failed to load dynamic chemical test types", err);
-        this.testTypeList = [];
-        if (callback) callback();
-      }
-    });
+  onChemicalTestTypesSelected(items: any[], sampleIdx: number, planIdx: number, chemIdx: number): void {
+    const ids = items.map(i => i.id);
+    this.getTestArray(sampleIdx, planIdx, 'chemicalTests').at(chemIdx).get('testTypeIds')?.setValue(ids);
+    this.planForm.markAsDirty();
+  }
+
+  onCombinedChemicalTestTypesSelected(items: any[]): void {
+    this.combinedPlanForm.get('testTypeIds')?.setValue(items.map(i => i.id));
   }
 
 

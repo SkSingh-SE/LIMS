@@ -182,6 +182,7 @@ export const routes: Routes = [
             { path: 'test/details/:id', component: LaboratoryTestComponent },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
+            { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent) , canDeactivate: [unsavedChangesGuard]},

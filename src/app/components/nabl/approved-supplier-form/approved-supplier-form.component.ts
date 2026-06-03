@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -19,14 +19,14 @@ import { NablHeaderService } from '../../../services/nabl-header.service';
     templateUrl: './approved-supplier-form.component.html'
 })
 export class ApprovedSupplierFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     supplierForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
     formTitle = 'Add Approved Supplier';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
-
+    supplierList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         supplier: true,
@@ -44,7 +44,7 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
     };
 
     performanceGrades = ['A', 'B', 'C', 'D'];
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private service: ApprovedSupplierService,
@@ -60,11 +60,11 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             next: (defaults) => {
                 this.supplierForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
-
+        this.loadSupplierList();
         if (path === 'details') {
             this.isViewMode = true;
             this.formTitle = 'View Approved Supplier';
@@ -87,31 +87,60 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             issueNo: ['01'],
             revNo: ['00'],
             date: [today, Validators.required],
-            documentNo: [''],
+            documentNo: ['F-20'],
 
             supplierName: ['', Validators.required],
-            contactDetails: ['', Validators.required],
-            productsServicesSupplied: ['', Validators.required],
-
-            registrationNo: [''],
+            supplierRegisterId: [null, Validators.required],
+            contactPerson: ['', Validators.required],
+            mobileNo: ['', [Validators.required, Validators.pattern('^[0-9]{10,12}$')]],
+            email: ['', [Validators.required, Validators.email]],
+            registerNo: ['', Validators.required],
+            gstNo: ['', [Validators.required, Validators.pattern('^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$')]],
+            serviceProviderName: ['', Validators.required],
+            address: ['', Validators.required],
             approvalDate: [today, Validators.required],
-            validUpTo: [''],
-
-            lastEvaluationDate: [''],
+            lastReviewDate: [''],
             lastScore: [null],
-            performanceGrade: [''],
-
+            performanceRating: [''],
             isBlacklisted: [false],
-            blacklistDate: [''],
-            address: [''],
-            agreementDate: [''],
-            remarks: [''],
+            blacklistDate: [null],
+            blacklistReason: [null],
+            isPresentStatus: [false],
+            enlistmentDate: [null],
             isActive: [true],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            preparedDate: [this.today],
+            reviewedBy: [null],
+            approvedBy: [null],
+            productApproved: [false],
+            agreementDate: [this.today, Validators.required],
+            remarks: [null]
+        });
+        this.supplierForm.get('isBlacklisted')?.valueChanges.subscribe(isChecked => {
+            const reason = this.supplierForm.get('blacklistReason');
+
+            if (isChecked) {
+                reason?.setValidators([Validators.required]);
+            } else {
+                reason?.clearValidators();
+                reason?.setValue('');
+            }
+
+            reason?.updateValueAndValidity();
         });
 
+        this.supplierForm.get('isPresentStatus')?.valueChanges.subscribe(status => {
+            const enlistmentDate = this.supplierForm.get('enlistmentDate');
+
+            if (status === true) {
+                enlistmentDate?.setValidators([Validators.required]);
+            } else {
+                enlistmentDate?.clearValidators();
+                enlistmentDate?.setValue(null);
+            }
+
+            enlistmentDate?.updateValueAndValidity();
+        });
         // System-managed fields — always readonly
         this.supplierForm.get('documentNo')?.disable();
         this.supplierForm.get('issueNo')?.disable();
@@ -124,24 +153,70 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             next: (data) => {
                 if (data) {
                     const formValues = { ...data };
-                    formValues.date = new Date().toISOString().split('T')[0];
+                    formValues.date = NablFormsHelper.formatDateForInput((data as any)?.date || '');
+                    formValues.lastReviewDate = NablFormsHelper.formatDateForInput((data as any)?.lastReviewDate || '');
+                    formValues.enlistmentDate = NablFormsHelper.formatDateForInput((data as any)?.enlistmentDate || '');
+                    formValues.agreementDate = NablFormsHelper.formatDateForInput((data as any)?.agreementDate || '');
                     this.supplierForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.supplierForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.supplierForm.get('documentNo')?.disable();
-                this.supplierForm.get('issueNo')?.disable();
-                this.supplierForm.get('revNo')?.disable();
-                this.supplierForm.get('formatNo')?.disable();
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.supplierForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                    this.supplierForm.get('documentNo')?.disable();
+                    this.supplierForm.get('issueNo')?.disable();
+                    this.supplierForm.get('revNo')?.disable();
+                    this.supplierForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
         });
     }
+
+
+    loadSupplierList(): void {
+        this.service.getAllSuppliers().subscribe({
+            next: (res) => {
+                this.supplierList = res;
+            },
+            error: () => {
+                this.supplierList = [];
+            }
+        })
+    }
+    onSupplierChange(event: any): void {
+        const supplierId = Number(event.target.value);
+        const selectSupplier = this.supplierList.find(c => c.id === supplierId || c.Id === supplierId);
+        if (!selectSupplier) {
+            this.supplierForm.patchValue({
+                supplierRegisterId: null,
+                supplierName: '',
+                contactPerson: '',
+                mobileNo: '',
+                email: '',
+                registerNo: '',
+                gstNo: '',
+                address: '',
+            });
+            return;
+        }
+        const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+        this.supplierForm.patchValue({
+            supplierRegisterId: selectSupplier.id || selectSupplier.Id,
+            supplierName: selectSupplier.name || selectSupplier.Name,
+            contactPerson: additional.ContactPerson || '',
+            mobileNo: additional.MobileNo || '',
+            email: additional.Email || '',
+            registerNo: additional.RegisterNo || '',
+            gstNo: additional.GSTNo || '',
+            address: additional.Address || ''
+        });
+
+
+    }
+
 
     onSubmit(): void {
         if (this.supplierForm.invalid) {
@@ -150,15 +225,36 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
         }
 
         const formData = this.supplierForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        formData.lastReviewDate = formData.lastReviewDate ? formData.lastReviewDate : null;
+        if (formData.isPresentStatus === false) {
+            formData.enlistmentDate = null;
+        }
+        if (formData.isBlacklisted || formData.blacklistReason) {
+            formData.blacklistDate = this.today;
+        }
+        if (formData.isBlacklisted === false) {
+            formData.blacklistDate = null;
+        }
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => { this.saved = true; this.router.navigate(['/approved-supplier']); },
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('Approved Supplier updated successfully', 'success')
+                    this.router.navigate(['/approved-supplier']);
+                },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => { this.saved = true; this.router.navigate(['/approved-supplier']); },
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('Competence requirement created successfully', 'success');
+                    this.router.navigate(['/approved-supplier']);
+                },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
             });
         }
@@ -172,16 +268,16 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
         this.openSections[section] = !this.openSections[section];
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.supplierForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.supplierForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.supplierForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.supplierForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

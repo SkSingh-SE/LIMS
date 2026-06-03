@@ -1,11 +1,8 @@
-<div
-  class="register-table-wrapper"
-  [class.card]="showCardWrapper"
-  [class.basic-data-table]="showCardWrapper"
-  [class.w-100]="showCardWrapper"
->
+<div class="register-table-wrapper" [class.card]="showCardWrapper" [class.basic-data-table]="showCardWrapper"
+  [class.w-100]="showCardWrapper">
   <!-- Card Header (when showCardWrapper is true) -->
-  <div *ngIf="showCardWrapper && title" class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+  <div *ngIf="showCardWrapper && title"
+    class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
     <label class="text-md fw-medium ms-3">{{ title }}</label>
     <a *ngIf="addRoute" [routerLink]="addRoute" class="btn btn-outline-light btn-sm me-3">
       <i class="bi bi-plus-lg"></i>
@@ -17,13 +14,8 @@
     <!-- Search & Controls Bar -->
     <div class="d-flex justify-content-end mb-2 no-print" *ngIf="showPagination">
       <div class="w-25 input-group custom-search">
-        <input
-          type="text"
-          class="form-control form-control-sm"
-          placeholder="Search..."
-          [(ngModel)]="searchTerm"
-          (keydown.enter)="onSearch()"
-        />
+        <input type="text" class="form-control form-control-sm" placeholder="Search..." [(ngModel)]="searchTerm"
+          (keydown.enter)="onSearch()" />
         <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
           <i class="bi bi-search"></i>
         </div>
@@ -40,26 +32,25 @@
               <div class="d-flex align-items-center justify-content-center">
                 <span class="dt-column-order">{{ col.label }}</span>
                 <span class="d-flex flex-column ms-2 mt-2">
-                  <i
-                    class="bi bi-caret-up sorting-icon-up"
+                  <i class="bi bi-caret-up sorting-icon-up"
                     [ngClass]="{ 'text-danger': sortByColumn === col.key && sortOrder === 'asc' }"
-                    (click)="applySorting(col.key)"
-                  ></i>
-                  <i
-                    class="bi bi-caret-down sorting-icon-down"
+                    (click)="applySorting(col.key)"></i>
+                  <i class="bi bi-caret-down sorting-icon-down"
                     [ngClass]="{ 'text-danger': sortByColumn === col.key && sortOrder === 'desc' }"
-                    (click)="applySorting(col.key)"
-                  ></i>
+                    (click)="applySorting(col.key)"></i>
                 </span>
-                <span *ngIf="!hasFilter(col.key) && col.filter" class="cursor-pointer ms-2 mt-1" (click)="openFilterModal(col.key, $event)">
+                <span *ngIf="!hasFilter(col.key) && col.filter" class="cursor-pointer ms-2 mt-1"
+                  (click)="openFilterModal(col.key, $event)">
                   <i class="bi bi-funnel"></i>
                 </span>
-                <span *ngIf="hasFilter(col.key) && col.filter" class="cursor-pointer ms-1 mt-1" (click)="resetFilter(col.key)">
+                <span *ngIf="hasFilter(col.key) && col.filter" class="cursor-pointer ms-1 mt-1"
+                  (click)="resetFilter(col.key)">
                   <i class="bi bi-x-lg text-danger"></i>
                 </span>
               </div>
             </th>
-            <th *ngIf="showActions" class="align-middle text-center no-print" [style.width]="showWorkflowActions ? '220px' : '150px'">Actions</th>
+            <th *ngIf="showActions" class="align-middle text-center no-print"
+              [style.width]="showWorkflowActions ? '220px' : '150px'">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -68,8 +59,8 @@
             <td *ngFor="let col of columns" class="align-middle">
               <span *ngIf="col.type === 'date'">{{ row[col.key] | date: "dd MMM, yyyy" }}</span>
               <ng-container *ngIf="col.type !== 'date'">
-                <span *ngIf="col.key === 'status' && showWorkflowActions" class="badge" [ngClass]="getStatusBadgeClass(row[col.key])"
-                  [class.text-decoration-line-through]="row.isObsolete">
+                <span *ngIf="col.key === 'status' && showWorkflowActions" class="badge"
+                  [ngClass]="getStatusBadgeClass(row[col.key])" [class.text-decoration-line-through]="row.isObsolete">
                   {{ row.isObsolete ? 'Obsolete' : row[col.key] }}
                 </span>
                 <span *ngIf="col.key !== 'status' || !showWorkflowActions">
@@ -82,11 +73,19 @@
                 <!-- Route-based navigation when baseRoute is set -->
                 <ng-container *ngIf="baseRoute; else eventActions">
                   <!-- View: always available -->
-                  <a [routerLink]="[baseRoute + '/details', row.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
+                  <a [routerLink]="[baseRoute + '/details', row.id]" [state]="{ mode: 'view' }" class="icon-link"
+                    title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
                   <!-- Edit: only Draft / Rejected -->
-                  <a *ngIf="canEdit(row)" [routerLink]="[baseRoute + '/edit', row.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                  <!-- <a *ngIf="canEdit(row)" [routerLink]="[baseRoute + '/edit', row.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  </a> -->
+
+                  <a *ngIf="canEdit(row)" [routerLink]="[baseRoute + '/edit', row.id]" class="icon-link"
+                    [class.disabled-edit]="isEditDisabled(row)"
+                    (click)="isEditDisabled(row) ? $event.preventDefault() : null">
+
                     <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
                   </a>
                   <!-- Print Preview: always available -->
@@ -94,25 +93,31 @@
                     <i class="bi bi-printer fs-5 text-primary"></i>
                   </a>
                   <!-- Delete: only Draft -->
-                  <a *ngIf="canDelete(row)" class="icon-link cursor-pointer" title="Delete" (click)="onDelete.emit(row.id)">
+                  <a *ngIf="canDelete(row)" class="icon-link cursor-pointer" title="Delete"
+                    (click)="onDelete.emit(row.id)">
                     <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
 
                   <!-- Workflow actions -->
                   <ng-container *ngIf="showWorkflowActions && !row.isObsolete">
-                    <a *ngIf="row.status === 'Draft'" class="icon-link cursor-pointer" title="Submit for Review" (click)="doSubmit(row)">
+                    <a *ngIf="row.status === 'Draft'" class="icon-link cursor-pointer" title="Submit for Review"
+                      (click)="doSubmit(row)">
                       <i class="bi bi-send fs-5 text-info"></i>
                     </a>
-                    <a *ngIf="row.status === 'Submitted'" class="icon-link cursor-pointer" title="Mark as Reviewed" (click)="doReview(row)">
+                    <a *ngIf="row.status === 'Submitted'" class="icon-link cursor-pointer" title="Mark as Reviewed"
+                      (click)="doReview(row)">
                       <i class="bi bi-check2-circle fs-5 text-warning"></i>
                     </a>
-                    <a *ngIf="row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Approve" (click)="doApprove(row)">
+                    <a *ngIf="row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Approve"
+                      (click)="doApprove(row)">
                       <i class="bi bi-check-circle-fill fs-5 text-success"></i>
                     </a>
-                    <a *ngIf="row.status === 'Submitted' || row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Reject" (click)="doReject(row)">
+                    <a *ngIf="row.status === 'Submitted' || row.status === 'Reviewed'" class="icon-link cursor-pointer"
+                      title="Reject" (click)="doReject(row)">
                       <i class="bi bi-x-circle fs-5 text-danger"></i>
                     </a>
-                    <a *ngIf="row.status === 'Approved'" class="icon-link cursor-pointer" title="Create Revision" (click)="openReviseDialog(row)">
+                    <a *ngIf="row.status === 'Approved'" class="icon-link cursor-pointer" title="Create Revision"
+                      (click)="openReviseDialog(row)">
                       <i class="bi bi-arrow-repeat fs-5 text-primary"></i>
                     </a>
                   </ng-container>
@@ -129,25 +134,31 @@
                   <a class="icon-link cursor-pointer" title="Preview" (click)="onPreview.emit(row.id)">
                     <i class="bi bi-printer fs-5 text-primary"></i>
                   </a>
-                  <a *ngIf="canDelete(row)" class="icon-link cursor-pointer" title="Delete" (click)="onDelete.emit(row.id)">
+                  <a *ngIf="canDelete(row)" class="icon-link cursor-pointer" title="Delete"
+                    (click)="onDelete.emit(row.id)">
                     <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
 
                   <!-- Workflow actions (event-based) -->
                   <ng-container *ngIf="showWorkflowActions && !row.isObsolete">
-                    <a *ngIf="row.status === 'Draft'" class="icon-link cursor-pointer" title="Submit for Review" (click)="doSubmit(row)">
+                    <a *ngIf="row.status === 'Draft'" class="icon-link cursor-pointer" title="Submit for Review"
+                      (click)="doSubmit(row)">
                       <i class="bi bi-send fs-5 text-info"></i>
                     </a>
-                    <a *ngIf="row.status === 'Submitted'" class="icon-link cursor-pointer" title="Mark as Reviewed" (click)="doReview(row)">
+                    <a *ngIf="row.status === 'Submitted'" class="icon-link cursor-pointer" title="Mark as Reviewed"
+                      (click)="doReview(row)">
                       <i class="bi bi-check2-circle fs-5 text-warning"></i>
                     </a>
-                    <a *ngIf="row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Approve" (click)="doApprove(row)">
+                    <a *ngIf="row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Approve"
+                      (click)="doApprove(row)">
                       <i class="bi bi-check-circle-fill fs-5 text-success"></i>
                     </a>
-                    <a *ngIf="row.status === 'Submitted' || row.status === 'Reviewed'" class="icon-link cursor-pointer" title="Reject" (click)="doReject(row)">
+                    <a *ngIf="row.status === 'Submitted' || row.status === 'Reviewed'" class="icon-link cursor-pointer"
+                      title="Reject" (click)="doReject(row)">
                       <i class="bi bi-x-circle fs-5 text-danger"></i>
                     </a>
-                    <a *ngIf="row.status === 'Approved'" class="icon-link cursor-pointer" title="Create Revision" (click)="openReviseDialog(row)">
+                    <a *ngIf="row.status === 'Approved'" class="icon-link cursor-pointer" title="Create Revision"
+                      (click)="openReviseDialog(row)">
                       <i class="bi bi-arrow-repeat fs-5 text-primary"></i>
                     </a>
                   </ng-container>
@@ -168,31 +179,25 @@
     </div>
 
     <!-- Pagination -->
-    <app-pagination
-      [currentPage]="pageNumber"
-      [pageSize]="pageSize"
-      [totalItems]="totalItems"
-      [pageSizes]="pageSizes"
-      (pageChange)="changePage($event)"
-      (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+    <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems" [pageSizes]="pageSizes"
+      (pageChange)="changePage($event)" (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
     </app-pagination>
   </div>
 
   <!-- Revision Dialog -->
-  <app-nabl-revision-dialog
-    [visible]="showRevisionDialog"
-    (onConfirm)="onRevisionConfirm($event)"
+  <app-nabl-revision-dialog [visible]="showRevisionDialog" (onConfirm)="onRevisionConfirm($event)"
     (onCancel)="onRevisionCancel()">
   </app-nabl-revision-dialog>
 
   <!-- Filter Modal -->
   <div #filterModal class="filter-modal shadow" style="display: none">
     <div class="card py-2 px-3 position-relative border-0">
-      <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+      <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+        (click)="closeFilterModal()"></button>
       <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle }}</label>
 
       <select class="form-select form-select-sm mb-2" [(ngModel)]="filterType">
-        <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+        <!-- <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
         <option *ngIf="getColumnType(filterColumn) === 'string'" value="StartsWith">Starts With</option>
         <option *ngIf="getColumnType(filterColumn) === 'string'" value="EndsWith">Ends With</option>
         <option *ngIf="getColumnType(filterColumn) === 'number'" value="Equal">Equal</option>
@@ -200,39 +205,32 @@
         <option *ngIf="getColumnType(filterColumn) === 'number'" value="LessThan">Less Than</option>
         <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
         <option *ngIf="getColumnType(filterColumn) === 'bool'" value="Equal">Equal</option>
-        <option *ngIf="getColumnType(filterColumn) === 'bool'" value="NotEqual">Not Equal</option>
+        <option *ngIf="getColumnType(filterColumn) === 'bool'" value="NotEqual">Not Equal</option> -->
+
+        <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains
+        </option>
+        <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+        <option value="Equal">Equal</option>
+        <option value="NotEqual">Not Equal</option>
+        <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater
+          Than</option>
+        <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than
+        </option>
       </select>
 
-      <input
-        *ngIf="getColumnType(filterColumn) !== 'date' && getColumnType(filterColumn) !== 'bool'"
-        type="text"
-        class="form-control form-control-sm mb-2"
-        [(ngModel)]="filterValue"
-        placeholder="Value"
-        (keydown.enter)="applyFilter()"
-      />
-      <select
-        *ngIf="getColumnType(filterColumn) === 'bool'"
-        class="form-select form-select-sm mb-2"
-        [(ngModel)]="filterValue"
-      >
+      <input *ngIf="getColumnType(filterColumn) !== 'date' && getColumnType(filterColumn) !== 'bool'" type="text"
+        class="form-control form-control-sm mb-2" [(ngModel)]="filterValue" placeholder="Value"
+        (keydown.enter)="applyFilter()" />
+      <select *ngIf="getColumnType(filterColumn) === 'bool'" class="form-select form-select-sm mb-2"
+        [(ngModel)]="filterValue">
         <option value="">Select...</option>
         <option value="true">Yes</option>
         <option value="false">No</option>
       </select>
-      <input
-        *ngIf="getColumnType(filterColumn) === 'date'"
-        type="date"
-        class="form-control form-control-sm mb-2"
-        [(ngModel)]="filterValue"
-      />
-      <input
-        *ngIf="getColumnType(filterColumn) === 'date' && filterType === 'Between'"
-        type="date"
-        class="form-control form-control-sm mb-2"
-        [(ngModel)]="filterValue2"
-        placeholder="End date"
-      />
+      <input *ngIf="getColumnType(filterColumn) === 'date'" type="date" class="form-control form-control-sm mb-2"
+        [(ngModel)]="filterValue" />
+      <input *ngIf="getColumnType(filterColumn) === 'date' && filterType === 'Between'" type="date"
+        class="form-control form-control-sm mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
 
       <div class="d-flex gap-1">
         <button class="btn btn-primary btn-sm flex-fill" (click)="applyFilter()">Apply</button>

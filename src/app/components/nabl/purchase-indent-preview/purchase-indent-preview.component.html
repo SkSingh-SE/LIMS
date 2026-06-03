@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,88 +36,53 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record()" [title]="'Purchase Indent / Request (F-21)'" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        mainTitle="Purchase Indent / Purchase Request"
-        [formatNo]="record()?.formatNo || 'F-21'"
-        [issueNo]="record()?.issueNo || '01'"
-        [revNo]="record()?.revNo || '00'"
-        [issueDate]="record()?.date || ''"
-      ></app-nabl-print-header>
+      <app-nabl-print-header mainTitle="Purchase Indent / Purchase Request" [formatNo]="record()?.formatNo || 'F-21'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-21')" [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
-      <!-- Section I: Indent Info -->
       <div class="doc-section mb-3">
-        <div class="sec-title">I. INDENT INFORMATION</div>
-        <table class="table table-bordered inner-table">
+        <table class="table table-bordered inner-table purchase-indent-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 20%">Indent Number</td>
-              <td style="width: 30%">{{ record()?.documentNo }}</td>
-              <td class="lbl" style="width: 20%">Date</td>
-              <td style="width: 30%">{{ record()?.date | date: "dd/MM/yyyy" }}</td>
+              <td class="lbl" style="width: 35%;">Date:-</td>
+              <td>{{ record()?.date | date: "dd/MM/yyyy" }}</td>
             </tr>
+
             <tr>
-              <td class="lbl">Department</td>
-              <td>{{ record()?.departmentName }}</td>
-              <td class="lbl">Priority</td>
-              <td>
-                <span
-                  class="fw-bold"
-                  [ngClass]="{
-                    'text-danger': record()?.priority === 'Urgent' || record()?.priority === 'High',
-                    'text-warning': record()?.priority === 'Medium',
-                    'text-info': record()?.priority === 'Low',
-                  }"
-                >
-                  {{ record()?.priority | uppercase }}
-                </span>
+              <td class="lbl">Purchase Indent / Purchase Request No:-</td>
+              <td>{{ record()?.piNo }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Description of Item / Service:-<br />
+                <small>(Chemical / Material Name)</small>
               </td>
+              <td>{{ record()?.justification }}</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
 
-      <!-- Section II: Items Table -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">II. REQUIRED ITEMS / SERVICES</div>
-        <table class="table table-bordered inner-table">
-          <thead>
-            <tr class="tbl-head">
-              <th style="width: 50px">SN</th>
-              <th>Description / Specification</th>
-              <th style="width: 100px">Qty</th>
-              <th style="width: 80px">Unit</th>
-              <th style="width: 150px">Est. Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of record()?.items; let i = index">
-              <td class="text-center">{{ i + 1 }}</td>
-              <td>{{ item.description }}</td>
-              <td class="text-center">{{ item.quantity }}</td>
-              <td class="text-center">{{ item.unitOfMeasure }}</td>
-              <td class="text-end">&#8377; {{ item.estimatedCost || 0 | number: "1.2-2" }}</td>
+            <tr>
+              <td class="lbl">Technical Specification:-</td>
+              <td>{{ record()?.technicalSpecification }}</td>
             </tr>
             <tr>
-              <td colspan="4" class="text-end lbl">Total Estimated Cost</td>
-              <td class="text-end fw-bold">&#8377; {{ totalEstimatedCost() | number: "1.2-2" }}</td>
+              <td class="lbl">Indentor Name</td>
+              <td>{{ record()?.indentorName }}</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Section III: Remarks -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">III. INSTRUCTIONS &amp; REMARKS</div>
-        <div class="sec-body" [innerHTML]="record()?.remarks || 'No additional instructions provided.'"></div>
-        <table class="table table-bordered inner-table">
-          <tbody>
             <tr>
-              <td class="lbl" style="width: 20%">Status</td>
-              <td style="width: 30%" [class.text-success]="record()?.status === 'Approved'">{{ record()?.status }}</td>
-              <td class="lbl" style="width: 20%">Indentor</td>
-              <td style="width: 30%">{{ record()?.preparedBy }}</td>
+              <td class="lbl">Unit Of Measure</td>
+              <td>{{ record()?.unitOfMeasure }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Quantity Required:-</td>
+              <td>{{ record()?.quantity }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Expected Date by when Item is required:-</td>
+              <td>{{ record()?.expectedDate | date: "dd/MM/yyyy" }}</td>
             </tr>
           </tbody>
         </table>
@@ -128,11 +90,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="record()?.preparedBy || ''"
-        issuedByName="Dept. Head / QM"
-        reviewedApprovedByName="Director / MD"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

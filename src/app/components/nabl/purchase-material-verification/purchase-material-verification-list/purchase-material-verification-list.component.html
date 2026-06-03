@@ -1,17 +1,11 @@
-<div class="container-fluid mt-4">
-  <div class="card shadow-sm border-0">
-    <div class="card-body p-0">
       <app-nabl-register-table
-        [title]="'F-25: Purchase Material Verification Records'"
-        [data]="records"
-        [columns]="columns"
-        [totalItems]="totalRecords"
+      [title]="'F-25: Purchase Material Verification Records'"
+      [columns]="columns"
+        [data]="veryficationMaterial"
+        [totalItems]="totalItems"
         [isLoading]="false"
         [baseRoute]="'/purchase-material-verification'"
         [addRoute]="'/purchase-material-verification/create'"
-        (onPageChange)="loadRecords($event)"
+        (onPageChange)="onPageChange($event)"
         (onDelete)="onDelete($event)"
       ></app-nabl-register-table>
-    </div>
-  </div>
-</div>

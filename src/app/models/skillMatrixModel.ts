@@ -27,6 +27,9 @@ export interface SkillMatrix {
     modifiedBy?: string;
     modifiedOn?: string;
     isActive?: boolean;
+    approvedBy?: string;
+    reviewedBy?:string;
+    
 }
 
 export interface SkillMatrixResponse {

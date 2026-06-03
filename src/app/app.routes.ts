@@ -212,7 +212,7 @@ export const routes: Routes = [
             { path: 'employee/equipment-authorization/create', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'employee/equipment-authorization/edit/:id', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'employee/equipment-authorization/details/:id', loadComponent: () => import('./components/nabl/employee-authorization-form/employee-authorization-form.component').then(m => m.EmployeeAuthorizationFormComponent) },
-
+            {path: 'employee/equipment-authorization/preview/:id', loadComponent: () => import('./components/nabl/employee-authorization-preview/employee-authorization-preview.component').then(m => m.EmployeeAuthorizationPreviewComponent) },
             { path: 'employee/competence', loadComponent: () => import('./components/nabl/employee-competence-list/employee-competence-list.component').then(m => m.EmployeeCompetenceListComponent) },
             { path: 'employee/competence/create', loadComponent: () => import('./components/nabl/employee-competence-form/employee-competence-form.component').then(m => m.EmployeeCompetenceFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'employee/competence/edit/:id', loadComponent: () => import('./components/nabl/employee-competence-form/employee-competence-form.component').then(m => m.EmployeeCompetenceFormComponent) , canDeactivate: [unsavedChangesGuard]},
@@ -554,7 +554,7 @@ export const routes: Routes = [
             { path: 'internal-auditor/create', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'internal-auditor/edit/:id', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'internal-auditor/details/:id', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-form/internal-auditor-form.component').then(m => m.InternalAuditorFormComponent) },
-            { path: 'internal-auditor/preview', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-preview/internal-auditor-preview.component').then(m => m.InternalAuditorPreviewComponent) },
+            { path: 'internal-auditor/preview/:id', loadComponent: () => import('./components/nabl/internal-auditor-nabl/internal-auditor-preview/internal-auditor-preview.component').then(m => m.InternalAuditorPreviewComponent) },
 
             // F-50: Audit Schedule & Plan
             { path: 'audit-plan', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-list/audit-plan-list.component').then(m => m.AuditPlanListComponent) },

@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,26 +36,22 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record" [title]="'Purchase Material Verification Record (F-25)'" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        mainTitle="PURCHASE MATERIAL VERIFICATION RECORD"
-        [formatNo]="record.formatNo || 'F-25'"
-        [issueNo]="record.issueNo || '01'"
-        [revNo]="record.revNo || '00'"
-        [issueDate]="record.date || ''"
-      ></app-nabl-print-header>
+      <app-nabl-print-header mainTitle="PURCHASE MATERIAL VERIFICATION RECORD" [formatNo]="record.formCode || 'F-25'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (record.formCode || 'F-23')" [issueNo]="record.issueNo || '01'"
+        [revNo]="record.revNo || '00'" [issueDate]="record.date || ''" [revDate]="'--'"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Section I: Supplier & Document Info -->
       <div class="doc-section mb-3">
-        <div class="sec-title">I. SUPPLIER & DOCUMENT INFORMATION</div>
+        <div class="sec-title">I. Purchse Order &amp; Supplier Information</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Supplier Name</td>
-              <td style="width: 25%">{{ record.supplierName }}</td>
-              <td class="lbl" style="width: 25%">Document No.</td>
-              <td style="width: 25%">{{ record.documentNo }}</td>
+              <td class="lbl" style="width: 25%">Purchase Order No</td>
+              <td style="width: 25%">{{ record.purchaseOrderNo }}</td>
+              <td class="lbl" style="width: 25%">PO Date</td>
+              <td style="width: 25%">{{ record.poDate }}</td>
             </tr>
             <tr>
               <td class="lbl">Invoice / Challan No.</td>
@@ -68,8 +61,26 @@
             </tr>
             <tr>
               <td class="lbl">GRN Number</td>
-              <td>{{ record.grnNo || "--" }}</td>
-              <td class="lbl">Verification Date</td>
+              <td>{{ record.grnNumber || "--" }}</td>
+              <td class="lbl" style="width: 25%">Supplier Name</td>
+              <td style="width: 25%">{{ record.supplierName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Email</td>
+              <td style="width: 25%">{{ record.email }}</td>
+              <td class="lbl" style="width: 25%">Phone No.</td>
+              <td style="width: 25%">{{ record.phoneNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Address</td>
+              <td style="width: 25%">{{ record.address }}</td>
+              <td class="lbl" style="width: 25%">GST No.</td>
+              <td style="width: 25%">{{ record.gstNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">PO Type</td>
+              <td style="width: 25%">{{ record.orderType }}</td>
+              <td class="lbl">Purchase Material Verfication Date</td>
               <td>{{ record.date | date: "dd/MM/yyyy" }}</td>
             </tr>
           </tbody>
@@ -82,69 +93,72 @@
         <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
-              <th style="width: 40px">SN</th>
-              <th>Material Description</th>
-              <th style="width: 120px">PO / Indent</th>
-              <th style="width: 100px">Qty.</th>
-              <th>Observations</th>
-              <th style="width: 80px">Status</th>
+              <th style="width: 50px;">SN</th>
+              <th>Material/Description</th>
+              <th>Ordered Qty </th>
+              <th>Recevice Qty </th>
+              <th>Approved Qty </th>
+              <th>Rejected Qty </th>
+              <th>Verification Details</th>
+              <th>Inspection Qty Status</th>
+              <th>Verification Done</th>
             </tr>
           </thead>
           <tbody class="small">
-            <tr *ngFor="let item of record.items; let i = index">
+            <tr *ngFor="let item of record.itemsParameters; let i = index">
               <td class="text-center">{{ i + 1 }}</td>
               <td>{{ item.materialName }}</td>
-              <td class="text-center">{{ item.poNumber }}</td>
-              <td class="text-center">{{ item.verifiedQuantity }}</td>
-              <td>{{ item.observation }}</td>
-              <td
-                class="text-center fw-bold"
-                [class.text-success]="item.verificationStatus === 'Pass'"
-                [class.text-danger]="item.verificationStatus === 'Fail'"
-              >
-                {{ item.verificationStatus }}
+              <td class="text-center">{{ item.orderedQty }}</td>
+              <td class="text-center">{{ item.receviceQty }}</td>
+              <td>{{ item.approvedQty }}</td>
+              <td>{{ item.rejectedQty}}</td>
+              <td>{{ item.verificationDetails }}</td>
+              <td class="text-center fw-bold" [class.text-success]="item.inspectionQtyStatus === 'Approved'"
+                [class.text-danger]="item.inspectionQtyStatus === 'Rejected'"
+                [class.text-warning]="item.inspectionQtyStatus === 'Conditional'">
+                {{ item.inspectionQtyStatus }}
               </td>
+              <td>{{ item.verificationDone }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
+      
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. REMARKS</div>
+        <div class="sec-body" [innerHTML]="record.remarks || '-'"></div>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. Deviations Observed</div>
+        <div class="sec-body" [innerHTML]="record.deviations || '-'"></div>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. Corrective Actions</div>
+        <div class="sec-body" [innerHTML]="record.correctiveActions || '-'"></div>
+      </div>
       <!-- Section III: Overall Verdict -->
       <div class="doc-section mb-3">
-        <div class="sec-title">III. OVERALL VERDICT</div>
+        <div class="sec-title">VI. Inspection Plan Validation &amp; Approvals</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Final Outcome</td>
-              <td
-                style="width: 75%"
-                class="fw-bold fs-6"
-                [ngClass]="{
-                  'text-success': record.overallStatus === 'Accepted',
-                  'text-danger': record.overallStatus === 'Rejected',
-                  'text-warning': record.overallStatus === 'Hold',
-                }"
-              >
-                {{ record.overallStatus | uppercase }}
-              </td>
+              <td class="lbl" style="width: 25%">Inspected By</td>
+              <td style="width: 25%">{{ record.inspectionBy }}</td>
+              <td class="lbl" style="width: 25%">Verified By</td>
+              <td style="width: 25%">{{ record.verifiedBy }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Section IV: Remarks -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">IV. REMARKS & DEVIATIONS</div>
-        <div class="sec-body" [innerHTML]="record.remarks || 'No additional remarks provided.'"></div>
-      </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="record.verifiedBy || ''"
-        [reviewedApprovedByName]="record.approvedBy || ''"
-        issuedByName="Dept. Head / QM"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="record.preparedBy"
+        [issuedByName]="record.reviewedBy || ''" [reviewedApprovedByName]="record.approvedBy"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

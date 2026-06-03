@@ -10,7 +10,7 @@ import { ApprovedSupplier, ApprovedSupplierListResponse, ApprovedSupplierRespons
 export class ApprovedSupplierService {
     private apiUrl = environment.apiUrl + '/Nabl/ApprovedSupplier';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<ApprovedSupplierListResponse> {
         return this.http.post<ApprovedSupplierListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,14 @@ export class ApprovedSupplierService {
 
     delete(id: number): Observable<ApprovedSupplierResponse> {
         return this.http.delete<ApprovedSupplierResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/supplierlist`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
     }
 }

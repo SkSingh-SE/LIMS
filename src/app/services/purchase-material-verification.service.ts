@@ -10,7 +10,7 @@ import { PurchaseMaterialVerification, PurchaseMaterialVerificationListResponse,
 export class PurchaseMaterialVerificationService {
     private apiUrl = environment.apiUrl + '/Nabl/PurchaseMaterialVerification';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<PurchaseMaterialVerificationListResponse> {
         return this.http.post<PurchaseMaterialVerificationListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,14 @@ export class PurchaseMaterialVerificationService {
 
     delete(id: number): Observable<PurchaseMaterialVerificationResponse> {
         return this.http.delete<PurchaseMaterialVerificationResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/pONoList`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
     }
 }

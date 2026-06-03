@@ -8,13 +8,14 @@
       <i class="bi bi-printer"></i> Print
     </button>
   </div>
-
+  </div>
+<div class="nabl-preview-page">
   <app-print-frame *ngIf="plan" orientation="landscape">
     <ng-container header>
       <app-nabl-print-header
           [formatNo]="'F-8'"
           mainTitle="TRAINING PLAN"
-          [docNo]="plan.documentNo || 'DMSPL / Level-04 / Format / F-8'"
+          [docNo]="'DMSPL / Level-04 / Format / F-8'"
           [issueNo]="plan.issueNo || '01'"
           [revNo]="plan.revNo || '00'">
       </app-nabl-print-header>
@@ -28,7 +29,7 @@
             <td class="label-cell border-2 border-dark" style="width: 15%;">YEAR</td>
             <td class="border-2 border-dark fw-bold" style="width: 35%;">{{ plan.planningYear }}</td>
             <td class="label-cell border-2 border-dark" style="width: 15%;">DATE</td>
-            <td class="border-2 border-dark fw-bold" style="width: 35%;">{{ plan.planDate | date:'dd.MM.yyyy' }}</td>
+            <td class="border-2 border-dark fw-bold" style="width: 35%;">{{ plan.date | date:'dd.MM.yyyy' }}</td>
           </tr>
         </tbody>
       </table>
@@ -46,17 +47,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let course of plan.courses; let i = index">
-              <td>{{ i + 1 }}</td>
+            <tr>
+              <td>1</td>
               <td class="text-start px-2">
-                <div class="fw-medium">{{ course.courseName }}</div>
-                <div *ngIf="course.remarks" class="small text-muted mt-1 italic">{{ course.remarks }}</div>
+                <div class="fw-medium">{{ plan.trainingTopic }}</div>
+                <div *ngIf="plan.completionRemarks" class="small text-muted mt-1 italic">{{ plan.completionRemarks }}</div>
               </td>
-              <td>{{ course.tentativeMonth || '-' }}</td>
-              <td>{{ course.agency || 'Internal' }}</td>
-              <td>{{ course.targetAudience }}</td>
+              <td>{{ plan.planMonth }}</td>
+              <td>{{ plan.agency || 'Internal' }}</td>
+              <td>{{ plan.targetAudience }}</td>
             </tr>
-            <tr *ngIf="!plan.courses || plan.courses.length === 0">
+            <tr *ngIf="!plan">
               <td colspan="5" class="py-4 text-muted italic">No training courses planned for this year.</td>
             </tr>
           </tbody>
@@ -69,7 +70,7 @@
       </div>
 
       <!-- Signatures -->
-      <div class="mt-4 pt-4">
+      <!-- <div class="mt-4 pt-4">
         <table class="table table-bordered border-2 border-dark text-center mb-0 signatories-table">
           <tbody>
             <tr>
@@ -88,11 +89,15 @@
             </tr>
           </tbody>
         </table>
-      </div>
+      </div> -->
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer></app-nabl-print-footer>
+      <app-nabl-print-footer
+          [preparedByName]="plan.preparedBy || ''"
+          [issuedByName]="plan.approvedBy || ''"
+          [reviewedApprovedByName]="plan.reviewedBy || ''">
+      ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

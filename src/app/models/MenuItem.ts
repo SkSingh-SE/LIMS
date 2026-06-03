@@ -145,7 +145,7 @@ export function getAllMenuItems(): MenuItem[] {
         {
           id: 71, title: 'General Requirements', route: '', parentMenuID: 7, permissions: [], children: [
             { id: 7101, title: 'F-2: Confidentiality Agree.', route: '/supplier-confidentiality-agreement', parentMenuID: 71, permissions: ['CanReadConfidentialityAgreement'], children: [], color: getRandomColor() },
-            { id: 7102, title: 'F-4: Impartiality Agree.', route: '/employee/impartiality-agreement', parentMenuID: 71, permissions: ['CanReadImpartialityAgreement'], children: [], color: getRandomColor() },
+            // { id: 7102, title: 'F-4: Impartiality Agree.', route: '/impartiality-agreement', parentMenuID: 71, permissions: ['CanReadImpartialityAgreement'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         },
         {

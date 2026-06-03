@@ -7,7 +7,7 @@ import { PurchaseMaterialVerification } from '../../../../models/purchaseMateria
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-purchase-material-verification-list',
     imports: [CommonModule, NablRegisterTableComponent],
@@ -16,49 +16,54 @@ import { of } from 'rxjs';
 })
 export class PurchaseMaterialVerificationListComponent implements OnInit {
     records: PurchaseMaterialVerification[] = [];
-    totalRecords = 0;
+    totalItems = 0;
     pageSize = 10;
     pageNumber = 1;
-
+    veryficationMaterial: any[] = [];
     columns: any[] = [
-        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-        { key: 'date', header: 'Date', type: 'date', sortable: true },
-        { key: 'supplierName', header: 'Supplier Name', type: 'text', sortable: true },
-        { key: 'invoiceNo', header: 'Invoice No.', type: 'text', sortable: true },
-        { key: 'overallStatus', header: 'Status', type: 'badge', sortable: true }
+        { key: 'purchaseOrderNo', type: 'string', label: 'PO No', filter: true },
+        { key: 'poDate', header: 'Date', type: 'date', label: 'PO Date', sortable: true },
+        { key: 'invoiceNo', header: 'Status', type: 'text', label: 'Invoice No', sortable: true },
+        { key: 'invoiceDate', header: 'Invoice No.', type: 'text', label: 'Invoice Date', sortable: true },
+        { key: 'supplierName', header: 'Supplier Name', label: 'Supplier Name', type: 'text', sortable: true },
     ];
 
     constructor(
         private service: PurchaseMaterialVerificationService,
-        private router: Router
+        private router: Router,
+        private toastService:ToastService
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.fetchData({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
-    loadRecords(event?: any) {
-        const params = {
-            PageNumber: event?.pageIndex ? event.pageIndex + 1 : this.pageNumber,
-            PageSize: event?.pageSize || this.pageSize,
-            searchTerm: event?.searchTerm || ''
-        };
+    onPageChange(payload: any) {
+        this.fetchData(payload);
+    }
 
-        this.service.getAll(params).pipe(
-            catchError(error => {
-                alert('Error loading records');
-                return of(null);
-            })
-        ).subscribe(response => {
-            if (response && response.success) {
-                this.records = response.items.map(item => ({
-                    ...item,
-                    badgeColor: this.getBadgeColor(item.overallStatus)
-                }));
-                this.totalRecords = response.totalRecords;
+    fetchData(payload: any) {
+        this.service.getAll(payload).subscribe({
+            next: (response) => {
+                this.veryficationMaterial = response?.items || [];
+                this.totalItems = response?.totalRecords || 0;
+            },
+            error: (error: any) => {
+                console.error('Error fetching purchase indents:', error);
+                this.veryficationMaterial = [];
+                this.totalItems = 0;
             }
         });
     }
+
+
 
     getBadgeColor(status: string): string {
         switch (status) {
@@ -70,14 +75,23 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
     }
 
     onDelete(id: number) {
-        if (confirm('Are you sure you want to delete this record?')) {
-            this.service.delete(id).subscribe(res => {
-                if (res.success) {
-                    alert('Record deleted successfully');
-                    this.loadRecords();
-                } else {
-                    alert('Failed to delete');
-                }
+         const confirm = window.confirm('Are you sure you want to delete this purchase indent?');
+        if (confirm) {
+            this.service.delete(id).subscribe({
+                next: (response) => {
+                    this.toastService.show(response.message, 'success');
+                    this.fetchData({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
+                },
+                error: (err) => {
+                    this.toastService.show(err.message, 'error');
+                },
             });
         }
     }

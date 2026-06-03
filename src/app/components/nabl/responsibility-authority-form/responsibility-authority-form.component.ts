@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -12,11 +12,12 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 
 @Component({
   selector: 'app-responsibility-authority-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule, NablSignatureSectionComponent],
   templateUrl: './responsibility-authority-form.component.html',
   styleUrl: './responsibility-authority-form.component.css'
 })
@@ -52,7 +53,7 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       ['clean']                                         // remove formatting button
     ]
   };
-
+ today = new Date().toISOString().split('T')[0];
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -60,17 +61,17 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
     private raService: ResponsibilityAuthorityService,
     private designationService: DesignationService,
     private toastService: ToastService
-  , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+    private nablHeaderService: NablHeaderService) { }
 
   ngOnInit(): void {
     this.initForm();
-        this.nablHeaderService.getFormDefaults('ResponsibilityAuthority').subscribe({
-            next: (defaults) => {
-                this.raForm.patchValue({ formatNo: defaults.formCode });
-            },
-            error: () => {}
-        });
+    this.nablHeaderService.getFormDefaults('ResponsibilityAuthority').subscribe({
+      next: (defaults) => {
+        this.raForm.patchValue({ formatNo: defaults.formCode });
+      },
+      error: () => { }
+    });
 
     this.route.paramMap.subscribe(params => {
       this.matrixId = Number(params.get('id'));
@@ -101,37 +102,52 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       designationId: [null, Validators.required],
       designationName: [''],
       issueNo: [''],
-      date: ['', Validators.required],
+      date: [this.today, Validators.required],
       revNo: [''],
       responsibilities: ['', Validators.required],
       authorities: ['', Validators.required],
       employeeAccepted: [false],
       preparedBy: [''],
+      reviewedBy: [null],
+      reviewedDate: [''],
+      approvedBy: [null],
+      approvedDate: [''], 
+      preparedDate: [this.today],
       issuedBy: [''],
-      reviewedApprovedBy: ['']
+      reviewedApprovedBy: [''],
+      acceptanceTimestamp: [''],
     });
 
-        // System-managed fields — always readonly
-        this.raForm.get('issueNo')?.disable();
-        this.raForm.get('revNo')?.disable();
-        this.raForm.get('formatNo')?.disable();
+    // System-managed fields — always readonly
+    this.raForm.get('issueNo')?.disable();
+    this.raForm.get('revNo')?.disable();
+    this.raForm.get('date')?.disable();
+    this.raForm.get('formatNo')?.disable();
   }
 
   loadData(): void {
     this.raService.getById(this.matrixId).subscribe({
       next: (data) => {
         if (data) {
-          this.raForm.patchValue(data);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.raForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.raForm.get('issueNo')?.disable();
-                this.raForm.get('revNo')?.disable();
-                this.raForm.get('formatNo')?.disable();
+          debugger;
+          // Prepare data first
+          const status = (data as any)?.status;
+          this.raForm.patchValue({
+            ...data,
+            date: NablFormsHelper.formatDateForInput(data?.date || '')
+          });
+
+          // Lock form if not in editable status
+          if (status && status !== 'Draft' && status !== 'Rejected') {
+            this.raForm.disable();
+            this.isViewMode = true;
+          }
+
+          // Re-disable system fields
+          this.raForm.get('issueNo')?.disable();
+          this.raForm.get('revNo')?.disable();
+          this.raForm.get('formatNo')?.disable();
+          this.raForm.get('date')?.disable();
         }
       },
       error: (error) => {
@@ -164,13 +180,21 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
   onSubmit(): void {
     if (this.raForm.valid) {
       const formData = this.raForm.getRawValue();
-
+      formData.prepareDate = this.today;
+      if(formData.approvedDate == "" || !formData.approvedDate) {
+        formData.approvedDate = null;
+      }
+      if(formData.reviewedDate == "" || !formData.reviewedDate) {
+        formData.reviewedDate = null;
+      }
+      formData.acceptanceTimestamp = formData.employeeAccepted ? new Date().toISOString() : null;
+      
       if (this.isEditMode) {
         formData.id = this.matrixId;
         this.raService.update(formData).subscribe({
           next: (response) => {
             this.saved = true;
-            this.toastService.show(response.message, 'success');
+            this.toastService.show('ResponsibilityAuthority matrix updated successfully', 'success');
             this.router.navigate(['/responsibility-authority']);
           },
           error: (error) => {
@@ -181,7 +205,7 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
         this.raService.create(formData).subscribe({
           next: (response) => {
             this.saved = true;
-            this.toastService.show(response.message, 'success');
+            this.toastService.show( 'ResponsibilityAuthority matrix created successfully', 'success');
             this.router.navigate(['/responsibility-authority']);
           },
           error: (error) => {

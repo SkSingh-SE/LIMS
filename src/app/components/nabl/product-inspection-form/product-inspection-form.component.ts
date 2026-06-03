@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -19,7 +19,7 @@ import { NablHeaderService } from '../../../services/nabl-header.service';
     templateUrl: './product-inspection-form.component.html'
 })
 export class ProductInspectionFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     inspectionForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
@@ -44,7 +44,8 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
 
     categories = ['Product', 'Service'];
     stages = ['Incoming', 'In-process', 'Final'];
-
+    risks = ['Low', 'Medium', 'High'];
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private service: ProductInspectionService,
@@ -60,7 +61,7 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
             next: (defaults) => {
                 this.inspectionForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
@@ -73,7 +74,16 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
             this.isEditMode = true;
             this.formTitle = 'Edit Inspection Plan';
         }
-
+        if(path != "details" && path != "edit"){
+            this.service.loadNextPlanNo().subscribe({
+                  next: (res) => {
+                    this.inspectionForm.patchValue({
+                        planNo: res.planNo
+                    })
+                },
+                error: () => { }
+            });
+        }
         if (this.recordId) {
             this.loadData();
         } else {
@@ -82,14 +92,14 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
     }
 
     initForm(): void {
-        const today = new Date().toISOString().split('T')[0];
         this.inspectionForm = this.fb.group({
             id: [0],
             formatNo: ['F-23'],
             issueNo: ['01'],
             revNo: ['00'],
-            date: [today, Validators.required],
+            date: [this.today, Validators.required],
             documentNo: [''],
+            risklevel: ['Low'],
 
             productName: ['', Validators.required],
             productCode: ['', Validators.required],
@@ -98,11 +108,13 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
 
             parameters: this.fb.array([]),
             remarks: [''],
-
+            planNo:[''],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: [''],
-
+            reviewedBy: [null],
+            approvedBy: [null],
+            approvedDate: [''],
+            preparedDate: [this.today],
+            reviewedDate: [''],
             status: ['Pending'],
             isActive: [true]
         });
@@ -112,6 +124,7 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         this.inspectionForm.get('issueNo')?.disable();
         this.inspectionForm.get('revNo')?.disable();
         this.inspectionForm.get('formatNo')?.disable();
+        this.inspectionForm.get('planNo')?.disable();
     }
 
     get parameters(): FormArray {
@@ -122,6 +135,7 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         const paramForm = this.fb.group({
             parameterName: ['', Validators.required],
             requirement: ['', Validators.required],
+            referenceStandard: ['', Validators.required],
             methodOfCheck: ['', Validators.required],
             frequency: ['', Validators.required],
             acceptanceCriteria: ['', Validators.required]
@@ -147,6 +161,7 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
                         const paramForm = this.fb.group({
                             parameterName: [p.parameterName, Validators.required],
                             requirement: [p.requirement, Validators.required],
+                            referenceStandard: [p.requirement, Validators.required],
                             methodOfCheck: [p.methodOfCheck, Validators.required],
                             frequency: [p.frequency, Validators.required],
                             acceptanceCriteria: [p.acceptanceCriteria, Validators.required]
@@ -155,17 +170,17 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
                     });
 
                     this.inspectionForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.inspectionForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.inspectionForm.get('documentNo')?.disable();
-                this.inspectionForm.get('issueNo')?.disable();
-                this.inspectionForm.get('revNo')?.disable();
-                this.inspectionForm.get('formatNo')?.disable();
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.inspectionForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                    this.inspectionForm.get('documentNo')?.disable();
+                    this.inspectionForm.get('issueNo')?.disable();
+                    this.inspectionForm.get('revNo')?.disable();
+                    this.inspectionForm.get('formatNo')?.disable();
                 }
             },
             error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to load record', 'error'); }
@@ -179,15 +194,26 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         }
 
         const formData = this.inspectionForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
 
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
-                next: () => { this.saved = true; this.router.navigate(['/product-inspection']); },
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('Product & Service Inspection Plan updated successfully', 'success')
+                    this.router.navigate(['/product-inspection']);
+                },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
             });
         } else {
             this.service.create(formData).subscribe({
-                next: () => { this.saved = true; this.router.navigate(['/product-inspection']); },
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('Product & Service Inspection Plan created successfully', 'success')
+                    this.router.navigate(['/product-inspection']);
+                },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
             });
         }
@@ -201,16 +227,16 @@ export class ProductInspectionFormComponent implements CanComponentDeactivate, O
         this.openSections[section] = !this.openSections[section];
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.inspectionForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.inspectionForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.inspectionForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.inspectionForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

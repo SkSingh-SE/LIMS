@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="trainingForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="trainingForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information (Mandatory Pattern) -->
         <div class="accordion-section mb-3">
@@ -22,7 +22,8 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList" placeholder="e.g. F-6">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList"
+                  placeholder="e.g. F-6">
                 <datalist id="formNumbersList">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -55,21 +56,38 @@
                 <label class="form-label">Employee Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="employeeName" placeholder="Enter Full Name"
                   [ngClass]="{'is-invalid': trainingForm.get('employeeName')?.invalid && trainingForm.get('employeeName')?.touched}">
+                <div *ngIf="trainingForm.get('employeeName')?.touched && trainingForm.get('employeeName')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  employee name is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Qualification <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="qualification" placeholder="e.g. B.Sc Chemistry"
+                <input type="text" class="form-control" formControlName="qualification"
+                  placeholder="e.g. B.Sc Chemistry"
                   [ngClass]="{'is-invalid': trainingForm.get('qualification')?.invalid && trainingForm.get('qualification')?.touched}">
+                <div *ngIf="trainingForm.get('qualification')?.touched && trainingForm.get('qualification')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  qualification is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Date of Joining <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="dateOfJoining"
                   [ngClass]="{'is-invalid': trainingForm.get('dateOfJoining')?.invalid && trainingForm.get('dateOfJoining')?.touched}">
+                <div *ngIf="trainingForm.get('dateOfJoining')?.touched && trainingForm.get('dateOfJoining')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  date Of joining is required.
+                </div>
               </div>
               <div class="col-md-12">
                 <label class="form-label">Position in Organization <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="position" placeholder="e.g. Quality Analyst"
                   [ngClass]="{'is-invalid': trainingForm.get('position')?.invalid && trainingForm.get('position')?.touched}">
+                <div *ngIf="trainingForm.get('position')?.touched && trainingForm.get('position')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  position is required.
+                </div>
               </div>
             </div>
           </div>
@@ -86,30 +104,61 @@
               <div class="col-md-4">
                 <label class="form-label">Date of Training <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="trainingDate">
+                <div *ngIf="trainingForm.get('trainingDate')?.touched && trainingForm.get('trainingDate')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  training date is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Trainer Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="trainerName" placeholder="Enter Trainer's Name">
+                <input type="text" class="form-control" formControlName="trainerName"
+                  placeholder="Enter Trainer's Name">
+                <div *ngIf="trainingForm.get('trainerName')?.touched && trainingForm.get('trainerName')?.invalid"
+                  class="text-danger text-sm mt-1">
+                 trainer name is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Trainer Designation <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="trainerDesignation" placeholder="e.g. Lab Head">
+                <input type="text" class="form-control" formControlName="trainerDesignation"
+                  placeholder="e.g. Lab Head">
+                <div *ngIf="trainingForm.get('trainerDesignation')?.touched && trainingForm.get('trainerDesignation')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  trainer designation is required.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Sample Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="sampleName" placeholder="e.g. Water for Testing">
+                <input type="text" class="form-control" formControlName="sampleName"
+                  placeholder="e.g. Water for Testing">
+                <div *ngIf="trainingForm.get('sampleName')?.touched && trainingForm.get('sampleName')?.invalid"
+                  class="text-danger text-sm mt-1">
+                 sample name is required.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Sample Ref No <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="sampleRefNo" placeholder="e.g. REF-2025-001">
+                <div *ngIf="trainingForm.get('sampleRefNo')?.touched && trainingForm.get('sampleRefNo')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  sample ref no is required.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Parameter <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="parameter" placeholder="e.g. pH Value">
+                <div *ngIf="trainingForm.get('parameter')?.touched && trainingForm.get('parameter')?.invalid"
+                  class="text-danger text-sm mt-1">
+                 parameter is required.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Test Method / SOP <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="testMethodSop" placeholder="e.g. SOP-CHE-01">
+                <div *ngIf="trainingForm.get('testMethodSop')?.touched && trainingForm.get('testMethodSop')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  test method/sop is required.
+                </div>
               </div>
             </div>
           </div>
@@ -126,6 +175,10 @@
               <div class="col-md-4">
                 <label class="form-label">Evaluation Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="evaluationDate">
+                 <div *ngIf="trainingForm.get('evaluationDate')?.touched && trainingForm.get('evaluationDate')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  evaluation date is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Mode of Evaluation <span class="text-danger">*</span></label>
@@ -133,16 +186,28 @@
                   <option value="Retesting">Retesting</option>
                   <option value="Replicate testing">Replicate testing</option>
                 </select>
+                 <div *ngIf="trainingForm.get('evaluationMode')?.touched && trainingForm.get('evaluationMode')?.invalid"
+                  class="text-danger text-sm mt-1">
+                 evaluation mode is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Parameter <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="evalParameter" placeholder="e.g. pH Value">
+                 <div *ngIf="trainingForm.get('evalParameter')?.touched && trainingForm.get('evalParameter')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  eval parameter is required.
+                </div>
               </div>
               <div class="col-md-12">
                 <label class="form-label">Test Method / SOP <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="evalTestMethodSop" placeholder="e.g. SOP-CHE-01">
+                <input type="text" class="form-control" formControlName="evalTestMethodSop"
+                  placeholder="e.g. SOP-CHE-01">
+                   <div *ngIf="trainingForm.get('evalTestMethodSop')?.touched && trainingForm.get('evalTestMethodSop')?.invalid"
+                  class="text-danger text-sm mt-1">
+                 eval test method/sop is required.
+                </div>
               </div>
-              
               <div class="col-md-3">
                 <label class="form-label">Observed Value-1</label>
                 <input type="text" class="form-control" formControlName="observedValue1" placeholder="Val 1">
@@ -153,7 +218,8 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Observed Average</label>
-                <input type="text" class="form-control bg-light" formControlName="observedValueAverage" placeholder="Avg" readonly>
+                <input type="text" class="form-control bg-light" formControlName="observedValueAverage"
+                  placeholder="Avg">
               </div>
               <div class="col-md-3">
                 <label class="form-label">Original Value</label>
@@ -184,13 +250,13 @@
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="trainingForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
           <button type="button" class="btn btn-cancel" routerLink="/induction-training">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="trainingForm.invalid">
+          <button type="submit" class="btn btn-save">
             <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
           </button>
         </div>

@@ -16,20 +16,17 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -43,125 +40,175 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record()" [title]="'Incoming Material Inspection Record (F-24)'" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        mainTitle="Incoming Material Inspection Record"
-        [formatNo]="record()?.formatNo || 'F-24'"
-        [issueNo]="record()?.issueNo || '01'"
-        [revNo]="record()?.revNo || '00'"
-        [issueDate]="record()?.date || ''"
-      ></app-nabl-print-header>
+      <app-nabl-print-header mainTitle="Incoming Material Inspection Record" [formatNo]="record()?.formatNo || 'F-24'"
+        [issueNo]="record()?.issueNo || '01'" [revNo]="record()?.revNo || '00'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-24')" [issueDate]="record()?.date || ''"
+        [revDate]="'--'">
+      </app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Section I: Material & Receipt Info -->
       <div class="doc-section mb-3">
-        <div class="sec-title">I. MATERIAL & RECEIPT DETAILS</div>
+        <div class="sec-title">I. Reference Details</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Material Name</td>
-              <td style="width: 25%">{{ record()?.materialName }}</td>
-              <td class="lbl" style="width: 25%">Material Code</td>
-              <td style="width: 25%">{{ record()?.materialCode }}</td>
+              <td class="lbl" style="width: 25%">Purchase Order No</td>
+              <td style="width: 25%">{{ record()?.purchaseOrderNo }}</td>
+              <td class="lbl" style="width: 25%">Indent No</td>
+              <td style="width: 25%">{{ record()?.indentNoPoNo }}</td>
             </tr>
             <tr>
+              <td class="lbl">Inspection Plan No</td>
+              <td>{{ record()?.inspectionPlanNoName }}</td>
               <td class="lbl">Supplier Name</td>
               <td>{{ record()?.supplierName }}</td>
-              <td class="lbl">Invoice No.</td>
-              <td>{{ record()?.invoiceNo }}</td>
             </tr>
             <tr>
-              <td class="lbl">Batch / Lot No.</td>
-              <td>{{ record()?.batchNo }} {{ record()?.lotNo ? "/ " + record()?.lotNo : "" }}</td>
-              <td class="lbl">Quantity Received</td>
-              <td>{{ record()?.quantityReceived }} {{ record()?.unitOfMeasure }}</td>
+              <td class="lbl">Email</td>
+              <td>{{ record()?.email }}</td>
+              <td class="lbl">Phone No</td>
+              <td>{{ record()?.phoneNo }}</td>
             </tr>
             <tr>
-              <td class="lbl">Record Number</td>
-              <td>{{ record()?.documentNo }}</td>
-              <td class="lbl">GRN No.</td>
-              <td>{{ record()?.grnNo || "--" }}</td>
+              <td class="lbl">Address</td>
+              <td>{{ record()?.address }}</td>
+              <td class="lbl">GST No.</td>
+              <td>{{ record()?.gstNo || "--" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">PO Type</td>
+              <td>{{ record()?.orderType }}</td>
+              <td class="lbl" style="width: 25%">Storage Condition</td>
+              <td style="width: 25%">{{ record()?.storageLocation }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Section II: Inspection Results -->
       <div class="doc-section mb-3">
-        <div class="sec-title">II. INSPECTION PARAMETERS & OBSERVATIONS</div>
+        <div class="sec-title">II.Received Items Table</div>
         <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
               <th style="width: 40px">SN</th>
-              <th>Parameter Name</th>
-              <th>Standard Requirement</th>
-              <th>Observation</th>
-              <th style="width: 100px">Result</th>
+              <th>Material/Description</th>
+              <th>Material Code </th>
+              <th>Ordered Qty </th>
+              <th>Unit </th>
+              <th>Received Qty</th>
+              <th>Batch No </th>
+              <th>Lot No </th>
+              <th>Invoice No</th>
+              <th>Expiry Date </th>
+              <th>COA Available </th>
             </tr>
           </thead>
           <tbody class="small">
-            <tr *ngFor="let r of record()?.results; let i = index">
+            <tr *ngFor="let r of record()?.itemsParameters; let i = index">
               <td class="text-center">{{ i + 1 }}</td>
-              <td>{{ r.parameterName }}</td>
-              <td>{{ r.requirement }}</td>
-              <td>{{ r.observation }}</td>
-              <td class="text-center fw-bold" [class.text-success]="r.result === 'Pass'" [class.text-danger]="r.result === 'Fail'">
-                {{ r.result }}
-              </td>
+              <td class="text-center">{{ r.materialName }}</td>
+              <td class="text-center">{{ r.materialCode }}</td>
+              <td class="text-center">{{ r.orderedQty }}</td>
+              <td class="text-center">{{ r.unit }}</td>
+              <td class="text-center">{{ r.receviceQty }}</td>
+              <td class="text-center">{{ r.batchNo }}</td>
+              <td class="text-center">{{ r.lotNo }}</td>
+              <td class="text-center">{{ r.invoiceNo }}</td>
+              <td class="text-center">{{ r.expiryDate }}</td>
+              <td class="text-center">{{ r.coaAvailable }}</td>
             </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Section II: Inspection Results -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III.Inspection Parameters & Observations</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 50px;">SN</th>
+              <th>Parameter Name</th>
+              <th>Requirement</th>
+              <th>Reference Standard</th>
+              <th>Method of Check</th>
+              <th>Frequency</th>
+              <th>Acceptance Criteria</th>
+            </tr>
+          </thead>
+          <tbody class="small">
+            <tr *ngFor="let r of record()?.inspectionParameters; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="text-center">{{ r.parameterName }}</td>
+              <td class="text-center">{{ r.requirement }}</td>
+              <td class="text-center">{{ r.referenceStandard }}</td>
+              <td class="text-center">{{ r.methodOfCheck }}</td>
+              <td class="text-center">{{ r.frequency }}</td>
+              <td class="text-center">{{ r.acceptanceCriteria }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. Inspection Plan Details</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Product / Service Name</td>
+              <td style="width: 25%">{{ record()?.productName }}</td>
+              <td class="lbl" style="width: 25%">Product / Service Code</td>
+              <td style="width: 25%">{{ record()?.productCode }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Category</td>
+              <td>{{ record()?.category }}</td>
+              <td class="lbl">Inspection Stage</td>
+              <td>{{ record()?.inspectionStage }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Risk Level</td>
+              <td>{{ record()?.riskLevel }}</td>
+              <td class="lbl">Final Status</td>
+              <td>{{ record()?.inspectionResult }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Inspected By</td>
+              <td style="width: 25%">{{ record()?.inspectionBy }}</td>
+              <td class="lbl" style="width: 25%">Verified By</td>
+              <td style="width: 25%">{{ record()?.receivedBy }}</td>
+            </tr>
+
           </tbody>
         </table>
       </div>
 
       <!-- Section III: Outcome -->
       <div class="doc-section mb-3">
-        <div class="sec-title">III. INSPECTION OUTCOME</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%">Final Status</td>
-              <td
-                style="width: 75%"
-                class="fw-bold fs-6"
-                [ngClass]="{
-                  'text-success': record()?.inspectionStatus === 'Accepted',
-                  'text-danger': record()?.inspectionStatus === 'Rejected',
-                  'text-warning': record()?.inspectionStatus === 'Conditional',
-                }"
-              >
-                {{ record()?.inspectionStatus | uppercase }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Section IV: Deviations & Corrective Actions -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">IV. DEVIATIONS & CORRECTIVE ACTIONS</div>
+        <div class="sec-title">III. INSPECTION OUTCOMEInspection Plan Details</div>
         <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
               <th style="width: 50%">DEVIATIONS OBSERVED</th>
               <th style="width: 50%">CORRECTIVE ACTIONS</th>
+              <th style="width: 50%">General Remarks</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="small" [innerHTML]="record()?.deviations || 'None.'"></td>
-              <td class="small" [innerHTML]="record()?.correctiveActions || 'No actions required.'"></td>
+              <td class="small" [innerHTML]="record()?.deviations"></td>
+              <td class="small" [innerHTML]="record()?.correctiveActions"></td>
+              <td class="small" [innerHTML]="record()?.generalRemarks"></td>
             </tr>
+
           </tbody>
         </table>
       </div>
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="record()?.inspectedBy || ''"
-        [reviewedApprovedByName]="record()?.verifiedBy || ''"
-        issuedByName="Quality Manager"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

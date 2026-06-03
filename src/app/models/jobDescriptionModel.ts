@@ -32,8 +32,13 @@ export interface JobDescription {
     confidentialityClause: string;
 
     // Section VII – Approval
-    preparedByName: string;
-    approvedByName: string;
+    preparedBy: string;
+    preparedDate: Date | string;
+    approvedBy: string;
+    approvedDate: Date | string;
+    reviewedBy: string;
+    
+    reviewedDate: Date | string;
     employeeAccepted: boolean;
 
     // Workflow

@@ -15,14 +15,13 @@
             <!-- Reviewed By (with suggestions) -->
             <div class="col-md-4">
                 <label class="form-label">Reviewed By</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Type or select..." />
+                <div class="dropup" #reviewerBox>
+                    <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Type or select..."  (focus)="openReviewer()"  />
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-expanded="false"
+                        <!-- <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                             title="Select from suggested reviewers">
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        </button> -->
+                        <ul class="dropdown-menu dropdown-menu-end"   [class.show]="isReviewerOpen" style="position: relative;">
                             <li *ngIf="reviewers.length === 0">
                                 <span class="dropdown-item-text text-muted">No suggestions</span>
                             </li>
@@ -40,14 +39,13 @@
             <!-- Approved By (with suggestions) -->
             <div class="col-md-4">
                 <label class="form-label">Approved By</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" formControlName="approvedBy" placeholder="Type or select..." />
+                <div class="dropup" #approverBox>
+                    <input type="text" class="form-control" formControlName="approvedBy" placeholder="Type or select..."   (focus)="openApprover()" />
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-expanded="false"
+                        <!-- <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                             title="Select from suggested approvers">
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        </button> -->
+                        <ul class="dropdown-menu dropdown-menu-end" [class.show]="isApproverOpen" style="position: relative;">
                             <li *ngIf="approvers.length === 0">
                                 <span class="dropdown-item-text text-muted">No suggestions</span>
                             </li>

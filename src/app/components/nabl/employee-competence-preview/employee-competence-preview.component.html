@@ -96,7 +96,7 @@
   <app-print-frame *ngIf="report" [orientation]="orientation">
     <ng-container header>
       <app-nabl-print-header
-          [formatNo]="'F-7A'"
+          [formatNo]="'F-7'"
           [mainTitle]="'EMPLOYEE COMPETENCE REPORT'"
           [docNo]="'DMSPL / Level-04 / Format / F-7'"
           [issueNo]="'01'"
@@ -187,9 +187,9 @@
 
     <ng-container footer>
       <app-nabl-print-footer
-          [preparedByName]="'General Manager'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="'Managing Director'">
+          [preparedByName]="report.preparedBy"
+          [issuedByName]="report.reviewedBy"
+          [reviewedApprovedByName]="report.approvedBy">
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>

@@ -10,7 +10,7 @@ import { TrainingAttendance, TrainingAttendanceListResponse, TrainingAttendanceR
 export class TrainingAttendanceService {
     private apiUrl = environment.apiUrl + '/Nabl/TrainingAttendance';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<TrainingAttendanceListResponse> {
         return this.http.post<TrainingAttendanceListResponse>(this.apiUrl + '/list', params || {});
@@ -28,8 +28,16 @@ export class TrainingAttendanceService {
         data.id = id;
         return this.http.post<TrainingAttendanceResponse>(`${this.apiUrl}/save`, data);
     }
-
+    uploadNABLFile(file: File): Observable<any> {
+        const fd = new FormData();
+        fd.append('logo', file); // backend param is 'logo'
+        return this.http.post<any>(`${this.apiUrl}/upload-signature`, fd);
+    }
+    
     delete(id: number): Observable<TrainingAttendanceResponse> {
         return this.http.delete<TrainingAttendanceResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getTrainingPlanDropdown(searchTerm: string, pageNo: number, pageSize: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/training-plan-dropdown?searchTerm=${searchTerm}&pageNo=${pageNo}&pageSize=${pageSize}`);
     }
 }

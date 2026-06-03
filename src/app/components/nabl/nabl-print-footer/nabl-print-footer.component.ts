@@ -14,8 +14,8 @@ export class NablPrintFooterComponent {
   @Input() reviewedApprovedByName: string = '';
 
   @Input() preparedByRole: string = 'Prepared By';
-  @Input() issuedByRole: string = 'Issued By';
-  @Input() reviewedApprovedByRole: string = 'Reviewed & Approved By';
+  @Input() issuedByRole: string = 'Reviewed By';
+  @Input() reviewedApprovedByRole: string = 'Approved By';
 
   @Input() showSignatures: boolean = true;
 }

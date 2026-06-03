@@ -16,7 +16,7 @@ export class EquipmentHistoryListComponent implements OnInit {
   totalItems = 0;
 
   columns: RegisterColumn[] = [
-    { key: 'recordDate', type: 'date', label: 'Date', filter: true },
+    // { key: 'recordDate', type: 'date', label: 'Date', filter: true },
     { key: 'equipmentName', type: 'string', label: 'Equipment', filter: true },
     { key: 'equipmentNo', type: 'string', label: 'Equipment No', filter: true },
     { key: 'recordType', type: 'string', label: 'Type', filter: true },
@@ -35,7 +35,7 @@ export class EquipmentHistoryListComponent implements OnInit {
       PageNumber: 1,
       PageSize: 10,
       searchTerm: '',
-      sortByColumn: 'recordDate',
+      sortByColumn: 'id',
       sortOrder: 'desc',
       filter: []
     });
@@ -66,7 +66,7 @@ export class EquipmentHistoryListComponent implements OnInit {
             PageNumber: 1,
             PageSize: 10,
             searchTerm: '',
-            sortByColumn: 'recordDate',
+            sortByColumn: 'id',
             sortOrder: 'desc',
             filter: []
           });

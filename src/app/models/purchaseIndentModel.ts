@@ -15,21 +15,24 @@ export interface PurchaseIndent {
     issueNo: string;
     revNo: string;
     date: Date | string;
-
+    SupplierId?: number;
     // Indent Details
     departmentName: string;
     indentorName: string;
     priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-
+    technicalSpecification: string;
+    justification: string;
+    quantity: number;
     // Items List
-    items: PurchaseIndentItem[];
 
     // Approval Status
     status: 'Draft' | 'Pending' | 'Approved' | 'Rejected';
     remarks?: string;
-
+    expectedDate: Date | string;
     // Signatories
     preparedBy: string;
+    piNo: string;
+    unitOfMeasure: string;
     reviewedBy?: string;
     approvedBy?: string;
 

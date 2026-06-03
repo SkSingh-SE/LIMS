@@ -32,4 +32,7 @@ export class PurchaseIndentService {
     delete(id: number): Observable<PurchaseIndentResponse> {
         return this.http.delete<PurchaseIndentResponse>(`${this.apiUrl}/delete/${id}`);
     }
+    getNextIndentNo(){
+        return this.http.get<any>(`${this.apiUrl}/next-indent-no`);
+    }
 }

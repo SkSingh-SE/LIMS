@@ -1,6 +1,6 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { PurchaseMaterialVerificationService } from '../../../../services/purchase-material-verification.service';
 import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
@@ -19,13 +19,13 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrls: ['./purchase-material-verification-form.component.css']
 })
 export class PurchaseMaterialVerificationFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     verificationForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
-    recordId: number | null = null;
+    recordId: number = 0;
     formNumbers: string[] = [];
-
+    PurchaseOrderNoList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         supplier: true,
@@ -46,13 +46,16 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
         { value: 'Fail', label: 'Fail' },
         { value: 'Conditional', label: 'Conditional' }
     ];
+    inspectionQtyStatus = ['Approved', 'Rejected', 'Conditional'];
 
     overallStatusOptions = [
         { value: 'Accepted', label: 'Accepted' },
         { value: 'Rejected', label: 'Rejected' },
-        { value: 'Hold', label: 'Hold' }
+        { value: 'Conditional', label: 'Hold' }
     ];
 
+    incomingId = 0;
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private service: PurchaseMaterialVerificationService,
@@ -69,9 +72,9 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
             next: (defaults) => {
                 this.verificationForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
-
+        this.loadPONoList();
         this.route.params.subscribe(params => {
             if (params['id']) {
                 this.recordId = +params['id'];
@@ -86,62 +89,152 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
         if (this.isViewMode) return 'View Purchase Material Verification Record';
         return this.isEditMode ? 'Edit Purchase Material Verification Record' : 'New Purchase Material Verification Record';
     }
-
     initForm(): void {
         this.verificationForm = this.fb.group({
             formatNo: ['F-25'],
-            documentNo: [''],
+            documentNo: ['F-25'],
             issueNo: [{ value: '01', disabled: true }],
             revNo: [{ value: '00', disabled: true }],
-            date: [{ value: new Date().toISOString().split('T')[0], disabled: true }, Validators.required],
+            date: [this.today, Validators.required],
 
             supplierName: ['', Validators.required],
             invoiceNo: ['', Validators.required],
-            invoiceDate: ['', Validators.required],
-            grnNo: [''],
+            invoiceDate: [this.today, Validators.required],
+            grnNumber: ['', Validators.required],
 
-            items: this.fb.array([], Validators.required),
-
-            overallStatus: ['Accepted', Validators.required],
+            itemsParameters: this.fb.array([]),
+            incomingMaterialId: [''],
+            // overallStatus: ['Accepted', Validators.required],
             remarks: [''],
             preparedBy: [''],
-            reviewedBy: [''],
+            reviewedBy: [null],
+            email: ['', Validators.required],
+            phoneNo: ['', Validators.required],
+            gstNo: ['', Validators.required],
+            address: ['', Validators.required],
+            orderType: ['', Validators.required],
+            poDate: ['', Validators.required],
+            correctiveActions: [''],
+            deviations: [''],
+            poNo: ['', Validators.required],
+            approvedBy: [null],
             verifiedBy: ['', Validators.required],
-            approvedBy: ['']
+            purchaseOrderNo: [''],
+            inspectionBy: ['', Validators.required],
+
+            approvedDate: [''],
+            preparedDate: [this.today],
+            reviewedDate: [''],
         });
 
         // System-managed fields — always readonly
         this.verificationForm.get('documentNo')?.disable();
         this.verificationForm.get('formatNo')?.disable();
+    }
+    loadPONoList(): void {
+        this.service.getAllPONoetails().subscribe({
+            next: (res) => {
+                this.PurchaseOrderNoList = res;
+            },
+            error: () => {
+                this.PurchaseOrderNoList = [];
+            }
+        })
+    }
 
-        if (!this.isEditMode) {
-            this.addItem();
+    onPoNoChange(event: any): void {
+        const selectedId = Number(event.target.value);
+        const items = this.PurchaseOrderNoList.find((x: any) => x.id === selectedId || x.Id === selectedId);
+        if (!items) {
+            this.items.clear();
+            return;
         }
+        this.incomingId = selectedId;
+        const data = items.additionalValues || items.AdditionalValues || {};
+        this.verificationForm.patchValue({
+            supplierName: data.SupplierName || '',
+            purchaseOrderNo: data.PurchaseOrderNo || '',
+            email: data.Email || '',
+            phoneNo: data.PhoneNo || '',
+            gstNo: data.GSTNo || '',
+            orderType: data.OrderType || '',
+            address: data.SupplierAddress || '',
+            poDate: NablFormsHelper.formatDateForInput(data.PODate) || '',
+            correctiveActions: data.CorrectiveActions || '',
+            deviations: data.Deviations || '',
+            verifiedBy: data.ReceivedBy || '',
+            inspectionBy: data.InspectionBy || '',
+        });
+        let parameters: any[] = [];
+
+        try {
+            parameters = data.ItemsJson
+                ? JSON.parse(data.ItemsJson)
+                : [];
+        } catch {
+            parameters = [];
+            this.toastService.show('Invalid inspection parameter data', 'error');
+        }
+
+        this.items.clear();
+
+        parameters.forEach((p: any) => {
+            this.items.push(this.fb.group({
+                materialName: [p.MaterialName || p.materialName || ''],
+                orderedQty: [p.OrderedQty || p.orderedQty || ''],
+                receviceQty: [p.receviceQty || p.ReceviceQty],
+                approvedQty: [0, [Validators.required]],
+                rejectedQty: [0, [Validators.required]],
+                verificationDetails: ['', Validators.required],
+                inspectionQtyStatus: ['Approved'],
+                verificationDone: ['', Validators.required],
+
+            }));
+        });
     }
 
     get items(): FormArray {
-        return this.verificationForm.get('items') as FormArray;
+        return this.verificationForm.get('itemsParameters') as FormArray;
     }
 
-    addItem(): void {
-        const itemGroup = this.fb.group({
-            materialName: ['', Validators.required],
-            poNumber: ['', Validators.required],
-            verifiedQuantity: [0, [Validators.required, Validators.min(0)]],
-            observation: ['', Validators.required],
-            verificationStatus: ['Pass', Validators.required]
-        });
-        this.items.push(itemGroup);
+    fetchInspectionPlanDetails() {
+        const poNo = Number(this.verificationForm.get('poNo')?.value || 0);
+        const id = this.incomingId || poNo;
+
+        if (!id) {
+            this.toastService.show('Please Select PO No.', 'warning');
+            return;
+        }
+
+        const urlTree = this.router.createUrlTree(['incoming-material/details', id]);
+
+        const url = this.router.serializeUrl(urlTree);
+
+        window.open(url, '_blank');
     }
 
-    removeItem(index: number): void {
-        this.items.removeAt(index);
-    }
 
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }
 
+    validateQty(row: AbstractControl, changedField: 'approvedQty' | 'rejectedQty'): void {
+        const receiveQty = Number(row.get('receviceQty')?.value || 0);
+        const approvedQty = Number(row.get('approvedQty')?.value || 0);
+        const rejectedQty = Number(row.get('rejectedQty')?.value || 0);
+
+        const total = approvedQty + rejectedQty;
+
+        if (total > receiveQty) {
+            this.toastService.show(
+                'Approved Qty + Rejected Qty cannot be greater than Receive Qty',
+                'warning'
+            );
+
+            row.get(changedField)?.setValue(0);
+            return;
+        }
+    }
     loadRecordData(): void {
         if (!this.recordId) return;
 
@@ -153,10 +246,23 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
                         this.items.removeAt(0);
                     }
 
+                    record.date = NablFormsHelper.formatDateForInput(record.date);
+                    // record.poDate =  NablFormsHelper.formatDateForInput(record.poDate);
                     // Add item groups for each item in record
-                    record.items.forEach(() => {
-                        this.addItem();
+                    record.itemsParameters?.forEach((r: any) => {
+                        this.items.push(this.fb.group({
+                            materialName: [r.materialName || '', Validators.required],
+                            orderedQty: [r.orderedQty || '', Validators.required],
+                            receviceQty: [r.receviceQty || '', Validators.required],
+                            approvedQty: [r.approvedQty || '', Validators.required],
+                            rejectedQty: [r.rejectedQty || '', Validators.required],
+                            verificationDetails: [r.verificationDetails || '', Validators.required],
+                            inspectionQtyStatus: [r.inspectionQtyStatus || '', Validators.required],
+                            verificationDone: [r.verificationDone || '', Validators.required],
+                        }))
+
                     });
+
 
                     this.verificationForm.patchValue(record);
                     // Lock form if not in editable status
@@ -190,40 +296,47 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
 
         const formData = this.verificationForm.getRawValue();
 
-        const request = this.isEditMode && this.recordId
-            ? this.service.update(this.recordId, formData)
-            : this.service.create(formData);
+        formData.preparedDate = this.today;
 
-        request.subscribe({
-            next: (res) => {
-                this.saved = true;
-                if (res.success) {
-                    this.toastService.show(`Record ${this.isEditMode ? 'updated' : 'created'} successfully`, 'success');
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('purchase-material-verification updated successfully', 'success')
                     this.router.navigate(['/purchase-material-verification']);
-                } else {
-                    this.toastService.show('Failed to save record', 'error');
-                }
-            },
-            error: (error: any) => {
-                this.toastService.show(error?.error?.message || 'Operation failed', 'error');
-            }
-        });
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
+            });
+        } else {
+
+            this.service.create(formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.toastService.show('purchase-material-verification created successfully', 'success')
+                    this.router.navigate(['/purchase-material-verification']);
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Operation failed', 'error'); }
+            });
+        }
+
     }
 
     onCancel(): void {
         this.router.navigate(['/purchase-material-verification']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.verificationForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.verificationForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.verificationForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.verificationForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

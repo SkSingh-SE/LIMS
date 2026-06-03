@@ -6,5 +6,9 @@
   [isLoading]="false"
   baseRoute="/purchase-order"
   addRoute="/purchase-order/create"
+  [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
   (onPageChange)="onPageChange($event)"
+    (onDelete)="deletePurchaseOrder($event)"
 ></app-nabl-register-table>

@@ -25,9 +25,11 @@ export interface SupplierRegistration {
     panNo: string;
     isoCertified: boolean;
     isoDetails?: string;
-
+    preparedBy: string; // General Manager
+    reviewedBy?: string;
+    approvedBy?: string;
     // Qualifications
-    bankDetails: {
+    bankDetail: {
         bankName: string;
         accountNo: string;
         ifscCode: string;
@@ -36,12 +38,15 @@ export interface SupplierRegistration {
 
     // Evaluation/Checklist
     documentsSubmitted: {
-        gstCertificate: boolean;
-        panCard: boolean;
+        monopolyCert: boolean;
+        popularBrandCert: boolean;
         isoCertificate: boolean;
-        cancelledCheque: boolean;
-        msmeCertificate: boolean;
-        otherDocs?: string;
+        workmanshipCert: boolean;
+        deliveryRecord: boolean;
+        supplierConfidentiality: boolean;
+        supplierApproved: boolean;
+        reasonNotApproved:string;
+        price: boolean;
     };
 
     // Status

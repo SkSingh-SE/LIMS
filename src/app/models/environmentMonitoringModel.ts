@@ -10,7 +10,7 @@ export interface EnvironmentDailyRecord {
 
 export interface EnvironmentMonitoring {
   id?: number;
-  formatNo: string; // F-12
+  FormCode: string; // F-12
   documentNo: string;
   issueNo: string;
   revNo: string;
@@ -34,6 +34,15 @@ export interface EnvironmentMonitoring {
   modifiedBy?: string;
   modifiedOn?: Date | string;
   isActive?: boolean;
+  roomName: string; // For display purposes
+  labRoomId?: number; // For storing the selected room's ID
+  preparedBy: string;
+  preparedDate: Date | string;
+  reviewedBy?: string;
+  reviewedDate?: Date | string;
+  approvedBy?: string;
+  approvedDate?: Date | string;
+
 }
 
 export interface EnvironmentMonitoringResponse {

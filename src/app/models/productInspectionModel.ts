@@ -3,6 +3,7 @@ export interface InspectionParameter {
     id?: number;
     parameterName: string;
     requirement: string;
+    referenceStandard: string;
     methodOfCheck: string;
     frequency: string;
     acceptanceCriteria: string;
@@ -28,6 +29,8 @@ export interface ProductInspection {
     preparedBy: string;
     reviewedBy: string;
     approvedBy: string;
+    planNo: string;
+    risklevel: string;
 
     status: 'Pending' | 'Approved' | 'Revised';
     isActive?: boolean;

@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="evaluationForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="evaluationForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -21,7 +21,8 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-26" />
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-26" />
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -32,7 +33,8 @@
               </div>
               <div class="col-md-2">
                 <label class="form-label">Issue No</label>
-                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto" />
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly
+                  placeholder="Auto" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">Rev No</label>
@@ -54,38 +56,357 @@
           </div>
           <div *ngIf="openSections['supplier']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="supplierName" />
+                <select class="form-select form-select-sm" formControlName="supplierRegisterId"
+                  (change)="onSupplierChange($event)">
+                  <option [ngValue]="null">Select Supplier</option>
+                  <option *ngFor="let supplier of supplierList" [value]="supplier.id || supplier.Id">
+                    {{ supplier.name || supplier.Name }}
+                  </option>
+                </select>
+                <div
+                  *ngIf="evaluationForm.get('supplierRegisterId')?.invalid && evaluationForm.get('supplierRegisterId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier name is required
+                </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Register No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="email" class="form-control shadow-sm" formControlName="registerNo"
+                  placeholder="register no." readonly />
+                <div
+                  *ngIf="evaluationForm.get('supplierRegisterId')?.invalid && evaluationForm.get('supplierRegisterId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier name is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Service Provider Name<span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="serviceProvider" readonly
+                  placeholder="service provider" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Contact Person
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" placeholder="contact person"
+                  formControlName="contactPerson" readonly />
+                <div
+                  *ngIf="evaluationForm.get('contactPerson')?.invalid && evaluationForm.get('contactPerson')?.touched"
+                  class="text-danger text-sm mt-1">
+                  contact person is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Mobile No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="mobileNo"
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="mobile no." readonly />
+                <span
+                  *ngIf="evaluationForm.get('mobileNo')?.hasError('required') && evaluationForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number is required.
+                </span>
+
+                <!-- Pattern -->
+                <span
+                  *ngIf="evaluationForm.get('mobileNo')?.hasError('pattern') && !evaluationForm.get('mobileNo')?.hasError('required') && evaluationForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number must be 10-13 digits.
+                </span>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Email ID
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="email" class="form-control shadow-sm" formControlName="email" placeholder="email"
+                  readonly />
+                <span *ngIf="evaluationForm.get('email')?.hasError('required') && evaluationForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  email Id is required.
+                </span>
+
+                <!-- Invalid Email -->
+                <span
+                  *ngIf="evaluationForm.get('email')?.hasError('email') && !evaluationForm.get('email')?.hasError('required') && evaluationForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  Please enter a valid email address.
+                </span>
+              </div>
+              <div class="col-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Present Status<span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control shadow-sm fw-bold" formControlName="presentStatus"
+                  placeholder="Present Status" readonly [ngClass]="{
+      'text-success border-success bg-light': evaluationForm.get('presentStatus')?.value === 'Enlisted',
+      'text-danger border-danger bg-light': evaluationForm.get('presentStatus')?.value === 'Delisted'
+    }">
+
+                <div
+                  *ngIf="evaluationForm.get('presentStatus')?.invalid && evaluationForm.get('presentStatus')?.touched"
+                  class="text-danger text-sm mt-1">
+                  Present Status is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Nature of Business
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="natureOfBusiness"
+                  placeholder="description of items/services to be supplied" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Materials/Services Supplied
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="productsServicesOffered"
+                  placeholder="description of items/services to be supplied" readonly />
+                <div
+                  *ngIf="evaluationForm.get('productsServicesOffered')?.invalid && evaluationForm.get('productsServicesOffered')?.touched"
+                  class="text-danger text-sm mt-1">
+                  materials/services supplied
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  GST No <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="gstNo"
+                  placeholder="gst no." readonly />
+                <span *ngIf="evaluationForm.get('gstNo')?.hasError('required') && evaluationForm.get('gstNo')?.touched"
+                  class="text-danger text-sm">
+                  gst number is required.
+                </span>
+
+                <!-- Pattern -->
+                <span
+                  *ngIf="evaluationForm.get('gstNo')?.hasError('pattern') && !evaluationForm.get('gstNo')?.hasError('required') && evaluationForm.get('gstNo')?.touched"
+                  class="text-danger text-sm">
+                  invalid gst format. Expected: 22AAAAA0000A1Z5
+                </span>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Address</label>
+                <input type="text" class="form-control shadow-sm" formControlName="address"
+                  placeholder="supplier address" readonly>
+              </div>
+
+              <!-- 
+              <div class="col-md-3">
                 <label class="form-label">Contact Person</label>
                 <input type="text" class="form-control" formControlName="contactPerson" />
               </div>
-              <div class="col-md-12">
+              <div class="col-md-3">
                 <label class="form-label">Materials / Services Supplied <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="materialsSupplied" />
+              </div> -->
+              <div class="col-md-3">
+                <label class="form-label">Evaluation Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="evaluationDate" />
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <label class="form-label">Evaluation Period (From) <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="evaluatingPeriodFrom" />
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <label class="form-label">Evaluation Period (To) <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="evaluatingPeriodTo" />
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-primary shadow-sm fw-semibold"
+                  (click)="fetchSupplierEvaluationDetails()">
+
+
+                  <i class="bi bi-search me-2"></i>
+                  Fetch Details
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Section III: Evaluation Criteria -->
+
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('poSummary')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['poSummary'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Purchase Order Summary</span>
+          </div>
+          <div *ngIf="openSections['poSummary']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>PO No</th>
+                    <th>PO Date</th>
+                    <th>Indent No</th>
+                    <th>Expected Delivery Date</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let po of poSummaryList; let i = index">
+                    <td class="text-center">{{ i + 1 }}</td>
+
+                    <td>
+                      <a href="javascript:void(0)" (click)="openPoItems(po)">
+                        {{ po.poNo || po.PONo }}
+                      </a>
+                    </td>
+
+                    <td>{{ po.poDate | date:'yyyy-MM-dd' }}</td>
+
+                    <td>
+                      <a href="javascript:void(0)" class="text-success" (click)="openIndent(po)">
+                        {{ po.referenceIndentNo || po.ReferenceIndentNo }}
+                      </a>
+                    </td>
+
+                    <td>{{ po.deliveryDate | date:'yyyy-MM-dd' }}</td>
+                  </tr>
+
+                  <tr *ngIf="!poSummaryList.length">
+                    <td colspan="5" class="text-center text-muted">
+                      No purchase order records found
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('inspectionSummary')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['inspectionSummary'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Incoming Inspection Summary</span>
+          </div>
+          <div *ngIf="openSections['inspectionSummary']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>PO No</th>
+                    <th>Inspection Plan No</th>
+                    <th>Inspection Date</th>
+                    <th>Final Status</th>
+                    <th>Received Items</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of incomingInspectionList; let i = index">
+                    <td class="text-center">{{ i + 1 }}</td>
+
+                    <td>{{ row.purchaseOrderNo || row.PurchaseOrderNo }}</td>
+
+                    <td>
+                      <a href="javascript:void(0)" (click)="openParameters(row)">
+                        {{ row.inspectionPlanNoName || row.IspectionPlanNoName }}
+                      </a>
+                    </td>
+
+                    <td>{{ row.date | date:'yyyy-MM-dd' }}</td>
+
+                    <td class="text-center">
+                      <span class="badge" [ngClass]="{
+                'bg-success': (row.inspectionResult || row.InspectionResult) === 'Accepted',
+                'bg-danger': (row.inspectionResult || row.InspectionResult) === 'Rejected',
+                'bg-warning text-dark': (row.inspectionResult || row.InspectionResult) === 'Conditional'
+              }">
+                        {{ row.inspectionResult || row.InspectionResult }}
+                      </span>
+                    </td>
+
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="openReceivedItems(row)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="!incomingInspectionList.length">
+                    <td colspan="6" class="text-center text-muted">
+                      No incoming inspection records found
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="doc-section mb-2">
+          <table class="table table-bordered inner-table mb-0">
+            <tbody>
+              <tr>
+                <td class="lbl text-center fw-bold py-1" style="width: 15%; font-size: 12px;">
+                  Acceptable Limit (Min)<span class="text-danger">*</span>
+                </td>
+
+                <td class="py-1" style="width: 85%;">
+                  <div class="d-flex align-items-center gap-2">
+
+                    <div class="input-group input-group-sm flex-grow-0"
+                      style="width: 110px; min-width: 350px; max-width: 110px;">
+
+                      <span class="input-group-text px-1">Min</span>
+
+                      <!-- <input type="number" class="form-control text-center px-1" formControlName="acceptableLimitMin"
+                        (input)="validateAcceptableLimitMin()"> -->
+                      <input type="number" class="form-control form-control-sm text-center"
+                        formControlName="acceptableLimitMin" (input)="updateConclusion()">
+                      <span class="input-group-text px-1">%</span>
+                    </div>
+
+                  </div>
+                  <div class="text-danger small mt-1" *ngIf="evaluationForm.get('acceptableLimitMin')?.hasError('min')">
+                    Acceptable limit must be greater than or equal to 30%.
+                  </div>
+
+                  <div class="text-danger small mt-1" *ngIf="evaluationForm.get('acceptableLimitMin')?.hasError('max')">
+                    Acceptable limit cannot exceed 90%.
+                  </div>
+                  <small class="text-danger small mt-1"
+                    *ngIf="evaluationForm.get('acceptableLimitMin')?.hasError('required')">
+                    Acceptable limit is required.
+                  </small>
+                  <small class="text-primary fw-semibold d-block mt-1"
+                    *ngIf="evaluationForm.get('acceptableLimitMin')?.value >= 30 &&evaluationForm.get('acceptableLimitMin')?.value <= 90">
+                    If the supplier evaluation result is greater than
+                    {{ evaluationForm.get('acceptableLimitMin')?.value }}%, the supplier will continue in the approved
+                    list; otherwise, the supplier will be removed from the approved list.
+                  </small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Section V: Evaluation Criteria -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('evaluation')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('evaluation')">
             <div>
               <i class="bi" [ngClass]="openSections['evaluation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="fw-bold ms-2">III. Evaluation Criteria</span>
+              <span class="fw-bold ms-2">V. Evaluation Criteria</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addCriteria(); $event.stopPropagation()">
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2"
+              (click)="addCriteria(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i> Add Criteria
             </button>
           </div>
@@ -94,29 +415,49 @@
               <table class="table table-hover align-middle m-0">
                 <thead class="bg-light">
                   <tr>
-                    <th class="ps-3 py-2 small fw-bold text-muted">Evaluation Parameter <span class="text-danger">*</span></th>
-                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Max Score <span class="text-danger">*</span></th>
-                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Score Obtained <span class="text-danger">*</span></th>
+                    <th style="width: 50px;">SN</th>
+                    <th class="ps-3 py-2 small fw-bold text-muted">Characteristics <span
+                        class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Max Score <span
+                        class="text-danger">*</span></th>
+                    <th class="py-2 small fw-bold text-muted text-center" style="width: 120px">Score Obtained<span
+                        class="text-danger">*</span></th>
                     <th class="py-2 small fw-bold text-muted">Remarks</th>
                     <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
                   </tr>
                 </thead>
                 <tbody formArrayName="criteria">
                   <tr *ngFor="let item of criteria.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
                     <td class="ps-3">
-                      <input type="text" class="form-control form-control-sm" placeholder="Parameter" formControlName="parameter" />
+                      <input type="text" class="form-control form-control-sm" placeholder="Parameter"
+                        formControlName="parameter" />
+                      <small class="text-danger"
+                        *ngIf="item.get('parameter')?.invalid && item.get('parameter')?.touched">
+                        Parameter is required.
+                      </small>
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm text-center" formControlName="maxScore" (ngModelChange)="calculateTotals()" />
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="maxScore"
+                        (ngModelChange)="calculateTotals()" />
+                      <small class="text-danger" *ngIf="item.get('maxScore')?.invalid && item.get('maxScore')?.touched">
+                        Max score is required and must be greater than 0.
+                      </small>
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm text-center" formControlName="scoreObtained" (ngModelChange)="calculateTotals()" />
+                      <input type="number" class="form-control form-control-sm text-center"
+                        formControlName="scoreObtained" (ngModelChange)="calculateTotals()" />
+                      <small class="text-danger" *ngIf="item.get('scoreObtained')?.invalid && item.get('scoreObtained')?.touched && item.get('maxScore')?.value > 0">
+                        Score obtained is required
+                      </small>
                     </td>
                     <td>
-                      <input type="text" class="form-control form-control-sm" placeholder="Remarks..." formControlName="remarks" />
+                      <input type="text" class="form-control form-control-sm" placeholder="Remarks..."
+                        formControlName="remarks" />
                     </td>
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removeCriteria(i)" [disabled]="criteria.length === 1">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeCriteria(i)"
+                        [disabled]="criteria.length === 1">
                         <i class="bi bi-trash3"></i>
                       </button>
                     </td>
@@ -126,15 +467,18 @@
                   <tr class="table-light fw-bold">
                     <td class="ps-3 text-end">Total:</td>
                     <td class="text-center">
-                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold" formControlName="maxPossibleScore" readonly tabindex="-1" />
+                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold"
+                        formControlName="maxPossibleScore" readonly tabindex="-1" />
                     </td>
                     <td class="text-center">
-                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold" formControlName="totalScore" readonly tabindex="-1" />
+                      <input class="form-control form-control-sm border-0 bg-transparent text-center fw-bold"
+                        formControlName="totalScore" readonly tabindex="-1" />
                     </td>
                     <td [attr.colspan]="isViewMode ? 1 : 2">
                       <div class="d-flex align-items-center ps-2">
                         <span class="me-2 small">Performance:</span>
-                        <input class="form-control form-control-sm border-0 bg-transparent fw-bold text-primary" style="width: 70px" formControlName="percentageScore" readonly tabindex="-1" />
+                        <input class="form-control form-control-sm border-0 bg-transparent fw-bold text-primary"
+                          style="width: 70px" formControlName="percentageScore" readonly tabindex="-1" />
                         <span class="small">%</span>
                       </div>
                     </td>
@@ -143,6 +487,24 @@
               </table>
             </div>
             <div class="p-3 border-top">
+              <div class="doc-section mb-3">
+                <div class="sec-title">Conclusion</div>
+                <div class="col-md-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" formControlName="toContinued" id="deliveryRecord"
+                      readonly />
+                    <label class="form-check-label fw-semibold small" for="toContinued">To be Continued</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" formControlName="toRemoved" id="price" readonly />
+                    <label class="form-check-label fw-semibold small" for="toRemoved">To be delete from Approved
+                      List</label>
+                  </div>
+                </div>
+              </div>
+
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Overall Recommendation <span class="text-danger">*</span></label>
@@ -150,9 +512,10 @@
                     <option *ngFor="let opt of recommendationOptions" [value]="opt.value">{{ opt.label }}</option>
                   </select>
                 </div>
-                <div class="col-12">
+                <div class="col-12 d-flex flex-column">
                   <label class="form-label">General Remarks / Areas of Improvement</label>
-                  <quill-editor formControlName="generalRemarks" [modules]="quillModules" [readOnly]="isViewMode" placeholder="Overall analysis..."></quill-editor>
+                  <quill-editor formControlName="generalRemarks" [modules]="quillModules" [readOnly]="isViewMode"
+                    placeholder="Overall analysis..."></quill-editor>
                 </div>
               </div>
             </div>
@@ -160,7 +523,7 @@
         </div>
 
         <!-- Section IV: Validation & Approvals -->
-        <div class="accordion-section mb-3">
+        <!-- <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('approval')">
             <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">IV. Validation &amp; Approvals</span>
@@ -177,15 +540,257 @@
               </div>
             </div>
           </div>
+        </div> -->
+
+        <!-- PO ITEMS POPUP -->
+        <div class="modal fade" id="poItemsModal" tabindex="-1">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                  PO Items
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>SN</th>
+                      <th>Material/Description</th>
+                      <th>Qty</th>
+                      <th>Unit Of Measure</th>
+                      <th>Unit Price</th>
+                      <th>total Amount</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr *ngFor="let item of poItemsList; let i = index">
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ item.Description || item.description }}</td>
+                      <td>{{ item.Quantity || item.quantity }}</td>
+                      <td>{{ item.UnitOfMeasure || item.unitOfMeasure }}</td>
+                      <td>{{ item.UnitPrice || item.unitPrice }}</td>
+                      <td>{{ item.TotalAmount || item.totalAmount }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                  Cancel
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
 
-        
+        <!-- INDENT DETAILS POPUP -->
+        <div class="modal fade" id="indentModal" tabindex="-1">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                  Purchase Indent Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body" *ngIf="selectedIndent">
+                <div class="row g-3">
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Indent No</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.purchaseIndentNo" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Description</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.description" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Technical Specification</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.technicalSpecification"
+                      readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Indentor Name</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.indentorName" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Unit Of Measure</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.unitOfMeasure" readonly>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Quantity</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.quantity" readonly>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Expected Date</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.expectedDate" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Priority</label>
+                    <input class="form-control form-control-sm" [value]="selectedIndent.priority" readonly>
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                  Cancel
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- RECEIVED ITEMS POPUP -->
+
+        <div class="modal fade" id="receivedItemsModal" tabindex="-1">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                  Received Item Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body p-4">
+                <!-- Horizontal scrollbar aur automatic width handle karne ke liye table-responsive wrapper -->
+                <div class="table-responsive">
+                  <!-- table-sm hata kar align-middle lagaya hai text vertical alignment ke liye -->
+                  <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                      <!-- text-nowrap se headers ek line me rahenge aur gaps badhenge -->
+                      <tr class="text-nowrap text-center">
+                        <th class="px-3">SN</th>
+                        <th class="px-4 text-start">Material/Description</th>
+                        <th class="px-3">Ordered Qty</th>
+                        <th class="px-3">Received Qty</th>
+                        <th class="px-3">Approved Qty</th>
+                        <th class="px-3">Rejected Qty</th>
+                        <th class="px-3">Unit Price</th>
+                        <th class="px-3">Amount</th>
+                        <th class="px-3">Batch No</th>
+                        <th class="px-3">Lot No</th>
+                        <th class="px-3">Invoice No</th>
+                        <th class="px-3">Verification Status</th>
+                        <th class="px-3">Verification Done By</th>
+                        <th class="px-4">Verification Details</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <!-- Data binding sequence ko header ke mutabik thik kar diya hai -->
+                      <tr *ngFor="let item of receivedItemsList; let i = index" class="text-center text-nowrap">
+                        <td class="px-3 fw-bold">{{ i + 1 }}</td>
+                        <!-- text-wrap lagaya hai taki product name lamba ho to niche text wrap ho jaye -->
+                        <td class="px-4 text-start text-wrap" style="min-width: 180px;">
+                          {{ item.ItemName || item.itemName }}
+                        </td>
+                        <td class="px-3">{{ item.OrderedQty || item.orderedQty }}</td>
+                        <td class="px-3">{{ item.ReceivedQty || item.receivedQty }}</td>
+                        <td class="px-3">{{ item.ApprovedQty || item.approvedQty || '-' }}</td>
+                        <td class="px-3">{{ item.RejectedQty || item.rejectedQty || '-' }}</td>
+                        <td class="px-3">{{ item.UnitPrice || item.unitPrice }}</td>
+                        <td class="px-3">{{ item.Amount || item.amount}}</td>
+                        <td class="px-3">{{ item.BatchNo || item.batchNo }}</td>
+                        <td class="px-3">{{ item.LotNo || item.lotNo }}</td>
+                        <td class="px-3">{{ item.InvoiceNo || item.invoiceNo }}</td>
+                        <td class="px-3">{{ item.VerificationStatus || item.verificationStatus || 'Pending' }}</td>
+                        <td class="px-3">{{ item.VerificationDone || item.verificationDone || '-' }}</td>
+                        <td class="px-4 text-wrap">{{ item.VerificationDetails || item.verificationDetails || '-'}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                  Cancel
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+
+
+        <!-- PARAMETER POPUP -->
+        <div class="modal fade" id="parameterModal" tabindex="-1">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                  Inspection Plan Parameters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>SN</th>
+                      <th>Parameter Name</th>
+                      <th>Requirement</th>
+                      <th>Reference Standard</th>
+                      <th>Method Of Check</th>
+                      <th>Frequency</th>
+                      <th>Acceptance Criteria</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr *ngFor="let p of selectedList; let i = index">
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ p.ParameterName || p.parameterName }}</td>
+                      <td>{{ p.Requirement || p.requirement }}</td>
+                      <td>{{ p.ReferenceStandard || p.referenceStandard }}</td>
+                      <td>{{ p.MethodOfCheck || p.methodOfCheck }}</td>
+                      <td>{{ p.Frequency || p.frequency }}</td>
+                      <td>{{ p.AcceptanceCriteria || p.acceptanceCriteria }}</td>
+                    </tr>
+
+                    <tr *ngIf="!selectedList.length">
+                      <td colspan="7" class="text-center text-muted">No parameter found</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                  Cancel
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <app-nabl-signature-section [parentForm]="evaluationForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="evaluationForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

@@ -60,7 +60,7 @@
       <app-nabl-print-header
           [formatNo]="'F-3'"
           [mainTitle]="'JOB DESCRIPTION'"
-          [docNo]="jobDesc.documentNo || ''"
+          [docNo]="'DMSPL / Level-04 / Format / ' + (jobDesc.formatNo || 'F-3')"
           [issueNo]="jobDesc.issueNo || '01'"
           [issueDate]="jobDesc.date || ''"
           [revNo]="jobDesc.revNo || '00'"
@@ -193,7 +193,7 @@
         </div>
 
         <!-- VII · Approval & Acceptance -->
-        <div class="doc-section mb-3 avoid-break">
+        <!-- <div class="doc-section mb-3 avoid-break">
           <div class="sec-title">VII. Approval &amp; Acceptance</div>
           <table class="table table-bordered mb-0 inner-table">
             <thead>
@@ -206,12 +206,12 @@
             <tbody>
               <tr>
                 <td class="lbl">Prepared By (Quality Manager)</td>
-                <td>{{ jobDesc.preparedByName || '—' }}</td>
+                <td>{{ jobDesc.preparedBy || '—' }}</td>
                 <td class="sig-cell"></td>
               </tr>
               <tr>
                 <td class="lbl">Approved By (Director)</td>
-                <td>{{ jobDesc.approvedByName || '—' }}</td>
+                <td>{{ jobDesc.approvedBy || '—' }}</td>
                 <td class="sig-cell"></td>
               </tr>
               <tr>
@@ -226,16 +226,16 @@
               </tr>
             </tbody>
           </table>
-        </div>
+        </div> -->
 
     </ng-container>
 
     <!-- ── FOOTER ─────────────────────────────────────────────── -->
     <ng-container footer>
       <app-nabl-print-footer
-          [preparedByName]="jobDesc.preparedByName || 'Quality Manager'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="jobDesc.approvedByName || 'Managing Director'">
+          [preparedByName]="jobDesc.preparedBy"
+          [issuedByName]="jobDesc.reviewedBy"
+          [reviewedApprovedByName]="jobDesc.approvedBy">
       </app-nabl-print-footer>
     </ng-container>
 

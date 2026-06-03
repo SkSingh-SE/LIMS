@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,13 +36,10 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record" [title]="'Supplier Evaluation Record (F-26)'" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        mainTitle="SUPPLIER EVALUATION RECORD"
-        [formatNo]="record.formatNo || 'F-26'"
-        [issueNo]="record.issueNo || '01'"
-        [revNo]="record.revNo || '00'"
-        [issueDate]="record.date || ''"
-      ></app-nabl-print-header>
+      <app-nabl-print-header mainTitle="SUPPLIER EVALUATION RECORD" [formatNo]="record.formatNo || 'F-26'"
+        [issueNo]="record.issueNo || '01'" [revNo]="record.revNo || '00'"
+          [docNo]="'DMSPL / Level-04 / Format / F-26'" [issueDate]="record.date || ''" [revDate]="record.date || ''"
+        [issueDate]="record.date || ''"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
@@ -56,11 +50,11 @@
           <tbody>
             <tr>
               <td class="lbl" style="width: 25%">Supplier Name</td>
-              <td style="width: 25%">{{ record.supplierName }}</td>
-              <td class="lbl" style="width: 25%">Document No.</td>
-              <td style="width: 25%">{{ record.documentNo }}</td>
+              <td colspan="3">{{ record.supplierName }}</td>
+              <!-- <td class="lbl" style="width: 25%">Document No.</td>
+              <td style="width: 25%">{{ record.documentNo }}</td> -->
             </tr>
-            <tr>
+            <!-- <tr>
               <td class="lbl">Contact Person</td>
               <td>{{ record.contactPerson || "--" }}</td>
               <td class="lbl">Evaluation Date</td>
@@ -69,11 +63,12 @@
             <tr>
               <td class="lbl">Materials / Services</td>
               <td colspan="3">{{ record.materialsSupplied }}</td>
-            </tr>
+            </tr> -->
             <tr>
               <td class="lbl">Evaluation Period</td>
               <td colspan="3">
-                {{ record.evaluatingPeriodFrom | date: "dd/MM/yyyy" }} to {{ record.evaluatingPeriodTo | date: "dd/MM/yyyy" }}
+                {{ record.evaluatingPeriodFrom | date: "dd/MM/yyyy" }} to {{ record.evaluatingPeriodTo | date:
+                "dd/MM/yyyy" }}
               </td>
             </tr>
           </tbody>
@@ -87,7 +82,7 @@
           <thead>
             <tr class="tbl-head text-center">
               <th style="width: 40px">SN</th>
-              <th>Evaluation Parameter</th>
+              <th>Characteristics</th>
               <th style="width: 100px">Max Score</th>
               <th style="width: 100px">Obtained</th>
               <th>Remarks</th>
@@ -115,41 +110,60 @@
       </div>
 
       <!-- Section III: Conclusion -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">III. OVERALL CONCLUSION</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%">Recommendation</td>
-              <td
-                style="width: 75%"
-                class="fw-bold fs-6"
-                [ngClass]="{
-                  'text-success': record.recommendation === 'Approved',
-                  'text-danger': record.recommendation === 'Rejected',
-                  'text-warning': record.recommendation === 'Conditionally Approved',
-                }"
-              >
-                {{ record.recommendation | uppercase }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      
+        <div class="doc-section mb-2">
+          <table class="table table-bordered inner-table mb-0">
+            <tbody>
 
+              <!-- Acceptable Limit -->
+              <tr>
+                <td class="lbl text-center fw-bold" style="width: 40%;">
+                  Acceptable Limit (Min)
+                </td>
+
+                <td class="text-center fw-semibold" style="width: 60%;">
+                  Min {{ record.acceptableLimitMin }}%
+                </td>
+              </tr>
+
+              <!-- Conclusion -->
+              <tr>
+                <td class="lbl text-center fw-bold">
+                  Conclusion
+                </td>
+
+                <td class="text-center">
+
+                  <div>
+                    <i class="bi" [ngClass]="record.toContinued ? 'bi-check-square-fill text-danger' : 'bi-square'">
+                    </i>
+                    <span class="ms-1">To be Continued</span>
+                  </div>
+
+                  <div>
+                    <i class="bi" [ngClass]="record.toRemoved ? 'bi-check-square-fill text-danger' : 'bi-square'">
+                    </i>
+                    <span class="ms-1">To be delete from Approved List</span>
+                  </div>
+
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+ 
       <!-- Section IV: Remarks -->
-      <div class="doc-section mb-3">
+      <!-- <div class="doc-section mb-3">
         <div class="sec-title">IV. GENERAL REMARKS</div>
         <div class="sec-body" [innerHTML]="record.generalRemarks || 'No additional remarks provided.'"></div>
-      </div>
+      </div> -->
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="record.evaluatedBy || ''"
-        [reviewedApprovedByName]="record.approvedBy || ''"
-        issuedByName="Quality Manager"
-      ></app-nabl-print-footer>
+     <app-nabl-print-footer [preparedByName]="record.preparedBy || ''" [issuedByName]="record.reviewedBy || ''"
+        [reviewedApprovedByName]="record.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

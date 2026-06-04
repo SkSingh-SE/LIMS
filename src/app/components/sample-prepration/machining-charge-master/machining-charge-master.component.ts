@@ -134,28 +134,61 @@ export class MachiningChargeMasterComponent implements OnInit {
       financialYearId: [v?.financialYearId ?? null, Validators.required],
       effectiveFrom: [v?.effectiveFrom ? String(v.effectiveFrom).substring(0, 10) : '', Validators.required],
       priceGeneralMetal: [v?.priceGeneralMetal ?? 0, [Validators.required, Validators.min(0)]],
-      priceHardMetal: [v?.priceHardMetal ?? 0, [Validators.required, Validators.min(0)]]
+      priceHardMetal: [v?.priceHardMetal ?? 0, [Validators.required, Validators.min(0)]],
+      cuttingRateGeneralMetal: [v?.cuttingRateGeneralMetal ?? 0, [Validators.required, Validators.min(0)]],
+      cuttingRateHardMetal: [v?.cuttingRateHardMetal ?? 0, [Validators.required, Validators.min(0)]]
     });
   }
 
   // FY selected → auto-fill Effective From with that FY's start date (user can edit after).
   onVersionFyChange(index: number): void {
     const vg = this.versions.at(index);
-    const fy = this.financialYears.find(f => f.id === vg.get('financialYearId')?.value);
+    const selectedFyId = vg.get('financialYearId')?.value;
+    // Block duplicate financial year — revert this row if the FY is already used elsewhere.
+    const isDuplicate = this.versions.controls.some((c, i) => i !== index && c.get('financialYearId')?.value === selectedFyId);
+    if (isDuplicate) {
+      this.toastService.show('This financial year is already added.', 'error');
+      vg.get('financialYearId')?.setValue(null);
+      vg.get('effectiveFrom')?.setValue('');
+      return;
+    }
+    const fy = this.financialYears.find(f => f.id === selectedFyId);
     if (fy?.startDate) {
       vg.get('effectiveFrom')?.setValue(String(fy.startDate).substring(0, 10));
     }
   }
 
+  // Min/max bounds for the Effective From date input — confined to the selected FY range.
+  getFyStart(index: number): string | null {
+    const fy = this.financialYears.find(f => f.id === this.versions.at(index).get('financialYearId')?.value);
+    return fy?.startDate ? String(fy.startDate).substring(0, 10) : null;
+  }
+  getFyEnd(index: number): string | null {
+    const fy = this.financialYears.find(f => f.id === this.versions.at(index).get('financialYearId')?.value);
+    return fy?.endDate ? String(fy.endDate).substring(0, 10) : null;
+  }
+
+  private hasEffectiveFromOutsideFy(): boolean {
+    return this.versions.controls.some(c => {
+      const fy = this.financialYears.find(f => f.id === c.get('financialYearId')?.value);
+      const eff = c.get('effectiveFrom')?.value;
+      if (!fy?.startDate || !fy?.endDate || !eff) return false;
+      const d = String(eff).substring(0, 10);
+      return d < String(fy.startDate).substring(0, 10) || d > String(fy.endDate).substring(0, 10);
+    });
+  }
+
   addVersion(): void {
     // Pick a financial year not already used by another version, so each row is distinct.
     const usedFyIds = new Set(this.versions.controls.map(v => v.get('financialYearId')?.value));
-    const pick = this.financialYears.find(f => !usedFyIds.has(f.id))
-      || this.financialYears.find(f => f.isCurrent)
-      || this.financialYears[0];
+    const pick = this.financialYears.find(f => !usedFyIds.has(f.id));
+    if (!pick) {
+      this.toastService.show('All financial years have already been added.', 'warning');
+      return;
+    }
     this.versions.push(this.createVersionGroup({
-      financialYearId: pick?.id ?? null,
-      effectiveFrom: pick?.startDate ?? null
+      financialYearId: pick.id,
+      effectiveFrom: pick.startDate ?? null
     }));
     this.form.markAsDirty();
   }
@@ -401,6 +434,13 @@ export class MachiningChargeMasterComponent implements OnInit {
     return new Set(dates).size !== dates.length;
   }
 
+  private hasDuplicateFinancialYear(): boolean {
+    const fyIds = this.versions.controls
+      .map(c => c.get('financialYearId')?.value)
+      .filter(v => v != null);
+    return new Set(fyIds).size !== fyIds.length;
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -408,6 +448,14 @@ export class MachiningChargeMasterComponent implements OnInit {
     }
     if (this.versions.length === 0) {
       this.toastService.show('At least one price version is required.', 'error');
+      return;
+    }
+    if (this.hasDuplicateFinancialYear()) {
+      this.toastService.show('Duplicate Financial Year — each financial year can appear only once.', 'error');
+      return;
+    }
+    if (this.hasEffectiveFromOutsideFy()) {
+      this.toastService.show('Effective From must fall within the selected financial year.', 'error');
       return;
     }
     if (this.hasDuplicateEffectiveFrom()) {
@@ -432,6 +480,8 @@ export class MachiningChargeMasterComponent implements OnInit {
       fd.append(`versions[${i}].effectiveFrom`, v.effectiveFrom || '');
       fd.append(`versions[${i}].priceGeneralMetal`, String(v.priceGeneralMetal ?? 0));
       fd.append(`versions[${i}].priceHardMetal`, String(v.priceHardMetal ?? 0));
+      fd.append(`versions[${i}].cuttingRateGeneralMetal`, String(v.cuttingRateGeneralMetal ?? 0));
+      fd.append(`versions[${i}].cuttingRateHardMetal`, String(v.cuttingRateHardMetal ?? 0));
     });
 
     if (this.selectedFile) {

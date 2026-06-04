@@ -301,6 +301,8 @@
                           type="date"
                           formControlName="effectiveFrom"
                           class="form-control form-control-sm"
+                          [min]="getFyStart(vi)"
+                          [max]="getFyEnd(vi)"
                           [ngClass]="{ 'is-invalid': v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid }"
                         />
                         <div *ngIf="v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid">

@@ -114,14 +114,14 @@
 <!-- Modal for Add/Edit/View Machining Charge Master -->
 <div
   id="machiningChargeModal"
-  class="modal fade modal-fade modal-lg"
+  class="modal fade modal-fade modal-xl"
   #modalRef
   tabindex="-1"
   data-bs-backdrop="static" data-bs-keyboard="false"
   aria-modal="true"
   role="dialog"
 >
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
         <label class="modal-title fw-medium">{{ formTitle }}</label>
@@ -232,8 +232,10 @@
                     <tr class="text-sm">
                       <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
                       <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
-                      <th style="min-width: 130px;">Normal Rate (₹) <span class="text-danger">*</span></th>
-                      <th style="min-width: 130px;">Hard Metal (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Normal Machining (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Normal Cutting (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Hard Machining (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Hard Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="width: 40px;"></th>
                     </tr>
                   </thead>
@@ -260,6 +262,8 @@
                           type="date"
                           formControlName="effectiveFrom"
                           class="form-control form-control-sm"
+                          [min]="getFyStart(vi)"
+                          [max]="getFyEnd(vi)"
                           [ngClass]="{ 'is-invalid': v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid }"
                         />
                         <div *ngIf="v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid">
@@ -282,6 +286,19 @@
                       <td>
                         <input
                           type="text"
+                          formControlName="cuttingRateGeneralMetal"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid }"
+                        />
+                        <div *ngIf="v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid">
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
                           formControlName="priceHardMetal"
                           class="form-control form-control-sm text-end"
                           appDecimalOnly
@@ -290,6 +307,19 @@
                         <div *ngIf="v.get('priceHardMetal')?.touched && v.get('priceHardMetal')?.invalid">
                           <span *ngIf="v.get('priceHardMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
                           <span *ngIf="v.get('priceHardMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          formControlName="cuttingRateHardMetal"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('cuttingRateHardMetal')?.touched && v.get('cuttingRateHardMetal')?.invalid }"
+                        />
+                        <div *ngIf="v.get('cuttingRateHardMetal')?.touched && v.get('cuttingRateHardMetal')?.invalid">
+                          <span *ngIf="v.get('cuttingRateHardMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('cuttingRateHardMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
                         </div>
                       </td>
                       <td class="text-center">

@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { ParameterUnitService } from '../../services/parameter-unit.service';
@@ -68,7 +68,6 @@ export class ParameterUnitComponent implements OnInit {
   formTitle = 'Parameter Unit Form';
 
   // Intelligence features
-  similarUnitCount = 0;
   testValue: number | null = null;
 
   constructor(
@@ -87,54 +86,44 @@ export class ParameterUnitComponent implements OnInit {
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       conversaionFactor: [''],
-      similarUnit1: [''],
-      conversionFactor1: [null],
-      similarUnit2: [''],
-      conversionFactor2: [null],
-      similarUnit3: [''],
-      conversionFactor3: [null],
-      similarUnit4: [''],
-      conversionFactor4: [null],
-      similarUnit5: [''],
-      conversionFactor5: [null],
-      similarUnit6: [''],
-      conversionFactor6: [null],
-      similarUnit7: [''],
-      conversionFactor7: [null],
+      // Normalized equivalents (unlimited add/remove). Each row: { id, name, conversionFactor }.
+      equivalents: this.fb.array([]),
     });
   }
 
-  detectSimilarUnitCount(): void {
-    let count = 0;
-    for (let i = 1; i <= 7; i++) {
-      if (this.parameterUnitForm.get(`similarUnit${i}`)?.value || this.parameterUnitForm.get(`conversionFactor${i}`)?.value) count = i;
-    }
-    this.similarUnitCount = count;
+  /** Equivalents FormArray accessor. */
+  get equivalents(): FormArray {
+    return this.parameterUnitForm.get('equivalents') as FormArray;
   }
 
-  addSimilarUnit(): void {
-    if (this.similarUnitCount < 7) this.similarUnitCount++;
+  createEquivalentGroup(e?: any): FormGroup {
+    return this.fb.group({
+      id: [e?.id ?? 0],
+      name: [e?.name ?? '', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      conversionFactor: [e?.conversionFactor ?? null, [Validators.min(0.000001)]],
+    });
   }
 
-  removeSimilarUnit(index: number): void {
-    // Shift all units above the removed index down by one
-    const patch: any = {};
-    for (let i = index; i < 7; i++) {
-      patch[`similarUnit${i}`] = this.parameterUnitForm.get(`similarUnit${i + 1}`)?.value || '';
-      patch[`conversionFactor${i}`] = this.parameterUnitForm.get(`conversionFactor${i + 1}`)?.value || null;
-    }
-    // Clear the last slot
-    patch[`similarUnit7`] = '';
-    patch[`conversionFactor7`] = null;
-    this.parameterUnitForm.patchValue(patch);
-    this.similarUnitCount--;
+  addEquivalent(): void {
+    this.equivalents.push(this.createEquivalentGroup());
   }
 
-  calculateConversions(): void {}
+  removeEquivalent(index: number): void {
+    this.equivalents.removeAt(index);
+  }
+
+  /** Rebuild the equivalents FormArray from a saved unit's child rows. */
+  private bindEquivalents(rows: any[]): void {
+    this.equivalents.clear();
+    (rows || [])
+      .slice()
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+      .forEach(e => this.equivalents.push(this.createEquivalentGroup(e)));
+  }
 
   getConvertedValue(index: number): string {
     if (this.testValue === null || this.testValue === undefined) return '—';
-    const factor = this.parameterUnitForm.get(`conversionFactor${index}`)?.value;
+    const factor = this.equivalents.at(index)?.get('conversionFactor')?.value;
     if (!factor) return '—';
     const result = this.testValue * factor;
     return Number.isInteger(result) ? result.toString() : result.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
@@ -163,7 +152,8 @@ export class ParameterUnitComponent implements OnInit {
       next: (response) => {
         if (this.parameterUnitId !== requestId) return; // discard stale response
         this.parameterUnitForm.patchValue(response);
-        this.detectSimilarUnitCount();
+        this.bindEquivalents(response.equivalents);
+        if (this.isViewMode) this.parameterUnitForm.disable();
       },
       error: (error) => {
         console.error('Error fetching parameter unit data:', error);
@@ -305,7 +295,6 @@ export class ParameterUnitComponent implements OnInit {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.similarUnitCount = 0;
       this.formTitle = 'Create Parameter Unit';
     } else if (type === 'edit') {
       this.isEditMode = true;

@@ -208,3 +208,175 @@
   border-color: #6c757d;
   color: #fff;
 }
+
+/* ── MS-A: compact (density-only) form styling ─────────────────────────────── */
+:host .form-control,
+:host .form-select {
+  font-size: 0.78rem;
+  min-height: 30px;
+  padding: 0.15rem 0.4rem;
+}
+:host .form-label {
+  font-size: 0.75rem;
+  margin-bottom: 0.15rem;
+  font-weight: 500;
+}
+:host .section-body {
+  padding: 0.6rem 0.75rem;
+}
+:host .table-sm > :not(caption) > * > * {
+  padding: 0.25rem 0.4rem;
+}
+:host .table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+:host .table td,
+:host .table th {
+  vertical-align: middle;
+}
+:host .btn-sm {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+}
+/* keep the first (Parameter) column readable while scrolling wide line tables */
+:host .table-responsive {
+  scrollbar-width: thin;
+}
+:host .nav-tabs .nav-link {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+
+/* MS-D: custom equation modal */
+:host .custom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+}
+:host .custom-modal-dialog {
+  background: #fff;
+  width: 540px;
+  max-width: 92vw;
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-top: 3px solid var(--primary-color);
+}
+:host .custom-modal-header,
+:host .custom-modal-footer {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+}
+:host .custom-modal-header {
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+}
+:host .custom-modal-footer {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid #eee;
+}
+:host .custom-modal-body {
+  padding: 0.9rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* ── Compact + enhanced Header Information & Parameter List ─────────────────── */
+/* Section header polish: accent bar, gradient, hover */
+:host .accordion-section {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+:host .section-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: linear-gradient(90deg, #fafbfc 0%, #fff 100%);
+  border-left: 3px solid var(--primary-color);
+  font-size: 0.85rem;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+:host .section-header:hover {
+  background: linear-gradient(90deg, #f3f4f6 0%, #fff 100%);
+}
+:host .section-header .bi {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+}
+
+/* Header Information compact grid: tighter labels/fields */
+:host .compact-grid .form-label {
+  font-size: 0.72rem;
+  margin-bottom: 0.1rem;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+:host .compact-grid .form-control,
+:host .compact-grid .form-select {
+  min-height: 28px;
+  font-size: 0.78rem;
+}
+:host .compact-grid input[readonly] {
+  background: #f8f9fa;
+  font-style: italic;
+  color: #6c757d;
+}
+
+/* Grade Identifiers: compact pill strip */
+:host .identifier-box {
+  background: #fafbfc;
+  border: 1px dashed #d5d9df;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+:host .identifier-box-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+:host .identifier-box .form-check {
+  margin-bottom: 0;
+}
+:host .identifier-box .form-check-label {
+  font-size: 0.76rem;
+}
+:host .identifier-box .vr {
+  align-self: stretch;
+  opacity: 0.25;
+}
+
+/* Parameter List: tab count badges + tighter rows */
+:host .nav-tabs .nav-link .badge {
+  font-size: 0.62rem;
+  padding: 0.18em 0.45em;
+  border: 1px solid #e0e0e0;
+}
+:host .nav-tabs .nav-link.active .badge {
+  background: var(--primary-color) !important;
+  color: #fff;
+  border-color: var(--primary-color);
+}
+:host .param-list-table {
+  max-width: 720px;
+}
+:host .param-list-table thead th {
+  background: #f7f8fa;
+}
+:host .param-list-table tbody tr:hover {
+  background: #fcfcfd;
+}

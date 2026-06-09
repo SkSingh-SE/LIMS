@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
@@ -62,7 +62,17 @@ export class MaterialSpecificationListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService, private router: Router) {
+  }
+
+  // MS-A: fetch a detached clone of the spec and open the create form pre-filled for a new version.
+  cloneAsNewVersion(id: number) {
+    this.materialSpecificationService.getCloneTemplate(id).subscribe({
+      next: (template) => {
+        this.router.navigate(['/material-specification/create'], { state: { mode: 'clone', cloneData: template } });
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load specification for cloning.', 'error')
+    });
   }
 
 

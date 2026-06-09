@@ -66,6 +66,10 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
+                                    <a (click)="cloneAsNewVersion(material.id)" class="icon-link cursor-pointer"
+                                        title="Create New Version">
+                                        <i class="bi bi-files text-primary"></i>
+                                    </a>
                                     <a (click)="deleteMaterialSpecification(material.id)" class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">

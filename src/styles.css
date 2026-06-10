@@ -562,7 +562,7 @@ body {
 
 .section-header .bi {
   font-size: var(--font-sm);
-  color: var(--primary-color);
+  /* color: var(--primary-color); */
   transition: transform 0.2s;
 }
 

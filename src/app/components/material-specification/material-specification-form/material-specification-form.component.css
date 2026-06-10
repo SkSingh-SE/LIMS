@@ -31,20 +31,20 @@
 .nav-tabs .nav-link {
   color: #495057;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--font-sm);
   border: none;
   padding: 0.5rem 1rem;
   transition: all 0.2s ease;
 }
 
 .nav-tabs .nav-link:hover {
-  color: #DA261C;
-  border-bottom: 2px solid #DA261C;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
 }
 
 .nav-tabs .nav-link.active {
   color: #fff;
-  background: linear-gradient(135deg, #FF2C1F, #DA261C);
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
   border-radius: 6px 6px 0 0;
   border: none;
 }
@@ -53,14 +53,14 @@
 .spec-table {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.825rem;
+  font-size: var(--font-sm);
 }
 
 .spec-th {
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
   color: #495057;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 10px 12px;
@@ -111,7 +111,7 @@
 /* Compact form controls inside table */
 .spec-table .form-control,
 .spec-table .form-select {
-  font-size: 0.825rem;
+  font-size: var(--font-sm);
   padding: 0.3rem 0.5rem;
   border-radius: 4px;
   border: 1px solid #ced4da;
@@ -120,7 +120,7 @@
 
 .spec-table .form-control:focus,
 .spec-table .form-select:focus {
-  border-color: #DA261C;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
 }
 
@@ -148,26 +148,20 @@
   border-color: #dc3545;
 }
 
-/* Header Styling */
-.card-form-header {
-  background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-  border-bottom: none;
-  padding: 0.75rem 1.25rem;
-}
-
+/* Header Styling — background/font inherit from global .card-form-header (styles.css) */
 .navbar-background {
-  background-color: #DA261C !important;
+  background-color: var(--primary-color) !important;
 }
 
 /* ─── Compact dropdowns inside spec table ─── */
 .spec-table app-multi-select-dropdown,
 .spec-table app-searchable-dropdown {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .spec-table app-searchable-dropdown .input-group .form-control {
   padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   line-height: 1.4;
 }
 
@@ -186,7 +180,7 @@
 /* ─── Compact ng-select inside spec table ─── */
 .spec-table ::ng-deep .ng-select .ng-select-container {
   min-height: 30px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .spec-table ::ng-deep .ng-select .ng-select-container .ng-value-container {
@@ -198,7 +192,7 @@
   color: #6c757d;
   border: 1px solid #6c757d;
   background-color: transparent;
-  font-size: 0.8rem;
+  font-size: var(--font-xs);
   padding: 0.25rem 0.5rem;
   transition: all 0.2s ease;
 }
@@ -212,14 +206,14 @@
 /* ── MS-A: compact (density-only) form styling ─────────────────────────────── */
 :host .form-control,
 :host .form-select {
-  font-size: 0.78rem;
   min-height: 30px;
   padding: 0.15rem 0.4rem;
 }
 :host .form-label {
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   margin-bottom: 0.15rem;
   font-weight: 500;
+  color: var(--neutral-700);
 }
 :host .section-body {
   padding: 0.6rem 0.75rem;
@@ -228,7 +222,7 @@
   padding: 0.25rem 0.4rem;
 }
 :host .table thead th {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -237,7 +231,7 @@
   vertical-align: middle;
 }
 :host .btn-sm {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   padding: 0.15rem 0.5rem;
 }
 /* keep the first (Parameter) column readable while scrolling wide line tables */
@@ -245,7 +239,7 @@
   scrollbar-width: thin;
 }
 :host .nav-tabs .nav-link {
-  font-size: 0.78rem;
+  font-size: var(--font-sm);
   padding: 0.3rem 0.75rem;
   cursor: pointer;
 }
@@ -304,7 +298,8 @@
   cursor: pointer;
   background: linear-gradient(90deg, #fafbfc 0%, #fff 100%);
   border-left: 3px solid var(--primary-color);
-  font-size: 0.85rem;
+  font-size: var(--font-sm);
+  font-weight: 600;
   user-select: none;
   transition: background 0.15s ease;
 }
@@ -312,23 +307,20 @@
   background: linear-gradient(90deg, #f3f4f6 0%, #fff 100%);
 }
 :host .section-header .bi {
-  color: var(--primary-color);
+  /* color: var(--primary-color); */
   font-size: 0.8rem;
 }
 
 /* Header Information compact grid: tighter labels/fields */
 :host .compact-grid .form-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   margin-bottom: 0.1rem;
-  color: #6b7280;
+  color: var(--neutral-700);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
 }
 :host .compact-grid .form-control,
 :host .compact-grid .form-select {
   min-height: 28px;
-  font-size: 0.78rem;
 }
 :host .compact-grid input[readonly] {
   background: #f8f9fa;
@@ -344,7 +336,7 @@
   padding: 0.4rem 0.6rem;
 }
 :host .identifier-box-label {
-  font-size: 0.74rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
@@ -353,7 +345,7 @@
   margin-bottom: 0;
 }
 :host .identifier-box .form-check-label {
-  font-size: 0.76rem;
+  font-size: var(--font-xs);
 }
 :host .identifier-box .vr {
   align-self: stretch;
@@ -371,12 +363,120 @@
   color: #fff;
   border-color: var(--primary-color);
 }
+:host .param-list-wrap {
+  max-width: 760px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
 :host .param-list-table {
-  max-width: 720px;
+  margin-bottom: 0;
 }
 :host .param-list-table thead th {
   background: #f7f8fa;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.4rem 0.5rem;
+}
+:host .param-list-table tbody td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
 }
 :host .param-list-table tbody tr:hover {
-  background: #fcfcfd;
+  background: #fafbfc;
+}
+:host .param-list-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid #f1f3f5;
+}
+:host .param-list-empty {
+  text-align: center;
+  padding: 1.1rem 0.5rem;
+  color: #8a929c;
+}
+:host .param-list-empty .bi {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #c2c8d0;
+}
+
+/* ── Grade tabs (tab-wise grades, like year-wise reference) ────────────────── */
+:host .grade-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-bottom: 2px solid #e9ecef;
+}
+:host .grade-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -2px;
+  background: #f8f9fa;
+  transition: all 0.15s ease;
+  max-width: 220px;
+}
+:host .grade-tab:hover {
+  background: #f1f3f5;
+  color: var(--primary-color);
+}
+:host .grade-tab.active {
+  background: #fff;
+  color: var(--primary-color);
+  border-color: #e9ecef;
+  border-top: 2px solid var(--primary-color);
+  font-weight: 600;
+}
+:host .grade-tab .grade-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:host .grade-tab-remove {
+  font-size: 0.65rem;
+  color: #adb5bd;
+  border-radius: 50%;
+  padding: 2px;
+  transition: all 0.15s ease;
+}
+:host .grade-tab-remove:hover {
+  color: #fff;
+  background: var(--primary-color);
+}
+:host .grade-tab-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--primary-color);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+:host .grade-tab-add:hover {
+  background: rgba(218, 38, 28, 0.08);
+}
+:host .grade-body {
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  background: #fff;
 }

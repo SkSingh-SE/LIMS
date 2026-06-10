@@ -10,7 +10,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { YearHelper } from '../../../utility/helper/year.helper';
@@ -40,7 +39,6 @@ import { FormFieldErrorComponent } from '../../../utility/components/form-field-
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
-    NumberOnlyDirective,
     SearchableDropdownComponent,
     FormFieldErrorComponent,
   ],
@@ -247,6 +245,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       id: [p?.id || 0],
       parameterID: [p?.parameterID ?? null, Validators.required],
       parameterUnitID: [p?.parameterUnitID ?? null],
+      // chosen equivalent (null = base unit). FK to ParameterUnitEquivalent.
+      parameterUnitEquivalentID: [p?.parameterUnitEquivalentID ?? null],
       // base unit used to compute the equivalent-unit options (rebind: default to the saved unit)
       defaultParameterUnitID: [p?.defaultParameterUnitID ?? p?.parameterUnitID ?? null],
       type: [p?.type || 'chemical'],
@@ -269,6 +269,17 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       row.patchValue({ parameterID: null, parameterUnitID: null });
       return;
     }
+    // Duplicate guard: same parameter must not be added twice in this tab's list.
+    const isDuplicate = this.headerParametersByTab(tab).controls
+      .some((ctrl, i) => i !== index && ctrl.get('parameterID')?.value === item.id);
+    if (isDuplicate) {
+      this.toastService.show(`"${item.name || item.text || 'Parameter'}" is already added in this list.`, 'warning');
+      // Sentinel then clear forces the searchable-dropdown's ngOnChanges to reset its display.
+      row.patchValue({ parameterID: -1, parameterUnitID: null, parameterUnitEquivalentID: null, defaultParameterUnitID: null });
+      setTimeout(() => row.patchValue({ parameterID: null }), 0);
+      this.equivalentUnitsByRow.set(row, []);
+      return;
+    }
     const additional = item?.additionalValues || {};
     const rawUnit = additional.UnitID ?? additional.unitID ?? null;
     const unitID = rawUnit != null && rawUnit !== '' ? Number(rawUnit) : null;
@@ -287,6 +298,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
         line.patchValue({
           parameterID: hp.get('parameterID')?.value,
           parameterUnitID: unitId,
+          parameterUnitEquivalentID: hp.get('parameterUnitEquivalentID')?.value ?? null,
           parameterName: hp.get('parameterName')?.value || '',
         });
         (linesGroup.get(tab) as FormArray).push(line);
@@ -338,7 +350,25 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.grades.push(gradeGroup);
     this.selectedMetalByGrade.push(null);
     this.gradeIdentifierValues.push({ key: '', value: '' });
+    const newIndex = this.grades.length - 1;
+    this.selectedSpecTab[newIndex] = this.selectedSpecTab[newIndex] || 'chemical';
+    if (seedFromHeader) this.selectedGradeIndex = newIndex; // jump to the new grade tab (not on rebind)
     // MS-B: the legacy UNS/Steel single field is replaced by configurable grade identifiers — no required validator.
+  }
+
+  /** Switch the active grade tab. */
+  selectGrade(index: number): void {
+    this.selectedGradeIndex = index;
+    this.selectedSpecTab[index] = this.selectedSpecTab[index] || 'chemical';
+  }
+
+  /** Remove a grade from its tab (stops tab-click) and keep selectedGradeIndex valid. */
+  removeGradeTab(index: number, event: Event): void {
+    event.stopPropagation();
+    this.removeGrade(index);
+    if (this.selectedGradeIndex >= this.grades.length) {
+      this.selectedGradeIndex = Math.max(0, this.grades.length - 1);
+    }
   }
 
   /** MS-B: legacy UNS/Steel validator no longer applies (field replaced by grade identifiers). */
@@ -371,7 +401,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       maxValue: [null],
       notes: [''],
       equation: [''],
+      minEquation: [''],
+      maxEquation: [''],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
       minValueEquation: [0],
       maxValueEquation: [0],
       minTolerance: [0],
@@ -389,8 +422,12 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       productSizeMasterID: [null],
       testCondition: [''],
       testNote: [''],
-      // MS-E: per-parameter test-method mapping rows [{ laboratoryTestID, testMethodSpecificationID, numberOfTestSpecimen }]
-      testMethodMapping: this.fb.array([]),
+      // MS-E matrix: one Laboratory Test per parameter + 5 fixed Test Method Specification slots.
+      laboratoryTestID: [null],
+      testMethodMapping: this.fb.array([
+        this.createTestMethodMappingRow(), this.createTestMethodMappingRow(), this.createTestMethodMappingRow(),
+        this.createTestMethodMappingRow(), this.createTestMethodMappingRow(),
+      ]),
       laboratoryTestIDs: this.fb.control([]),
       type: [tab],
       IsCustom: [false],
@@ -426,13 +463,17 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   // (the runtime evaluator is a separate test-phase task — this only authors it).
   equationModalVisible = false;
   equationModalLine: FormGroup | null = null;
-  equationDraft = '';
+  minEquationDraft = '';
+  maxEquationDraft = '';
+  equationActiveField: 'min' | 'max' = 'min'; // which textarea chips/operators insert into
   equationParamChips: Array<{ symbol: string; name: string }> = [];
-  equationOperators: string[] = ['+', '-', '*', '/', '(', ')', '>', '<', '>=', '<=', '==', 'IF(', ', ', ')'];
+  equationOperators: string[] = ['+', '-', '*', '/', '(', ')', '>', '<', '>=', '<=', '==', ', ', 'IF(', 'MIN(', 'MAX(', 'specMax(', 'specMin('];
 
   openEquationModal(group: AbstractControl, gradeIndex: number): void {
     this.equationModalLine = group as FormGroup;
-    this.equationDraft = group.get('equation')?.value || '';
+    this.minEquationDraft = group.get('minEquation')?.value || '';
+    this.maxEquationDraft = group.get('maxEquation')?.value || '';
+    this.equationActiveField = 'min';
     // Available references = every other parameter in this grade (both tabs) that has a symbol.
     const chips: Array<{ symbol: string; name: string }> = [];
     (['chemical', 'mechanical'] as const).forEach(t => {
@@ -446,17 +487,20 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.equationModalVisible = true;
   }
   insertEquationToken(token: string): void {
-    this.equationDraft = (this.equationDraft || '') + token;
+    if (this.equationActiveField === 'max') this.maxEquationDraft = (this.maxEquationDraft || '') + token;
+    else this.minEquationDraft = (this.minEquationDraft || '') + token;
   }
   saveEquation(): void {
-    this.equationModalLine?.get('equation')?.setValue(this.equationDraft);
+    this.equationModalLine?.get('minEquation')?.setValue(this.minEquationDraft?.trim() || null);
+    this.equationModalLine?.get('maxEquation')?.setValue(this.maxEquationDraft?.trim() || null);
     this.equationModalLine?.markAsDirty();
     this.closeEquationModal();
   }
   closeEquationModal(): void {
     this.equationModalVisible = false;
     this.equationModalLine = null;
-    this.equationDraft = '';
+    this.minEquationDraft = '';
+    this.maxEquationDraft = '';
     this.equationParamChips = [];
   }
 
@@ -683,7 +727,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
                 maxValue: line.maxValue,
                 notes: line.notes,
                 equation: line.equation,
+                minEquation: line.minEquation,
+                maxEquation: line.maxEquation,
                 parameterUnitID: line.parameterUnitID,
+                parameterUnitEquivalentID: line.parameterUnitEquivalentID,
                 minValueEquation: line.minValueEquation,
                 maxValueEquation: line.maxValueEquation,
                 minTolerance: line.minTolerance,
@@ -700,6 +747,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
                 productSizeMasterID: line.productSizeMasterID,
                 testCondition: line.testCondition,
                 testNote: line.testNote,
+                laboratoryTestID: line.laboratoryTestID ?? null,
                 laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || [],
                 // Parameter metadata from joined Parameter navigation (for precision/UI only)
                 decimalPrecision: line.parameter?.decimalPrecision ?? 2,
@@ -707,13 +755,13 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
                 parameterName: line.parameter?.name ?? '',
                 minReportableLimit: line.parameter?.minReportableLimit ?? null
               });
-              // MS-E: rebuild test-method mapping rows from relational collection
+              // MS-E matrix: rebuild test-method spec slots (pad/truncate to exactly 5)
               const tmArray = lineGroup.get('testMethodMapping') as FormArray;
               tmArray.clear();
-              (line.testMethodMappings || [])
+              const saved = (line.testMethodMappings || [])
                 .slice()
-                .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-                .forEach((m: any) => tmArray.push(this.createTestMethodMappingRow(m)));
+                .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+              for (let s = 0; s < 5; s++) tmArray.push(this.createTestMethodMappingRow(saved[s]));
               formArray.push(lineGroup);
               // Populate equivalent-unit options for the saved unit (preserve the bound value).
               if (line.parameterUnitID) {
@@ -800,13 +848,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
         const { laboratoryTestIDs, laboratoryTests, testMethodMapping, ...rest } = line;
         return {
           ...rest,
-          // MS-E: relational test-method mappings (one row per Lab Test + Method + specimen qty)
-          testMethodMappings: (testMethodMapping || []).map((m: any, idx: number) => ({
-            laboratoryTestID: m.laboratoryTestID ?? null,
-            testMethodSpecificationID: m.testMethodSpecificationID ?? null,
-            numberOfTestSpecimen: m.numberOfTestSpecimen ?? null,
-            displayOrder: idx
-          })),
+          // MS-E matrix: keep only filled Test Method Spec slots; Lab Test lives on the line (laboratoryTestID).
+          testMethodMappings: (testMethodMapping || [])
+            .map((m: any, idx: number) => ({ testMethodSpecificationID: m.testMethodSpecificationID ?? null, displayOrder: idx + 1 }))
+            .filter((m: any) => m.testMethodSpecificationID != null),
           laboratoryTests: (laboratoryTestIDs || []).map((id: number) => ({
             specificationLineID: line.id || 0,
             laboratoryTestID: id
@@ -1002,14 +1047,19 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   loadEquivalentUnits(group: AbstractControl, unitId: number | null, setSelected: boolean): void {
     if (!unitId) {
       this.equivalentUnitsByRow.set(group, []);
-      if (setSelected) group.get('parameterUnitID')?.setValue(null);
+      if (setSelected) {
+        group.get('parameterUnitID')?.setValue(null);
+        group.get('parameterUnitEquivalentID')?.setValue(null);
+      }
       return;
     }
+    // On a fresh parameter pick: base unit = parameterUnitID, equivalent = null (base) by default.
+    if (setSelected) {
+      group.get('parameterUnitID')?.setValue(Number(unitId));
+      group.get('parameterUnitEquivalentID')?.setValue(null);
+    }
     this.prameterUnitService.getEquivalentUnits(unitId).subscribe({
-      next: (units: any[]) => {
-        this.equivalentUnitsByRow.set(group, units || []);
-        if (setSelected) group.get('parameterUnitID')?.setValue(Number(unitId));
-      },
+      next: (units: any[]) => this.equivalentUnitsByRow.set(group, units || []),
       error: () => this.equivalentUnitsByRow.set(group, []),
     });
   }

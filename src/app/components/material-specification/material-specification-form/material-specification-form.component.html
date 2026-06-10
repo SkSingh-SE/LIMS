@@ -168,18 +168,22 @@
 
           <ng-container *ngFor="let tab of ['chemical', 'mechanical']">
             <div *ngIf="selectedHeaderTab === tab" [formArrayName]="tab">
-              <div class="table-responsive">
-                <table class="table table-sm align-middle param-list-table">
-                  <thead class="table-light">
-                    <tr class="text-sm">
+              <div class="table-responsive param-list-wrap">
+                <table class="table table-sm align-middle param-list-table mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width: 42px;">#</th>
                       <th>Parameter <span class="text-danger">*</span></th>
-                      <th style="width: 180px;">Unit</th>
-                      <th *ngIf="!isViewMode" style="width: 40px;"></th>
+                      <th style="width: 220px;">Unit</th>
+                      <th *ngIf="!isViewMode" class="text-center" style="width: 76px;">
+                        <button type="button" class="btn btn-sm btn-add " title="Add parameter"
+                          (click)="addHeaderParameter($any(tab))"> <i class="bi bi-plus-circle-dotted"></i></button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let hp of headerParametersByTab($any(tab)).controls; let hi = index"
-                      [formGroupName]="hi" class="text-sm">
+                    <tr *ngFor="let hp of headerParametersByTab($any(tab)).controls; let hi = index" [formGroupName]="hi">
+                      <td class="text-center text-muted small fw-medium">{{ hi + 1 }}</td>
                       <td>
                         <app-searchable-dropdown [smallInput]="true"
                           class="w-100"
@@ -193,19 +197,24 @@
                         ></app-searchable-dropdown>
                       </td>
                       <td>
-                        <select class="form-select form-select-sm" formControlName="parameterUnitID">
-                          <option [ngValue]="null" disabled>Select Unit</option>
-                          <option *ngFor="let unit of getRowEquivalentUnits(hp)" [ngValue]="unit.id">{{ unit.name }}</option>
+                        <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID">
+                          <option *ngIf="!getRowEquivalentUnits(hp).length" [ngValue]="null" disabled>Select Parameter first</option>
+                          <option *ngFor="let unit of getRowEquivalentUnits(hp)" [ngValue]="unit.equivalentId">{{ unit.name }}</option>
                         </select>
                       </td>
-                      <td *ngIf="!isViewMode" class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" title="Remove"
-                          (click)="removeHeaderParameter($any(tab), hi)"><i class="bi bi-trash"></i></button>
+                      <td *ngIf="!isViewMode" class="text-center text-nowrap">
+                        
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" title="Remove parameter"
+                          (click)="removeHeaderParameter($any(tab), hi)"><i class="bi bi-trash3"></i></button>
                       </td>
                     </tr>
                     <tr *ngIf="headerParametersByTab($any(tab)).length === 0">
-                      <td colspan="3" class="text-center text-muted py-2">
-                        No parameters here yet. Added parameters are copied into each grade's tabs on "Add Grade".
+                      <td [attr.colspan]="isViewMode ? 3 : 4">
+                        <div class="param-list-empty">
+                          <i class="bi bi-card-list"></i>
+                          <div class="fw-medium">No parameters added yet</div>
+                          <small class="text-muted">Added parameters are copied into each grade's tabs on "Add Grade".</small>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -216,24 +225,24 @@
         </div>
       </div>
 
-      <!-- Section II: Grades -->
+      <!-- Section II: Grades (tab-wise) -->
       <div formArrayName="grades">
-        <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi" class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleGrade(gi)">
-            <i class="bi" [ngClass]="openGrades[gi] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">
-              {{ grade.get("grade")?.value || "New Grade" }}
-            </span>
-            <div class="ms-auto d-flex gap-2 align-items-center">
-              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addGrade(); $event.stopPropagation()">
-                <i class="bi bi-plus-circle-dotted"></i> Add Grade
-              </button>
-              <button *ngIf="!isViewMode && grades.length > 1" type="button" class="btn btn-sm btn-remove" (click)="removeGrade(gi); $event.stopPropagation()">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div *ngIf="openGrades[gi]" class="section-body">
+        <!-- Grade tab bar -->
+        <ul class="grade-tabs">
+          <li *ngFor="let grade of grades.controls; let gi = index" class="grade-tab"
+              [class.active]="selectedGradeIndex === gi" (click)="selectGrade(gi)"
+              [title]="grade.get('grade')?.value || 'Grade ' + (gi + 1)">
+            <span class="grade-tab-label">{{ grade.get("grade")?.value || "Grade " + (gi + 1) }}</span>
+            <i *ngIf="!isViewMode && grades.length > 1" class="bi bi-x-lg grade-tab-remove"
+               title="Remove grade" (click)="removeGradeTab(gi, $event)"></i>
+          </li>
+          <li *ngIf="!isViewMode" class="grade-tab-add" (click)="addGrade()" title="Add a new grade">
+            <i class="bi bi-plus-circle"></i> Add Grade
+          </li>
+        </ul>
+
+        <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi">
+          <div *ngIf="selectedGradeIndex === gi" class="section-body grade-body">
               <div class="row gy-3 mb-2">
                 <div class="col-md-3">
                   <label class="form-label">
@@ -374,14 +383,11 @@
                       <thead>
                         <tr class="text-nowrap">
                           <th class="spec-th text-center">#</th>
-                          <th class="spec-th text-center">Manual</th>
                           <th class="spec-th wide-input">Parameter</th>
+                          <th class="spec-th wide-input">Unit</th>
                           <th class="spec-th wide-input">Min</th>
                           <th class="spec-th wide-input">Max</th>
                           <th class="spec-th wide-input">Note</th>
-                          <th class="spec-th wide-input">Unit</th>
-                          <th class="spec-th wide-input">Min Equation</th>
-                          <th class="spec-th wide-input">Max Equation</th>
                           <th class="spec-th wide-input">Min Tolerance</th>
                           <th class="spec-th wide-input">Max Tolerance</th>
                           <th class="spec-th wide-input">Specimen Orientation</th>
@@ -405,11 +411,6 @@
                         >
                           <tr class="spec-row">
                             <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
-                            <td class="text-center">
-                              <div class="form-check d-flex justify-content-center">
-                                <input class="form-check-input" type="checkbox" formControlName="manualSelection" />
-                              </div>
-                            </td>
                             <td class="wide-input">
                               <div class="d-flex align-items-center gap-1">
                                 <div class="flex-grow-1">
@@ -432,6 +433,15 @@
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
+                            </td>
+                            <td>
+                              <!-- Unit Dropdown - base + equivalents (binds equivalentId, null = base) -->
+                              <select class="form-select form-select-sm wide-input" formControlName="parameterUnitEquivalentID">
+                                <option *ngIf="!getRowEquivalentUnits(group).length" [ngValue]="null" disabled>Select Unit</option>
+                                <option *ngFor="let unit of getRowEquivalentUnits(group)" [ngValue]="unit.equivalentId">
+                                  {{ unit.name }}
+                                </option>
+                              </select>
                             </td>
                             <td>
                               <input
@@ -462,37 +472,6 @@
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
-                            </td>
-                            <td>
-                              <!-- Unit Dropdown - auto-filled from parameter, changeable among equivalents -->
-                              <select class="form-select form-select-sm wide-input" formControlName="parameterUnitID">
-                                <option [ngValue]="null" disabled>Select Unit</option>
-                                <option *ngFor="let unit of getRowEquivalentUnits(group)" [ngValue]="unit.id">
-                                  {{ unit.name }}
-                                </option>
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValueEquation"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValueEquation')"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValueEquation"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValueEquation')"
-                              />
                             </td>
                             <td>
                               <input
@@ -646,9 +625,9 @@
                             </td>
                             <td class="text-center">
                               <button type="button" class="btn btn-sm"
-                                [ngClass]="group.get('equation')?.value ? 'btn-primary' : 'btn-outline-primary'"
+                                [ngClass]="(group.get('minEquation')?.value || group.get('maxEquation')?.value) ? 'btn-primary' : 'btn-outline-primary'"
                                 (click)="openEquationModal(group, gi)" [disabled]="isViewMode"
-                                [title]="group.get('equation')?.value || 'Add equation'">
+                                title="Min/Max limit equation">
                                 <i class="bi bi-calculator"></i> ƒx
                               </button>
                             </td>
@@ -720,14 +699,11 @@
                       <thead>
                         <tr class="text-nowrap">
                           <th class="spec-th text-center">#</th>
-                          <th class="spec-th text-center">Manual</th>
                           <th class="spec-th wide-input">Parameter</th>
+                          <th class="spec-th wide-input">Unit</th>
                           <th class="spec-th wide-input">Min</th>
                           <th class="spec-th wide-input">Max</th>
                           <th class="spec-th wide-input">Note</th>
-                          <th class="spec-th wide-input">Unit</th>
-                          <th class="spec-th wide-input">Min Equation</th>
-                          <th class="spec-th wide-input">Max Equation</th>
                           <th class="spec-th wide-input">Min Tolerance</th>
                           <th class="spec-th wide-input">Max Tolerance</th>
                           <th class="spec-th wide-input">Specimen Orientation</th>
@@ -751,11 +727,6 @@
                         >
                           <tr class="spec-row">
                             <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
-                            <td class="text-center">
-                              <div class="form-check d-flex justify-content-center">
-                                <input class="form-check-input" type="checkbox" formControlName="manualSelection" />
-                              </div>
-                            </td>
                             <td class="wide-input">
                               <div class="d-flex align-items-center gap-1">
                                 <div class="flex-grow-1">
@@ -778,6 +749,15 @@
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
+                            </td>
+                            <td>
+                              <!-- Unit Dropdown - base + equivalents (binds equivalentId, null = base) -->
+                              <select class="form-select form-select-sm wide-input" formControlName="parameterUnitEquivalentID">
+                                <option *ngIf="!getRowEquivalentUnits(group).length" [ngValue]="null" disabled>Select Unit</option>
+                                <option *ngFor="let unit of getRowEquivalentUnits(group)" [ngValue]="unit.equivalentId">
+                                  {{ unit.name }}
+                                </option>
+                              </select>
                             </td>
                             <td>
                               <input
@@ -808,37 +788,6 @@
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
-                            </td>
-                            <td>
-                              <!-- Unit Dropdown - auto-filled from parameter, changeable among equivalents -->
-                              <select class="form-select form-select-sm wide-input" formControlName="parameterUnitID">
-                                <option [ngValue]="null" disabled>Select Unit</option>
-                                <option *ngFor="let unit of getRowEquivalentUnits(group)" [ngValue]="unit.id">
-                                  {{ unit.name }}
-                                </option>
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValueEquation"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValueEquation')"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValueEquation"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValueEquation')"
-                              />
                             </td>
                             <td>
                               <input
@@ -992,9 +941,9 @@
                             </td>
                             <td class="text-center">
                               <button type="button" class="btn btn-sm"
-                                [ngClass]="group.get('equation')?.value ? 'btn-primary' : 'btn-outline-primary'"
+                                [ngClass]="(group.get('minEquation')?.value || group.get('maxEquation')?.value) ? 'btn-primary' : 'btn-outline-primary'"
                                 (click)="openEquationModal(group, gi)" [disabled]="isViewMode"
-                                [title]="group.get('equation')?.value || 'Add equation'">
+                                title="Min/Max limit equation">
                                 <i class="bi bi-calculator"></i> ƒx
                               </button>
                             </td>
@@ -1266,116 +1215,88 @@
                   </div>
                 </div> -->
 
-                <!-- MS-E: Chemical Test Method mapping -->
+                <!-- MS-E: Chemical Test Method matrix (Parameter RO + Lab Test + TMS 1-5) -->
                 <div class="p-2" *ngIf="selectedSpecTab[gi] === 'chemicalTestMethod'">
-                  <label class="fw-bold fs-6 mb-2 d-block">Test Method Mapping — Chemical</label>
                   <div formArrayName="chemical">
                     <div class="alert alert-light border small mb-2" *ngIf="!getSpecificationLinesByTab(gi, 'chemical').length">
                       Add parameters in the <strong>Chemical</strong> tab first.
                     </div>
-                    <div class="card mb-2" *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index" [formGroupName]="i">
-                      <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
-                        <span class="fw-medium small">{{ i + 1 }}. {{ group.get('parameterName')?.value || 'Parameter' }}</span>
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addTestMethodMappingRow(group)">
-                          <i class="bi bi-plus-circle-dotted"></i> Add Method
-                        </button>
-                      </div>
-                      <div class="card-body p-2">
-                        <table class="table spec-table align-middle mb-0" style="min-width: 700px">
-                          <thead>
-                            <tr class="text-nowrap">
-                              <th class="spec-th text-center">#</th>
-                              <th class="spec-th wide-input">Laboratory Test</th>
-                              <th class="spec-th wide-input">Test Method</th>
-                              <th class="spec-th text-center">No. of Specimen</th>
-                              <th *ngIf="!isViewMode" class="spec-th text-center"></th>
-                            </tr>
-                          </thead>
-                          <tbody formArrayName="testMethodMapping">
-                            <tr class="spec-row" *ngFor="let m of testMethodMappingArray(group).controls; let mi = index" [formGroupName]="mi">
-                              <td class="text-center text-muted small">{{ mi + 1 }}</td>
-                              <td class="wide-input">
-                                <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Test'" [labelName]="'Laboratory Test'"
-                                  [fetchDataFn]="getChemicalLaboratoryTest" (itemSelected)="m.get('laboratoryTestID')?.setValue($event?.id ?? null)"
-                                  [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('laboratoryTestID')?.value"></app-searchable-dropdown>
-                              </td>
-                              <td class="wide-input">
+                    <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'chemical').length" style="max-height: calc(100vh - 200px)">
+                      <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
+                        <thead>
+                          <tr class="text-nowrap">
+                            <th class="spec-th text-center">#</th>
+                            <th class="spec-th wide-input">Parameter</th>
+                            <th class="spec-th wide-input">Laboratory Test</th>
+                            <th class="spec-th wide-input">Test Method Specification 1</th>
+                            <th class="spec-th wide-input">2</th>
+                            <th class="spec-th wide-input">3</th>
+                            <th class="spec-th wide-input">4</th>
+                            <th class="spec-th wide-input">5</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index" [formGroupName]="i">
+                            <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                            <td class="fw-medium small">{{ group.get('parameterName')?.value || '—' }}</td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Test'" [labelName]="'Laboratory Test'"
+                                [fetchDataFn]="getChemicalLaboratoryTest" (itemSelected)="group.get('laboratoryTestID')?.setValue($event?.id ?? null)"
+                                [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="group.get('laboratoryTestID')?.value"></app-searchable-dropdown>
+                            </td>
+                            <ng-container formArrayName="testMethodMapping">
+                              <td class="wide-input" *ngFor="let m of testMethodMappingArray(group).controls; let mi = index" [formGroupName]="mi">
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
                               </td>
-                              <td class="text-center">
-                                <input type="number" min="1" class="form-control form-control-sm wide-input" formControlName="numberOfTestSpecimen" placeholder="Qty" appNumberOnly />
-                              </td>
-                              <td *ngIf="!isViewMode" class="text-center">
-                                <button type="button" class="btn btn-sm btn-remove spec-delete-btn" (click)="removeTestMethodMappingRow(group, mi)" title="Remove">
-                                  <i class="bi bi-trash3"></i>
-                                </button>
-                              </td>
-                            </tr>
-                            <tr *ngIf="!testMethodMappingArray(group).length">
-                              <td colspan="5" class="text-center text-muted small">No methods mapped.</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                            </ng-container>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
 
-                <!-- MS-E: General Test Method mapping -->
+                <!-- MS-E: General Test Method matrix (Parameter RO + Lab Test + TMS 1-5) -->
                 <div class="p-2" *ngIf="selectedSpecTab[gi] === 'mechanicalTestMethod'">
-                  <label class="fw-bold fs-6 mb-2 d-block">Test Method Mapping — General</label>
                   <div formArrayName="mechanical">
                     <div class="alert alert-light border small mb-2" *ngIf="!getSpecificationLinesByTab(gi, 'mechanical').length">
                       Add parameters in the <strong>General</strong> tab first.
                     </div>
-                    <div class="card mb-2" *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index" [formGroupName]="i">
-                      <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
-                        <span class="fw-medium small">{{ i + 1 }}. {{ group.get('parameterName')?.value || 'Parameter' }}</span>
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addTestMethodMappingRow(group)">
-                          <i class="bi bi-plus-circle-dotted"></i> Add Method
-                        </button>
-                      </div>
-                      <div class="card-body p-2">
-                        <table class="table spec-table align-middle mb-0" style="min-width: 700px">
-                          <thead>
-                            <tr class="text-nowrap">
-                              <th class="spec-th text-center">#</th>
-                              <th class="spec-th wide-input">Laboratory Test</th>
-                              <th class="spec-th wide-input">Test Method</th>
-                              <th class="spec-th text-center">No. of Specimen</th>
-                              <th *ngIf="!isViewMode" class="spec-th text-center"></th>
-                            </tr>
-                          </thead>
-                          <tbody formArrayName="testMethodMapping">
-                            <tr class="spec-row" *ngFor="let m of testMethodMappingArray(group).controls; let mi = index" [formGroupName]="mi">
-                              <td class="text-center text-muted small">{{ mi + 1 }}</td>
-                              <td class="wide-input">
-                                <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Test'" [labelName]="'Laboratory Test'"
-                                  [fetchDataFn]="getGeneralLaboratoryTest" (itemSelected)="m.get('laboratoryTestID')?.setValue($event?.id ?? null)"
-                                  [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('laboratoryTestID')?.value"></app-searchable-dropdown>
-                              </td>
-                              <td class="wide-input">
+                    <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'mechanical').length" style="max-height: calc(100vh - 200px)">
+                      <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
+                        <thead>
+                          <tr class="text-nowrap">
+                            <th class="spec-th text-center">#</th>
+                            <th class="spec-th wide-input">Parameter</th>
+                            <th class="spec-th wide-input">Laboratory Test</th>
+                            <th class="spec-th wide-input">Test Method Specification 1</th>
+                            <th class="spec-th wide-input">2</th>
+                            <th class="spec-th wide-input">3</th>
+                            <th class="spec-th wide-input">4</th>
+                            <th class="spec-th wide-input">5</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index" [formGroupName]="i">
+                            <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
+                            <td class="fw-medium small">{{ group.get('parameterName')?.value || '—' }}</td>
+                            <td class="wide-input">
+                              <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Test'" [labelName]="'Laboratory Test'"
+                                [fetchDataFn]="getGeneralLaboratoryTest" (itemSelected)="group.get('laboratoryTestID')?.setValue($event?.id ?? null)"
+                                [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="group.get('laboratoryTestID')?.value"></app-searchable-dropdown>
+                            </td>
+                            <ng-container formArrayName="testMethodMapping">
+                              <td class="wide-input" *ngFor="let m of testMethodMappingArray(group).controls; let mi = index" [formGroupName]="mi">
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
                               </td>
-                              <td class="text-center">
-                                <input type="number" min="1" class="form-control form-control-sm wide-input" formControlName="numberOfTestSpecimen" placeholder="Qty" appNumberOnly />
-                              </td>
-                              <td *ngIf="!isViewMode" class="text-center">
-                                <button type="button" class="btn btn-sm btn-remove spec-delete-btn" (click)="removeTestMethodMappingRow(group, mi)" title="Remove">
-                                  <i class="bi bi-trash3"></i>
-                                </button>
-                              </td>
-                            </tr>
-                            <tr *ngIf="!testMethodMappingArray(group).length">
-                              <td colspan="5" class="text-center text-muted small">No methods mapped.</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                            </ng-container>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -1395,14 +1316,17 @@
   <div class="custom-modal-backdrop" *ngIf="equationModalVisible" (click)="closeEquationModal()">
     <div class="custom-modal-dialog" (click)="$event.stopPropagation()">
       <div class="custom-modal-header">
-        <h6 class="mb-0">Custom Equation</h6>
+        <h6 class="mb-0">Min / Max Limit Equation</h6>
         <button type="button" class="btn-close" (click)="closeEquationModal()"></button>
       </div>
       <div class="custom-modal-body">
-        <p class="text-muted small mb-2">
-          Compute Min/Max from other parameters' runtime values. Example:
-          <code>IF(C &gt; 56, Mg + 0.4 * (C - 56), Mg)</code>
-        </p>
+        <div class="alert alert-light border small mb-2 py-2">
+          <div class="mb-1">Set Min/Max limit by calculation from other parameters. Click a field, then insert tokens.</div>
+          <div><strong>Tokens:</strong> <code>C</code> = measured value · <code>specMax(C)</code>/<code>specMin(C)</code> = that parameter's spec limit · <code>IF(cond, a, b)</code>, <code>MIN(...)</code>, <code>MAX(...)</code>.</div>
+          <div class="mt-1"><strong>Example</strong> — "per 0.01% C below its max, +0.06% Mn above its max, up to 1.65%":<br>
+            <code>MIN(1.65, specMax(Mn) + 6 * MAX(0, specMax(C) - C))</code>
+          </div>
+        </div>
         <label class="form-label small fw-medium mb-1">Parameters</label>
         <div class="d-flex flex-wrap gap-1 mb-2">
           <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -1411,17 +1335,28 @@
           <span *ngIf="!equationParamChips.length" class="text-muted small">No parameters with symbols in this grade yet.</span>
         </div>
         <label class="form-label small fw-medium mb-1">Operators</label>
-        <div class="d-flex flex-wrap gap-1 mb-2">
+        <div class="d-flex flex-wrap gap-1 mb-3">
           <button type="button" class="btn btn-sm btn-outline-secondary"
             *ngFor="let op of equationOperators" (click)="insertEquationToken(op)">{{ op }}</button>
         </div>
-        <label class="form-label small fw-medium mb-1">Equation</label>
-        <textarea class="form-control form-control-sm" rows="3" [(ngModel)]="equationDraft" [ngModelOptions]="{ standalone: true }"
-          placeholder="e.g. IF(C > 56, Mg + 0.4 * (C - 56), Mg)"></textarea>
+
+        <label class="form-label small fw-medium mb-1">
+          Min Limit Equation <span *ngIf="equationActiveField === 'min'" class="badge bg-primary">active</span>
+        </label>
+        <textarea class="form-control form-control-sm mb-3" rows="2" [(ngModel)]="minEquationDraft"
+          [ngModelOptions]="{ standalone: true }" (focus)="equationActiveField = 'min'"
+          placeholder="e.g. Mg + 0.4 * (C - 56)"></textarea>
+
+        <label class="form-label small fw-medium mb-1">
+          Max Limit Equation <span *ngIf="equationActiveField === 'max'" class="badge bg-primary">active</span>
+        </label>
+        <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="maxEquationDraft"
+          [ngModelOptions]="{ standalone: true }" (focus)="equationActiveField = 'max'"
+          placeholder="e.g. IF(C > 56, Mg + 1, Mg)"></textarea>
       </div>
       <div class="custom-modal-footer">
         <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">Cancel</button>
-        <button type="button" class="btn btn-sm btn-cancel text-danger" (click)="equationDraft = ''">Clear</button>
+        <button type="button" class="btn btn-sm btn-cancel text-danger" (click)="minEquationDraft = ''; maxEquationDraft = ''">Clear</button>
         <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()">Apply</button>
       </div>
     </div>

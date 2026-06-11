@@ -25,12 +25,13 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ProductSizeMasterService } from '../../../services/product-size-master.service';
 import { ToastService } from '../../../services/toast.service';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { buildSpecTemplate, parseSpecTemplate, ParsedSpecRow, SpecMasters } from '../spec-template-excel.helper';
 
 @Component({
   selector: 'app-material-specification-form',
@@ -504,109 +505,174 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.equationParamChips = [];
   }
 
-  // ── MS-F: bulk import spec lines from CSV (upload only) ──────────────────────
-  parameterImportHeaders = ['Parameter', 'Min', 'Max', 'Note', 'Lower Limit', 'Lower Limit Value', 'Upper Limit', 'Upper Limit Value', 'Test Condition', 'Test Note'];
+  // ── MS-F: multi-sheet .xlsx template (download) + import with preview ─────────
+  importBuilding = false;
+  importPreviewVisible = false;
+  importPreviewRows: ParsedSpecRow[] = [];
 
-  downloadParameterTemplate(tab: 'chemical' | 'mechanical'): void {
-    const header = this.parameterImportHeaders.join(',');
-    const example = tab === 'chemical'
-      ? 'Carbon,0.05,0.12,,>=,0.05,<=,0.12,,'
-      : 'Tensile Strength,200,,,>=,200,,,,';
-    const blob = new Blob([`${header}\n${example}\n`], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `spec-parameters-${tab}-template.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  get importOkCount(): number { return this.importPreviewRows.filter(r => r.status === 'ok').length; }
+  get importWarnCount(): number { return this.importPreviewRows.filter(r => r.status === 'warning').length; }
+  get importErrorCount(): number { return this.importPreviewRows.filter(r => r.status === 'error').length; }
+  get importHasImportable(): boolean { return this.importPreviewRows.some(r => r.status !== 'error'); }
+
+  /** Fetch every master list, then build and download the multi-sheet Excel template. */
+  downloadSpecTemplate(): void {
+    if (this.importBuilding) return;
+    this.importBuilding = true;
+    const all = (fn: any) => fn('', 0, 5000);
+    forkJoin({
+      chemical: all(this.getChemicalParameter),
+      mechanical: all(this.getMechanicalParameter),
+      units: all(this.getParameterUnitDropdownFn),
+      laboratoryTests: all(this.getAllLaboratoryTestFn),
+      testMethodSpecs: all(this.getTestMethodSpecification),
+      specimenOrientations: all(this.getSpecimenOrientationFn),
+      heatTreatments: all(this.getHeatTreatment),
+      dimensionalFactors: all(this.getDimensionalFactor),
+      productConditions: all(this.getProductCondition),
+      productSizes: all(this.getProductSize),
+      metalClassifications: all(this.getMetalClassification),
+    }).subscribe({
+      next: async (m: any) => {
+        const tag = (list: any[], section: string) => (list || []).map(x => ({ ...x, section }));
+        const masters: SpecMasters = {
+          parameters: [...tag(m.chemical, 'chemical'), ...tag(m.mechanical, 'mechanical')],
+          units: m.units || [],
+          laboratoryTests: m.laboratoryTests || [],
+          testMethodSpecs: m.testMethodSpecs || [],
+          specimenOrientations: m.specimenOrientations || [],
+          heatTreatments: m.heatTreatments || [],
+          dimensionalFactors: m.dimensionalFactors || [],
+          productConditions: m.productConditions || [],
+          productSizes: m.productSizes || [],
+          metalClassifications: m.metalClassifications || [],
+        };
+        try {
+          const blob = await buildSpecTemplate(masters);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'material-specification-template.xlsx';
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch {
+          this.toastService.show('Failed to build template.', 'error');
+        } finally {
+          this.importBuilding = false;
+        }
+      },
+      error: () => { this.importBuilding = false; this.toastService.show('Failed to load master data for template.', 'error'); },
+    });
   }
 
-  onParameterFileSelected(event: Event, gradeIndex: number, tab: 'chemical' | 'mechanical'): void {
+  onSpecFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      this.importParameterCsv(String(reader.result || ''), gradeIndex, tab);
-      input.value = '';
+    reader.onload = async () => {
+      try {
+        const rows = await parseSpecTemplate(reader.result as ArrayBuffer);
+        if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
+        this.importPreviewRows = rows;
+        this.importPreviewVisible = true;
+      } catch (e: any) {
+        this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
+      } finally {
+        input.value = '';
+      }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   }
 
-  private parseCsvLine(line: string): string[] {
-    const out: string[] = [];
-    let cur = '', inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (inQuotes) {
-        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (ch === '"') inQuotes = false;
-        else cur += ch;
-      } else if (ch === '"') inQuotes = true;
-      else if (ch === ',') { out.push(cur); cur = ''; }
-      else cur += ch;
-    }
-    out.push(cur);
-    return out.map(s => s.trim());
+  cancelImport(): void {
+    this.importPreviewVisible = false;
+    this.importPreviewRows = [];
   }
 
-  private importParameterCsv(text: string, gradeIndex: number, tab: 'chemical' | 'mechanical'): void {
-    const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
-    if (lines.length < 2) { this.toastService.show('No data rows found in file.', 'warning'); return; }
-    const dataRows = lines.slice(1).map(l => this.parseCsvLine(l)).filter(r => r[0]);
-    if (!dataRows.length) { this.toastService.show('No valid rows to import.', 'warning'); return; }
+  /** Commit the previewed rows (skipping error rows) into the form, grouped by grade. */
+  commitImport(): void {
+    const rows = this.importPreviewRows.filter(r => r.status !== 'error');
+    if (!rows.length) { this.toastService.show('No importable rows.', 'warning'); return; }
 
-    const fetchFn = tab === 'chemical' ? this.getChemicalParameter : this.getMechanicalParameter;
-    const lookups = dataRows.map(r => fetchFn(r[0], 1, 20));
-    forkJoin(lookups.length ? lookups : [of([])]).subscribe({
-      next: (results) => {
-        let added = 0;
-        const unmatched: string[] = [];
-        results.forEach((items: any[], idx: number) => {
-          const row = dataRows[idx];
-          const key = (row[0] || '').toLowerCase();
-          const list = items || [];
-          const match =
-            list.find((it: any) => (it.name || it.text || '').toLowerCase() === key) ||
-            list.find((it: any) => ((it.additionalValues?.Symbol || it.additionalValues?.symbol || '') + '').toLowerCase() === key);
-          if (!match) { unmatched.push(row[0]); return; }
-          this.addImportedSpecLine(gradeIndex, tab, match, row);
-          added++;
+    let added = 0, skipped = 0;
+    const byGrade = new Map<string, ParsedSpecRow[]>();
+    rows.forEach(r => {
+      const key = r.grade.trim().toLowerCase();
+      if (!byGrade.has(key)) byGrade.set(key, []);
+      byGrade.get(key)!.push(r);
+    });
+
+    byGrade.forEach((gradeRows) => {
+      const gradeName = gradeRows[0].grade.trim();
+      let gIndex = this.grades.controls.findIndex(g => (g.get('grade')?.value || '').trim().toLowerCase() === gradeName.toLowerCase());
+      if (gIndex < 0) {
+        this.addGrade(false);
+        gIndex = this.grades.length - 1;
+        this.grades.at(gIndex).patchValue({ grade: gradeName, metalClassificationID: gradeRows[0].metalClassificationID });
+      }
+      gradeRows.forEach(r => {
+        const tab = r.section;
+        const lines = this.getSpecificationLinesByTab(gIndex, tab);
+        const dup = lines.controls.some(c => c.get('parameterID')?.value === r.parameterID);
+        if (dup) { skipped++; return; }
+        const group = this.createSpecificationLineFormGroup(tab);
+        group.patchValue({
+          parameterID: r.parameterID,
+          parameterName: r.parameterName,
+          parameterSymbol: r.parameterSymbol,
+          decimalPrecision: r.decimalPrecision,
+          parameterUnitID: r.parameterUnitID,
+          minValue: r.minValue,
+          maxValue: r.maxValue,
+          minTolerance: r.minTolerance,
+          maxTolerance: r.maxTolerance,
+          lowerLimitValue: r.lowerLimitValue,
+          lowerLimitDecimalValue: r.lowerLimitDecimalValue,
+          upperLimitValue: r.upperLimitValue,
+          upperLimitDecimalValue: r.upperLimitDecimalValue,
+          minEquation: r.minEquation,
+          maxEquation: r.maxEquation,
+          notes: r.notes,
+          specimenOrientationID: r.specimenOrientationID,
+          dimensionalFactorID: r.dimensionalFactorID,
+          heatTreatmentID: r.heatTreatmentID,
+          productConditionID1: r.productConditionID1,
+          productConditionID2: r.productConditionID2,
+          productSizeMasterID: r.productSizeMasterID,
+          testCondition: r.testCondition,
+          testNote: r.testNote,
+          laboratoryTestID: r.laboratoryTestID,
         });
-        this.grades.markAsDirty();
-        let msg = `${added} parameter(s) imported.`;
-        if (unmatched.length) msg += ` ${unmatched.length} unmatched: ${unmatched.join(', ')}`;
-        this.toastService.show(msg, unmatched.length ? 'warning' : 'success');
-      },
-      error: () => this.toastService.show('Failed to import parameters.', 'error')
+        // Test Method Spec matrix → pad to exactly 5 slots.
+        const tmArray = group.get('testMethodMapping') as FormArray;
+        tmArray.clear();
+        for (let s = 0; s < 5; s++) {
+          tmArray.push(this.createTestMethodMappingRow(
+            r.testMethodSpecIDs[s] != null ? { testMethodSpecificationID: r.testMethodSpecIDs[s] } : undefined
+          ));
+        }
+        lines.push(group);
+        if (r.parameterUnitID) this.loadEquivalentUnits(group, Number(r.parameterUnitID), true);
+        added++;
+      });
     });
+
+    this.grades.markAsDirty();
+    if (added) this.selectedGradeIndex = Math.min(this.selectedGradeIndex, this.grades.length - 1);
+    let msg = `${added} line(s) imported.`;
+    if (skipped) msg += ` ${skipped} duplicate(s) skipped.`;
+    this.toastService.show(msg, 'success');
+    this.cancelImport();
   }
 
-  private addImportedSpecLine(gradeIndex: number, tab: 'chemical' | 'mechanical', match: any, row: string[]): void {
-    const group = this.createSpecificationLineFormGroup(tab);
-    const add = match.additionalValues || {};
-    const rawUnit = add.UnitID ?? add.unitID ?? null;
-    const unitID = rawUnit != null && rawUnit !== '' ? Number(rawUnit) : null;
-    const num = (v: string) => (v != null && v !== '' ? Number(v) : null);
-    group.patchValue({
-      parameterID: match.id,
-      parameterName: match.name || match.text || '',
-      parameterSymbol: add.Symbol || add.symbol || '',
-      decimalPrecision: Number(add.DecimalPrecision ?? add.decimalPrecision ?? 2),
-      minValue: num(row[1]),
-      maxValue: num(row[2]),
-      notes: row[3] || '',
-      lowerLimitValue: row[4] || '',
-      lowerLimitDecimalValue: num(row[5]),
-      upperLimitValue: row[6] || '',
-      upperLimitDecimalValue: num(row[7]),
-      testCondition: row[8] || '',
-      testNote: row[9] || ''
-    });
-    this.getSpecificationLinesByTab(gradeIndex, tab).push(group);
-    // API: fetch equivalent units + bind the parameter's default unit.
-    this.loadEquivalentUnits(group, unitID, true);
-  }
+  // Master dropdown fetchers used to build the template (bound as arrow fns for forkJoin).
+  getParameterUnitDropdownFn = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.prameterUnitService.getParameterUnitDropdown(term, page, pageSize);
+  getSpecimenOrientationFn = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.specimenService.getSpecimenOrientationDropdown(term, page, pageSize);
+  getAllLaboratoryTestFn = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
 
   /** Returns HTML input step attribute based on parameter decimal precision. */
   getStep(group: AbstractControl | null): string {

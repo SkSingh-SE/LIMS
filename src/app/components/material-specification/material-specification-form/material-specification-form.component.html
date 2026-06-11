@@ -227,6 +227,18 @@
 
       <!-- Section II: Grades (tab-wise) -->
       <div formArrayName="grades">
+        <!-- MS-F: Excel template + import (multi-grade, all sections in one file) -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end align-items-center gap-2 mb-2">
+          <button type="button" class="btn btn-sm btn-cancel" (click)="downloadSpecTemplate()" [disabled]="importBuilding"
+            title="Download a multi-sheet Excel template (all grades & sections)">
+            <i class="bi" [ngClass]="importBuilding ? 'bi-hourglass-split' : 'bi-download'"></i>
+            {{ importBuilding ? 'Preparing…' : 'Download Template' }}
+          </button>
+          <button type="button" class="btn btn-sm btn-cancel" (click)="specXlsx.click()" title="Import grades & lines from filled Excel template">
+            <i class="bi bi-upload"></i> Import Excel
+          </button>
+          <input #specXlsx type="file" accept=".xlsx" hidden (change)="onSpecFileSelected($event)" />
+        </div>
         <!-- Grade tab bar -->
         <ul class="grade-tabs">
           <li *ngFor="let grade of grades.controls; let gi = index" class="grade-tab"
@@ -345,13 +357,6 @@
                       >
                         <i class="bi bi-plus-circle-dotted"></i>
                         Add Line
-                      </button>
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel mt-1" (click)="csvChem.click()" title="Import parameters from CSV">
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                      <input #csvChem type="file" accept=".csv" hidden (change)="onParameterFileSelected($event, gi, 'chemical')" />
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel mt-1" (click)="downloadParameterTemplate('chemical')" title="Download CSV template">
-                        <i class="bi bi-download"></i> Template
                       </button>
                       <button
                         type="button"
@@ -661,13 +666,6 @@
                       >
                         <i class="bi bi-plus-circle-dotted"></i>
                         Add Line
-                      </button>
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel mt-1" (click)="csvGen.click()" title="Import parameters from CSV">
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                      <input #csvGen type="file" accept=".csv" hidden (change)="onParameterFileSelected($event, gi, 'mechanical')" />
-                      <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-cancel mt-1" (click)="downloadParameterTemplate('mechanical')" title="Download CSV template">
-                        <i class="bi bi-download"></i> Template
                       </button>
                       <button
                         type="button"
@@ -1310,6 +1308,59 @@
       </div>
     </form>
   </div>
+  </div>
+
+  <!-- MS-F: Import preview / validation modal -->
+  <div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
+    <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
+      <div class="custom-modal-header">
+        <h6 class="mb-0">Import Preview — review before adding</h6>
+        <button type="button" class="btn-close" (click)="cancelImport()"></button>
+      </div>
+      <div class="custom-modal-body">
+        <div class="d-flex gap-3 mb-2 small">
+          <span class="badge bg-success">{{ importOkCount }} OK</span>
+          <span class="badge bg-warning text-dark">{{ importWarnCount }} Warning</span>
+          <span class="badge bg-danger">{{ importErrorCount }} Error</span>
+          <span class="text-muted">Error rows ko import nahi kiya jayega.</span>
+        </div>
+        <div class="table-responsive import-preview-table">
+          <table class="table table-sm table-bordered mb-0">
+            <thead>
+              <tr>
+                <th>#</th><th>Status</th><th>Grade</th><th>Section</th><th>Parameter</th>
+                <th>Unit</th><th>Min</th><th>Max</th><th>Notes / Messages</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of importPreviewRows"
+                  [ngClass]="{ 'table-danger': r.status === 'error', 'table-warning': r.status === 'warning' }">
+                <td>{{ r.rowNumber }}</td>
+                <td>
+                  <span class="badge"
+                    [ngClass]="{ 'bg-success': r.status === 'ok', 'bg-warning text-dark': r.status === 'warning', 'bg-danger': r.status === 'error' }">
+                    {{ r.status | uppercase }}
+                  </span>
+                </td>
+                <td>{{ r.grade }}</td>
+                <td>{{ r.section }}</td>
+                <td>{{ r.parameterName }}</td>
+                <td>{{ r.unitName }}</td>
+                <td>{{ r.minValue }}</td>
+                <td>{{ r.maxValue }}</td>
+                <td class="text-danger small">{{ r.messages.join(' ') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="custom-modal-footer">
+        <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()">Cancel</button>
+        <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="!importHasImportable">
+          Import {{ importOkCount + importWarnCount }} line(s)
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- MS-D: Custom Equation editor modal -->

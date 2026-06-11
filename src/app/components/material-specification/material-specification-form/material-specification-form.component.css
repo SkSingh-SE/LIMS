@@ -262,6 +262,23 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   border-top: 3px solid var(--primary-color);
 }
+:host .import-preview-dialog {
+  width: 1000px;
+}
+:host .import-preview-table {
+  max-height: 55vh;
+  overflow: auto;
+}
+:host .import-preview-table table {
+  font-size: var(--font-xs);
+}
+:host .import-preview-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f7f8fa;
+  z-index: 1;
+  white-space: nowrap;
+}
 :host .custom-modal-header,
 :host .custom-modal-footer {
   display: flex;

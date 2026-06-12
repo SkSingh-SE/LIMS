@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TestMethodNablService } from '../../../../services/test-method-nabl.service';
 import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
 import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
 import { NablSignatureBlockComponent } from '../../nabl-signature-block/nabl-signature-block.component';
 import { PrintFrameComponent } from '../../print-frame/print-frame.component';
+import { TestMethodNabl } from '../../../../models/testMethodNablModel';
 
 @Component({
     selector: 'app-test-method-nabl-preview',
@@ -16,7 +17,7 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 })
 export class TestMethodNablPreviewComponent implements OnInit {
     recordId: number = 0;
-    data: any = null;
+    data = signal<TestMethodNabl | null>(null);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -40,7 +41,7 @@ export class TestMethodNablPreviewComponent implements OnInit {
     fetchData() {
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
-                this.data = resp;
+                this.data.set(resp);
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {

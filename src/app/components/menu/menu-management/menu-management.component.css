@@ -1,0 +1,19 @@
+.submenu-node {
+  border-left: 3px solid #ccc;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 4px 4px 0;
+  background: #fafbfc;
+}
+
+.submenu-node .submenu-node {
+  background: #f4f6f9;
+}
+
+.submenu-node .submenu-node .submenu-node {
+  background: #eef1f5;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}

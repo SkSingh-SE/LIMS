@@ -116,6 +116,7 @@ export function getAllMenuItems(): MenuItem[] {
             // { id: 43, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 500, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
             // { id: 46, title: 'Machining Charges', route: '/sample/machining', parentMenuID: 500, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() },
             { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
+            { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         }
       ]
@@ -280,10 +281,10 @@ export function getAllMenuItems(): MenuItem[] {
       color: '',
       children: [
         { id: 56, title: 'Testing Dashboard', route: '/testing/dashboard', parentMenuID: 9, permissions: ['CanReadTestingDashboard'], children: [], color: getRandomColor() },
-        { id: 57, title: 'Perform Test', route: '/testing/perform/:id', parentMenuID: 9, permissions: ['CanReadPerformTest'], children: [], color: getRandomColor() },
+        // { id: 57, title: 'Perform Test', route: '/testing/perform/:id', parentMenuID: 9, permissions: ['CanReadPerformTest'], children: [], color: getRandomColor() },
         { id: 60, title: 'Test Verification', route: '/testing/verification', parentMenuID: 9, permissions: ['CanReadTestVerification'], children: [], color: getRandomColor() },
         { id: 58, title: 'Long Term Tracking', route: '/testing/longterm', parentMenuID: 9, permissions: ['CanReadLongTermTracking'], children: [], color: getRandomColor() },
-        { id: 59, title: 'Test Results', route: '/testing/results/:id', parentMenuID: 9, permissions: ['CanReadTestResults'], children: [], color: getRandomColor() }
+        // { id: 59, title: 'Test Results', route: '/testing/results/:id', parentMenuID: 9, permissions: ['CanReadTestResults'], children: [], color: getRandomColor() }
       ]
     },
     {

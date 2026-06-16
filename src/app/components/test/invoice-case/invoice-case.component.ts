@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
-import { Observable } from 'rxjs';
-import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 import { InvoiceCaseService } from '../../../services/invoice-case.service';
 import { ToastService } from '../../../services/toast.service';
 import { SettingsService } from '../../../services/settings.service';
@@ -19,27 +18,16 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 })
 export class InvoiceCaseComponent implements OnInit {
   invoiceCaseForm!: FormGroup;
-  isViewMode: boolean = false;
-  isEditMode: boolean = false;
-  invoiceId: number = 0;
-  validChemicalElements: string[] = [
-    'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
-    'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca',
-    'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn',
-    'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr',
-    'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn',
-    'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd',
-    'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb',
-    'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg',
-    'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th',
-    'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm',
-    'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
-    'Rg', 'Cn', 'Fl', 'Lv', 'Ts', 'Og'
-  ];
+  isViewMode = false;
+  isEditMode = false;
+  invoiceId = 0;
 
-  caseNameInputs: string[] = [];
-  filteredSuggestionsList: string[][] = [];
   financialYears: any[] = [];
+  activeVersionIndex = 0;
+
+  // Lab test context — used to seed price rows for newly added year versions
+  labTestConfigs: any[] = [];
+  subGroupName = '';
 
   pricingTypeOptions = [
     { value: 'Element', label: 'Parameter Count' },
@@ -48,284 +36,286 @@ export class InvoiceCaseComponent implements OnInit {
     { value: 'FlatRate', label: 'Flat Rate' },
   ];
 
-  constructor(private fb: FormBuilder, private labTestService: LaboratoryTestService, private invoiceService: InvoiceCaseService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private settingsService: SettingsService) { }
+  constructor(
+    private fb: FormBuilder,
+    private labTestService: LaboratoryTestService,
+    private invoiceService: InvoiceCaseService,
+    private toastService: ToastService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private settingsService: SettingsService
+  ) {}
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.invoiceId = Number(params.get('id'));
     });
     const state = history.state as { mode?: string };
-    if (state) {
-      if (state.mode === 'view') {
-        this.isViewMode = true;
-      }
-      if (state.mode === 'edit') {
-        this.isEditMode = true;
-      }
-    }
+    if (state?.mode === 'view') this.isViewMode = true;
+    if (state?.mode === 'edit') this.isEditMode = true;
 
     this.initForm();
     this.loadFinancialYears();
-    if (this.invoiceId > 0) {
-      this.getInvoiceCase(this.invoiceId);
-      
-    } else {
-
-    }
   }
+
   initForm(): void {
     this.invoiceCaseForm = this.fb.group({
-      id: [0],
-      financialYearId: [null, Validators.required],
-      laboratoryTestID: [null],
-      defaultPricingType: [null],
-      invoiceCasePrices: this.fb.array([])
+      laboratoryTestID: [null, Validators.required],
+      versions: this.fb.array([])
     });
   }
+
   loadFinancialYears(): void {
     this.settingsService.getFinancialYearsDropdown().subscribe({
       next: (list) => {
-        this.financialYears = list;
-        // Auto-select current FY for new records
-        if (this.invoiceId === 0) {
-          const current = list.find((fy: any) => fy.isCurrent);
-          if (current) {
-            this.invoiceCaseForm.patchValue({ financialYearId: current.id });
-          }
+        this.financialYears = list || [];
+        if (this.invoiceId > 0) {
+          this.resolveLabTestForEdit(this.invoiceId);
         }
       },
       error: (err) => this.toastService.show(err?.error?.message || 'Failed to load financial years', 'error')
     });
   }
-  get invoiceCases(): FormArray {
-    return this.invoiceCaseForm.get('invoiceCasePrices') as FormArray;
+
+  // The list passes an InvoiceCase row id; the form manages all year-versions for its
+  // LaboratoryTest, so resolve the lab test first then load every version.
+  private resolveLabTestForEdit(invoiceCaseId: number): void {
+    this.invoiceService.getInvoiceCaseById(invoiceCaseId).subscribe({
+      next: (response) => {
+        const labTestId = response?.laboratoryTestID;
+        if (!labTestId) {
+          this.toastService.show('Invoice case has no linked Sub Group Test.', 'error');
+          return;
+        }
+        this.invoiceCaseForm.patchValue({ laboratoryTestID: labTestId });
+        this.loadLabTestConfigs(labTestId, true);
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load invoice case', 'error')
+    });
   }
 
-  addCase(): void {
-    this.invoiceCases.push(this.fb.group({
-      id: [0],
-      name: ['', Validators.required],
-      aliasName:['',Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
-      invoiceCaseConfigID: [null]
-    }));
-    this.caseNameInputs.push('');
-    this.filteredSuggestionsList.push([]);
-  }
-  removeCase(index: number): void {
-    this.invoiceCases.removeAt(index);
-    this.caseNameInputs.splice(index, 1);
-    this.filteredSuggestionsList.splice(index, 1);
+  get versions(): FormArray {
+    return this.invoiceCaseForm.get('versions') as FormArray;
   }
 
+  pricesOf(versionIndex: number): FormArray {
+    return this.versions.at(versionIndex).get('prices') as FormArray;
+  }
 
-  // addCaseFromUserInput(name: string, price: number): void {
-  //   const { type, logicConfig } = this.parseInvoiceCaseName(name);
-  //   this.cases.push(this.fb.group({
-  //     name: [name],
-  //     type: [type],
-  //     logicConfig: this.fb.group(logicConfig),
-  //     price: [price, Validators.required]
-  //   }));
-  //   this.caseNameInputs.push('');
-  //   this.filteredSuggestionsList.push([]);
-  // }
+  // ── Financial-year helpers ──
+  get defaultFinancialYearId(): number | null {
+    return this.financialYears.find(fy => fy.isCurrent)?.id ?? null;
+  }
 
+  getVersionFyLabel(versionIndex: number): string {
+    const fyId = this.versions.at(versionIndex).get('financialYearId')?.value;
+    return this.financialYears.find(fy => fy.id === fyId)?.year || '—';
+  }
 
-  // onCaseNameInput(i: number): void {
-  //   const caseGroup = this.cases.at(i) as FormGroup;
-  //   const name = caseGroup.get('name')?.value;
-  //   this.caseNameInputs[i] = name || '';
-  //   const input = this.caseNameInputs[i]?.trim();
-  //   this.filteredSuggestionsList[i] = [];
+  isCurrentVersion(versionIndex: number): boolean {
+    const fyId = this.versions.at(versionIndex).get('financialYearId')?.value;
+    return fyId != null && fyId === this.defaultFinancialYearId;
+  }
 
-  //   if (!input) return;
-
-  //   const isNumber = /^\d+$/.test(input);
-  //   const normalizedInput = input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
-
-  //   if (isNumber) {
-  //     this.filteredSuggestionsList[i] = [
-  //       `${input} element`,
-  //       `${input} hr`,
-  //       `${input} mm`,
-  //       `up to ${input} mm`,
-  //       `${input} mm to ${+input + 10} mm`,
-  //       `above ${input} mm`,
-  //       `${input} kn`,
-  //       `up to ${input} kn`,
-  //       `${input} kn to ${+input + 100} kn`,
-  //       `above ${input} kn`
-  //     ];
-  //   }
-
-  //   if (this.validChemicalElements.includes(normalizedInput)) {
-  //     this.filteredSuggestionsList[i].push(`special element (${input})`);
-  //   }
-  // }
-
-  // selectSuggestion(i: number, suggestion: string): void {
-  //   this.caseNameInputs[i] = suggestion;
-  //   this.filteredSuggestionsList[i] = [];
-  //   const caseGroup = this.cases.at(i) as FormGroup;
-  //   const { type, logicConfig } = this.parseInvoiceCaseName(suggestion);
-  //   caseGroup.patchValue({
-  //     name: suggestion,
-  //     type: type,
-  //     logicConfig: this.fb.group(logicConfig)
-  //   });
-  // }
-
-
-  // parseInvoiceCaseName(name: string): { type: string; logicConfig: any } {
-  //   name = name.trim().toLowerCase();
-
-  //   if (/^\d+ element$/.test(name)) {
-  //     const count = parseInt(name);
-  //     return { type: 'element-count', logicConfig: { min: count, max: count } };
-  //   }
-
-  //   if (/^\d+\s*mm$/.test(name)) {
-  //     const size = parseInt(name);
-  //     return { type: 'size-range', logicConfig: { min: size, max: size } };
-  //   }
-
-  //   if (name.includes('kn')) {
-  //     if (name.includes('up to')) {
-  //       const max = parseInt(name);
-  //       return { type: 'test-load', logicConfig: { min: 0, max } };
-  //     }
-  //     if (name.includes('to')) {
-  //       const [min, max] = name.split('to').map(s => parseInt(s));
-  //       return { type: 'test-load', logicConfig: { min, max } };
-  //     }
-  //     if (name.includes('above')) {
-  //       const min = parseInt(name);
-  //       return { type: 'test-load', logicConfig: { min, max: Infinity } };
-  //     }
-  //   }
-
-  //   if (name.startsWith('special element')) {
-  //     const el = name.split('(')[1]?.replace(')', '').trim();
-  //     return { type: 'element-name', logicConfig: { element: el } };
-  //   }
-
-  //   return { type: 'custom', logicConfig: {} };
-  // }
-
-  submit(): void {
-    if (this.invoiceCaseForm.valid) {
-      const payload = this.invoiceCaseForm.getRawValue();
-      if (this.invoiceId > 0) {
-        this.invoiceService.updateInvoiceCase(payload).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.invoiceCaseForm.reset();
-            this.router.navigate(['/invoice-case']);
-          },
-          error: (error) => {
-            this.toastService.show(error.error.message, 'error');
-          }
-        })
-      } else {
-        this.invoiceService.createInvoiceCase(payload).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.invoiceCaseForm.reset();
-            this.router.navigate(['/invoice-case']);
-          },
-          error: (error) => {
-            this.toastService.show(error.error.message, 'error');
-          }
-        })
-      }
+  // FY selected → warn if already used, revert; else auto-fill Effective From.
+  onVersionFyChange(versionIndex: number): void {
+    const vg = this.versions.at(versionIndex);
+    const selectedFyId = vg.get('financialYearId')?.value;
+    const duplicate = this.versions.controls.some(
+      (v, i) => i !== versionIndex && v.get('financialYearId')?.value === selectedFyId
+    );
+    if (duplicate) {
+      this.toastService.show('This financial year is already added. Please select a different year.', 'error');
+      vg.get('financialYearId')?.setValue(null);
+      vg.get('effectiveFrom')?.setValue('');
+      return;
+    }
+    const fy = this.financialYears.find(f => f.id === selectedFyId);
+    if (fy?.startDate) {
+      vg.get('effectiveFrom')?.setValue(this.toDateInput(fy.startDate));
     }
   }
+
+  // ── FormGroup builders ──
+  private buildPriceGroup(p: any): FormGroup {
+    return this.fb.group({
+      id: [p?.id ?? 0],
+      invoiceCaseConfigID: [p?.invoiceCaseConfigID ?? null],
+      name: [p?.name ?? ''],
+      aliasName: [p?.aliasName ?? '', Validators.required],
+      price: [p?.price ?? 0, [Validators.required, Validators.min(0.01)]]
+    });
+  }
+
+  private buildVersionGroup(v: any): FormGroup {
+    const prices = (v?.prices ?? []).map((p: any) => this.buildPriceGroup(p));
+    return this.fb.group({
+      id: [v?.id ?? 0],
+      financialYearId: [v?.financialYearId ?? null, Validators.required],
+      effectiveFrom: [this.toDateInput(v?.effectiveFrom), Validators.required],
+      defaultPricingType: [v?.defaultPricingType ?? null],
+      prices: this.fb.array(prices)
+    });
+  }
+
+  private toDateInput(value: any): string {
+    if (!value) return '';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().substring(0, 10);
+  }
+
+  // ── Load existing versions for a lab test ──
+  loadVersions(labTestId: number): void {
+    this.invoiceService.getByLabTest(labTestId).subscribe({
+      next: (response) => {
+        this.versions.clear();
+        // Deduplicate by financialYearId — keep the one with the latest effectiveFrom.
+        const raw: any[] = response?.versions ?? [];
+        const fyMap = new Map<any, any>();
+        raw.forEach(v => {
+          const key = v.financialYearId ?? v.id;
+          const existing = fyMap.get(key);
+          if (!existing || new Date(v.effectiveFrom) > new Date(existing.effectiveFrom)) {
+            fyMap.set(key, v);
+          }
+        });
+        const deduped = Array.from(fyMap.values());
+        deduped.forEach((v: any) => this.versions.push(this.buildVersionGroup(v)));
+
+        if (this.versions.length === 0) {
+          this.addYear();
+        } else {
+          // Pre-select the default-FY version, else the first (newest) tab
+          const idx = deduped.findIndex(v => v.isCurrentFy);
+          this.activeVersionIndex = idx >= 0 ? idx : 0;
+        }
+
+        if (this.isViewMode) this.invoiceCaseForm.disable();
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load invoice case prices', 'error')
+    });
+  }
+
+  // ── Lab test selection ──
   getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.labTestService.getLaboratoryTestDropdown(term, page, pageSize);
   };
 
-  onLaboratorySelected(item: any) {
+  onLaboratorySelected(item: any): void {
     if (!item) {
       this.invoiceCaseForm.patchValue({ laboratoryTestID: null });
-      this.invoiceCases.clear();
+      this.versions.clear();
+      this.labTestConfigs = [];
+      this.subGroupName = '';
       return;
     }
     this.invoiceCaseForm.patchValue({ laboratoryTestID: item.id });
-    this.getLabTestById(item.id);
-  };
-  getLabTestById(id: number) {
-    this.labTestService.getLaboratoryTestById(id).subscribe({
-      next: (response) => {
-        if (response?.invoiceCases) {
-          if (this.invoiceId == 0) {
-            const invoiceCaseArray = this.invoiceCases;
-            invoiceCaseArray.clear();
-            response?.invoiceCases?.forEach((item: any) => {
-              invoiceCaseArray.push(
-                this.fb.group({
-                  id: [0],
-                  name: [`${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`],
-                  aliasName:['',Validators.required],
-                  price: [0,[Validators.required, Validators.min(0.01)]],
-                  invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-                })
-              );
-            });
-          } else {
-            const existingNames = this.invoiceCases.controls.map(ctrl =>
-              ctrl.get('name')?.value?.trim().toLowerCase()
-            );
-            response.invoiceCases.forEach((item: any) => {
-              const newName = `${response.subGroup} - ${item?.invoiceCaseConfiguration?.name}`.trim().toLowerCase();
+    this.loadLabTestConfigs(item.id, true);
+  }
 
-              if (!existingNames.includes(newName)) {
-                this.invoiceCases.push(
-                  this.fb.group({
-                    id: [0],
-                    name: [newName],
-                    aliasName: ['', Validators.required],
-                    price: [0, [Validators.required, Validators.min(0.01)]],
-                    invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-                  })
-                );
-              }
-            });
-          }
+  // Loads the lab test's invoice-case configs (the price-row template).
+  // seedFirstYear=true → after configs load, also load existing versions / seed one.
+  private loadLabTestConfigs(labTestId: number, seedFirstYear: boolean): void {
+    this.labTestService.getLaboratoryTestById(labTestId).subscribe({
+      next: (response) => {
+        this.subGroupName = response?.subGroup ?? '';
+        this.labTestConfigs = response?.invoiceCases ?? [];
+        if (seedFirstYear) {
+          this.loadVersions(labTestId);
         }
       },
-      error: (error) => {
-        console.error(error);
-      }
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load test configuration', 'error')
     });
   }
-  getInvoiceCase(id: number) {
-    this.invoiceService.getInvoiceCaseById(id).subscribe({
-      next: (response) => {
-        this.invoiceCaseForm.patchValue(response);
-        response?.invoiceCasePrices?.forEach((item: any) => {
-          this.invoiceCases.push(
-            this.fb.group({
-              id: [item.id],
-              name: [item.name],
-              aliasName:[item.aliasName],
-              price: [item.price],
-              invoiceCaseConfigID: [item?.invoiceCaseConfigID]
-            })
-          );
-        });
-        if(this.isViewMode){
-          this.invoiceCaseForm.disable();
-        }
-        if(this.isEditMode){
-          this.invoiceCaseForm.get('financialYearId')?.disable();
-          this.invoiceCaseForm.get('laboratoryTestID')?.disable();
-        }
-      },
-      error: (error) => {
-        this.toastService.show(error.error.message, 'error');
-      }
-    });
 
+  // Builds price rows for a brand-new year version from the lab test's configs.
+  private buildPriceRowsFromConfigs(): any[] {
+    return this.labTestConfigs.map((c: any) => ({
+      id: 0,
+      invoiceCaseConfigID: c?.invoiceCaseConfigID,
+      name: `${this.subGroupName} - ${c?.invoiceCaseConfiguration?.name ?? ''}`,
+      aliasName: c?.invoiceCaseConfiguration?.name ?? '',
+      price: 0
+    }));
+  }
+
+  // ── Year version actions ──
+  addYear(): void {
+    const usedFyIds = new Set(this.versions.controls.map(v => v.get('financialYearId')?.value));
+    const pick = this.financialYears.find(fy => !usedFyIds.has(fy.id));
+    if (!pick) {
+      this.toastService.show('All available financial years are already added.', 'warning');
+      return;
+    }
+    this.versions.push(this.buildVersionGroup({
+      id: 0,
+      financialYearId: pick.id,
+      effectiveFrom: pick.startDate ?? null,
+      defaultPricingType: null,
+      prices: this.buildPriceRowsFromConfigs()
+    }));
+    this.activeVersionIndex = this.versions.length - 1;
+  }
+
+  removeYear(index: number): void {
+    if (this.versions.length === 1) {
+      this.toastService.show('At least one year version is required.', 'error');
+      return;
+    }
+    this.versions.removeAt(index);
+    if (this.activeVersionIndex >= this.versions.length) {
+      this.activeVersionIndex = this.versions.length - 1;
+    }
+  }
+
+  selectVersion(index: number): void {
+    this.activeVersionIndex = index;
+  }
+
+  // ── Save ──
+  submit(): void {
+    if (this.invoiceCaseForm.invalid) {
+      this.invoiceCaseForm.markAllAsTouched();
+      this.toastService.show('Please fill all required fields before saving.', 'error');
+      return;
+    }
+    if (this.versions.length === 0) {
+      this.toastService.show('Add at least one year version.', 'error');
+      return;
+    }
+
+    // No two versions may share the same Effective From date
+    const dates = this.versions.controls.map(v => v.get('effectiveFrom')?.value);
+    if (new Set(dates).size !== dates.length) {
+      this.toastService.show('Two year versions have the same Effective From date.', 'error');
+      return;
+    }
+
+    const raw = this.invoiceCaseForm.getRawValue();
+    const payload = {
+      laboratoryTestID: raw.laboratoryTestID,
+      versions: raw.versions.map((v: any) => ({
+        id: v.id,
+        financialYearId: v.financialYearId,
+        effectiveFrom: v.effectiveFrom,
+        defaultPricingType: v.defaultPricingType,
+        prices: v.prices.map((p: any) => ({
+          id: p.id,
+          invoiceCaseConfigID: p.invoiceCaseConfigID,
+          name: p.name,
+          aliasName: p.aliasName,
+          price: p.price
+        }))
+      }))
+    };
+
+    this.invoiceService.saveAll(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message, 'success');
+        this.router.navigate(['/invoice-case']);
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to save invoice case prices', 'error')
+    });
   }
 }

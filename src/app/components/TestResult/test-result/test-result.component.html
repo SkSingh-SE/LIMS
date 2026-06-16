@@ -58,7 +58,7 @@
               <td class="text-center">
                 <div class="d-flex gap-2 justify-content-center align-items-center">
                   <a
-                    *ngIf="item.actionStatus === 'CAN_TEST' || item.sampleStatus === 'In Progress' || item.sampleStatus === 'Pending'"
+                    *ngIf="item.canPerformTesting"
                     [routerLink]="['/testing/perform', item.sampleId]"
                     class="icon-link action-icon-link"
                     title="Perform Testing"
@@ -100,7 +100,7 @@
                 </a>
                 <span *ngIf="!item.inwardId">{{ item.caseNo }}</span>
               </td>
-              <td>
+              <td class="fw-semibold">
                 <a *ngIf="item.customerID"
                    [routerLink]="['/customer/details', item.customerID]"
                    [state]="{ mode: 'view' }"

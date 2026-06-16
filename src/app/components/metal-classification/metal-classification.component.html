@@ -76,7 +76,13 @@
                                 <span *ngIf="customerType.hasMechanicalParams" class="badge bg-success">Yes</span>
                                 <span *ngIf="!customerType.hasMechanicalParams" class="badge bg-secondary">No</span>
                             </td>
-                            <td>{{ customerType.sortOrder }}</td>
+                            <td class="text-center">
+                                <span *ngIf="customerType.metalType === 'Hard'" class="badge bg-danger">Hard</span>
+                                <span *ngIf="customerType.metalType === 'Normal'" class="badge bg-secondary">Normal</span>
+                                <span *ngIf="customerType.metalType && customerType.metalType !== 'Hard' && customerType.metalType !== 'Normal'" class="badge bg-secondary">{{ customerType.metalType }}</span>
+                                <span *ngIf="!customerType.metalType" class="text-muted">—</span>
+                            </td>
+                            <!-- <td>{{ customerType.sortOrder }}</td> -->
                             <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
@@ -178,6 +184,9 @@
                         </div>
                     </div>
                     <div class="row">
+                       
+                    </div>
+                    <div class="row">
                         <!-- Parent Classification -->
                         <div class="col-md-6 mb-1">
                             <label class="form-label">Parent Classification</label>
@@ -199,13 +208,30 @@
                                 </button>
                             </div>
                         </div>
-                        <!-- Sort Order -->
-                        <div class="col-md-6 mb-1">
+                         <!-- Metal Type -->
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Metal Type</label>
+                            <div class="d-flex gap-4 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeNormal"
+                                        formControlName="metalType" value="Normal"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeNormal">Normal</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeHard"
+                                        formControlName="metalType" value="Hard"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeHard">Hard</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- <div class="col-md-6 mb-1">
                             <label for="sortOrder" class="form-label">Sort Order</label>
                             <input type="number" id="sortOrder" class="form-control" formControlName="sortOrder"
                                 placeholder="Enter Sort Order"
                                 [attr.disabled]="isViewMode ? true : null" />
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <!-- Has Chemical Params -->

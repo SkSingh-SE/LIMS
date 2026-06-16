@@ -8,7 +8,19 @@
   width: 100%;
 }
 
-/* ─── Label — inherits global .form-label (font-sm, weight 500) ─── */
+/* ─── Label — mirrors global sets so encapsulation boundary doesn't break them ─── */
+:host .form-label {
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 500;
+  color: var(--neutral-700, #374151);
+  font-family: 'Poppins', sans-serif;
+}
+
+:host .form-label.form-label-sm {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
 
 /* ─── Input Group (unified container) ─── */
 .input-group {
@@ -37,8 +49,9 @@
   border: none !important;
   box-shadow: none !important;
   background: transparent;
-  font-size: var(--font-sm);
-  padding: 0.375rem 0.75rem;
+  font-size: var(--font-sm, 0.8125rem);
+  font-family: 'Poppins', sans-serif;
+  padding: 0.275rem 0.75rem;
   color: var(--neutral-900, #1e293b);
   height: auto;
   line-height: 1.5;
@@ -82,7 +95,7 @@
 .input-group .input-group-text.clear-icon {
   border: none !important;
   background: transparent;
-  padding: 0 0.3rem;
+  padding: 0 0.5rem;
   color: #adb5bd;
   cursor: pointer;
   transition: color 0.15s ease;
@@ -93,11 +106,11 @@
 }
 
 .input-group .input-group-text.clear-icon:hover {
-  color: #dc3545;
+  color: #dc0e23;
 }
 
 .input-group .input-group-text.clear-icon i {
-  font-size: 0.6rem;
+  font-size: 0.9rem;
 }
 
 /* ─── SM Mode (when smallInput=true adds form-control-sm) ─── */
@@ -106,13 +119,13 @@
 }
 
 .input-group:has(.form-control-sm) .form-control-sm {
-  font-size: 0.78rem;
+  font-size: var(--font-sm, 0.8125rem);
   padding: 0.2rem 0.5rem;
   line-height: 1.4;
 }
 
 .input-group:has(.form-control-sm) .form-control-sm::placeholder {
-  font-size: 0.76rem;
+  font-size: var(--font-sm, 0.8125rem);
 }
 
 .input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon {

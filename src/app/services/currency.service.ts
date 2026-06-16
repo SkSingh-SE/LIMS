@@ -16,4 +16,12 @@ export class CurrencyService {
       `${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNo}&pageSize=${pageSize}`
     );
   }
+
+  getDefault(): Observable<{ id: number; name: string } | null> {
+    return this.http.get<{ id: number; name: string } | null>(`${this.apiUrl}/default`);
+  }
+
+  setDefault(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/set-default/${id}`, {});
+  }
 }

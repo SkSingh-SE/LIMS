@@ -1,0 +1,30 @@
+.fy-tabs .nav-link {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.9rem;
+  color: #555;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.fy-tabs .nav-link.active {
+  font-weight: 600;
+  color: var(--primary-color);
+  border-bottom-color: transparent;
+}
+
+.fy-tabs .nav-link.current-fy {
+  border-top: 2px solid #198754;
+}
+
+.fy-tabs .add-year-tab {
+  color: var(--primary-color);
+}
+
+.version-panel {
+  background: #fafbfc;
+  border-radius: 0 0 4px 4px;
+}
+
+.wide-input {
+  min-width: 200px;
+}

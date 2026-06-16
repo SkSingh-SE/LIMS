@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, AfterViewChecked, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, signal } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationStart, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { NotificationBellComponent } from './notification-bell/notification-bell.component';
@@ -58,6 +58,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   navbarHeight: number = 64;
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
+  private routerSub: any = null;
 
   loggedInUserName: string = '';
   loggedInUserRole: string = '';
@@ -98,6 +99,12 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngOnInit(): void {
+    this.routerSub = this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        this.closeAllMenus();
+      }
+    });
+
     const userData = this.authService.getUserData();
     if (userData) {
       this.loggedInUserName = userData.userName || '';
@@ -325,7 +332,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           // 1. Set global permissions
           const perms = this.collectPermissionsFromApi(res || []);
           this.permissionService.setPermissions(perms);
-          this.permissionService.setAdmin(true); // TODO: set from user role, skip permission check for now
+          const ud = this.authService.getUserData();
+          const isAdmin = ud?.isAdmin === true || (ud?.role ?? '').toLowerCase() === 'admin';
+          this.permissionService.setAdmin(isAdmin);
 
           // 2. Filter hardcoded menu by API response
 
@@ -461,6 +470,14 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   closeSubMenu() {
     this.isSubMenuOpen.set(false);
+    setTimeout(() => this.updateNavbarHeight(), 300);
+  }
+
+  closeAllMenus(): void {
+    this.isSubMenuOpen.set(false);
+    this.hoveredSubmenuId.set(null);
+    this.hoveredGroupId.set(null);
+    this.isMenu2Open.set(false);
     setTimeout(() => this.updateNavbarHeight(), 300);
   }
 
@@ -639,6 +656,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (this.resizeObserver) { this.resizeObserver.disconnect(); }
     if (this.submenuTimer)   { clearTimeout(this.submenuTimer); }
     if (this.groupTimer)     { clearTimeout(this.groupTimer); }
+    this.routerSub?.unsubscribe();
     this.stopCameraStream();
   }
 }

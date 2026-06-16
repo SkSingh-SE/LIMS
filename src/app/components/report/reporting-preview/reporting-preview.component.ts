@@ -34,6 +34,7 @@ export class ReportingPreviewComponent implements OnInit {
 
   // internal flag to prevent double submits
   private submitting = false;
+  submittingForApproval = false;
   pdfGenerating = false;
 
   // Pricing data (read-only, from backend)
@@ -61,6 +62,10 @@ export class ReportingPreviewComponent implements OnInit {
         this.loadReportPreview(this.sampleId);
       }
     });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/reporting/dashboard']);
   }
 
   loadReportFormats(reportHeaderId: number | string): void {
@@ -218,6 +223,7 @@ export class ReportingPreviewComponent implements OnInit {
       statementOfConformity: (src as any).statementOfConformity || '',
       decisionRule: (src as any).decisionRule || '',
       ulrNo: (src as any).ulrNo || '',
+      canSubmitForReportApproval: (src as any).canSubmitForReportApproval ?? false,
     };
 
     return dst;
@@ -264,9 +270,6 @@ export class ReportingPreviewComponent implements OnInit {
     };
   }
 
-  goBack(): void {
-    window.history.back();
-  }
 
   // Collapsible toggle methods
   toggleMechanicalTest(testId: string): void {
@@ -388,6 +391,22 @@ export class ReportingPreviewComponent implements OnInit {
         this.pdfGenerating = false;
         console.error('PDF generation failed:', err);
         this.toast.show(err?.error?.message || 'PDF generation failed', 'error');
+      }
+    });
+  }
+
+  submitForReportApproval(): void {
+    if (!this.sampleId || this.submittingForApproval) return;
+    this.submittingForApproval = true;
+    this.reportingService.submitForReportApproval(this.sampleId).subscribe({
+      next: () => {
+        this.submittingForApproval = false;
+        this.toast.show('Submitted for report approval successfully', 'success');
+        this.loadReportPreview(this.sampleId);
+      },
+      error: (err) => {
+        this.submittingForApproval = false;
+        this.toast.show(err?.errorMessage || 'Failed to submit for report approval', 'error');
       }
     });
   }

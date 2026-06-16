@@ -14,7 +14,6 @@ import { LaboratoryTestService } from '../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
 import { YearHelper } from '../../utility/helper/year.helper';
-import { TestMethodStandardService } from '../../services/test-method-standard.service';
 import { ProductTestGroupService } from '../../services/product-test-group.service';
 import { ProductSpecificationGradeService } from '../../services/product-specification-grade.service';
 import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
@@ -101,7 +100,7 @@ export class ProductSpecificationComponent implements OnInit {
     { value: 5, label: 'Test Method 5' },
   ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private testMethodStandardService: TestMethodStandardService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
       if (this.productSpecificationId > 0) {
@@ -496,7 +495,7 @@ export class ProductSpecificationComponent implements OnInit {
   }
 
   getTestMethodStandardDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.testMethodStandardService.getTestMethodStandardDropdown(term, page, pageSize);
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
 
   onTestGroupMethodSelected(item: any) {

@@ -1,6 +1,36 @@
+.table thead th {
+  cursor: pointer;
+}
+
+.table thead th:hover {
+  background-color: #f8f9fa;
+}
+
 .card .card-header {
   padding: 0.5rem 0.5rem !important;
   height: 47px !important;
+}
+
+.filter-modal {
+  position: absolute;
+  display: none;
+  z-index: 1000;
+}
+
+.sorting-icon-up {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -3px;
+}
+
+.sorting-icon-down {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -3px;
 }
 
 .bordered-table thead tr th {
@@ -46,44 +76,25 @@
   max-width: 100%;
 }
 
-/* ── Tree styles ── */
-.menu-tree-table tbody tr {
-  transition: background-color 0.1s;
+.wide-input {
+  max-width: 170px;
 }
 
-.menu-root-row {
-  background-color: #f8f9fa;
-}
-
-.menu-root-row:hover {
-  background-color: #e9ecef;
-}
-
-.menu-child-row:hover {
-  background-color: #f5f7fa;
-}
-
-.tree-toggle {
+.cursor {
   cursor: pointer;
-  color: var(--primary-color);
-  width: 16px;
-  display: inline-flex;
-  justify-content: center;
 }
 
-.tree-toggle:hover {
-  opacity: 0.7;
+.fieldset-block {
+  border: 1px solid #e3e6ea;
+  border-left: 3px solid var(--primary-color);
+  background-color: #fafbfc;
+  border-radius: 4px;
 }
 
-.tree-leaf-spacer {
-  width: 16px;
-  display: inline-flex;
-  justify-content: center;
-}
-
-code.text-success {
-  background: #f0fff4;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 0.75rem;
+.fieldset-legend {
+  font-size: 0.85rem;
+  font-weight: 500;
+  width: auto;
+  padding: 0 6px;
+  margin-bottom: 0;
 }

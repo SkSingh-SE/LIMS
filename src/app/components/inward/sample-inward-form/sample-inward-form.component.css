@@ -1,27 +1,50 @@
-/* ─── Nav Tabs ─── */
-.nav-tabs {
-  border-bottom: 2px solid #e9ecef;
+/* ─── Main Card ─── */
+.inward-main-card {
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px;
+  overflow: visible;
 }
 
-.nav-tabs .nav-link {
-  color: #495057;
+/* ─── Card Header (tabs row) ─── */
+.inward-header {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 8px 8px 0 0;
+  min-height: 52px;
+  overflow: visible;
+  padding: 0 0.5rem;
+}
+
+/* ─── Nav Tabs (inside card header) ─── */
+.inward-header .nav-tabs {
+  border-bottom: none;
+  align-self: stretch;
+}
+
+.inward-header .nav-tabs .nav-link {
+  color: #6c757d;
   font-weight: 500;
-  padding: 0.6rem 1.2rem;
+  padding: 0.75rem 1.4rem;
+  margin-right: 0.25rem;
   border: none;
   border-bottom: 3px solid transparent;
-  transition: all 0.25s ease;
-  font-size: 0.9rem;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  /* pull the bottom border down so active indicator overlaps the header border */
+  margin-bottom: -2px;
+  line-height: 1.5;
 }
 
-.nav-tabs .nav-link:hover {
+.inward-header .nav-tabs .nav-link:hover {
   color: var(--primary-color, #da261c);
-  border-bottom-color: rgba(218, 38, 28, 0.3);
-  background: transparent;
+  border-bottom-color: rgba(218, 38, 28, 0.35);
+  background: rgba(218, 38, 28, 0.04);
 }
 
-.nav-tabs .nav-link.active {
+.inward-header .nav-tabs .nav-link.active {
   color: var(--primary-color, #da261c);
-  border-color: transparent;
   border-bottom: 3px solid var(--primary-color, #da261c);
   background: transparent;
   font-weight: 600;
@@ -40,8 +63,8 @@ fieldset legend {
   padding: 0 0.5rem;
 }
 
-/* ─── Cards ─── */
-.card {
+/* ─── Inner Cards (customer info, etc.) ─── */
+.card-body .card {
   border: 1px solid #e9ecef !important;
   border-radius: 8px;
   background: #fff;
@@ -49,20 +72,11 @@ fieldset legend {
   transition: box-shadow 0.2s ease;
 }
 
-.card:hover {
+.card-body .card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.card .card-header {
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  background: var(--primary-color, #da261c);
-  /* color: #fff; */
-  font-size: 0.85rem;
-  padding: 0.5rem 1rem;
-}
-
-.card .card-body {
+.card-body .card .card-body {
   padding: 1rem;
 }
 
@@ -94,9 +108,14 @@ fieldset legend {
 }
 
 .table-compact td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0.4rem;
   vertical-align: middle;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact th {
+  padding: 0.4rem 0.4rem;
+  white-space: nowrap;
 }
 
 .table-compact tbody tr:hover {
@@ -110,6 +129,12 @@ fieldset legend {
   border-radius: 6px;
   border: 1px solid #ced4da;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
 }
 
 .form-control:focus,
@@ -215,14 +240,14 @@ input::file-selector-button:hover {
 }
 
 /* ─── Radio & Checkbox Alignment ─── */
-.form-check-inline {
+/* .form-check-inline {
   margin-right: 1rem;
 }
 
 .form-check-input:checked {
   background-color: var(--primary-color, #da261c);
   border-color: var(--primary-color, #da261c);
-}
+} */
 
 /* ─── Responsive Tweaks ─── */
 @media (max-width: 768px) {
@@ -258,7 +283,6 @@ input::file-selector-button:hover {
 }
 
 @media print {
-  /* Hide everything except job card */
   :host > div > *:not(.job-card-print) {
     display: none !important;
   }
@@ -271,88 +295,125 @@ input::file-selector-button:hover {
     color: #000;
   }
 
+  /* ── Header ── */
   .jc-header {
     text-align: center;
     border-bottom: 2px solid #000;
     padding-bottom: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 14px;
   }
-
   .jc-title {
     font-size: 20px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
   }
-
   .jc-meta {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
   }
 
+  /* ── Sections ── */
   .jc-section {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
-
   .jc-section-title {
     font-weight: 700;
-    font-size: 13px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     background: #f0f0f0;
     padding: 4px 8px;
     border-left: 3px solid #da261c;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
+  /* ── Customer info table ── */
   .jc-info-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
-
   .jc-info-table td {
     padding: 4px 8px;
     font-size: 11px;
     border: 1px solid #ddd;
   }
 
-  .jc-table {
-    width: 100%;
-    border-collapse: collapse;
+  /* ── Case flags ── */
+  .jc-flag-row {
+    display: flex;
+    gap: 12px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
   }
-
-  .jc-table th {
-    background: #f0f0f0;
+  .jc-flag {
+    font-weight: 700;
     font-size: 10px;
-    text-transform: uppercase;
-    padding: 5px 6px;
-    border: 1px solid #999;
-    text-align: left;
+    border: 1.5px solid #da261c;
+    color: #da261c;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
   }
-
-  .jc-table td {
-    padding: 4px 6px;
-    border: 1px solid #ccc;
+  .jc-receipt-note {
+    padding: 4px 8px;
     font-size: 11px;
   }
 
-  .jc-table tbody tr:nth-child(even) {
-    background: #fafafa;
+  /* ── Per-sample block ── */
+  .jc-sample-block {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+  .jc-sample-header {
+    background: #f0f0f0;
+    border-left: 3px solid #da261c;
+    border-bottom: 1px solid #ccc;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
   }
 
+  /* ── Key-Value table (used for sample details AND conformity) ── */
+  .jc-kv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .jc-kv-key {
+    padding: 3px 8px;
+    font-weight: 600;
+    font-size: 10px;
+    color: #333;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    width: 160px;
+    vertical-align: top;
+  }
+  .jc-kv-val {
+    padding: 3px 8px;
+    font-size: 11px;
+    border: 1px solid #e0e0e0;
+    vertical-align: top;
+  }
+
+  /* ── Signatures ── */
   .jc-footer {
     display: flex;
     justify-content: space-between;
     margin-top: 40px;
     padding-top: 10px;
   }
-
   .jc-sign-block {
     text-align: center;
     font-size: 11px;
   }
-
   .jc-sign-line {
     width: 150px;
     border-bottom: 1px solid #000;

@@ -1,0 +1,164 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back to Lists
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="matrixForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">F-6 / F-6A Format Details</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="formatNo"> 
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+                <!-- <input type="text" class="form-control mt-1" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-6"> -->
+                <span *ngIf="matrixForm.get('formatNo')?.invalid && matrixForm.get('formatNo')?.touched" class="text-danger text-sm">Form is required.</span>
+              </div>
+              {{1}}
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                  [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="matrixForm.get('designationId')?.value"></app-searchable-dropdown>
+                <span *ngIf="matrixForm.get('designationId')?.invalid && matrixForm.get('designationId')?.touched" class="text-danger text-sm">Designation is required.</span>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" [disabled]="isViewMode" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date" [disabled]="isViewMode" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" [disabled]="isViewMode" />
+          </div>{{1}}
+              <div class="col-md-12">
+                <label class="form-label">Decision <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="decision" placeholder="e.g. Approved" [disabled]="isViewMode" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Skills & Competency Matrix -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('skills')">
+            <i class="bi" [ngClass]="openSections['skills'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Skills & Competency Matrix</span>
+          </div>
+          <div *ngIf="openSections['skills']" class="section-body">
+            <p class="text-muted mb-3">Define the skills required for this designation and assess employee competency levels.</p>
+
+            <!-- Add Skills Section -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <label class="form-label fw-bold">Required Skills <span class="text-danger">*</span></label>
+                <div class="d-flex gap-2 align-items-center mb-3">
+                  <input #skillInput type="text" class="form-control" placeholder="Enter skill name" [disabled]="isViewMode" />
+                  <button type="button" class="btn btn-secondary btn-sm" [disabled]="isViewMode || !skillInput.value"
+                          (click)="addSkill(skillInput.value); skillInput.value=''">
+                    <i class="bi bi-plus"></i> Add Skill
+                  </button>
+                </div>
+                <div *ngIf="skills.length > 0" class="mb-3">
+                  <span *ngFor="let ctrl of skills.controls; let i=index" class="badge bg-info me-1 mb-1">
+                    {{ ctrl.value }}
+                    <i *ngIf="!isViewMode" class="bi bi-x ms-1" (click)="skills.removeAt(i)" style="cursor:pointer"></i>
+                  </span>
+                </div>
+                <span *ngIf="matrixForm.get('skills')?.invalid && matrixForm.get('skills')?.touched" class="text-danger text-sm">
+                  At least one skill is required.
+                </span>
+              </div>
+            </div>
+
+            <!-- Employee Skills Matrix Table -->
+            <div class="row" *ngIf="employeeSkills.length > 0">
+              <div class="col-12">
+                <label class="form-label fw-bold mb-2">Employee Competency Assessment</label>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Employee Name</th>
+                        <th>Designation</th>
+                        <th *ngFor="let skill of skills.controls">{{ skill.value }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let empCtrl of employeeSkillsGroups; let ei=index" [formGroup]="empCtrl">
+                        <td class="fw-bold">{{ empCtrl.get('employeeName')?.value }}</td>
+                        <td>{{ empCtrl.get('designationName')?.value }}</td>
+                        <td *ngFor="let skill of skills.controls; let si=index">
+                          <select class="form-select form-select-sm" [disabled]="isViewMode"
+                                  [value]="empCtrl.get('skills')?.value?.[skill.value] || ''"
+                                  (change)="empCtrl.get('skills')?.value[skill.value] = $any($event.target).value">
+                            <option value="">--</option>
+                            <option value="P">P (Proficient)</option>
+                            <option value="C">C (Competent)</option>
+                            <option value="D">D (Developing)</option>
+                            <option value="N">N (Not Competent)</option>
+                          </select>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Approval & Acceptance -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('footer')">
+            <i class="bi" [ngClass]="openSections['footer'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Approval & Acceptance</span>
+          </div>
+          <div *ngIf="openSections['footer']" class="section-body">
+            <p class="text-muted mb-3">Official approval signatures and authorization.</p>
+            <div class="row gy-3">
+              <div class="col-md-4">
+                <label class="form-label">Prepared By (HR Manager)</label>
+                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" [disabled]="isViewMode" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Issued By (Quality Manager)</label>
+                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" [disabled]="isViewMode" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Reviewed & Approved By (Managing Director)</label>
+                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" [disabled]="isViewMode" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="matrixForm.invalid">
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

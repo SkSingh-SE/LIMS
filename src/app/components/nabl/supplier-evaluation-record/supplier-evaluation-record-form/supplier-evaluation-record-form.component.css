@@ -1,0 +1,6 @@
+/* F-26 Supplier Evaluation Record Form styles */
+.input-group.fixed-width {
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+}

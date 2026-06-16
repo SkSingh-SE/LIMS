@@ -1,0 +1,135 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div
+      class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center"
+    >
+      <label class="text-center text-md fw-medium ms-3">Report Formats</label>
+      <button class="btn btn-sm btn-light" (click)="createNew()">
+        <i class="bi bi-plus-lg me-1"></i> New Format
+      </button>
+    </div>
+
+    <div class="card-body">
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-3">
+        <div class="w-25 input-group custom-search">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search..."
+            [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()"
+          />
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div *ngIf="formats.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100 small">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th class="fw-semibold">#</th>
+              <th
+                *ngFor="let col of columns"
+                class="fw-semibold"
+                style="cursor: pointer"
+                (click)="col.filter && applySorting(col.key)"
+              >
+                <div class="d-flex align-items-center justify-content-center">
+                  <span>{{ col.label }}</span>
+                  <span
+                    *ngIf="col.filter"
+                    class="d-flex flex-column ms-2 mt-1"
+                  >
+                    <i
+                      class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{
+                        'text-danger':
+                          sortByColumn === col.key && sortOrder === 'asc'
+                      }"
+                    ></i>
+                    <i
+                      class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{
+                        'text-danger':
+                          sortByColumn === col.key && sortOrder === 'desc'
+                      }"
+                    ></i>
+                  </span>
+                </div>
+              </th>
+              <th class="fw-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of formats; let i = index"
+              class="align-middle text-center"
+            >
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>
+                <span class="badge bg-secondary">{{ item.formatCode }}</span>
+              </td>
+              <td class="text-start">{{ item.formatName }}</td>
+              <td>{{ item.pageLayout }}</td>
+              <td>
+                <span
+                  *ngIf="item.isDefault"
+                  class="badge bg-success"
+                  >Default</span
+                >
+              </td>
+              <td>{{ item.sectionCount }}</td>
+              <td>{{ item.mappingCount }}</td>
+              <td>
+                <div class="d-flex gap-1 justify-content-center">
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    title="Edit"
+                    (click)="editFormat(item.id)"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    title="Clone"
+                    (click)="cloneFormat(item.id)"
+                  >
+                    <i class="bi bi-copy"></i>
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    title="Delete"
+                    (click)="deleteFormat(item.id)"
+                    [disabled]="item.isLocked"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="formats.length === 0" class="text-center py-4 text-muted">
+        <i class="bi bi-file-earmark-text fs-1"></i>
+        <p class="mt-2">No report formats found. Create your first format!</p>
+      </div>
+
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalRecords"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+      </app-pagination>
+    </div>
+  </div>
+</div>

@@ -6,10 +6,13 @@ import { Router } from '@angular/router';
 import { SignalRService } from '../../services/signal-r.service';
 import { NotificationStoreService } from '../../services/notification-store.service';
 import { PushServiceService } from '../../services/push-service.service';
+import { emailPatternValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, CommonModule, ReactiveFormsModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -18,10 +21,11 @@ export class LoginComponent {
   showPassword = signal(false);
   isLoading = signal(false);
   errorMessage = signal('');
+  submitted = false;
   constructor(private fb: FormBuilder, private authService: AuthService, private router: Router, private signalR: SignalRService, private notificationStore: NotificationStoreService, private pushService: PushServiceService) {
     this.loginForm = this.fb.group({
-      email: ['', Validators.required],
-      password: ['', Validators.required]
+      email: ['', [Validators.required, emailPatternValidator()]],
+      password: ['', [Validators.required, Validators.minLength(8)]]
     });
   }
 
@@ -29,7 +33,13 @@ export class LoginComponent {
     this.showPassword.set(!this.showPassword());
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.loginForm, path, this.submitted);
+  }
+
   onLogin() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.loginForm);
     if (this.loginForm.valid) {
       this.isLoading.set(true);
       console.log('Login successful', this.loginForm.value);
@@ -48,7 +58,7 @@ export class LoginComponent {
             this.pushService.subscribeToPush();
           }
 
-          this.router.navigate(['/sample/inward']);
+          this.router.navigate(['/']); // Redirect to main dashboard
         },
         error: (err) => {
           this.errorMessage.set(err?.errorMessage);

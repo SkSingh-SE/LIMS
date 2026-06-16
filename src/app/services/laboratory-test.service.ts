@@ -35,11 +35,16 @@ export class LaboratoryTestService {
     getLaboratoryTestDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+    getLaboratoryTestDropdownForGeneral(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/general-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+
     getLaboratoryTestDropdownForChemicals(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
-    getTestCasesByTestMethodId(testMethodId:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/test-cases/${testMethodId}`);
+    getDistinctTestNames(searchTerm: string, pageSize: number = 20): Observable<string[]> {
+      return this.http.get<string[]>(`${this.apiUrl}/distinct-names?searchTerm=${searchTerm}&pageSize=${pageSize}`);
     }
+
 }

@@ -2,23 +2,22 @@
   <div class="card basic-data-table w-100 border-0 shadow-sm">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-list-ul"></i>
         Case Account List
       </label>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-3">
         <div class="w-25 input-group custom-search">
           <input
             type="text"
-            class="form-control border-secondary"
+            class="form-control"
             placeholder="Search..."
             [(ngModel)]="searchTerm"
             (keydown.enter)="onSearch()"
           />
-          <div class="input-group-text pe-auto border-secondary cursor-pointer" (click)="onSearch()">
+          <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
             <i class="bi bi-search"></i>
           </div>
         </div>
@@ -29,6 +28,7 @@
         <table class="table bordered-table align-middle w-100 small">
           <thead class="table-light">
             <tr class="text-center align-middle">
+              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
               <th *ngFor="let column of columns; let i = index" class="fw-semibold">
                 <div class="d-flex align-items-center justify-content-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -47,25 +47,52 @@
                     ></i>
                   </span>
                   <span
-                    *ngIf="!hasFilter(column.key) && i != 0 && column.filter"
+                    *ngIf="!hasFilter(column.key) && column.filter"
                     class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)"
                   >
-                    <i class="bi bi-funnel text-muted"></i>
+                    <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center fw-semibold">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             <tr *ngFor="let item of dataList" class="align-middle text-center">
-              <td class="fw-semibold">{{ item.caseNo || item.case_no }}</td>
-              <td>{{ item.customerName || item.customer_name }}</td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-3">
+                  <a class="icon-link" title="View"
+                    (click)="openCaseDetail(item.inwardId || item.id, 'view')">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                  </a>
+                  <a class="icon-link" title="Open"
+                    (click)="openCaseDetail(item.inwardId || item.id, 'edit')">
+                    <img src="/icons/edit.svg" alt="Open" class="icon-svg">
+                  </a>
+                </div>
+              </td>
+              <td class="fw-semibold">
+                <a
+                  [routerLink]="['/accounts/cases', item.inwardId || item.id]"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View details for ' + (item.caseNo || item.case_no)">
+                  {{ item.caseNo || item.case_no }}
+                </a>
+              </td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + (item.customerName || item.customer_name)">
+                  {{ item.customerName || item.customer_name }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName || item.customer_name }}</span>
+              </td>
               <td>{{ item.customerType || item.customer_type }}</td>
               <td>
                 <span [ngClass]="getStatusBadgeClass(item.piStatus || item.pi_status)">
@@ -82,26 +109,6 @@
                   {{ item.paymentStatus || item.payment_status || 'N/A' }}
                 </span>
               </td>
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
-                  <button
-                    class="btn btn-sm btn-outline-primary fw-semibold"
-                    title="Open"
-                    (click)="openCaseDetail(item.inwardId || item.id, 'edit')"
-                  >
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span class="d-none d-sm-inline"> Open</span>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-secondary fw-semibold"
-                    title="View"
-                    (click)="openCaseDetail(item.inwardId || item.id, 'view')"
-                  >
-                    <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline"> View</span>
-                  </button>
-                </div>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -114,54 +121,17 @@
       </div>
 
       <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-        <div>
-          <label class="me-2 fw-semibold small">Items per page:</label>
-          <select
-            class="form-select form-select-sm d-inline-block w-auto border-secondary"
-            [ngModel]="pageSize"
-            (ngModelChange)="changePageSize($event)"
-          >
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
-          </select>
-        </div>
-
-        <div class="text-muted small">Showing {{ getStartRecord() }} to {{ getEndRecord() }} of {{ totalItems }} records</div>
-
-        <nav aria-label="Page navigation">
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
-              <a class="page-link cursor" (click)="onPageChange(1)">First</a>
-            </li>
-            <li class="page-item" [ngClass]="{ disabled: pageNumber === 1 }">
-              <a class="page-link cursor" (click)="onPageChange(pageNumber - 1)">Previous</a>
-            </li>
-
-            <li
-              *ngFor="let page of [].constructor(totalPages); let i = index"
-              class="page-item"
-              [ngClass]="{ active: pageNumber === i + 1 }"
-            >
-              <a class="page-link cursor" (click)="onPageChange(i + 1)">{{ i + 1 }}</a>
-            </li>
-
-            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
-              <a class="page-link cursor" (click)="onPageChange(pageNumber + 1)">Next</a>
-            </li>
-            <li class="page-item" [ngClass]="{ disabled: pageNumber === totalPages }">
-              <a class="page-link cursor" (click)="onPageChange(totalPages)">Last</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-4">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
   </div>
 </div>
 

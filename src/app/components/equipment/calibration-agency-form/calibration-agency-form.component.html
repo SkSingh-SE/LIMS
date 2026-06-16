@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
     <div class="card-header card-form-header text-white text-center">
-        <h6 class="text-center">Calibration Agency Form</h6>
+        <label class="fw-medium">Calibration Agency Form</label>
     </div>
     <div class="card-body ">
         <form [formGroup]="calibrationForm" (ngSubmit)="onSubmit()">
@@ -23,8 +23,8 @@
                 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File</label>
-                    <ng-container *ngIf="calibrationForm.get('agreementFilePath')?.value; else uploadField">
+                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
+                    <ng-container *ngIf="calibrationForm.get('agreementFilePath')?.value || calibrationForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                             <span class="text-truncate me-2" type="button"
                                 (click)="openFileInNewTab(calibrationForm.get('agreementFilePath')?.value)"
@@ -43,6 +43,8 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
+                    <div *ngIf="calibrationForm.get('fileName')?.touched && calibrationForm.get('fileName')?.invalid"
+                        class="text-danger text-sm">Agreement File is required.</div>
                 </div>
                 <!--Contact Person 1-->
                 <div>
@@ -60,8 +62,10 @@
                         placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
                         (blur)="checkPhoneNumber($event)"
                         [ngClass]="{ 'is-invalid': calibrationForm.get('contactNo1')?.touched && calibrationForm.get('contactNo1')?.invalid }" />
-                    <div *ngIf="calibrationForm.get('contactNo1')?.touched && calibrationForm.get('contactNo1')?.invalid"
-                        class="text-danger text-sm">Contact No 1 is required.</div>
+                    <span *ngIf="calibrationForm.get('contactNo1')?.hasError('required') && calibrationForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact No 1 is required.</span>
+                    <span *ngIf="calibrationForm.get('contactNo1')?.hasError('pattern') && !calibrationForm.get('contactNo1')?.hasError('required') && calibrationForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 1-->
@@ -86,6 +90,8 @@
                     <label class="form-label">Contact No 2</label>
                     <input type="text" class="form-control" formControlName="contactNo2"
                         placeholder="Enter Contact No 2" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="calibrationForm.get('contactNo2')?.hasError('pattern') && calibrationForm.get('contactNo2')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 2-->
@@ -110,6 +116,8 @@
                     <label class="form-label">Contact No 3</label>
                     <input type="text" class="form-control" formControlName="contactNo3"
                         placeholder="Enter Contact No 3" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="calibrationForm.get('contactNo3')?.hasError('pattern') && calibrationForm.get('contactNo3')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 3-->
@@ -123,10 +131,9 @@
                 </div>
 
             </div>
-            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-
-                <a [routerLink]="['/oem']" class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a [routerLink]="['/calibration-agency']" class="btn btn-cancel">Cancel</a>
+                <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
             </div>
 
         </form>

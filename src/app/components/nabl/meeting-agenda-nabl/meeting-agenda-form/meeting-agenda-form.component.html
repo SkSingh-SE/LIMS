@@ -1,0 +1,193 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="agendaForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="docNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="issueDate" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Meeting Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('meetingDetails')">
+            <i class="bi" [ngClass]="openSections['meetingDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Meeting Details</span>
+          </div>
+          <div *ngIf="openSections['meetingDetails']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Meeting Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="meetingDate" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Meeting Time
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="time" class="form-control" formControlName="meetingTime" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Venue
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="venue" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Chairperson
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="chairperson" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Attendees -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('attendees')">
+            <i class="bi" [ngClass]="openSections['attendees'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Proposed Attendees</span>
+          </div>
+          <div *ngIf="openSections['attendees']" class="section-body">
+            <div formArrayName="attendees">
+              <div *ngFor="let attendee of attendees.controls; let i = index" [formGroupName]="i" class="row gy-2 mb-2 align-items-end">
+                <div class="col-md-6">
+                  <label class="form-label" *ngIf="i === 0">
+                    Name
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" formControlName="name" />
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label" *ngIf="i === 0">
+                    Designation
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" formControlName="designation" />
+                </div>
+                <div class="col-md-1">
+                  <button
+                    *ngIf="!isViewMode && attendees.length > 1"
+                    type="button"
+                    class="btn btn-remove btn-sm mb-1"
+                    (click)="removeAttendee(i)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAttendee()">
+              <i class="bi bi-plus"></i>
+              Add Attendee
+            </button>
+          </div>
+        </div>
+
+        <!-- Section IV: Agenda Items -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('agendaItems')">
+            <i class="bi" [ngClass]="openSections['agendaItems'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Agenda Items</span>
+          </div>
+          <div *ngIf="openSections['agendaItems']" class="section-body">
+            <div formArrayName="agendaItems">
+              <div *ngFor="let item of agendaItems.controls; let i = index" [formGroupName]="i" class="row gy-2 mb-2 align-items-end">
+                <div class="col-md-11">
+                  <label class="form-label" *ngIf="i === 0">
+                    Agenda Item
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" formControlName="item" />
+                </div>
+                <div class="col-md-1">
+                  <button
+                    *ngIf="!isViewMode && agendaItems.length > 1"
+                    type="button"
+                    class="btn btn-remove btn-sm mb-1"
+                    (click)="removeAgendaItem(i)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAgendaItem()">
+              <i class="bi bi-plus"></i>
+              Add Item
+            </button>
+          </div>
+        </div>
+
+        
+        <app-nabl-signature-section [parentForm]="agendaForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="agendaForm.invalid">
+            {{ isEditMode ? "Update Notice" : "Save Notice" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

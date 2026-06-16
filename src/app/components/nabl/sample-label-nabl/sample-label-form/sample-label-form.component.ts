@@ -1,0 +1,155 @@
+import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { SampleLabelNablService } from '../../../../services/sample-label-nabl.service';
+import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { ToastService } from '../../../../services/toast.service';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
+
+@Component({
+    selector: 'app-sample-label-nabl-form',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, NablSignatureSectionComponent],
+    templateUrl: './sample-label-form.component.html'
+})
+export class SampleLabelNablFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    requestForm!: FormGroup;
+    recordId: number = 0;
+    isEditMode = false;
+    isViewMode = false;
+    formTitle = 'Add Sample Label (F-33)';
+    formNumbers: string[] = NablFormsHelper.getFormNumbers();
+    openSections: { [key: string]: boolean } = { header: true, sample: true, analysis: true };
+
+    toggleSection(section: string): void {
+        this.openSections[section] = !this.openSections[section];
+    }
+
+    constructor(
+        private fb: FormBuilder,
+        private service: SampleLabelNablService,
+        private router: Router,
+        private route: ActivatedRoute,
+        private toastService: ToastService
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) { }
+
+    ngOnInit(): void {
+        this.initForm();
+        this.nablHeaderService.getFormDefaults('SampleLabel').subscribe({
+            next: (defaults) => {
+                this.requestForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
+        this.recordId = Number(this.route.snapshot.params['id']);
+
+        const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
+        if (path === 'details') {
+            this.isViewMode = true;
+            this.formTitle = 'View Sample Label';
+            this.requestForm.disable();
+        } else if (path === 'edit') {
+            this.isEditMode = true;
+            this.formTitle = 'Edit Sample Label';
+        }
+
+        if (this.recordId) {
+            this.loadData();
+        }
+    }
+
+    initForm(): void {
+        const today = new Date().toISOString().split('T')[0];
+        this.requestForm = this.fb.group({
+            id: [0],
+            formatNo: ['F-33'],
+            issueNo: ['03'],
+            revNo: ['00'],
+            sampleId: ['', Validators.required],
+            receiptDate: [today, Validators.required],
+            description: ['', Validators.required],
+            quantity: ['', Validators.required],
+            testParameters: ['', Validators.required],
+            preparedBy: [''],
+            status: ['Active']
+        });
+
+        // System-managed fields — always readonly
+        this.requestForm.get('issueNo')?.disable();
+        this.requestForm.get('revNo')?.disable();
+        this.requestForm.get('formatNo')?.disable();
+    }
+
+    loadData(): void {
+        this.service.getById(this.recordId).subscribe({
+            next: (data) => {
+                if (data) {
+                    this.requestForm.patchValue(data);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.requestForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.requestForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.requestForm.get('issueNo')?.disable();
+                this.requestForm.get('revNo')?.disable();
+                this.requestForm.get('formatNo')?.disable();
+                }
+            },
+            error: (error: any) => {
+                this.toastService.show(error?.error?.message || 'Operation failed', 'error');
+            }
+        });
+    }
+
+    onSubmit(): void {
+        if (this.requestForm.invalid) {
+            this.requestForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.requestForm.getRawValue();
+
+        const obs = this.isEditMode
+            ? this.service.update(this.recordId, formData)
+            : this.service.create(formData);
+
+        obs.subscribe({
+            next: (res) => {
+              this.saved = true;
+                this.toastService.show(res.message, 'success');
+                this.router.navigate(['/nabl/sample-label']);
+            },
+            error: (err) => {
+                this.toastService.show(err.message || 'Operation failed', 'error');
+            }
+        });
+    }
+
+    onCancel(): void {
+        this.router.navigate(['/nabl/sample-label']);
+    }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.requestForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.requestForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal , HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
@@ -14,21 +14,32 @@ import { RoleService } from '../../../services/role.service';
 import { AreaService } from '../../../services/area.service';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../services/auth.service';
+import { EmployeeUserManagementComponent } from '../employee-user-management/employee-user-management.component';
+import { EmployeeJobTrainingComponent } from '../employee-job-training/employee-job-training.component';
+import { EmployeePerformanceRecordComponent } from '../employee-performance-record/employee-performance-record.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { YearHelper } from '../../../utility/helper/year.helper';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { EmployeeAuthorizationService } from '../../../services/employee-authorization.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 @Component({
   selector: 'app-employee-form',
-  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent],
+  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent, FormFieldErrorComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
-export class EmployeeFormComponent {
+export class EmployeeFormComponent implements CanComponentDeactivate {
+  saved = false;
 
   isAdminUser: boolean = false;
   uploadedFiles: File[] = [];
   currentStep = signal(1);
-  isLoading = signal(false);
   showPassword = signal(false);
   employeeId!: number;
   isViewMode: boolean = false;
+  yearOptions: number[] = YearHelper.educationYears();
   formHeaders: { key: number, label: string }[] = [
     { key: 1, label: 'Basic Details' },
     { key: 2, label: 'Qualification' },
@@ -47,6 +58,8 @@ export class EmployeeFormComponent {
   activeFormKey: number = 1;
   residentialAreas: any[] = [];
   permanentAreas: any[] = [];
+  designationRoleName: string = '';
+  submitted = false;
   // Define the form group
   personalInfoForm!: FormGroup;
   qualificationForm!: FormGroup;
@@ -82,10 +95,14 @@ export class EmployeeFormComponent {
 
   documentList: any[] = [];
 
+  // Authorization tab data
+  authorizationRecords: any[] = [];
+  authorizationLoading = false;
+  authorizationLoaded = false;
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService) {
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private areaService: AreaService, private toastService: ToastService, private route: ActivatedRoute, private router: Router, private designationService: DesignationService, private departmentService: DepartmentService, private roleService: RoleService, private authService: AuthService, private unsavedChangesService: UnsavedChangesService, private employeeAuthorizationService: EmployeeAuthorizationService) {
     this.isAdminUser = this.authService.getUserData()?.isAdmin || false;
-   }
+  }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -101,14 +118,14 @@ export class EmployeeFormComponent {
 
     this.personalInfoForm = this.fb.group({
       id: [this.employeeId],
-      name: ['', [Validators.required, Validators.maxLength(100)]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       dateOfBirth: ['', Validators.required],
       bloodGroup: ['', Validators.maxLength(5)],
       mobileNo: [
         '',
         [
           Validators.required,
-          Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/),
+          Validators.pattern(/^[+]?\d{10,13}$/),
         ]
       ],
       gender: ['', Validators.required],
@@ -116,7 +133,7 @@ export class EmployeeFormComponent {
         '',
         [
           Validators.required,
-          Validators.pattern(/^\d{10}$|^\d{11}$|^\d{12}$/),
+          Validators.pattern(/^[+]?\d{10,13}$/),
         ]
       ],
       emailId: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
@@ -135,7 +152,7 @@ export class EmployeeFormComponent {
       permanentAddressLine1: ['', Validators.required],
       permanentAddressLine2: [''],
       permanentPinCode: ['', Validators.pattern(/^\d{6}$/)],
-      permanentAreaID: [''],
+      permanentAreaID: [null],
       permanentCity: [{ value: '', disabled: true }],
       permanentState: [{ value: '', disabled: true }],
       permanentCountry: [{ value: '', disabled: true }],
@@ -145,13 +162,17 @@ export class EmployeeFormComponent {
       accountHolderName: ['', Validators.maxLength(100)],
       accountNumber: ['', [Validators.maxLength(20), Validators.pattern(/^\d+$/)]],
       ifscCode: ['', [Validators.maxLength(11), Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
-      departmentID: [null],
-      reportingManagerID: [null],
-      designationID: [null],
-      dateOfJoin: [''],
-      roleID: [null],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      departmentID: [null, Validators.required],
+      reportingManagerID: [null, Validators.required],
+      designationID: [null, Validators.required],
+      dateOfJoin: ['', Validators.required],
+      // roleID derived from Designation → Role (not a form field)
+      password: ['', [Validators.required, Validators.minLength(8)]],
       relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
+      qualificationSummary: [''],
+      experience: [''],
+      trainingRecordsJson: [''],
+      competencyLevel: [''],
     });
 
     this.qualificationForm = this.fb.group({
@@ -173,12 +194,37 @@ export class EmployeeFormComponent {
     if (this.employeeId > 0) {
       this.activeFormKey = key;
       this.currentStep.set(key);
+      if (key === 4) {
+        this.loadAuthorizationRecords();
+      }
     } else if (this.activeFormKey !== key) {
       this.toastService.show('Please save the employee first.', 'warning');
     }
   }
+
+  loadAuthorizationRecords(): void {
+    if (!this.employeeId || this.authorizationLoaded) return;
+    this.authorizationLoading = true;
+    this.employeeAuthorizationService.getAll({
+      PageNumber: 1,
+      PageSize: 50,
+      searchTerm: '',
+      sortByColumn: 'id',
+      sortOrder: 'desc',
+      filter: [{ column: 'employeeId', type: 'equals', value: this.employeeId.toString(), value2: null }]
+    }).subscribe({
+      next: (res: any) => {
+        this.authorizationRecords = res.items || [];
+        this.authorizationLoading = false;
+        this.authorizationLoaded = true;
+      },
+      error: () => {
+        this.authorizationLoading = false;
+        this.authorizationRecords = [];
+      }
+    });
+  }
   loadEmployee() {
-    this.isLoading.set(true);
     this.employeeService.getEmployeeById(this.employeeId).subscribe({
       next: (data) => {
         this.personalInfoForm.patchValue(data);
@@ -186,6 +232,20 @@ export class EmployeeFormComponent {
           dateOfBirth: this.formatDateForInput(data.dateOfBirth),
           dateOfJoin: this.formatDateForInput(data.dateOfJoin)
         });
+
+        // Resolve role name from designation
+        if (data.designation?.role?.name) {
+          this.designationRoleName = data.designation.role.name;
+        } else if (data.designationID) {
+          this.designationService.getDesignationById(data.designationID).subscribe({
+            next: (designation) => {
+              this.designationRoleName = designation?.role?.name || '';
+            },
+            error: () => {
+              this.designationRoleName = '';
+            }
+          });
+        }
 
         this.setQualifications(data.qualifications || []);
 
@@ -195,12 +255,10 @@ export class EmployeeFormComponent {
         }
 
         this.loadEmployeeDocuments(data.documents || []);
-        this.isLoading.set(false);
       },
       error: (err) => {
         this.router.navigate(['/employee']);
         console.error('Error loading designation:', err);
-        this.isLoading.set(false);
         this.toastService.show("Something went wrong", 'error');
       }
 
@@ -227,51 +285,68 @@ export class EmployeeFormComponent {
     return this.roleService.getRoleDropdown(term, page, pageSize);
   }
   onDesignationSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ designationID: null }); this.designationRoleName = ''; return; }
     this.personalInfoForm.patchValue({ designationID: item.id });
+    // Fetch designation details to resolve the role from Designation -> Role
+    this.designationService.getDesignationById(item.id).subscribe({
+      next: (designation) => {
+        if (designation?.role?.name) {
+          this.designationRoleName = designation.role.name;
+        } else {
+          this.designationRoleName = '';
+        }
+      },
+      error: () => {
+        this.designationRoleName = '';
+      }
+    });
   }
   onDepartmentSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ departmentID: null }); return; }
     this.personalInfoForm.patchValue({ departmentID: item.id });
   }
   onEmployeeSelected(item: any) {
+    if (!item) { this.personalInfoForm.patchValue({ reportingManagerID: null }); return; }
     this.personalInfoForm.patchValue({ reportingManagerID: item.id });
   }
-  onRoleSelected(item: any) {
-    this.personalInfoForm.patchValue({ roleID: item.id });
+  // Role is derived from Designation — no manual role selection
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.personalInfoForm, path, this.submitted);
   }
 
   submitForm() {
-    if (this.personalInfoForm.valid) {
-      console.log('Form Submitted', this.personalInfoForm.value);
-
-      if (this.employeeId) {
-        // Update employee
-        this.employeeService.updateEmployee(this.employeeId, this.personalInfoForm.value).subscribe({
-          next: (response) => {
-            this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
-            // Optional: refresh or redirect
-          },
-          error: (error) => {
-            console.error('Error updating employee:', error);
-            this.toastService.show(`${error?.error?.message || 'Error updating employee'}`, 'error');
-          }
-        });
-      } else {
-        // Create new employee
-        this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
-          next: (response) => {
-            this.employeeId = response.id;
-            this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
-          },
-          error: (error) => {
-            console.error('Error creating employee:', error);
-            this.toastService.show(`${error?.error?.message || 'Error creating employee'}`, 'error');
-          }
-        });
-      }
-
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.personalInfoForm);
+    if (!this.personalInfoForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    if (this.employeeId) {
+      // Update employee
+      this.employeeService.updateEmployee(this.employeeId, this.personalInfoForm.value).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.toastService.show(`${response.message || 'Employee updated successfully.'}`, 'success');
+          this.router.navigate(['/employee']);
+        },
+        error: (error) => {
+          console.error('Error updating employee:', error);
+        }
+      });
     } else {
-      this.toastService.show('Form is invalid. Please check the fields.', 'warning');
-      this.personalInfoForm.markAllAsTouched(); // Mark all controls to show validation errors
+      // Create new employee
+      this.employeeService.createEmployee(this.personalInfoForm.value).subscribe({
+        next: (response) => {
+          this.saved = true;
+          this.employeeId = response.id;
+          this.toastService.show(`${response.message || 'Employee created successfully.'}`, 'success');
+          this.router.navigate(['/employee']);
+        },
+        error: (error) => {
+          console.error('Error creating employee:', error);
+        }
+      });
     }
   }
 
@@ -386,7 +461,7 @@ export class EmployeeFormComponent {
       employeeId: [data?.employeeID || this.employeeId || 0],
       qualification: [data?.qualification || '', Validators.required],
       schoolOrUniversity: [data?.schoolOrUniversity || '', Validators.required],
-      passingYear: [data?.passingYear || '', [Validators.required, Validators.min(1900)]],
+      passingYear: [data?.passingYear || null, Validators.required],
     });
     if (this.isViewMode) {
       group.disable(); // Disable the new group if in view mode
@@ -646,4 +721,17 @@ export class EmployeeFormComponent {
     });
   }
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!(this.personalInfoForm?.dirty || this.qualificationForm?.dirty || this.documentsForm?.dirty) || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if ((this.personalInfoForm?.dirty || this.qualificationForm?.dirty || this.documentsForm?.dirty) && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

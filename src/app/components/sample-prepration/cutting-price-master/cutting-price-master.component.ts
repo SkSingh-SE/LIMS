@@ -1,15 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../../services/toast.service';
 import { CuttingPriceMasterService } from '../../../services/cutting-price-master.service';
+import { SpecimenTypeService } from '../../../services/specimen-type.service';
+import { SettingsService } from '../../../services/settings.service';
+import { Observable } from 'rxjs';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 
 @Component({
   selector: 'app-cutting-price-master',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DecimalOnlyDirective, SearchableDropdownModalComponent, PaginationComponent],
   templateUrl: './cutting-price-master.component.html',
   styleUrl: './cutting-price-master.component.css'
 })
@@ -19,16 +24,21 @@ export class CuttingPriceMasterComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'cuttingType', type: 'string', label: 'Cutting Type', filter: true },
     { key: 'unitType', type: 'string', label: 'Unit Type', filter: true },
-    { key: 'ratePerUnit', type: 'string', label: 'Rate Per Unit', filter: true },
+    { key: 'specimenTypeName', type: 'string', label: 'Specimen Type', filter: true },
+    { key: 'sizeRange', type: 'string', label: 'Size Range (mm)', filter: false },
+    // { key: 'currentRatePerUnit', type: 'number', label: 'Normal Rate (₹)', filter: true },
+    // { key: 'currentRatePerUnitHard', type: 'number', label: 'Hard Rate (₹)', filter: true },
+    { key: 'versionCount', type: 'number', label: 'Years', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    specimenTypeName: 'string',
     cuttingType: 'string',
     unitType: 'string',
-    ratePerUnit: 'string'
+    currentRatePerUnit: 'number',
+    currentRatePerUnitHard: 'number'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -44,12 +54,11 @@ export class CuttingPriceMasterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -64,35 +73,98 @@ export class CuttingPriceMasterComponent implements OnInit {
   cuttingPriceForm!: FormGroup;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
-  customerTypeObject: any = null;
   cuttingPriceId: number = 0;
   formTitle = 'Cutting Price Master Form';
 
-  unitTypes = ['Per Cut', 'Per Minute', 'Per Sample'];
+  unitTypes = ['Per Cut', 'Per Minute', 'Per Sample', 'Job Dependent'];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private cuttingPriceService: CuttingPriceMasterService, private toastService: ToastService) {
+  selectedSpecimenTypeId: number = 0;
+
+  financialYears: any[] = [];
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cuttingPriceService: CuttingPriceMasterService,
+    private toastService: ToastService,
+    private specimenTypeService: SpecimenTypeService,
+    private settingsService: SettingsService
+  ) {
     this.route.params.subscribe(params => {
       this.cuttingPriceId = params['id'] || 0;
       if (this.cuttingPriceId > 0) {
         this.getDetails();
       }
     });
-
   }
-
 
   ngOnInit() {
     this.fetchData();
     this.initForm();
+    this.loadFinancialYears();
   }
+
   initForm() {
     this.cuttingPriceForm = this.fb.group({
       id: [0],
+      specimenTypeId: [null],
       cuttingType: ['', Validators.required],
       unitType: ['', Validators.required],
-      ratePerUnit: [0, [Validators.required, Validators.min(0)]],
-      remark: ['']
+      sizeRangeMin: [null, [Validators.min(0)]],
+      sizeRangeMax: [null, [Validators.min(0)]],
+      remark: [''],
+      versions: this.fb.array([])
     });
+    this.selectedSpecimenTypeId = 0;
+  }
+
+  loadFinancialYears() {
+    this.settingsService.getFinancialYearsDropdown().subscribe({
+      next: (data) => { this.financialYears = data || []; },
+      error: () => { this.financialYears = []; }
+    });
+  }
+
+  get versions(): FormArray {
+    return this.cuttingPriceForm.get('versions') as FormArray;
+  }
+
+  createVersionGroup(v?: any): FormGroup {
+    return this.fb.group({
+      id: [v?.id || 0],
+      financialYearId: [v?.financialYearId ?? null, Validators.required],
+      effectiveFrom: [v?.effectiveFrom ? String(v.effectiveFrom).substring(0, 10) : '', Validators.required],
+      ratePerUnit: [v?.ratePerUnit ?? 0, [Validators.required, Validators.min(0)]],
+      ratePerUnitHard: [v?.ratePerUnitHard ?? 0, [Validators.required, Validators.min(0)]]
+    });
+  }
+
+  // FY selected → auto-fill Effective From with that FY's start date (user can edit after).
+  onVersionFyChange(index: number): void {
+    const vg = this.versions.at(index);
+    const fy = this.financialYears.find(f => f.id === vg.get('financialYearId')?.value);
+    if (fy?.startDate) {
+      vg.get('effectiveFrom')?.setValue(String(fy.startDate).substring(0, 10));
+    }
+  }
+
+  addVersion(): void {
+    // Pick a financial year not already used by another version, so each row is distinct.
+    const usedFyIds = new Set(this.versions.controls.map(v => v.get('financialYearId')?.value));
+    const pick = this.financialYears.find(f => !usedFyIds.has(f.id))
+      || this.financialYears.find(f => f.isCurrent)
+      || this.financialYears[0];
+    this.versions.push(this.createVersionGroup({
+      financialYearId: pick?.id ?? null,
+      effectiveFrom: pick?.startDate ?? null
+    }));
+    this.cuttingPriceForm.markAsDirty();
+  }
+
+  removeVersion(index: number): void {
+    this.versions.removeAt(index);
+    this.cuttingPriceForm.markAsDirty();
   }
 
   fetchData() {
@@ -102,25 +174,36 @@ export class CuttingPriceMasterComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.listData = [];
-        this.isLoading.set(false);
       }
-    }
-
-    );
+    });
   }
+
   getDetails(): void {
-    this.cuttingPriceService.getCuttingPriceMasterById(this.cuttingPriceId).subscribe({
+    const requestId = this.cuttingPriceId;
+    this.cuttingPriceService.getCuttingPriceMasterById(requestId).subscribe({
       next: (response) => {
-        this.customerTypeObject = response;
-        this.cuttingPriceForm.patchValue(response);
+        if (this.cuttingPriceId !== requestId) return; // discard stale response
+        this.cuttingPriceForm.patchValue({
+          id: response.id,
+          specimenTypeId: response.specimenTypeId,
+          cuttingType: response.cuttingType,
+          unitType: response.unitType,
+          sizeRangeMin: response.sizeRangeMin,
+          sizeRangeMax: response.sizeRangeMax,
+          remark: response.remark
+        });
+        this.selectedSpecimenTypeId = response.specimenTypeId || 0;
+        this.versions.clear();
+        (response.versions || []).forEach((v: any) => this.versions.push(this.createVersionGroup(v)));
+        if (this.versions.length === 0) this.versions.push(this.createVersionGroup());
+        if (this.isViewMode) this.cuttingPriceForm.disable();
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.message || 'Error fetching record.', 'error');
       }
     });
   }
@@ -143,7 +226,7 @@ export class CuttingPriceMasterComponent implements OnInit {
       if (col.key === column) {
         this.filterColumnTitle = col.label;
       }
-    })
+    });
     this.filterValue = '';
     this.filterValue2 = '';
 
@@ -171,6 +254,16 @@ export class CuttingPriceMasterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -210,7 +303,7 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   changePageSize(event: Event) {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
@@ -218,6 +311,8 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -225,6 +320,13 @@ export class CuttingPriceMasterComponent implements OnInit {
 
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
+  }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
   hasFilter(column: string): boolean {
@@ -250,29 +352,28 @@ export class CuttingPriceMasterComponent implements OnInit {
       });
     }
   }
+
   openModal(type: string, id: number): void {
+    this.initForm();
+    this.cuttingPriceId = 0;
     if (id > 0) {
       this.cuttingPriceId = id;
-      this.getDetails();
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Cutting Price Master Form';
-      this.cuttingPriceForm.enable();
+      this.versions.push(this.createVersionGroup());
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Cutting Price Master Form';
-      this.cuttingPriceForm.enable();
-
-    }
-    else if (type === 'view') {
+      this.getDetails();
+    } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
       this.formTitle = 'View Cutting Price Master';
-      this.cuttingPriceForm.disable();
+      this.getDetails();
     }
 
     this.bsModal = new Modal(this.modalElement.nativeElement);
@@ -283,38 +384,66 @@ export class CuttingPriceMasterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.initForm();
+    this.cuttingPriceId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+  }
+
+  private hasDuplicateEffectiveFrom(): boolean {
+    const dates = this.versions.controls
+      .map(c => c.get('effectiveFrom')?.value)
+      .filter(v => !!v);
+    return new Set(dates).size !== dates.length;
   }
 
   onSubmit(): void {
-    if (this.cuttingPriceForm.valid) {
-      let formData = this.cuttingPriceForm.value;
-      if (this.isEditMode) {
-        this.cuttingPriceService.updateCuttingPriceMaster(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.cuttingPriceService.createCuttingPriceMaster(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    if (this.cuttingPriceForm.invalid) {
+      this.cuttingPriceForm.markAllAsTouched();
+      return;
+    }
+    if (this.versions.length === 0) {
+      this.toastService.show('At least one rate version is required.', 'error');
+      return;
+    }
+    if (this.hasDuplicateEffectiveFrom()) {
+      this.toastService.show('Duplicate Effective From date — each date can appear only once.', 'error');
+      return;
+    }
+
+    const formData = this.cuttingPriceForm.getRawValue();
+    if (this.isEditMode) {
+      this.cuttingPriceService.updateCuttingPriceMaster(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.cuttingPriceService.createCuttingPriceMaster(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 
+  fetchSpecimenTypeDropdown = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.specimenTypeService.getSpecimenTypeDropdown(searchTerm, pageNumber, pageSize);
+  };
+
+  onSpecimenTypeSelected(item: any): void {
+    this.cuttingPriceForm.patchValue({ specimenTypeId: item?.id || null });
+    this.selectedSpecimenTypeId = item?.id || 0;
+  }
 }
-
-

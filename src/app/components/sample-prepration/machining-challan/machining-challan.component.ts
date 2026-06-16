@@ -1,108 +1,158 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-
-export interface MachiningSample {
-  id: string;
-  sampleNo: string;
-  test: string;
-  method: string;
-  material: string;
-}
-
-export interface MachiningCase {
-  id: string;
-  caseNo: string;
-  samples: MachiningSample[];
-}
+import { FormsModule } from '@angular/forms';
+import { Observable, of } from 'rxjs';
+import { TestResultService } from '../../../services/test-result.service';
+import { SampleInwardService } from '../../../services/sample-inward.service';
+import { ToastService } from '../../../services/toast.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-machining-challan',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, SearchableDropdownComponent],
   templateUrl: './machining-challan.component.html',
-  styleUrl: './machining-challan.component.css'
+  styleUrl: './machining-challan.component.css',
 })
 export class MachiningChallanComponent implements OnInit {
+  // ── Case / Inward selection ──
+  selectedInwardId: number | null = null;
+  availableSamples: any[] = [];
 
-  cases: MachiningCase[] = [
-    {
-      id: 'case-1',
-      caseNo: 'DMSPL-004567',
-      samples: [
-        { id: 's1', sampleNo: '24-000001', test: 'Tensile Test', method: 'ASTM A370', material: 'Stainless Steel' },
-        { id: 's2', sampleNo: '24-000002', test: 'Tensile Test', method: 'ASTM A370', material: 'Stainless Steel' },
-        { id: 's3', sampleNo: '24-000003', test: 'Tensile Test', method: 'ASTM A370', material: 'Stainless Steel' },
-        { id: 's4', sampleNo: '24-000004', test: 'Tensile Test', method: 'ASTM A370', material: 'Stainless Steel' }
-      ]
+  // ── Sample selection ──
+  selectedSampleId: number | null = null;
+
+  // ── Machining data ──
+  loading = false;
+  machiningItems: any[] = [];
+
+  // ── Add new item ──
+  newDesc = '';
+  newAmount: number | null = null;
+  newRemark = '';
+
+  constructor(
+    private testResultService: TestResultService,
+    private inwardService: SampleInwardService,
+    private toastService: ToastService,
+  ) {}
+
+  ngOnInit(): void {}
+
+  // ── Case (Inward) Dropdown ──
+
+  fetchSampleInwardDropdown = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any> => {
+    return this.inwardService.getPreparationInwardDropdown(searchTerm, pageNumber, pageSize);
+  };
+
+  onInwardSelected(item: any): void {
+    if (!item) {
+      this.resetSelection();
+      return;
     }
-  ];
 
-  printedList: MachiningSample[] = [];
-  challanForm!: FormGroup;
+    this.selectedInwardId = item.id;
+    this.availableSamples = [];
+    this.selectedSampleId = null;
+    this.machiningItems = [];
 
-  testOptions = ['Tensile Test', 'Impact Test', 'Hardness Test'];
-  methodOptions = ['ASTM A370', 'IS 1608', 'ISO 6892-1'];
-  materialOptions = ['Stainless Steel', 'Mild Steel', 'Aluminium'];
-  preparationOptions = ['Flat', 'Round', 'Notch'];
-
-  constructor(private fb: FormBuilder) { }
-
-  ngOnInit(): void {
-    this.challanForm = this.fb.group({
-      caseId: [null, Validators.required],
-      samples: this.fb.array([])
+    // Load samples for this inward
+    this.inwardService.getSampleInwardById(item.id).subscribe({
+      next: (data: any) => {
+        this.availableSamples = (data?.sampleDetails || []).map((s: any) => ({
+          id: s.id,
+          name: s.sampleNo + (s.details ? ' - ' + s.details : ''),
+          sampleNo: s.sampleNo,
+        }));
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to load samples', 'error');
+      },
     });
   }
 
-  get samplesFA(): FormArray { return this.challanForm.get('samples') as FormArray; }
+  // ── Sample Dropdown (local filter over loaded samples) ──
 
-  onCaseChange(): void {
-    const caseId = this.challanForm.get('caseId')!.value;
-    const picked = this.cases.find(c => c.id === caseId);
-    while (this.samplesFA.length) this.samplesFA.removeAt(0);
-    if (picked) {
-      picked.samples.forEach(s => this.samplesFA.push(
-        this.fb.group({
-          selected: [false],
-          id: [s.id],
-          sampleNo: [s.sampleNo],
-          test: [s.test],
-          method: [s.method],
-          material: [s.material],
-          preparation: ['']
-        })
-      ));
+  fetchSampleDropdown = (searchTerm: string, _pageNumber: number, _pageSize: number): Observable<any[]> => {
+    if (!this.availableSamples.length) return of([]);
+    if (!searchTerm) return of(this.availableSamples);
+    const term = searchTerm.toLowerCase();
+    return of(this.availableSamples.filter(s => s.name.toLowerCase().includes(term)));
+  };
+
+  onSampleSelected(item: any): void {
+    if (!item) {
+      this.selectedSampleId = null;
+      this.machiningItems = [];
+      return;
     }
+    this.selectedSampleId = item.id;
+    this.loadItems();
   }
 
-  toggleAll(event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.samplesFA.controls.forEach(ctrl => ctrl.get('selected')!.setValue(checked));
+  // ── Reset ──
+
+  resetSelection(): void {
+    this.selectedInwardId = null;
+    this.availableSamples = [];
+    this.selectedSampleId = null;
+    this.machiningItems = [];
   }
 
-  printSelected(): void {
-    const selectedSamples: MachiningSample[] = [];
-    this.samplesFA.controls = this.samplesFA.controls.filter(ctrl => {
-      if (ctrl.get('selected')!.value) {
-        selectedSamples.push({
-          id: ctrl.get('id')!.value,
-          sampleNo: ctrl.get('sampleNo')!.value,
-          test: ctrl.get('test')!.value,
-          method: ctrl.get('method')!.value,
-          material: ctrl.get('material')!.value
-        });
-        return false;
-      }
-      return true;
+  // ── Load Machining Items ──
+
+  loadItems(): void {
+    if (!this.selectedSampleId) return;
+    this.loading = true;
+    this.testResultService.getMachiningItems(this.selectedSampleId).subscribe({
+      next: (data) => {
+        this.machiningItems = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.toastService.show(err?.error?.message || 'Failed to load machining items', 'error');
+      },
     });
-    this.printedList.push(...selectedSamples);
-    console.log('PRINT CHALLAN for', selectedSamples.map(s => s.sampleNo));
   }
 
-  reprint(sample: MachiningSample): void {
-    console.log('REPRINT CHALLAN for', sample.sampleNo);
+  // ── Add Item ──
+
+  addItem(): void {
+    if (!this.selectedSampleId || !this.newDesc?.trim() || !this.newAmount) return;
+    this.testResultService
+      .addMachiningItem(this.selectedSampleId, {
+        description: this.newDesc.trim(),
+        amount: this.newAmount,
+        remark: this.newRemark?.trim() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.newDesc = '';
+          this.newAmount = null;
+          this.newRemark = '';
+          this.loadItems();
+          this.toastService.show('Machining item added', 'success');
+        },
+        error: (err) => this.toastService.show(err?.error?.message || 'Failed to add item', 'error'),
+      });
   }
-  hasSelectedSamples(): boolean {
-    return this.samplesFA.controls.some(c => c.get('selected')!.value);
+
+  // ── Delete Item ──
+
+  deleteItem(itemId: number): void {
+    if (!confirm('Delete this machining charge?')) return;
+    this.testResultService.deleteMachiningItem(itemId).subscribe({
+      next: () => {
+        this.loadItems();
+        this.toastService.show('Machining item deleted', 'success');
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to delete item', 'error'),
+    });
+  }
+
+  // ── Total ──
+
+  get totalAmount(): number {
+    return this.machiningItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
   }
 }

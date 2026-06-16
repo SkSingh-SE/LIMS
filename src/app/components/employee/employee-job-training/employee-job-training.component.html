@@ -1,0 +1,288 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">Job Training & Evaluation</label>
+      <span class="text-white-50 small me-3">Read-only view from NABL records</span>
+    </div>
+
+    <div class="card-body">
+      <!-- Summary Cards -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-journal-check fs-2 text-primary mb-2"></i>
+              <h3 class="mb-0 fw-bold">{{ summaryData.totalInduction }}</h3>
+              <p class="text-muted small mb-0">Induction Trainings (F-6)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-clipboard-check fs-2 text-info mb-2"></i>
+              <h3 class="mb-0 fw-bold text-info">{{ summaryData.totalTrainingPlan }}</h3>
+              <p class="text-muted small mb-0">Training Plans (F-8)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-check-circle fs-2 text-success mb-2"></i>
+              <h3 class="mb-0 fw-bold text-success">{{ summaryData.completedTrainings }}</h3>
+              <p class="text-muted small mb-0">Completed Trainings</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-calendar-event fs-2 text-warning mb-2"></i>
+              <h3 class="mb-0 fw-bold text-warning">{{ summaryData.plannedTrainings }}</h3>
+              <p class="text-muted small mb-0">Planned Trainings</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Tabs -->
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeSection === 'induction'" (click)="switchSection('induction')" role="button">
+            <i class="bi bi-mortarboard me-1"></i> Induction Training (F-6)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeSection === 'trainingPlan'" (click)="switchSection('trainingPlan')" role="button">
+            <i class="bi bi-calendar3 me-1"></i> Training Plan (F-8)
+          </a>
+        </li>
+      </ul>
+
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()">
+          <div class="input-group-text pe-auto" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== INDUCTION TRAINING TABLE (F-6) ==================== -->
+      <div *ngIf="activeSection === 'induction'">
+        <!-- Loading -->
+        <div *ngIf="loadingInduction" class="d-flex justify-content-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!loadingInduction && inductionRecords.length > 0" class="table-responsive">
+          <table class="table bordered-table align-middle w-100">
+            <thead class="table-light">
+              <tr class="align-middle">
+                <th>SN</th>
+                <th *ngFor="let column of inductionColumns">
+                  <div class="d-flex align-items-center">
+                    <span class="dt-column-order">{{ column.label }}</span>
+                    <span class="d-flex flex-column ms-2 mt-2">
+                      <i class="bi bi-caret-up sorting-icon-up"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                        (click)="applySorting(column.key)"></i>
+                      <i class="bi bi-caret-down sorting-icon-down"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                        (click)="applySorting(column.key)"></i>
+                    </span>
+                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                      (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                      (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of inductionRecords; let i = index" class="text-sm">
+                <td>{{ (inductionPageNumber - 1) * inductionPageSize + i + 1 }}</td>
+                <td>{{ record.formCode }}</td>
+                <td>{{ record.trainerName || '-' }}</td>
+                <td>{{ record.trainerDesignation || '-' }}</td>
+                <td>{{ record.trainingDate | date: 'dd MMM, yyyy' }}</td>
+                <td>{{ record.parameter || '-' }}</td>
+                <td>{{ record.testMethodSop || '-' }}</td>
+                <td>
+                  <span *ngIf="record.evaluationMode" [ngClass]="getEvaluationModeClass(record.evaluationMode)">
+                    {{ record.evaluationMode }}
+                  </span>
+                  <span *ngIf="!record.evaluationMode">-</span>
+                </td>
+                <td>{{ record.remarks || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- No Records -->
+        <div *ngIf="!loadingInduction && inductionRecords.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+            <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+            <div class="fw-semibold">No induction training records found</div>
+            <small class="text-muted mt-1">Induction training records (F-6) for this employee will appear here</small>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="!loadingInduction && inductionRecords.length > 0" class="d-flex justify-content-between align-items-center mt-2">
+          <div class="d-flex align-items-center">
+            <select [ngModel]="inductionPageSize" class="form-select w-auto" (change)="changeInductionPageSize($event)">
+              <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+            </select>
+          </div>
+          <div class="text-muted small">Showing {{ getInductionStartRecord() }} to {{ getInductionEndRecord() }} of {{ inductionTotalItems }} records</div>
+          <ul class="pagination mb-0 d-flex align-items-center">
+            <li class="page-item" [class.disabled]="inductionPageNumber === 1">
+              <a class="page-link" (click)="onInductionPageChange(inductionPageNumber - 1)">Previous</a>
+            </li>
+            <li *ngFor="let page of inductionTotalPages" class="page-item" [class.active]="inductionPageNumber === page">
+              <a class="page-link" (click)="onInductionPageChange(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="inductionPageNumber === inductionTotalPagesCount">
+              <a class="page-link" (click)="onInductionPageChange(inductionPageNumber + 1)">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ==================== TRAINING PLAN TABLE (F-8) ==================== -->
+      <div *ngIf="activeSection === 'trainingPlan'">
+        <!-- Loading -->
+        <div *ngIf="loadingTrainingPlan" class="d-flex justify-content-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!loadingTrainingPlan && trainingPlanRecords.length > 0" class="table-responsive">
+          <table class="table bordered-table align-middle w-100">
+            <thead class="table-light">
+              <tr class="align-middle">
+                <th>SN</th>
+                <th *ngFor="let column of trainingPlanColumns">
+                  <div class="d-flex align-items-center">
+                    <span class="dt-column-order">{{ column.label }}</span>
+                    <span class="d-flex flex-column ms-2 mt-2">
+                      <i class="bi bi-caret-up sorting-icon-up"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                        (click)="applySorting(column.key)"></i>
+                      <i class="bi bi-caret-down sorting-icon-down"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                        (click)="applySorting(column.key)"></i>
+                    </span>
+                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                      (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                      (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of trainingPlanRecords; let i = index" class="text-sm">
+                <td>{{ (trainingPlanPageNumber - 1) * trainingPlanPageSize + i + 1 }}</td>
+                <td>{{ record.formCode }}</td>
+                <td>{{ record.trainingTopic || '-' }}</td>
+                <td>
+                  <span *ngIf="record.trainingType" [ngClass]="getTrainingTypeClass(record.trainingType)">
+                    {{ record.trainingType }}
+                  </span>
+                  <span *ngIf="!record.trainingType">-</span>
+                </td>
+                <td>{{ record.trainerName || '-' }}</td>
+                <td>{{ record.plannedDate | date: 'dd MMM, yyyy' }}</td>
+                <td>{{ record.actualDate ? (record.actualDate | date: 'dd MMM, yyyy') : '-' }}</td>
+                <td>{{ record.duration || '-' }}</td>
+                <td>
+                  <span *ngIf="record.trainingStatus" [ngClass]="getTrainingStatusClass(record.trainingStatus)">
+                    {{ record.trainingStatus }}
+                  </span>
+                  <span *ngIf="!record.trainingStatus">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- No Records -->
+        <div *ngIf="!loadingTrainingPlan && trainingPlanRecords.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+            <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+            <div class="fw-semibold">No training plan records found</div>
+            <small class="text-muted mt-1">Training plan records (F-8) for this employee will appear here</small>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="!loadingTrainingPlan && trainingPlanRecords.length > 0" class="d-flex justify-content-between align-items-center mt-2">
+          <div class="d-flex align-items-center">
+            <select [ngModel]="trainingPlanPageSize" class="form-select w-auto" (change)="changeTrainingPlanPageSize($event)">
+              <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
+            </select>
+          </div>
+          <div class="text-muted small">Showing {{ getTrainingPlanStartRecord() }} to {{ getTrainingPlanEndRecord() }} of {{ trainingPlanTotalItems }} records</div>
+          <ul class="pagination mb-0 d-flex align-items-center">
+            <li class="page-item" [class.disabled]="trainingPlanPageNumber === 1">
+              <a class="page-link" (click)="onTrainingPlanPageChange(trainingPlanPageNumber - 1)">Previous</a>
+            </li>
+            <li *ngFor="let page of trainingPlanTotalPages" class="page-item" [class.active]="trainingPlanPageNumber === page">
+              <a class="page-link" (click)="onTrainingPlanPageChange(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="trainingPlanPageNumber === trainingPlanTotalPagesCount">
+              <a class="page-link" (click)="onTrainingPlanPageChange(trainingPlanPageNumber + 1)">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative">
+    <!-- Close Button -->
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+      (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input *ngIf="activeFilterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <input *ngIf="activeFilterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+    <input *ngIf="activeFilterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+      class="form-control mb-2" [(ngModel)]="filterValue" />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>

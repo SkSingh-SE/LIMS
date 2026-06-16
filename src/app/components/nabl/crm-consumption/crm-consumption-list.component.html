@@ -1,0 +1,13 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    title="F-18: Reference Material Consumption Records"
+    [columns]="columns"
+    [data]="items"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [addRoute]="'/reference-material-consumption/create'"
+    [baseRoute]="'/reference-material-consumption'"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)">
+  </app-nabl-register-table>
+</div>

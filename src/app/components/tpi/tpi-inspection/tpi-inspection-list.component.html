@@ -1,0 +1,139 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+    <div class="card basic-data-table w-100">
+        <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+            <label class="text-center text-md fw-medium ms-3">TPI Inspections</label>
+            <a routerLink="/tpi-inspection/create" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-plus-lg me-1"></i> Create
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <div class="w-25 input-group custom-search">
+                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+                        (keydown.enter)="onSearch()">
+                    <div class="input-group-text pe-auto" (click)="onSearch()">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="inspectionList.length > 0 || filters.length > 0" class="table-responsive">
+                <table class="table bordered-table align-middle w-100">
+                    <thead class="table-light">
+                        <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
+                            <th *ngFor="let column of columns; let i = index">
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">{{ column.label }}</span>
+                                    <span class="d-flex flex-column ms-2 mt-2">
+                                        <i class="bi bi-caret-up sorting-icon-up"
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                                            (click)="applySorting(column.key)"></i>
+                                        <i class="bi bi-caret-down sorting-icon-down"
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                                            (click)="applySorting(column.key)"></i>
+                                    </span>
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                                        (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of inspectionList; let i = index" class="text-sm">
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/tpi-inspection/details', item.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + item.sampleNumber">
+                                    {{ item.sampleNumber }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge" [ngClass]="stageBadgeClass[item.tpiStage] || 'bg-secondary'">
+                                    {{ stageLabels[item.tpiStage] || 'Unknown' }}
+                                </span>
+                            </td>
+                            <td>{{ item.tpiAgencyName }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="statusBadgeClass[item.tpiStatus] || 'bg-secondary'">
+                                    {{ statusLabels[item.tpiStatus] || 'Unknown' }}
+                                </span>
+                            </td>
+                            <td>{{ item.scheduledDate | date:"dd MMM, yyyy" }}</td>
+                            <td>{{ item.inspectorName }}</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                    <a [routerLink]="['/tpi-inspection/details', item.id]" class="btn btn-sm btn-outline-secondary"
+                                        title="View Details"><i class="bi bi-eye"></i></a>
+                                    <button *ngIf="item.tpiStatus === 0" class="btn btn-sm btn-outline-info"
+                                        (click)="updateStatus(item.id, 1, 'Schedule')">Schedule</button>
+                                    <button *ngIf="item.tpiStatus === 1" class="btn btn-sm btn-add"
+                                        (click)="updateStatus(item.id, 2, 'Start')">Start</button>
+                                    <button *ngIf="item.tpiStatus === 2" class="btn btn-sm btn-outline-success"
+                                        (click)="updateStatus(item.id, 3, 'Approve')">Approve</button>
+                                    <button *ngIf="item.tpiStatus === 2" class="btn btn-sm btn-remove"
+                                        (click)="updateStatus(item.id, 4, 'Reject')">Reject</button>
+                                    <button *ngIf="item.tpiStatus === 0 || item.tpiStatus === 1" class="btn btn-sm btn-cancel"
+                                        (click)="updateStatus(item.id, 5, 'Waive')">Waive</button>
+                                    <button *ngIf="item.tpiStatus === 3 || item.tpiStatus === 4 || item.tpiStatus === 5"
+                                        class="btn btn-sm btn-outline-dark" (click)="exportReleaseNote(item.id)"
+                                        [disabled]="exportingId === item.id" title="Export Release Note">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div *ngIf="inspectionList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                    <div class="fw-semibold">No records found</div>
+                </div>
+            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+    <div class="card py-2 px-3 shadow position-relative">
+        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+            (click)="closeFilterModal()"></button>
+        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+        <select class="form-select mb-2" [(ngModel)]="filterType">
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
+            <option value="Equal">Equal</option>
+            <option value="NotEqual">Not Equal</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
+        </select>
+        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+            class="form-control mb-2" [(ngModel)]="filterValue" />
+        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+        </div>
+        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+    </div>
+</div>

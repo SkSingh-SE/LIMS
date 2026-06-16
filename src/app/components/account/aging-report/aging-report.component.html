@@ -1,0 +1,97 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Aging Report</label>
+      <button class="btn btn-outline-light btn-sm me-3" (click)="loadReport()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body">
+
+  <!-- Filter -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <small class="text-muted">
+      Showing {{ filteredData.length }} of {{ reportData.length }} customers
+    </small>
+    <div class="w-25 input-group custom-search">
+      <input type="text" class="form-control" placeholder="Search customer..."
+             [(ngModel)]="customerFilter" (input)="onFilterChange()" />
+      <div class="input-group-text">
+        <i class="bi bi-search"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Table -->
+  <div *ngIf="filteredData.length > 0" class="table-responsive">
+    <table class="table bordered-table align-middle w-100 small mb-0">
+      <thead class="table-light">
+        <tr class="align-middle">
+          <th class="sortable" (click)="sortBy('customerName')">
+            Customer
+            <i class="bi ms-1" [ngClass]="getSortIcon('customerName')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('current')">
+            Current (0-30)
+            <i class="bi ms-1" [ngClass]="getSortIcon('current')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days30')">
+            30 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days30')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days60')">
+            60 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days60')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days90')">
+            90 Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days90')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('days90Plus')">
+            90+ Days
+            <i class="bi ms-1" [ngClass]="getSortIcon('days90Plus')"></i>
+          </th>
+          <th class="text-end sortable" (click)="sortBy('total')">
+            Total
+            <i class="bi ms-1" [ngClass]="getSortIcon('total')"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of filteredData">
+          <td class="fw-semibold">{{ row.customerName }}</td>
+          <td class="text-end">{{ (row.current || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days30 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days60 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (row.days90 || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">
+            <span [class.text-danger]="(row.days90Plus || 0) > 0" [class.fw-bold]="(row.days90Plus || 0) > 0">
+              {{ (row.days90Plus || 0) | number:'1.2-2' }}
+            </span>
+          </td>
+          <td class="text-end fw-bold">{{ (row.total || 0) | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="table-warning fw-bold">
+          <td>Grand Total</td>
+          <td class="text-end">{{ getTotal('current') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days30') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days60') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days90') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getTotal('days90Plus') | number:'1.2-2' }}</td>
+          <td class="text-end">{{ getGrandTotal() | number:'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredData.length === 0" class="alert alert-light border border-secondary text-center py-4">
+    <i class="bi bi-info-circle text-secondary"></i>
+    <p class="mb-0 text-secondary">No aging data available.</p>
+  </div>
+
+    </div>
+  </div>
+</div>

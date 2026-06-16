@@ -1,0 +1,158 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Purchase Order Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="record()" [title]="'Purchase Order (F-22)'" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        mainTitle="Purchase Order"
+        [formatNo]="record()?.formatNo || 'F-22'"
+        [issueNo]="record()?.issueNo || '01'"
+         [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-22')"
+        [revNo]="record()?.revNo || '00'"
+        [issueDate]="record()?.date || ''"
+      [revDate]="'--'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Section I: PO & Vendor Info -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. ORDER & VENDOR DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 20%">Doc Number</td>
+              <td style="width: 30%">{{ record()?.documentNo }}</td>
+              <td class="lbl" style="width: 20%">PO Date</td>
+              <td style="width: 30%">{{ record()?.poDate | date: "dd/MM/yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Supplier Name</td>
+              <td>{{ record()?.supplierName }}</td>
+              <td class="lbl">Reference Indent No.</td>
+              <td>{{ record()?.referenceIndentName || "--" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Supplier Address</td>
+              <td>{{ record()?.supplierAddress }}</td>
+              <td class="lbl">Order Type</td>
+              <td>{{ record()?.orderType }}</td>
+            </tr>
+            <tr *ngIf="record()?.gstNo">
+              <td class="lbl">Supplier GST</td>
+              <td colspan="3">{{ record()?.gstNo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section II: Line Items -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. LINE ITEMS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 40px">SN</th>
+              <th>Description / Specification</th>
+              <th style="width: 80px">Qty</th>
+              <th style="width: 60px">Unit</th>
+              <th style="width: 120px">Unit Price ({{ record()?.currency }})</th>
+              <th style="width: 120px">Total ({{ record()?.currency }})</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of record()?.items; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ item.description }}</td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td class="text-center">{{ item.unitOfMeasure }}</td>
+              <td class="text-end">{{ item.unitPrice | number: "1.2-2" }}</td>
+              <td class="text-end fw-bold">{{ item.totalAmount | number: "1.2-2" }}</td>
+            </tr>
+          </tbody>
+          <tfoot class="small">
+            <tr>
+              <td colspan="5" class="text-end lbl">Sub Total</td>
+              <td class="text-end fw-bold">{{ record()?.totalAmount | number: "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td colspan="5" class="text-end lbl">Tax (GST)</td>
+              <td class="text-end fw-bold text-secondary">{{ record()?.gstAmount | number: "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td colspan="5" class="text-end lbl fw-bold text-uppercase">Grand Total</td>
+              <td class="text-end fw-bold fs-6">&#8377; {{ record()?.grandTotal | number: "1.2-2" }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Section III: Delivery & Terms -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. DELIVERY & PAYMENT</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Expected Delivery Date</td>
+              <td style="width: 75%">{{ record()?.deliveryDate | date: "dd/MM/yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Payment Terms</td>
+              <td>{{ record()?.paymentTerms }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section IV: Terms & Conditions -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. TERMS & CONDITIONS</div>
+        <div class="sec-body" [innerHTML]="record()?.tearmCondition"></div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record()?.preparedBy || ''"
+          [issuedByName]="record()?.reviewedBy || ''"
+          [reviewedApprovedByName]="record()?.approvedBy || ''">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

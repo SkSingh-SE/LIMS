@@ -5,27 +5,38 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { Observable } from 'rxjs';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
+import { VersionStatus } from '../../../utility/status_flow/enums/version-status.enum';
+import { YearHelper } from '../../../utility/helper/year.helper';
 
 @Component({
   selector: 'app-test-method-specification',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent],
   templateUrl: './test-method-specification.component.html',
-  styleUrl: './test-method-specification.component.css'
+  styleUrl: './test-method-specification.component.css',
 })
 export class TestMethodSpecificationComponent implements OnInit {
   testSpecificationForm!: FormGroup;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
+  yearOptions: number[] = YearHelper.standardYears();
   selectedStandardOrganization: any = {};
   testMethodSpecificationID: number = 0;
+  VersionStatus = VersionStatus;
 
-  constructor(private fb: FormBuilder, private toastService: ToastService, private standardOrganizationService: StandardOrgnizationService, private testMethodService: TestMethodSpecificationService, private route: ActivatedRoute, private router: Router) { }
+  constructor(
+    private fb: FormBuilder,
+    private toastService: ToastService,
+    private standardOrganizationService: StandardOrgnizationService,
+    private testMethodService: TestMethodSpecificationService,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       this.testMethodSpecificationID = Number(params.get('id'));
     });
     const state = history.state as { mode?: string };
@@ -43,7 +54,7 @@ export class TestMethodSpecificationComponent implements OnInit {
       this.loadTestMethodSpecification(this.testMethodSpecificationID);
     } else {
       this.addVersion(true);
-      this.onDefaultChange(0);
+      this.onActivateVersion(0);
     }
   }
 
@@ -54,8 +65,8 @@ export class TestMethodSpecificationComponent implements OnInit {
       standardOrganizationID: ['', Validators.required],
       testMethodStandard: ['', Validators.required],
       name: ['', Validators.required],
-      part:[''],
-      versions: this.fb.array([])
+      part: [''],
+      versions: this.fb.array([]),
     });
   }
   get versions(): FormArray {
@@ -66,13 +77,18 @@ export class TestMethodSpecificationComponent implements OnInit {
     return this.fb.group({
       id: [0],
       testMethodSpecificationID: [0],
-      default: [false],
+      status: [VersionStatus.Draft],
       version: ['', Validators.required],
+      year: [null],
+      effectiveDate: [new Date().toISOString().split('T')[0]],
+      supersededDate: [null],
+      reviewDate: [null],
+      changeReason: [''],
       standardFile: ['', Validators.required],
       standardFilePath: [''],
       uploadReferenceID: [null],
       file: [null],
-      isVersionAdded: [flag]
+      isVersionAdded: [flag],
     });
   }
 
@@ -86,6 +102,12 @@ export class TestMethodSpecificationComponent implements OnInit {
 
   removeVersion(index: number): void {
     if (this.versions.length > 1) {
+      const version = this.versions.at(index);
+      // Only allow removing Draft versions that haven't been saved
+      if (version.get('status')?.value === VersionStatus.Superseded || version.get('status')?.value === VersionStatus.Withdrawn) {
+        this.toastService.show('Cannot remove superseded or withdrawn versions.', 'warning');
+        return;
+      }
       this.versions.removeAt(index);
     }
   }
@@ -109,25 +131,33 @@ export class TestMethodSpecificationComponent implements OnInit {
             standardOrganizationID: response.standardOrganizationID,
             testMethodStandard: response.testMethodStandard,
             name: response.name,
-            isDisabled: response.isDisabled
+            part: response.part || '',
+            isDisabled: response.isDisabled,
           });
           this.versions.clear();
 
-          // Ensure only one default is true and put default version at the top
-          let defaultFound = false;
+          // Versions come pre-sorted from API (Active first)
           response.versions.forEach((version: any) => {
-            if (version.default && !defaultFound) {
-              defaultFound = true;
-              const versionGroup = this.createVersionGroup();
-              versionGroup.patchValue(version);
-              this.versions.insert(0, versionGroup); // insert default version at top
-            } else {
-              version.default = false;
-              const versionGroup = this.createVersionGroup();
-              versionGroup.patchValue(version);
-              this.versions.push(versionGroup);
-            }
+            const versionGroup = this.createVersionGroup();
+            versionGroup.patchValue({
+              id: version.id,
+              testMethodSpecificationID: version.testMethodSpecificationID,
+              status: version.status,
+              version: version.version,
+              year: version.year != null ? +version.year : null,
+              effectiveDate: version.effectiveDate ? version.effectiveDate.split('T')[0] : null,
+              supersededDate: version.supersededDate ? version.supersededDate.split('T')[0] : null,
+              reviewDate: version.reviewDate ? version.reviewDate.split('T')[0] : null,
+              changeReason: version.changeReason,
+              standardFile: version.standardFile,
+              standardFilePath: version.standardFilePath,
+              uploadReferenceID: version.uploadReferenceID,
+            });
+            this.versions.push(versionGroup);
           });
+
+          // Disable read-only versions (Superseded/Withdrawn)
+          this.applyVersionDisabledState();
 
           if (this.isViewMode) {
             this.testSpecificationForm.disable();
@@ -136,13 +166,15 @@ export class TestMethodSpecificationComponent implements OnInit {
             this.testSpecificationForm.disable();
           } else {
             this.testSpecificationForm.enable();
-            this.testSpecificationForm.get('isDisabled')?.enable(); // Keep checkbox enabled
+            this.testSpecificationForm.get('isDisabled')?.enable();
+            // Re-apply version disabled state after enabling form
+            this.applyVersionDisabledState();
           }
         }
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
-      }
+      },
     });
   }
 
@@ -170,7 +202,7 @@ export class TestMethodSpecificationComponent implements OnInit {
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'image/jpeg',
-        'image/png'
+        'image/png',
       ];
 
       if (!allowedTypes.includes(file.type)) {
@@ -178,30 +210,22 @@ export class TestMethodSpecificationComponent implements OnInit {
         event.target.value = '';
         return;
       }
-      let previewUrl = '';
-      const reader = new FileReader();
-      reader.onload = () => {
-        previewUrl = reader.result as string;
-      };
-      reader.readAsDataURL(file);
       this.versions.at(index).patchValue({ standardFile: file.name, file: file });
     }
   }
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-       const baseUrl = environment.baseUrl;
+      const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
-    } else {
-
     }
   }
   removeFile(index: number): void {
-    this.versions.at(index).patchValue({ standardFile: '', file: null });
+    this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
-  getCaption(year: string): string {
+  getCaption(year: any): string {
     const org = this.selectedStandardOrganization?.name;
     const std = this.testSpecificationForm.get('testMethodStandard')?.value;
     return org && std && year ? `${org} ${std} - ${year}` : '';
@@ -218,24 +242,100 @@ export class TestMethodSpecificationComponent implements OnInit {
         error: (error) => {
           console.error(error);
           this.toastService.show(error.message, 'error');
-        }
+        },
       });
     } else {
       this.testSpecificationForm.get('isDisabled')?.setValue(false);
     }
+  }
 
+  applyVersionDisabledState() {
+    this.versions.controls.forEach((group, idx) => {
+      const status = group.get('status')?.value;
+      if (status === VersionStatus.Superseded || status === VersionStatus.Withdrawn) {
+        group.disable({ emitEvent: false });
+        // Keep status readable for UI badges
+        group.get('status')?.enable({ emitEvent: false });
+      } else {
+        group.enable({ emitEvent: false });
+      }
+    });
+  }
 
+  onActivateVersion(index: number) {
+    const versions = this.testSpecificationForm.get('versions') as FormArray;
+    versions.controls.forEach((group, idx) => {
+      if (idx !== index) {
+        const currentStatus = group.get('status')?.value;
+        if (currentStatus === VersionStatus.Active) {
+          group.get('status')?.setValue(VersionStatus.Superseded, { emitEvent: false });
+          group.get('supersededDate')?.setValue(new Date().toISOString().split('T')[0], { emitEvent: false });
+        }
+      } else {
+        group.get('status')?.setValue(VersionStatus.Active, { emitEvent: false });
+        group.get('effectiveDate')?.setValue(new Date().toISOString().split('T')[0], { emitEvent: false });
+      }
+    });
+    this.applyVersionDisabledState();
+  }
+
+  onWithdrawVersion(index: number) {
+    const reason = prompt('Enter reason for withdrawal:');
+    if (reason !== null) {
+      const version = this.versions.at(index);
+      version.get('status')?.setValue(VersionStatus.Withdrawn);
+      version.get('changeReason')?.setValue(reason);
+      version.get('supersededDate')?.setValue(new Date().toISOString().split('T')[0]);
+      this.applyVersionDisabledState();
+    }
+  }
+
+  isVersionReadOnly(index: number): boolean {
+    const status = this.versions.at(index).get('status')?.value;
+    return status === VersionStatus.Superseded || status === VersionStatus.Withdrawn;
+  }
+
+  getStatusLabel(index: number): string {
+    const status = this.versions.at(index).get('status')?.value;
+    switch (status) {
+      case VersionStatus.Active:
+        return 'CURRENT';
+      case VersionStatus.Draft:
+        return 'DRAFT';
+      case VersionStatus.Superseded:
+        return 'SUPERSEDED';
+      case VersionStatus.Withdrawn:
+        return 'WITHDRAWN';
+      default:
+        return '';
+    }
+  }
+
+  getStatusBadgeClass(index: number): string {
+    const status = this.versions.at(index).get('status')?.value;
+    switch (status) {
+      case VersionStatus.Active:
+        return 'bg-success';
+      case VersionStatus.Draft:
+        return 'bg-warning text-dark';
+      case VersionStatus.Superseded:
+        return 'bg-secondary';
+      case VersionStatus.Withdrawn:
+        return 'bg-danger';
+      default:
+        return 'bg-light';
+    }
   }
 
   submit() {
     if (this.testSpecificationForm.valid) {
-      console.log(this.testSpecificationForm.value);
       const raw = this.testSpecificationForm.getRawValue();
       const formData = new FormData();
       formData.append('id', raw.id.toString());
       formData.append('standardOrganizationID', raw.standardOrganizationID);
       formData.append('testMethodStandard', raw.testMethodStandard);
       formData.append('name', raw.name);
+      formData.append('part', raw.part || '');
       formData.append('isDisabled', raw.isDisabled ? 'true' : 'false');
 
       const versionsArray: any[] = [];
@@ -244,12 +344,16 @@ export class TestMethodSpecificationComponent implements OnInit {
         versionsArray.push({
           id: version.id,
           testMethodSpecificationID: version.testMethodSpecificationID,
-          default: version.default,
+          status: version.status,
           version: version.version,
           year: version.year,
+          effectiveDate: version.effectiveDate,
+          supersededDate: version.supersededDate,
+          reviewDate: version.reviewDate,
+          changeReason: version.changeReason,
           standardFile: version.standardFile,
           standardFilePath: version.standardFilePath,
-          uploadReferenceID: version.uploadReferenceID || null
+          uploadReferenceID: version.uploadReferenceID || null,
         });
 
         if (version.file) {
@@ -268,7 +372,7 @@ export class TestMethodSpecificationComponent implements OnInit {
           },
           error: (error) => {
             this.toastService.show(error.message, 'error');
-          }
+          },
         });
       } else {
         this.testMethodService.createTestMethodSpecification(formData).subscribe({
@@ -281,31 +385,20 @@ export class TestMethodSpecificationComponent implements OnInit {
           },
           error: (error) => {
             this.toastService.show(error.message, 'error');
-          }
+          },
         });
       }
-
     } else {
       this.testSpecificationForm.markAllAsTouched();
     }
   }
-  onDefaultChange(selectedIndex: number) {
-    const versions = this.testSpecificationForm.get('versions') as FormArray;
-    versions.controls.forEach((group, idx) => {
-      if (idx !== selectedIndex) {
-        group.get('default')?.setValue(false, { emitEvent: false });
-      }else{
-        group.get('default')?.setValue(true, { emitEvent: false });
-      }
-    });
-  }
+
   moveVersionUp(index: number): void {
     if (index === 0) return;
     const versions = this.versions;
     const current = versions.at(index);
     versions.removeAt(index);
     versions.insert(index - 1, current);
-    this.onDefaultChange(index - 1);
   }
 
   moveVersionDown(index: number): void {
@@ -314,8 +407,5 @@ export class TestMethodSpecificationComponent implements OnInit {
     const current = versions.at(index);
     versions.removeAt(index);
     versions.insert(index + 1, current);
-    this.onDefaultChange(index + 1);
   }
-
-
 }

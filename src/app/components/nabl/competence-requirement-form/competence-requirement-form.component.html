@@ -1,0 +1,143 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+    <div class="card w-100 shadow-lg">
+        <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+            <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+            <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="goBack()">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </button>
+        </div>
+        <div class="card-body">
+            <form [formGroup]="requirementForm" (ngSubmit)="onSubmit()">
+
+                <!-- Section I: Header Information -->
+                <div class="accordion-section mb-3">
+                    <div class="section-header" (click)="toggleSection('header')">
+                        <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                        <span class="fw-bold ms-2">I. Header Information</span>
+                        <div class="ms-auto pe-3 text-muted small">NABL Compliance Header</div>
+                    </div>
+                    <div *ngIf="openSections['header']" class="section-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" formControlName="formatNo"
+                                    list="formNumbersList" placeholder="e.g. F-4">
+                                <datalist id="formNumbersList">
+                                    <option *ngFor="let form of formNumbers" [value]="form"></option>
+                                </datalist>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Issue No</label>
+                                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Rev No</label>
+                                <input type="text" class="form-control bg-light" formControlName="revNo" readonly>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check form-switch mt-4 pt-2">
+                                    <input class="form-check-input" type="checkbox" id="isExternal"
+                                        formControlName="isExternal">
+                                    <label class="form-check-label fw-bold ms-2" for="isExternal">External
+                                        Provider?</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section II: Position & Activity Information -->
+                <div class="accordion-section mb-3">
+                    <div class="section-header" (click)="toggleSection('position')">
+                        <i class="bi" [ngClass]="openSections['position'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                        <span class="fw-bold ms-2">II. Position & Activity Details</span>
+                    </div>
+                    <div *ngIf="openSections['position']" class="section-body">
+                        <div class="row g-3">
+                            <div class="col-md-6" *ngIf="!requirementForm.get('isExternal')?.value">
+                                <label class="form-label fw-medium">Position / Designation <span
+                                        class="text-danger">*</span></label>
+                                <app-searchable-dropdown [hideLabel]="true" [fetchDataFn]="getDesignations"
+                                    [placeholder]="'Search Position...'"
+                                    [selectedItem]="requirementForm.get('positionId')?.value"
+                                    (itemSelected)="onDesignationSelected($event)" [isDisabled]="isViewMode">
+                                </app-searchable-dropdown>
+                                <div *ngIf="requirementForm.get('positionId')?.touched && requirementForm.get('positionId')?.invalid"
+                                    class="text-danger text-sm mt-1">
+                                    Position is required.
+                                </div>
+                            </div>
+
+                            <div class="col-md-6" *ngIf="requirementForm.get('isExternal')?.value">
+                                <label class="form-label fw-medium">Related Activity <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" formControlName="relatedActivity"
+                                    placeholder="e.g. Calibration of Balances">
+                                <div *ngIf="requirementForm.get('relatedActivity')?.touched && requirementForm.get('relatedActivity')?.invalid"
+                                    class="text-danger text-sm mt-1">
+                                    Activity is required.
+                                </div>
+                            </div>
+
+                            <!-- <div class="col-md-6">
+                                <label class="form-label fw-medium">Approved By (Mandatory) <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" formControlName="approvedBy" placeholder="Enter Approver's Name">
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section III: Criteria -->
+                <div class="accordion-section mb-3">
+                    <div class="section-header" (click)="toggleSection('criteria')">
+                        <i class="bi" [ngClass]="openSections['criteria'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                        <span class="fw-bold ms-2">III. Competence Criteria</span>
+                    </div>
+                    <div *ngIf="openSections['criteria']" class="section-body">
+                        <div class="row mb-4">
+                            <div class="row d-flex">
+                                <label class="form-label fw-bold small text-muted">Minimum Educational Requirements
+                                    <span class="text-danger">*</span></label>
+                                <quill-editor formControlName="minimumEducation" [modules]="quillModules"
+                                    [readOnly]="isViewMode" class="w-100"
+                                    placeholder="Specify educational qualifications (e.g., M.Sc in Chemistry)..."></quill-editor>
+                                <div *ngIf="requirementForm.get('minimumEducation')?.touched && requirementForm.get('minimumEducation')?.invalid"
+                                    class="text-danger text-sm mt-1">
+                                    Education is required.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="row d-flex">
+                                <label class="form-label fw-bold small text-muted">Minimum Experience Requirements <span
+                                        class="text-danger">*</span></label>
+                                <quill-editor formControlName="minimumExperience" [modules]="quillModules"
+                                    [readOnly]="isViewMode" class="w-100"
+                                    placeholder="Specify experience requirements (e.g., 2 years in testing)..."></quill-editor>
+                                <div *ngIf="requirementForm.get('minimumExperience')?.touched && requirementForm.get('minimumExperience')?.invalid"
+                                    class="text-danger text-sm mt-1">
+                                    Experience is required.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <app-nabl-signature-section [parentForm]="requirementForm"></app-nabl-signature-section>
+
+                <!-- Footer Actions -->
+                <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
+                    <button type="submit" class="btn btn-save">
+                        {{ isEditMode ? 'Update' : 'Save' }} Requirement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

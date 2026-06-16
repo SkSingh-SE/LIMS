@@ -1,0 +1,119 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Competence Requirement Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="requirement" [orientation]="orientation">
+    <ng-container header>
+      <!-- Reusable Document Header -->
+      <app-nabl-print-header
+          formatNo="F-7C"
+          mainTitle="COMPETENCE REQUIREMENT DOCUMENT"
+          [docNo]="'DMSPL / Level-04 / Format / F-7C'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- Position / Activity Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">POSITION DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Position / Activity</td>
+              <td>{{ getDisplayText() }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Requirement Type</td>
+              <td>{{ requirement.isExternal ? 'External Activity Provider' : 'Internal Staff' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Educational / Technical Requirements -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EDUCATIONAL / TECHNICAL REQUIREMENTS</div>
+        <div class="sec-body" [innerHTML]="requirement.minimumEducation"></div>
+      </div>
+
+      <!-- Experience Requirements -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EXPERIENCE REQUIREMENTS</div>
+        <div class="sec-body" style="white-space: pre-wrap;">{{ requirement.minimumExperience }}</div>
+      </div>
+
+      <!-- Acceptance / Approval -->
+      <!-- <div class="doc-section mb-3">
+        <div class="sec-title">ACCEPTANCE / APPROVAL</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Approved By</td>
+              <td>{{ requirement.approvedBy }}</td>
+              <td class="lbl" style="width: 20%">Signature</td>
+              <td style="width: 20%;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div> -->
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="requirement.preparedBy"
+          [issuedByName]="requirement.reviewedBy"
+          [reviewedApprovedByName]="requirement.approvedBy">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

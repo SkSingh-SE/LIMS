@@ -1,0 +1,58 @@
+.cursor-pointer { cursor: pointer; }
+.cursor { cursor: pointer; }
+
+.filter-modal {
+  position: absolute;
+  display: none;
+  z-index: 1000;
+}
+
+.sorting-icon-up {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -3px;
+}
+
+.sorting-icon-down {
+  font-size: 18px;
+  line-height: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -3px;
+}
+
+/* Expanded Panel */
+.expanded-panel td {
+  background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%) !important;
+}
+
+tr.cursor:hover { background-color: #f8f9fa; }
+
+.action-icon-link {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+.action-icon-link:hover {
+  transform: scale(1.1);
+}
+.action-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Custom Modal */
+.modal-backdrop-custom {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); z-index: 1040;
+}
+
+.modal-custom {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); z-index: 1050;
+  background: #fff; border-radius: 8px; padding: 20px;
+  min-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}

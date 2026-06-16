@@ -1,0 +1,230 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+    <div class="card basic-data-table w-100">
+        <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+            <label class="text-center text-md fw-medium ms-3">Hardness Equivalence List</label>
+            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
+                <i class="bi bi-plus-lg"></i> Create Hardness Equivalence
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <div class="w-25 input-group custom-search">
+                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+                        (keydown.enter)="onSearch()">
+                    <div class="input-group-text pe-auto" (click)="onSearch()">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="hardnessEquivalenceList.length > 0 || filters.length > 0" class="table-responsive">
+                <table class="table bordered-table align-middle w-100">
+                    <thead class="table-light">
+                        <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
+                            <th *ngFor="let column of columns; let i = index">
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">{{ column.label }}</span>
+                                    <span class="d-flex flex-column ms-2 mt-2">
+                                        <i class="bi bi-caret-up sorting-icon-up"
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                                            (click)="applySorting(column.key)"></i>
+                                        <i class="bi bi-caret-down sorting-icon-down"
+                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                                            (click)="applySorting(column.key)"></i>
+                                    </span>
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                                        (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of hardnessEquivalenceList; let i = index" class="text-sm">
+
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-3">
+                                    <a (click)="openModal('view',item.id)" class="icon-link" title="View">
+                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
+                                    </a>
+                                    <a (click)="openModal('edit',item.id)" class="icon-link" title="Edit">
+                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                                    </a>
+                                    <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
+                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ item.hardnessScale }}</td>
+                            <td>{{ item.indenterSize }}</td>
+                            <td>{{ item.load }}</td>
+                            <td>{{ item.fromValue }}</td>
+                            <td>{{ item.toValue }}</td>
+                            <td>{{ item.equivalentScale }}</td>
+                            <td>{{ item.equivalentFromValue }}</td>
+                            <td>{{ item.equivalentToValue }}</td>
+                            <td>{{ item.standardReference }}</td>                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div *ngIf="hardnessEquivalenceList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                    <div class="fw-semibold">No records found</div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+    <div class="card py-2 px-3 shadow position-relative">
+        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+            (click)="closeFilterModal()"></button>
+        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+        <select class="form-select mb-2" [(ngModel)]="filterType">
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
+            <option value="Equal">Equal</option>
+            <option value="NotEqual">Not Equal</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
+            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
+        </select>
+        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+            class="form-control mb-2" [(ngModel)]="filterValue" />
+        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+        </div>
+        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit/View Hardness Equivalence -->
+<div class="modal fade modal-fade modal-xl" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+    aria-labelledby="hardnessEquivalenceModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header card-form-header text-white">
+                <label class="modal-title fw-medium" id="hardnessEquivalenceModalLabel">
+                    {{ formTitle }}
+                </label>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close"
+                    (click)="closeModal()"></button>
+            </div>
+            <form [formGroup]="hardnessEquivalenceForm" (ngSubmit)="onSubmit()">
+                <div class="modal-body row row-cols-3 row-gap-2 position-relative">
+
+                    <div>
+                        <label class="form-label">Hardness Scale <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" formControlName="hardnessScale"
+                            placeholder="e.g. BHN"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('hardnessScale')?.touched && hardnessEquivalenceForm.get('hardnessScale')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('hardnessScale')?.invalid && hardnessEquivalenceForm.get('hardnessScale')?.touched"
+                            class="text-danger text-sm">Hardness Scale is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Indenter Size</label>
+                        <input type="text" class="form-control" formControlName="indenterSize"
+                            placeholder="e.g. 10mm"
+                            [attr.disabled]="isViewMode ? true : null" />
+                    </div>
+
+                    <div>
+                        <label class="form-label">Load</label>
+                        <input type="text" class="form-control" formControlName="load"
+                            placeholder="e.g. 3000 kgf"
+                            [attr.disabled]="isViewMode ? true : null" />
+                    </div>
+
+                    <div>
+                        <label class="form-label">From Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" formControlName="fromValue"
+                            placeholder="Enter From Value"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('fromValue')?.touched && hardnessEquivalenceForm.get('fromValue')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('fromValue')?.invalid && hardnessEquivalenceForm.get('fromValue')?.touched"
+                            class="text-danger text-sm">From Value is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">To Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" formControlName="toValue"
+                            placeholder="Enter To Value"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('toValue')?.touched && hardnessEquivalenceForm.get('toValue')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('toValue')?.invalid && hardnessEquivalenceForm.get('toValue')?.touched"
+                            class="text-danger text-sm">To Value is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Equivalent Scale <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" formControlName="equivalentScale"
+                            placeholder="e.g. HRC"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('equivalentScale')?.touched && hardnessEquivalenceForm.get('equivalentScale')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('equivalentScale')?.invalid && hardnessEquivalenceForm.get('equivalentScale')?.touched"
+                            class="text-danger text-sm">Equivalent Scale is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Equivalent From Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" formControlName="equivalentFromValue"
+                            placeholder="Enter Equivalent From"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('equivalentFromValue')?.touched && hardnessEquivalenceForm.get('equivalentFromValue')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('equivalentFromValue')?.invalid && hardnessEquivalenceForm.get('equivalentFromValue')?.touched"
+                            class="text-danger text-sm">Equivalent From Value is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Equivalent To Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" formControlName="equivalentToValue"
+                            placeholder="Enter Equivalent To"
+                            [ngClass]="{'is-invalid': hardnessEquivalenceForm.get('equivalentToValue')?.touched && hardnessEquivalenceForm.get('equivalentToValue')?.invalid}"
+                            [attr.disabled]="isViewMode ? true : null" />
+                        <span *ngIf="hardnessEquivalenceForm.get('equivalentToValue')?.invalid && hardnessEquivalenceForm.get('equivalentToValue')?.touched"
+                            class="text-danger text-sm">Equivalent To Value is required.</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Standard Reference</label>
+                        <input type="text" class="form-control" formControlName="standardReference"
+                            placeholder="e.g. ASTM E10"
+                            [attr.disabled]="isViewMode ? true : null" />
+                    </div>
+                </div>
+
+                <div *ngIf="!isViewMode" class="modal-footer">
+                    <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save"
+                        [disabled]="hardnessEquivalenceForm.invalid">
+                        {{ isEditMode ? 'Update' : 'Save' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

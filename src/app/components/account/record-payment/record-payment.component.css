@@ -1,0 +1,28 @@
+.success-icon {
+  font-size: 4rem;
+}
+
+.invoice-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.invoice-item {
+  padding: 10px 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.invoice-item:hover {
+  background-color: #f8f9fa;
+  border-color: #dc3545;
+}
+
+.invoice-item.selected {
+  background-color: #fce4e6;
+  border-color: #dc3545;
+}
+

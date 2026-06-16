@@ -1,0 +1,30 @@
+<div class="signature-block-container">
+    <h6 *ngIf="title" class="block-title">{{ title }}</h6>
+    <table class="table table-bordered signature-table">
+        <thead>
+            <tr>
+                <th>Name of Employee</th>
+                <th>Designation</th>
+                <th>Signature</th>
+                <th *ngIf="showDateColumn">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let entry of signatories">
+                <td>{{ entry.name }}</td>
+                <td>{{ entry.designation }}</td>
+                <td class="sig-cell">
+                    <span *ngIf="entry.signature">{{ entry.signature }}</span>
+                </td>
+                <td *ngIf="showDateColumn">{{ entry.date || '' }}</td>
+            </tr>
+            <!-- Empty rows for additional signatures -->
+            <tr *ngFor="let _ of [].constructor(Math.max(0, 5 - signatories.length))">
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td class="sig-cell">&nbsp;</td>
+                <td *ngIf="showDateColumn">&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

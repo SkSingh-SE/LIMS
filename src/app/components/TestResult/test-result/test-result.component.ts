@@ -6,12 +6,13 @@ import { TestResultService } from '../../../services/test-result.service';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { ToastService } from '../../../services/toast.service';
 import { PaymentService } from '../../../services/payment.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-test-result',
   templateUrl: './test-result.component.html',
   styleUrls: ['./test-result.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, PaginationComponent ]
 })
 export class TestResultComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -25,7 +26,7 @@ export class TestResultComponent implements OnInit {
     { key: 'tests', type: 'string', label: 'Tests', filter: false },
     { key: 'sampleStatus', type: 'string', label: 'Status', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     sampleNo: 'string',
@@ -49,12 +50,11 @@ export class TestResultComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -74,7 +74,6 @@ export class TestResultComponent implements OnInit {
   }
 
   fetchData() {
-    this.isLoading.set(true);
     // Prefer dashboard-specific API; fall back to list if needed
     this.testresultService.getAllTestResults(this.payload).subscribe({
       next: (resp) => {
@@ -82,12 +81,10 @@ export class TestResultComponent implements OnInit {
         this.totalItems = resp?.totalRecords || 0;
         this.pageSize = resp?.pageSize || 10;
         this.pageNumber = resp?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Fallback list API failed:', err);
         this.listData = [];
-        this.isLoading.set(false);
       }
     });
 
@@ -98,27 +95,27 @@ export class TestResultComponent implements OnInit {
    * Maps API response to component display format
    */
   enrichDashboardItem(item: any) {
-    // Validate critical fields
-    if (!item.sampleId && !item.id) {
-      console.warn('[Dashboard] Missing sample ID for item:', item);
-    }
-    if (!item.sampleNo) {
-      console.warn('[Dashboard] Missing sample number for item:', item);
-    }
-    if (!item.tests) {
-      console.warn('[Dashboard] Missing tests for sample:', item.sampleNo || item.id);
-    }
-
     return {
       ...item,
-      // Ensure proper ID references for routing
       sampleId: item.sampleId || item.id,
       planId: item.planId || null,
-      // Ensure tests string is comma-separated test names
-      tests: this.formatTestsDisplay(item.tests),
-      // Check if sample has long-term tests that are active
+      // Convert comma-separated string to array of {testName} objects for badge rendering
+      tests: this.convertTestsToArray(item.tests),
+      // Use DB sample status for the badge — more accurate than computed status
+      sampleStatus: item.currentStageStatus || item.sampleStatus,
       hasLongTermTests: this.hasActiveLongTermTests(item)
     };
+  }
+
+  private convertTestsToArray(tests: any): { testName: string }[] {
+    if (!tests) return [];
+    if (typeof tests === 'string') {
+      return tests.split(',').map(t => t.trim()).filter(t => t.length > 0).map(t => ({ testName: t }));
+    }
+    if (Array.isArray(tests)) {
+      return tests.map((t: any) => ({ testName: t.testName || t.name || t.toString() }));
+    }
+    return [];
   }
 
   /**
@@ -212,6 +209,17 @@ export class TestResultComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -259,6 +267,8 @@ export class TestResultComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -267,6 +277,14 @@ export class TestResultComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;

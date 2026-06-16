@@ -1,0 +1,156 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Intermediate Check Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="record()" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record()?.formatNo || 'F-16'"
+          [mainTitle]="'INTERMEDIATE CHECK RECORDS'"
+          [docNo]="'DMSPL / Level-04 / Format / F-16'"
+          [issueNo]="record()?.issueNo || '01'"
+          [revNo]="record()?.revNo || '00'"
+          [issueDate]="record()?.date || ''">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Equipment & Period Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EQUIPMENT & PERIOD DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Equipment Name</td>
+              <td style="width: 42%">{{ record()?.equipmentName }}</td>
+              <td class="lbl" style="width: 15%">Period</td>
+              <td style="width: 18%">{{ getMonthName(record()?.checkMonth || 1) }} {{ record()?.checkYear }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Equipment No.</td>
+              <td>{{ record()?.equipmentNo }}</td>
+              <td class="lbl">Doc No.</td>
+              <td>{{ record()?.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Location</td>
+              <td colspan="3">{{ record()?.location }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Daily Records Table -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">DAILY CHECK RECORDS</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th rowspan="2" style="width: 40px;">Date</th>
+              <th rowspan="2" style="width: 60px;">Status</th>
+              <th colspan="2">Observation / Condition</th>
+              <th rowspan="2" style="width: 80px;">Time</th>
+            </tr>
+            <tr class="tbl-head">
+              <th>Equipment Condition</th>
+              <th>Specific Observations</th>
+            </tr>
+          </thead>
+          <tbody class="font-xs">
+            <tr *ngFor="let row of record()?.dailyRecords">
+              <td class="fw-bold">{{ row.date | date: 'dd/MM' }}</td>
+              <td>
+                <span [ngClass]="{'text-success': row.checkStatus === 'ok', 'text-danger': row.checkStatus === 'deviation'}">
+                  {{ row.checkStatus | uppercase }}
+                </span>
+              </td>
+              <td>{{ row.equipmentCondition }}</td>
+              <td>{{ row.observations }}</td>
+              <td>{{ row.checkTime }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary Section -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">SUMMARY</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 50%">Deviations Observed</th>
+              <th style="width: 50%">Corrective Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div [innerHTML]="record()?.deviationsObserved"></div>
+                <div *ngIf="!record()?.deviationsObserved" class="text-muted fst-italic">None recorded</div>
+              </td>
+              <td>
+                <div [innerHTML]="record()?.correctiveActions"></div>
+                <div *ngIf="!record()?.correctiveActions" class="text-muted fst-italic">N/A</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Next Calibration Due</td>
+              <td class="fw-bold">{{ record()?.nextCalibrationDue | date: 'dd MMM, yyyy' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="record()?.checkedBy || 'Technician'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="record()?.verifiedBy || 'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

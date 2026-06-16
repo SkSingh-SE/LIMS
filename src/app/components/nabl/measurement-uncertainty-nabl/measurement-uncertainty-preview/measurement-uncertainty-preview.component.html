@@ -1,0 +1,193 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Measurement Uncertainty Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'MEASUREMENT OF UNCERTAINTY RECORDS'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- I. Basic Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. BASIC INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Document No.</td>
+              <td class="fw-bold" style="width: 20%">{{ data.documentNo }}</td>
+              <td class="lbl" style="width: 20%">Date</td>
+              <td>{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- II. Test Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. TEST INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Test Parameter</td>
+              <td>{{ data.testParameter }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Test Method</td>
+              <td>{{ data.testMethod }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Equipment Used</td>
+              <td>{{ data.equipmentUsed }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Sample Description</td>
+              <td>{{ data.sampleDescription }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- III. Measurement Readings -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. MEASUREMENT READINGS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 80px">Sr. No.</th>
+              <th>Measured Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reading of data.readings; let i = index" class="text-center">
+              <td>{{ i + 1 }}</td>
+              <td>{{ reading.measuredValue }}</td>
+              <td>{{ reading.unit }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- IV. Uncertainty Budget -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. UNCERTAINTY BUDGET</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th>Source of Uncertainty</th>
+              <th>Type</th>
+              <th>Distribution</th>
+              <th>Std. Uncertainty (u)</th>
+              <th>Sensitivity (c)</th>
+              <th>Contribution (u×c)²</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let src of data.uncertaintySources" class="text-center small">
+              <td class="text-start">{{ src.source }}</td>
+              <td>{{ src.type }}</td>
+              <td>{{ src.distribution }}</td>
+              <td>{{ src.standardUncertainty }}</td>
+              <td>{{ src.sensitivityCoefficient }}</td>
+              <td>{{ src.contribution }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- V. Statistical Analysis Results -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. STATISTICAL ANALYSIS RESULTS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Mean (x̄)</td>
+              <td>{{ data.mean }}</td>
+              <td class="lbl" style="width: 30%">Combined Uncertainty (uc)</td>
+              <td class="fw-bold">{{ data.combinedUncertainty }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Standard Deviation (s)</td>
+              <td>{{ data.standardDeviation }}</td>
+              <td class="lbl">Coverage Factor (k)</td>
+              <td>{{ data.coverageFactor }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Type A Uncertainty</td>
+              <td>{{ data.typeAUncertainty }}</td>
+              <td class="lbl">Confidence Level</td>
+              <td>{{ data.confidenceLevel }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Type B Uncertainty</td>
+              <td>{{ data.typeBUncertainty }}</td>
+              <td class="lbl fw-bold">Expanded Uncertainty (U)</td>
+              <td class="fw-bold text-success fs-5">± {{ data.expandedUncertainty }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- VI. Remarks -->
+      <div class="doc-section mb-3" *ngIf="data.remarks">
+        <div class="sec-title">VI. REMARKS</div>
+        <div class="sec-body">{{ data.remarks }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

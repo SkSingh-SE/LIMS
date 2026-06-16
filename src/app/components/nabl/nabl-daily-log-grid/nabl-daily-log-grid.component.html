@@ -1,0 +1,42 @@
+<div class="daily-log-container">
+    <!-- Room / Month / Year Header -->
+    <div class="log-header-info" *ngIf="roomName || month || year">
+        <div class="row mb-2">
+            <div class="col-6" *ngIf="roomName">
+                <strong>Room:-</strong> {{ roomName }}
+            </div>
+            <div class="col-3" *ngIf="month">
+                <strong>Month:-</strong> {{ month }}
+            </div>
+            <div class="col-3" *ngIf="year">
+                <strong>Year:-</strong> {{ year }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Table -->
+    <table class="table table-bordered daily-log-table">
+        <thead>
+            <tr>
+                <th class="date-col">Date</th>
+                <th *ngFor="let col of columns" [style.width]="col.width || 'auto'">
+                    <div>{{ col.label }}</div>
+                    <div *ngIf="col.subLabel" class="sub-label">{{ col.subLabel }}</div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let day of dayRows">
+                <td class="date-col text-center fw-bold">{{ day }}</td>
+                <td *ngFor="let col of columns">
+                    <ng-container *ngIf="!editable">
+                        {{ getEntry(day)[col.key] || '' }}
+                    </ng-container>
+                    <input *ngIf="editable" type="text" class="form-control form-control-sm grid-input"
+                           [value]="getEntry(day)[col.key] || ''"
+                           (change)="onValueChange(day, col.key, $any($event.target).value)">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

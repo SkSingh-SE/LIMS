@@ -1,0 +1,135 @@
+<div class="container-fluid mt-4 no-print">
+  <div class="d-flex justify-content-between mb-3">
+    <button (click)="goBack()" class="btn btn-cancel shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i>
+      Back to List
+    </button>
+    <button (click)="print()" class="btn btn-primary shadow-sm px-4">
+      <i class="bi bi-printer me-1"></i>
+      Print Record
+    </button>
+  </div>
+</div>
+<div class="nabl-preview-page">
+<app-print-frame orientation="portrait" *ngIf="record() as data">
+  <ng-container header>
+    <app-nabl-print-header
+      [formatNo]="data.formatNo || 'F-9'"
+      mainTitle="TRAINING ATTENDANCE RECORD"
+      [docNo]="'DMSPL / Level-04 / Format / F-9'"
+      [issueNo]="data.issueNo || '03'"
+      [issueDate]="data.date || ''"
+      [revNo]="data.revNo || '00'"
+      [revDate]="data.date || ''"
+    ></app-nabl-print-header>
+  </ng-container>
+
+  <ng-container body>
+    <div class="my-4">
+      <!-- Session Identification -->
+      <!-- <div class="row g-3 mb-4 border rounded p-3 bg-light mx-0 shadow-sm print-no-shadow">
+        <div class="col-12 border-bottom pb-2">
+          <div class="text-muted small text-uppercase fw-bold">Training Program Title</div>
+          <div class="fw-bold fs-5 text-primary">{{ data.trainingPlanName }}</div>
+        </div>
+        <div class="col-md-4 mt-2">
+          <div class="text-muted small text-uppercase">Venue</div>
+          <div class="fw-semibold">{{ data.venueMode }}</div>
+        </div>
+        <div class="col-md-4 mt-2">
+          <div class="text-muted small text-uppercase">Faculty / Trainer</div>
+          <div class="fw-semibold">{{ data.trainerName }}</div>
+        </div>
+        <div class="col-md-4 mt-2">
+          <div class="text-muted small text-uppercase">Date & Time</div>
+          <div class="fw-semibold">{{ data.trainingDatetime }}</div>
+        </div>
+      </div> -->
+
+      <table class="table table-bordered border-dark align-middle mb-4 shadow-sm print-no-shadow">
+  <thead class="bg-light text-center small fw-bold">
+    <tr>
+      <th colspan="3" class="text-start py-2">
+        <span class="text-muted small text-uppercase d-block">Training Program Title</span>
+        <span class="fs-5 text-primary">{{ data.trainingPlanName }}</span>
+      </th>
+    </tr>
+    <tr class="text-uppercase text-muted small">
+      <th width="33%">Venue</th>
+      <th width="33%">Faculty / Trainer</th>
+      <th width="33%">Date & Time</th>
+    </tr>
+  </thead>
+  <tbody class="text-center fw-semibold">
+    <tr>
+      <td>{{ data.venueMode }}</td>
+      <td>{{ data.trainerName }}</td>
+      <td>{{ data.trainingDatetime }}</td>
+    </tr>
+  </tbody>
+</table>
+
+      <!-- Attendance Table -->
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered border-dark align-middle">
+          <thead class="bg-light text-center small fw-bold">
+            <tr>
+              <th width="60">SN</th>
+              <th>Name of Participant</th>
+              <th width="250">Participant's Feedback</th>
+              <!-- <th width="150" class="no-print">Signature</th> -->
+              <th width="150" class="print-only">Signature</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of data.participants; let i = index" class="text-center small">
+              <td class="fw-bold">{{ p.slNo || i + 1 }}</td>
+              <td class="text-start ps-3 fw-medium">{{ p.participantName }}</td>
+              <td>{{ p.feedback }}</td>
+              <td class="signature-cell p-2">
+                <!-- <span class="text-muted opacity-50">{{ p.signaturePreview }}</span> -->
+                 <img [src]="p.filePath" alt="Signature"  style="max-height: 45px; max-width: 120px; object-fit: contain;" *ngIf="p.filePath" class="signature-image" />
+              </td>
+            </tr>
+            <!-- Empty rows to satisfy form requirement if too few -->
+            <!-- <tr *ngFor="let i of [1, 2, 3, 4, 5]" class="no-print">
+              <td colspan="5" style="height: 35px" *ngIf="data.participants.length < 5"></td>
+            </tr> -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Session Highlights / Remarks -->
+      <div *ngIf="data.genearalRemarks" class="mb-4">
+        <div class="p-3 border rounded bg-white shadow-sm print-no-shadow">
+          <h6 class="fw-bold border-bottom pb-2 mb-2">
+            <i class="bi bi-info-circle me-2"></i>
+            Session Remarks / Highlights
+          </h6>
+          <div class="ql-editor p-0 small" [innerHTML]="data.genearalRemarks"></div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2 border-top border-dark border-opacity-25 pb-3">
+        <p class="small fst-italic text-muted">
+          Note: Participant's signature to be taken by the faculty / QM immediately after the training session.
+        </p>
+        <div class="d-flex justify-content-between align-items-end mt-4">
+          <div>
+            <div class="mb-1 fw-bold">Signature of Faculty:</div>
+            <div class="border-bottom border-dark border-opacity-50" style="width: 250px; height: 30px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container footer>
+    <app-nabl-print-footer
+      [preparedByName]="data.preparedBy || ''"
+      [issuedByName]="data.reviewedBy || ''"
+      [reviewedApprovedByName]="data.approvedBy || ''"
+    ></app-nabl-print-footer>
+  </ng-container>
+</app-print-frame>
+</div>  

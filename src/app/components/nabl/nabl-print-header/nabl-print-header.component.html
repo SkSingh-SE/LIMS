@@ -1,0 +1,24 @@
+<div class="nabl-header-container">
+    <!-- Top Header with Logo and Company Info -->
+    <div class="header-main">
+        <div class="logo-section">
+            <img [src]="logoPath" alt="Logo" class="company-logo" onerror="this.src='LIMS.png'">
+        </div>
+        <div class="company-section">
+            <h6 class="company-name">{{ companyName }}</h6>
+            <p class="company-address">{{ companyAddress }}</p>
+            
+            <div class="header-meta-grid">
+                <div class="meta-col">Doc No. – {{ docNo }}</div>
+                <div class="meta-col">Issue No. / Date:- {{ issueNo }} / {{ issueDate | date:'dd.MM.yyyy' }}</div>
+                <div class="meta-col">Rev No. / Date:- {{ revNo }} / {{ revDate !== '--' ? (revDate | date:'dd.MM.yyyy') : '--' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title Row -->
+    <div class="title-row">
+        <div class="format-label">FORMAT – “{{ formatNo }}”</div>
+        <div class="main-title">{{ mainTitle }}</div>
+    </div>
+</div>

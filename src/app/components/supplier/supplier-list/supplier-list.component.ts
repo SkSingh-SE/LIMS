@@ -4,10 +4,11 @@ import { SupplierService } from '../../../services/supplier.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-supplier-list',
-  imports: [CommonModule,RouterModule,FormsModule],
+  imports: [ CommonModule,RouterModule,FormsModule, PaginationComponent ],
   templateUrl: './supplier-list.component.html',
   styleUrl: './supplier-list.component.css'
 })
@@ -15,22 +16,23 @@ export class SupplierListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'productType', type: 'string', label: 'Product Type', filter: true },
     { key: 'contactPerson1', type: 'string', label: 'Contact Person', filter: true },
-    { key: 'contactNo1', type: 'number', label: 'Contact Number', filter: true },
+    { key: 'contactNo1', type: 'string', label: 'Contact Number', filter: true },
     { key: 'emailId1', type: 'string', label: 'Email', filter: true },
     { key: 'address', type: 'string', label: 'Address', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     productType: 'string',
     contactPerson1: 'string',
-    contactNo1: 'number',
+    contactNo1: 'string',
     emailId1: 'string',
-    address: 'string'
+    address: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -47,12 +49,11 @@ export class SupplierListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -78,12 +79,10 @@ export class SupplierListComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.supplierList = [];
-        this.isLoading.set(false);
       }
 
     });
@@ -137,6 +136,17 @@ export class SupplierListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -152,6 +162,7 @@ export class SupplierListComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -184,6 +195,8 @@ export class SupplierListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -192,6 +205,14 @@ export class SupplierListComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -209,7 +230,6 @@ export class SupplierListComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting supplier:', error);
-          this.toastService.show('Failed to delete supplier', 'error');
         }
       });
     }

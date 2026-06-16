@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from "../../../utility/components/searchable-dropdown/searchable-dropdown.component";
 import { Observable } from 'rxjs';
@@ -13,47 +13,70 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
+import { CustomerPOService } from '../../../services/customer-po.service';
+import { AccountService } from '../../../services/account.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
-import { Injectable } from '@angular/core';
-import { CanDeactivate } from '@angular/router';
+import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
-export class SampleInwardFormComponent implements OnInit {
+export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   // Constants
   caseNumber: string = 'DMSPL-000001';
   yearCode: string = new Date().getFullYear().toString().slice(-2);
   sampleNumber: string = '25-000001';
   lastSampleNumber: number = +this.sampleNumber.split('-')[1];
   readonly witnessList: string[] = ['Witness A', 'Witness B', 'Witness C', 'Witness D'];
-  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Identification', 'Sealed By', 'Witness By', 'Stamp By'];
+  readonly descriptionOptions = ['Heat No', 'Batch No', 'Lot No', 'Description', 'Sealed By', 'Witness By', 'Stamp By'];
   readonly testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
 
   // Data
   contactPersons: any[] = [];
   billingToContactPerson: any[] = [];
   reportingToContactPerson: any[] = [];
+  reportingToOverrideContacts: any[] = [];
+  billingToOverrideContacts: any[] = [];
+  // Holds contact IDs to restore after override customer contacts load in edit mode
+  private editRestoreContactIDs: { reporting?: number | null; billing?: number | null } = {};
   dispatchModes: any[] = [];
   selectedDispatchModes: number[] = [];
   sampleNumbers: string[] = [];
 
   // State
+  submitted = false;
   sampleInwardForm!: FormGroup;
   globalTestCounter = 1;
   uploadedFile: File | null = null;
   customerData: any = null;
+  showPODropdown: boolean = false;
+  selectedCustomerType: string = '';
+  selectedPODetails: any = null;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
   sampleId: number = 0;
+  currentInwardStatus: InwardStatus | string = '';
+  planTabLoaded: boolean = false;
+  private planLastSampleCount = 0;
+
+  // Cancel sample dialog state
+  showCancelDialog = false;
+  cancelTargetIndex = -1;
+  cancelReason = '';
 
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
@@ -72,8 +95,12 @@ export class SampleInwardFormComponent implements OnInit {
     private inwardService: SampleInwardService,
     private route: ActivatedRoute,
     private router: Router,
-    private prodCondService: ProductConditionService
-  ) { }
+    private prodCondService: ProductConditionService,
+    private specimenOrientationService: SpecimenOrientationService,
+    private productFormService: ProductFormService,
+    private unsavedChangesService: UnsavedChangesService,
+    private customerPOService: CustomerPOService,
+    private accountService: AccountService) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -107,11 +134,11 @@ export class SampleInwardFormComponent implements OnInit {
       area: [''],
       state: [''],
       city: [''],
-      pinCode: [''],
+      pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
       country: ['India'],
       gstNo: [''],
       dispatchModes: this.fb.array([], Validators.required),
-      poNumber: [''],
+      purchaseOrderId: [null],
       advancePayment: [''],
       billRequired: [true],
       advancePIRequired: [false],
@@ -123,36 +150,40 @@ export class SampleInwardFormComponent implements OnInit {
       returnSample: [false],
       notDestroyed: [false],
       sampleReceiptNote: [''],
+      statementOfConformity: ['Not Applicable'],
+      decisionRule: ['Not Applicable'],
       requestFilePath: [''],
       requestFileName: [''],
       file: [null],
       contacts: this.fb.array([]),
       reportingTo: this.fb.group({
         id: [0],
-        contactPersonID: [''],
+        customerID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
-        pinCode: [''],
+        pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
         area: [''],
         city: [''],
         state: [''],
         country: [''],
-        mobileNo: [''],
-        emailId: [''],
+        mobileNo: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
+        emailId: ['', Validators.email],
         type: ['reporting']
       }),
       billingTo: this.fb.group({
         id: [0],
-        contactPersonID: [''],
+        customerID: [null],
+        contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
-        pinCode: [''],
+        pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
         area: [''],
         city: [''],
         state: [''],
         country: [''],
-        mobileNo: [''],
-        emailId: [''],
+        mobileNo: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
+        emailId: ['', Validators.email],
         type: ['billing']
       }),
       sampleDetails: this.fb.array([], [
@@ -196,6 +227,20 @@ export class SampleInwardFormComponent implements OnInit {
     return this.sampleInwardForm.get('sampleAdditionalDetails') as FormArray;
   }
 
+  // Job card column visibility — only show a column if at least one sample has data
+  get jcHasMetalClassification(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('metalClassificationName')?.value);
+  }
+  get jcHasProductCondition(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('productConditionName')?.value);
+  }
+  get jcHasSpecimenOrientation(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('specimenOrientationName')?.value);
+  }
+  get jcHasRemarks(): boolean {
+    return this.sampleDetails.controls.some(s => !!s.get('remarks')?.value);
+  }
+
   // Utility
   getCurrentTime(): string {
     const now = new Date();
@@ -226,7 +271,8 @@ export class SampleInwardFormComponent implements OnInit {
       next: (data) => {
         this.caseNumber = data.caseNo || 'DMSPL-000001';
         this.sampleNumber = data.sampleNo;
-        this.lastSampleNumber = +this.sampleNumber.split('-')[1];
+        // API returns the NEXT number to assign; subtract 1 so the first addSample() generates it correctly
+        this.lastSampleNumber = +this.sampleNumber.split('-')[1] - 1;
       },
       error: (error) => console.error('Error fetching case number:', error)
     });
@@ -236,17 +282,67 @@ export class SampleInwardFormComponent implements OnInit {
     return this.customerService.getCustomerDropdown(term, page, pageSize);
   };
 
+  checkCustomerHasPOs(customerId: number): void {
+    this.customerPOService.getDropdown(customerId, '', 0, 1).subscribe({
+      next: (pos) => {
+        this.showPODropdown = pos && pos.length > 0;
+      },
+      error: () => {
+        this.showPODropdown = false;
+      }
+    });
+  }
+
+  getPurchaseOrders = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const customerId = this.sampleInwardForm.get('customerID')?.value;
+    if (!customerId) return new Observable(subscriber => subscriber.next([]));
+    return this.customerPOService.getDropdown(customerId, term, page, pageSize);
+  };
+
+  onPOSelect(item: any): void {
+    if (!item) {
+      this.sampleInwardForm.patchValue({ purchaseOrderId: null });
+      this.selectedPODetails = null;
+      return;
+    }
+    this.sampleInwardForm.patchValue({ purchaseOrderId: item.id });
+    this.selectedPODetails = item;
+  }
+
   getCustomerDetails(id: number): void {
     this.customerService.getCustomerById(id).subscribe({
       next: (data) => {
         if (!data) return;
 
         this.customerData = data;
+        this.selectedCustomerType = (data.customerType || '').toLowerCase();
+
+        // Only reset PO if user is actively changing customer (not during edit mode auto-resolve)
+        const currentPO = this.sampleInwardForm.get('purchaseOrderId')?.value;
+        if (!currentPO) {
+          this.selectedPODetails = null;
+          this.checkCustomerHasPOs(data.id);
+        }
+
+        // Credit limit advisory check for credit-type customers
+        if (this.selectedCustomerType.includes('credit') || this.selectedCustomerType.includes('relationship')) {
+          this.accountService.checkCreditLimit(data.id).subscribe({
+            next: (res) => {
+              if (res?.warning) {
+                this.toastService.show(res.warning, 'warning');
+              }
+            },
+            error: () => { /* silent — advisory only */ }
+          });
+        }
+
         this.sampleInwardForm.patchValue({
           caseNo: this.caseNumber,
           contactPersonName: this.customerData.name,
           address: this.customerData.address,
           pinCode: this.customerData.pinCode,
+          // Auto-fill ReturnSample from customer only on CREATE (don't overwrite saved value on edit)
+          ...(this.sampleId === 0 ? { returnSample: this.customerData.sampleReturn || false } : {}),
         });
 
         this.dispatchModesArray.clear();
@@ -261,30 +357,43 @@ export class SampleInwardFormComponent implements OnInit {
 
         this.fetchArea(this.customerData?.areaID, this.sampleInwardForm);
 
-        this.contactControls.clear();
-        this.contactPersons = [];
-        this.billingToContactPerson = [];
-        this.reportingToContactPerson = [];
+        // Only reload contacts from customer master if:
+        // 1. Creating new inward (sampleId === 0), OR
+        // 2. No contacts loaded yet from API (contacts array is empty)
+        // This prevents overwriting saved Selected/SendBill/SendReport values on edit
+        if (this.contactControls.length === 0 || this.sampleId === 0) {
+          this.contactControls.clear();
+          this.contactPersons = [];
+          this.billingToContactPerson = [];
+          this.reportingToContactPerson = [];
+          this.reportingToOverrideContacts = [];
+          this.billingToOverrideContacts = [];
+          this.reportingTo.patchValue({ customerID: null });
+          this.billingTo.patchValue({ customerID: null });
 
-        if (Array.isArray(this.customerData?.contactPersons)) {
-          // When creating new (sampleId === 0), set selected: true by default
-          const defaultSelected = this.sampleId === 0;
+          if (Array.isArray(this.customerData?.contactPersons)) {
+            const defaultSelected = this.sampleId === 0;
 
-          this.customerData.contactPersons.forEach((contact: any) => {
-            contact.contactID = contact.id;
-            this.addContact(contact, defaultSelected);
-            this.contactPersons.push(contact);
-          });
+            this.customerData.contactPersons.forEach((contact: any) => {
+              contact.contactID = contact.id;
+              this.addContact(contact, defaultSelected);
+              this.contactPersons.push(contact);
+            });
 
-          // Update contact lists based on selected, sendBill, and sendReport
+            this.updateContactLists();
+          }
+        } else {
+          // Edit mode: just update the contactPersons list for dropdowns
+          this.contactPersons = this.customerData?.contactPersons?.map((c: any) => ({ ...c, contactID: c.id })) || [];
           this.updateContactLists();
+        }
 
-          if (this.billingToContactPerson.length > 0) {
-            this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
-          }
-          if (this.reportingToContactPerson.length > 0) {
-            this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
-          }
+        // Update billing/reporting address helpers
+        if (this.billingToContactPerson.length > 0) {
+          this.updateAddressHelper(this.billingToContactPerson[0], 'billingTo');
+        }
+        if (this.reportingToContactPerson.length > 0) {
+          this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
         }
       },
       error: (error) => console.error('Error fetching customer details:', error)
@@ -309,6 +418,15 @@ export class SampleInwardFormComponent implements OnInit {
           next: (customer) => {
             if (customer) {
               this.customerData = customer;
+              this.selectedCustomerType = (customer.customerType || '').toLowerCase();
+
+              // In edit mode: if PO was saved, show dropdown directly; otherwise check if customer has POs
+              if (data.purchaseOrderId) {
+                this.showPODropdown = true;
+              } else {
+                this.checkCustomerHasPOs(customer.id);
+              }
+
               this.sampleInwardForm.patchValue({
                 caseNo: data.caseNumber,
                 contactPersonName: customer.name,
@@ -327,6 +445,9 @@ export class SampleInwardFormComponent implements OnInit {
               this.fetchArea(customer?.areaID, this.sampleInwardForm);
             }
 
+            // Store current status for Plan tab control
+            this.currentInwardStatus = data.status || '';
+
             // Override with Inward Data
             this.sampleInwardForm.patchValue({
               id: data.id,
@@ -339,6 +460,7 @@ export class SampleInwardFormComponent implements OnInit {
               pinCode: data.pinCode,
               country: data.country,
               gstNo: data.gstNo,
+              purchaseOrderId: data.purchaseOrderId || null,
               advancePayment: data.advancePayment,
               billRequired: data.billRequired,
               advancePIRequired: data.advancePIRequired,
@@ -348,12 +470,36 @@ export class SampleInwardFormComponent implements OnInit {
               returnSample: data.returnSample,
               notDestroyed: data.notDestroyed,
               sampleReceiptNote: data.sampleReceiptNote,
+              statementOfConformity: data.statementOfConformity || 'Not Applicable',
+              decisionRule: data.decisionRule || 'Not Applicable',
               requestFileName: data.requestFileName,
               requestFilePath: data.requestFilePath,
               uploadReferenceId: data.uploadReferenceID,
               status: data.status,
               collectionTime: data.collectionTime || this.getCurrentTime()
             });
+
+            // Restore PO in edit mode
+            if (data.purchaseOrderId) {
+              this.showPODropdown = true;
+              // Load PO details for badge display
+              this.customerPOService.getById(data.purchaseOrderId).subscribe({
+                next: (po: any) => {
+                  if (po) {
+                    this.selectedPODetails = {
+                      id: po.id,
+                      name: po.poNumber || po.PONumber,
+                      additionalValues: {
+                        POAmount: po.poAmount || po.POAmount,
+                        RemainingAmount: po.remainingAmount || po.RemainingAmount,
+                        ValidUntil: po.validUntil || po.ValidUntil
+                      }
+                    };
+                  }
+                },
+                error: () => { }
+              });
+            }
 
             // Override Dispatch Modes
             if (Array.isArray(data.dispatchModes)) {
@@ -396,16 +542,25 @@ export class SampleInwardFormComponent implements OnInit {
               this.updateContactLists();
             }
 
-            // Override Reporting To & Billing To
+            // Restore Reporting To & Billing To (with override customer support)
             if (data.reportingTo) {
+              // Capture contact ID before SearchableDropdown [selectedItem] triggers onReportingToCustomerChange
+              if (data.reportingTo.customerID && data.reportingTo.customerID !== data.customerID) {
+                this.editRestoreContactIDs.reporting = data.reportingTo.contactPersonID;
+              }
               this.sampleInwardForm.get('reportingTo')?.patchValue(data.reportingTo);
             }
             if (data.billingTo) {
+              if (data.billingTo.customerID && data.billingTo.customerID !== data.customerID) {
+                this.editRestoreContactIDs.billing = data.billingTo.contactPersonID;
+              }
               this.sampleInwardForm.get('billingTo')?.patchValue(data.billingTo);
             }
 
             // Override Samples + Additional Details
             this.sampleDetails.clear();
+            this.sampleAdditionalDetails.clear();
+            this.bufferedAdditionalDetails = {};
             this.sampleNumbers = [];
             data.sampleDetails?.forEach((sd: any) => {
               const additionalSampleDetail = data.sampleAdditionalDetails?.filter(
@@ -414,13 +569,28 @@ export class SampleInwardFormComponent implements OnInit {
 
               const normalizedSample = {
                 ...sd,
+                // Map navigation property names for dropdown rebinding
+                metalClassificationName: sd.metalClassificationName || sd.metalClassification?.name || '',
+                productConditionName: sd.productConditionName || sd.productCondition?.name || '',
+                specimenOrientationName: sd.specimenOrientationName || sd.specimenOrientation?.name || '',
                 additionalDetails: additionalSampleDetail
               };
               this.addSample(normalizedSample);
-
+              // Disable the row if it's cancelled
+              if (normalizedSample.isCancelled) {
+                const lastIdx = this.sampleDetails.length - 1;
+                (this.sampleDetails.at(lastIdx) as FormGroup).disable();
+              }
             });
-            // Disable form if not in SAMPLE_INWARD_REGISTERED status
-            if ( data?.status !== InwardStatus.INWARD_REGISTERED  && data?.status !== SampleStatus.INWARD_COMPLETED) {
+            // Full edit allowed during registration, intake-complete, and planning phases.
+            // From UNDER_REVIEW onward, form is view-only but cancel button
+            // stays enabled per-sample until testing is completed.
+            const editableStatuses: string[] = [
+              InwardStatus.INWARD_REGISTERED,
+              InwardStatus.INWARD_COMPLETED,
+              InwardStatus.UNDER_PLANNING,
+            ];
+            if (!editableStatuses.includes(data?.status)) {
               this.isViewMode = true;
               this.disableFormRecursively(this.sampleInwardForm);
             }
@@ -451,10 +621,34 @@ export class SampleInwardFormComponent implements OnInit {
   }
 
   // Event Handlers
-  onAddressCustomerChange(section: 'reportingTo' | 'billingTo', event: Event): void {
+  onAddressContactPersonChange(section: 'reportingTo' | 'billingTo', event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedValue = +target.value;
-    const selectedCustomer = this.contactPersons.find(c => c.contactID === selectedValue);
+    const group = section === 'reportingTo' ? this.reportingTo : this.billingTo;
+
+    if (!selectedValue || isNaN(selectedValue)) {
+      group.patchValue({
+        contactPersonID: null,
+        contactPersonName: '',
+        address: '',
+        pinCode: '',
+        area: '',
+        city: '',
+        state: '',
+        country: '',
+        mobileNo: '',
+        emailId: ''
+      });
+      group.get('contactPersonID')?.markAsTouched();
+      return;
+    }
+
+    const overrideList = section === 'reportingTo'
+      ? this.reportingToOverrideContacts
+      : this.billingToOverrideContacts;
+    const selectedCustomer =
+      overrideList.find(c => c.contactID === selectedValue) ||
+      this.contactPersons.find(c => c.contactID === selectedValue);
     this.updateAddressHelper(selectedCustomer, section);
   }
 
@@ -514,9 +708,12 @@ export class SampleInwardFormComponent implements OnInit {
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset billingTo if sendBill is unchecked and this contact was selected
+    // Reset billingTo if sendBill is unchecked and this contact was selected (only if no override customer)
     if (!contact.sendBill && this.billingTo.get('contactPersonID')?.value === contact.contactID) {
-      this.billingTo.reset();
+      if (!this.billingTo.get('customerID')?.value) {
+        this.billingTo.reset();
+        this.billingTo.patchValue({ type: 'billing' });
+      }
     }
   }
 
@@ -528,9 +725,12 @@ export class SampleInwardFormComponent implements OnInit {
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset reportingTo if sendReport is unchecked and this contact was selected
+    // Reset reportingTo if sendReport is unchecked and this contact was selected (only if no override customer)
     if (!contact.sendReport && this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
-      this.reportingTo.reset();
+      if (!this.reportingTo.get('customerID')?.value) {
+        this.reportingTo.reset();
+        this.reportingTo.patchValue({ type: 'reporting' });
+      }
     }
   }
 
@@ -542,24 +742,97 @@ export class SampleInwardFormComponent implements OnInit {
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset billingTo/reportingTo if contact is deselected and was currently selected
+    // Reset billingTo/reportingTo if contact is deselected and was currently selected (only if no override customer)
     if (!contact.selected) {
-      if (this.billingTo.get('contactPersonID')?.value === contact.contactID) {
+      if (this.billingTo.get('contactPersonID')?.value === contact.contactID
+          && !this.billingTo.get('customerID')?.value) {
         this.billingTo.reset();
+        this.billingTo.patchValue({ type: 'billing' });
       }
-      if (this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
+      if (this.reportingTo.get('contactPersonID')?.value === contact.contactID
+          && !this.reportingTo.get('customerID')?.value) {
         this.reportingTo.reset();
+        this.reportingTo.patchValue({ type: 'reporting' });
       }
     }
   }
 
   onCustomerSelect(item: any): void {
+    if (!item) {
+      this.sampleInwardForm.patchValue({ customerID: null, purchaseOrderId: null });
+      this.showPODropdown = false;
+      this.selectedPODetails = null;
+      this.selectedCustomerType = '';
+      return;
+    }
     this.sampleInwardForm.patchValue({
       customerID: item.id
     });
-    if (this.sampleId === 0) {
-      this.getCustomerDetails(item.id);
+    this.getCustomerDetails(item.id);
+  }
+
+  onReportingToCustomerChange(item: any): void {
+    if (!item) {
+      this.reportingToOverrideContacts = [];
+      this.editRestoreContactIDs.reporting = undefined;
+      this.reportingTo.patchValue({
+        customerID: null, contactPersonID: null, contactPersonName: '',
+        address: '', pinCode: '', area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+      });
+      return;
     }
+    this.reportingTo.patchValue({ customerID: item.id });
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        if (!data) return;
+        this.reportingToOverrideContacts = (data.contactPersons || []).map((c: any) => ({ ...c, contactID: c.id }));
+        const restoreId = this.editRestoreContactIDs.reporting;
+        this.editRestoreContactIDs.reporting = undefined;
+        if (restoreId) {
+          // Edit-mode restore: contacts just loaded, re-bind the saved contact person
+          setTimeout(() => this.reportingTo.patchValue({ contactPersonID: restoreId }));
+        } else {
+          // User manually changed customer: clear the contact selection
+          this.reportingTo.patchValue({
+            contactPersonID: null, contactPersonName: '', address: '', pinCode: '',
+            area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+          });
+        }
+      },
+      error: (err) => console.error('Error fetching reporting-to override customer:', err)
+    });
+  }
+
+  onBillingToCustomerChange(item: any): void {
+    if (!item) {
+      this.billingToOverrideContacts = [];
+      this.editRestoreContactIDs.billing = undefined;
+      this.billingTo.patchValue({
+        customerID: null, contactPersonID: null, contactPersonName: '',
+        address: '', pinCode: '', area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+      });
+      return;
+    }
+    this.billingTo.patchValue({ customerID: item.id });
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        if (!data) return;
+        this.billingToOverrideContacts = (data.contactPersons || []).map((c: any) => ({ ...c, contactID: c.id }));
+        const restoreId = this.editRestoreContactIDs.billing;
+        this.editRestoreContactIDs.billing = undefined;
+        if (restoreId) {
+          // Edit-mode restore: contacts just loaded, re-bind the saved contact person
+          setTimeout(() => this.billingTo.patchValue({ contactPersonID: restoreId }));
+        } else {
+          // User manually changed customer: clear the contact selection
+          this.billingTo.patchValue({
+            contactPersonID: null, contactPersonName: '', address: '', pinCode: '',
+            area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+          });
+        }
+      },
+      error: (err) => console.error('Error fetching billing-to override customer:', err)
+    });
   }
 
   isDispatchModeSelected(id: number): boolean {
@@ -631,12 +904,33 @@ export class SampleInwardFormComponent implements OnInit {
       sampleNo: [sampleNo],
       details: [existingSample?.details || '', Validators.required],
       metalClassificationID: [existingSample?.metalClassificationID || ''],
+      metalClassificationName: [existingSample?.metalClassificationName || ''],
       productConditionID: [existingSample?.productConditionID || ''],
+      productConditionName: [existingSample?.productConditionName || ''],
+      specimenOrientationID: [existingSample?.specimenOrientationID || ''],
+      specimenOrientationName: [existingSample?.specimenOrientationName || ''],
       remarks: [existingSample?.remarks || ''],
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
       sampleFilePath: [existingSample?.sampleFilePath || ''],
-      file: [null]
+      file: [null],
+      productFormID: [existingSample?.productFormID || null],
+      thickness: [existingSample?.thickness || null],
+      diameter: [existingSample?.diameter || null],
+      width: [existingSample?.width || null],
+      length: [existingSample?.length || null],
+      sampleStatus: [existingSample?.sampleStatus || ''],
+      isCancelled: [existingSample?.isCancelled || false],
+      cancellationReason: [existingSample?.cancellationReason || ''],
+      preparationRequired: [existingSample?.preparationRequired ?? false],
+      machiningRequired: [existingSample?.machiningRequired ?? false],
+      machiningAmount: [existingSample?.machiningAmount ?? null],
+      specimen: [existingSample?.specimen || ''],
+      otherPreparation: [existingSample?.otherPreparation ?? false],
+      otherPreparationCharge: [existingSample?.otherPreparationCharge ?? null],
+      tpiRequired: [existingSample?.tpiRequired ?? false],
+      tpiAgencyName: [existingSample?.tpiAgencyName || ''],
+      testInstructions: [existingSample?.testInstructions || '']
     });
 
     this.sampleDetails.push(sampleForm);
@@ -701,22 +995,179 @@ export class SampleInwardFormComponent implements OnInit {
   }
 
 
+  applyQty(index: number): void {
+    const sample = this.sampleDetails.at(index) as FormGroup;
+    const qty = Number(sample.get('quantity')?.value || 1);
+    if (qty <= 1) return;
+
+    // Capture all field values to replicate
+    const data = sample.getRawValue();
+
+    // Reset original row to qty=1
+    sample.patchValue({ quantity: 1 });
+
+    // Add qty-1 identical copies (addSample generates new sampleNos)
+    for (let i = 1; i < qty; i++) {
+      this.addSample({
+        id: 0,
+        sampleNo: '',
+        details: data.details,
+        metalClassificationID: data.metalClassificationID,
+        metalClassificationName: data.metalClassificationName,
+        productConditionID: data.productConditionID,
+        productConditionName: data.productConditionName,
+        specimenOrientationID: data.specimenOrientationID,
+        specimenOrientationName: data.specimenOrientationName,
+        remarks: data.remarks,
+        quantity: 1,
+        fileName: '',
+        sampleFilePath: '',
+        file: null,
+        productFormID: data.productFormID,
+        thickness: data.thickness,
+        diameter: data.diameter,
+        width: data.width,
+        length: data.length,
+      });
+    }
+  }
+
   removeSample(index: number): void {
     if (this.isViewMode) return;
 
-    const removedSampleNo = this.sampleDetails.at(index).get('sampleNo')?.value;
+    const sample = this.sampleDetails.at(index) as FormGroup;
+    const sampleId = sample.get('id')?.value;
+    const removedSampleNo = sample.get('sampleNo')?.value;
 
+    if (sampleId && sampleId > 0) {
+      // Saved row — call API to soft-delete on backend
+      this.inwardService.deleteSample(sampleId).subscribe({
+        next: () => {
+          this.sampleDetails.removeAt(index);
+          this.manageSampleNumber('remove', index);
+          if (removedSampleNo && this.bufferedAdditionalDetails[removedSampleNo]) {
+            delete this.bufferedAdditionalDetails[removedSampleNo];
+          }
+          this.sampleAdditionalDetails.controls.forEach(row => {
+            const valuesArray = row.get('values') as FormArray;
+            valuesArray.removeAt(index);
+          });
+          this.toastService.show('Sample deleted successfully.', 'success');
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to delete sample.', 'error');
+        }
+      });
+      return;
+    }
+
+    // Unsaved new row — remove from FormArray directly
     this.sampleDetails.removeAt(index);
     this.manageSampleNumber('remove', index);
-
-    // Remove from buffered additional details if exists
     if (removedSampleNo && this.bufferedAdditionalDetails[removedSampleNo]) {
       delete this.bufferedAdditionalDetails[removedSampleNo];
     }
-
     this.sampleAdditionalDetails.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
       valuesArray.removeAt(index);
+    });
+  }
+
+  // Cancel button is shown per-sample when the form is locked (not editable)
+  // and the sample has not yet reached TESTING_COMPLETED.
+  // During INWARD_REGISTERED / UNDER_PLANNING the user can delete the row instead.
+  canCancelThisSample(sample: AbstractControl): boolean {
+    const status = sample.get('sampleStatus')?.value as string;
+    if (!status) return false;
+
+    // Too early — form is still editable, delete is the right action
+    const editableStatuses = new Set([
+      SampleStatus.SAMPLE_INWARD_REGISTERED,
+      SampleStatus.AWAITING_MISSING_INFORMATION,
+      SampleStatus.INWARD_COMPLETED,
+      SampleStatus.UNDER_PLANNING,
+    ]);
+    // Too late — testing done or already cancelled, cannot reverse
+    const nonCancellableStatuses = new Set([
+      SampleStatus.TESTING_COMPLETED,
+      SampleStatus.TESTING_UNDER_VERIFICATION,
+      SampleStatus.TESTING_VERIFICATION_REJECTED,
+      SampleStatus.TESTING_VERIFIED,
+      SampleStatus.REPORT_GENERATION_IN_PROGRESS,
+      SampleStatus.REPORT_GENERATED,
+      SampleStatus.REPORT_UNDER_REVIEW,
+      SampleStatus.REPORT_REJECTED_BY_INTERNAL,
+      SampleStatus.REPORT_AMENDED_BY_INTERNAL,
+      SampleStatus.REPORT_AMENDED_REJECTED,
+      SampleStatus.REPORT_AMENDMENT_APPROVED,
+      SampleStatus.REPORT_SENT_FOR_CUSTOMER_REVIEW,
+      SampleStatus.CUSTOMER_REQUESTED_AMENDMENT,
+      SampleStatus.AMENDMENT_IN_PROGRESS,
+      SampleStatus.AMENDMENT_COMPLETED,
+      SampleStatus.PAYMENT_PENDING,
+      SampleStatus.PAYMENT_COMPLETED,
+      SampleStatus.FINAL_REPORT_APPROVED,
+      SampleStatus.REPORT_DISPATCHED,
+      SampleStatus.CASE_CLOSED,
+      SampleStatus.SAMPLE_CANCELLED,
+    ]);
+
+    return !editableStatuses.has(status as SampleStatus) && !nonCancellableStatuses.has(status as SampleStatus);
+  }
+
+  switchToPlanTab(): void {
+    if (this.sampleInwardForm.dirty) {
+      this.toastService.show('Please save your changes before viewing the plan.', 'warning');
+      return;
+    }
+
+    const activeSampleCount = this.sampleDetails.controls.filter(
+      s => !s.get('isCancelled')?.value
+    ).length;
+
+    const needsReload = !this.planTabLoaded || activeSampleCount !== this.planLastSampleCount;
+
+    if (needsReload) {
+      this.planTabLoaded = false;
+      this.planLastSampleCount = activeSampleCount;
+      setTimeout(() => (this.planTabLoaded = true), 0);
+    }
+  }
+
+  openCancelDialog(index: number): void {
+    this.cancelTargetIndex = index;
+    this.cancelReason = '';
+    this.showCancelDialog = true;
+  }
+
+  confirmCancelSample(): void {
+    const sample = this.sampleDetails.at(this.cancelTargetIndex) as FormGroup;
+    const sampleId = sample.get('id')?.value;
+
+    if (!sampleId || sampleId === 0) {
+      // Unsaved new row — just remove from FormArray directly
+      this.sampleDetails.removeAt(this.cancelTargetIndex);
+      this.manageSampleNumber('remove', this.cancelTargetIndex);
+      this.showCancelDialog = false;
+      return;
+    }
+
+    this.inwardService.cancelSample(sampleId, this.cancelReason).subscribe({
+      next: () => {
+        sample.patchValue({
+          sampleStatus: SampleStatus.SAMPLE_CANCELLED,
+          isCancelled: true,
+          cancellationReason: this.cancelReason
+        });
+        sample.disable();
+        this.showCancelDialog = false;
+        this.planLastSampleCount = 0; // force plan tab to reload — cancelled sample must be excluded
+        this.toastService.show('Sample cancelled successfully.', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to cancel sample.', 'error');
+        this.showCancelDialog = false;
+      }
     });
   }
 
@@ -762,16 +1213,49 @@ export class SampleInwardFormComponent implements OnInit {
   onMetalClassificationSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
-      metalClassificationID: item.id,
+      metalClassificationID: item?.id || null,
+      metalClassificationName: item?.name || '',
+      specimenOrientationID: null,
+      specimenOrientationName: '',
     });
   }
 
   onProductConditionSelected(item: any, sampleIndex: number): void {
     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
     sampleDetailGroup.patchValue({
-      productConditionID: item.id,
+      productConditionID: item?.id || null,
+      productConditionName: item?.name || '',
     });
   }
+
+  // Specimen Orientation & Product Form — commented out per client requirement
+  // getSpecimenOrientationDrop = (sampleIndex: number) => {
+  //   return (term: string, page: number, pageSize: number): Observable<any[]> => {
+  //     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //     const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+  //     if (metalClassificationID) {
+  //       return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+  //     }
+  //     return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  //   };
+  // };
+
+  // onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({
+  //     specimenOrientationID: item?.id || null,
+  //     specimenOrientationName: item?.name || '',
+  //   });
+  // }
+
+  // getProductFormDrop = (term: string, page: number, pageSize: number) => {
+  //   return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  // };
+
+  // onProductFormSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({ productFormID: item?.id || null });
+  // }
 
   // File Handling
   private validateFile(file: File, allowedTypes: string[], maxSizeMB = 5): boolean {
@@ -831,10 +1315,16 @@ export class SampleInwardFormComponent implements OnInit {
     this.sampleDetails.at(index).patchValue({ fileName: '', file: null });
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.sampleInwardForm, path, this.submitted);
+  }
+
   // Submission
   onSubmit(includePlans: boolean = false): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.sampleInwardForm);
     if (!this.sampleInwardForm.valid) {
-      this.sampleInwardForm.markAllAsTouched();
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
 
@@ -864,8 +1354,7 @@ export class SampleInwardFormComponent implements OnInit {
       city: value.city,
       pinCode: value.pinCode,
       country: value.country,
-      gstNo: value.gstNo,
-      poNumber: value.poNumber,
+      purchaseOrderId: value.purchaseOrderId || '',
       advancePayment: value.advancePayment || '0',
       billRequired: value.billRequired || 'false',
       advancePIRequired: value.advancePIRequired || 'false',
@@ -904,10 +1393,29 @@ export class SampleInwardFormComponent implements OnInit {
     // Reporting & Billing
     ['reportingTo', 'billingTo'].forEach(section => {
       const sec = value[section] || {};
+      // Map camelCase to PascalCase for backend
+      const fieldMapping: Record<string, string> = {
+        'id': 'Id',
+        'customerID': 'CustomerID',
+        'contactPersonID': 'ContactPersonID',
+        'contactPersonName': 'ContactPersonName',
+        'address': 'Address',
+        'pinCode': 'PinCode',
+        'area': 'Area',
+        'city': 'City',
+        'state': 'State',
+        'country': 'Country',
+        'mobileNo': 'MobileNo',
+        'emailId': 'EmailId',
+        'type': 'Type'
+      };
+
       Object.keys(sec).forEach(k => {
         const val = sec[k];
         if (val !== undefined && val !== null) {
-          formData.append(`${section}.${k}`, String(val));
+          const pascalKey = fieldMapping[k] || k.charAt(0).toUpperCase() + k.slice(1);
+          const sectionName = section === 'reportingTo' ? 'ReportingTo' : 'BillingTo';
+          formData.append(`${sectionName}.${pascalKey}`, String(val));
         }
       });
     });
@@ -919,8 +1427,14 @@ export class SampleInwardFormComponent implements OnInit {
       formData.append(`sampleDetails[${i}].details`, s.details || '');
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
+      formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
+      formData.append(`sampleDetails[${i}].productFormID`, s.productFormID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
       formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
+      formData.append(`sampleDetails[${i}].thickness`, s.thickness != null ? String(s.thickness) : '');
+      formData.append(`sampleDetails[${i}].diameter`, s.diameter != null ? String(s.diameter) : '');
+      formData.append(`sampleDetails[${i}].width`, s.width != null ? String(s.width) : '');
+      formData.append(`sampleDetails[${i}].length`, s.length != null ? String(s.length) : '');
       formData.append(`sampleDetails[${i}].fileName`, s.fileName || '');
       formData.append(`sampleDetails[${i}].sampleFilePath`, s.sampleFilePath || '');
       if (s.file instanceof File) {
@@ -952,14 +1466,29 @@ export class SampleInwardFormComponent implements OnInit {
       return; // Prevent save
     }
 
-    const request$ = (value.id && value.id > 0)
-      ? this.inwardService.updateSampleInward(formData)
-      : this.inwardService.createSampleInward(formData);
+    const isNew = !(value.id && value.id > 0);
+    const request$ = isNew
+      ? this.inwardService.createSampleInward(formData)
+      : this.inwardService.updateSampleInward(formData);
 
     request$.subscribe({
-      next: () => {
+      next: (response: any) => {
+        this.saved = true;
         this.toastService.show('Sample Inward saved successfully!', 'success');
-        this.router.navigate(['/sample/inward']);
+        // Show credit limit warning (advisory — inward is already saved)
+        if (response?.creditWarning) {
+          this.toastService.show(response.creditWarning, 'warning');
+        }
+        if (isNew && response?.id) {
+          // Navigate to edit mode so Plan tab becomes visible
+          this.router.navigate(['/sample/inward/edit', response.id], { state: { mode: 'edit' } });
+        } else {
+          // Already in edit mode, reload to refresh data
+          this.sampleId = value.id;
+          this.planLastSampleCount = 0; // force plan tab to reload after next save
+          this.fetchSampleInwardDetails(this.sampleId);
+          this.sampleInwardForm.markAsPristine();
+        }
       },
       error: (err) => {
         console.error('Error saving sample inward:', err);
@@ -973,6 +1502,35 @@ export class SampleInwardFormComponent implements OnInit {
     formData.append('collectionDate', now.toISOString().split('T')[0]);
   }
 
+  savePaymentInfo(): void {
+    if (!this.sampleId) {
+      this.toastService.show('Please save the inward first before updating payment info.', 'warning');
+      return;
+    }
+    const v = this.sampleInwardForm.getRawValue();
+    const payload = {
+      purchaseOrderId: v.purchaseOrderId || null,
+      advancePayment: v.advancePayment || 0,
+      billRequired: v.billRequired ?? true,
+      advancePIRequired: v.advancePIRequired ?? false,
+      holdTestingUntilPIApproved: v.holdTestingUntilPIApproved ?? false,
+    };
+    this.inwardService.updatePaymentInfo(this.sampleId, payload).subscribe({
+      next: (res) => {
+        this.sampleInwardForm.patchValue({
+          purchaseOrderId: res.purchaseOrderId ?? null,
+          advancePayment: res.advancePayment,
+          billRequired: res.billRequired,
+          advancePIRequired: res.advancePIRequired,
+          holdTestingUntilPIApproved: res.holdTestingUntilPIApproved,
+        });
+        this.sampleInwardForm.markAsPristine();
+        this.toastService.show('Payment info saved successfully.', 'success');
+      },
+      error: () => this.toastService.show('Failed to save payment info. Please try again.', 'error'),
+    });
+  }
+
   goToSampleTab(): void {
     const tabBtn = document.getElementById('sample-tab') as HTMLElement | null;
     if (tabBtn) {
@@ -982,7 +1540,22 @@ export class SampleInwardFormComponent implements OnInit {
 
   onCancel(): void {
     this.sampleInwardForm.reset();
-    this.router.navigate(['/sample/inward']);  // Should be inward list, not plan
+    this.router.navigate(['/sample/inward']);
+  }
+
+  printJobCard(): void {
+    window.print();
+  }
+
+  getJobCardAdditionalDetails(sampleIdx: number): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = [];
+    (this.sampleAdditionalDetails as FormArray).controls.forEach(row => {
+      const label = row.get('label')?.value;
+      const valuesArray = row.get('values') as FormArray;
+      const value = valuesArray.at(sampleIdx)?.value;
+      if (label && value) result.push({ label, value });
+    });
+    return result;
   }
 
   // Custom method to check if inward is completed
@@ -990,15 +1563,16 @@ export class SampleInwardFormComponent implements OnInit {
     return inward.status === InwardStatus.COMPLETED;
   }
 
+
   private generateSampleNumber(counter: number): string {
     return `${this.yearCode}-${counter.toString().padStart(6, '0')}`;
   }
 
- private manageSampleNumber(
-  action: 'init' | 'add' | 'remove',
-  removeIndex?: number,
-  sampleNo?: string
-): string {
+  private manageSampleNumber(
+    action: 'init' | 'add' | 'remove',
+    removeIndex?: number,
+    sampleNo?: string
+  ): string {
 
     // INIT → rebinding / edit / API load
     if (action === 'init') {
@@ -1055,19 +1629,25 @@ export class SampleInwardFormComponent implements OnInit {
     }
 
     return this.sampleNumber;
-}
+  }
 
 
+  trackByIndex(index: number) {
+    return index;
+  }
 
 
-}
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.sampleInwardForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
 
-@Injectable()
-export class UnsavedChangesGuard implements CanDeactivate<SampleInwardFormComponent> {
-  canDeactivate(component: SampleInwardFormComponent): boolean {
-    if (component.sampleInwardForm.dirty) {
-      return confirm('You have unsaved changes. Are you sure?');
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.sampleInwardForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
     }
-    return true;
   }
 }
+

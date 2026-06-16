@@ -1,0 +1,379 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Method Validation Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <div *ngIf="!data" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header [formatNo]="data()?.formatNo || 'F-30'" [docNo]="'DMSPL / Level-04 / Format / F-30'"
+        [issueNo]="data()?.issueNo || '01'" [revNo]="data()?.revNo || '01'" [issueDate]="data()?.date || ''"
+        [revDate]="data()?.date || ''" [mainTitle]="'METHOD VALIDATION RECORD'"></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- I. TEST METHOD INFORMATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. TEST METHOD INFORMATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Verified Test Method Code</td>
+              <td>{{ data()?.testMethodCode }}</td>
+              <td class="lbl">Verified Test Method Name</td>
+              <td>{{ data()?.testMethodName }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Reference Standard</td>
+              <td>{{ data()?.referenceStandard }}</td>
+              <td class="lbl">Rev / Issue</td>
+              <td>{{ data()?.revIssue }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Verification Date</td>
+              <td>{{ data()?.verificationDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Verification By</td>
+              <td>{{ data()?.verifiedBy }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Validation Date</td>
+              <td>{{ data()?.validationDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Validated By</td>
+              <td>{{ data()?.validatedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- II. VALIDATION REQUIREMENT -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. VALIDATION REQUIREMENT</div>
+
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr>
+              <td class="lbl">Validation Type</td>
+              <td class="lbl">Reason For Validation</td>
+              <td class="lbl">Validation Scope / Description</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ data()?.validationType }}</td>
+              <td>{{ data()?.reasonForValidation }}</td>
+              <td>{{ data()?.validationScope }}</td>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- III. CRM / REFERENCE MATERIAL -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. CRM / REFERENCE MATERIAL</div>
+
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th>SN</th>
+              <th>CRM Sample ID</th>
+              <th>Certificate No.</th>
+              <th>Reference Value</th>
+              <th>Unit</th>
+              <th>Measurement Uncertainty</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let c of data()?.crmMaterialParameters; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ c.crmSampleId }}</td>
+              <td>{{ c.certificateNo }}</td>
+              <td>{{ c.referenceValue }}</td>
+              <td>{{ c.unit }}</td>
+              <td>{{ c.measurementUncertainty }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- IV. EQUIPMENT INFORMATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. EQUIPMENT INFORMATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Equipment Name</td>
+              <td>{{ data()?.equipmentName }}</td>
+              <td class="lbl">Equipment ID</td>
+              <td>{{ data()?.equipmentId }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Temperature</td>
+              <td>{{ data()?.temperature }}</td>
+              <td class="lbl">Humidity</td>
+              <td>{{ data()?.humidity }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- V. ACCEPTANCE CRITERIA -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. ACCEPTANCE CRITERIA</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Recovery Minimum (%)</td>
+              <td>{{ data()?.recoveryMin }}</td>
+              <td class="lbl">Recovery Maximum (%)</td>
+              <td>{{ data()?.recoveryMax }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Maximum RSD (%)</td>
+              <td>{{ data()?.rsdMax }}</td>
+              <td class="lbl">Maximum Bias Allowed</td>
+              <td>{{ data()?.biasMax }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- VI. ACCURACY STUDY -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">VI. ACCURACY STUDY</div>
+
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th>SN</th>
+              <th>CRM Sample ID</th>
+              <th>Reference Value</th>
+              <th>Unit</th>
+              <th>Observation Value</th>
+              <th>Difference</th>
+              <th>Recovery %</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let a of data()?.accuracyStudy; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ a.crmSampleId }}</td>
+              <td>{{ a.referenceValue }}</td>
+              <td>{{ a.unit }}</td>
+              <td>{{ a.observationValue }}</td>
+              <td>{{ a.difference }}</td>
+              <td>{{ a.recovery }}</td>
+              <td class="fw-bold" [class.text-success]="a.status === 'PASS'" [class.text-danger]="a.status === 'FAIL'">
+                {{ a.status }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- VII. PRECISION / REPEATABILITY STUDY -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">VII. PRECISION / REPEATABILITY STUDY</div>
+
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th rowspan="2">SN</th>
+              <th rowspan="2">CRM Sample ID</th>
+              <th rowspan="2">Reference Value</th>
+              <th rowspan="2">Unit</th>
+              <th colspan="5">Readings</th>
+              <th rowspan="2">Mean</th>
+              <th rowspan="2">SD</th>
+              <th rowspan="2">RSD (%)</th>
+              <th rowspan="2">Status</th>
+            </tr>
+
+            <tr class="tbl-head">
+              <th>R1</th>
+              <th>R2</th>
+              <th>R3</th>
+              <th>R4</th>
+              <th>R5</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let p of data()?.precisionStudy; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ p.crmSampleId }}</td>
+              <td>{{ p.referenceValue }}</td>
+              <td>{{ p.unit }}</td>
+              <td>{{ p.reading1 || ''}}</td>
+              <td>{{ p.reading2 || ''}}</td>
+              <td>{{ p.reading3 || ''}}</td>
+              <td>{{ p.reading4 || ''}}</td>
+              <td>{{ p.reading5 || ''}}</td>
+              <td>{{ p.mean }}</td>
+              <td>{{ p.sd }}</td>
+              <td>{{ p.rsd }}</td>
+              <td class="fw-bold" [class.text-success]="p.status === 'PASS'" [class.text-danger]="p.status === 'FAIL'">
+                {{ p.status }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- VIII. VALIDATION PARAMETERS COVERED -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">VIII. VALIDATION PARAMETERS COVERED</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td colspan="4">
+                <div class="d-flex flex-wrap gap-5">
+
+                  <span class="check-box">
+                    <i class="bi" [ngClass]="data()?.accuracy ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Accuracy
+                  </span>
+
+                  <span class="check-box">
+                    <i class="bi" [ngClass]="data()?.precision ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Precision
+                  </span>
+
+                  <span class="check-box">
+                    <i class="bi"
+                      [ngClass]="data()?.repeatability ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Repeatability
+                  </span>
+
+                  <span class="check-box">
+                    <i class="bi" [ngClass]="data()?.recovery ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Recovery
+                  </span>
+
+                  <span class="check-box">
+                    <i class="bi"
+                      [ngClass]="data()?.measurement ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Measurement Uncertainty
+                  </span>
+
+                  <span class="check-box">
+                    <i class="bi" [ngClass]="data()?.robustness ? 'bi-check-square-fill text-danger' : 'bi-square'"></i>
+                    Robustness
+                  </span>
+
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="data()?.robustness === true">
+              <td class="lbl">Robustness Details</td>
+              <td colspan="3">{{ data()?.robustnessResults }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- IX. MEASUREMENT UNCERTAINTY -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IX. MEASUREMENT UNCERTAINTY</div>
+
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr>
+              <td class="lbl">Measurement Uncertainty (±)</td>
+              <td class="lbl">Expanded Uncertainty (±)</td>
+              <td class="lbl">Coverage Factor (k)</td>
+              <td class="lbl">Confidence Level (%)</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ data()?.measurementUncertainty }}</td>
+              <td>{{ data()?.expandedUncertainty }}</td>
+              <td>{{ data()?.coverageFactor }}</td>
+              <td>{{ data()?.confidenceLevel }}</td>
+          </tbody>
+        </table>
+      </div>
+
+
+
+      <!-- X. FINAL CONCLUSION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">X. FINAL CONCLUSION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Valid Status</td>
+              <td class="fw-bold" [class.text-success]="data()?.validStatus === 'Valid'"
+                [class.text-danger]="data()?.validStatus === 'Not Valid'">{{ data()?.validStatus }}</td>
+            </tr>
+
+
+            <tr *ngIf="data()?.validStatus === 'Not Valid'">
+              <td class="lbl">Reason Not Valid</td>
+              <td>{{ data()?.reasonNotValid }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Conclusion</td>
+              <td [innerHTML]="data()?.conclusion"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="data()?.preparedBy || ''" [issuedByName]="data()?.reviewedBy || ''"
+        [reviewedApprovedByName]="data()?.approvedBy || ''"></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

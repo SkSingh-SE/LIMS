@@ -1,0 +1,103 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Risk Assessment Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'RISK & OPPORTUNITY ASSESSMENT'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="doc-section mb-3">
+        <div class="sec-title">RISK & OPPORTUNITY ASSESSMENT</div>
+        <table class="table table-bordered inner-table align-middle">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 100px">Date</th>
+              <th>Activity / Process</th>
+              <th>Risk Identified</th>
+              <th>Opportunity Identification</th>
+              <th>Mitigation Plan</th>
+              <th>Responsibility</th>
+              <th>Effectiveness of Action Taken</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-center">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td>{{ data.activityProcess }}</td>
+              <td>
+                <div class="ql-editor p-1" [innerHTML]="data.riskIdentified"></div>
+              </td>
+              <td>
+                <div class="ql-editor p-1" [innerHTML]="data.opportunity"></div>
+              </td>
+              <td>
+                <div class="ql-editor p-1" [innerHTML]="data.mitigationPlan"></div>
+              </td>
+              <td class="text-center">{{ data.responsibility }}</td>
+              <td>
+                <div class="ql-editor p-1" [innerHTML]="data.effectiveness"></div>
+              </td>
+            </tr>
+            <!-- Empty row for filling space if needed -->
+            <tr *ngIf="!data">
+              <td colspan="7" style="height: 400px"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'General Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

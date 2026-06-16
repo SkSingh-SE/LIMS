@@ -1,0 +1,197 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="qcpForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">Format Details</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control fw-bold" formControlName="documentNo" placeholder="QCP-0001" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Plan Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('planInfo')">
+            <i class="bi" [ngClass]="openSections['planInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Plan Information</span>
+          </div>
+          <div *ngIf="openSections['planInfo']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Plan Year
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-control" formControlName="planYear">
+                  <option [ngValue]="null">Select Year</option>
+                  <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Discipline
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="discipline" placeholder="Chemical/Mechanical" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Group / Subgroups
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="materialProductGroup" placeholder="Metals & Alloys" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Lab In-charge
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="labIncharge" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Quality Assurance / Control Activities -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('activities')">
+            <div>
+              <i class="bi" [ngClass]="openSections['activities'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Quality Assurance / Control Activities</span>
+            </div>
+            <button
+              *ngIf="!isViewMode"
+              type="button"
+              class="btn btn-sm btn-light py-0 me-3"
+              (click)="addActivity(); $event.stopPropagation()"
+            >
+              <i class="bi bi-plus-lg me-1"></i>
+              Add Activity
+            </button>
+          </div>
+          <div *ngIf="openSections['activities']" class="section-body p-0">
+            <div class="table-responsive m-0">
+              <table class="table table-bordered mb-0 small">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 fw-bold text-muted" style="width: 50px">S.N.</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 250px">QA / QC Activity Name</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 150px">Frequency</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 150px">Target / Criteria</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 140px">Planned Date</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 140px">Actual Date</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 120px">Result Status</th>
+                    <th class="py-2 fw-bold text-muted">Remarks</th>
+                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="activities">
+                  <tr *ngFor="let activity of activities.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3 text-center">{{ i + 1 }}</td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="activityName">
+                        <option value="">Select Activity</option>
+                        <option value="Use of Reference Material (CRM)">Use of Reference Material (CRM)</option>
+                        <option value="Use of alternative instrumentation">Use of alternative instrumentation</option>
+                        <option value="Functional check(s) of Equipment">Functional check(s) of Equipment</option>
+                        <option value="Use of check or working standards">Use of check or working standards</option>
+                        <option value="Intermediate checks on measuring equipment">Intermediate checks on equipment</option>
+                        <option value="Replicate Testing">Replicate Testing</option>
+                        <option value="Retesting of Retained Sample">Retesting of Retained Sample</option>
+                        <option value="Correlation of results">Correlation of results for diff characteristics</option>
+                        <option value="Review of reported results">Review of reported results</option>
+                        <option value="Intra-laboratory comparisons (ILC)">Intra-laboratory comparisons (ILC)</option>
+                        <option value="Testing of Blind sample">Testing of Blind sample</option>
+                        <option value="Other">Other (Specify in Remarks)</option>
+                      </select>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="plannedFrequency" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="targetCriteria" /></td>
+                    <td><input type="date" class="form-control form-control-sm" formControlName="plannedDate" /></td>
+                    <td><input type="date" class="form-control form-control-sm" formControlName="actualDate" /></td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="resultStatus">
+                        <option value="Pending">Pending</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Not Satisfactory">Not Satisfactory</option>
+                      </select>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="remarks" /></td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeActivity(i)" [disabled]="activities.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <app-nabl-signature-section [parentForm]="qcpForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="qcpForm.invalid || false">
+            {{ isEditMode ? "Update Record" : "Save Record" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

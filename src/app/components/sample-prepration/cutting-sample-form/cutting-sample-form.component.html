@@ -14,7 +14,7 @@
               [fetchDataFn]="fetchSampleInwardDropdown"
               placeholder="Search Collection No."
               [required]="true"
-              [isDisabled]="isEditMode || isViewMode"
+              [isDisabled]="true"
               (itemSelected)="onInwardSelected($event)"
               [selectedItem]="selectedInwardId"
             ></app-searchable-dropdown>
@@ -51,13 +51,14 @@
               <div class="card-body d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <h6 class="mb-0">Sample #: {{ sCtrl.get("sampleNo")?.value }}</h6>
-                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="removeSample(i)">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
 
-                <div class="mb-3">
-                   <app-searchable-dropdown
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <app-searchable-dropdown
                       [placeholder]="'Type of Material'"
                       [hideLabel]="true"
                       [fetchDataFn]="getMetalClassification"
@@ -65,6 +66,73 @@
                       [selectedItem]="sCtrl.get('metalClassificationID')?.value"
                       [isDisabled]="true"
                     ></app-searchable-dropdown>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex gap-1 align-items-start">
+                      <div class="flex-grow-1">
+                        <app-searchable-dropdown
+                          [placeholder]="'Specimen Type'"
+                          [hideLabel]="true"
+                          [fetchDataFn]="fetchSpecimenTypeDropdown"
+                          (itemSelected)="onSpecimenTypeSelected($event, i)"
+                          [selectedItem]="sCtrl.get('specimenTypeId')?.value"
+                          [isDisabled]="isViewMode"
+                        ></app-searchable-dropdown>
+                      </div>
+                      <a *ngIf="!isViewMode" class="btn btn-sm btn-outline-danger"
+                        href="/specimen-type" target="_blank" rel="noopener"
+                        title="Add Specimen Type in Master">
+                        <i class="bi bi-plus-lg"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Specimen Dimensions -->
+                <div class="row mb-3 g-2">
+                  <div class="col-md-3 col-6">
+                    <label class="form-label small text-muted mb-0">Length (mm)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="length" placeholder="Length" appDecimalOnly />
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="form-label small text-muted mb-0">Width (mm)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="width" placeholder="Width" appDecimalOnly />
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="form-label small text-muted mb-0">Thickness (mm)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="thickness" placeholder="Thickness" appDecimalOnly />
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="form-label small text-muted mb-0">Diameter (mm)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="diameter" placeholder="Diameter" appDecimalOnly />
+                  </div>
+                </div>
+
+                <!-- Orientation & Status -->
+                <div class="row mb-3 g-2">
+                  <div class="col-md-4">
+                    <label class="form-label small text-muted mb-0">Orientation</label>
+                    <select formControlName="orientation" class="form-select form-select-sm">
+                      <option [value]="null" disabled>Select</option>
+                      <option *ngFor="let o of orientationOptions" [value]="o">{{ o }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-muted mb-0">Preparation Status</label>
+                    <select formControlName="preparationStatus" class="form-select form-select-sm">
+                      <option *ngFor="let s of preparationStatusOptions" [value]="s">{{ s }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-muted mb-0">Photo URL</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="photoUrl" placeholder="Photo URL" />
+                  </div>
+                </div>
+
+                <!-- Preparation Instructions -->
+                <div class="mb-3">
+                  <label class="form-label small text-muted mb-0">Preparation Instructions</label>
+                  <textarea formControlName="preparationInstructions" class="form-control form-control-sm" rows="2" placeholder="Enter preparation instructions..."></textarea>
                 </div>
 
                 <div class="mb-2">
@@ -143,8 +211,11 @@
         <div class="text-end fs-5 fw-bold mb-3" *ngIf="samplesFA.length">GRAND TOTAL: ₹ {{ grandTotal() | number : "1.0-2" }}</div>
 
         <div *ngIf="!isViewMode" class="text-end gap-2">
-          <button type="button" class="btn btn-warning me-2" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-success" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
+          <button type="button" class="btn btn-cancel me-2" (click)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-info me-2 text-white" (click)="printSampleCuttingRaw()">
+            <i class="bi bi-printer me-1"></i> Print Raw Format
+          </button>
+          <button type="submit" class="btn btn-save" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
@@ -8,10 +8,15 @@ import { ToastService } from '../../services/toast.service';
 import { ParameterService } from '../../services/parameter.service';
 import { Observable } from 'rxjs';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-metal-classification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, MultiSelectDropdownComponent, SearchableDropdownComponent, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './metal-classification.component.html',
   styleUrl: './metal-classification.component.css'
 })
@@ -21,14 +26,21 @@ export class MetalClassificationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'hasChemicalParams', type: 'string', label: 'Chemical', filter: false },
+    { key: 'hasMechanicalParams', type: 'string', label: 'Mechanical', filter: false },
+    { key: 'metalType', type: 'string', label: 'Metal Type', filter: true },
+    // { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    code: 'string',
     name: 'string',
-    createdOn: 'date'
+    metalType: 'string',
+    // sortOrder: 'number',
+    modifiedOn: 'date',
   };
 
   // common filter variables
@@ -44,12 +56,11 @@ export class MetalClassificationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -62,6 +73,7 @@ export class MetalClassificationComponent implements OnInit {
 
   // form base varryable
   MetalClassificationForm!: FormGroup;
+  submitted = false;
   MetalClassificationList: any[] = [];
   metalClassificationId: number = 0;
   isEditMode: boolean = false;
@@ -80,7 +92,13 @@ export class MetalClassificationComponent implements OnInit {
   initForm() {
     this.MetalClassificationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      code: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
+      parentID: [null],
+      hasChemicalParams: [false],
+      hasMechanicalParams: [false],
+      sortOrder: [1],
+      metalType: ['Normal'],
       parameterIds: [[]],
       parameters: this.fb.array([]),
     });
@@ -92,20 +110,20 @@ export class MetalClassificationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.MetalClassificationList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   getDetails(): void {
-    this.metalclassificationService.getMetalClassificationById(this.metalClassificationId).subscribe({
+    const requestId = this.metalClassificationId;
+    this.metalclassificationService.getMetalClassificationById(requestId).subscribe({
       next: (response) => {
+        if (this.metalClassificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.MetalClassificationForm.patchValue(response);
         this.MetalClassificationForm.patchValue({
@@ -164,6 +182,17 @@ export class MetalClassificationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -171,7 +200,7 @@ export class MetalClassificationComponent implements OnInit {
     if (!this.filterColumn || this.filterValue === '') return;
 
     const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    const filterData = { column: this.filterColumn, type: this.filterType, value: String(this.filterValue), value2: this.filterValue2 ? String(this.filterValue2) : undefined };
 
     if (existingFilterIndex > -1) {
       this.filters[existingFilterIndex] = filterData;
@@ -179,6 +208,7 @@ export class MetalClassificationComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -211,6 +241,8 @@ export class MetalClassificationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -219,6 +251,14 @@ export class MetalClassificationComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -238,12 +278,15 @@ export class MetalClassificationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.initForm();
+    this.parameterReloadKey++;
+    this.metalClassificationId = 0;
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -251,15 +294,11 @@ export class MetalClassificationComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.MetalClassificationForm.reset();
       this.formTitle = 'Metal Classification Form';
-      this.MetalClassificationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Metal Classification Form';
-      this.MetalClassificationForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -272,15 +311,44 @@ export class MetalClassificationComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.MetalClassificationForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.initForm();
+    this.metalClassificationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
+  parameterReloadKey = 0;
+
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const hasChem = this.MetalClassificationForm?.get('hasChemicalParams')?.value;
+    const hasMech = this.MetalClassificationForm?.get('hasMechanicalParams')?.value;
+    if (hasChem && hasMech) {
+      return this.parameterService.getParameterDropdown(term, page, pageSize);
+    } else if (hasChem) {
+      return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+    } else if (hasMech) {
+      return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+    }
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
+
+  onCheckboxChange(): void {
+    this.parameterReloadKey++;
+    const isChemical = this.MetalClassificationForm.get('hasChemicalParams')?.value;
+    const isMechanical = this.MetalClassificationForm.get('hasMechanicalParams')?.value;
+    if (!isChemical && !isMechanical) {
+      this.MetalClassificationForm.patchValue({ parameterIds: [] });
+    }
+  }
 
   onParameterSelected(item: any[]) {
     console.log("selected item", item);
@@ -296,39 +364,59 @@ export class MetalClassificationComponent implements OnInit {
         })
       );
     })
-    this.MetalClassificationForm.patchValue({ parameterIDs: selectIds });
+    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
   }
 
+  getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.metalclassificationService.getMetalClassificationDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
+
   onSubmit(): void {
-    if (this.MetalClassificationForm.valid) {
-      let formData = this.MetalClassificationForm.value;
-      console.log("submit values", formData);
-      if (this.isEditMode) {
-        this.metalclassificationService.updateMetalClassification(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.MetalClassificationForm.reset();
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.metalclassificationService.createMetalClassification(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.MetalClassificationForm.reset();
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.MetalClassificationForm);
+    if (!this.MetalClassificationForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.MetalClassificationForm.value;
+    const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
+    const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+    if (hasParams && parameterArray.length === 0) {
+      this.toastService.show('Please select at least one parameter.', 'warning');
+      return;
+    }
+    if (this.isEditMode) {
+      this.metalclassificationService.updateMetalClassification(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.MetalClassificationForm.reset();
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.metalclassificationService.createMetalClassification(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.MetalClassificationForm.reset();
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 

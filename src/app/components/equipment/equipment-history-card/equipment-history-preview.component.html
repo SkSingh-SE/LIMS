@@ -1,0 +1,102 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-cancel btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn btn-save btn-sm" (click)="printRecord()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="record" orientation="portrait">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-14'"
+          mainTitle="EQUIPMENT HISTORY CARD"
+          [docNo]="'DMSPL / Level-04 / Format / F-14'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Equipment Details -->
+      <table class="table table-bordered border-2 border-dark mb-3 info-table">
+        <tbody>
+          <tr>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Equipment Details</td>
+            <td class="border-2 border-dark">
+              <div class="fw-bold">{{ record.equipmentName }} ({{ record.equipmentNo }})</div>
+              <div class="text-muted small">ID: {{ record.equipmentId }}</div>
+            </td>
+            <td class="label-cell border-2 border-dark" style="width: 25%;">Record Details</td>
+            <td class="border-2 border-dark">
+              <div>Type: <span class="fw-medium">{{ record.recordType | titlecase }}</span></div>
+              <div>Date: <span class="fw-medium">{{ record.recordDate | date:'dd.MM.yyyy' }}</span></div>
+            </td>
+          </tr>
+          <tr>
+            <td class="label-cell border-2 border-dark">Performed By</td>
+            <td class="border-2 border-dark">{{ record.performedBy }}</td>
+            <td class="label-cell border-2 border-dark">Status</td>
+            <td class="border-2 border-dark fw-bold">{{ record.status | titlecase }}</td>
+          </tr>
+          <tr *ngIf="record.recordType === 'calibration'">
+            <td class="label-cell border-2 border-dark">Agency / Cert No</td>
+            <td class="border-2 border-dark">{{ record.agency }} / {{ record.certificateNo }}</td>
+            <td class="label-cell border-2 border-dark">Next Due Date</td>
+            <td class="border-2 border-dark">{{ record.nextDueDate | date:'dd.MM.yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Description of Work Performed</div>
+        <div class="section-content ql-editor p-3" [innerHTML]="record.description"></div>
+      </div>
+
+      <div *ngIf="record.observations" class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Observations</div>
+        <div class="section-content ql-editor p-3" [innerHTML]="record.observations"></div>
+      </div>
+
+      <div *ngIf="record.actionsTaken" class="section mb-3 border-2 border-dark">
+        <div class="section-title border-bottom-2">Actions Taken</div>
+        <div class="section-content ql-editor p-3" [innerHTML]="record.actionsTaken"></div>
+      </div>
+
+      <div class="mt-4 pt-5">
+        <table class="table table-bordered border-2 border-dark text-center">
+          <tbody>
+            <tr>
+              <td style="width: 33.33%; height: 80px;" class="align-bottom pb-1">
+                <div class="fw-bold">Performed By</div>
+                <div class="small">{{ record.performedBy }}</div>
+              </td>
+              <td style="width: 33.33%;" class="align-bottom pb-1">
+                <div class="fw-bold">Verified By</div>
+                <div class="small">(Quality Manager)</div>
+              </td>
+              <td style="width: 33.33%;" class="align-bottom pb-1">
+                <div class="fw-bold">Approved By</div>
+                <div class="small">(Technical Manager)</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="false" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

@@ -1,82 +1,170 @@
-<div class="container-fluid d-flex flex-column align-items-center mt-4">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
-    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-calculator"></i>
-        Account Dashboard
-      </label>
-    </div>
-
-    <div *ngIf="!isLoading()" class="card-body p-4">
-      <div class="row g-4">
-        <!-- PI Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
-               (click)="navigateToCaseList('pi-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-file-earmark-text text-warning" style="font-size: 3rem;"></i>
-              </div>
-              <h5 class="card-title text-muted mb-2">PI Pending</h5>
-              <h2 class="text-warning mb-0">{{ dashboardData.piPending }}</h2>
-            </div>
-          </div>
-        </div>
-
-        <!-- Invoice Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
-               (click)="navigateToCaseList('invoice-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-receipt text-info" style="font-size: 3rem;"></i>
-              </div>
-              <h5 class="card-title text-muted mb-2">Invoice Pending</h5>
-              <h2 class="text-info mb-0">{{ dashboardData.invoicePending }}</h2>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Pending Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
-               (click)="navigateToCaseList('payment-pending')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-credit-card text-danger" style="font-size: 3rem;"></i>
-              </div>
-              <h5 class="card-title text-muted mb-2">Payment Pending</h5>
-              <h2 class="text-danger mb-0">{{ dashboardData.paymentPending }}</h2>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fully Settled Card -->
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm cursor-pointer" 
-               (click)="navigateToCaseList('fully-settled')"
-               style="transition: transform 0.2s; cursor: pointer;">
-            <div class="card-body text-center">
-              <div class="mb-3">
-                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-              </div>
-              <h5 class="card-title text-muted mb-2">Fully Settled</h5>
-              <h2 class="text-success mb-0">{{ dashboardData.fullySettled }}</h2>
-            </div>
-          </div>
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Account Dashboard</label>
+      <div class="d-flex align-items-center gap-2 me-3">
+        <button class="btn btn-outline-light btn-sm" (click)="loadDashboard()">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <div class="refresh-status" *ngIf="lastUpdated">
+          <small>{{ formatTimestamp(lastUpdated) }}</small>
         </div>
       </div>
     </div>
+    <div class="card-body p-3" style="background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);">
+      <div class="dashboard-content">
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <!-- ═══ Financial Summary ═══ -->
+        <div class="dashboard-section">
+          <h4 class="section-title"><i class="bi bi-currency-rupee"></i> Financial Summary</h4>
+          <div class="fin-grid">
+            <div class="fin-card fin-card--revenue">
+              <div class="fin-icon fin-icon--green"><i class="bi bi-graph-up-arrow"></i></div>
+              <div class="fin-info">
+                <div class="fin-amount">{{ formatCurrency(dashboardData.totalRevenue) }}</div>
+                <div class="fin-label">Total Revenue</div>
+              </div>
+            </div>
+            <div class="fin-card fin-card--outstanding">
+              <div class="fin-icon fin-icon--blue"><i class="bi bi-wallet2"></i></div>
+              <div class="fin-info">
+                <div class="fin-amount">{{ formatCurrency(dashboardData.totalOutstanding) }}</div>
+                <div class="fin-label">Outstanding</div>
+              </div>
+            </div>
+            <div class="fin-card fin-card--overdue">
+              <div class="fin-icon fin-icon--red"><i class="bi bi-exclamation-triangle"></i></div>
+              <div class="fin-info">
+                <div class="fin-amount">{{ formatCurrency(dashboardData.totalOverdue) }}</div>
+                <div class="fin-label">Overdue</div>
+              </div>
+            </div>
+            <div class="fin-card fin-card--collection">
+              <div class="fin-icon fin-icon--green"><i class="bi bi-cash-stack"></i></div>
+              <div class="fin-info">
+                <div class="fin-amount">{{ formatCurrency(dashboardData.todayCollection) }}</div>
+                <div class="fin-label">Today's Collection</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Case Status ═══ -->
+        <div class="dashboard-section">
+          <h4 class="section-title"><i class="bi bi-folder2-open"></i> Case Status</h4>
+          <div class="status-grid">
+            <div class="status-card status-card--warning" (click)="navigateToCaseList('pi-pending')" role="button" tabindex="0">
+              <div class="status-icon status-icon--warning"><i class="bi bi-file-earmark-text"></i></div>
+              <div class="status-info">
+                <div class="status-count">{{ dashboardData.piPending }}</div>
+                <div class="status-label">PI Pending</div>
+                <div class="status-desc">Awaiting proforma</div>
+              </div>
+            </div>
+            <div class="status-card status-card--blue" (click)="navigateToCaseList('invoice-pending')" role="button" tabindex="0">
+              <div class="status-icon status-icon--blue"><i class="bi bi-receipt"></i></div>
+              <div class="status-info">
+                <div class="status-count">{{ dashboardData.invoicePending }}</div>
+                <div class="status-label">Invoice Pending</div>
+                <div class="status-desc">Ready to invoice</div>
+              </div>
+            </div>
+            <div class="status-card status-card--red" (click)="navigateToCaseList('payment-pending')" role="button" tabindex="0">
+              <div class="status-icon status-icon--red"><i class="bi bi-credit-card"></i></div>
+              <div class="status-info">
+                <div class="status-count">{{ dashboardData.paymentPending }}</div>
+                <div class="status-label">Payment Pending</div>
+                <div class="status-desc">Awaiting payment</div>
+              </div>
+            </div>
+            <div class="status-card status-card--green" (click)="navigateToCaseList('fully-settled')" role="button" tabindex="0">
+              <div class="status-icon status-icon--green"><i class="bi bi-check-circle"></i></div>
+              <div class="status-info">
+                <div class="status-count">{{ dashboardData.fullySettled }}</div>
+                <div class="status-label">Fully Settled</div>
+                <div class="status-desc">Paid & closed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Customer Type Breakdown ═══ -->
+        <div class="dashboard-section" *ngIf="dashboardData.customerTypeBreakdown?.length">
+          <h4 class="section-title"><i class="bi bi-people"></i> By Customer Type</h4>
+          <table class="table table-sm breakdown-table mb-0">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th class="text-center">Cases</th>
+                <th class="text-end">Outstanding</th>
+                <th class="text-center" style="width: 80px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of dashboardData.customerTypeBreakdown">
+                <td>
+                  <span class="type-badge text-white"
+                    [ngClass]="{
+                      'bg-success': item.type === 'Walk In',
+                      'bg-primary': item.type === 'Credit Customer',
+                      'bg-info': item.type !== 'Walk In' && item.type !== 'Credit Customer'
+                    }">{{ item.type }}</span>
+                </td>
+                <td class="text-center fw-bold">{{ item.caseCount }}</td>
+                <td class="text-end outstanding-val" [class.text-danger]="item.outstandingAmount > 0">
+                  {{ item.outstandingAmount > 0 ? formatCurrency(item.outstandingAmount) : '-' }}
+                </td>
+                <td class="text-center">
+                  <button class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.68rem; border-radius: 6px;"
+                    (click)="navigateToCaseList(item.type)">View <i class="bi bi-arrow-right"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ═══ Quick Actions ═══ -->
+        <div class="dashboard-section">
+          <h4 class="section-title"><i class="bi bi-lightning"></i> Quick Actions</h4>
+          <div class="actions-grid">
+            <button class="action-btn action-btn--primary" (click)="navigateToCaseList()">
+              <i class="bi bi-list-ul"></i> All Cases
+            </button>
+            <button class="action-btn action-btn--success" (click)="navigateTo('/accounts/record-payment')">
+              <i class="bi bi-currency-rupee"></i> Record Payment
+            </button>
+            <button class="action-btn action-btn--info" (click)="navigateTo('/accounts/ledger')">
+              <i class="bi bi-journal-text"></i> Customer Ledger
+            </button>
+            <button class="action-btn action-btn--info" (click)="navigateTo('/accounts/outstanding-report')">
+              <i class="bi bi-bar-chart"></i> Outstanding
+            </button>
+            <button class="action-btn action-btn--warning" (click)="navigateTo('/accounts/aging-report')">
+              <i class="bi bi-clock-history"></i> Aging Report
+            </button>
+            <button class="action-btn action-btn--success" (click)="navigateToCaseList('fully-settled')">
+              <i class="bi bi-check-circle"></i> Settled Cases
+            </button>
+            <button class="action-btn action-btn--warning" (click)="navigateToCaseList('pi-pending')">
+              <i class="bi bi-file-earmark-text"></i> Pending PIs
+            </button>
+            <button class="action-btn action-btn--danger" (click)="navigateToCaseList('payment-pending')">
+              <i class="bi bi-credit-card"></i> Pending Payments
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="isEmpty()" class="empty-state">
+          <i class="bi bi-calculator empty-state-icon"></i>
+          <h4>No Account Data Available</h4>
+          <p class="text-muted small">Data will appear once cases are available.</p>
+          <button class="btn btn-sm btn-outline-danger" (click)="loadDashboard()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
-

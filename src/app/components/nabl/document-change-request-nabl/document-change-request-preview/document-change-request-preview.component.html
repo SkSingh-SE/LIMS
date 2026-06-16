@@ -1,0 +1,136 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Document Change Request Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'DOCUMENT CHANGE REQUEST FORM'"
+        [docNo]="data.docNo"
+        [issueNo]="data.headerIssueNo"
+        [issueDate]="data.headerIssueDate"
+        [revNo]="data.headerRevNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- Document Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">DOCUMENT DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Date</td>
+              <td>{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Document Title</td>
+              <td>{{ data.documentTitle }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Doc. No.</td>
+              <td>{{ data.documentNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Issue No. / Rev. No.</td>
+              <td>{{ data.issueNo }} / {{ data.revNo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Changes Required -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CHANGES REQUIRED</div>
+        <div class="sec-body" [innerHTML]="data.changesRequired"></div>
+      </div>
+
+      <!-- Justification -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">JUSTIFICATION</div>
+        <div class="sec-body" [innerHTML]="data.justification"></div>
+      </div>
+
+      <!-- Authorization -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">AUTHORIZATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Initiated By</td>
+              <td>{{ data.initiatedBy }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Approved By (Director)</td>
+              <td>{{ data.approvedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action Taken by Quality Manager -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">ACTION TAKEN BY QUALITY MANAGER</div>
+        <div class="sec-body" [innerHTML]="data.actionTaken"></div>
+      </div>
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'General Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

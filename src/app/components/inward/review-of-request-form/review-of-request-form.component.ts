@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -8,47 +8,51 @@ import { LaboratoryTestService } from '../../../services/laboratory-test.service
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { ParameterService } from '../../../services/parameter.service';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
+import { ProductConditionService } from '../../../services/product-condition.service';
+import { TPIService } from '../../../services/tpi.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
+import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-review-of-request-form',
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent, SearchableDropdownComponent]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
   plan: any = null;
   baseUrl = environment.baseUrl;
-  showActionPanel = false;
-  reviewAction: 'approve' | 'sendback' | 'reject' | null = null;
   reviewRemark: string = '';
   submitAttempted = false;
   testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
+  reviewStatus: SampleStatus = SampleStatus.UNDER_REVIEW_REQUEST;
 
   // Dropdown data maps
   specificationMap: { [id: string]: string } = {};
   standardMap: { [id: string]: string } = {};
   testMethodMap: { [id: string]: string } = {};
   metalClassificationMap: { [id: string]: string } = {};
+  productConditionMap: { [id: string]: string } = {};
   parameterMap: { [id: string]: string } = {};
+  tpiAgencyMap: { [id: string]: string } = {};
 
   // Filtered test methods and standards for dependent dropdowns
   filteredTestMethods: { [key: string]: any[] } = {};
   filteredStandards: any[] = [];
 
-  // Drag position for review panel
-  dragPosition = { x: window.innerWidth - 140, y: 100 };
-  private isDragging = false;
-  private dragOffset = { x: 0, y: 0 };
-
   actions: any[] = [];
   selectedAction: any = null;
   showReviewButton = signal(true);
+
+  prepForms: { [sampleId: number]: FormGroup } = {};
+  openPrepSections: { [sampleId: number]: boolean } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -61,7 +65,9 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private activeRoute: ActivatedRoute,
     private router: Router,
     private workflowService: WorkflowService,
-    private toast: ToastService
+    private toast: ToastService,
+    private productConditionService: ProductConditionService,
+    private tpiService: TPIService
   ) { }
 
   ngOnInit(): void {
@@ -91,11 +97,23 @@ export class ReviewOfRequestFormComponent implements OnInit {
       this.metalClassificationMap = {};
       (list || []).forEach((item: any) => this.metalClassificationMap[item.id] = item.name);
     });
+    this.productConditionService.getProductConditionDropdown('', 0, 1000).subscribe(list => {
+      this.productConditionMap = {};
+      (list || []).forEach((item: any) => this.productConditionMap[item.id] = item.name);
+    });
     this.parameterService.getChemicalParameterDropdown('', 0, 1000).subscribe(list => {
       this.parameterMap = {};
       (list || []).forEach((item: any) => this.parameterMap[item.id] = item.name);
     });
+    this.tpiService.getTPIDropdown('', 0, 1000).subscribe(list => {
+      this.tpiAgencyMap = {};
+      (list || []).forEach((item: any) => this.tpiAgencyMap[item.id] = item.name);
+    });
   }
+
+  getTPIAgencies = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.tpiService.getTPIDropdown(searchTerm, pageNumber, pageSize);
+  };
 
 
   fetchSampleInwardDetails(inwardId: number): void {
@@ -107,7 +125,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
             id: data.id,
             customerName: data.customerName,
             customerAddress: data.address,
-            customerContact: data.customerContact,
+            customerContact: data.contacts?.find((c: any) => c.selected)?.name || data.contacts?.[0]?.name || '-',
             caseNo: data.caseNo,
             sampleReceiptNote: data.sampleReceiptNote,
             urgent: data.urgent,
@@ -115,6 +133,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
             notDestroyed: data.notDestroyed,
             statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
             decisionRule: data.decisionRule ?? 'Not Applicable',
+
             samples: (data.sampleDetails || []).map((s: any) => {
               // Find additional details for this sample
               const additionalDetails = (data.sampleAdditionalDetails || [])
@@ -128,6 +147,11 @@ export class ReviewOfRequestFormComponent implements OnInit {
               const testPlans = (data.sampleTestPlans || [])
                 .filter((tp: any) => tp.sampleID === s.id)
                 .map((tp: any) => ({
+                  id: tp.id,
+                  version: tp.version,
+                  planStatus: tp.planStatus,
+                  approvedByName: tp.approvedByName,
+                  approvedAt: tp.approvedAt,
                   generalTests: (tp.generalTests || []).map((gt: any) => ({
                     sampleNo: gt.sampleNo,
                     specification1: gt.specification1,
@@ -136,6 +160,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                     methods: (gt.methods || []).map((m: any) => ({
                       testMethodID: m.testMethodID,
                       standardID: m.standardID,
+                      standardName: m.standardName,
                       quantity: m.quantity,
                       reportNo: m.reportNo,
                       ulrNo: m.ulrNo,
@@ -165,10 +190,13 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 }));
 
               return {
+                id: s.id,
                 sampleNo: s.sampleNo,
                 details: s.details,
-                category: s.category,
-                nature: s.nature,
+                metalClassificationID: s.metalClassificationID,
+                metalClassificationName: s.metalClassificationName,
+                productConditionID: s.productConditionID,
+                productConditionName: s.productConditionName,
                 remarks: s.remarks,
                 quantity: s.quantity,
                 preparationRequired: s.preparationRequired ?? false,
@@ -178,6 +206,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 otherPreparation: s.otherPreparation ?? false,
                 otherPreparationCharge: s.otherPreparationCharge ?? 0,
                 tpiRequired: s.tpiRequired ?? false,
+                tpiAgencyID: s.tpiAgencyID ?? null,
                 testInstructions: s.testInstructions ?? '',
                 fileName: s.fileName ?? '',
                 sampleFilePath: s.sampleFilePath ?? '',
@@ -186,6 +215,26 @@ export class ReviewOfRequestFormComponent implements OnInit {
               };
             })
           };
+
+          // Build prep FormGroups for each sample
+          this.prepForms = {};
+          this.openPrepSections = {};
+          (this.plan.samples || []).forEach((s: any) => {
+            this.prepForms[s.id] = this.fb.group({
+              preparationRequired: [s.preparationRequired],
+              machiningRequired: [s.machiningRequired],
+              machiningAmount: [s.machiningAmount],
+              specimen: [s.specimen],
+              otherPreparation: [s.otherPreparation],
+              otherPreparationCharge: [s.otherPreparationCharge],
+              testInstructions: [s.testInstructions],
+              tpiRequired: [s.tpiRequired],
+              tpiAgencyID: [s.tpiAgencyID]
+            });
+            this.openPrepSections[s.id] = !!(s.preparationRequired || s.machiningRequired || s.otherPreparation || s.tpiRequired);
+          });
+
+          this.reviewStatus = data.status;
           this.showReviewButton.set(data.canTakeAction);
           this.actions = data.actions || [];
           if (this.actions.length > 0) {
@@ -221,6 +270,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
               specification1: gt.specification1,
               specification2: gt.specification2,
               standardID: method.standardID,
+              standardName: method.standardName,
               testMethodID: method.testMethodID,
               quantity: method.quantity,
               reportNo: method.reportNo,
@@ -322,11 +372,26 @@ export class ReviewOfRequestFormComponent implements OnInit {
     }
   }
 
-  // Review action handlers
-  onReviewActionChange() {
-    if (this.reviewAction !== 'sendback') {
-      this.reviewRemark = '';
-    }
+  togglePrepSection(sampleId: number): void {
+    this.openPrepSections[sampleId] = !this.openPrepSections[sampleId];
+  }
+
+  savePrepForSample(sampleId: number): void {
+    const form = this.prepForms[sampleId];
+    if (!form) return;
+    this.inwardService.updateSamplePrep(sampleId, form.value).subscribe({
+      next: () => this.toast.show('Preparation details saved.', 'success'),
+      error: () => this.toast.show('Failed to save preparation details.', 'error')
+    });
+  }
+
+  onTPIAgencySelected(item: any, sampleId: number): void {
+    this.prepForms[sampleId]?.patchValue({ tpiAgencyID: item?.id ?? null });
+  }
+
+  getTpiAgencyName(id: any): string {
+    if (!id) return '-';
+    return this.tpiAgencyMap[id] || String(id);
   }
 
   submitReview() {
@@ -353,38 +418,17 @@ export class ReviewOfRequestFormComponent implements OnInit {
     });
   }
 
-  // Drag and drop handlers
-  startDrag(event: MouseEvent | TouchEvent) {
-    event.preventDefault();
-    this.isDragging = true;
-    let clientX = (event as MouseEvent).clientX ?? (event as TouchEvent).touches[0].clientX;
-    let clientY = (event as MouseEvent).clientY ?? (event as TouchEvent).touches[0].clientY;
-    this.dragOffset = {
-      x: clientX - this.dragPosition.x,
-      y: clientY - this.dragPosition.y
-    };
-    window.addEventListener('mousemove', this.onDragMove);
-    window.addEventListener('mouseup', this.stopDrag);
-    window.addEventListener('touchmove', this.onDragMove, { passive: false });
-    window.addEventListener('touchend', this.stopDrag);
+  // Get badge class based on review status
+  getStatusBadgeClass(): string {
+    switch (this.reviewStatus) {
+      case SampleStatus.UNDER_REVIEW_REQUEST:
+        return 'bg-warning text-dark';
+      case SampleStatus.REQUEST_APPROVED:
+        return 'bg-success';
+      case SampleStatus.REQUEST_REJECTED:
+        return 'bg-danger';
+      default:
+        return 'bg-secondary';
+    }
   }
-
-  onDragMove = (event: MouseEvent | TouchEvent) => {
-    if (!this.isDragging) return;
-    let clientX = (event as MouseEvent).clientX ?? (event as TouchEvent).touches[0].clientX;
-    let clientY = (event as MouseEvent).clientY ?? (event as TouchEvent).touches[0].clientY;
-    this.dragPosition = {
-      x: clientX - this.dragOffset.x,
-      y: clientY - this.dragOffset.y
-    };
-    event.preventDefault();
-  };
-
-  stopDrag = () => {
-    this.isDragging = false;
-    window.removeEventListener('mousemove', this.onDragMove);
-    window.removeEventListener('mouseup', this.stopDrag);
-    window.removeEventListener('touchmove', this.onDragMove);
-    window.removeEventListener('touchend', this.stopDrag);
-  };
 }

@@ -5,10 +5,11 @@ import { Modal } from 'bootstrap';
 import { Observable } from 'rxjs';
 import { ToastService } from '../../services/toast.service';
 import { ConfigService } from '../../services/config.service';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-configuration',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [ CommonModule, ReactiveFormsModule, FormsModule, PaginationComponent ],
   templateUrl: './configuration.component.html',
   styleUrl: './configuration.component.css'
 })
@@ -18,13 +19,12 @@ export class ConfigManagerComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'keyName', type: 'string', label: 'Key', filter: true },
     { key: 'groupName', type: 'string', label: 'Group Name', filter: true },
     { key: 'value', type: 'string', label: 'Value', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     keyName: 'string',
     groupName: 'string',
     value: 'string'
@@ -43,12 +43,11 @@ export class ConfigManagerComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -103,12 +102,10 @@ export class ConfigManagerComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.configList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -116,8 +113,10 @@ export class ConfigManagerComponent implements OnInit {
 
 
   getDetails(): void {
-    this.configService.getConfigurationsById(this.configId).subscribe({
+    const requestId = this.configId;
+    this.configService.getConfigurationsById(requestId).subscribe({
       next: (res: any) => {
+        if (this.configId !== requestId) return; // discard stale response
         if (res) {
           // Parse pipe-separated values into array for dropdown
           const valuesArray = res.value ? res.value.split('|').map((item: string) => item.trim()) : [];
@@ -199,6 +198,17 @@ export class ConfigManagerComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -246,6 +256,8 @@ export class ConfigManagerComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -254,6 +266,14 @@ export class ConfigManagerComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -273,6 +293,7 @@ export class ConfigManagerComponent implements OnInit {
   openModal(type: string, id: number): void {
     // Reset form first
     this.initForm();
+    this.configId = 0;
 
     if (type === 'create') {
       this.isEditMode = false;
@@ -317,13 +338,19 @@ export class ConfigManagerComponent implements OnInit {
       this.bsModal.hide();
     }
     this.configForm.reset();
+    this.configForm.enable();
     this.configId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
     if (this.configForm.valid) {
       const payload = this.configForm.getRawValue();
-      payload.value = payload.values.map((a: any) => a).join('|');
+      // For multi-value (csv/dropdown), join values array; for single, keep the value field as-is
+      if (payload.values && payload.values.length > 0) {
+        payload.value = payload.values.map((a: any) => a).join('|');
+      }
 
 
       const saveFn = this.configId > 0

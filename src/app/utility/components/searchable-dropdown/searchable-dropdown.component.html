@@ -1,10 +1,43 @@
 <div class="position-relative w-100">
-        <label *ngIf="!hideLabel" class="form-label">{{ labelName }} <span *ngIf="required"
-                        class="text-danger">*</span></label>
-        <input #inputRef #modelRef="ngModel" type="text" class="form-control" [class]="smallInput ? 'form-control-sm' : 'form-control'" [placeholder]="placeholder"
-                [(ngModel)]="selectedLabel" [disabled]="isDisabled" (input)="handleInput($event)" (focus)="onFocus()"
-                autocomplete="off" [required]="required" [ngClass]="{ 'is-invalid': required && modelRef.invalid && modelRef.touched }" />
-        <div *ngIf="required && modelRef.invalid && modelRef.touched" class="invalid-feedback">
-                {{ labelName }} is required.
-        </div>
+  <label *ngIf="!hideLabel" class="form-label" [ngClass]="{'form-label-sm': smallInput}">
+    {{ labelName }}
+    <span *ngIf="required" class="text-danger">*</span>
+  </label>
+  <div class="input-group">
+  <input
+    #inputRef
+    #modelRef="ngModel"
+    type="text"
+    class="form-control"
+    [class]="smallInput ? 'form-control-sm' : 'form-control'"
+    [placeholder]="placeholder"
+    [(ngModel)]="selectedLabel"
+    [disabled]="isDisabled"
+    (input)="handleInput($event)"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+    (keydown)="handleKeydown($event)"
+    autocomplete="off"
+    [required]="required"
+    [ngClass]="{ 'is-invalid': (required && modelRef.invalid && modelRef.touched) || isInvalid }"
+  />
+    <span
+      class="input-group-text clear-icon"
+      role="button"
+      (click)="clearSelection($event)"
+      *ngIf="!isDisabled && selectedLabel"
+      title="Clear"
+    >
+      <i class="bi bi-x-lg"></i>
+    </span>
+    <span
+      class="input-group-text dropdown-toggle-icon"
+      role="button"
+      (click)="onChevronClick()"
+      *ngIf="!isDisabled"
+    >
+      <i class="bi bi-chevron-down"></i>
+    </span>
+  </div>
+  <div *ngIf="required && modelRef.invalid && modelRef.touched" class="invalid-feedback">{{ labelName }} is required.</div>
 </div>

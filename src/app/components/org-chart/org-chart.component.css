@@ -1,0 +1,453 @@
+/* Container */
+.org-chart-container {
+  width: 100%;
+  height: calc(100vh - 70px); /* Adjust for header */
+  overflow: auto;
+  padding: 2rem;
+  background-color: #0f172a; /* Dark background matching image */
+  display: flex;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.org-chart-header {
+  height: 50px;
+  background-color: #1e293b;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  justify-content: space-between;
+  border-bottom: 1px solid #334155;
+  color: white;
+}
+
+.org-chart-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid #475569;
+  color: #cbd5e1;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: #334155;
+  color: white;
+  border-color: #94a3b8;
+}
+
+/* Tree Structure */
+.tree ul {
+  padding-top: 20px; 
+  position: relative;
+  transition: all 0.5s;
+  display: flex;
+  justify-content: center;
+}
+
+.tree li {
+  float: left; 
+  text-align: center;
+  list-style-type: none;
+  position: relative;
+  padding: 20px 5px 0 5px;
+  transition: all 0.5s;
+}
+
+/* Connecting Lines */
+.tree li::before, .tree li::after {
+  content: '';
+  position: absolute; 
+  top: 0; 
+  right: 50%;
+  border-top: 2px solid #5a6b8c; /* Line color */
+  width: 50%; 
+  height: 20px;
+}
+
+.tree li::after {
+  right: auto; 
+  left: 50%;
+  border-left: 2px solid #5a6b8c;
+}
+
+/* Remove connectors from root */
+.tree li:only-child::after, .tree li:only-child::before {
+  display: none;
+}
+
+.tree li:only-child { 
+  padding-top: 0;
+}
+
+/* Remove connectors from first and last child to create rounded tree look */
+.tree li:first-child::before, .tree li:last-child::after {
+  border: 0 none;
+}
+
+/* Add vertical line for last/first child */
+.tree li:last-child::before {
+  border-right: 2px solid #5a6b8c;
+  border-radius: 0 5px 0 0;
+}
+
+.tree li:first-child::after {
+  border-radius: 5px 0 0 0;
+}
+
+/* Line down from parent */
+.tree ul ul::before {
+  content: '';
+  position: absolute; 
+  top: 0; 
+  left: 50%;
+  border-left: 2px solid #5a6b8c;
+  width: 0; 
+  height: 20px;
+}
+
+/* Node Card */
+.node-card {
+  display: inline-block;
+  background-color: #1e293b; /* Dark card bg */
+  border-radius: 8px;
+  padding: 10px;
+  width: 180px; /* Compact width */
+  position: relative;
+  transition: all 0.3s;
+  border: 1px solid #334155;
+  z-index: 10;
+}
+
+.node-card:hover {
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transform: translateY(-2px);
+  border-color: #475569;
+}
+
+/* Node Content Layout */
+.node-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Avatar */
+.node-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Node Info Text */
+.node-info {
+  text-align: left;
+  flex: 1;
+  min-width: 0; /* Prevent overflow */
+}
+
+.node-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-role {
+  font-size: 9px;
+  color: #cbd5e1;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-location {
+  font-size: 8px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.node-department {
+  font-size: 7px;
+  color: #64748b;
+  margin-top: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Toggle Button (+/-) */
+.toggle-btn {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #DA261C; /* Brand Red */
+  color: white;
+  border: 2px solid #0f172a; /* Border matching container bg to look 'cut out' */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  z-index: 20;
+}
+
+.toggle-btn:hover {
+  background-color: #b91c12;
+}
+
+/* Line down from expanded node to the ul */
+.line-down {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    background-color: #5a6b8c;
+    z-index: 5;
+}
+
+/* Zoom/Scroll Logic */
+/* .tree {
+   transform-origin: top center;
+   transform: scale(0.9);
+} */
+/* ... Existing Styles ... */
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.icon-btn {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: #334155;
+    color: white;
+    border-color: #94a3b8;
+}
+
+/* Floating Zoom Controls */
+.zoom-controls {
+    position: fixed;
+    top: 150px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #1e293b;
+    padding: 5px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.zoom-controls button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.zoom-controls button:hover {
+    background: #334155;
+    color: white;
+}
+
+/* =========================================
+   LIGHT MODE THEME
+   ========================================= */
+.org-chart-container.light-mode {
+    background-color: #f8fafc;
+    color: #1a202c;
+}
+
+.org-chart-header.light-mode {
+    background-color: #ffffff;
+    border-bottom-color: #e2e8f0;
+    color: #1a202c;
+}
+
+.org-chart-header.light-mode .back-btn,
+.org-chart-header.light-mode .icon-btn {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+.org-chart-header.light-mode .back-btn:hover,
+.org-chart-header.light-mode .icon-btn:hover {
+    background-color: #f1f5f9;
+    color: #DA261C;
+    border-color: #DA261C;
+}
+
+.light-mode .node-card {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.light-mode .node-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #cbd5e1;
+}
+
+.light-mode .node-name { color: #1e293b; }
+.light-mode .node-role { color: #64748b; }
+.light-mode .node-location { color: #94a3b8; }
+
+.light-mode .tree li::before, 
+.light-mode .tree li::after,
+.light-mode .tree ul ul::before,
+.light-mode .line-down {
+    border-color: #cbd5e1;
+    /* background-color: #cbd5e1; For line-down */
+}
+
+.light-mode .zoom-controls {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.light-mode .zoom-controls button {
+    color: #64748b;
+}
+
+.light-mode .zoom-controls button:hover {
+    background: #f1f5f9;
+    color: #DA261C;
+}
+
+/* =========================================
+   VERTICAL LAYOUT MODE
+   ========================================= */
+.vertical-layout .tree ul {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 20px;
+}
+
+.vertical-layout .tree li {
+    float: none;
+    text-align: left;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Hide horizontal connectors in vertical mode */
+.vertical-layout .tree li::before,
+.vertical-layout .tree li::after,
+.vertical-layout .tree ul ul::before {
+    display: none; 
+}
+
+/* New Vertical Connectors */
+.vertical-layout .node-card {
+    margin-left: 0;
+}
+
+.vertical-layout .line-down {
+    display: none; /* Hide default drop line */
+}
+
+/* Custom left-side hierarchy lines for vertical mode */
+.vertical-layout .tree ul {
+    border-left: 2px solid #5a6b8c;
+    margin-left: 20px;
+}
+
+.vertical-layout.light-mode .tree ul {
+    border-left-color: #cbd5e1;
+}
+
+/* Root UL shouldn't have line */
+.vertical-layout .tree > ul {
+    border-left: none;
+    margin-left: 0;
+}
+
+.vertical-layout .tree li {
+    padding-left: 20px;
+    position: relative;
+}
+
+.vertical-layout .tree li::before {
+    content: '';
+    position: absolute;
+    top: 50px; /* Align with center of card height roughly */
+    left: 0;
+    width: 20px;
+    height: 0;
+    border-top: 2px solid #5a6b8c;
+    display: block !important;
+}
+
+.vertical-layout.light-mode .tree li::before {
+    border-top-color: #cbd5e1;
+}
+
+.vertical-layout .toggle-btn {
+    left: -10px; /* Move to left side */
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+}

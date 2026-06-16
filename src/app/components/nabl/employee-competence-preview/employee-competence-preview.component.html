@@ -1,0 +1,197 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Employee Competence Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- Employee Mode: Report List -->
+  <div *ngIf="isEmployeeMode && !loading && reports.length > 1" class="mb-3 no-print">
+    <div class="card shadow-sm">
+      <div class="card-header card-form-header text-white">
+        <label class="fw-medium">Competence Evaluations ({{ reports.length }} records)</label>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Evaluation Period</th>
+              <th>Overall Rating</th>
+              <th>Evaluated By</th>
+              <th>Date</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of reports; let i = index" [class.table-active]="report === r" style="cursor: pointer;" (click)="selectReport(r)">
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.evaluationPeriodFrom }} — {{ r.evaluationPeriodTo }}</td>
+              <td>{{ r.overallRating || '-' }}</td>
+              <td>{{ r.evaluationDoneBy || '-' }}</td>
+              <td>{{ r.evaluationDate | date: 'dd-MMM-yyyy' }}</td>
+              <td class="text-center"><i class="bi bi-eye text-primary"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="isEmployeeMode && !loading && reports.length === 0" class="text-center py-5">
+    <i class="bi bi-clipboard-check" style="font-size: 48px; color: #ccc;"></i>
+    <p class="text-muted mt-2">No competence evaluations found for this employee.</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="report" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-7'"
+          [mainTitle]="'EMPLOYEE COMPETENCE REPORT'"
+          [docNo]="'DMSPL / Level-04 / Format / F-7'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- Employee Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EMPLOYEE INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Name</td>
+              <td colspan="3"><strong>{{ report.employeeName }}</strong></td>
+            </tr>
+            <tr>
+              <td class="lbl">Designation</td>
+              <td style="width: 25%">{{ report.designationName }}</td>
+              <td class="lbl" style="width: 25%">Evaluation Period</td>
+              <td>
+                From: {{ report.evaluationPeriodFrom | date:'dd/MM/yyyy' }} To: {{ report.evaluationPeriodTo | date:'dd/MM/yyyy' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Performance Level -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">PERFORMANCE LEVEL (Please &#10003;)</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th>Description</th>
+              <th *ngFor="let opt of ratingOptions" style="width: 12%;">{{ opt }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let param of report.parameters">
+              <td>{{ param.name }}</td>
+              <td *ngFor="let opt of ratingOptions" class="text-center">
+                <span *ngIf="param.rating === opt" class="fw-bold">&#10003;</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Overall Rating -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">OVERALL RATING &amp; TRAINING</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Overall Rating (1 Lowest – 10 Highest)</td>
+              <td>
+                <div class="rating-box-container mt-1">
+                  <div *ngFor="let n of [1,2,3,4,5,6,7,8,9,10]"
+                       class="rating-box border-dark border-end-2 text-center"
+                       [class.selected]="report.overallRating === n">
+                    {{ n }}
+                    <span *ngIf="report.overallRating === n" class="check-mark">&#10003;</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Specific Training Required</td>
+              <td>
+                <ol class="mb-0 mt-1" *ngIf="report.specificTrainingRequired">
+                  <li>{{ report.specificTrainingRequired }}</li>
+                </ol>
+                <span *ngIf="!report.specificTrainingRequired">-</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Evaluation Done By</td>
+              <td>{{ report.evaluationDoneBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="report.preparedBy"
+          [issuedByName]="report.reviewedBy"
+          [reviewedApprovedByName]="report.approvedBy">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

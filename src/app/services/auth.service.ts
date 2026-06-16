@@ -39,7 +39,11 @@ export class AuthService {
 
   saveUserData(userData: any): void {
     localStorage.setItem('userData', JSON.stringify(userData));
-    const expirationTime = Date.now() + userData.expiresInSecond * 1000; // Convert seconds to milliseconds
+    const seconds = userData.expiresInSeconds ?? userData.expiresInSecond ?? 0;
+    let expirationTime = Date.now() + seconds * 1000;
+    if (isNaN(expirationTime) || seconds <= 0) {
+      expirationTime = Date.now() + 8 * 60 * 60 * 1000; // fallback: 8 hours
+    }
     localStorage.setItem('tokenExpiration', expirationTime.toString());
   }
 
@@ -51,7 +55,6 @@ export class AuthService {
   isLoggedIn(): boolean {
     const expiration = localStorage.getItem('tokenExpiration');
     const userData = this.getUserData();
-  alert('isLoggedIn called');
     if (!userData || !expiration) {
       return false;
     }
@@ -79,5 +82,63 @@ export class AuthService {
   getToken(): string | null {
     const userData = this.getUserData();
     return userData ? userData.token : null;
+  }
+
+  getProfileImagePath(): string | null {
+    const userData = this.getUserData();
+    return userData?.profileImagePath || null;
+  }
+
+  updateProfileImagePath(path: string): void {
+    const userData = this.getUserData();
+    if (userData) {
+      userData.profileImagePath = path;
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
+  }
+
+  /**
+   * Get user roles from stored user data
+   */
+  getUserRoles(): string[] {
+    const userData = this.getUserData();
+    if (!userData || !userData.roles) {
+      return [];
+    }
+    
+    // Handle both single role string and array of roles
+    return Array.isArray(userData.roles) ? userData.roles : [userData.roles];
+  }
+
+  /**
+   * Check if user has a specific role
+   */
+  hasRole(role: string): boolean {
+    const userRoles = this.getUserRoles();
+    return userRoles.includes(role);
+  }
+
+  /**
+   * Check if user has any of the specified roles
+   */
+  hasAnyRole(roles: string[]): boolean {
+    const userRoles = this.getUserRoles();
+    return roles.some(role => userRoles.includes(role));
+  }
+
+  /**
+   * Check if user has all of the specified roles
+   */
+  hasAllRoles(roles: string[]): boolean {
+    const userRoles = this.getUserRoles();
+    return roles.every(role => userRoles.includes(role));
+  }
+
+  /**
+   * Get user's primary role (first role in the array)
+   */
+  getPrimaryRole(): string | null {
+    const userRoles = this.getUserRoles();
+    return userRoles.length > 0 ? userRoles[0] : null;
   }
 }

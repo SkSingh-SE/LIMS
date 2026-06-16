@@ -1,0 +1,24 @@
+.form-check-card {
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.form-check-card:hover {
+    background-color: #f8f9fa;
+}
+
+.form-check-card .form-check-label {
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+}

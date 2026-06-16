@@ -1,0 +1,298 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="uncertaintyForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+            <div class="ms-auto pe-3 text-muted small">Format Details</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option value="" disabled>Select Form</option>
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control fw-bold" formControlName="documentNo" placeholder="MU-0001" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Test Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('testInfo')">
+            <i class="bi" [ngClass]="openSections['testInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Test Information</span>
+          </div>
+          <div *ngIf="openSections['testInfo']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">
+                  Test Parameter
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="testParameter" placeholder="e.g. Tensile Strength" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Test Method / Standard
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="testMethod" placeholder="e.g. IS 2062:2011" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Equipment Used
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="equipmentUsed" placeholder="Equipment name and ID" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Sample Description
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="sampleDescription" placeholder="Material and dimensions" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Measurement Readings -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('readings')">
+            <div>
+              <i class="bi" [ngClass]="openSections['readings'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. Measurement Readings</span>
+            </div>
+            <button
+              *ngIf="!isViewMode"
+              type="button"
+              class="btn btn-sm btn-light py-0 me-3"
+              (click)="addReading(); $event.stopPropagation()"
+            >
+              <i class="bi bi-plus-lg me-1"></i>
+              Add Reading
+            </button>
+          </div>
+          <div *ngIf="openSections['readings']" class="section-body p-0">
+            <div class="table-responsive m-0">
+              <table class="table table-bordered mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 small fw-bold text-muted" style="width: 80px">Sr. No.</th>
+                    <th class="py-2 small fw-bold text-muted">Measured Value</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 150px">Unit</th>
+                    <th *ngIf="!isViewMode" class="py-2 small fw-bold text-muted text-center" style="width: 60px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="readings">
+                  <tr *ngFor="let reading of readings.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3 text-center">{{ i + 1 }}</td>
+                    <td>
+                      <input type="number" step="0.001" class="form-control form-control-sm" formControlName="measuredValue" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="unit" placeholder="MPa, HV, %" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeReading(i)" [disabled]="readings.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Sources of Uncertainty -->
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('sources')">
+            <div>
+              <i class="bi" [ngClass]="openSections['sources'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">IV. Sources of Uncertainty</span>
+            </div>
+            <button
+              *ngIf="!isViewMode"
+              type="button"
+              class="btn btn-sm btn-light py-0 me-3"
+              (click)="addUncertaintySource(); $event.stopPropagation()"
+            >
+              <i class="bi bi-plus-lg me-1"></i>
+              Add Source
+            </button>
+          </div>
+          <div *ngIf="openSections['sources']" class="section-body p-0">
+            <div class="table-responsive m-0">
+              <table class="table table-bordered mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-3 py-2 small fw-bold text-muted">Source</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 120px">Type</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 140px">Distribution</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 140px">Std. Uncertainty</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 140px">Sensitivity Coeff.</th>
+                    <th class="py-2 small fw-bold text-muted" style="width: 120px">Contribution</th>
+                    <th *ngIf="!isViewMode" class="py-2 small fw-bold text-muted text-center" style="width: 60px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="uncertaintySources">
+                  <tr *ngFor="let src of uncertaintySources.controls; let i = index" [formGroupName]="i">
+                    <td class="ps-3">
+                      <input type="text" class="form-control form-control-sm" formControlName="source" placeholder="Source name" />
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="type">
+                        <option value="Type A">Type A</option>
+                        <option value="Type B">Type B</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="distribution">
+                        <option value="Normal">Normal</option>
+                        <option value="Rectangular">Rectangular</option>
+                        <option value="Triangular">Triangular</option>
+                        <option value="U-shaped">U-shaped</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" step="0.0001" class="form-control form-control-sm" formControlName="standardUncertainty" />
+                    </td>
+                    <td>
+                      <input type="number" step="0.01" class="form-control form-control-sm" formControlName="sensitivityCoefficient" />
+                    </td>
+                    <td>
+                      <input type="number" step="0.0001" class="form-control form-control-sm" formControlName="contribution" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button
+                        type="button"
+                        class="btn btn-sm text-danger"
+                        (click)="removeUncertaintySource(i)"
+                        [disabled]="uncertaintySources.length === 1"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Statistical Analysis -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('analysis')">
+            <i class="bi" [ngClass]="openSections['analysis'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Statistical Analysis & Results</span>
+          </div>
+          <div *ngIf="openSections['analysis']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Mean</label>
+                <input type="number" step="0.001" class="form-control" formControlName="mean" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Standard Deviation</label>
+                <input type="number" step="0.001" class="form-control" formControlName="standardDeviation" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Type A Uncertainty</label>
+                <input type="number" step="0.0001" class="form-control" formControlName="typeAUncertainty" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Type B Uncertainty</label>
+                <input type="number" step="0.0001" class="form-control" formControlName="typeBUncertainty" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Combined Uncertainty</label>
+                <input type="number" step="0.0001" class="form-control" formControlName="combinedUncertainty" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Coverage Factor (k)</label>
+                <input type="number" step="0.1" class="form-control" formControlName="coverageFactor" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-success fw-bold">Expanded Uncertainty (U)</label>
+                <input type="number" step="0.0001" class="form-control border-success" formControlName="expandedUncertainty" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Confidence Level</label>
+                <select class="form-select" formControlName="confidenceLevel">
+                  <option value="95%">95%</option>
+                  <option value="99%">99%</option>
+                  <option value="99.73%">99.73%</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Effective Degrees of Freedom</label>
+                <input type="number" class="form-control" formControlName="effectiveDegreesOfFreedom" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">No. of Readings</label>
+                <input type="number" class="form-control" formControlName="numberOfReadings" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <app-nabl-signature-section [parentForm]="uncertaintyForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="uncertaintyForm.invalid || false">
+            {{ isEditMode ? "Update Record" : "Save Record" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

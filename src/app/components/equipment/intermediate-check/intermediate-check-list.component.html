@@ -1,0 +1,147 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+    <div class="card basic-data-table w-100">
+        <div
+            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+            <label class="text-center text-md fw-medium ms-3">Intermediate Check Records (F-16)</label>
+            <a routerLink="/intermediate-check/create" class="btn btn-outline-light me-3">
+                <i class="bi bi-plus-lg"></i> Add New Check
+            </a>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Search -->
+            <div class="d-flex justify-content-end mb-2">
+                <div class="w-25 input-group custom-search">
+                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+                        (keydown.enter)="onSearch()">
+                    <div class="input-group-text pe-auto" (click)="onSearch()">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="records.length > 0" class="table-responsive">
+                <table class="table bordered-table align-middle w-100">
+                    <thead class="table-light">
+                        <tr class="text-center align-middle">
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">#</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Period</span>
+                                    <span class="d-flex flex-column ms-2 mt-2">
+                                        <i class="bi bi-caret-up sorting-icon-up"
+                                            [ngClass]="{'text-danger': sortByColumn === 'checkYear' && sortOrder === 'asc'}"
+                                            (click)="applySort('checkYear')"></i>
+                                        <i class="bi bi-caret-down sorting-icon-down"
+                                            [ngClass]="{'text-danger': sortByColumn === 'checkYear' && sortOrder === 'desc'}"
+                                            (click)="applySort('checkYear')"></i>
+                                    </span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Equipment</span>
+                                    <span class="d-flex flex-column ms-2 mt-2">
+                                        <i class="bi bi-caret-up sorting-icon-up"
+                                            [ngClass]="{'text-danger': sortByColumn === 'equipmentName' && sortOrder === 'asc'}"
+                                            (click)="applySort('equipmentName')"></i>
+                                        <i class="bi bi-caret-down sorting-icon-down"
+                                            [ngClass]="{'text-danger': sortByColumn === 'equipmentName' && sortOrder === 'desc'}"
+                                            (click)="applySort('equipmentName')"></i>
+                                    </span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Equipment No</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Location</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Total Checks</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Deviations</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <span class="dt-column-order">Next Calibration</span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let record of records; let i = index" class="text-sm">
+
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-3">
+                                    <a [routerLink]="['/intermediate-check/details', record.id]"
+                                        [state]="{ mode: 'view' }" class="icon-link" title="View">
+                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
+                                    </a>
+                                    <a [routerLink]="['/intermediate-check/edit', record.id]"
+                                        [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                                    </a>
+                                    <a class="icon-link" title="Delete" (click)="deleteRecord(record.id)">
+                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ getMonthName(record.checkMonth) }} {{ record.checkYear }}</td>
+                            <td>{{ record.equipmentName }}</td>
+                            <td>{{ record.equipmentNo }}</td>
+                            <td>{{ record.location }}</td>
+                            <td>{{ record.totalChecksPerformed }}</td>
+                            <td>
+                                <span *ngIf="record.deviationsObserved" class="badge bg-warning text-dark">
+                                    {{ record.deviationsObserved }}
+                                </span>
+                                <span *ngIf="!record.deviationsObserved" class="badge bg-success">
+                                    None
+                                </span>
+                            </td>
+                            <td>
+                                <span *ngIf="record.nextCalibrationDue"
+                                    [ngClass]="record.nextCalibrationDue < dateNow ? 'text-danger' : 'text-muted'">
+                                    {{ record.nextCalibrationDue | date:'dd MMM, yyyy' }}
+                                </span>
+                                <span *ngIf="!record.nextCalibrationDue">-</span>
+                            </td>                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div *ngIf="records.length == 0"
+                class="w-100 h-100 text-center border rounded-3 mb-2">
+                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+                    <div class="fw-semibold">No records found</div>
+                </div>
+            </div>
+            <!-- Pagination -->
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
+        </div>
+    </div>
+</div>

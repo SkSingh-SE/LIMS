@@ -1,0 +1,125 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Sample Preparation Queue</label>
+    </div>
+
+    <div class="card-body">
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-3">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div *ngIf="listData.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100 small">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+              <th *ngFor="let column of columns" class="fw-semibold">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-1">
+                    <i *ngIf="column.filter" class="bi bi-caret-up sorting-icon-up"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                       (click)="applySorting(column.key)"></i>
+                    <i *ngIf="column.filter" class="bi bi-caret-down sorting-icon-down"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                       (click)="applySorting(column.key)"></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                        (click)="openFilterModal(column.key, $event)">
+                    <i class="bi bi-funnel"></i>
+                  </span>
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                        (click)="resetFilter(column.key)">
+                    <i class="bi bi-x-lg text-danger"></i>
+                  </span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of listData" class="align-middle text-center">
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-3">
+                  <!-- View always -->
+                  <a *ngIf="item.id > 0" class="icon-link" title="View" (click)="navigateTo(item, 'details')">
+                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                  </a>
+                  <!-- Edit if not invoiced -->
+                  <a *ngIf="!item.isInvoiced && item.id > 0" class="icon-link" title="Edit" (click)="navigateTo(item, 'edit')">
+                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                  </a>
+                  <!-- Create if no prep record and not invoiced -->
+                  <a *ngIf="item.id === 0 && !item.isInvoiced" class="icon-link" title="Start Preparation" (click)="navigateTo(item, 'create')">
+                    <img src="/icons/add.svg" alt="Create" class="icon-svg">
+                  </a>
+                </div>
+              </td>
+              <td class="fw-semibold">
+                <a [routerLink]="['/sample/inward/details', item.inwardID]" [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none">{{ item.caseNo }}</a>
+              </td>
+              <td>{{ item.sampleNo }}</td>
+              <td>
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + item.customerName">
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
+              <td>{{ item.sampleDescription || '-' }}</td>
+              <td>
+                <app-test-status-badge [status]="item.status"></app-test-status-badge>
+              </td>
+              <td>{{ item.assignedToName || '-' }}</td>
+              <td class="text-end">{{ (item.totalCharges || 0) | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="listData.length === 0" class="alert alert-light border border-secondary text-center py-4">
+        <i class="bi bi-info-circle text-secondary"></i>
+        <p class="mb-0 text-secondary">No samples pending preparation.</p>
+      </div>
+
+      <!-- Pagination -->
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative border-0">
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+    <select class="form-select mb-2 border-secondary" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+    </select>
+    <input type="text" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue"
+           placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <button class="btn btn-danger btn-sm mb-2 fw-semibold" (click)="applyFilter()">Apply</button>
+  </div>
+</div>

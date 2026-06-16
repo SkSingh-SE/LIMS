@@ -4,7 +4,7 @@
       <label class="text-center text-md fw-medium ms-3">Test List</label>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="align-middle text-center">Actions</th>
+                            <th class="align-middle text-center" style="width: 180px; min-width: 180px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -38,13 +38,13 @@
                     ></i>
                   </span>
                   <span
-                    *ngIf="!hasFilter(column.key) && i != 0 && column.filter"
+                    *ngIf="!hasFilter(column.key) && column.filter"
                     class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)"
                   >
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
@@ -55,51 +55,72 @@
 
           <tbody>
             <tr *ngFor="let item of listData" class="align-middle">
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
-                  <!-- Perform Testing Button -->
-                  <button
-                  *ngIf="item.sampleStatus !== 'Completed'"
-                    class="btn btn-sm btn-outline-danger-600"
+              <td class="text-center">
+                <div class="d-flex gap-2 justify-content-center align-items-center">
+                  <a
+                    *ngIf="item.canPerformTesting"
                     [routerLink]="['/testing/perform', item.sampleId]"
+                    class="icon-link action-icon-link"
                     title="Perform Testing"
-                    [disabled]="item.sampleStatus === 'Completed'"
                   >
-                    <i class="bi bi-play-fill"></i>
-                    <span class="d-none d-sm-inline">Perform Test</span>
-                  </button>
-
-                  <!-- View Results Button -->
-                  <button
-                    class="btn btn-sm btn-outline-info"
+                    <i class="bi bi-play-circle-fill text-success action-icon"></i>
+                  </a>
+                  <a
                     [routerLink]="['/testing/results', item.sampleId]"
-                    title="View Full Result"
+                    class="icon-link"
+                    title="View Results"
                   >
-                    <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline">View</span>
-                  </button>
-
-                  <!-- Long-Term Tracking Button (only for active long-term tests) -->
-                  <button
+                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                  </a>
+                  <a
                     *ngIf="item.hasLongTermTests"
-                    class="btn btn-sm btn-outline-warning"
                     routerLink="/testing/longterm"
+                    class="icon-link"
                     title="Long-Term Tracking"
                   >
-                    <i class="bi bi-clock-history"></i>
-                    <span class="d-none d-sm-inline">LongTerm</span>
-                  </button>
+                    <i class="bi bi-clock-history" style="font-size: 1.3rem; color: #e65100;"></i>
+                  </a>
                 </div>
               </td>
-              <td class="fw-semibold">{{ item.sampleNo }}</td>
-              <td>{{ item.caseNo }}</td>
-              <td>{{ item.customerName }}</td>
+              <td class="fw-semibold">
+                <a 
+                  [routerLink]="['/testing/results', item.sampleId]"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View test results for ' + item.sampleNo">
+                  {{ item.sampleNo }}
+                </a>
+              </td>
+              <td class="fw-semibold">
+                <a *ngIf="item.inwardId"
+                   [routerLink]="['/sample/inward/details', item.inwardId]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View inward for ' + item.caseNo">
+                  {{ item.caseNo }}
+                </a>
+                <span *ngIf="!item.inwardId">{{ item.caseNo }}</span>
+              </td>
+              <td class="fw-semibold">
+                <a *ngIf="item.customerID"
+                   [routerLink]="['/customer/details', item.customerID]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View customer: ' + item.customerName">
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
               <td>{{ item.material }}</td>
               <td>{{ item.condition }}</td>
               <td>
-                <small class="text-muted">{{ item.tests }}</small>
+                <ng-container *ngIf="item.tests?.length > 0">
+                  <span *ngFor="let test of item.tests" class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.75rem;">
+                    {{ test.testName }}
+                  </span>
+                </ng-container>
+                <span *ngIf="!item.tests || item.tests.length === 0" class="text-muted">-</span>
               </td>
-              <td class="">
+              <td class="text-center">
                 <app-test-status-badge [status]="item.sampleStatus"></app-test-status-badge>
               </td>
 
@@ -107,34 +128,22 @@
           </tbody>
         </table>
       </div>
-      <div *ngIf="listData.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+      <div *ngIf="listData.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
         <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
           <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
           <div class="fw-semibold">No records found</div>
         </div>
       </div>
       <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center">
-        <!-- Page Size Selector -->
-        <div class="d-flex align-items-center">
-          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-          </select>
-        </div>
-
-        <!-- Pagination Controls -->
-        <ul class="pagination mb-0 d-flex align-items-center">
-          <li class="page-item" [class.disabled]="pageNumber === 1">
-            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-          </li>
-          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-          </li>
-        </ul>
-      </div>
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
     </div>
   </div>
 </div>

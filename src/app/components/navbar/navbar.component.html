@@ -1,14 +1,14 @@
 <nav #navbar class="navbar-expand-lg fixed-top border-bottom shadow-sm">
-  <div class="d-flex w-100 nav-content navbar-background">
+  <div class="nav-content navbar-background" style="position: relative;">
     <!-- Logo -->
-    <div class="w-auto border-end bg-white px-2">
+    <div class="nav-logo border-end bg-white px-2">
       <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
         <img src="LIMS.png" alt="Logo" width="50" height="40" />
       </a>
     </div>
-    <div class="flex-grow-1 d-flex align-items-center">
-      <!-- Menu Section -->
-      <div #menuContainer class="menu-container d-flex mx-2">
+    <!-- Menu cell: browser gives this the exact 1fr pixel width -->
+    <div class="nav-menu-cell">
+      <div #menuContainer class="menu-container">
         <div
           *ngFor="let menu of visibleMenuItems; let i = index"
           #menuItem
@@ -24,7 +24,11 @@
       </div>
     </div>
     <!-- Right Section -->
-    <div #navRight class="d-flex align-items-center gap-2 me-2">
+    <div #navRight class="nav-right-cell d-flex align-items-center gap-2">
+      <!-- Search Icon Button (always visible, no inline input) -->
+      <button class="btn btn-light rounded-circle h-auto menu-search-btn" (click)="toggleSearch()">
+        <i class="bi bi-search"></i>
+      </button>
       <!-- Down Arrow Icon -->
       <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
         <i class="bi" [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
@@ -32,70 +36,354 @@
 
       <app-notification-bell></app-notification-bell>
       <!-- User Profile Dropdown -->
-      <div class="me-2">
+      <div class="me-2 user-dropdown-wrapper">
         <button
-          class="btn position-relative rounded-circle h-auto border-0 p-0"
+          class="btn user-avatar-btn border-0 p-0 d-flex align-items-center gap-2"
           type="button"
           id="userDropdown"
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
-          <img src="user-avatar.png" alt="Logo" width="40" height="40" />
+          <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
+          <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
+          <div class="user-name-display d-none d-lg-flex flex-column align-items-start">
+            <span class="user-display-name">{{ loggedInUserName }}</span>
+            <span class="user-display-role">{{ loggedInUserRole }}</span>
+          </div>
+          <i class="bi bi-chevron-down text-white" style="font-size: 10px;"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end mt-2 p-2 shadow" aria-labelledby="userDropdown">
-          <li><a class="dropdown-item" href="#">Profile</a></li>
-          <li><a class="dropdown-item" href="/config">Settings</a></li>
-          <li>
-            <hr class="dropdown-divider" />
+        <ul class="dropdown-menu dropdown-menu-end mt-2 p-0 shadow user-profile-menu" aria-labelledby="userDropdown">
+          <!-- Header -->
+          <li class="user-menu-header px-3 py-2">
+            <div class="d-flex align-items-center gap-2">
+              <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" />
+              <div *ngIf="!profileImageUrl" class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
+              <div>
+                <div class="user-menu-name">{{ loggedInUserName }}</div>
+                <div class="user-menu-role">{{ loggedInUserRole }}</div>
+              </div>
+            </div>
           </li>
-          <li><a class="dropdown-item btn" (click)="logout()">Logout</a></li>
+          <li><hr class="dropdown-divider my-1" /></li>
+          <li class="px-1 pb-1">
+            <a class="dropdown-item rounded" style="cursor:pointer" (click)="openProfile()">
+              <i class="bi bi-person-circle me-2"></i>Profile
+            </a>
+            <a class="dropdown-item rounded" routerLink="/settings">
+              <i class="bi bi-gear me-2"></i>Settings
+            </a>
+          </li>
+          <li><hr class="dropdown-divider my-1" /></li>
+          <li class="px-1 pb-1">
+            <a class="dropdown-item rounded text-danger cursor-pointer" role="button" (click)="logout()">
+              <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </a>
+          </li>
         </ul>
       </div>
     </div>
+
   </div>
+
+  <!-- ── Command Palette (position:fixed, covers full viewport) ── -->
+  <ng-container *ngIf="isSearchExpanded()">
+    <div class="cmd-backdrop" (click)="collapseSearch()"></div>
+    <div class="cmd-modal" role="dialog" aria-modal="true">
+      <!-- Input Row -->
+      <div class="cmd-input-row">
+        <i class="bi bi-search cmd-search-icon"></i>
+        <input
+          #searchInput
+          type="text"
+          class="cmd-input"
+          placeholder="Search menu, features, reports..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+          (keydown)="onSearchKeydown($event)"
+          autocomplete="off"
+        />
+        <span class="cmd-esc-badge" (click)="collapseSearch()">Esc</span>
+      </div>
+
+      <!-- Results -->
+      <div class="cmd-results" *ngIf="isSearchOpen() && searchResults.length > 0">
+        <div class="cmd-results-label">Results</div>
+        <div
+          *ngFor="let item of searchResults; let i = index"
+          [id]="'search-result-' + i"
+          class="cmd-result-item"
+          [class.cmd-highlighted]="i === searchHighlightIndex"
+          (mousedown)="navigateToSearch(item)"
+          (mouseenter)="searchHighlightIndex = i"
+        >
+          <div class="cmd-result-icon" [class.cmd-icon-active]="i === searchHighlightIndex">
+            <i class="bi bi-grid-3x3-gap"></i>
+          </div>
+          <div class="cmd-result-body">
+            <div class="cmd-result-title">{{ item.title }}</div>
+            <div class="cmd-result-crumb">{{ item.breadcrumb }}</div>
+          </div>
+          <div class="cmd-result-enter" *ngIf="i === searchHighlightIndex">
+            <kbd>↵</kbd>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="cmd-empty" *ngIf="searchQuery.length >= 2 && searchResults.length === 0">
+        <i class="bi bi-search cmd-empty-icon"></i>
+        <div class="cmd-empty-title">No results found</div>
+        <div class="cmd-empty-sub">No matches for "<strong>{{ searchQuery }}</strong>"</div>
+      </div>
+
+      <!-- Default hint when nothing typed -->
+      <div class="cmd-hint-state" *ngIf="searchQuery.length < 2">
+        <i class="bi bi-search cmd-hint-icon"></i>
+        <div class="cmd-hint-text">Type at least 2 characters to search</div>
+      </div>
+
+      <!-- Footer -->
+      <div class="cmd-footer">
+        <span class="cmd-footer-item"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+        <span class="cmd-footer-item"><kbd>↵</kbd> Open</span>
+        <span class="cmd-footer-item"><kbd>Esc</kbd> Close</span>
+        <span class="cmd-footer-shortcut ms-auto"><kbd>Ctrl</kbd>+<kbd>K</kbd> to open</span>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- menu2: rendered when overflow available -->
   <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2" *ngIf="menu2Items && menu2Items.length > 0">
-    <div class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
-      <div
-        *ngFor="let menu of menu2Items"
-        class="menu2-item header-font"
-        (click)="openSubMenu(menu)"
-        [ngClass]="{ active: activeMenu() === menu.title }"
-      >
-        <div class="d-flex gap-2 align-items-center">
-          <i class="bi" [class]="menu.icon"></i>
-          <span class="">{{ menu.title }}</span>
+    <div class="menu2-outer d-flex align-items-center bg-theme">
+      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('left')">
+        <i class="bi bi-chevron-left text-white"></i>
+      </button>
+      <div #menu2Scroll class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
+        <div
+          *ngFor="let menu of menu2Items"
+          class="menu2-item header-font"
+          (click)="openSubMenu(menu)"
+          [ngClass]="{ active: activeMenu() === menu.title }"
+        >
+          <div class="d-flex gap-2 align-items-center">
+            <i class="bi" [class]="menu.icon"></i>
+            <span class="">{{ menu.title }}</span>
+          </div>
         </div>
       </div>
+      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('right')">
+        <i class="bi bi-chevron-right text-white"></i>
+      </button>
     </div>
   </div>
 
   <!-- submenu: show when subMenus signal has items and submenu open -->
-  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()" (mouseleave)="closeSubMenu()">
+  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()"> <!-- (mouseleave)="closeSubMenu()" -->
+    <!-- (mouseleave)="onSubmenuLeave()" -->
     <div
       *ngFor="let subMenuItem of subMenus()"
       class="submenu-item"
       (click)="setActiveSubMenu(subMenuItem)"
+      (mouseenter)="onSubmenuEnter(subMenuItem.id)"
+
       [ngClass]="{ active: activeSubmenu() === subMenuItem.title }"
     >
+
       <ng-container *ngIf="subMenuItem.children && subMenuItem.children.length > 0; else leafLink">
-        <div class="dropdown p-0">
-          <div class="btn dropdown-toggle p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="header-font m-0 p-0">{{ subMenuItem.title }}</span>
-          </div>
-          <ul class="dropdown-menu">
-            <li *ngFor="let nestedSubMenu of subMenuItem.children" class="px-2 py-2">
-              <a [routerLink]="nestedSubMenu.route" class="label-font m-0 p-0">{{ nestedSubMenu.title }}</a>
-            </li>
+        <div class="dropdown">
+          <span class="submenu-label dropdown-toggle">{{ subMenuItem.title }}</span>
+          <ul class="dropdown-menu"
+              [class.show]="hoveredSubmenuId() === subMenuItem.id"
+              (mouseenter)="onDropdownEnter(subMenuItem.id)">
+              <!-- (mouseleave)="onDropdownLeave()" -->
+            <ng-container *ngFor="let nestedSubMenu of subMenuItem.children">
+              <!-- Group with children: fly-out panel -->
+              <ng-container *ngIf="nestedSubMenu.children && nestedSubMenu.children.length > 0; else singleNestedItem">
+                <li class="dropdown-submenu"
+                    [ngClass]="{ 'active-group': activeNestedItemId() === nestedSubMenu.id }"
+                    (mouseenter)="onGroupEnter(nestedSubMenu.id)">
+                    <!-- (mouseleave)="onGroupLeave()" -->
+                  <a class="has-submenu">{{ nestedSubMenu.title }}</a>
+                  <ul class="dropdown-menu submenu-panel"
+                      [class.show]="hoveredGroupId() === nestedSubMenu.id"
+                      (mouseenter)="onGroupEnter(nestedSubMenu.id)">
+                      <!-- (mouseleave)="onGroupLeave()" -->
+                    <li *ngFor="let deepItem of nestedSubMenu.children"
+                        [ngClass]="{ 'active-deep': activeDeepItemId() === deepItem.id }">
+                      <a [routerLink]="deepItem.route"
+                         (click)="setActiveDeepItem(deepItem, nestedSubMenu.id)">{{ deepItem.title }}</a>
+                    </li>
+                  </ul>
+                </li>
+              </ng-container>
+              <!-- Leaf: direct link -->
+              <ng-template #singleNestedItem>
+                <li [ngClass]="{ 'active-nested': activeNestedItemId() === nestedSubMenu.id }">
+                  <a [routerLink]="nestedSubMenu.route"
+                     (click)="setActiveNestedItem(nestedSubMenu)">{{ nestedSubMenu.title }}</a>
+                </li>
+              </ng-template>
+            </ng-container>
           </ul>
         </div>
       </ng-container>
       <ng-template #leafLink>
-        <a [routerLink]="subMenuItem.route" class="page-link">
-          <span class="label-font m-0 p-0">{{ subMenuItem.title }}</span>
-        </a>
+        <a [routerLink]="subMenuItem.route" class="submenu-label">{{ subMenuItem.title }}</a>
       </ng-template>
     </div>
   </div>
 </nav>
+
+<!-- ── Profile Drawer ─────────────────────────────────────── -->
+<ng-container *ngIf="isProfileOpen()">
+  <div class="pd-backdrop" (click)="closeProfile()"></div>
+
+  <div class="pd-drawer">
+    <!-- Header -->
+    <div class="pd-header">
+      <div class="pd-blob pd-blob-1"></div>
+      <div class="pd-blob pd-blob-2"></div>
+
+      <button class="pd-close" (click)="closeProfile()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+
+      <div class="pd-avatar-wrapper">
+        <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="pd-avatar-img" alt="Profile" />
+        <div *ngIf="!profileImageUrl" class="pd-avatar">{{ loggedInUserInitials }}</div>
+        <div class="pd-avatar-actions" *ngIf="!isUploadingImage()">
+          <button class="pd-avatar-btn" title="Take Photo" (click)="triggerCameraCapture()">
+            <i class="bi bi-camera-fill"></i>
+          </button>
+          <button class="pd-avatar-btn" title="Upload Image" (click)="triggerProfileImageUpload()">
+            <i class="bi bi-image-fill"></i>
+          </button>
+        </div>
+        <div class="pd-avatar-overlay" *ngIf="isUploadingImage()">
+          <i class="bi bi-arrow-repeat pd-spin"></i>
+        </div>
+      </div>
+      <input
+        #profileImageInput
+        type="file"
+        accept="image/*"
+        class="d-none"
+        (change)="onProfileImageSelected($event)"
+      />
+      <!-- Camera Capture Overlay -->
+      <div class="camera-overlay" *ngIf="isCameraOpen()">
+        <div class="camera-container">
+          <div class="camera-header">
+            <span>Take Photo</span>
+            <button class="camera-close" (click)="closeCamera()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="camera-body">
+            <video #cameraVideo autoplay playsinline class="camera-video" *ngIf="!capturedImageUrl"></video>
+            <img *ngIf="capturedImageUrl" [src]="capturedImageUrl" class="camera-preview" alt="Captured" />
+          </div>
+          <div class="camera-footer">
+            <button *ngIf="!capturedImageUrl" class="btn btn-light btn-sm" (click)="capturePhoto()">
+              <i class="bi bi-circle-fill text-danger me-1"></i> Capture
+            </button>
+            <ng-container *ngIf="capturedImageUrl">
+              <button class="btn btn-light btn-sm" (click)="retakePhoto()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Retake
+              </button>
+              <button class="btn btn-save btn-sm" (click)="useCapturedPhoto()">
+                <i class="bi bi-check-lg me-1"></i> Use Photo
+              </button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+      <div class="pd-name">{{ loggedInUserName }}</div>
+
+      <div class="pd-pills">
+        <span class="pd-pill-role">{{ loggedInUserRole }}</span>
+        <span class="pd-pill-status" [ngClass]="loggedInAccountStatus === 'Active' ? 'pd-active' : 'pd-inactive'">
+          <span class="pd-dot"></span>{{ loggedInAccountStatus || 'Active' }}
+        </span>
+      </div>
+
+      <div class="pd-email" *ngIf="loggedInEmail">
+        <i class="bi bi-envelope-fill me-1"></i>{{ loggedInEmail }}
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="pd-body">
+
+      <!-- Stat Cards -->
+      <div class="pd-stats">
+        <div class="pd-stat">
+          <div class="pd-stat-icon pds-red"><i class="bi bi-shield-check"></i></div>
+          <div class="pd-stat-label">Access</div>
+          <div class="pd-stat-val">{{ loggedInIsAdmin ? 'Administrator' : loggedInUserRole }}</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-icon pds-green"><i class="bi bi-person-check"></i></div>
+          <div class="pd-stat-label">Status</div>
+          <div class="pd-stat-val">{{ loggedInAccountStatus || 'Active' }}</div>
+        </div>
+        <div class="pd-stat" *ngIf="loggedInLastLogin">
+          <div class="pd-stat-icon pds-blue"><i class="bi bi-clock-history"></i></div>
+          <div class="pd-stat-label">Last Login</div>
+          <div class="pd-stat-val pd-stat-xs">{{ loggedInLastLogin }}</div>
+        </div>
+      </div>
+
+      <!-- Section Label -->
+      <div class="pd-section-label">Account Details</div>
+
+      <!-- Detail Rows -->
+      <div class="pd-detail">
+        <div class="pd-detail-icon-box"><i class="bi bi-person"></i></div>
+        <div class="pd-detail-content">
+          <div class="pd-detail-label">Username</div>
+          <div class="pd-detail-value">{{ loggedInUserName }}</div>
+        </div>
+      </div>
+
+      <div class="pd-detail" *ngIf="loggedInEmail">
+        <div class="pd-detail-icon-box"><i class="bi bi-envelope"></i></div>
+        <div class="pd-detail-content">
+          <div class="pd-detail-label">Email Address</div>
+          <div class="pd-detail-value">{{ loggedInEmail }}</div>
+        </div>
+      </div>
+
+      <div class="pd-detail">
+        <div class="pd-detail-icon-box"><i class="bi bi-shield-lock"></i></div>
+        <div class="pd-detail-content">
+          <div class="pd-detail-label">Role</div>
+          <div class="pd-detail-value">{{ loggedInUserRole }}</div>
+        </div>
+      </div>
+
+      <div class="pd-detail" *ngIf="loggedInIsAdmin">
+        <div class="pd-detail-icon-box pd-icon-gold"><i class="bi bi-star-fill"></i></div>
+        <div class="pd-detail-content">
+          <div class="pd-detail-label">Admin Access</div>
+          <div class="pd-detail-value">Full system administrator</div>
+        </div>
+        <span class="pd-admin-tag">Admin</span>
+      </div>
+
+      <div class="pd-detail" *ngIf="loggedInLastLogin">
+        <div class="pd-detail-icon-box"><i class="bi bi-calendar-check"></i></div>
+        <div class="pd-detail-content">
+          <div class="pd-detail-label">Last Login</div>
+          <div class="pd-detail-value">{{ loggedInLastLogin }}</div>
+        </div>
+      </div>
+
+    </div><!-- /pd-body -->
+
+    <!-- Footer -->
+    <div class="pd-footer">
+      <button class="pd-signout-btn" (click)="logout()">
+        <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+      </button>
+    </div>
+  </div>
+</ng-container>

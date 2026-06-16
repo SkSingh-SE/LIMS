@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="F-32: Sample Muster Register"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/nabl/sample-muster-register"
+  addRoute="/nabl/sample-muster-register/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

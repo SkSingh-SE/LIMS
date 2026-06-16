@@ -1,251 +1,212 @@
-/* Minimal, Compact Styling - Refined for Red & White Theme */
+/* ============================================
+   Report Preview — Clean Professional Design
+   ============================================ */
 
-/* Cursor Pointer */
-.cursor-pointer {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+/* Report Header Card */
+.report-header-card {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.cursor-pointer:hover {
-  background-color: #f5f5f5 !important;
-}
-
-/* Bordered Tables */
-.bordered-table {
-  border-collapse: collapse;
-  margin-bottom: 0;
-  border: 1px solid #e8e8e8;
-}
-
-.bordered-table thead th {
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  font-weight: 600;
-  color: #212529;
-  padding: 0.5rem;
-  text-align: left;
-  font-size: 0.85rem;
-}
-
-.bordered-table tbody td {
-  border: 1px solid #e8e8e8;
-  padding: 0.5rem;
-  font-size: 0.85rem;
-}
-
-.bordered-table tbody tr:nth-child(even) {
-  background-color: #fafafa;
-}
-
-.bordered-table tbody tr:hover {
-  background-color: #f0f0f0;
-}
-
-/* Theme Color Legend */
-.theme-color {
-  color: #da261c;
-}
-
-/* Badge Styles */
-.badge {
-  padding: 0.35rem 0.65rem;
+.rh-title-bar {
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
+  color: white;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  font-family: "Poppins", sans-serif;
   font-weight: 500;
-  font-size: 0.75rem;
-  border-radius: 3px;
 }
 
-.badge.bg-success {
-  background-color: #28a745 !important;
-  color: white;
+.rh-body {
+  padding: 16px;
+  background: #fff;
 }
 
-.badge.bg-danger {
-  background-color: #da261c !important;
-  color: white;
+.info-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
 }
 
-.badge.bg-info {
-  background-color: #17a2b8 !important;
-  color: white;
+.info-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
 }
 
-.badge.bg-warning {
-  background-color: #ffc107 !important;
-  color: #212529;
+/* Section Cards */
+.section-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.badge.bg-secondary {
-  background-color: #6c757d !important;
-  color: white;
+.section-header {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.badge.bg-light {
-  background-color: #f8f9fa !important;
-  border: 1px solid #d4d4d4;
-  color: #212529;
+.section-body {
+  padding: 14px 16px;
+  background: #fff;
 }
 
-/* Text Danger for Failed Parameters */
-.text-danger {
-  color: #da261c;
+/* Detail Items */
+.detail-item {
+  display: flex;
+  flex-direction: column;
 }
 
-/* Cards - Clean & Minimal */
-.card {
-  border: 1px solid #e8e8e8 !important;
+.detail-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Dimension Tags */
+.dimension-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.conformity-applicable {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+/* Test Blocks */
+.test-block {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.test-block:last-child {
+  border-bottom: none;
+}
+
+.test-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 0.88rem;
+}
+
+.test-header:hover {
+  background: #f8fafc;
+}
+
+.test-content {
+  padding: 8px 16px 16px;
+  background: #fafbfc;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Result Table */
+.result-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+}
+
+.result-table thead th {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.result-table tbody td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  color: #334155;
+}
+
+.result-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Row status colors */
+.row-fail {
+  background: #fef2f2 !important;
+}
+
+.row-fail:hover {
+  background: #fee2e2 !important;
+}
+
+.row-marginal {
+  background: #fffbeb !important;
+}
+
+.row-marginal:hover {
+  background: #fef3c7 !important;
+}
+
+/* Badges */
+.badge {
+  padding: 3px 8px;
+  font-weight: 500;
+  font-size: 0.72rem;
   border-radius: 4px;
 }
 
-.card-header {
-  border-bottom: 1px solid #e8e8e8;
-  background-color: #fafafa;
-  font-size: 0.95rem;
-}
+.badge.bg-success { background-color: #16a34a !important; color: white; }
+.badge.bg-danger { background-color: #dc2626 !important; color: white; }
+.badge.bg-warning { background-color: #f59e0b !important; }
+.badge.bg-info { background-color: #0ea5e9 !important; color: white; }
 
-.card-body {
-  padding: 1rem;
+/* Sticky Action Bar — same as Review of Request */
+.review-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
 }
 
 /* Buttons */
-.btn-danger {
-  background-color: #da261c;
-  border-color: #da261c;
-  color: white;
-}
+.btn-outline-success { border-color: #16a34a; color: #16a34a; }
+.btn-outline-success:hover:not(:disabled) { background: #16a34a; color: white; }
 
-.btn-danger:hover:not(:disabled) {
-  background-color: #b81c15;
-  border-color: #b81c15;
-}
-
-.btn-outline-danger {
-  color: #da261c;
-  border-color: #da261c;
-}
-
-.btn-outline-danger:hover:not(:disabled) {
-  background-color: #da261c;
-  border-color: #da261c;
-  color: white;
-}
-
-.btn-outline-secondary {
-  color: #6c757d;
-  border-color: #6c757d;
-}
-
-.btn-outline-secondary:hover:not(:disabled) {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: white;
-}
-
-.btn-sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.875rem;
-}
-
-/* Responsive - Compact on Mobile */
+/* Responsive */
 @media (max-width: 768px) {
-  .bordered-table thead th,
-  .bordered-table tbody td {
-    padding: 0.35rem !important;
-    font-size: 0.75rem;
-  }
-
-  .card-body {
-    padding: 0.75rem !important;
-  }
-
-  .card-header {
-    padding: 0.5rem !important;
-  }
-
-  .btn-sm {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.8rem;
-  }
-}
-
-/* Action Panel Button Styles */
-.btn-group .btn {
-  border-radius: 4px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-  min-width: auto;
-}
-
-.btn-group .btn:not(:first-child) {
-  margin-left: 0.25rem;
-}
-
-/* Spinner - Theme Color */
-.spinner-border {
-  border-color: currentColor;
-  border-right-color: transparent;
-}
-
-.spinner-border.text-danger {
-  color: #da261c !important;
-}
-
-/* Checkboxes & Radio Buttons */
-.form-check-input:checked {
-  background-color: #da261c;
-  border-color: #da261c;
-}
-
-.form-check-input:focus {
-  border-color: #da261c;
-  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.25);
-}
-
-
-.btn-outline-success {
-  border-color: #28a745;
-  color: #28a745;
-}
-
-.btn-outline-success:hover:not(:disabled) {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-outline-warning {
-  border-color: #ffc107;
-  color: #b8860b;
-}
-
-.btn-outline-warning:hover:not(:disabled) {
-  background-color: #ffc107;
-  color: white;
-}
-
-.btn-outline-danger {
-  border-color: #dc3545;
-  color: #dc3545;
-}
-
-.btn-outline-danger:hover:not(:disabled) {
-  background-color: #dc3545;
-  color: white;
-}
-
-/* Form Control Styling */
-.form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.form-control.border-danger {
-  border-color: #dc3545 !important;
-}
-
-/* Card Shadows */
-.shadow-sm {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-}
-
-.shadow-lg {
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+  .rh-body, .section-body { padding: 10px 12px; }
+  .result-table thead th, .result-table tbody td { padding: 6px 8px; font-size: 0.75rem; }
+  .test-header, .test-content { padding: 8px 12px; }
 }

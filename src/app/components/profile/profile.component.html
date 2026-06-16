@@ -1,0 +1,103 @@
+<div class="profile-page">
+
+  <!-- ── Hero ─────────────────────────────────────────────── -->
+  <div class="profile-hero">
+    <div class="ph-blob ph-blob-1"></div>
+    <div class="ph-blob ph-blob-2"></div>
+    <div class="profile-hero-content">
+      <div class="ph-avatar">{{ initials }}</div>
+      <h4 class="ph-name">{{ userName }}</h4>
+      <div class="ph-badges">
+        <span class="ph-role-badge">{{ role }}</span>
+        <span class="ph-status-badge" [ngClass]="accountStatus === 'Active' ? 'ph-status-active' : 'ph-status-inactive'">
+          <span class="ph-status-dot"></span>{{ accountStatus || 'Active' }}
+        </span>
+      </div>
+      <div class="ph-email" *ngIf="email">
+        <i class="bi bi-envelope me-1"></i>{{ email }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Stat Cards ─────────────────────────────────────────── -->
+  <div class="profile-stats">
+    <div class="pstat-card">
+      <div class="pstat-icon-wrap pstat-red">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div class="pstat-body">
+        <div class="pstat-label">Access Level</div>
+        <div class="pstat-value">{{ isAdmin ? 'Administrator' : role }}</div>
+      </div>
+    </div>
+
+    <div class="pstat-card" *ngIf="lastLoginDate">
+      <div class="pstat-icon-wrap pstat-blue">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <div class="pstat-body">
+        <div class="pstat-label">Last Login</div>
+        <div class="pstat-value">{{ lastLoginDate }}</div>
+      </div>
+    </div>
+
+    <div class="pstat-card">
+      <div class="pstat-icon-wrap pstat-green">
+        <i class="bi bi-person-check"></i>
+      </div>
+      <div class="pstat-body">
+        <div class="pstat-label">Account Status</div>
+        <div class="pstat-value">{{ accountStatus || 'Active' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Detail Card ─────────────────────────────────────────── -->
+  <div class="profile-detail-card">
+    <div class="pdc-header">
+      <i class="bi bi-person-vcard-fill me-2"></i>Account Details
+    </div>
+
+    <div class="pdc-row">
+      <div class="pdc-icon-box"><i class="bi bi-person"></i></div>
+      <div class="pdc-info">
+        <div class="pdc-label">Username</div>
+        <div class="pdc-value">{{ userName }}</div>
+      </div>
+    </div>
+
+    <div class="pdc-row">
+      <div class="pdc-icon-box"><i class="bi bi-envelope"></i></div>
+      <div class="pdc-info">
+        <div class="pdc-label">Email Address</div>
+        <div class="pdc-value">{{ email || '—' }}</div>
+      </div>
+    </div>
+
+    <div class="pdc-row">
+      <div class="pdc-icon-box"><i class="bi bi-shield-lock"></i></div>
+      <div class="pdc-info">
+        <div class="pdc-label">Role</div>
+        <div class="pdc-value">{{ role }}</div>
+      </div>
+    </div>
+
+    <div class="pdc-row" *ngIf="isAdmin">
+      <div class="pdc-icon-box pdc-icon-gold"><i class="bi bi-star-fill"></i></div>
+      <div class="pdc-info">
+        <div class="pdc-label">Admin Access</div>
+        <div class="pdc-value">Full system administrator</div>
+      </div>
+      <span class="pdc-badge-admin">Admin</span>
+    </div>
+
+    <div class="pdc-row" *ngIf="lastLoginDate">
+      <div class="pdc-icon-box"><i class="bi bi-calendar-check"></i></div>
+      <div class="pdc-info">
+        <div class="pdc-label">Last Login</div>
+        <div class="pdc-value">{{ lastLoginDate }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>

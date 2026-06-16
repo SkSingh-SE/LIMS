@@ -1,179 +1,245 @@
-<div class="card shadow-lg m-2">
-  <div class="card-header card-form-header text-white text-center">
-    <h6 class="text-center">ISO Scope Form</h6>
-  </div>
-  <div class="card-body">
-    <form [formGroup]="scopeForm" (ngSubmit)="onSubmit()" novalidate>
-      <div class="d-flex flex-row justify-content-between gap-2 mb-2">
-        <div class="col-6">
-          <label for="laboratoryTest" class="form-label fw-semibold">Laboratory Test Method</label>
-          <app-searchable-dropdown
-            id="laboratoryTest"
-            [placeholder]="'Search Laboratory Test Method'"
-            [labelName]="'Laboratory Test Method'"
-            [fetchDataFn]="getLaboratoryTest"
-            (itemSelected)="onLaboratorySelected($event)"
-            [hideLabel]="true"
-            [required]="true"
-            [isDisabled]="isViewMode"
-            [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
-          ></app-searchable-dropdown>
-        </div>
-        <div class="col-6 d-flex align-items-center justify-content-end">
-          <button
-            *ngIf="!isViewMode"
-            type="button"
-            class="btn btn-sm btn-outline-danger-600 me-2"
-            (click)="addSpecification()"
-            aria-label="Add Specification"
-          >
-            <i class="bi bi-plus-circle-dotted"></i>
-            Add Specification
-          </button>
-        </div>
-      </div>
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">ISO Scope Form</label>
+      <a routerLink="/scope" class="btn btn-outline-light btn-sm me-3">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="scopeForm" (ngSubmit)="onSubmit()" novalidate>
 
-      <div formArrayName="specifications" class="accordion" id="specAccordion">
-        <div *ngFor="let spec of specifications.controls; let i = index" [formGroupName]="i" class="accordion-item mb-3">
-          <h2 class="accordion-header" id="heading{{ i }}">
-            <button
-              class="accordion-button py-2 px-3 small"
-              [ngClass]="{ collapsed: i !== 0 }"
-              type="button"
-              data-bs-toggle="collapse"
-              [attr.data-bs-target]="'#collapse' + i"
-              [attr.aria-expanded]="i === 0 ? 'true' : 'false'"
-              [attr.aria-controls]="'collapse' + i"
-            >
-              <span class="fw-bold">
+        <!-- Section I: Header -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <div class="d-flex align-items-end gap-1">
+                  <div class="flex-grow-1">
+                    <app-searchable-dropdown
+                      [placeholder]="'Search Laboratory Test'"
+                      [labelName]="'Laboratory Test'"
+                      [fetchDataFn]="getLaboratoryTest"
+                      (itemSelected)="onLaboratorySelected($event)"
+                      [hideLabel]="false"
+                      [required]="true"
+                      [isDisabled]="isViewMode"
+                      [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
+                      [isInvalid]="isFieldInvalid('laboratoryTestID')"
+                    ></app-searchable-dropdown>
+                  </div>
+                  <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank"
+                    class="btn btn-outline-primary btn-sm" title="Add New Lab Test" style="margin-bottom: 2px;">
+                    <i class="bi bi-plus-lg"></i>
+                  </a>
+                </div>
+                <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test Method" [submitted]="submitted"/>
+              </div>
+              <!-- <div class="col-md-2">
+                <label class="form-label">Valid From</label>
+                <input type="date" class="form-control" formControlName="validFrom" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Valid Until</label>
+                <input type="date" class="form-control" formControlName="validUntil" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Next Review Date</label>
+                <input type="date" class="form-control" formControlName="nextReviewDate" />
+              </div> -->
+              <div class="col-md-6">
+                <label class="form-label">Scope Remarks</label>
+                <textarea class="form-control" formControlName="scopeRemarks" rows="2" maxlength="500" placeholder="Remarks about scope coverage"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Specifications -->
+        <div formArrayName="specifications">
+          <div *ngFor="let spec of specifications.controls; let i = index" [formGroupName]="i" class="accordion-section mb-3">
+            <div class="section-header" (click)="toggleSpec(i)">
+              <i class="bi" [ngClass]="openSpecs[i] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">
                 {{ spec.get("testMethodSpecification")?.value || "New Specification" }}
               </span>
-              <span class="ms-2 text-muted small">(Parameters: {{ spec.get("parameters")?.value?.length || 0 }})</span>
-            </button>
-          </h2>
-          <div
-            [id]="'collapse' + i"
-            class="accordion-collapse collapse"
-            [ngClass]="{ show: i === 0 }"
-            [attr.aria-labelledby]="'heading' + i"
-            data-bs-parent="#specAccordion"
-          >
-            <div class="accordion-body">
-              <div class="d-flex flex-row justify-content-between gap-2 mb-2">
-                <div class="col-6">
-                  <label for="testMethodSpec{{ i }}" class="form-label fw-semibold">Test Method Specification</label>
-                  <app-searchable-dropdown
-                    id="testMethodSpec{{ i }}"
-                    class="w-100"
-                    [placeholder]="'Search Test Specification'"
-                    [labelName]="'Test Method Specification'"
-                    [fetchDataFn]="getTestMethodSpecification"
-                    (itemSelected)="onTestSpecificationSelected($event, i)"
-                    [hideLabel]="true"
-                    [required]="true"
-                    [isDisabled]="isViewMode"
-                    [selectedItem]="spec.get('testMethodSpecificationID')?.value"
-                  ></app-searchable-dropdown>
+              <span class="ms-2 text-muted small">(Parameters: {{ parameters(i).length }})</span>
+              <div class="ms-auto d-flex gap-2 align-items-center">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addSpecification(); $event.stopPropagation()">
+                  <i class="bi bi-plus-circle-dotted"></i> Add Spec
+                </button>
+                <button *ngIf="!isViewMode && specifications.length > 1" type="button" class="btn btn-sm btn-outline-dark" (click)="removeSpecification(i); $event.stopPropagation()">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="openSpecs[i]" class="section-body">
+              <!-- Test Method Specification Dropdown -->
+              <div class="row gy-3 mb-3">
+                <div class="col-md-6">
+                  <div class="d-flex align-items-end gap-1">
+                    <div class="flex-grow-1">
+                      <app-searchable-dropdown
+                        class="w-100"
+                        [placeholder]="'Search Test Specification'"
+                        [labelName]="'Test Method Specification'"
+                        [fetchDataFn]="getTestMethodSpecification"
+                        (itemSelected)="onTestSpecificationSelected($event, i)"
+                        [hideLabel]="false"
+                        [required]="true"
+                        [isDisabled]="isViewMode"
+                        [selectedItem]="spec.get('testMethodSpecificationID')?.value"
+                        [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"
+                      ></app-searchable-dropdown>
+                    </div>
+                    <a *ngIf="!isViewMode" routerLink="/test-specification/create" target="_blank"
+                      class="btn btn-outline-primary btn-sm" title="Add New Test Method Specification" style="margin-bottom: 2px;">
+                      <i class="bi bi-plus-lg"></i>
+                    </a>
+                  </div>
+                  <app-field-error [control]="spec.get('testMethodSpecificationID')" label="Test Method Specification" [submitted]="submitted"/>
                 </div>
-                <div class="col-6 d-flex align-items-center justify-content-end">
+                <div class="col-md-3" *ngIf="specVersionsMap.get(i)?.length">
+                  <label class="form-label">Spec Version</label>
+                  <select class="form-select" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
+                    <option [ngValue]="null">-- Auto (Active) --</option>
+                    <option *ngFor="let v of specVersionsMap.get(i)" [ngValue]="v.id">{{ v.name }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Parameters Table -->
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="fw-bold fs-6 mb-0">Parameters</label>
+                <div class="d-flex gap-2">
                   <button
                     *ngIf="!isViewMode"
                     type="button"
-                    class="btn btn-outline-warning btn-sm me-2"
-                    (click)="removeSpecification(i)"
-                    aria-label="Remove Specification"
+                    class="btn btn-sm btn-add mt-1"
+                    (click)="addParameter(i)"
                   >
-                    <i class="bi bi-x-circle"></i>
-                    Remove Spec
+                    <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-scroll-nav mt-1"
+                    (click)="scrollToStart(i)"
+                    title="Scroll to start"
+                  >
+                    <i class="bi bi-arrow-left-circle"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-scroll-nav mt-1"
+                    (click)="scrollToEnd(i)"
+                    title="Scroll to end"
+                  >
+                    <i class="bi bi-arrow-right-circle"></i>
                   </button>
                 </div>
               </div>
 
-              <div formArrayName="parameters" class="table-responsive mb-3 custom-scroll">
-                <table class="table table-borderless align-middle mb-1" style="min-width: 900px">
-                  <thead class="table-light">
-                    <tr class="text-nowrap text-muted small">
-                      <th class="fw-medium px-2 text-center">ISO</th>
-                      <th class="fw-medium px-2 wide-input">Parameter</th>
-                      <th class="fw-medium px-2 wide-input">Unit</th>
-                      <th class="fw-medium px-2 wide-input">Qualitative / Quantitative</th>
-                      <th class="fw-medium px-2 wide-input">Lower</th>
-                      <th class="fw-medium px-2 wide-input">Upper</th>
-                      <th class="fw-medium px-2 wide-input">Discipline</th>
-                      <th class="fw-medium px-2 wide-input">Group</th>
-                      <th class="fw-medium px-2 wide-input">Sub-Group</th>
-                      <th class="fw-medium px-2 wide-input">Equipment(s)</th>
-                      <th class="fw-medium text-center">Action</th>
+              <div
+                [id]="'scroll-params-' + i"
+                formArrayName="parameters"
+                class="table-responsive position-relative custom-scroll"
+                style="max-height: calc(100vh - 200px)"
+              >
+                <table class="table spec-table align-middle" style="min-width: 1400px">
+                  <thead>
+                    <tr class="text-nowrap">
+                      <th class="spec-th text-center">#</th>
+                      <th class="spec-th text-center">ISO</th>
+                      <th class="spec-th wide-input">Parameter</th>
+                      <th class="spec-th wide-input">Unit</th>
+                      <th class="spec-th wide-input">Qual / Quant</th>
+                      <th class="spec-th" style="min-width:180px">Lower Limit</th>
+                      <th class="spec-th" style="min-width:180px">Upper Limit</th>
+                      <th class="spec-th wide-input">Discipline</th>
+                      <th class="spec-th wide-input">Group</th>
+                      <th class="spec-th wide-input">Sub-Group</th>
+                      <th class="spec-th wide-input-xl">Equipment(s)</th>
+                      <th *ngIf="!isViewMode" class="spec-th text-center"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let param of parameters(i).controls; let j = index" [formGroupName]="j">
+                    <tr *ngFor="let param of parameters(i).controls; let j = index" [formGroupName]="j" class="spec-row">
+                      <td class="text-center text-muted small fw-medium">{{ j + 1 }}</td>
                       <td class="text-center">
-                        <div class="form-check text-center">
-                          <input class="form-check-input mt-1" type="checkbox" formControlName="isUnderISO" [disabled]="isViewMode" />
+                        <div class="form-check d-flex justify-content-center">
+                          <input class="form-check-input" type="checkbox" formControlName="isUnderISO" [disabled]="isViewMode" />
                         </div>
                       </td>
                       <td class="wide-input">
-                        <app-searchable-dropdown
-                          class="w-100"
-                          [placeholder]="'Search Parameter'"
-                          [labelName]="'Parameter'"
-                          [fetchDataFn]="getParameter"
-                          (itemSelected)="onParameterSelected($event, i, j)"
-                          [isDisabled]="isViewMode"
-                          [hideLabel]="true"
-                          [selectedItem]="param.get('parameterID')?.value"
-                        ></app-searchable-dropdown>
+                        <div class="d-flex align-items-center gap-1">
+                          <app-searchable-dropdown
+                            class="flex-grow-1"
+                            [placeholder]="'Search Parameter'"
+                            [labelName]="'Parameter'"
+                            [fetchDataFn]="getParameter"
+                            (itemSelected)="onParameterSelected($event, i, j)"
+                            [isDisabled]="isViewMode"
+                            [hideLabel]="true"
+                            [selectedItem]="param.get('parameterID')?.value"
+                          ></app-searchable-dropdown>
+                          <a *ngIf="!isViewMode" routerLink="/parameter-category" target="_blank"
+                            class="btn btn-outline-primary btn-sm p-0" style="width:24px;height:24px;line-height:24px;text-align:center;"
+                            title="Add New Parameter">
+                            <i class="bi bi-plus-lg" style="font-size:0.7rem"></i>
+                          </a>
+                        </div>
                       </td>
                       <td>
-                        <label for="unitSelect{{ i }}-{{ j }}" class="visually-hidden">Unit</label>
-                        <select
-                          id="unitSelect{{ i }}-{{ j }}"
-                          class="form-select wide-input"
-                          formControlName="parameterUnitID"
-                          [disabled]="isViewMode"
-                        >
-                          <option value="" disabled>Select Unit</option>
+                        <select class="form-select wide-input" formControlName="parameterUnitID">
+                          <option value="" disabled selected>Select Unit</option>
                           <option *ngFor="let unit of parameterUnits" [value]="unit.id">{{ unit.name }}</option>
                         </select>
                       </td>
                       <td>
-                        <label for="qualQuantSelect{{ i }}-{{ j }}" class="visually-hidden">Qualitative or Quantitative</label>
                         <select
-                          id="qualQuantSelect{{ i }}-{{ j }}"
                           formControlName="qualitativeQuantitative"
-                          class="form-select"
+                          class="form-select wide-input"
                           [disabled]="isViewMode"
                         >
-                          <option value="" disabled>Select Option</option>
+                          <option value="" disabled>Select</option>
                           <option value="Qualitative">Qualitative</option>
                           <option value="Quantitative">Quantitative</option>
                         </select>
                       </td>
-
                       <td>
-                        <label for="lowerLimitSelect{{ i }}-{{ j }}" class="visually-hidden">Lower Limit</label>
-                        <select
-                          id="lowerLimitSelect{{ i }}-{{ j }}"
-                          class="form-control form-select wide-input"
-                          formControlName="lowerLimit"
-                          [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
-                        >
-                          <option value="">Select Option</option>
-                          <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
-                        </select>
+                        <div class="d-flex gap-1 align-items-center">
+                          <select
+                            class="form-select" style="width:60px; min-width:60px;"
+                            formControlName="lowerLimit"
+                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
+                          >
+                            <option value="">Op</option>
+                            <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
+                          </select>
+                          <input type="number" class="form-control" style="width:100px;"
+                            formControlName="lowerLimitValue" placeholder="Value"
+                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                        </div>
                       </td>
                       <td>
-                        <label for="upperLimitSelect{{ i }}-{{ j }}" class="visually-hidden">Upper Limit</label>
-                        <select
-                          id="upperLimitSelect{{ i }}-{{ j }}"
-                          class="form-control form-select wide-input"
-                          formControlName="upperLimit"
-                          [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
-                        >
-                          <option value="">Select Option</option>
-                          <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
-                        </select>
+                        <div class="d-flex gap-1 align-items-center">
+                          <select
+                            class="form-select" style="width:60px; min-width:60px;"
+                            formControlName="upperLimit"
+                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
+                          >
+                            <option value="">Op</option>
+                            <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
+                          </select>
+                          <input type="number" class="form-control" style="width:100px;"
+                            formControlName="upperLimitValue" placeholder="Value"
+                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                        </div>
                       </td>
                       <td class="wide-input">
                         <app-searchable-dropdown
@@ -186,10 +252,8 @@
                           [selectedItem]="param.get('disciplineID')?.value"
                         ></app-searchable-dropdown>
                       </td>
-                      <td class="wide-input">
-                        <label for="groupSelect{{ i }}-{{ j }}" class="visually-hidden">Group</label>
+                      <td>
                         <select
-                          id="groupSelect{{ i }}-{{ j }}"
                           class="form-select wide-input"
                           formControlName="groupID"
                           (change)="onGroupSelected($event, i, j)"
@@ -199,10 +263,8 @@
                           <option *ngFor="let group of groupOptionsPerParam[i + '-' + j] || []" [value]="group.id">{{ group.name }}</option>
                         </select>
                       </td>
-                      <td class="wide-input">
-                        <label for="subGroupSelect{{ i }}-{{ j }}" class="visually-hidden">Sub Group</label>
+                      <td>
                         <select
-                          id="subGroupSelect{{ i }}-{{ j }}"
                           class="form-select wide-input"
                           formControlName="subGroupID"
                           [disabled]="isViewMode"
@@ -214,53 +276,37 @@
                         </select>
                       </td>
                       <td class="wide-input-xl">
-                        <app-multi-select-dropdown
-                          [placeholder]="'Select multiple items...'"
-                          [required]="false"
-                          [labelName]="'Equipments'"
+                        <app-searchable-dropdown-modal
+                          class="w-100"
+                          [placeholder]="'Search Equipment'"
+                          [labelName]="'Equipment'"
+                          [fetchDataFn]="getEquipment"
+                          [isMultiSelect]="true"
                           [hideLabel]="true"
                           [isDisabled]="isViewMode"
-                          [fetchDataFn]="getEquipment"
-                          [selectedValues]="param.get('equipmentIDs')?.value"
+                          [selectedItem]="param.get('equipmentIDs')?.value"
                           (itemsSelected)="onEquipmentSelect($event, i, j)"
-                        ></app-multi-select-dropdown>
+                        ></app-searchable-dropdown-modal>
                       </td>
                       <td *ngIf="!isViewMode" class="text-center">
-                        <button type="button" class="btn btn-link p-0" aria-label="Remove Parameter" (click)="removeParameter(i, j)">
-                          <img src="/icons/delete.svg" alt="Delete" class="w-100" />
+                        <button type="button" class="btn btn-outline-danger spec-delete-btn" (click)="removeParameter(i, j)">
+                          <i class="bi bi-trash3"></i>
                         </button>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div class="d-flex align-items-center justify-content-end">
-                <button
-                  *ngIf="!isViewMode"
-                  type="button"
-                  class="btn btn-outline-danger-600 btn-sm ms-2"
-                  (click)="addParameter(i)"
-                  aria-label="Add Parameter"
-                >
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Parameter
-                </button>
-              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2">
-        <a class="btn btn-sm btn-outline-warning me-2" routerLink="/scope" role="button" aria-label="Cancel"> <i class="bi bi-x-circle"></i> Cancel</a>
-        <button [disabled]="!scopeForm.valid || !hasAnyParameter" type="submit" class="btn btn-sm btn-outline-danger-600" aria-label="Save Scope">
-          <i class="bi bi-save"></i> Save
-        </button>
-      </div> -->
-      <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/scope']" class="btn btn-warning">Cancel</a>
-        <button type="submit" class="btn btn-success px-3">Save</button>
-      </div>
-    </form>
+        <!-- Action Buttons -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-3">Save</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

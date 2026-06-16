@@ -1,18 +1,302 @@
+/* ─── Theme Variables ─── */
+:host ::ng-deep {
+  --primary-color: #da261c;
+  --primary-hover: #b91c1c;
+}
+
+/* ─── Fieldset ─── */
+fieldset.border {
+  border: none !important;
+  border-left: 3px solid var(--primary-color, #da261c) !important;
+  background: #fafbfc;
+  border-radius: 0 6px 6px 0;
+  padding: 0.6rem 0.8rem !important;
+  margin-bottom: 0.75rem !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+fieldset.border:hover {
+  box-shadow: 0 2px 10px rgba(218, 38, 28, 0.09);
+}
+
+fieldset legend {
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  background: transparent;
+  padding: 0 0.4rem;
+  margin-bottom: 0.35rem;
+  border: none;
+  float: none;
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  letter-spacing: 0.2px;
+}
+
+fieldset legend i {
+  font-size: 0.9rem;
+  vertical-align: -1px;
+  opacity: 0.85;
+}
+
+/* ─── Contact Fieldset (repeatable — slightly distinct) ─── */
+fieldset.contact-fieldset {
+  border-left-color: #6c757d !important;
+  background: #f8f9fb;
+}
+
+fieldset.contact-fieldset:hover {
+  box-shadow: 0 2px 10px rgba(108, 117, 125, 0.12);
+}
+
+fieldset.contact-fieldset legend {
+  color: #495057;
+}
+
+/* ─── Cards ─── */
+.card {
+  border: 1px solid #e9ecef !important;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.card .card-header {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background: var(--primary-color, #da261c);
+  font-size: 0.85rem;
+  padding: 0.4rem 1rem;
+}
+
+.card .card-body {
+  padding: 0.6rem 0.8rem;
+}
+
+/* ─── Form Controls — use global styles.css sets (36px normal / 30px -sm) ─── */
+textarea.form-control {
+  min-height: unset;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
+}
+
+/* ─── Checkbox / Radio ─── */
+.form-check {
+  margin-bottom: 0;
+}
+
+.form-check-input {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+}
+
+.form-check-inline {
+  margin-right: 0.75rem;
+}
+
+.form-check-label {
+  font-size: 0.78rem;
+}
+
+/* ─── Row Spacing Override ─── */
+.row.gy-1 > * {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+/* ─── Normalize ng-select height to match Bootstrap form-control (36px) ─── */
+:host ::ng-deep .ng-select .ng-select-container {
+  min-height: 36px !important;
+}
+:host ::ng-deep .ng-select.ng-select-multiple .ng-select-container {
+  height: auto !important;
+  min-height: 36px !important;
+  align-items: center;
+}
+
+/* ─── sm override — allow ng-select-sm to shrink to 30px (smallInput=true) ─── */
+:host ::ng-deep .ng-select.ng-select-sm .ng-select-container {
+  min-height: 30px !important;
+  height: 30px !important;
+}
+:host ::ng-deep .ng-select.ng-select-sm.ng-select-multiple .ng-select-container {
+  height: auto !important;
+  min-height: 30px !important;
+}
+
+/* ─── Billing Options Sub-section ─── */
+.billing-opts-box {
+  border: 1px solid #e2e6ea;
+  border-left: 2px solid #adb5bd;
+  border-radius: 4px;
+  background: #f4f5f6;
+  padding: 0.5rem 0.75rem 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.billing-opts-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ─── Tables (Compact) ─── */
+.table-compact {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.table-compact th {
+  background: #f1f3f5;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-compact td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  font-size: 0.8rem;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.btn-add {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  border: 1px dashed var(--primary-color, #da261c);
+  background: transparent;
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.btn-add:hover {
+  background: rgba(218, 38, 28, 0.05);
+  border-style: solid;
+  color: var(--primary-color, #da261c);
+}
+
+.btn-save {
+  background: var(--primary-color, #da261c);
+  color: #fff;
+  border: none;
+}
+
+.btn-save:hover {
+  background: var(--primary-hover, #b91c1c);
+  color: #fff;
+}
+
+.btn-cancel {
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  background: #fff;
+}
+
+.btn-cancel:hover {
+  background: #f8f9fa;
+  color: #343a40;
+}
+
+:host ::ng-deep .btn-outline-primary,
+.btn-outline-primary {
+  color: #da261c !important;
+  border-color: #da261c !important;
+}
+
+:host ::ng-deep .btn-outline-primary:hover,
+.btn-outline-primary:hover {
+  background-color: #da261c !important;
+  border-color: #da261c !important;
+  color: #fff !important;
+}
+
+/* ─── Dropdown ─── */
 .dropdown-menu {
-    border-radius: 0.5rem;
-    background-color: #fff;
+  border-radius: 0.4rem;
+  background-color: #fff;
+  font-size: 0.8rem;
+}
+
+.hover-bg:hover {
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+/* ─── Text Helpers ─── */
+.text-sm {
+  font-size: 0.72rem;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+/* ─── Sticky Bottom Bar ─── */
+.sticky-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: #fff;
+  border-top: 2px solid var(--primary-color, #da261c);
+  padding: 0.4rem 1.5rem;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .card .card-body {
+    padding: 0.5rem;
   }
-  
-  .badge {
-    font-size: 0.9rem;
-    padding: 0.5em 0.75em;
-    display: inline-flex;
-    align-items: center;
+
+  .sticky-bottom-bar {
+    padding: 0.4rem 0.6rem;
   }
-  .badge span {
-    font-weight: bold;
+
+  fieldset.border {
+    padding: 0.5rem 0.6rem !important;
   }
-  .hover-bg:hover {
-    background-color: #f8f9fa; /* light gray */
-    cursor: pointer;
-  }
+}

@@ -2,7 +2,6 @@
   <div class="card basic-data-table w-100 border-0 shadow-sm">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-file-earmark-text"></i>
         Case Account Detail
       </label>
       <button class="btn btn-outline-light me-3" (click)="goBack()">
@@ -10,7 +9,7 @@
       </button>
     </div>
 
-    <div *ngIf="!isLoading() && caseSummary" class="card-body">
+    <div *ngIf="caseSummary" class="card-body">
       <!-- Case Summary Section -->
       <div class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-light">
@@ -28,7 +27,16 @@
             </div>
             <div class="col-md-3">
               <strong>Customer Type:</strong>
-              <p class="text-muted">{{ caseSummary.customerType || caseSummary.customer_type }}</p>
+              <p>
+                <span class="badge" [ngClass]="{
+                  'bg-primary': (caseSummary.customerType || caseSummary.customer_type || '').toLowerCase() === 'credit',
+                  'bg-warning text-dark': (caseSummary.customerType || caseSummary.customer_type || '').toLowerCase() === 'walk-in',
+                  'bg-info': (caseSummary.customerType || caseSummary.customer_type || '').toLowerCase() === 'purchaseorder',
+                  'bg-secondary': !(caseSummary.customerType || caseSummary.customer_type)
+                }">
+                  {{ caseSummary.customerType || caseSummary.customer_type || 'N/A' }}
+                </span>
+              </p>
             </div>
             <div class="col-md-3">
               <strong>PI Status:</strong>
@@ -50,23 +58,192 @@
         </div>
       </div>
 
-      <!-- Invoice Section -->
+      <!-- Pricing Section -->
+      <div *ngIf="caseSummary?.pricing || caseSummary?.priceSnapshot" class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-currency-rupee"></i>
+            Pricing Information
+            <span class="badge bg-light text-dark ms-2">
+              <i class="bi bi-lock-fill"></i> Price Snapshot
+            </span>
+          </h5>
+          <!-- Recalculate Button (Gap 6) -->
+          <button
+            *ngIf="canRecalculate() && !isReadOnly"
+            class="btn btn-sm btn-outline-light"
+            (click)="recalculatePricing()"
+            [disabled]="isRecalculating()"
+          >
+            <span *ngIf="isRecalculating()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isRecalculating()" class="bi bi-arrow-clockwise me-1"></i>
+            {{ isRecalculating() ? 'Recalculating...' : 'Recalculate Prices' }}
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>Total Amount:</strong>
+              <p class="text-muted fs-5">{{ (caseSummary.pricing || caseSummary.priceSnapshot)?.totalAmount | currency: 'INR' }}</p>
+            </div>
+            <div class="col-md-3" *ngIf="(caseSummary.pricing || caseSummary.priceSnapshot)?.subTotal">
+              <strong>Sub Total:</strong>
+              <p class="text-muted">{{ (caseSummary.pricing || caseSummary.priceSnapshot).subTotal | currency: 'INR' }}</p>
+            </div>
+            <div class="col-md-3" *ngIf="(caseSummary.pricing || caseSummary.priceSnapshot)?.tax">
+              <strong>Tax:</strong>
+              <p class="text-muted">{{ (caseSummary.pricing || caseSummary.priceSnapshot).tax | currency: 'INR' }}</p>
+            </div>
+            <div class="col-md-3" *ngIf="caseSummary?.billingStatus">
+              <strong>Billing Status:</strong>
+              <p><span class="badge bg-secondary">{{ caseSummary.billingStatus }}</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proforma Invoice (PI) Section — hidden for DirectTaxInvoice customers -->
+      <div *ngIf="(caseSummary?.piStatus || caseSummary?.pi_status) !== 'NOT_REQUIRED'" class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Proforma Invoice (PI)</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="!proformaInvoice">
+            <p class="text-muted mb-3">No Proforma Invoice has been generated for this case.</p>
+            <ng-container>
+              <button
+                *ngIf="canGeneratePI() && !isReadOnly"
+                class="btn btn-primary"
+                (click)="generatePI()"
+                [disabled]="isGeneratingPI() || !canGeneratePI()"
+              >
+                <span *ngIf="isGeneratingPI()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!isGeneratingPI()" class="bi bi-file-earmark-pdf me-2"></i>
+                {{ isGeneratingPI() ? 'Generating...' : 'Generate Proforma Invoice' }}
+              </button>
+            </ng-container>
+            <p *ngIf="!canGeneratePI()" class="text-muted small">
+              <i class="bi bi-info-circle"></i> PI can only be generated after report approval and pricing is available.
+            </p>
+          </div>
+
+          <div *ngIf="proformaInvoice">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <strong>PI No:</strong>
+                <p class="text-muted">{{ proformaInvoice.piNo || proformaInvoice.pi_no || proformaInvoice.invoiceNo }}</p>
+              </div>
+              <div class="col-md-4">
+                <strong>PI Status:</strong>
+                <p>
+                  <span [ngClass]="getInvoiceStatusBadgeClass(proformaInvoice.status)">
+                    {{ proformaInvoice.status }}
+                  </span>
+                </p>
+              </div>
+              <div class="col-md-4">
+                <strong>PI Amount:</strong>
+                <p class="text-muted">{{ proformaInvoice.amount | currency: 'INR' }}</p>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-add"
+                (click)="openInvoicePreview('pi')"
+              >
+                <i class="bi bi-eye me-2"></i>Preview PI
+              </button>
+              <button
+                class="btn btn-save"
+                (click)="sendInvoice('email')"
+                [disabled]="isSendingInvoice() || isReadOnly"
+              >
+                <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i>
+                {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advance Payment Section -->
+      <div *ngIf="advancePayments.length > 0 || proformaInvoice" class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Advance Payment</h5>
+          <button *ngIf="proformaInvoice && !invoice" class="btn btn-outline-warning btn-sm"
+            (click)="goToRecordPayment()">
+            <i class="bi bi-plus-circle me-1"></i> Record Advance Payment
+          </button>
+        </div>
+        <div class="card-body">
+          <div *ngIf="advancePayments.length > 0" class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Mode</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let advance of advancePayments">
+                  <td>{{ advance.date | date: 'dd-MMM-yyyy' }}</td>
+                  <td class="fw-semibold">&#8377;{{ advance.amount | number:'1.2-2' }}</td>
+                  <td>{{ advance.paymentMode }}</td>
+                  <td>
+                    <span [ngClass]="getPaymentStatusBadgeClass(advance.status)">
+                      {{ advance.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot *ngIf="advancePayments.length > 1">
+                <tr class="table-light">
+                  <td class="fw-bold">Total</td>
+                  <td class="fw-bold text-success">&#8377;{{ getTotalAdvance() | number:'1.2-2' }}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div *ngIf="advancePayments.length === 0" class="text-muted small">
+            <i class="bi bi-info-circle me-1"></i> No advance payments recorded yet. Click "Record Advance Payment" to pay against the PI.
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Invoice Section -->
       <div class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Invoice</h5>
+          <h5 class="mb-0">Final Invoice</h5>
         </div>
         <div class="card-body">
           <div *ngIf="!invoice">
-            <p class="text-muted mb-3">No invoice has been generated for this case.</p>
-            <button
-              class="btn btn-primary"
-              (click)="generateInvoice()"
-              [disabled]="isGeneratingInvoice() || isReadOnly"
-            >
-              <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-              <i *ngIf="!isGeneratingInvoice()" class="bi bi-file-earmark-plus me-2"></i>
-              {{ isGeneratingInvoice() ? 'Generating...' : 'Generate Invoice' }}
-            </button>
+            <p class="text-muted mb-3">No Final Invoice has been generated for this case.</p>
+            <ng-container *hasPermission="['CanReadAccount', 'CanManageAccount', 'CanGenerateInvoice']">
+              <button
+                *ngIf="canGenerateInvoice() && !isReadOnly"
+                class="btn btn-primary"
+                (click)="generateInvoice()"
+                [disabled]="isGeneratingInvoice() || !canGenerateInvoice()"
+              >
+                <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!isGeneratingInvoice()" class="bi bi-file-earmark-plus me-2"></i>
+                {{ isGeneratingInvoice() ? 'Generating...' : 'Generate Final Invoice' }}
+              </button>
+            </ng-container>
+            <p *ngIf="!canGenerateInvoice()" class="text-muted small">
+              <i class="bi bi-info-circle"></i>
+              <ng-container *ngIf="(caseSummary?.piStatus || caseSummary?.pi_status) === 'NOT_REQUIRED'; else piRequiredHint">
+                Final Invoice can only be generated after report approval and pricing is calculated.
+              </ng-container>
+              <ng-template #piRequiredHint>
+                Final Invoice can only be generated after report approval and advance payment is completed.
+              </ng-template>
+            </p>
           </div>
 
           <div *ngIf="invoice">
@@ -89,15 +266,30 @@
               </div>
             </div>
 
+            <!-- Customer Discount Display (Gap 7) -->
+            <div *ngIf="invoice.discountAmount > 0" class="alert alert-success mb-3">
+              <i class="bi bi-percent me-1"></i>
+              <strong>Customer Discount:</strong>
+              {{ invoice.discountPercentage }}% applied
+              ({{ invoice.discountAmount | currency: 'INR' }} off on Sub Total {{ invoice.subTotal | currency: 'INR' }})
+            </div>
+
+            <!-- Advance Adjustment Display -->
+            <div *ngIf="invoice.advanceAdjustment || invoice.advance_adjustment" class="alert alert-info mb-3">
+              <strong>Advance Adjustment:</strong>
+              {{ (invoice.advanceAdjustment || invoice.advance_adjustment) | currency: 'INR' }}
+              has been deducted from this invoice.
+            </div>
+
             <div class="d-flex gap-2">
               <button
-                class="btn btn-outline-primary"
+                class="btn btn-add"
                 (click)="openInvoicePreview()"
               >
                 <i class="bi bi-eye me-2"></i>Preview Invoice
               </button>
               <button
-                class="btn btn-success"
+                class="btn btn-save"
                 (click)="sendInvoice('email')"
                 [disabled]="isSendingInvoice() || isReadOnly"
               >
@@ -106,7 +298,7 @@
                 {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
               </button>
               <button
-                class="btn btn-success"
+                class="btn btn-save"
                 (click)="sendInvoice('whatsapp')"
                 [disabled]="isSendingInvoice() || isReadOnly"
               >
@@ -119,10 +311,103 @@
         </div>
       </div>
 
+      <!-- Additional Charges Section -->
+      <div class="card mb-4 border-0 shadow-sm" *ngIf="invoice">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Additional Charges</h5>
+          <button *ngIf="!isReadOnly" class="btn btn-sm btn-primary" (click)="showAddLineItem = !showAddLineItem">
+            <i class="bi bi-plus"></i> Add Charge
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Tax %</th>
+                <th class="text-end">Tax Amount</th>
+                <th class="text-end">Total</th>
+                <th *ngIf="!isReadOnly" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="showAddLineItem">
+                <td>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="newLineItem.description" placeholder="Description" />
+                </td>
+                <td>
+                  <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="newLineItem.amount" min="0" step="0.01" />
+                </td>
+                <td>
+                  <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="newLineItem.taxPercent" min="0" max="100" step="0.01" />
+                </td>
+                <td class="text-end align-middle">{{ (newLineItem.amount * newLineItem.taxPercent / 100) | currency: 'INR' }}</td>
+                <td class="text-end align-middle">{{ (newLineItem.amount + newLineItem.amount * newLineItem.taxPercent / 100) | currency: 'INR' }}</td>
+                <td class="text-center align-middle">
+                  <button class="btn btn-sm btn-save me-1" (click)="saveLineItem()">
+                    <i class="bi bi-check"></i>
+                  </button>
+                  <button class="btn btn-sm btn-cancel" (click)="showAddLineItem = false">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </td>
+              </tr>
+              <ng-container *ngFor="let item of lineItems">
+                <tr *ngIf="editingLineItemId !== item.id">
+                  <td>{{ item.description }}</td>
+                  <td class="text-end">{{ item.amount | currency: 'INR' }}</td>
+                  <td class="text-end">{{ item.taxPercent }}%</td>
+                  <td class="text-end">{{ getLineItemTaxAmount(item) | currency: 'INR' }}</td>
+                  <td class="text-end">{{ getLineItemTotal(item) | currency: 'INR' }}</td>
+                  <td *ngIf="!isReadOnly" class="text-center">
+                    <button class="btn btn-sm btn-add me-1" (click)="editLineItem(item)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-remove" (click)="deleteLineItem(item)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="editingLineItemId === item.id">
+                  <td>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="editLineItemData.description" />
+                  </td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="editLineItemData.amount" min="0" step="0.01" />
+                  </td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="editLineItemData.taxPercent" min="0" max="100" step="0.01" />
+                  </td>
+                  <td class="text-end align-middle">{{ (editLineItemData.amount * editLineItemData.taxPercent / 100) | currency: 'INR' }}</td>
+                  <td class="text-end align-middle">{{ (editLineItemData.amount + editLineItemData.amount * editLineItemData.taxPercent / 100) | currency: 'INR' }}</td>
+                  <td class="text-center align-middle">
+                    <button class="btn btn-sm btn-save me-1" (click)="updateLineItem()">
+                      <i class="bi bi-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-cancel" (click)="cancelEditLineItem()">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="!lineItems.length && !showAddLineItem">
+                <td [attr.colspan]="isReadOnly ? 5 : 6" class="text-center text-muted py-3">
+                  No additional charges added.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Payment List Section -->
       <div class="card border-0 shadow-sm">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Payment List</h5>
+          <button *ngIf="!isReadOnly" class="btn btn-sm btn-outline-success" (click)="goToRecordPayment()">
+            <i class="bi bi-plus-circle"></i> Record Payment
+          </button>
         </div>
         <div class="card-body">
           <div *ngIf="!isLoadingPayments() && payments.length > 0" class="table-responsive">
@@ -140,10 +425,27 @@
               </thead>
               <tbody>
                 <tr *ngFor="let payment of payments" class="text-center">
-                  <td>{{ (payment.date || payment.createdDate || payment.created_date) | date: 'MMM dd, yyyy' }}</td>
+                  <td>{{ (payment.date || payment.createdDate || payment.created_date) | date: 'dd-MMM-yyyy' }}</td>
                   <td>{{ payment.paymentType || payment.payment_type }}</td>
-                  <td>{{ payment.against }}</td>
-                  <td>{{ payment.reference || payment.referenceNo || payment.reference_no }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'bg-info': (payment.against || '').toLowerCase().includes('pi'),
+                      'bg-primary': (payment.against || '').toLowerCase().includes('invoice')
+                    }">
+                      {{ payment.against || 'N/A' }}
+                    </span>
+                  </td>
+                  <td>
+                    <a
+                      *ngIf="payment.reference || payment.referenceNo || payment.reference_no"
+                      class="text-primary text-decoration-none cursor-pointer"
+                      [title]="'View payment details for ' + (payment.reference || payment.referenceNo || payment.reference_no)"
+                      (click)="openPaymentDetail(payment)"
+                    >
+                      {{ payment.reference || payment.referenceNo || payment.reference_no }}
+                    </a>
+                    <span *ngIf="!payment.reference && !payment.referenceNo && !payment.reference_no">N/A</span>
+                  </td>
                   <td>{{ payment.amount | currency: 'INR' }}</td>
                   <td>
                     <span [ngClass]="getPaymentStatusBadgeClass(payment.status)">
@@ -152,7 +454,7 @@
                   </td>
                   <td *ngIf="!isReadOnly">
                     <button
-                      *ngIf="canSendPaymentLink(payment.status)"
+                      *ngIf="paymentGatewayEnabled && canSendPaymentLink(payment.status)"
                       class="btn btn-sm btn-primary"
                       (click)="sendPaymentLink(payment.paymentOrderId || payment.payment_order_id || payment.id)"
                       [disabled]="sendingPaymentLinkId === (payment.paymentOrderId || payment.payment_order_id || payment.id)"
@@ -165,7 +467,7 @@
                         *ngIf="sendingPaymentLinkId !== (payment.paymentOrderId || payment.payment_order_id || payment.id)"
                         class="bi bi-send me-1"
                       ></i>
-                      {{ payment.status?.toLowerCase() === 'failed' ? 'Resend Link' : 'Send Link' }}
+                      Resend Receipt
                     </button>
                   </td>
                 </tr>
@@ -185,13 +487,62 @@
           </div>
         </div>
       </div>
+
+      <!-- Close Case Section — only show when invoice is generated -->
+      <div class="card mt-4 border-0 shadow-sm" *ngIf="!isReadOnly && invoice">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <span *ngIf="!canClose && closeReason" class="text-muted small">
+              <i class="bi bi-info-circle"></i> {{ closeReason }}
+            </span>
+          </div>
+          <button class="btn btn-danger" [disabled]="!canClose || isClosing()" (click)="closeCase()"
+            *hasPermission="['CanManageAccount']">
+            <span *ngIf="isClosing()" class="spinner-border spinner-border-sm me-1"></span>
+            <i *ngIf="!isClosing()" class="bi bi-lock-fill me-1"></i>
+            Close Case
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading()" class="card-body text-center py-5">
-      <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+
+<!-- Exchange Rate Modal (shown for non-INR customers before generating final invoice) -->
+<div *ngIf="showExchangeRateModal" class="modal-backdrop-custom" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;">
+  <div class="card shadow-lg" style="max-width:380px;width:100%;border-top:3px solid var(--primary-color);">
+    <div class="card-header card-form-header text-white">
+      <strong>Exchange Rate Required</strong>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-2" style="font-size:0.85rem;">
+        Customer billing currency: <strong>{{ caseSummary?.customerCurrencyCode }}</strong><br>
+        Enter today's exchange rate (1 {{ caseSummary?.customerCurrencyCode }} = ? ₹):
+      </p>
+      <div class="input-group input-group-sm mb-3">
+        <span class="input-group-text">1 {{ caseSummary?.customerCurrencyCode }} =</span>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="exchangeRateInput"
+          placeholder="e.g. 83.45"
+          min="0.0001"
+          step="0.01"
+          [ngClass]="{ 'is-invalid': exchangeRateInput !== null && exchangeRateInput <= 0 }"
+        />
+        <span class="input-group-text">₹</span>
       </div>
+      <div *ngIf="exchangeRateInput !== null && exchangeRateInput <= 0">
+        <span class="text-danger" style="font-size:0.8rem;">Exchange rate must be greater than 0.</span>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 justify-content-end">
+      <button class="btn btn-sm btn-cancel" (click)="showExchangeRateModal = false">Cancel</button>
+      <button class="btn btn-sm btn-save" (click)="confirmExchangeRate()" [disabled]="isGeneratingInvoice()">
+        <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-1"></span>
+        Confirm &amp; Generate
+      </button>
     </div>
   </div>
 </div>

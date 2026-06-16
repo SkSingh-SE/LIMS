@@ -1,0 +1,171 @@
+import { Component, OnInit , HostListener } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { QuillModule } from 'ngx-quill';
+import { CustomerFeedbackService } from '../../../../services/customer-feedback.service';
+import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
+
+@Component({
+    selector: 'app-customer-feedback-form',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
+    templateUrl: './customer-feedback-form.component.html',
+    styleUrl: './customer-feedback-form.component.css'
+})
+export class CustomerFeedbackFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    feedbackForm!: FormGroup;
+    isEditMode = false;
+    isViewMode = false;
+    recordId: number = 0;
+    formTitle = 'Customer Feedback Form';
+    formNumbers = NablFormsHelper.getFormNumbers();
+
+    feedbackParameters = [
+        'Quality of Test Results',
+        'Timely Delivery of Reports',
+        'Technical Competence of Staff',
+        'Response to Queries',
+        'Behavior of Lab Personnel',
+        'Overall Service'
+    ];
+
+    openSections: { [key: string]: boolean } = {
+        header: true,
+        customerInfo: true,
+        ratings: true,
+        comments: true
+    };
+
+    quillModules = {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['clean']
+        ]
+    };
+
+    constructor(
+        private fb: FormBuilder,
+        private route: ActivatedRoute,
+        private router: Router,
+        private service: CustomerFeedbackService
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
+        this.initForm();
+        this.nablHeaderService.getFormDefaults('CustomerFeedback').subscribe({
+            next: (defaults) => {
+                this.feedbackForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
+    }
+
+    ngOnInit() {
+        this.route.paramMap.subscribe(params => {
+            const id = params.get('id');
+            const mode = this.route.snapshot.url[1]?.path;
+
+            if (id && id !== 'create') {
+                this.recordId = +id;
+                this.isEditMode = mode === 'edit';
+                this.isViewMode = mode === 'details';
+                this.formTitle = this.isViewMode ? 'View Customer Feedback' : 'Edit Customer Feedback';
+                this.loadRecord();
+            }
+        });
+    }
+
+    private initForm() {
+        this.feedbackForm = this.fb.group({
+            formatNo: ['F-47'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
+            revDate: ['--', Validators.required],
+
+            customerName: ['', Validators.required],
+            contactPerson: ['', Validators.required],
+            date: ['', Validators.required],
+            ratings: this.fb.array(this.feedbackParameters.map(p => this.fb.group({
+                parameter: [p, Validators.required],
+                rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
+            }))),
+            comments: [''],
+            suggestions: [''],
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
+        });
+
+        // System-managed fields — always readonly
+        this.feedbackForm.get('docNo')?.disable();
+        this.feedbackForm.get('issueNo')?.disable();
+        this.feedbackForm.get('revNo')?.disable();
+        this.feedbackForm.get('formatNo')?.disable();
+    }
+
+    get ratingsArray() {
+        return this.feedbackForm.get('ratings') as FormArray;
+    }
+
+    private loadRecord() {
+        this.service.getById(this.recordId).subscribe(data => {
+            if (data) {
+                // Clear and rebuild ratings array if number of parameters differs (unlikely here but safe)
+                this.feedbackForm.patchValue(data);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.feedbackForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.feedbackForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.feedbackForm.get('docNo')?.disable();
+                this.feedbackForm.get('issueNo')?.disable();
+                this.feedbackForm.get('revNo')?.disable();
+                this.feedbackForm.get('formatNo')?.disable();
+            }
+        });
+    }
+
+    toggleSection(section: string) {
+        this.openSections[section] = !this.openSections[section];
+    }
+
+    onSubmit() {
+        if (this.feedbackForm.valid) {
+            if (this.isEditMode) {
+                this.service.update(this.recordId, this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
+            } else {
+                this.service.create(this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
+            }
+        }
+    }
+
+    onCancel() {
+        this.router.navigate(['/customer-feedback']);
+    }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.feedbackForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.feedbackForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+}

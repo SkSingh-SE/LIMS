@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════
+   SEARCHABLE DROPDOWN — Unified Select Design
+   Matches global .form-control height, border, font
+   ═══════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* ─── Label — mirrors global sets so encapsulation boundary doesn't break them ─── */
+:host .form-label {
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 500;
+  color: var(--neutral-700, #374151);
+  font-family: 'Poppins', sans-serif;
+}
+
+:host .form-label.form-label-sm {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+/* ─── Input Group (unified container) ─── */
+.input-group {
+  border: 1px solid var(--neutral-300, #ced4da);
+  border-radius: var(--radius-sm, 4px);
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  min-height: 36px;
+}
+
+.input-group:hover {
+  border-color: var(--primary-color, #da261c);
+  background-color: #fff8f8;
+}
+
+.input-group:focus-within {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12);
+  background-color: #fff;
+}
+
+/* ─── Input Field (remove its own border, match other inputs) ─── */
+.input-group .form-control,
+.input-group .form-control-sm {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  font-size: var(--font-sm, 0.8125rem);
+  font-family: 'Poppins', sans-serif;
+  padding: 0.275rem 0.75rem;
+  color: var(--neutral-900, #1e293b);
+  height: auto;
+  line-height: 1.5;
+}
+
+.input-group .form-control::placeholder {
+  color: var(--neutral-400, #94a3b8);
+  font-size: var(--font-sm);
+}
+
+.input-group .form-control:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+/* ─── Dropdown Icon (seamless with input) ─── */
+.input-group .input-group-text.dropdown-toggle-icon {
+  border: none !important;
+  background: transparent;
+  padding: 0 0.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.input-group .input-group-text.dropdown-toggle-icon:hover {
+  color: var(--primary-color, #da261c);
+  background: rgba(218, 38, 28, 0.06);
+}
+
+.input-group .input-group-text.dropdown-toggle-icon i {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+}
+
+/* ─── Clear Icon ─── */
+.input-group .input-group-text.clear-icon {
+  border: none !important;
+  background: transparent;
+  padding: 0 0.5rem;
+  color: #adb5bd;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.input-group .input-group-text.clear-icon:hover {
+  color: #dc0e23;
+}
+
+.input-group .input-group-text.clear-icon i {
+  font-size: 0.9rem;
+}
+
+/* ─── SM Mode (when smallInput=true adds form-control-sm) ─── */
+.input-group:has(.form-control-sm) {
+  min-height: 30px;
+}
+
+.input-group:has(.form-control-sm) .form-control-sm {
+  font-size: var(--font-sm, 0.8125rem);
+  padding: 0.2rem 0.5rem;
+  line-height: 1.4;
+}
+
+.input-group:has(.form-control-sm) .form-control-sm::placeholder {
+  font-size: var(--font-sm, 0.8125rem);
+}
+
+.input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon {
+  padding: 0 0.35rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon i {
+  font-size: 0.55rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.clear-icon {
+  padding: 0 0.2rem;
+}
+
+.input-group:has(.form-control-sm) .input-group-text.clear-icon i {
+  font-size: 0.5rem;
+}
+
+/* ─── Disabled State ─── */
+.input-group:has(.form-control:disabled) {
+  background: var(--neutral-100, #f8f9fa);
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.input-group .form-control:disabled {
+  background: transparent;
+  color: var(--neutral-500, #6c757d);
+}
+
+/* ─── Invalid State ─── */
+.input-group:has(.is-invalid) {
+  border-color: #dc3545;
+}
+
+.input-group:has(.is-invalid):focus-within {
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
+}
+
+/* ─── Validation Message ─── */
+.invalid-feedback {
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}

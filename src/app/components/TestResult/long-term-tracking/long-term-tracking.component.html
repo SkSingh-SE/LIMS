@@ -9,7 +9,7 @@
       </button>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search Bar -->
       <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
@@ -134,7 +134,6 @@
               </th>
 
               <!-- Actions -->
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
 
@@ -164,7 +163,7 @@
 
                   <!-- Record Reading -->
                   <button
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-add"
                     (click)="recordReading(test)"
                     [disabled]="!canRecordReading(test) || isSaving()"
                     title="Record Reading"
@@ -197,7 +196,7 @@
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="isLoading()" class="text-center py-5">
+      <div *ngIf="false" class="text-center py-5">
         <div class="spinner-border text-danger" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
@@ -226,7 +225,7 @@
             <span *ngIf="totalRecords">({{ totalRecords }} total)</span>
           </span>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="onPageChange(pageNumber - 1)"
             [disabled]="pageNumber <= 1"
             title="Previous page"
@@ -234,7 +233,7 @@
             <i class="bi bi-chevron-left"></i>
           </button>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="onPageChange(pageNumber + 1)"
             [disabled]="pageNumber >= totalPages"
             title="Next page"
@@ -242,7 +241,7 @@
             <i class="bi bi-chevron-right"></i>
           </button>
           <button
-            class="btn btn-sm btn-outline-secondary"
+            class="btn btn-sm btn-cancel"
             (click)="loadLongTermTests()"
             title="Refresh data"
           >
@@ -340,7 +339,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-success"
+          class="btn btn-save"
           (click)="completeTest(selectedTest!)"
           [disabled]="!canCompleteTest(selectedTest!) || isSaving()"
         >

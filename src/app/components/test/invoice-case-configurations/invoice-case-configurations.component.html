@@ -8,7 +8,7 @@
       </a>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
@@ -23,41 +23,32 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th *ngFor="let column of columns; let i = index">
+              <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
+              <th *ngFor="let column of columns">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
                   <span class="d-flex flex-column ms-2 mt-2">
-                    <i
-                      class="bi bi-caret-up sorting-icon-up"
-                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
-                      (click)="applySorting(column.key)"
-                    ></i>
-                    <i
-                      class="bi bi-caret-down sorting-icon-down"
-                      [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
-                      (click)="applySorting(column.key)"
-                    ></i>
+                    <i class="bi bi-caret-up sorting-icon-up"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                       (click)="applySorting(column.key)"></i>
+                    <i class="bi bi-caret-down sorting-icon-down"
+                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                       (click)="applySorting(column.key)"></i>
                   </span>
-                  <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of invoiceList; let i = index" class="text-sm">
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.aliasName }}</td>
-              <td>{{ item.value || item.start + " - " + item.end }}</td>
               <td class="text-center">
-                <div class="d-flex justify-content-center gap-2">
-                  <!-- Flex for spacing -->
+                <div class="d-flex justify-content-center gap-3">
                   <a (click)="openModal('view', item.id)" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
@@ -69,38 +60,33 @@
                   </a>
                 </div>
               </td>
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.aliasName }}</td>
+              <td>{{ item.value || (item.start + ' – ' + item.end + (item.unit ? ' ' + item.unit : '')) }}</td>
+              <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div *ngIf="invoiceList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+
+      <div *ngIf="invoiceList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
         <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
           <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
           <div class="fw-semibold">No records found</div>
         </div>
       </div>
-      <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center">
-        <!-- Page Size Selector -->
-        <div class="d-flex align-items-center">
-          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-          </select>
-        </div>
 
-        <!-- Pagination Controls -->
-        <ul class="pagination mb-0 d-flex align-items-center">
-          <li class="page-item" [class.disabled]="pageNumber === 1">
-            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-          </li>
-          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-          </li>
-        </ul>
-      </div>
+      <!-- Pagination -->
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
     </div>
   </div>
 </div>
@@ -108,11 +94,8 @@
 <!-- Filter Modal -->
 <div #filterModal class="filter-modal">
   <div class="card py-2 px-3 shadow position-relative">
-    <!-- Close Button in the Top-Right Corner -->
     <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
-
     <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
     <select class="form-select mb-2" [(ngModel)]="filterType">
       <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
       <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
@@ -121,142 +104,359 @@
       <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
       <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
     </select>
-
-    <input
-      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
-      type="text"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-      placeholder="Enter value"
-      (keydown.enter)="applyFilter()"
-    />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'number'"
-      type="number"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-      placeholder="Enter number"
-      (keydown.enter)="applyFilter()"
-    />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
-      type="date"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-    />
+    <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date" class="form-control mb-2" [(ngModel)]="filterValue" />
     <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
       <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
       <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
     </div>
-
     <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
   </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
-<div
-  id="customerTypeModal"
-  class="modal fade modal-fade modal-lg"
-  #modalRef
-  tabindex="-1"
-  data-bs-backdrop="static"
-  aria-labelledby="customerTypeModalLabel"
-  aria-modal="true"
-  role="dialog"
->
+<!-- Create / Edit / View Modal -->
+<div id="invoiceConfigModal" class="modal fade modal-xl" #modalRef tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
+
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
-          {{ formTitle }}
-        </label>
+        <label class="modal-title fw-medium">{{ formTitle }}</label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
+
       <form [formGroup]="invoiceForm">
-        <div class="modal-body row row-cols-2">
-          <!-- Selection Type -->
-          <div class="mb-1 col">
-            <label class="form-label">
-              Selection Type
-              <span class="text-danger">*</span>
-            </label>
-            <select class="form-select" formControlName="selectionType" (change)="onTypeChange()">
-              <option value="">Select</option>
-              <option *ngFor="let type of selectionTypes" [value]="type.value">{{ type.label }}</option>
-            </select>
-            <span
-              *ngIf="invoiceForm.get('selectionType')?.invalid && invoiceForm.get('selectionType')?.touched"
-              class="text-danger text-sm"
-            >
-              Selection Type is required.
-            </span>
-          </div>
+        <div class="modal-body">
 
-          <!-- Unit (auto-filled) -->
-          <div class="mb-1 col">
-            <label class="form-label">Unit</label>
-            <input class="form-control" formControlName="unit" placeholder="Auto filled" readonly />
-          </div>
-
-          <!-- Value (for single) -->
-          <div class="mb-1 col" *ngIf="!invoiceForm.get('selectionType')?.value?.toLowerCase().includes('range')">
-            <label class="form-label">Value</label>
-            <input class="form-control" formControlName="value" placeholder="Enter value" (input)="updateName()" />
-          </div>
-
-          <!-- Range: Start + End -->
-          <div class="mb-1 col" *ngIf="invoiceForm.get('selectionType')?.value?.toLowerCase().includes('range')">
-            <label class="form-label">Range</label>
-            <div class="d-flex">
-              <input class="form-control me-1" formControlName="start" placeholder="Start" />
-              <input class="form-control" formControlName="end" placeholder="End" (input)="updateRangeName()" />
+          <!-- Row 1: Selection Type (full width) -->
+          <div class="row g-2 mb-2">
+            <div class="col-12">
+              <label class="form-label">Selection Type <span class="text-danger">*</span></label>
+              <ng-select
+                [items]="selectionTypes"
+                bindLabel="label"
+                bindValue="value"
+                groupBy="group"
+                formControlName="selectionType"
+                placeholder="-- Select pricing type --"
+                notFoundText="No matching type found"
+                [clearable]="false"
+                [searchable]="true"
+                (change)="onTypeChange()"
+                [disabled]="isViewMode">
+                <ng-template ng-option-tmp let-item="item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ item.label }}</span>
+                    <small class="text-muted ms-2">{{ item.hint }}</small>
+                  </div>
+                </ng-template>
+              </ng-select>
+              <span *ngIf="invoiceForm.get('selectionType')?.invalid && invoiceForm.get('selectionType')?.touched"
+                    class="text-danger text-sm">Selection Type is required.</span>
             </div>
           </div>
 
-          <!-- Name (auto-generated) -->
-          <div class="mb-1 col">
-            <label class="form-label">Name</label>
-            <ng-select
-              [items]="filteredSuggestions$ | async"
-              bindLabel="name"
-              [addTag]="true"
-              [multiple]="false"
-              [hideSelected]="true"
-              [typeahead]="nameInput$"
-              [(ngModel)]="selectedSuggestion"
-              [ngModelOptions]="{standalone: true}"
-              (change)="onSuggestionSelected($event)"
-              [loading]="nameLoading"
-              placeholder="Enter or select name"
-            ></ng-select>
+          <!-- Row 2: Value/Range  +  Name (side by side) -->
+          <div class="row g-2 mb-2" *ngIf="invoiceForm.get('selectionType')?.value">
+
+            <!-- SizeLoad: 3 columns (Min Size + Max Size + Max Load) -->
+            <ng-container *ngIf="isSizeLoadType && !isSizeAndLoadType">
+              <div class="col-4">
+                <label class="form-label">Min Size <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="start"
+                         placeholder="e.g. 0" (input)="autoGenerateName()" />
+                  <span class="input-group-text">mm</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <label class="form-label">Max Size <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="end"
+                         placeholder="e.g. 20" (input)="autoGenerateName()" />
+                  <span class="input-group-text">mm</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <label class="form-label">Max Load <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="value"
+                         placeholder="e.g. 1000" (input)="autoGenerateName()" />
+                  <span class="input-group-text">kN</span>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- SizeAndLoad: 4 columns (Min Size + Max Size + Min Load + Max Load) -->
+            <ng-container *ngIf="isSizeAndLoadType">
+              <div class="col-3">
+                <label class="form-label">Min Size <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="start"
+                         placeholder="e.g. 0" (input)="autoGenerateName()" />
+                  <span class="input-group-text">mm</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <label class="form-label">Max Size <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="end"
+                         placeholder="e.g. 25" (input)="autoGenerateName()" />
+                  <span class="input-group-text">mm</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <label class="form-label">Min Load <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="value"
+                         placeholder="e.g. 400" (input)="autoGenerateName()" />
+                  <span class="input-group-text">kN</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <label class="form-label">Max Load <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input class="form-control" type="number" formControlName="value2"
+                         placeholder="e.g. 1000" (input)="autoGenerateName()" />
+                  <span class="input-group-text">kN</span>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- SizeLoad/SizeAndLoad validation errors -->
+            <ng-container *ngIf="isSizeLoadType">
+              <div class="col-12" *ngIf="rangeError">
+                <span class="text-danger text-sm">{{ rangeError }}</span>
+              </div>
+              <div class="col-12" *ngIf="!rangeError && (invoiceForm.get('start')?.invalid || invoiceForm.get('end')?.invalid || invoiceForm.get('value')?.invalid) && (invoiceForm.get('start')?.touched || invoiceForm.get('end')?.touched || invoiceForm.get('value')?.touched)">
+                <span class="text-danger text-sm">All size and load fields are required.</span>
+              </div>
+            </ng-container>
+
+            <!-- Single-value types (hidden for SpectroCombination — value is auto-set from name) -->
+            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType">
+              <label class="form-label">Value <span class="text-danger">*</span></label>
+              <!-- Select type (e.g. WithImage, WithExtenso) -->
+              <select *ngIf="currentConfig.inputType === 'select'"
+                      class="form-select"
+                      formControlName="value"
+                      (change)="autoGenerateName()">
+                <option value="">-- Select --</option>
+                <option *ngFor="let opt of currentConfig.selectOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+              <!-- Text / Number input -->
+              <div *ngIf="currentConfig.inputType !== 'select'" class="input-group">
+                <input class="form-control"
+                       [type]="currentConfig.inputType"
+                       formControlName="value"
+                       [placeholder]="currentConfig.valuePlaceholder"
+                       (input)="autoGenerateName()" />
+                <span class="input-group-text" *ngIf="currentConfig.unit">{{ currentConfig.unit }}</span>
+              </div>
+              <!-- Dimension auto-detect hint -->
+              <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+              </small>
+              <span *ngIf="invoiceForm.get('value')?.invalid && invoiceForm.get('value')?.touched"
+                    class="text-danger text-sm">Value is required.</span>
+            </div>
+
+            <!-- Range types -->
+            <div class="col-6" *ngIf="currentConfig.isRange">
+              <label class="form-label">Range <span class="text-danger">*</span></label>
+              <div class="d-flex gap-1">
+                <div class="input-group flex-fill">
+                  <input class="form-control"
+                         [type]="currentConfig.inputType"
+                         formControlName="start"
+                         [placeholder]="currentConfig.startPlaceholder || 'Start'"
+                         (input)="autoGenerateName()" />
+                  <span class="input-group-text" *ngIf="currentConfig.unit">{{ currentConfig.unit }}</span>
+                </div>
+                <div class="input-group flex-fill">
+                  <input class="form-control"
+                         [type]="currentConfig.inputType"
+                         formControlName="end"
+                         [placeholder]="currentConfig.endPlaceholder || 'End'"
+                         (input)="autoGenerateName()" />
+                  <span class="input-group-text" *ngIf="currentConfig.unit">{{ currentConfig.unit }}</span>
+                </div>
+              </div>
+              <!-- Dimension auto-detect hint for range types (e.g. SizeRange) -->
+              <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+              </small>
+              <!-- Range validation errors -->
+              <span *ngIf="rangeError" class="text-danger text-sm">{{ rangeError }}</span>
+              <span *ngIf="!rangeError && (invoiceForm.get('start')?.invalid || invoiceForm.get('end')?.invalid) && (invoiceForm.get('start')?.touched || invoiceForm.get('end')?.touched)"
+                    class="text-danger text-sm">Both Start and End are required.</span>
+            </div>
+
+            <!-- Name (auto-generated or picked from suggestions) -->
+            <div [ngClass]="isSizeLoadType || isSpectroType ? 'col-12' : 'col-6'">
+              <label class="form-label">Name <span class="text-danger">*</span></label>
+
+              <!-- SpectroCombination: name is auto-generated from linked parameters -->
+              <input *ngIf="isSpectroType"
+                     class="form-control"
+                     [value]="invoiceForm.get('name')?.value || ''"
+                     placeholder="Select parameters below to auto-generate name"
+                     readonly />
+
+              <!-- All other types: suggestion dropdown -->
+              <ng-select *ngIf="!isSpectroType"
+                [items]="filteredSuggestions$ | async"
+                bindLabel="name"
+                [addTag]="true"
+                addTagText="Use custom name:"
+                notFoundText="Type to add a custom name"
+                [multiple]="false"
+                [hideSelected]="true"
+                [typeahead]="nameInput$"
+                [(ngModel)]="selectedSuggestion"
+                [ngModelOptions]="{standalone: true}"
+                (change)="onSuggestionSelected($event)"
+                [loading]="nameLoading"
+                [placeholder]="namePlaceholder"
+                [disabled]="isViewMode"
+              ></ng-select>
+
+              <span *ngIf="invoiceForm.get('name')?.invalid && invoiceForm.get('name')?.touched"
+                    class="text-danger text-sm">Name is required.</span>
+            </div>
+
           </div>
 
-          <!-- Alias Names -->
-          <div class="mb-1 col-12">
-            <div class="d-flex justify-content-between m-2">
-              <label class="form-label">Alias Names</label>
-              <button type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAlias()">
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Alias
-              </button>
-            </div>
-            <div formArrayName="aliasNames" class="d-flex flex-column">
-              <div *ngFor="let aliasCtrl of aliasNames.controls; let i = index" [formGroupName]="i" class="d-flex align-items-center mb-1">
-                <input class="form-control me-2" formControlName="name" placeholder="Enter alias name" (keydown.enter)="addAlias()" />
-                <button type="button" class="btn btn-danger btn-sm" (click)="removeAlias(i)" *ngIf="aliasNames.length > 1">×</button>
+          <!-- Hidden unit field — keeps the form value in sync for submission -->
+          <input type="hidden" formControlName="unit" />
+          <input type="hidden" formControlName="sourceParameterIDs" />
+
+          <!-- Linked Parameter Picker (shown for types that auto-detect from parameters) -->
+          <div class="row g-2 mb-2" *ngIf="showParamPicker">
+            <div class="col-12">
+
+              <!-- SpectroCombination: Base Config toggle -->
+              <div *ngIf="isSpectroType" class="d-flex align-items-center gap-2 mb-2 p-2 rounded border"
+                   style="background:#fff8f8; border-color: var(--primary-color) !important;">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         id="isBaseConfigToggle"
+                         formControlName="isBaseConfig"
+                         (change)="onBaseConfigToggle()"
+                         [attr.disabled]="isViewMode ? true : null" />
+                  <label class="form-check-label fw-medium" for="isBaseConfigToggle">
+                    Base Configuration (Full)
+                  </label>
+                </div>
+                <small class="text-muted">
+                  <ng-container *ngIf="isBaseConfig">
+                    Select the <strong>standard elements</strong> that define the "Full" spectro analysis.
+                    Name stays <strong>"Full"</strong>.
+                  </ng-container>
+                  <ng-container *ngIf="!isBaseConfig">
+                    Select the <strong>extra elements</strong> (e.g. N, B, Ca) added on top of Full.
+                    Name auto-generates as <strong>"Full + N + B..."</strong>.
+                  </ng-container>
+                </small>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                <label class="form-label mb-0">
+                  <ng-container *ngIf="isSpectroType && isBaseConfig">Standard Elements (Full)</ng-container>
+                  <ng-container *ngIf="isSpectroType && !isBaseConfig">Extra Elements</ng-container>
+                  <ng-container *ngIf="!isSpectroType">Linked Parameters</ng-container>
+                  <small class="text-muted ms-1">
+                    <i class="bi bi-info-circle"
+                       title="The pricing engine reads the value of these parameters from test results for auto price detection."></i>
+                  </small>
+                </label>
+                <!-- Category toggle (hidden for SpectroCombination — always Chemical) -->
+                <div *ngIf="!isSpectroType" class="d-flex align-items-center gap-3">
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catChemical" name="paramCat"
+                           [value]="'Chemical'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catChemical">Chemical</label>
+                  </div>
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catMechanical" name="paramCat"
+                           [value]="'Mechanical'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catMechanical">Mechanical</label>
+                  </div>
+                  <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" id="catAll" name="paramCat"
+                           [value]="'All'" [(ngModel)]="parameterCategory"
+                           [ngModelOptions]="{standalone: true}"
+                           (change)="onCategoryChange()" [disabled]="isViewMode" />
+                    <label class="form-check-label" for="catAll">All</label>
+                  </div>
+                </div>
+              </div>
+              <app-multi-select-dropdown
+                [fetchDataFn]="getLinkedParamsFn"
+                [selectedValues]="selectedParamIds"
+                [reloadKey]="paramPickerReloadKey"
+                [isDisabled]="isViewMode"
+                [hideLabel]="true"
+                placeholder="Search and select parameters..."
+                (itemsSelected)="onParamSelected($event)">
+              </app-multi-select-dropdown>
+
+              <!-- FallbackToUserInput: shown for non-Spectro param picker types (e.g. Load, Hours) -->
+              <div *ngIf="!isSpectroType" class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="fallbackToUserInputToggle"
+                       formControlName="fallbackToUserInput"
+                       [attr.disabled]="isViewMode ? true : null" />
+                <label class="form-check-label" for="fallbackToUserInputToggle">
+                  Fallback to User Input
+                  <small class="text-muted ms-1">
+                    <i class="bi bi-info-circle"
+                       title="If the linked parameter is not found in test results, ask the user to enter the value manually at test result entry."></i>
+                  </small>
+                </label>
               </div>
             </div>
           </div>
+
+          <!-- Alias Names -->
+          <div class="row g-2">
+            <div class="col-12">
+              <div class="d-flex justify-content-between mb-1">
+                <label class="form-label mb-0">Alias Names</label>
+                <button type="button" class="btn btn-sm btn-add" (click)="addAlias()">
+                  <i class="bi bi-plus-circle-dotted"></i> Add Alias
+                </button>
+              </div>
+              <div formArrayName="aliasNames" class="d-flex flex-column gap-1">
+                <div *ngFor="let aliasCtrl of aliasNames.controls; let i = index"
+                     [formGroupName]="i" class="d-flex align-items-center">
+                  <input class="form-control me-2" formControlName="name"
+                         placeholder="Enter alias name" (keydown.enter)="addAlias()" />
+                  <button type="button" class="btn btn-danger btn-sm"
+                          *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">×</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Modal Footer -->
+        <!-- Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-          <button type="button" class="btn navbar-background text-white" [disabled]="invoiceForm.invalid" (click)="onSubmit()">
-            {{ isEditMode ? "Update" : "Save" }}
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-save"
+                  [disabled]="invoiceForm.invalid || !!rangeError"
+                  (click)="onSubmit()">
+            {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>
       </form>
+
     </div>
   </div>
 </div>

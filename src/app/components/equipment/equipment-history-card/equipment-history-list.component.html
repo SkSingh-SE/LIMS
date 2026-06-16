@@ -1,0 +1,16 @@
+
+  <app-nabl-register-table
+    [title]="'Equipment History Records (F-14)'"
+    [addButtonLabel]="'Add New Record'"
+    [addRoute]="'/equipment-history-card/create'"
+    [baseRoute]="'/equipment-history-card'"
+    [columns]="columns"
+    [data]="records"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)">
+  </app-nabl-register-table>

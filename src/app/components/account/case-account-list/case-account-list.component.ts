@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AccountService } from '../../../services/account.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-case-account-list',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './case-account-list.component.html',
   styleUrl: './case-account-list.component.css'
 })
@@ -23,7 +24,7 @@ export class CaseAccountListComponent implements OnInit {
     { key: 'paymentStatus', type: 'string', label: 'Payment Status', filter: true },
   ];
 
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     customerType: 'string',
@@ -41,15 +42,14 @@ export class CaseAccountListComponent implements OnInit {
   isFilterOpen = false;
 
   dataList: any[] = [];
-  isLoading = signal(false);
 
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20, 50];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'caseNo';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
 
   payload = {
@@ -90,13 +90,15 @@ export class CaseAccountListComponent implements OnInit {
 
     if (filterMap[filterType]) {
       this.filters = [filterMap[filterType]];
-      this.payload.filter = this.filters;
+    } else {
+      // Customer type filter (e.g., "Walk In", "Credit Customer", "Relationship Credit")
+      this.filters = [{ column: 'customerType', type: 'Equal', value: filterType, value2: filterType }];
     }
+    this.payload.filter = this.filters;
     this.fetchData();
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.payload.searchTerm = this.searchTerm;
@@ -110,13 +112,11 @@ export class CaseAccountListComponent implements OnInit {
         this.totalItems = response?.totalRecords || response?.totalItems || 0;
         this.pageSize = response?.pageSize || this.pageSize;
         this.pageNumber = response?.pageNumber || this.pageNumber;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching case accounts:', error);
         this.toastService.show('Failed to load case accounts', 'error');
         this.dataList = [];
-        this.isLoading.set(false);
       }
     });
   }
@@ -164,7 +164,7 @@ export class CaseAccountListComponent implements OnInit {
   }
 
   openCaseDetail(inwardId: number, mode: 'edit' | 'view' = 'edit'): void {
-    this.router.navigate(['/accounts/cases', inwardId], { queryParams: { mode } });
+    this.router.navigate(['/accounts/cases', inwardId], { state: { mode } });
   }
 
   openFilterModal(column: string, event: MouseEvent): void {
@@ -201,6 +201,17 @@ export class CaseAccountListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -242,10 +253,24 @@ export class CaseAccountListComponent implements OnInit {
   }
 
   getStatusBadgeClass(status: string): string {
+    const billingMap: Record<string, string> = {
+      'PRICE_DRAFTED': 'badge bg-secondary',
+      'PI_GENERATED': 'badge bg-info',
+      'PRICE_SNAPSHOT': 'badge bg-info',
+      'INVOICE_GENERATED': 'badge bg-warning text-dark',
+      'PAYMENT_PENDING': 'badge bg-warning text-dark',
+      'PAYMENT_PARTIAL': 'badge bg-warning text-dark',
+      'PAYMENT_COMPLETED': 'badge bg-success',
+    };
+
+    if (billingMap[status]) return billingMap[status];
+
+    // Fallback for generic status keywords
     const statusLower = (status || '').toLowerCase();
     if (statusLower.includes('pending')) return 'badge bg-warning text-dark';
     if (statusLower.includes('paid') || statusLower.includes('completed')) return 'badge bg-success';
-    if (statusLower.includes('failed')) return 'badge bg-danger';
+    if (statusLower.includes('failed') || statusLower.includes('rejected')) return 'badge bg-danger';
+    if (statusLower.includes('generated') || statusLower.includes('draft')) return 'badge bg-info';
     return 'badge bg-secondary';
   }
 }

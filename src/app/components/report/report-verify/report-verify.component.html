@@ -1,0 +1,174 @@
+<div class="verify-page">
+  <!-- Loading -->
+  <div *ngIf="loading" class="verify-container">
+    <div class="text-center py-5">
+      <div class="spinner-border text-danger" role="status"></div>
+      <p class="text-muted mt-3">Verifying report authenticity...</p>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && error" class="verify-container">
+    <div class="verify-card error-card">
+      <div class="card-icon error">
+        <i class="bi bi-shield-x"></i>
+      </div>
+      <h3 class="fw-bold text-danger mt-3">Verification Failed</h3>
+      <p class="text-muted">{{ error }}</p>
+      <small class="text-muted">If you believe this is an error, please contact the laboratory directly.</small>
+    </div>
+  </div>
+
+  <!-- Report Verified -->
+  <div *ngIf="!loading && reportData" class="verify-container">
+    <div class="verify-card">
+      <!-- Verified Badge -->
+      <div class="verified-badge">
+        <div class="card-icon success">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <div class="verified-text">
+          <h3 class="fw-bold mb-0">Report Verified</h3>
+          <p class="text-muted mb-0">This is an authentic report issued by <strong>{{ reportData.labName }}</strong></p>
+        </div>
+        <span class="status-pill" [ngClass]="reportData.status === 'Approved' || reportData.status === 'Final' ? 'pill-success' : reportData.status === 'Report Generated' ? 'pill-primary' : 'pill-warning'">
+          {{ reportData.status }}
+        </span>
+      </div>
+
+      <!-- PDF Download Link -->
+      <div *ngIf="reportData.pdfPath" class="pdf-link-bar">
+        <a [href]="baseUrl + '/' + reportData.pdfPath" target="_blank" class="pdf-link">
+          <i class="bi bi-file-pdf-fill"></i>
+          <span>View Original Report (PDF)</span>
+          <i class="bi bi-box-arrow-up-right ms-auto"></i>
+        </a>
+      </div>
+
+      <!-- Report Identity Section -->
+      <div class="info-section">
+        <div class="section-label">
+          <i class="bi bi-file-earmark-text me-2"></i>Report Identity
+        </div>
+        <div class="info-row">
+          <div class="info-cell">
+            <span class="cell-label">Report No</span>
+            <span class="cell-value">{{ reportData.reportNo || '-' }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="cell-label">Certificate No</span>
+            <span class="cell-value">{{ reportData.certificateNo || '-' }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="cell-label">Date of Issue</span>
+            <span class="cell-value">{{ reportData.dateOfIssue || '-' }}</span>
+          </div>
+          <div class="info-cell" *ngIf="reportData.nablCertNo">
+            <span class="cell-label">NABL Cert</span>
+            <span class="cell-value nabl">{{ reportData.nablCertNo }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer & Sample Section -->
+      <div class="info-section">
+        <div class="section-label">
+          <i class="bi bi-person-badge me-2"></i>Customer & Sample Details
+        </div>
+        <div class="info-row">
+          <div class="info-cell">
+            <span class="cell-label">Customer</span>
+            <span class="cell-value">{{ reportData.customerName || '-' }}</span>
+          </div>
+          <div class="info-cell" *ngIf="reportData.customerAddress">
+            <span class="cell-label">Address</span>
+            <span class="cell-value">{{ reportData.customerAddress }}</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell">
+            <span class="cell-label">Sample No</span>
+            <span class="cell-value">{{ reportData.sampleNo || '-' }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="cell-label">Case No</span>
+            <span class="cell-value">{{ reportData.caseNo || '-' }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="cell-label">Material</span>
+            <span class="cell-value">{{ reportData.material || '-' }}</span>
+          </div>
+          <div class="info-cell" *ngIf="reportData.condition">
+            <span class="cell-label">Condition</span>
+            <span class="cell-value">{{ reportData.condition }}</span>
+          </div>
+        </div>
+        <div class="info-row" *ngIf="reportData.sampleDescription || reportData.dateReceived">
+          <div class="info-cell" *ngIf="reportData.sampleDescription">
+            <span class="cell-label">Description</span>
+            <span class="cell-value">{{ reportData.sampleDescription }}</span>
+          </div>
+          <div class="info-cell" *ngIf="reportData.dateReceived">
+            <span class="cell-label">Date Received</span>
+            <span class="cell-value">{{ reportData.dateReceived }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Results -->
+      <div *ngFor="let test of reportData.testDetails" class="info-section">
+        <div class="section-label d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-clipboard-data me-2"></i>{{ test.testName }}</span>
+          <span class="result-pill" [ngClass]="test.allPassed ? 'result-pass' : 'result-fail'">
+            {{ test.allPassed ? 'PASS' : 'FAIL' }}
+          </span>
+        </div>
+        <div class="table-responsive">
+          <table class="verify-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Unit</th>
+                <th>Spec Min</th>
+                <th>Spec Max</th>
+                <th>Result</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of test.parameters" [class.row-fail]="p.status === 'Fail'">
+                <td class="fw-medium">{{ p.name }}</td>
+                <td>{{ p.unit || '-' }}</td>
+                <td>{{ p.specMin || '-' }}</td>
+                <td>{{ p.specMax || '-' }}</td>
+                <td class="fw-semibold">{{ p.result || '-' }}</td>
+                <td class="text-center">
+                  <span class="result-pill small" [ngClass]="p.status === 'Pass' ? 'result-pass' : p.status === 'Fail' ? 'result-fail' : 'result-na'">
+                    {{ p.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lab Footer -->
+      <div class="lab-footer">
+        <div class="lab-info">
+          <strong>{{ reportData.labName }}</strong>
+          <span *ngIf="reportData.labAddress">{{ reportData.labAddress }}</span>
+          <span>
+            <span *ngIf="reportData.labPhone">Ph: {{ reportData.labPhone }}</span>
+            <span *ngIf="reportData.labEmail"> | {{ reportData.labEmail }}</span>
+          </span>
+          <span *ngIf="reportData.labCIN">CIN: {{ reportData.labCIN }}</span>
+        </div>
+        <div class="verify-stamp">
+          <i class="bi bi-shield-fill-check"></i>
+          <span>Digitally Verified</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

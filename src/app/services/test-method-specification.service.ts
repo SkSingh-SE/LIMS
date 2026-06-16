@@ -44,5 +44,20 @@ export class TestMethodSpecificationService {
       return this.http.get<any>(`${this.apiUrl}/test-method-standard-wise/${standardId}`);
     }
 
+    activateVersion(specificationId: number, versionId: number): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/activate-version`, { specificationId, versionId });
+    }
+
+    withdrawVersion(specificationId: number, versionId: number, reason: string): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/withdraw-version`, { specificationId, versionId, reason });
+    }
+
+    getVersionImpact(versionId: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/version-impact/${versionId}`);
+    }
+
+    getVersionsDropdown(specId: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/${specId}/versions/dropdown`);
+    }
 
 }

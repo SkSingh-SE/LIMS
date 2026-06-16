@@ -6,10 +6,11 @@ import { ToastService } from '../../../services/toast.service';
 import { MenuService } from '../../../services/menu.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-menu-permission',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownModalComponent],
+  imports: [ CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownModalComponent, PaginationComponent ],
   templateUrl: './menu-permission.component.html',
   styleUrl: './menu-permission.component.css'
 })
@@ -19,11 +20,10 @@ export class MenuPermissionComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'title', type: 'string', label: 'Title', filter: true }
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     title: 'string'
   };
 
@@ -40,12 +40,11 @@ export class MenuPermissionComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
   sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -124,12 +123,10 @@ export class MenuPermissionComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.permissionList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -137,8 +134,10 @@ export class MenuPermissionComponent implements OnInit {
 
 
   getDetails(): void {
-    this.menuService.getPermissions(this.menuId).subscribe({
+    const requestId = this.menuId;
+    this.menuService.getPermissions(requestId).subscribe({
       next: (res: any) => {
+        if (this.menuId !== requestId) return; // discard stale response
         if (res) {
           this.permissionForm.patchValue({
             menuId: this.menuId
@@ -255,6 +254,17 @@ export class MenuPermissionComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -302,6 +312,8 @@ export class MenuPermissionComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -310,6 +322,14 @@ export class MenuPermissionComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -335,6 +355,7 @@ export class MenuPermissionComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.menuId = 0;
     if (id > 0) {
       this.menuId = id;
       this.getDetails();
@@ -344,7 +365,6 @@ export class MenuPermissionComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Permission Form';
-      this.permissionForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -396,6 +416,12 @@ export class MenuPermissionComponent implements OnInit {
     return this.menuService.getSubMenuDropdown(term, page, pageSize);
   };
   onMenuSelected(item: any) {
+    if (!item) {
+      this.permissionForm.patchValue({ menuId: null });
+      this.selectedMenu = null;
+      this.menuId = 0;
+      return;
+    }
     this.permissionForm.patchValue({ menuId: item.id });
     this.selectedMenu = item;
     this.menuId = item.id;

@@ -1,0 +1,38 @@
+.opening-balance-bar {
+  padding: 10px 16px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #dc3545;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Row color coding */
+.row-debit {
+  background-color: #fff5f5 !important;
+}
+
+.row-debit:hover {
+  background-color: #ffe8e8 !important;
+}
+
+.row-credit {
+  background-color: #f0fff4 !important;
+}
+
+.row-credit:hover {
+  background-color: #dcffe4 !important;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #6c757d;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: #e9ecef;
+}

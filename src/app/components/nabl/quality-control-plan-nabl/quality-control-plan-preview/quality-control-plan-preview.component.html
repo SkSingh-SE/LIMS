@@ -1,0 +1,136 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Quality Control Plan Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'QUALITY ASSURANCE / CONTROL PLAN'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.date"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Plan Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. Plan Information</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 20%">Document No.</td>
+              <td class="fw-bold" style="width: 30%">{{ data.documentNo }}</td>
+              <td class="lbl" style="width: 15%">Plan Year</td>
+              <td class="fw-bold" style="width: 15%">{{ data.planYear }}</td>
+              <td class="lbl" style="width: 10%">Date</td>
+              <td style="width: 10%">{{ data.date | date: "dd.MM.yyyy" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Discipline</td>
+              <td>{{ data.discipline }}</td>
+              <td class="lbl">Group/Subgroup</td>
+              <td colspan="3">{{ data.materialProductGroup }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Lab In-charge</td>
+              <td colspan="5">{{ data.labIncharge }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Activities Table -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. QA / QC Activities</div>
+        <table class="table table-bordered inner-table align-middle small">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 50px">S.N.</th>
+              <th>Activity Name</th>
+              <th>Frequency</th>
+              <th>Target / Criteria</th>
+              <th>Planned Date</th>
+              <th>Actual Date</th>
+              <th>Result Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let activity of data.activities; let i = index" class="text-center">
+              <td>{{ i + 1 }}</td>
+              <td class="text-start">{{ activity.activityName }}</td>
+              <td>{{ activity.plannedFrequency }}</td>
+              <td>{{ activity.targetCriteria }}</td>
+              <td>{{ activity.plannedDate | date: "dd-MM-yyyy" }}</td>
+              <td>{{ activity.actualDate ? (activity.actualDate | date: "dd-MM-yyyy") : "-" }}</td>
+              <td>
+                <span
+                  [class.text-success]="activity.resultStatus === 'Satisfactory'"
+                  [class.text-danger]="activity.resultStatus === 'Not Satisfactory'"
+                  class="fw-bold"
+                >
+                  {{ activity.resultStatus }}
+                </span>
+              </td>
+              <td>{{ activity.remarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Note -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. Note</div>
+        <div class="sec-body">
+          Quality assurance activities shall be planned as per ISO/IEC 17025 requirements. Results of QA activities shall be evaluated.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="data.preparedBy"
+        [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

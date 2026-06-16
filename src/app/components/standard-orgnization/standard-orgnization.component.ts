@@ -5,10 +5,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { StandardOrgnizationService } from '../../services/standard-orgnization.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-standard-orgnization',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './standard-orgnization.component.html',
   styleUrl: './standard-orgnization.component.css'
 })
@@ -18,14 +22,15 @@ export class StandardOrgnizationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'numberType', type: 'string', label: 'Number Type', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
-    createdOn: 'date'
+    numberType: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -42,12 +47,11 @@ export class StandardOrgnizationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -60,10 +64,11 @@ export class StandardOrgnizationComponent implements OnInit {
 
   // form
   StandardOrganizationForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
-  formTitle = 'Specimen Orientation Form';
+  formTitle = 'Standard Organization Form';
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private standardOrgService: StandardOrgnizationService, private toastService: ToastService) {
 
@@ -74,10 +79,13 @@ export class StandardOrgnizationComponent implements OnInit {
     this.fetchData();
     this.initForm();
   }
+  numberTypeOptions = ['UNS', 'SteelNumber', 'None'];
+
   initForm() {
     this.StandardOrganizationForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      numberType: ['None', [Validators.required, noWhitespaceValidator()]]
     });
   }
   fetchData() {
@@ -87,20 +95,20 @@ export class StandardOrgnizationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.StandardOrganizationList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   getDetails(): void {
-    this.standardOrgService.getStandardOrganizationById(this.standardOrganizationId).subscribe({
+    const requestId = this.standardOrganizationId;
+    this.standardOrgService.getStandardOrganizationById(requestId).subscribe({
       next: (response) => {
+        if (this.standardOrganizationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.StandardOrganizationForm.patchValue(response);
       },
@@ -156,6 +164,17 @@ export class StandardOrgnizationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -203,6 +222,8 @@ export class StandardOrgnizationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -211,6 +232,14 @@ export class StandardOrgnizationComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -236,6 +265,9 @@ export class StandardOrgnizationComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.StandardOrganizationForm.reset();
+    this.StandardOrganizationForm.enable();
+    this.standardOrganizationId = 0;
     if (id > 0) {
       this.standardOrganizationId = id;
       this.getDetails();
@@ -244,12 +276,11 @@ export class StandardOrgnizationComponent implements OnInit {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
-      this.formTitle = 'Specimen Orientation Form';
-      this.StandardOrganizationForm.enable();
+      this.formTitle = 'Standard Organization Form';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Specimen Orientation Form';
+      this.formTitle = 'Standard Organization Form';
       this.StandardOrganizationForm.enable();
 
     }
@@ -264,39 +295,53 @@ export class StandardOrgnizationComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.StandardOrganizationForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.StandardOrganizationForm.reset();
+    this.StandardOrganizationForm.enable();
+    this.standardOrganizationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
-    if (this.StandardOrganizationForm.valid) {
-      let formData = this.StandardOrganizationForm.value;
-      if (this.isEditMode) {
-        this.standardOrgService.updateStandardOrganization(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.standardOrgService.createStandardOrganization(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.StandardOrganizationForm);
+    if (!this.StandardOrganizationForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.StandardOrganizationForm.value;
+    if (this.isEditMode) {
+      this.standardOrgService.updateStandardOrganization(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.standardOrgService.createStandardOrganization(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

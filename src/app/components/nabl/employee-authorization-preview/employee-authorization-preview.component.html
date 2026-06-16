@@ -1,0 +1,125 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Employee Authorization Matrix
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="employeeauthorization" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header [formatNo]="employeeauthorization.formCode" [mainTitle]="'EQUIPMENT AUTHORIZATION (On Site)'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (employeeauthorization.formCode || 'F-7B')" [issueNo]="employeeauthorization.issueNo || '01'" [issueDate]="employeeauthorization.date || ''" [revNo]="employeeauthorization.revNo || '00'"[revDate]="'--'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="doc-section mb-3">
+        <div class="sec-title">AUTHORIZATION MATRIX</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th>Department</th>
+              <th>Personnel</th>
+              <th>UID</th>
+              <th>Equipment</th>
+              <th>Test Method Authorization</th>
+              <th>Test Authorization</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ employeeauthorization.departmentName }}</td>
+              <td>{{ employeeauthorization.personnelName }}</td>
+              <!-- <td>{{ employeeauthorization.uid }}</td> -->
+              <!-- <td> <span *ngFor="let form of employeeauthorization.employeeEquipmentAuth">
+                  {{ form.uid || form.uid }}
+                </span></td>
+              <td><span *ngFor="let form of employeeauthorization.employeeEquipmentAuth">
+                  {{form.equipmentName || form.equipmentName }}
+                </span></td>
+              <td><span *ngFor="let form of employeeauthorization.testMethodAuth">
+                  {{ form.testMethodName || form.testMethodName }}
+                </span></td>
+              <td><span *ngFor="let form of employeeauthorization.labTestAuth">
+                  {{ form.labTestName || form.labTestName }}
+                </span></td> -->
+              <td>
+                <span *ngFor="let form of employeeauthorization.employeeEquipmentAuth; let isLast = last">
+                  {{ form.uid }}{{ !isLast ? ' , ' : '' }}
+                </span>
+              </td>
+
+              <!-- Equipment Name Column -->
+              <td>
+                <span *ngFor="let form of employeeauthorization.employeeEquipmentAuth; let isLast = last">
+                  {{ form.equipmentName}}{{ !isLast ? ' , ' : '' }}
+                </span>
+              </td>
+
+              <!-- Test Method Authorization Column -->
+              <td>
+                <span *ngFor="let form of employeeauthorization.testMethodAuth; let isLast = last">
+                  {{ form.testMethodName }}{{ !isLast ? ' , ' : '' }}
+                </span>
+              </td>
+
+              <!-- Test Authorization (Lab Tests) Column -->
+              <td>
+                <span *ngFor="let form of employeeauthorization.labTestAuth; let isLast = last">
+                  {{ form.labTestName }}{{ !isLast ? ' , ' : '' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="employeeauthorization?.preparedBy || ''"
+        [issuedByName]="employeeauthorization?.reviewedBy || ''"
+        [reviewedApprovedByName]="employeeauthorization?.approvedBy || ''">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

@@ -20,12 +20,9 @@
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="text" id="email" class="form-control" formControlName="email"
-                            placeholder="Enter Email" 
-                            [ngClass]="{'is-invalid': loginForm.get('email')?.touched && loginForm.get('email')?.invalid}"/>
-                        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-                            class="text-danger">
-                            Email is required.
-                        </div>
+                            placeholder="Enter Email"
+                            [ngClass]="{'is-invalid': isFieldInvalid('email')}"/>
+                        <app-field-error [control]="loginForm.get('email')" label="Email" [submitted]="submitted"/>
                     </div>
 
                     <!-- Password -->
@@ -35,22 +32,19 @@
                             <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
                                 formControlName="password" placeholder="Enter Password"
                                 aria-describedby="password-icon"
-                                [ngClass]="{'is-invalid': loginForm.get('password')?.touched && loginForm.get('password')?.invalid}" />
+                                [ngClass]="{'is-invalid': isFieldInvalid('password')}" />
                             <span type="button" (click)="togglePassword()" class="input-group-text" id="password-icon"
-                            [ngClass]="{'is-invalid': loginForm.get('password')?.touched && loginForm.get('password')?.invalid}"
+                            [ngClass]="{'is-invalid': isFieldInvalid('password')}"
                             ><i class="bi"
                                     [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i></span>
                         </div>
-                        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-                            class="text-danger">
-                            Password is required.
-                        </div>
+                        <app-field-error [control]="loginForm.get('password')" label="Password" [submitted]="submitted"/>
                     </div>
 
                     <!-- Login Button -->
                     <div class="d-grid">
-                        
-                        <button class="btn btn-danger" type="submit" [disabled]="loginForm.invalid">
+
+                        <button class="btn btn-danger" type="submit">
                             <span *ngIf="isLoading()" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                             <span *ngIf="isLoading()" class="ms-2" role="status">Loading...</span>
                             <span *ngIf="!isLoading()">Login</span>

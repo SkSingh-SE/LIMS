@@ -4,10 +4,12 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { RouterModule } from '@angular/router';
 import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-scope-list',
-  imports: [CommonModule, RouterModule, FormsModule, HasPermissionDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, HasPermissionDirective, PaginationComponent ],
   templateUrl: './scope-list.component.html',
   styleUrl: './scope-list.component.css'
 })
@@ -15,20 +17,18 @@ export class ScopeListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
     { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Specification', filter: true },
-    { key: 'parameterName', type: 'string', label: 'Parameter', filter: true },
-    { key: 'parameterUnit', type: 'string', label: 'Parameter Unit', filter: true },
+    { key: 'parameterCount', type: 'number', label: 'Parameters', filter: false },
     { key: 'isUnderISO', type: 'string', label: 'Under ISO', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     laboratoryTestName: 'string',
     testMethodSpecificationName: 'string',
-    parameterName: 'string',
-    parameterUnit: 'string',
     isUnderISO: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,12 +45,11 @@ export class ScopeListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -61,7 +60,7 @@ export class ScopeListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private scopeService: LabScopeService) {
+  constructor(private fb: FormBuilder, private scopeService: LabScopeService, private toastService: ToastService) {
   }
 
 
@@ -77,12 +76,10 @@ export class ScopeListComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.listData = [];
-        this.isLoading.set(false);
       }
 
     });
@@ -136,6 +133,17 @@ export class ScopeListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -151,6 +159,7 @@ export class ScopeListComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -183,6 +192,8 @@ export class ScopeListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -191,6 +202,14 @@ export class ScopeListComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -198,6 +217,22 @@ export class ScopeListComponent implements OnInit {
   getColumnType(columnKey: string): string | undefined {
     const column = this.columns.find(col => col.key === columnKey);
     return column ? column.type : undefined;
+  }
+
+  deleteScope(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this scope?');
+    if (confirmed) {
+      this.scopeService.deleteLabScope(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.errorMessage || error.error?.message || error.message, 'error');
+        }
+      });
+    }
   }
 
 }

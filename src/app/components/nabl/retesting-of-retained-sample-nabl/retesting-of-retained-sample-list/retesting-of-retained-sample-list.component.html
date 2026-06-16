@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-38: Retesting of Retained Samples'"
+    [addButtonLabel]="'Add Record'"
+    [addRoute]="'/retesting-retained-sample/create'"
+    [baseRoute]="'/retesting-retained-sample'"
+    [columns]="columns"
+    [data]="listData"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)"
+  ></app-nabl-register-table>
+</div>

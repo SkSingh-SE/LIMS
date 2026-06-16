@@ -1,0 +1,126 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Audit Checklist Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'AUDIT CHECKLIST & OBSERVATION'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="doc-section mb-3">
+        <div class="sec-title">AUDIT INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width:25%">Audit Date</td>
+              <td style="width:25%">{{ data.auditDate | date: "dd/MM/yyyy" }}</td>
+              <td class="lbl" style="width:25%">Area / Dept</td>
+              <td style="width:25%">{{ data.areaDepartment }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Auditor</td>
+              <td>{{ data.auditorName }}</td>
+              <td class="lbl">Auditee</td>
+              <td>{{ data.auditeeName }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">CHECKLIST ITEMS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width:60px">Sr. No.</th>
+              <th style="width:100px">Clause No.</th>
+              <th style="width:300px">Requirement</th>
+              <th>Observation</th>
+              <th style="width:100px">Compliance (Yes/No/NA)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of data.items; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="text-center">{{ item.clauseNo }}</td>
+              <td>{{ item.requirement }}</td>
+              <td>
+                <div class="ql-editor" [innerHTML]="item.observation"></div>
+              </td>
+              <td class="text-center">
+                <strong>{{ item.compliance }}</strong>
+              </td>
+            </tr>
+            <!-- Filling space -->
+            <tr *ngIf="data.items.length < 5">
+              <td colspan="5" [style.height.px]="100 * (5 - data.items.length)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Auditor'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Auditee'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

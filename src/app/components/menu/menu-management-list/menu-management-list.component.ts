@@ -1,199 +1,157 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MenuService } from '../../../services/menu.service';
+import { ToastService } from '../../../services/toast.service';
+
+interface FlatNode {
+  id: number;
+  title: string;
+  icon: string | null;
+  route: string | null;
+  depth: number;
+  hasChildren: boolean;
+  parentId: number | null;
+  expanded: boolean;
+  visible: boolean;
+}
 
 @Component({
   selector: 'app-menu-management-list',
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './menu-management-list.component.html',
-  styleUrl: './menu-management-list.component.css'
+  styleUrl: './menu-management-list.component.css',
 })
 export class MenuManagementListComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
+  flatNodes: FlatNode[] = [];
+  searchTerm = '';
+  private allNodes: FlatNode[] = [];
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'title', type: 'string', label: 'Title', filter: true },
-    // { key: 'isExpanded', type: 'string', label: 'Children', filter: true },
-    // { key: 'route', type: 'string', label: 'Route', filter: true }
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
-    title: 'string',
-    // isExpanded: 'string',
-    // route: 'string'
-  };
+  constructor(private menuService: MenuService, private toastService: ToastService) {}
 
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
-  // materialSpecificationListForm: FormGroup;
-  listData: any[] = [];
-
-  pageNumber = 1;
-  pageSize = 10;
-  totalItems = 0;
-  pageSizes = [5, 10, 20];
-
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
-  searchTerm: string = '';
-  isLoading = signal(false);
-
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
-
-  constructor(private fb: FormBuilder, private menuService: MenuService) {
+  ngOnInit(): void {
+    this.loadTree();
   }
 
-
-  ngOnInit() {
-    this.fetchData();
-  }
-
-  fetchData() {
-
-    this.menuService.getAllMenus(this.payload).subscribe({
-      next: (response) => {
-        this.listData = response?.items || [];
-        this.totalItems = response?.totalRecords || 0;
-        this.pageSize = response?.pageSize || 10;
-        this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
+  loadTree(): void {
+    this.menuService.getMenuTree().subscribe({
+      next: (tree) => {
+        this.allNodes = this.flattenTree(tree, 0);
+        this.applySearch();
       },
-      error: (error) => {
-        console.error('Error fetching designations:', error);
-        this.listData = [];
-        this.isLoading.set(false);
-      }
-
+      error: () => this.toastService.show('Failed to load menus.', 'error'),
     });
-
   }
 
-  applySorting(column: string) {
-    if (this.sortByColumn === column) {
-      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortByColumn = column;
-      this.sortOrder = 'asc';
-    }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
-    this.fetchData();
-  }
-
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
+  private flattenTree(nodes: any[], depth: number): FlatNode[] {
+    const result: FlatNode[] = [];
+    for (const node of nodes) {
+      const hasChildren = node.subMenu?.length > 0;
+      const flat: FlatNode = {
+        id: node.id,
+        title: node.title,
+        icon: node.icon ?? null,
+        route: node.route ?? null,
+        depth,
+        hasChildren,
+        parentId: node.parentID ?? null,
+        expanded: depth === 0,
+        visible: depth === 0,
+      };
+      result.push(flat);
+      if (hasChildren) {
+        result.push(...this.flattenTree(node.subMenu, depth + 1));
       }
-    })
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    // Determine filter type dynamically
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
     }
+    return result;
+  }
 
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
+  private updateVisibility(): void {
+    const expandedIds = new Set<number>();
+    for (const node of this.flatNodes) {
+      if (node.depth === 0) {
+        node.visible = true;
+        if (node.expanded) expandedIds.add(node.id);
+      } else {
+        node.visible = node.parentId !== null && expandedIds.has(node.parentId);
+        if (node.visible && node.expanded) expandedIds.add(node.id);
+      }
     }
   }
 
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
+  toggle(node: FlatNode): void {
+    node.expanded = !node.expanded;
+    this.updateVisibility();
+  }
 
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+  expandAll(): void {
+    this.flatNodes.forEach((n) => (n.expanded = true));
+    this.updateVisibility();
+  }
 
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
+  collapseAll(): void {
+    this.flatNodes.forEach((n) => (n.expanded = false));
+    this.updateVisibility();
+  }
+
+  onSearch(): void {
+    this.applySearch();
+  }
+
+  private applySearch(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) {
+      this.flatNodes = this.allNodes.map((n) => ({ ...n }));
+      // restore default visibility (only roots expanded)
+      this.flatNodes.forEach((n) => {
+        n.expanded = n.depth === 0;
+        n.visible = n.depth === 0;
+      });
+      this.updateVisibility();
+      return;
     }
 
-    this.fetchData();
-    this.closeFilterModal();
-  }
+    // Mark matched nodes and their ancestors as visible
+    const matchedIds = new Set<number>();
+    const ancestorIds = new Set<number>();
 
-  resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
+    // first pass: find all matches
+    for (const node of this.allNodes) {
+      if (node.title.toLowerCase().includes(term) || (node.route ?? '').toLowerCase().includes(term)) {
+        matchedIds.add(node.id);
+      }
     }
-  }
 
-  onPageChange(page: number) {
-    this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
-    this.fetchData();
-  }
+    // second pass: find all ancestors of matches
+    const buildAncestors = (parentId: number | null) => {
+      if (parentId === null) return;
+      const parent = this.allNodes.find((n) => n.id === parentId);
+      if (parent && !ancestorIds.has(parent.id)) {
+        ancestorIds.add(parent.id);
+        buildAncestors(parent.parentId);
+      }
+    };
 
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
-    this.fetchData();
-  }
-
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
+    for (const node of this.allNodes) {
+      if (matchedIds.has(node.id)) buildAncestors(node.parentId);
     }
+
+    this.flatNodes = this.allNodes
+      .filter((n) => matchedIds.has(n.id) || ancestorIds.has(n.id))
+      .map((n) => ({ ...n, expanded: true, visible: true }));
   }
 
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
+  depthPadding(depth: number): string {
+    return `${depth * 1.4 + 0.5}rem`;
   }
 
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
+  depthBadgeClass(depth: number): string {
+    const classes = ['bg-primary', 'bg-success', 'bg-warning text-dark', 'bg-secondary'];
+    return classes[depth] ?? 'bg-secondary';
   }
 
+  depthLabel(depth: number): string {
+    return `L${depth}`;
+  }
 }
-

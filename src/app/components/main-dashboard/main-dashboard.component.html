@@ -1,0 +1,244 @@
+<div class="main-dashboard-container" role="main" aria-label="Main Dashboard">
+  <!-- Enhanced Dashboard Header -->
+  <header class="dashboard-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="header-content">
+          <h4 class="dashboard-title">
+            <i class="bi bi-speedometer2 me-2"></i>
+            Dashboard
+          </h4>
+          <p class="dashboard-subtitle">Welcome back, {{ currentUser?.userName || 'User' }}</p>
+          <div class="header-stats">
+            <span class="stat-item">
+              <i class="bi bi-grid-3x3-gap"></i>
+              <span class="stat-value">{{ displayCards().length }}</span>
+              <span class="stat-label">Cards</span>
+            </span>
+            <span class="stat-item">
+              <i class="bi bi-graph-up"></i>
+              <span class="stat-value">{{ charts().length }}</span>
+              <span class="stat-label">Charts</span>
+            </span>
+            <span class="stat-item">
+              <i class="bi bi-bell"></i>
+              <span class="stat-value">{{ notifications().length }}</span>
+              <span class="stat-label">Notifications</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="header-actions">
+          <div class="action-group">
+            <button
+              class="btn btn-primary btn-sm"
+              (click)="onRefresh()"
+              [disabled]="false"
+              aria-label="Refresh dashboard data"
+              title="Refresh dashboard">
+              <i class="bi bi-arrow-clockwise" [class.spin]="false" aria-hidden="true"></i>
+              <span class="btn-text">Refresh</span>
+            </button>
+            <button
+              *ngIf="hasCustomLayout()"
+              class="btn btn-cancel btn-sm"
+              (click)="resetLayout()"
+              title="Reset to default layout">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span class="btn-text">Reset</span>
+            </button>
+          </div>
+        </div>
+        <div class="refresh-status" role="status" aria-live="polite">
+          <div class="status-item">
+            <i class="bi bi-clock me-1" aria-hidden="true"></i>
+            <span class="status-text">Last updated: {{ formatTimestamp(lastRefresh()) }}</span>
+          </div>
+          <div class="status-item" *ngIf="isAutoRefreshActive()">
+            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+            <span class="status-text">Next refresh: {{ timeUntilNextRefresh() }}</span>
+          </div>
+          <div class="status-item warning" *ngIf="getAutoRefreshRetryAttempts() > 0">
+            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+            <span class="status-text">Retry attempt: {{ getAutoRefreshRetryAttempts() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Enhanced Error State -->
+  <div *ngIf="error()" class="alert alert-danger alert-dismissible fade show modern-alert" role="alert" aria-live="assertive">
+    <div class="alert-content">
+      <div class="alert-icon">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+      <div class="alert-message">
+        <strong>Error:</strong> {{ error() }}
+        <p class="alert-description">Please check your connection and try again.</p>
+      </div>
+      <button type="button" class="btn-close" (click)="error.set(null)" aria-label="Dismiss error"></button>
+    </div>
+  </div>
+
+  <!-- Enhanced Loading State -->
+  <div *ngIf="false" class="loading-container" aria-label="Loading dashboard data">
+    <div class="loading-content">
+      <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <div class="loading-text">
+        <h4>Loading Dashboard</h4>
+        <p>Please wait while we prepare your dashboard...</p>
+      </div>
+    </div>
+    <div class="dashboard-section">
+      <h6 class="section-title">Overview</h6>
+      <div class="row" role="list" aria-label="Dashboard cards loading">
+        <!-- Enhanced Card Skeletons -->
+        <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12"
+             *ngFor="let item of getSkeletonArray(12); trackBy: trackByIndex"
+             role="listitem">
+          <div class="skeleton-card">
+            <div class="skeleton-header">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-title"></div>
+            </div>
+            <div class="skeleton-body">
+              <div class="skeleton-count"></div>
+              <div class="skeleton-description"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Content: Modern Grid Layout -->
+  <div class="dashboard-content">
+
+    <!-- Stats Area: Overview Cards -->
+    <div class="dashboard-stats-area" *ngIf="displayCards().length > 0">
+      <section class="dashboard-section stats-section" aria-label="Dashboard overview cards">
+        <div class="section-header">
+          <div class="section-content">
+            <h6 class="section-title">
+              <i class="bi bi-grid-3x3-gap me-2"></i>
+              Key Metrics
+            </h6>
+          </div>
+          <div class="layout-controls">
+            <button
+              class="btn btn-sm"
+              (click)="toggleCustomizationMode()"
+              [class.active]="isCustomizationMode()"
+              title="Rearrange cards">
+              <i class="bi bi-gear"></i>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="cards-grid"
+          cdkDropList
+          [cdkDropListDisabled]="!isCustomizationMode()"
+          (cdkDropListDropped)="onCardDrop($event)">
+          <div
+            class="card-item-wrapper"
+            *ngFor="let card of displayCards(); trackBy: trackByCardKey"
+            cdkDrag
+            [cdkDragDisabled]="!isCustomizationMode()">
+
+            <div *ngIf="isCustomizationMode()" class="drag-handle" cdkDragHandle>
+              <i class="bi bi-grip-vertical"></i>
+            </div>
+
+            <app-dashboard-card
+              [card]="card"
+              [isLoading]="false"
+              [isCustomizationMode]="isCustomizationMode()"
+              (cardClick)="onCardClick($event)">
+            </app-dashboard-card>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Main Area: Analytics + Activity -->
+    <div class="dashboard-main-area">
+      <!-- Analytics Area: Charts -->
+      <div class="dashboard-analytics-area" *ngIf="charts().length > 0">
+        <section class="dashboard-section analytics-section" aria-label="Analytics charts">
+          <div class="section-header">
+            <div class="section-content">
+              <h6 class="section-title">
+                <i class="bi bi-graph-up me-2"></i>
+                Analytics
+              </h6>
+            </div>
+          </div>
+          <div [class]="getChartGridClass()" class="charts-container">
+            <div
+              class="chart-item-wrapper"
+              *ngFor="let chart of charts(); trackBy: trackByChartKey">
+              <app-dashboard-chart [chartData]="chart"></app-dashboard-chart>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Activity Area: Notifications -->
+      <div class="dashboard-activity-area" *ngIf="notifications().length > 0">
+        <section class="dashboard-section activity-section" aria-label="Recent notifications">
+          <div class="section-header">
+            <div class="section-content">
+              <h6 class="section-title">
+                <i class="bi bi-bell me-2"></i>
+                Activity
+              </h6>
+            </div>
+          </div>
+          <div class="notifications-wrapper">
+            <app-dashboard-notification-panel
+              [notifications]="notifications()"
+              [isLoading]="false"
+              [maxDisplayCount]="10"
+              (notificationClick)="onNotificationClick($event)"
+              (viewAllClick)="onViewAllNotifications()">
+            </app-dashboard-notification-panel>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Enhanced Empty State -->
+    <div *ngIf="displayCards().length === 0 && charts().length === 0 && notifications().length === 0"
+         class="empty-state modern-empty-state"
+         role="status"
+         aria-live="polite">
+      <div class="empty-content">
+        <div class="empty-icon">
+          <i class="bi bi-speedometer2"></i>
+        </div>
+        <h3>No Dashboard Data Available</h3>
+        <p class="empty-description">
+          All dashboard data will be displayed here once it's available.
+        </p>
+        <div class="empty-actions">
+          <button class="btn btn-primary me-2" (click)="onRefresh()" aria-label="Refresh dashboard">
+            <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+            Refresh Dashboard
+          </button>
+          <button class="btn btn-cancel" (click)="optimizeForNetwork()" aria-label="Optimize network settings">
+            <i class="bi bi-gear me-2" aria-hidden="true"></i>
+            Check Network
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

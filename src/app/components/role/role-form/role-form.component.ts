@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, signal, ViewChild , HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { RoleService } from '../../../services/role.service';
@@ -7,29 +7,35 @@ import { CommonModule } from '@angular/common';
 import { MenuService } from '../../../services/menu.service';
 import { Observable } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-role-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
+  imports: [ CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './role-form.component.html',
   styleUrl: './role-form.component.css'
 })
-export class RoleFormComponent implements OnInit {
+export class RoleFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     description: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,12 +51,11 @@ export class RoleFormComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -63,6 +68,7 @@ export class RoleFormComponent implements OnInit {
 
   // form
   roleForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   roleId: number = 0;
@@ -80,7 +86,7 @@ export class RoleFormComponent implements OnInit {
   ];
   groupedMenuItems: any[] = [];
 
-  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService) {
+  constructor(private fb: FormBuilder, private roleService: RoleService, private toastService: ToastService, private menuService: MenuService, private unsavedChangesService: UnsavedChangesService) {
 
   }
 
@@ -95,12 +101,16 @@ export class RoleFormComponent implements OnInit {
   initForm() {
     this.roleForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      description: [''],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      description: ['', [Validators.maxLength(500)]],
       isAdmin: [false],
       menuIDs: [[]],
       menuItems: this.fb.array([]),
     });
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.roleForm, path, this.submitted);
   }
   fetchData() {
     this.roleService.getAllRoles(this.payload).subscribe({
@@ -109,12 +119,10 @@ export class RoleFormComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.roleList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -122,8 +130,10 @@ export class RoleFormComponent implements OnInit {
 
 
   getDetails(): void {
-    this.roleService.getRoleById(this.roleId).subscribe({
+    const requestId = this.roleId;
+    this.roleService.getRoleById(requestId).subscribe({
       next: (res: any) => {
+        if (this.roleId !== requestId) return; // discard stale response
         if (res) {
           this.roleForm.patchValue({
             id: res.id,
@@ -192,6 +202,17 @@ export class RoleFormComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -239,6 +260,8 @@ export class RoleFormComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -247,6 +270,14 @@ export class RoleFormComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -272,6 +303,9 @@ export class RoleFormComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.roleForm.reset();
+    this.roleForm.enable();
+    this.roleId = 0;
     if (id > 0) {
       this.roleId = id;
       this.getDetails();
@@ -281,7 +315,6 @@ export class RoleFormComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Role Form';
-      this.roleForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -301,6 +334,7 @@ export class RoleFormComponent implements OnInit {
   }
 
   closeModal(): void {
+    this.submitted = false;
     this.roleForm.reset();
     if (this.bsModal) {
       this.bsModal.hide();
@@ -308,36 +342,39 @@ export class RoleFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.roleForm.valid) {
-      const payload = this.roleForm.getRawValue();
-      const roleId = payload.id;
-
-      // Transform menuIDs into menuItems[]
-      const menuItems = payload.menuIDs.map((menuId: number) => ({
-        id: 0,                // or undefined/null if new
-        roleId: roleId,
-        menuId: menuId
-      }));
-      payload.menuItems = menuItems;
-
-
-      const saveFn = this.roleId > 0
-        ? this.roleService.updateRole
-        : this.roleService.createRole;
-
-
-      saveFn.call(this.roleService, payload).subscribe({
-        next: (res: any) => {
-          this.toastService.show(res.message, 'success');
-          this.closeModal();
-          this.initForm();
-          this.fetchData()
-        },
-        error: (err: any) => this.toastService.show(err.error.message, 'error')
-      });
-    } else {
-      this.roleForm.markAllAsTouched();
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.roleForm);
+    if (!this.roleForm.valid) {
+      this.toastService.show('Please fill in all required fields correctly.', 'warning');
+      return;
     }
+    const payload = this.roleForm.getRawValue();
+    const roleId = payload.id;
+
+    // Transform menuIDs into menuItems[]
+    const menuItems = payload.menuIDs.map((menuId: number) => ({
+      id: 0,                // or undefined/null if new
+      roleId: roleId,
+      menuId: menuId
+    }));
+    payload.menuItems = menuItems;
+
+
+    const saveFn = this.roleId > 0
+      ? this.roleService.updateRole
+      : this.roleService.createRole;
+
+
+    saveFn.call(this.roleService, payload).subscribe({
+      next: (res: any) => {
+        this.saved = true;
+        this.toastService.show(res.message, 'success');
+        this.closeModal();
+        this.initForm();
+        this.fetchData()
+      },
+      error: (err: any) => this.toastService.show(err.error.message, 'error')
+    });
   }
 
   trackByFn(item: any) {
@@ -367,6 +404,19 @@ export class RoleFormComponent implements OnInit {
   }
 
 
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.roleForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.roleForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }
 
 

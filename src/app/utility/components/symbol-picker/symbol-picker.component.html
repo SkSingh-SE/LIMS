@@ -1,0 +1,67 @@
+<div class="symbol-picker-wrapper">
+  <button type="button" class="btn btn-outline-secondary btn-sm symbol-trigger-btn"
+    title="Insert Special Symbol" [disabled]="disabled" (click)="toggle()">
+    <i class="bi bi-fonts"></i> &#937;
+  </button>
+
+  <div *ngIf="isOpen" class="symbol-picker-dropdown shadow">
+    <!-- Header -->
+    <div class="symbol-picker-header d-flex justify-content-between align-items-center px-2 py-1">
+      <small class="fw-semibold text-muted">Insert Symbol</small>
+      <button type="button" class="btn-close btn-close-sm" (click)="isOpen = false"></button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="symbol-tabs d-flex border-bottom">
+      <button type="button" class="symbol-tab-btn" [class.active]="activeTab === 'all'"
+        (click)="switchTab('all')">All Symbols</button>
+      <button type="button" class="symbol-tab-btn" [class.active]="activeTab === 'recent'"
+        (click)="switchTab('recent')">
+        <i class="bi bi-clock-history"></i> Recent
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="px-2 py-1" *ngIf="activeTab === 'all'">
+      <input type="text" class="form-control form-control-sm" placeholder="Search symbols..."
+        [(ngModel)]="searchText" (click)="$event.stopPropagation()" />
+    </div>
+
+    <!-- Symbol Body -->
+    <div class="symbol-picker-body">
+      <!-- All Symbols Tab -->
+      <ng-container *ngIf="activeTab === 'all'">
+        <div *ngFor="let group of filteredGroups" class="mb-1">
+          <small class="text-muted px-2 fw-semibold">{{ group.label }}</small>
+          <div class="d-flex flex-wrap px-1">
+            <button *ngFor="let sym of group.symbols" type="button"
+              class="btn btn-light btn-sm symbol-btn" [title]="sym.name"
+              (click)="selectSymbol(sym.char, sym.name)">
+              {{ sym.char }}
+            </button>
+          </div>
+        </div>
+        <div *ngIf="filteredGroups.length === 0" class="text-center text-muted py-3">
+          <small>No symbols found for "{{ searchText }}"</small>
+        </div>
+      </ng-container>
+
+      <!-- Recent Tab -->
+      <ng-container *ngIf="activeTab === 'recent'">
+        <div *ngIf="recentSymbols.length > 0" class="mb-1">
+          <small class="text-muted px-2 fw-semibold">Recently Used</small>
+          <div class="d-flex flex-wrap px-1">
+            <button *ngFor="let sym of recentSymbols" type="button"
+              class="btn btn-light btn-sm symbol-btn" [title]="sym.name"
+              (click)="selectSymbol(sym.char, sym.name)">
+              {{ sym.char }}
+            </button>
+          </div>
+        </div>
+        <div *ngIf="recentSymbols.length === 0" class="text-center text-muted py-3">
+          <small>No recently used symbols</small>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

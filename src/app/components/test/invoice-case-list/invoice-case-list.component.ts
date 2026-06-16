@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { InvoiceCaseService } from '../../../services/invoice-case.service';
 import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-invoice-case-list',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
   templateUrl: './invoice-case-list.component.html',
   styleUrl: './invoice-case-list.component.css'
 })
@@ -15,18 +16,17 @@ export class InvoiceCaseListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
-    { key: 'financialYear', type: 'string', label: 'FinancialYear', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'financialYear', type: 'string', label: 'Financial Year', filter: true },
     { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
-    { key: 'name', type: 'string', label: 'Invoice Case', filter: true },
-    { key: 'price', type: 'number', label: 'Price', filter: true },
+    { key: 'tierCount', type: 'number', label: 'Tiers', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
-    name: 'string',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     financialYear: 'string',
     laboratoryTest: 'string',
-    price: 'number',
+    tierCount: 'number',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -37,18 +37,18 @@ export class InvoiceCaseListComponent implements OnInit {
   filterValue2: string = '';
   filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
-  
+
   dataList: any[] = [];
+  expandedRows: Set<number> = new Set();
 
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -67,23 +67,30 @@ export class InvoiceCaseListComponent implements OnInit {
   }
 
   fetchData() {
-
     this.invoiceCaseService.getAllInvoiceCases(this.payload).subscribe({
       next: (response) => {
         this.dataList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching list:', error);
         this.dataList = [];
-        this.isLoading.set(false);
       }
-
     });
+  }
 
+  toggleRow(id: number): void {
+    if (this.expandedRows.has(id)) {
+      this.expandedRows.delete(id);
+    } else {
+      this.expandedRows.add(id);
+    }
+  }
+
+  isExpanded(id: number): boolean {
+    return this.expandedRows.has(id);
   }
 
   applySorting(column: string) {
@@ -108,7 +115,6 @@ export class InvoiceCaseListComponent implements OnInit {
     this.filterValue = '';
     this.filterValue2 = '';
 
-    // Determine filter type dynamically
     const columnType = this.filterColumnTypes[column];
     switch (columnType) {
       case 'string':
@@ -133,6 +139,17 @@ export class InvoiceCaseListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -172,7 +189,7 @@ export class InvoiceCaseListComponent implements OnInit {
 
   changePageSize(event: Event) {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
@@ -180,6 +197,8 @@ export class InvoiceCaseListComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -187,6 +206,13 @@ export class InvoiceCaseListComponent implements OnInit {
 
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
+  }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
   hasFilter(column: string): boolean {
@@ -206,11 +232,9 @@ export class InvoiceCaseListComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
-
 }
-

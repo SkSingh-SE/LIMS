@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'Review of Calibration Certificates (F-15)'"
+    [addButtonLabel]="'Add New Review'"
+    [addRoute]="'/calibration-review/create'"
+    [baseRoute]="'/calibration-review'"
+    [columns]="columns"
+    [data]="records"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)">
+  </app-nabl-register-table>
+</div>

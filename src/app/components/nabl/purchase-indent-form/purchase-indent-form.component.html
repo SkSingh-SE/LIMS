@@ -1,0 +1,232 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg border-0">
+    <!-- Premium Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-cart-plus-fill fs-4 me-2"></i>
+        <header class="text-md fw-medium">{{ formTitle }}</header>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i> Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="indentForm" (ngSubmit)="onSubmit()">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">I. Document Control Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Form Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-21">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Issue No <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Doc No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Indent Details -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('details')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Request Details</span>
+          </div>
+          <div *ngIf="openSections['details']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Purchase Indent/Purchase Request No<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="piNo">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Description of Item<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="justification" placeholder="description of item">
+                <div *ngIf="indentForm.get('justification')?.invalid && indentForm.get('justification')?.touched"
+                  class="text-danger text-sm mt-1">
+                  description of item is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Technical Specification<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="technicalSpecification" placeholder="technical specification">
+                <div *ngIf="indentForm.get('technicalSpecification')?.invalid && indentForm.get('technicalSpecification')?.touched"
+                  class="text-danger text-sm mt-1">
+                 technical specification is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Indentor Name<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="indentorName" placeholder="intentor name">
+                <div *ngIf="indentForm.get('indentorName')?.invalid && indentForm.get('indentorName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  indentor name is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Unit Of Measure <span
+                    class="text-danger">*</span></label>
+                <input type="string" class="form-control shadow-sm" formControlName="unitOfMeasure" placeholder="unit of measure">
+                <div *ngIf="indentForm.get('unitOfMeasure')?.invalid && indentForm.get('unitOfMeasure')?.touched"
+                  class="text-danger text-sm mt-1">
+                  unit of measure is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Quantity<span class="text-danger">*</span></label>
+                <input type="number" class="form-control shadow-sm" formControlName="quantity" placeholder="quantity">
+                 <div
+                  *ngIf="indentForm.get('quantity')?.invalid && indentForm.get('quantity')?.touched"
+                  class="text-danger text-sm mt-1">
+                  quantity is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Expected Date </label>
+                <input type="date" class="form-control bg-light" formControlName="expectedDate">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Priority </label>
+                <select class="form-select shadow-sm" formControlName="priority">
+                  <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Items List -->
+        <!-- <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('items')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['items'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Required Items / Services</span>
+          </div>
+          <div *ngIf="openSections['items']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Description / Specification <span class="text-danger">*</span></th>
+                    <th style="width: 120px;">Qty <span class="text-danger">*</span></th>
+                    <th style="width: 120px;">Unit <span class="text-danger">*</span></th>
+                    <th>Purpose / Remark</th>
+                    <th style="width: 150px;">Est. Cost</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="description"
+                        rows="1"></textarea>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-center border-dashed"
+                        formControlName="quantity">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm text-center border-dashed"
+                        formControlName="unitOfMeasure">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="purpose">
+                    </td>
+                    <td>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-dashed">₹</span>
+                        <input type="number" class="form-control border-dashed" formControlName="estimatedCost">
+                      </div>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeItem(i)"
+                        [disabled]="items.length <= 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+              <button type="button" class="btn btn-add btn-sm px-3" (click)="addItem()">
+                <i class="bi bi-plus-circle me-1"></i> Add More Item
+              </button>
+            </div>
+          </div>
+        </div> -->
+
+        <!-- Section IV: Remarks -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('remarks')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['remarks'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Additional Instructions & Remarks</span>
+          </div>
+          <div *ngIf="openSections['remarks']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <quill-editor formControlName="remarks" [modules]="quillModules"
+                placeholder="Enter special instructions or justification for purchase..."
+                [readOnly]="isViewMode"></quill-editor>
+              <!-- <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">Current Status</label>
+                <input type="text" class="form-control form-control-sm bg-light fw-bold" formControlName="status"
+                  readonly>
+              </div> -->
+            </div>
+          </div>
+        </div>
+
+
+        <app-nabl-signature-section [parentForm]="indentForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Indent
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

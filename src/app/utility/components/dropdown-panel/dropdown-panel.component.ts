@@ -1,45 +1,58 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-dropdown-panel',
   imports: [CommonModule],
   templateUrl: './dropdown-panel.component.html',
-  styleUrl: './dropdown-panel.component.css'
+  styleUrl: './dropdown-panel.component.css',
 })
 export class DropdownPanelComponent {
   @Input() items: any[] = [];
+  @Input() selectedItemId: any;
+  @Input() loading = false;
+
   @Output() selectItem = new EventEmitter<any>();
   @Output() onScroll = new EventEmitter<any>();
 
-  selectedIndex = 0;
+  @ViewChild('listRef', { static: true }) listRef!: ElementRef<HTMLUListElement>;
 
-  onKeyDown(event: KeyboardEvent): void {
-    debugger;
-    const itemCount = this.items.length;
+  highlightedIndex = 0;
 
-    if (itemCount === 0) return;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        this.selectedIndex = (this.selectedIndex + 1) % itemCount;
-        event.preventDefault();
-        break;
-      case 'ArrowUp':
-        this.selectedIndex = (this.selectedIndex - 1 + itemCount) % itemCount;
-        event.preventDefault();
-        break;
-      case 'Enter':
-        this.onSelect(this.items[this.selectedIndex]);
-        event.preventDefault();
-        break;
-    }
+  ngOnInit(): void {
+    this.setInitialHighlight();
   }
 
-  onSelect(item: any) {
+  ngOnChanges(): void {
+    this.setInitialHighlight();
+  }
+
+  private setInitialHighlight(): void {
+    if (!this.items?.length || !this.selectedItemId) return;
+    const index = this.items.findIndex(i => i.id === this.selectedItemId);
+    this.highlightedIndex = index >= 0 ? index : 0;
+  }
+
+  onSelect(item: any, index: number): void {
+    this.highlightedIndex = index;
     this.selectItem.emit(item);
   }
-  onScrollEvent(event: any) {
+
+  onScrollEvent(event: any): void {
     this.onScroll.emit(event);
+  }
+
+  trackById(_index: number, item: any): any {
+    return item.id;
+  }
+
+  /** Public method — called by parent to scroll highlighted item into view */
+  scrollToHighlightedItem(): void {
+    setTimeout(() => {
+      const listEl = this.listRef?.nativeElement;
+      if (!listEl) return;
+      const itemEl = listEl.children[this.highlightedIndex] as HTMLElement;
+      itemEl?.scrollIntoView({ block: 'nearest' });
+    });
   }
 }

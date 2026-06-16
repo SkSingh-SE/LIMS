@@ -1,14 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { HeatTreatmentService } from '../../services/heat-treatment.service';
+import { HeatTreatmentCategoryService } from '../../services/heat-treatment-category.service';
+import { CoolingMediumService } from '../../services/cooling-medium.service';
+import { MetalClassificationService } from '../../services/metal-classification.service';
 import { ToastService } from '../../services/toast.service';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-heat-treatment',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './heat-treatment.component.html',
   styleUrl: './heat-treatment.component.css'
 })
@@ -18,14 +27,15 @@ export class HeatTreatmentComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    code: 'string',
     name: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -41,12 +51,11 @@ export class HeatTreatmentComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -59,23 +68,28 @@ export class HeatTreatmentComponent implements OnInit {
 
   // form
   HeatTreatmentForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   heatTreatmentId: number = 0;
   formTitle = 'Heat Treatment Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private heatTreatmentService: HeatTreatmentService, private toastService: ToastService) {
-
-  }
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private heatTreatmentService: HeatTreatmentService,
+    private heatTreatmentCategoryService: HeatTreatmentCategoryService,
+    private coolingMediumService: CoolingMediumService,
+    private metalClassificationService: MetalClassificationService,
+    private toastService: ToastService,
+  ) {}
 
 
   ngOnInit() {
     this.fetchData();
-    this.HeatTreatmentForm = this.fb.group({
-      id: [0],
-      name: ['', Validators.required]
-    });
+    this.initForm();
   }
 
   fetchData() {
@@ -85,22 +99,26 @@ export class HeatTreatmentComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.HeatTreatmentList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   getDetails(): void {
-    this.heatTreatmentService.getHeatTreatmentById(this.heatTreatmentId).subscribe({
+    const requestId = this.heatTreatmentId;
+    this.heatTreatmentService.getHeatTreatmentById(requestId).subscribe({
       next: (response) => {
+        if (this.heatTreatmentId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.HeatTreatmentForm.patchValue(response);
+        if (response.applicableClassifications?.length > 0) {
+          const ids = response.applicableClassifications.map((c: any) => c.metalClassificationID);
+          this.HeatTreatmentForm.get('applicableClassificationIds')?.setValue(ids);
+        }
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -154,6 +172,17 @@ export class HeatTreatmentComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -201,6 +230,8 @@ export class HeatTreatmentComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -209,6 +240,14 @@ export class HeatTreatmentComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -228,12 +267,30 @@ export class HeatTreatmentComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
+  initForm() {
+    this.HeatTreatmentForm = this.fb.group({
+      id: [0],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      heatTreatmentCategoryID: [null],
+      tempRangeMin: [null],
+      tempRangeMax: [null],
+      tempRangeDescription: [''],
+      coolingMediumID: [null],
+      applicableClassificationIds: [[]],
+      applicableClassifications: this.fb.array([]),
+    });
+  }
+
   openModal(type: string, id: number): void {
+    this.initForm();
+    this.customerTypeObject = null;
+    this.heatTreatmentId = 0;
     if (id > 0) {
       this.heatTreatmentId = id;
       this.getDetails();
@@ -241,15 +298,11 @@ export class HeatTreatmentComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.HeatTreatmentForm.reset();
       this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Heat Treatment Form';
-      this.HeatTreatmentForm.enable();
-      
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -262,42 +315,81 @@ export class HeatTreatmentComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.HeatTreatmentForm, path, this.submitted);
+  }
+
   closeModal(): void {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.initForm();
+    this.customerTypeObject = null;
+    this.heatTreatmentId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+    this.submitted = false;
   }
 
   onSubmit(): void {
-    if (this.HeatTreatmentForm.valid) {
-      let formData = this.HeatTreatmentForm.value;
-      if (this.isEditMode) {
-        this.heatTreatmentService.updateHeatTreatment(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.heatTreatmentService.createHeatTreatment(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.HeatTreatmentForm);
+    if (!this.HeatTreatmentForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.HeatTreatmentForm.value;
+    const classIds = formData.applicableClassificationIds || [];
+    formData.applicableClassifications = classIds.map((id: number) => ({ metalClassificationID: id }));
+    if (this.isEditMode) {
+      this.heatTreatmentService.updateHeatTreatment(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.heatTreatmentService.createHeatTreatment(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 
+  getCategoryDropdown = (s: string, p: number, ps: number) =>
+    this.heatTreatmentCategoryService.getHeatTreatmentCategoryDropdown(s, p, ps);
+
+  getCoolingMediumDropdown = (s: string, p: number, ps: number) =>
+    this.coolingMediumService.getCoolingMediumDropdown(s, p, ps);
+
+  getMetalClassificationDropdown = (s: string, p: number, ps: number) =>
+    this.metalClassificationService.getMetalClassificationDropdown(s, p, ps);
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onClassificationSelected(selectedItems: any[]): void {
+    const classificationsArray = this.HeatTreatmentForm.get('applicableClassifications') as FormArray;
+    classificationsArray.clear();
+    const ids = selectedItems.map((item: any) => item.id || item);
+    ids.forEach((id: number) => {
+      classificationsArray.push(this.fb.group({ metalClassificationID: [id] }));
+    });
+    this.HeatTreatmentForm.get('applicableClassificationIds')?.setValue(ids);
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 }
-
-

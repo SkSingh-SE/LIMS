@@ -1,0 +1,565 @@
+<div class="user-management-container">
+  <!-- Internal Tabs -->
+  <ul class="nav nav-pills mb-3 border-bottom pb-2 gap-2" role="tablist">
+    <li class="nav-item" *ngFor="let tab of tabs">
+      <button
+        class="nav-link d-flex align-items-center gap-2"
+        [class.active]="activeTab() === tab.id"
+        [class.bg-white]="activeTab() !== tab.id"
+        [class.text-dark]="activeTab() !== tab.id"
+        [class.shadow-sm]="activeTab() !== tab.id"
+        (click)="setActiveTab(tab.id)"
+        type="button"
+      >
+        <i class="bi" [ngClass]="tab.icon"></i>
+        {{ tab.label }}
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content pt-2">
+    <!-- Loading Indicator -->
+    <div *ngIf="false" class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Forms for Tabs 1, 2, 3 -->
+    <form [formGroup]="userForm" *ngIf="activeTab() !== 4">
+      <!-- Tab 1: Login Details -->
+      <div *ngIf="activeTab() === 1" class="animation-fade-in">
+        <div class="row g-3">
+          <!-- Account Identity Card -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                  <i class="bi bi-person-badge me-2 text-danger"></i>
+                  Account Identity
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <!-- Left Column -->
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">USERNAME</label>
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                          <i class="bi bi-person text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 bg-light" formControlName="userName" readonly />
+                      </div>
+                      <small class="text-muted">Username cannot be changed once created.</small>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">EMAIL ADDRESS</label>
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                          <i class="bi bi-envelope text-muted"></i>
+                        </span>
+                        <input type="email" class="form-control border-start-0 bg-light" formControlName="email" readonly />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="form-label text-muted small fw-bold">ACCOUNT STATUS</label>
+                      <div>
+                        <span [ngClass]="getAccountStatusClass()" class="px-3 py-2 fs-6">
+                          <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem"></i>
+                          {{ user?.accountStatus || userForm.get("accountStatus")?.value || "Unknown" }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Column -->
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">LAST LOGIN</label>
+                      <div class="p-3 bg-light rounded border">
+                        <div class="d-flex align-items-center">
+                          <i class="bi bi-clock-history text-primary me-2 fs-5"></i>
+                          <div>
+                            <div class="fw-bold text-dark">{{ getFormattedLastLogin() }}</div>
+                            <small class="text-muted">Last successful login</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="form-label text-muted small fw-bold">FAILED LOGIN ATTEMPTS</label>
+                      <div class="p-3 bg-light rounded border">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <div class="d-flex align-items-center">
+                            <i class="bi bi-shield-exclamation text-warning me-2 fs-5"></i>
+                            <span class="text-dark">Failed Attempts</span>
+                          </div>
+                          <span [ngClass]="getFailedAttemptsClass()" class="px-3 py-1">
+                            {{ user?.failedLoginAttempts ?? userForm.get("failedLoginAttempts")?.value ?? 0 }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions Card -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                  <i class="bi bi-gear me-2 text-danger"></i>
+                  Account Actions
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">NEW PASSWORD</label>
+
+                    <div class="input-group">
+                      <input
+                        [type]="showPassword ? 'text' : 'password'"
+                        class="form-control"
+                        formControlName="password"
+                        [disabled]="isViewMode"
+                        placeholder="Enter new password..."
+                      />
+
+                      <button type="button" class="btn btn-add" (click)="togglePasswordVisibility()" [disabled]="isViewMode">
+                        <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                      </button>
+                    </div>
+
+                    <small class="text-muted d-block mt-1">Leave blank to keep current password</small>
+
+                    <button type="button" class="btn btn-danger w-100 mt-2" [disabled]="isViewMode" (click)="resetPassword()">
+                      <i class="bi bi-key me-2"></i>
+                      Reset Password
+                    </button>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
+                      <div>
+                        <div class="fw-bold text-dark">Login Access</div>
+                        <small class="text-muted">Enable or disable user login</small>
+                      </div>
+                      <div class="form-switch switch-primary">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="loginEnabled"
+                          formControlName="isLoginEnabled"
+                          [disabled]="isViewMode"
+                          style="width: 3rem; height: 1.5rem"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Access Control -->
+      <div *ngIf="activeTab() === 2" class="animation-fade-in">
+        <div class="row g-3">
+          <!-- System Access Card -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                  <i class="bi bi-shield-check me-2 text-danger"></i>
+                  System Access
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <!-- Remote Login Toggle -->
+                  <div class="col-md-12">
+                    <div class="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-globe text-primary fs-4 me-3"></i>
+                        <div>
+                          <div class="fw-bold text-dark">Allow Remote Login</div>
+                          <small class="text-muted">Access from external networks</small>
+                        </div>
+                      </div>
+                      <div class="form-switch switch-primary">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="remoteLogin"
+                          formControlName="allowRemoteLogin"
+                          [disabled]="isViewMode"
+                          style="width: 3rem; height: 1.5rem"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- IP Restriction -->
+                  <div class="col-md-12">
+                    <label class="form-label text-muted small fw-bold">IP RESTRICTION (OPTIONAL)</label>
+
+                    <textarea
+                      class="form-control"
+                      rows="2"
+                      formControlName="ipRestriction"
+                      [disabled]="isViewMode"
+                      maxlength="100"
+                      placeholder="e.g. 192.168.1.100, 10.0.0.50"
+                    ></textarea>
+
+                    <small class="text-muted d-block">Leave empty to allow access from any IP address</small>
+
+                    <small
+                      class="text-danger d-block mt-1"
+                      *ngIf="userForm.get('ipRestriction')?.errors?.['invalidIpRestriction'] && userForm.get('ipRestriction')?.touched"
+                    >
+                      Enter valid IPv4 addresses (comma-separated). CIDR notation is supported.
+                    </small>
+                  </div>
+
+                  <!-- Working Hours -->
+                  <div class="col-md-12">
+                    <div class="card border-0 shadow-sm">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-start gap-3">
+                          <i class="bi bi-clock text-primary fs-4 mt-1"></i>
+
+                          <div class="flex-grow-1">
+                            <label class="form-label fw-bold text-dark mb-1">Working Hours Restriction</label>
+
+                            <p class="text-muted small mb-3">
+                              Define the allowed login time window for this user. Leave empty to allow access at any time.
+                            </p>
+
+                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
+                              <div style="width: 140px">
+                                <label class="form-label small fw-bold mb-1">Start Time</label>
+                                <input
+                                  type="time"
+                                  class="form-control"
+                                  formControlName="startTime"
+                                  [disabled]="isViewMode"
+                                  placeholder="Type here e.g., 09:00"
+                                  aria-label="Start time"
+                                />
+                                <small class="text-muted">e.g., 09:00</small>
+                              </div>
+
+                              <div style="width: 140px">
+                                <label class="form-label small fw-bold mb-1">End Time</label>
+                                <input
+                                  type="time"
+                                  class="form-control"
+                                  formControlName="endTime"
+                                  [disabled]="isViewMode"
+                                  placeholder="Type here e.g., 18:00"
+                                  aria-label="End time"
+                                />
+                                <small class="text-muted">e.g., 18:00</small>
+                              </div>
+
+                              <div *ngIf="userForm.get('endTime')?.hasError('endBeforeStart')" class="text-danger small">
+                                End time must be after start time.
+                              </div>
+                            </div>
+
+                            <div class="mt-2">
+                              <small class="text-muted">Example: 09:00–18:00</small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role is auto-derived from Designation — removed manual role management -->
+        </div>
+      </div>
+
+      <!-- Tab 3: Session & Security -->
+      <div *ngIf="activeTab() === 3" class="animation-fade-in">
+        <div class="row g-3">
+          <!-- Session Settings Card -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                  <i class="bi bi-hourglass-split me-2 text-danger"></i>
+                  Session Settings
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <!-- Session Timeout -->
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">SESSION TIMEOUT</label>
+                    <select class="form-select" formControlName="sessionTimeout" [disabled]="isViewMode">
+                      <option [value]="0">Default Session</option>
+                      <option [value]="15">15 Minutes</option>
+                      <option [value]="30">30 Minutes</option>
+                      <option [value]="60">60 Minutes</option>
+                      <option [value]="120">120 Minutes</option>
+                    </select>
+                    <small class="text-muted">Auto logout after inactivity</small>
+                  </div>
+
+                  <!-- Force Password Change -->
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">PASSWORD POLICY</label>
+                    <div class="d-flex align-items-center p-3 border rounded bg-light">
+                      <div class="flex-grow-1">
+                        <div class="fw-bold text-dark small">Force Change on Login</div>
+                      </div>
+                      <div class="form-switch switch-primary">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="forcePass"
+                          formControlName="forcePasswordChange"
+                          [disabled]="isViewMode"
+                          style="width: 2.5rem; height: 1.25rem"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two-Factor Authentication Card -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-light border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
+                    Two-Factor Authentication (2FA)
+                  </h6>
+                  <div class="form-switch switch-primary">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="2faToggle"
+                      [checked]="is2FAEnabled()"
+                      (change)="toggle2FA()"
+                      [disabled]="isViewMode"
+                      style="width: 3rem; height: 1.5rem"
+                    />
+                    <label class="form-check-label ms-2 fw-bold" [class.text-success]="is2FAEnabled()" [class.text-muted]="!is2FAEnabled()">
+                      {{ is2FAEnabled() ? "ON" : "OFF" }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Add an extra layer of security to your account.
+                  <span class="badge bg-warning text-dark ms-1">Mandatory for Admin & Signing Authority</span>
+                </p>
+
+                <!-- 2FA Status Display -->
+                <div *ngIf="is2FAEnabled() && otpStep === 3" class="alert alert-success border-success d-flex align-items-center">
+                  <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                  <div>
+                    <strong>2FA Enabled</strong>
+                    <div class="small">Method: {{ otpMethod | titlecase }}</div>
+                  </div>
+                </div>
+
+                <!-- 2FA Setup Steps -->
+                <div *ngIf="is2FAEnabled() && otpStep > 0 && otpStep < 3" class="mt-3">
+                  <!-- Step 1: Method Selection -->
+                  <div *ngIf="otpStep === 1">
+                    <h6 class="fw-bold mb-3">Select Authentication Method:</h6>
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <div
+                          class="card border-2 cursor-pointer"
+                          [class.border-danger]="otpMethod === 'email'"
+                          [class.bg-light]="otpMethod === 'email'"
+                          (click)="selectOtpMethod('email')"
+                        >
+                          <div class="card-body text-center">
+                            <i class="bi bi-envelope fs-1 text-primary mb-2 d-block"></i>
+                            <div class="fw-bold">Email OTP</div>
+                            <small class="text-muted">Receive code via email</small>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div
+                          class="card border-2 cursor-pointer"
+                          [class.border-danger]="otpMethod === 'sms'"
+                          [class.bg-light]="otpMethod === 'sms'"
+                          (click)="selectOtpMethod('sms')"
+                        >
+                          <div class="card-body text-center">
+                            <i class="bi bi-chat-dots fs-1 text-success mb-2 d-block"></i>
+                            <div class="fw-bold">SMS OTP</div>
+                            <small class="text-muted">Receive code via SMS</small>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="card border-2 opacity-50">
+                          <div class="card-body text-center">
+                            <i class="bi bi-phone fs-1 text-muted mb-2 d-block"></i>
+                            <div class="fw-bold">Authenticator App</div>
+                            <small class="text-muted">
+                              <span class="badge bg-secondary">Coming Soon</span>
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2: Verify OTP -->
+                  <div *ngIf="otpStep === 2">
+                    <h6 class="fw-bold mb-3">Verify {{ otpMethod | titlecase }}:</h6>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <div class="input-group">
+                          <input
+                            type="text"
+                            class="form-control"
+                            placeholder="Enter OTP"
+                            maxlength="6"
+                            [(ngModel)]="otpCode"
+                            [ngModelOptions]="{ standalone: true }"
+                          />
+                          <button class="btn btn-danger" type="button" (click)="verifyOtp()">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Verify
+                          </button>
+                        </div>
+                        <small class="text-muted">Integration Pending. Enter any 4+ chars.</small>
+                      </div>
+                      <div class="col-md-6 d-flex align-items-center gap-2">
+                        <button class="btn btn-link text-decoration-none" (click)="resendOtp()" [disabled]="resendCooldown > 0">
+                          <i class="bi bi-arrow-clockwise me-1"></i>
+                          Resend OTP
+                          <span *ngIf="resendCooldown > 0">({{ resendCooldown }}s)</span>
+                        </button>
+                        <span class="text-muted">|</span>
+                        <button class="btn btn-link text-decoration-none text-secondary" (click)="otpStep = 1">
+                          <i class="bi bi-arrow-left me-1"></i>
+                          Change Method
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2FA Disabled State -->
+                <div *ngIf="!is2FAEnabled()" class="text-center py-4">
+                  <i class="bi bi-shield-x text-muted" style="font-size: 3rem"></i>
+                  <p class="text-muted mt-2">Two-factor authentication is currently disabled</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Lock Policy Card (Read-Only) -->
+          <div class="col-12">
+            <div class="card border-0 shadow-sm border-warning">
+              <div class="card-header bg-warning bg-opacity-10 border-bottom border-warning">
+                <h6 class="mb-0 fw-bold text-dark">
+                  <i class="bi bi-shield-exclamation me-2 text-warning"></i>
+                  Account Lock Policy
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light">
+                      <label class="form-label text-muted small fw-bold mb-2">AUTO LOCK AFTER</label>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-lock text-danger fs-4 me-3"></i>
+                        <div>
+                          <div class="fw-bold text-dark fs-5">{{ user?.autoLockAfterAttempts ?? "—" }} Failed Attempts</div>
+                          <small class="text-muted">System-wide security policy</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light">
+                      <label class="form-label text-muted small fw-bold mb-2">UNLOCK METHOD</label>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-key text-success fs-4 me-3"></i>
+                        <div>
+                          <span class="badge bg-success fs-6 px-3 py-2">
+                            {{ user?.unlockMethod || "—" }}
+                          </span>
+                          <div class="small text-muted mt-1">Account unlock requires admin intervention</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <div class="alert alert-light border mb-0">
+                      <h6 class="alert-heading small fw-bold">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Session Awareness
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Changing sensitive roles, permissions, or security settings (like 2FA) will force a logout for the user to ensure
+                        security compliance.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Tab 4: User Permission -->
+    <div *ngIf="activeTab() === 4" class="animation-fade-in">
+      <!-- Embed UserPermissionComponent with fixed user logic -->
+      <app-user-permission
+        [targetUserId]="employeeId ? employeeId.toString() : ''"
+        [allowUserSelection]="false"
+        [containerClass]="'px-0'"
+        [isViewMode]="isViewMode"
+      ></app-user-permission>
+    </div>
+
+    <!-- Action Buttons (for Tabs 1-3) -->
+    <div class="mt-4 border-top pt-3 d-flex justify-content-end" *ngIf="activeTab() !== 4 && !isViewMode">
+      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="userForm.invalid || false">
+        <i class="bi bi-save me-1"></i>
+        Save User Settings
+      </button>
+    </div>
+  </div>
+</div>

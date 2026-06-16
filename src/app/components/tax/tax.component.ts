@@ -5,10 +5,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ToastService } from '../../services/toast.service';
 import { TaxService } from '../../services/tax.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-tax',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './tax.component.html',
   styleUrl: './tax.component.css'
 })
@@ -18,18 +22,17 @@ export class TaxComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'rate', type: 'number', label: 'Rate', filter: true },
     { key: 'date', type: 'date', label: 'Date', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
-    rate: 'string',
+    rate: 'number',
     date: 'date',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,12 +48,11 @@ export class TaxComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -63,6 +65,7 @@ export class TaxComponent implements OnInit {
 
   // form
   taxForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -85,10 +88,10 @@ export class TaxComponent implements OnInit {
   initForm() {
     this.taxForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       date: ['', Validators.required],
       rate: ['', Validators.required],
-      remark: [''],
+      remark: ['', [Validators.maxLength(500)]],
     });
   }
 
@@ -99,20 +102,19 @@ export class TaxComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
         this.taxList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   loadCustomerTypeData(): void {
-    this.taxService.getTaxById(this.taxId).subscribe({
+    const requestId = this.taxId;
+    this.taxService.getTaxById(requestId).subscribe({
       next: (response) => {
+        if (this.taxId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.taxForm.patchValue({
           id: this.customerTypeObject.id || 0,
@@ -176,6 +178,17 @@ export class TaxComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -183,7 +196,7 @@ export class TaxComponent implements OnInit {
     if (!this.filterColumn || this.filterValue === '') return;
 
     const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+    const filterData = { column: this.filterColumn, type: this.filterType, value: String(this.filterValue), value2: this.filterValue2 != null ? String(this.filterValue2) : this.filterValue2 };
 
     if (existingFilterIndex > -1) {
       this.filters[existingFilterIndex] = filterData;
@@ -191,6 +204,7 @@ export class TaxComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -223,6 +237,8 @@ export class TaxComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -231,6 +247,14 @@ export class TaxComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -249,13 +273,15 @@ export class TaxComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
+        error: () => {
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.taxForm.reset();
+    this.taxForm.enable();
+    this.taxId = 0;
     if (id > 0) {
       debugger;
       this.taxId = id;
@@ -266,7 +292,6 @@ export class TaxComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Tax Form';
-      this.taxForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -285,39 +310,51 @@ export class TaxComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.taxForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.taxForm.reset();
+    this.taxForm.enable();
+    this.taxId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
-    if (this.taxForm.valid) {
-      let formData = this.taxForm.value;
-      if (this.isEditMode) {
-        this.taxService.updateTax(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.taxService.createTax(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.taxForm);
+    if (!this.taxForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.taxForm.value;
+    if (this.isEditMode) {
+      this.taxService.updateTax(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.taxService.createTax(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
     }
   }
 

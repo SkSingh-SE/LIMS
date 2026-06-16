@@ -6,17 +6,20 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { environment } from '../../../../environments/environment';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { ToastService } from '../../../services/toast.service';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 
 @Component({
   selector: 'app-reporting-preview',
   templateUrl: './reporting-preview.component.html',
   styleUrl: './reporting-preview.component.css',
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective]
 })
 export class ReportingPreviewComponent implements OnInit {
   baseUrl = environment.baseUrl;
   reportData: ReportingPreview | null = null;
-  isLoading = signal(false);
   sampleId: string = '';
 
   // Collapsible sections
@@ -31,12 +34,25 @@ export class ReportingPreviewComponent implements OnInit {
 
   // internal flag to prevent double submits
   private submitting = false;
+  submittingForApproval = false;
   pdfGenerating = false;
+
+  // Pricing data (read-only, from backend)
+  pricingData: any = null;
+  hasPriceSnapshot = false;
+
+  // Multi-format report generation
+  reportFormats: any[] = [];
+  selectedFormatType: number = 0;
+  formatPdfGenerating = false;
 
   constructor(
     private route: ActivatedRoute,
     private reportingService: ReportingService,
-    private router: Router
+    private router: Router,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -48,16 +64,69 @@ export class ReportingPreviewComponent implements OnInit {
     });
   }
 
+  goBack(): void {
+    this.router.navigate(['/reporting/dashboard']);
+  }
+
+  loadReportFormats(reportHeaderId: number | string): void {
+    this.reportingService.getAvailableFormatsForReport(+reportHeaderId).subscribe({
+      next: (formats) => {
+        this.reportFormats = formats;
+        if (formats.length > 0 && !this.selectedFormatType) {
+          this.selectedFormatType = formats[0].formatType;
+        }
+      },
+      error: () => {
+        // Fallback to static formats
+        this.reportingService.getAvailableFormats().subscribe({
+          next: (formats) => this.reportFormats = formats,
+          error: () => this.reportFormats = [],
+        });
+      },
+    });
+  }
+
+  downloadByFormat(): void {
+    if (!this.reportData?.reportHeaderId || this.formatPdfGenerating) return;
+    this.formatPdfGenerating = true;
+    const headerId = +this.reportData.reportHeaderId;
+    this.reportingService.generateByFormat(headerId, this.selectedFormatType).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Report-${headerId}-${this.selectedFormatType}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.formatPdfGenerating = false;
+      },
+      error: (err) => {
+        console.error('Format PDF generation failed:', err);
+        this.formatPdfGenerating = false;
+      },
+    });
+  }
+
   loadReportPreview(sampleId: string): void {
-    this.isLoading.set(true);
     this.reportingService.getReportPreview(sampleId).subscribe({
       next: (data) => {
         this.reportData = this.normalizeReportPreview(data);
-        this.isLoading.set(false);
+        // Extract pricing data if available (read-only after approval)
+        this.pricingData = (data as any)?.pricing || (data as any)?.priceSnapshot || null;
+        this.hasPriceSnapshot = !!this.pricingData || !!(data as any)?.hasPriceSnapshot || false;
+        // Load dynamic formats based on this report's actual test data
+        if (this.reportData.reportHeaderId) {
+          this.loadReportFormats(this.reportData.reportHeaderId);
+        }
       },
       error: (error) => {
         console.error('Error loading report preview:', error);
-        this.isLoading.set(false);
+        const status = error?.status;
+        if (status === 404) {
+          this.toast.show('Report not yet generated for this sample. Please complete testing and verification first.', 'warning');
+        } else {
+          this.toast.show(error?.error?.message || 'Error loading report preview.', 'error');
+        }
       }
     });
   }
@@ -94,8 +163,10 @@ export class ReportingPreviewComponent implements OnInit {
           minValue: p.minValue ?? '',
           maxValue: p.maxValue ?? '',
           isWithinLimit:  p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          resultStatus: (p as any).resultStatus || '',
           remarks: p.remarks || ''
-        }))
+        })),
+        images: ((t as any).images || []).map((img: any) => ({ id: img.id || img.ID, filePath: img.filePath || img.FilePath, caption: img.caption || img.Caption }))
       })),
       chemicalTests: (src.chemicalTests || []).map(t => ({
         testResultHeaderId: (t as any).testResultHeaderId || (t as any).testId || '',
@@ -112,8 +183,10 @@ export class ReportingPreviewComponent implements OnInit {
           minValue: p.minValue ?? '',
           maxValue: p.maxValue ?? '',
           isWithinLimit: p.isWithinLimit !== undefined ? p.isWithinLimit : false,
+          resultStatus: (p as any).resultStatus || '',
           remarks: p.remarks || ''
-        }))
+        })),
+        images: ((t as any).images || []).map((img: any) => ({ id: img.id || img.ID, filePath: img.filePath || img.FilePath, caption: img.caption || img.Caption }))
       })),
       longTermTests: (src.longTermTests || []).map(t => ({
         longTermTestId: (t as any).longTermTestId || (t as any).id || '',
@@ -132,7 +205,25 @@ export class ReportingPreviewComponent implements OnInit {
         })
       })),
       actions: src.actions || [],
-      amendment: src.amendment || null
+      amendment: src.amendment || null,
+      // Sample details
+      grade: (src as any).grade || '',
+      heatNo: (src as any).heatNo || '',
+      batchNo: (src as any).batchNo || '',
+      sampleDescription: (src as any).sampleDescription || '',
+      description: (src as any).description || '',
+      quantity: (src as any).quantity || '',
+      sampleReceivedDate: (src as any).sampleReceivedDate || '',
+      testStartDate: (src as any).testStartDate || '',
+      testDate: (src as any).testDate || '',
+      thickness: (src as any).thickness || null,
+      diameter: (src as any).diameter || null,
+      width: (src as any).width || null,
+      length: (src as any).length || null,
+      statementOfConformity: (src as any).statementOfConformity || '',
+      decisionRule: (src as any).decisionRule || '',
+      ulrNo: (src as any).ulrNo || '',
+      canSubmitForReportApproval: (src as any).canSubmitForReportApproval ?? false,
     };
 
     return dst;
@@ -179,9 +270,6 @@ export class ReportingPreviewComponent implements OnInit {
     };
   }
 
-  goBack(): void {
-    window.history.back();
-  }
 
   // Collapsible toggle methods
   toggleMechanicalTest(testId: string): void {
@@ -222,13 +310,11 @@ export class ReportingPreviewComponent implements OnInit {
 
   // Action handling - matches ReviewOfRequestFormComponent pattern
   submitReview(): void {
-    debugger;
     if (!this.selectedAction || !this.reportData || this.submitting) return;
     const actionKey = (this.selectedAction.action || '').toString().toLowerCase();
     if (actionKey !== 'next' && !this.actionRemark) return;
 
     this.submitting = true;
-    this.isLoading.set(true);
 
      const payload = {
       id: this.reportData.workflowInstanceId,
@@ -238,17 +324,15 @@ export class ReportingPreviewComponent implements OnInit {
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.isLoading.set(false);
         this.showActionPanel = false;
         // keep UX consistent with other screens
-        alert('Action completed successfully.');
+        this.toast.show('Action completed successfully', 'success');
         this.router.navigate(['/reporting/dashboard']);
       },
       error: (err) => {
         this.submitting = false;
         console.error('Action failed:', err);
-        this.isLoading.set(false);
-        alert('Action failed. See console for details.');
+        this.toast.show('Action failed', 'error');
       }
     });
   }
@@ -260,31 +344,87 @@ export class ReportingPreviewComponent implements OnInit {
    */
   canGeneratePdf(): boolean {
     if (!this.reportData) return false;
-    const allowedStatuses = ['Completed', 'Approved'];
-    return allowedStatuses.includes(this.reportData.status);
+    return this.statusHelper.canGeneratePDF(this.reportData.status);
+  }
+
+  /**
+   * Check if pricing can be viewed (read-only after approval)
+   */
+  canViewPricing(): boolean {
+    if (!this.reportData) return false;
+    return this.statusHelper.canViewPricing(this.reportData.status);
+  }
+
+  /**
+   * Check if user can approve reports
+   */
+  canApproveReport(): boolean {
+    return true;
+    return this.roleHelper.canApproveReport();
+  }
+
+  // Expose statusHelper to template
+  get statusHelperService() {
+    return this.statusHelper;
   }
 
   /**
    * Generate PDF for the current report
    */
+  // Generate & Save PDF on server (original behavior)
   generatePdf(): void {
     if (!this.reportData || this.pdfGenerating) return;
 
     if (!this.canGeneratePdf()) {
-      alert('PDF can only be generated for approved/completed reports.');
+      this.toast.show('PDF can only be generated before sending for approval', 'warning');
       return;
     }
 
     this.pdfGenerating = true;
-    this.reportingService.generateReportPdf(this.reportData.reportHeaderId).subscribe({
+    this.reportingService.generateReportPdf(this.sampleId).subscribe({
       next: () => {
         this.pdfGenerating = false;
-        alert('PDF generated successfully.');
+        this.toast.show('Report generated & saved successfully', 'success');
+        this.loadReportPreview(this.sampleId);
       },
       error: (err) => {
         this.pdfGenerating = false;
         console.error('PDF generation failed:', err);
-        alert('PDF generation failed. See console for details.');
+        this.toast.show(err?.error?.message || 'PDF generation failed', 'error');
+      }
+    });
+  }
+
+  submitForReportApproval(): void {
+    if (!this.sampleId || this.submittingForApproval) return;
+    this.submittingForApproval = true;
+    this.reportingService.submitForReportApproval(this.sampleId).subscribe({
+      next: () => {
+        this.submittingForApproval = false;
+        this.toast.show('Submitted for report approval successfully', 'success');
+        this.loadReportPreview(this.sampleId);
+      },
+      error: (err) => {
+        this.submittingForApproval = false;
+        this.toast.show(err?.errorMessage || 'Failed to submit for report approval', 'error');
+      }
+    });
+  }
+
+  // Preview selected format — opens PDF in new browser tab
+  previewByFormat(): void {
+    if (!this.reportData?.reportHeaderId || this.formatPdfGenerating) return;
+    this.formatPdfGenerating = true;
+    const headerId = +this.reportData.reportHeaderId;
+    this.reportingService.generateByFormat(headerId, this.selectedFormatType).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.formatPdfGenerating = false;
+      },
+      error: (err) => {
+        console.error('Preview failed:', err);
+        this.formatPdfGenerating = false;
       }
     });
   }

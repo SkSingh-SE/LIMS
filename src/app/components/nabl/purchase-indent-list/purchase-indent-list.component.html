@@ -1,0 +1,15 @@
+<app-nabl-register-table
+  title="F-21: Purchase Indent / Purchase Request"
+  [columns]="columns"
+  [data]="indents"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/purchase-indent"
+  addRoute="/purchase-indent/create"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+  (onPageChange)="onPageChange($event)"
+    (onDelete)="deletePurchaseIndent($event)"
+
+></app-nabl-register-table>

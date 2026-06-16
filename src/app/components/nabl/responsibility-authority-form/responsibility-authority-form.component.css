@@ -1,0 +1,21 @@
+.card-form-header {
+    background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
+    border-bottom: none;
+    padding: 0.75rem 1.25rem;
+}
+
+.navbar-background {
+    background-color: #DA261C !important;
+}
+
+/* Read-only / Disabled state for Quill in this component */
+.ra-form-disabled :host ::ng-deep .ql-toolbar.ql-snow {
+    display: none;
+}
+
+.ra-form-disabled :host ::ng-deep .ql-container.ql-snow {
+    background-color: #e9ecef;
+    border-top: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    cursor: not-allowed;
+}

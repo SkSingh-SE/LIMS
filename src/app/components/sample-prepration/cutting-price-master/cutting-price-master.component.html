@@ -8,7 +8,7 @@
       </a>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
@@ -23,6 +23,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
+              <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -38,77 +39,71 @@
                       (click)="applySorting(column.key)"
                     ></i>
                   </span>
-                  <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
               </th>
-              <th class="align-middle text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let customerType of listData; let i = index" class="text-sm">
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="wide-input">{{ customerType.cuttingType }}</td>
-              <td class="wide-input">{{ customerType.unitType }}</td>
-              <td class="wide-input">{{ customerType.ratePerUnit }}</td>
+            <tr *ngFor="let row of listData; let i = index" class="text-sm">
               <td class="text-center">
-                <div class="d-flex justify-content-center gap-2">
-                  <!-- Flex for spacing -->
-                  <a (click)="openModal('view', customerType.id)" class="icon-link" title="View">
+                <div class="d-flex justify-content-center gap-3">
+                  <a (click)="openModal('view', row.id)" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
-                  <a (click)="openModal('edit', customerType.id)" class="icon-link" title="Edit">
+                  <a (click)="openModal('edit', row.id)" class="icon-link" title="Edit">
                     <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
                   </a>
-                  <a (click)="deleteFn(customerType.id)" class="icon-link" title="Delete">
+                  <a (click)="deleteFn(row.id)" class="icon-link" title="Delete">
                     <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
                 </div>
               </td>
+              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="wide-input">{{ row.cuttingType }}</td>
+              <td class="wide-input">{{ row.unitType }}</td>
+              <td class="wide-input">{{ row.specimenTypeName || '-' }}</td>
+              <td class="text-center">
+                <span *ngIf="row.sizeRangeMin != null || row.sizeRangeMax != null">
+                  {{ row.sizeRangeMin ?? '0' }} – {{ row.sizeRangeMax ?? '∞' }}
+                </span>
+                <span *ngIf="row.sizeRangeMin == null && row.sizeRangeMax == null">-</span>
+              </td>
+              <!-- <td class="text-end">{{ row.currentRatePerUnit ?? '-' }}</td>
+              <td class="text-end">{{ row.currentRatePerUnitHard ?? '-' }}</td> -->
+              <td class="text-center">{{ row.versionCount }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div *ngIf="listData.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+      <div *ngIf="listData.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
         <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
           <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
           <div class="fw-semibold">No records found</div>
         </div>
       </div>
       <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center">
-        <!-- Page Size Selector -->
-        <div class="d-flex align-items-center">
-          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-          </select>
-        </div>
-
-        <!-- Pagination Controls -->
-        <ul class="pagination mb-0 d-flex align-items-center">
-          <li class="page-item" [class.disabled]="pageNumber === 1">
-            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-          </li>
-          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-          </li>
-        </ul>
-      </div>
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
     </div>
   </div>
 </div>
 
 <!-- Filter Modal -->
 <div #filterModal class="filter-modal">
+
   <div class="card py-2 px-3 shadow position-relative">
-    <!-- Close Button in the Top-Right Corner -->
     <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
 
     <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
@@ -153,104 +148,219 @@
   </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
+<!-- Modal for Add/Edit/View Cutting Price Master -->
 <div
   id="customerTypeModal"
   class="modal fade modal-fade modal-lg"
   #modalRef
   tabindex="-1"
-  data-bs-backdrop="static"
+  data-bs-backdrop="static" data-bs-keyboard="false"
   aria-labelledby="customerTypeModalLabel"
   aria-modal="true"
   role="dialog"
 >
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+        <label class="modal-title fw-medium" id="customerTypeModalLabel">
           {{ formTitle }}
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="cuttingPriceForm" (ngSubmit)="onSubmit()">
+        <!-- use small input for dropdowns in modal -->
         <div class="modal-body row row-cols-2 row-gap-2 position-relative">
-          <!--Cutting Type-->
+          <!-- Cutting Type -->
           <div>
-            <label for="cuttingType" class="form-label">
+            <label for="cuttingType" class="form-label form-label-sm">
               Cutting Type
               <span class="text-danger">*</span>
             </label>
             <input
               id="cuttingType"
               formControlName="cuttingType"
-              class="form-control"
-              placeholder="e.g. Hacksaw, EDM Wire, Gas Cutting, etc."
+              class="form-control form-control-sm"
+              placeholder="e.g. ≤ 12 mm, Water Jet, Gas Cutting, etc."
               [ngClass]="{ 'is-invalid': cuttingPriceForm.get('cuttingType')?.touched && cuttingPriceForm.get('cuttingType')?.invalid }"
             />
-            <span
-              *ngIf="cuttingPriceForm.get('cuttingType')?.invalid && cuttingPriceForm.get('cuttingType')?.touched"
-              class="text-danger text-sm"
-            >
-              Cutting Type is required.
-            </span>
+            <div *ngIf="cuttingPriceForm.get('cuttingType')?.touched && cuttingPriceForm.get('cuttingType')?.invalid">
+              <span *ngIf="cuttingPriceForm.get('cuttingType')?.hasError('required')" class="text-danger text-sm">Cutting Type is required.</span>
+            </div>
+          </div>
+          <!-- Specimen Type -->
+          <div>
+            <app-searchable-dropdown-modal
+              [labelName]="'Specimen Type'"
+              [fetchDataFn]="fetchSpecimenTypeDropdown"
+              placeholder="Search Specimen Type"
+              [required]="false"
+              [smallInput]="true"
+              [isDisabled]="isViewMode"
+              (itemSelected)="onSpecimenTypeSelected($event)"
+              [selectedItem]="selectedSpecimenTypeId"
+            ></app-searchable-dropdown-modal>
           </div>
 
-          <div class="">
-            <label for="unitType" class="form-label">
+          
+
+          <!-- Unit Type -->
+          <div>
+            <label for="unitType" class="form-label form-label-sm">
               Unit Type
               <span class="text-danger">*</span>
             </label>
             <select
               formControlName="unitType"
-              class="form-control form-select"
+              class="form-control form-select form-select-sm"
               id="unitType"
               [ngClass]="{ 'is-invalid': cuttingPriceForm.get('unitType')?.touched && cuttingPriceForm.get('unitType')?.invalid }"
             >
               <option value="" disabled>Select Option</option>
               <option *ngFor="let unit of unitTypes" [value]="unit">{{ unit }}</option>
             </select>
-            <span
-              *ngIf="cuttingPriceForm.get('unitType')?.invalid && cuttingPriceForm.get('unitType')?.touched"
-              class="text-danger text-sm"
-            >
-              Unit Type is required.
-            </span>
+            <div *ngIf="cuttingPriceForm.get('unitType')?.touched && cuttingPriceForm.get('unitType')?.invalid">
+              <span *ngIf="cuttingPriceForm.get('unitType')?.hasError('required')" class="text-danger text-sm">Unit Type is required.</span>
+            </div>
           </div>
 
-          <div class="">
-            <label for="ratePerUnit" class="form-label">
-              Rate Per Unit (₹)
-              <span class="text-danger">*</span>
-            </label>
+          <!-- Remarks -->
+          <div>
+            <label for="remark" class="form-label form-label-sm">Remarks</label>
+            <textarea id="remark" formControlName="remark" rows="1" class="form-control form-control-sm" placeholder="add remark"></textarea>
+          </div>
+
+          <!-- Size Range Min -->
+          <div>
+            <label for="sizeRangeMin" class="form-label form-label-sm">Size Range Min (mm)</label>
             <input
-              id="ratePerUnit"
+              id="sizeRangeMin"
               type="text"
-              formControlName="ratePerUnit"
-              class="form-control"
-              placeholder="50"
+              formControlName="sizeRangeMin"
+              class="form-control form-control-sm"
+              placeholder="e.g. 13 (leave blank for Water Jet / Gas / EDM)"
               appDecimalOnly
-              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('ratePerUnit')?.touched && cuttingPriceForm.get('ratePerUnit')?.invalid }"
+              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('sizeRangeMin')?.touched && cuttingPriceForm.get('sizeRangeMin')?.invalid }"
             />
-            <span
-              *ngIf="cuttingPriceForm.get('ratePerUnit')?.invalid && cuttingPriceForm.get('ratePerUnit')?.touched"
-              class="text-danger text-sm"
-            >
-              Rate is required.
-            </span>
+            <div *ngIf="cuttingPriceForm.get('sizeRangeMin')?.touched && cuttingPriceForm.get('sizeRangeMin')?.invalid">
+              <span *ngIf="cuttingPriceForm.get('sizeRangeMin')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
+            </div>
           </div>
 
-          <div class="">
-            <label for="remark" class="form-label">Remarks</label>
-            <textarea id="remarks" formControlName="remark" rows="2" class="form-control" placeholder="add remark"></textarea>
+          <!-- Size Range Max -->
+          <div>
+            <label for="sizeRangeMax" class="form-label form-label-sm">Size Range Max (mm)</label>
+            <input
+              id="sizeRangeMax"
+              type="text"
+              formControlName="sizeRangeMax"
+              class="form-control form-control-sm"
+              placeholder="e.g. 25 (leave blank for Water Jet / Gas / EDM)"
+              appDecimalOnly
+              [ngClass]="{ 'is-invalid': cuttingPriceForm.get('sizeRangeMax')?.touched && cuttingPriceForm.get('sizeRangeMax')?.invalid }"
+            />
+            <div *ngIf="cuttingPriceForm.get('sizeRangeMax')?.touched && cuttingPriceForm.get('sizeRangeMax')?.invalid">
+              <span *ngIf="cuttingPriceForm.get('sizeRangeMax')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
+            </div>
+          </div>
+
+          <!-- Year-wise Rates -->
+          <div class="col-12">
+            <fieldset class="fieldset-block p-2 mt-1">
+              <legend class="fieldset-legend">Year-wise Rates <span class="text-danger">*</span></legend>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-2">
+                  <thead class="table-light">
+                    <tr class="text-sm">
+                      <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
+                      <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
+                      <th style="min-width: 120px;">Normal Rate (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 120px;">Hard Rate (₹) <span class="text-danger">*</span></th>
+                      <th style="width: 40px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="versions">
+                    <tr *ngFor="let v of versions.controls; let vi = index" [formGroupName]="vi" class="text-sm">
+                      <td>
+                        <select
+                          formControlName="financialYearId"
+                          class="form-control form-select form-select-sm"
+                          (change)="onVersionFyChange(vi)"
+                          [ngClass]="{ 'is-invalid': v.get('financialYearId')?.touched && v.get('financialYearId')?.invalid }"
+                        >
+                          <option [ngValue]="null" disabled>Select financial year</option>
+                          <option *ngFor="let fy of financialYears" [ngValue]="fy.id">
+                            {{ fy.year }}<span *ngIf="fy.isCurrent"> ★</span>
+                          </option>
+                        </select>
+                        <div *ngIf="v.get('financialYearId')?.touched && v.get('financialYearId')?.invalid">
+                          <span *ngIf="v.get('financialYearId')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          formControlName="effectiveFrom"
+                          class="form-control form-control-sm"
+                          [ngClass]="{ 'is-invalid': v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid }"
+                        />
+                        <div *ngIf="v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid">
+                          <span *ngIf="v.get('effectiveFrom')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          formControlName="ratePerUnit"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('ratePerUnit')?.touched && v.get('ratePerUnit')?.invalid }"
+                        />
+                        <div *ngIf="v.get('ratePerUnit')?.touched && v.get('ratePerUnit')?.invalid">
+                          <span *ngIf="v.get('ratePerUnit')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('ratePerUnit')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          formControlName="ratePerUnitHard"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('ratePerUnitHard')?.touched && v.get('ratePerUnitHard')?.invalid }"
+                        />
+                        <div *ngIf="v.get('ratePerUnitHard')?.touched && v.get('ratePerUnitHard')?.invalid">
+                          <span *ngIf="v.get('ratePerUnitHard')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('ratePerUnitHard')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <button
+                          *ngIf="!isViewMode && versions.length > 1"
+                          type="button"
+                          class="btn btn-sm btn-outline-danger border-0 p-1"
+                          title="Remove"
+                          (click)="removeVersion(vi)"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addVersion()">
+                <i class="bi bi-plus-lg"></i> Add Year
+              </button>
+            </fieldset>
           </div>
         </div>
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark me-2" (click)="closeModal()">
+          <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">
             Cancel
           </button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="cuttingPriceForm.invalid">
+          <button type="submit" class="btn btn-save" [disabled]="cuttingPriceForm.invalid">
             {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>

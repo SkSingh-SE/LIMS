@@ -4,12 +4,16 @@ import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { getActionConfig, ActionButtonConfig } from '../../../utility/workflow-action.helper';
+import { WorkflowService } from '../../../services/workflow.service';
+import { ToastService } from '../../../services/toast.service';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-review-of-request',
   templateUrl: './review-of-request.component.html',
   styleUrl: './review-of-request.component.css',
-  imports: [CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent]
+  imports: [ CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent, PaginationComponent ]
 })
 export class ReviewOfRequestComponent  implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -19,14 +23,14 @@ export class ReviewOfRequestComponent  implements OnInit {
     { key: 'customerName', type: 'string', label: 'Customer', filter: true },
     { key: 'inwardStatus', type: 'string', label: 'Status', filter: true },
     { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
-    { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: false },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
     customerName: 'string',
     inwardStatus: 'string',
     modifiedBy: 'string',
-    modifiedOn: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -43,12 +47,11 @@ export class ReviewOfRequestComponent  implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -59,7 +62,19 @@ export class ReviewOfRequestComponent  implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private inwardService: SampleInwardService) {
+  // Action remark modal state
+  pendingAction: any = null;
+  pendingItem: any = null;
+  actionRemark: string = '';
+  showRemarkModal: boolean = false;
+  isSubmittingAction: boolean = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private inwardService: SampleInwardService,
+    private workflowService: WorkflowService,
+    private toast: ToastService
+  ) {
   }
 
 
@@ -75,12 +90,10 @@ export class ReviewOfRequestComponent  implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error fetching designations:', error);
         this.listData = [];
-        this.isLoading.set(false);
       }
 
     });
@@ -134,6 +147,17 @@ export class ReviewOfRequestComponent  implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -181,6 +205,8 @@ export class ReviewOfRequestComponent  implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -189,6 +215,14 @@ export class ReviewOfRequestComponent  implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -198,8 +232,60 @@ export class ReviewOfRequestComponent  implements OnInit {
     return column ? column.type : undefined;
   }
 
-  onActionClick(action: any) {
-   console.log('Action clicked:', action);
+  getActionCfg(action: string): ActionButtonConfig {
+    return getActionConfig(action);
+  }
+
+  onActionClick(action: any, item: any) {
+    // 'Next' = Approve (no remark). 'Cancel'/'Back' = need remark.
+    if (action?.action?.toLowerCase() === 'next') {
+      const confirmed = window.confirm(`Are you sure you want to ${action.name}?`);
+      if (!confirmed) return;
+      this.performAction(action, '');
+    } else {
+      this.pendingAction = action;
+      this.pendingItem = item;
+      this.actionRemark = '';
+      this.showRemarkModal = true;
+    }
+  }
+
+  confirmRemarkAction(): void {
+    if (!this.pendingAction) return;
+    if (!this.actionRemark?.trim()) {
+      this.toast.show('Please enter remarks.', 'warning');
+      return;
+    }
+    this.performAction(this.pendingAction, this.actionRemark.trim());
+  }
+
+  closeRemarkModal(): void {
+    this.showRemarkModal = false;
+    this.pendingAction = null;
+    this.pendingItem = null;
+    this.actionRemark = '';
+  }
+
+  private performAction(action: any, remark: string): void {
+    const payload = {
+      id: action.id,
+      action: action.action,
+      name: action.name,
+      remarks: remark
+    };
+    this.isSubmittingAction = true;
+    this.workflowService.performWorkflowAction(payload).subscribe({
+      next: (response: any) => {
+        this.isSubmittingAction = false;
+        this.toast.show(response?.message || 'Action performed successfully', 'success');
+        this.closeRemarkModal();
+        this.fetchData();
+      },
+      error: (error: any) => {
+        this.isSubmittingAction = false;
+        this.toast.show(error?.error?.message || error?.errorMessage || 'Error performing action. Please try again.', 'error');
+      }
+    });
   }
 
 }

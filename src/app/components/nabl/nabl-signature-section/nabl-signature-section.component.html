@@ -1,0 +1,64 @@
+<div class="accordion-section mb-3" *ngIf="showSection">
+    <div class="section-header" (click)="toggleSection()" style="cursor: pointer;">
+        <i class="bi" [ngClass]="isOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+        <span class="fw-bold ms-2">{{ sectionTitle }}</span>
+    </div>
+    <div *ngIf="isOpen" class="section-body" [formGroup]="parentForm">
+        <div class="row g-3">
+            <!-- Prepared By (auto-filled from logged-in user) -->
+            <div class="col-md-4">
+                <label class="form-label">Prepared By</label>
+                <input type="text" class="form-control bg-light" formControlName="preparedBy" readonly />
+                <small class="text-muted">Auto-filled from logged-in user</small>
+            </div>
+
+            <!-- Reviewed By (with suggestions) -->
+            <div class="col-md-4">
+                <label class="form-label">Reviewed By</label>
+                <div class="dropup" #reviewerBox>
+                    <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Type or select..."  (focus)="openReviewer()"  />
+                    <div class="dropdown">
+                        <!-- <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                            title="Select from suggested reviewers">
+                        </button> -->
+                        <ul class="dropdown-menu dropdown-menu-end"   [class.show]="isReviewerOpen" style="position: relative;">
+                            <li *ngIf="reviewers.length === 0">
+                                <span class="dropdown-item-text text-muted">No suggestions</span>
+                            </li>
+                            <li *ngFor="let r of reviewers">
+                                <button class="dropdown-item" type="button" (click)="onReviewerClick(r)">
+                                    {{ r.name }}
+                                    <small class="text-muted d-block">{{ r.designation }}</small>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved By (with suggestions) -->
+            <div class="col-md-4">
+                <label class="form-label">Approved By</label>
+                <div class="dropup" #approverBox>
+                    <input type="text" class="form-control" formControlName="approvedBy" placeholder="Type or select..."   (focus)="openApprover()" />
+                    <div class="dropdown">
+                        <!-- <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                            title="Select from suggested approvers">
+                        </button> -->
+                        <ul class="dropdown-menu dropdown-menu-end" [class.show]="isApproverOpen" style="position: relative;">
+                            <li *ngIf="approvers.length === 0">
+                                <span class="dropdown-item-text text-muted">No suggestions</span>
+                            </li>
+                            <li *ngFor="let a of approvers">
+                                <button class="dropdown-item" type="button" (click)="onApproverClick(a)">
+                                    {{ a.name }}
+                                    <small class="text-muted d-block">{{ a.designation }}</small>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

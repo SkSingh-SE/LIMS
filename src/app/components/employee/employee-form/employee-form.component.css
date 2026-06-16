@@ -1,48 +1,306 @@
-.form-wizard-list .count {
-    line-height: 35px !important;
+/* ─── Theme Variables ─── */
+:host ::ng-deep {
+  --primary-color: #da261c;
+  --primary-hover: #b91c1c;
 }
 
+/* ─── Wizard Tabs ─── */
+.form-wizard-list .count {
+  line-height: 35px !important;
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #e9ecef;
+}
 
 .nav-tabs .nav-link {
-    color: #1A1A80;
-    /* Custom color */
+  color: #495057;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.25s ease;
+  font-size: 0.78rem;
 }
 
 .nav-tabs .nav-link:hover {
-    color: #FF2C1F;
-    /* Hover color */
-    border-color: #FF2C1F;
+  color: var(--primary-color, #da261c);
+  border-bottom-color: rgba(218, 38, 28, 0.3);
+  background: transparent;
 }
 
 .nav-tabs .nav-link.active {
-    color: #fff !important;
-    /* Active tab color */
-    border-color: #FF2C1F;
-    background: #FF2C1F;
-    border-bottom: 0;
-
+  color: var(--primary-color, #da261c);
+  border-color: transparent;
+  border-bottom: 3px solid var(--primary-color, #da261c);
+  background: transparent;
+  font-weight: 600;
 }
 
+/* ─── Fieldset (Option A: Left Accent) ─── */
+fieldset.border {
+  border: none !important;
+  border-left: 3px solid var(--primary-color, #da261c) !important;
+  background: #fafbfc;
+  border-radius: 0 6px 6px 0;
+  padding: 0.6rem 0.8rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+fieldset legend {
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  background: transparent;
+  padding: 0 0.4rem;
+  margin-bottom: 0.2rem;
+  border: none;
+  float: none;
+  width: auto;
+}
+
+/* ─── Section Divider ─── */
+.section-divider {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  border-bottom: 2px solid var(--primary-color, #da261c);
+  padding-bottom: 0.15rem;
+  display: inline-block;
+}
+
+/* ─── Cards ─── */
 .card {
-    border-color: #FF2C1F !important;
-    border-radius: 10px;
-    background: transparent;
-    border: 0;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
+  border: 1px solid #e9ecef !important;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
 }
 
 .card .card-header {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    background: #FF2C1F;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  background: var(--primary-color, #da261c);
+  font-size: 0.85rem;
+  padding: 0.4rem 1rem;
 }
 
-input::file-selector-button {
-    color: #fff;
-    background-color: #FF2C1F;
+.card .card-body {
+  padding: 0.6rem 0.8rem;
 }
+
+/* ─── Form Controls (Ultra Compact) ─── */
+.form-control,
+.form-select {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  height: auto;
+  min-height: 30px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+textarea.form-control {
+  min-height: unset;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #da261c;
+  box-shadow: 0 0 0 0.12rem rgba(218, 38, 28, 0.12);
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
+}
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.15rem;
+}
+
+/* ─── Searchable Dropdown — compact override for this form ─── */
+:host ::ng-deep app-searchable-dropdown .form-label,
+:host ::ng-deep app-searchable-dropdown-modal .form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group,
+:host ::ng-deep app-searchable-dropdown-modal .input-group {
+  min-height: 30px;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group .form-control,
+:host ::ng-deep app-searchable-dropdown-modal .input-group .form-control {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ─── Checkbox / Radio ─── */
+.form-check {
+  margin-bottom: 0;
+}
+
+.form-check-input {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+}
+
+.form-check-inline {
+  margin-right: 0.75rem;
+}
+
+.form-check-label {
+  font-size: 0.78rem;
+}
+
+/* ─── Row Spacing Override ─── */
+.row.gy-1 > * {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+/* ─── Tables (Compact) ─── */
+.table-compact,
+.table-sm {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.table-compact th,
+.table-sm thead th {
+  background: #f1f3f5;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-compact td,
+.table-sm tbody td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-compact tbody tr:hover,
+.table-sm tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  font-size: 0.8rem;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+:host ::ng-deep .btn-outline-primary,
+.btn-outline-primary {
+  color: #da261c !important;
+  border-color: #da261c !important;
+}
+
+:host ::ng-deep .btn-outline-primary:hover,
+.btn-outline-primary:hover {
+  background-color: #da261c !important;
+  border-color: #da261c !important;
+  color: #fff !important;
+}
+
+/* ─── File Upload ─── */
+input::file-selector-button {
+  color: #fff;
+  background-color: var(--primary-color, #da261c);
+  border: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+input::file-selector-button:hover {
+  background-color: var(--primary-hover, #b91c1c);
+}
+
 .input-file {
-    cursor: pointer !important;
+  cursor: pointer !important;
+}
+
+/* ─── Text Helpers ─── */
+.text-sm {
+  font-size: 0.72rem;
+}
+
+/* ─── Sticky Bottom Bar ─── */
+.sticky-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: #fff;
+  border-top: 2px solid var(--primary-color, #da261c);
+  padding: 0.4rem 1.5rem;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .nav-tabs .nav-link {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.72rem;
   }
+
+  .card .card-body {
+    padding: 0.5rem;
+  }
+
+  .sticky-bottom-bar {
+    padding: 0.4rem 0.6rem;
+  }
+
+  fieldset.border {
+    padding: 0.5rem 0.6rem !important;
+  }
+}
+
+/* ─── Subtle Animations ─── */
+.tab-pane {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

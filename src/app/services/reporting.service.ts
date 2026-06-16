@@ -18,9 +18,15 @@ export interface ReportingListItem {
   condition: string;
   status: 'Pending' | 'Completed' | 'ReadyForReport' | 'Report Pending' | 'Approved';
   reportHeaderId?: string;
+  reportNo?: string;
+  inwardId?: number;
   workflowInstanceId?: string;
   canTakeAction?: boolean;
   actions?: WorkflowAction[];
+  totalAmount?: number;
+  price?: number;
+  pricing?: any;
+  customerID?: number;
 }
 
 export interface TestParameter {
@@ -30,28 +36,45 @@ export interface TestParameter {
   unit: string;
   minValue: number | string;
   maxValue: number | string;
+  specMinValue?: number | string;
+  specMaxValue?: number | string;
   isWithinLimit: boolean;
+  resultStatus?: string;
   remarks?: string;
+  decimalPrecision?: number;
+  conversionFactor?: number;
+  convertedValue?: number;
+  selectedUnit?: string;
+}
+
+export interface TestImage {
+  id: number;
+  filePath: string;
+  caption?: string;
 }
 
 export interface MechanicalTest {
   testResultHeaderId: string;
   testName: string;
+  testMethod?: string;
   reportNo: string;
   specification1Name: string;
   specification2Name?: string;
   status: 'Completed' | 'Running' | 'Pending' | 'Failed';
   parameters: TestParameter[];
+  images?: TestImage[];
 }
 
 export interface ChemicalTest {
   testResultHeaderId: string;
   testName: string;
+  testMethod?: string;
   reportNo: string;
   specification1Name: string;
   specification2Name?: string;
   status: 'Completed' | 'Running' | 'Pending' | 'Failed';
   parameters: TestParameter[];
+  images?: TestImage[];
 }
 
 export interface LongTermTestReading {
@@ -92,6 +115,37 @@ export interface ReportingPreview {
   longTermTests: LongTermTest[];
   actions: WorkflowAction[];
   amendment: AmendmentDetails | null;
+  pricing?: any;
+  priceSnapshot?: any;
+  hasPriceSnapshot?: boolean;
+  // Sample details for approval review
+  grade?: string;
+  heatNo?: string;
+  batchNo?: string;
+  sampleDescription?: string;
+  description?: string;
+  quantity?: string;
+  sampleReceivedDate?: string;
+  testStartDate?: string;
+  testDate?: string;
+  thickness?: number;
+  diameter?: number;
+  width?: number;
+  length?: number;
+  statementOfConformity?: string;
+  decisionRule?: string;
+  ulrNo?: string;
+  ulr?: string;
+  // NABL compliance fields
+  productForm?: string;
+  specimenOrientation?: string;
+  heatTreatment?: string;
+  roomTemperature?: number;
+  roomHumidity?: number;
+  equipmentUsed?: string;
+  crossSectionArea?: number;
+  gaugeLength?: number;
+  canSubmitForReportApproval?: boolean;
 }
 
 @Injectable({
@@ -202,7 +256,25 @@ export class ReportingService {
     return this.http.get<any>(`${this.apiUrl}/generate-pdf/${sampleId}`, {});
   }
 
+  submitForReportApproval(sampleId: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/TestResults/submit-for-report-review/${sampleId}`, {});
+  }
+
   submitAmendment(formData: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/request-amendment`, formData);
+  }
+
+  getAvailableFormats(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/formats`);
+  }
+
+  getAvailableFormatsForReport(reportHeaderId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${reportHeaderId}/available-formats`);
+  }
+
+  generateByFormat(reportHeaderId: number, formatType: number, watermark?: string): Observable<Blob> {
+    let url = `${this.apiUrl}/${reportHeaderId}/generate/${formatType}`;
+    if (watermark) url += `?watermark=${encodeURIComponent(watermark)}`;
+    return this.http.get(url, { responseType: 'blob' });
   }
 }

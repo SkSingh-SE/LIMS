@@ -1,166 +1,367 @@
-<div class="container-fluid p-3 redwhite-bg">
-  <!-- SECTION 1: SAMPLE SUMMARY -->
-  <div class="card shadow-sm mb-3 red-card">
-    <div class="card-body">
-      <legend
-        class="w-auto px-2 fw-semibold theme-color"
-        style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-      >
-        Sample Information
-      </legend>
+<div class="container-fluid p-3">
 
-      <div class="row g-2 compact-info">
-        <div class="col-md-2">
-          <strong>Case No:</strong>
-          {{ inward.caseNo }}
-        </div>
-        <div class="col-md-2">
-          <strong>Customer</strong>
-          {{ inward.customerName }}
-        </div>
-        <div class="col-md-2">
-          <strong>Sample No:</strong>
-          {{ sample.sampleNo }}
-        </div>
-        <div class="col-md-2">
-          <strong>Material:</strong>
-          {{ sample.material }}
-        </div>
-        <div class="col-md-2">
-          <strong>Metal Class:</strong>
-          {{ sample.metalClassification }}
-        </div>
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Red Gradient Bar                                   -->
+  <!-- ================================================================ -->
+  <div class="page-header-bar">
+    <h4>
+      <i class="bi bi-clipboard2-pulse me-2"></i>Test Result Entry
+    </h4>
+    <div class="header-meta">
+      <span class="badge">{{ inward?.caseNo }}</span>
+      <span class="badge" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" [title]="inward?.customerName">{{ inward?.customerName }}</span>
+      <app-test-status-badge *ngIf="sample?.sampleStatus" [status]="sample.sampleStatus"></app-test-status-badge>
+      <button class="btn btn-sm btn-outline-light ms-2" type="button" (click)="cancel()">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+      </button>
+    </div>
+  </div>
 
-        <div class="col-md-2">
-          <strong>Condition:</strong>
-          {{ sample.productCondition }}
-        </div>
-        <div class="col-md-2">
-          <strong>Batch No:</strong>
-          {{ sample.batchNo }}
-        </div>
-        <div class="col-md-3">
-          <strong>Remarks:</strong>
-          {{ sample.remarks }}
-        </div>
+  <!-- ================================================================ -->
+  <!-- INFO CARDS GRID                                                  -->
+  <!-- ================================================================ -->
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-label">Sample ID</div>
+      <div class="info-value">{{ sample?.sampleNo }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Client</div>
+      <div class="info-value">{{ inward?.customerName }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Material</div>
+      <div class="info-value">{{ sample?.material }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Classification</div>
+      <div class="info-value">{{ sample?.metalClassification }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Condition</div>
+      <div class="info-value">{{ sample?.productCondition || '-' }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.productForm">
+      <div class="info-label">Product Form</div>
+      <div class="info-value">{{ sample.productForm }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.specimenOrientation">
+      <div class="info-label">Orientation</div>
+      <div class="info-value">{{ sample.specimenOrientation }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.heatTreatment">
+      <div class="info-label">Heat Treatment</div>
+      <div class="info-value">{{ sample.heatTreatment }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Batch No</div>
+      <div class="info-value">{{ sample?.batchNo || '-' }}</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Remarks</div>
+      <div class="info-value" [title]="sample?.remarks">{{ sample?.remarks || '-' }}</div>
+    </div>
+    <div class="info-card" *ngIf="sample?.thickness || sample?.diameter || sample?.width || sample?.length">
+      <div class="info-label">Dimensions</div>
+      <div class="info-value">
+        <span *ngIf="sample?.thickness">T:{{sample.thickness}}mm </span>
+        <span *ngIf="sample?.diameter">D:{{sample.diameter}}mm </span>
+        <span *ngIf="sample?.width">W:{{sample.width}}mm </span>
+        <span *ngIf="sample?.length">L:{{sample.length}}mm </span>
+        <span *ngIf="sample?.crossSectionArea">CSA:{{sample.crossSectionArea}}mm² </span>
+        <span *ngIf="sample?.gaugeLength">GL:{{sample.gaugeLength}}mm</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 2: PLANS + TESTS -->
-  <div class="accordion" id="plansAccordion" [formGroup]="resultForm">
-    <div formArrayName="plans">
-      <div *ngFor="let plan of plansFA.controls; let p = index" class="accordion-item border-danger p-2" [formGroupName]="p">
-        <h2 class="accordion-header">
-          <button
-            class="accordion-button collapsed fw-bold text-danger py-2 px-2"
-            type="button"
-            data-bs-toggle="collapse"
-            [attr.data-bs-target]="'#plan-' + p"
-            aria-expanded="false"
-            [attr.aria-controls]="'plan-' + p"
-          >
-            <span class="fw-semibold text-dark text-uppercase me-2">{{ plans[p].type }} Tests </span>
+  <!-- ================================================================ -->
+  <!-- TOP-LEVEL TABS                                                   -->
+  <!-- ================================================================ -->
+  <ul class="nav main-tabs mb-0">
+    <li>
+      <button class="main-tab-link" [class.active]="activeMainTab === 'results'" (click)="activeMainTab = 'results'">
+        <i class="bi bi-clipboard2-pulse"></i>
+        Test Results
+        <span class="main-tab-badge">{{ plans.length }}</span>
+      </button>
+    </li>
+    <li>
+      <button class="main-tab-link" [class.active]="activeMainTab === 'preparation'" (click)="activeMainTab = 'preparation'">
+        <i class="bi bi-scissors"></i>
+        Preparation &amp; Pricing
+        <span class="main-tab-badge" *ngIf="unifiedPriceSummary">
+          &#8377;{{ unifiedPriceSummary.grandTotal | number:'1.0-0' }}
+        </span>
+      </button>
+    </li>
+  </ul>
 
+  <!-- ================================================================ -->
+  <!-- TAB 1: TEST RESULTS                                              -->
+  <!-- ================================================================ -->
+  <div class="main-tab-content" *ngIf="activeMainTab === 'results'">
 
-            <span class="small text-danger-600">
-              <i class="bi bi-journal-text me-1"></i>
-               Specification:
-              <span class="fw-semibold">
-                {{ plans[p].specification }}
-              </span>
-            </span>
-          </button>
-        </h2>
+    <!-- Alert Banners (conditional — only when parameters fail/marginal) -->
+    <ng-container *ngIf="parameterAlerts.length > 0">
+      <div *ngFor="let alert of parameterAlerts"
+        class="alert-banner"
+        [ngClass]="alert.type === 'fail' ? 'alert-banner-fail' : 'alert-banner-warn'">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi" [ngClass]="alert.type === 'fail' ? 'bi-x-octagon-fill' : 'bi-exclamation-triangle-fill'"></i>
+          <strong>{{ alert.title }}</strong>
+          <span class="ms-2">{{ alert.message }}</span>
+        </div>
+        <button type="button" class="btn-close" (click)="dismissAlert(alert.id)"></button>
+      </div>
+    </ng-container>
 
-        <div [id]="'plan-' + p" class="accordion-collapse collapse" data-bs-parent="#plansAccordion">
-          <div class="accordion-body">
+    <!-- PLAN TABS + TESTS -->
+    <div [formGroup]="resultForm">
+      <div formArrayName="plans">
+
+        <!-- Plan Sub-Tabs -->
+        <ul class="plan-tabs">
+          <li *ngFor="let plan of plansFA.controls; let p = index">
+            <button
+              class="plan-tab-link"
+              [class.active]="activePlanIndex === p"
+              type="button"
+              (click)="activePlanIndex = p">
+              <span class="plan-tab-type">{{ plans[p].type }}</span>
+              <span class="plan-tab-spec">{{ plans[p].specification }}</span>
+              <span class="badge bg-info ms-1" *ngIf="plans[p].specimenLabel">{{ plans[p].specimenLabel }}</span>
+              <span class="plan-tab-count" *ngIf="!plans[p].specimenLabel">{{ plans[p].tests.length }}</span>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div>
+          <div
+            *ngFor="let plan of plansFA.controls; let p = index"
+            class="tab-pane"
+            [class.active]="activePlanIndex === p"
+            [formGroupName]="p">
+
             <div formArrayName="tests">
               <div
                 *ngFor="let test of getTests(p).controls; let t = index"
-                class="card mb-3 border-secondary test-card"
-                [formGroupName]="t"
-              >
-                <div class="card-header bg-light d-flex justify-content-between align-items-start">
+                class="test-card"
+                [ngClass]="getTestCardClass(plans[p].tests[t].status)"
+                [formGroupName]="t">
+
+                <!-- Test Card Header -->
+                <div class="test-card-header">
                   <div class="d-flex flex-column">
-                    <div class="fw-semibold text-dark">
-                      <span class="text-danger-600"> {{ plans[p].tests[t].name }}</span>
-                      <div class="me-0 d-flex align-items-center gap-2 small text-muted">
-                        <i class="bi bi-file-earmark-text"></i>
-                        <span>Report No:</span>
-                        <span class="badge bg-light text-dark border">
-                          {{ plans[p].tests[t].reportNo }}
-                        </span>
-                      </div>
+                    <span class="fw-semibold">{{ plans[p].tests[t].name }}</span>
+                    <div class="d-flex align-items-center gap-2 small text-muted">
+                      <i class="bi bi-file-earmark-text"></i>
+                      <span>Report No:</span>
+                      <span class="badge bg-light text-dark border">{{ plans[p].tests[t].reportNo }}</span>
+                      <app-test-status-badge [status]="plans[p].tests[t].status"></app-test-status-badge>
                     </div>
                   </div>
 
-                  <div class="text-end">
-                    <!-- Status Badge (top-right) -->
-                    <span class="badge me-2">
-                      <app-test-status-badge [status]="plans[p].tests[t].status"></app-test-status-badge>
+                  <!-- NABL Scope Summary Banner -->
+                  <div *ngIf="hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-danger py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <span>
+                      <strong>NABL Scope:</strong>
+                      {{ getNablScopeSummary(plans[p].tests[t].headerId).outOfScopeCount }} parameter(s) are outside NABL accreditation scope.
+                      Report will NOT carry NABL endorsement for these tests.
+                    </span>
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                      <input type="checkbox" class="form-check-input"
+                        [(ngModel)]="nablScopeAcknowledged[plans[p].tests[t].headerId]"
+                        [ngModelOptions]="{standalone: true}">
+                      I acknowledge
+                    </label>
+                  </div>
+                  <div *ngIf="hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-success py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    <i class="bi bi-shield-check"></i>
+                    <span>All parameters are within NABL accreditation scope
+                      <span *ngIf="getNablScopeSummary(plans[p].tests[t].headerId).notAccreditedCount > 0" class="text-muted">
+                        ({{ getNablScopeSummary(plans[p].tests[t].headerId).notAccreditedCount }} parameter(s) not in scope)
+                      </span>
+                    </span>
+                  </div>
+                  <div *ngIf="(nablScopeMap[plans[p].tests[t].headerId] || []).length > 0 && !hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    <i class="bi bi-shield-x"></i>
+                    <span>No parameters are under NABL accreditation scope for this test. Create scope entry in ISO Scope form.</span>
+                  </div>
+
+                  <!-- Orientation Mismatch Warning Banner -->
+                  <div *ngIf="hasOrientationMismatches(plans[p].tests[t].headerId)"
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span><strong>Orientation Mismatch:</strong> Specimen orientation does not match specification requirement for
+                      {{ orientationWarnings[plans[p].tests[t].headerId]?.warnings?.length }} parameter(s).
+                    </span>
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                      <input type="checkbox" class="form-check-input"
+                        [(ngModel)]="orientationDeviationAcknowledged[plans[p].tests[t].headerId]"
+                        [ngModelOptions]="{standalone: true}">
+                      I confirm this deviation is intentional
+                    </label>
+                  </div>
+
+                  <!-- Test Toolbar -->
+                  <div class="test-toolbar d-flex align-items-center gap-2">
+                    <button
+                      *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId) && plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' && plans[p].tests[t].status !== 'Long-Term'"
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      (click)="startTest(p, t)"
+                      [disabled]="plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Long-Term'"
+                      title="Start Test">
+                      <i class="bi bi-play-fill me-1"></i>Start Test
+                    </button>
+
+                    <button
+                      *ngIf="!isTestFinalized(plans[p].tests[t].status) && (plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'In Progress' || plans[p].tests[t].status === 'Long-Term')"
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      (click)="saveTestWise(p, t)"
+                      title="Save all parameters for this test">
+                      <i class="bi bi-floppy me-1"></i>Save
+                    </button>
+
+                    <button
+                      *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId) && (plans[p].tests[t].status === 'Started' || plans[p].tests[t].status === 'In Progress' || plans[p].tests[t].status === 'Long-Term')"
+                      type="button"
+                      class="btn btn-save btn-sm"
+                      (click)="completeTest(p, t)"
+                      [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' && plans[p].tests[t].status !== 'Long-Term'"
+                      title="Complete Test">
+                      <i class="bi bi-check-circle me-1"></i>Complete Test
+                    </button>
+
+                    <!-- Submit for Verification (per test — after Completed) -->
+                    <button
+                      *ngIf="plans[p].tests[t].status === 'Completed'"
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      (click)="submitForVerification(p, t)"
+                      title="Submit this test for reviewer verification">
+                      <i class="bi bi-send-check me-1"></i>Submit for Verification
+                    </button>
+
+                    <!-- Verification Status Badges -->
+                    <span *ngIf="plans[p].tests[t].status === 'PendingVerification'"
+                      class="badge bg-warning text-dark">
+                      <i class="bi bi-hourglass-split me-1"></i>Pending Verification
+                    </span>
+                    <span *ngIf="plans[p].tests[t].status === 'Verified'"
+                      class="badge bg-success">
+                      <i class="bi bi-patch-check me-1"></i>Verified
+                    </span>
+                    <span *ngIf="plans[p].tests[t].status === 'VerificationRejected'"
+                      class="badge bg-danger">
+                      <i class="bi bi-x-octagon me-1"></i>Rejected — Re-test Required
                     </span>
 
-                    <!-- Action buttons group (respect existing *ngIf and [disabled]) -->
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Test actions">
+                    <div class="d-flex gap-1">
                       <button
                         *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
                         type="button"
-                        class="btn btn-primary"
-                        (click)="startTest(p, t)"
-                        [disabled]="
-                          plans[p].tests[t].status === 'Started' ||
-                          plans[p].tests[t].status === 'Completed' ||
-                          plans[p].tests[t].status === 'Long-Term'
-                        "
-                        title="Start Test"
-                      >
-                        <i class="bi bi-play-fill"></i>
-                        Start
+                        class="btn btn-outline-warning btn-sm"
+                        (click)="openMoveToLongTermModal(p, t)"
+                        [disabled]="(plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress') || plans[p].tests[t].status == 'Completed'"
+                        title="Move to Long-Term Tracking">
+                        <i class="bi bi-hourglass-split"></i>
                       </button>
 
                       <button
-                        *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
+                        *ngIf="plans[p].tests[t].equipmentId && !isHeaderCompleted(plans[p].tests[t].headerId)"
                         type="button"
-                        class="btn btn-success"
-                        (click)="completeTest(p, t)"
-                        [disabled]="plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress' && plans[p].tests[t].status !== 'Long-Term'"
-                        title="Complete Test"
-                      >
-                        <i class="bi bi-check"></i>
-                        Complete
-                      </button>
-                      <button
-                        *ngIf="!isHeaderCompleted(plans[p].tests[t].headerId)"
-                        type="button"
-                        class="btn btn-warning"
-                        (click)="openMoveToLongTermModal(p, t)"
-                        [disabled]="
-                          (plans[p].tests[t].status !== 'Started' && plans[p].tests[t].status !== 'In Progress') ||
-                          plans[p].tests[t].status == 'Completed'
-                        "
-                        title="Move to Long-Term Tracking"
-                      >
-                        <i class="bi bi-hourglass"></i>
-                        Long-Term
+                        class="btn btn-outline-info btn-sm"
+                        (click)="fetchMachineData(plans[p].tests[t].headerId, plans[p].tests[t].equipmentId)"
+                        [disabled]="machineDataLoading[plans[p].tests[t].headerId]"
+                        title="Fetch data from connected machine">
+                        <i class="bi" [ngClass]="machineDataLoading[plans[p].tests[t].headerId] ? 'bi-arrow-repeat spin' : 'bi-cpu'"></i>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- RESULT ENTRY TABLE -->
+                <!-- Environment & Equipment Panel (collapsible) -->
+                <div class="env-panel">
+                  <button
+                    class="btn btn-link btn-sm text-muted text-decoration-none w-100 text-start py-1 px-3"
+                    type="button"
+                    (click)="toggleEnvInfo(plans[p].tests[t].headerId)">
+                    <i class="bi" [ngClass]="envInfoVisible[plans[p].tests[t].headerId] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                    Environment &amp; Equipment
+                  </button>
+
+                  <div *ngIf="envInfoVisible[plans[p].tests[t].headerId]" class="px-3 pb-2">
+                    <div class="row g-2 small">
+                      <div class="col-md-2" *ngIf="environmentMap[plans[p].tests[t].headerId] as env">
+                        <div class="d-flex flex-column">
+                          <span class="text-muted fw-semibold">Lab Environment</span>
+                          <span *ngIf="env.labRoomName"><i class="bi bi-building me-1"></i>{{ env.labRoomName }}</span>
+                          <span *ngIf="env.roomTemperature != null"><i class="bi bi-thermometer-half me-1"></i>{{ env.roomTemperature }}&#176;C</span>
+                          <span *ngIf="env.roomHumidity != null"><i class="bi bi-droplet me-1"></i>{{ env.roomHumidity }}% RH</span>
+                        </div>
+                      </div>
+                      <div class="col-md-3" *ngIf="testTimingMap[plans[p].tests[t].headerId] as timing">
+                        <div class="d-flex flex-column">
+                          <span class="text-muted fw-semibold">Test Timing</span>
+                          <span><i class="bi bi-play-circle me-1"></i>Start: {{ formatDateTime(timing.testStartTime) }}</span>
+                          <span><i class="bi bi-stop-circle me-1"></i>End: {{ formatDateTime(timing.testEndTime) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-md-2" *ngIf="testTimingMap[plans[p].tests[t].headerId]?.performedByName">
+                        <div class="d-flex flex-column">
+                          <span class="text-muted fw-semibold">Performed By</span>
+                          <span><i class="bi bi-person me-1"></i>{{ testTimingMap[plans[p].tests[t].headerId].performedByName }}</span>
+                        </div>
+                      </div>
+                      <div class="col-md-5">
+                        <div class="d-flex flex-column">
+                          <span class="text-muted fw-semibold">Equipment Used</span>
+                          <div class="d-flex flex-wrap gap-1 align-items-center">
+                            <span *ngFor="let eq of selectedEquipmentMap[plans[p].tests[t].headerId] || []" class="badge bg-light text-dark border me-1">
+                              {{ eq.name }}
+                              <button *ngIf="!isViewMode" type="button" class="btn-close btn-close-sm ms-1" style="font-size: 0.5rem;" (click)="removeEquipment(plans[p].tests[t].headerId, eq.id)"></button>
+                            </span>
+                            <div *ngIf="!isViewMode" style="min-width: 180px;">
+                              <app-searchable-dropdown
+                                [placeholder]="'Add Equipment'"
+                                [labelName]="'Equipment'"
+                                [fetchDataFn]="getEquipmentDropdown"
+                                (itemSelected)="onEquipmentSelected(plans[p].tests[t].headerId, $event)"
+                                [hideLabel]="true"
+                                [smallInput]="true"
+                              ></app-searchable-dropdown>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PARAMETER TABLE — Red Gradient Header -->
                 <div class="card-body p-2">
-                  <table class="table table-sm table-bordered align-middle">
-                    <thead class="table-danger text-center small">
+                  <table class="table table-sm table-bordered align-middle result-table mb-2">
+                    <thead class="result-table-head text-center">
                       <tr>
                         <th>Parameter</th>
-                        <th>Unit</th>
-                        <th *ngIf="plans[p].type === 'Chemical'">Min</th>
-                        <th *ngIf="plans[p].type === 'Chemical'">Max</th>
-                        <th style="width: 150px">Value</th>
-                        <th *ngIf="plans[p].type === 'Chemical'">Status</th>
-                        <th style="width: 200px">Remarks</th>
-                        <th style="width: 80px">Action</th>
+                        <th style="width: 70px">Unit</th>
+                        <th *ngIf="plans[p].type !== 'Chemical'" style="width: 130px">Spec Range</th>
+                        <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Min</th>
+                        <th *ngIf="plans[p].type === 'Chemical'" style="width: 80px">Max</th>
+                        <th style="width: 140px">Value</th>
+                        <th style="width: 90px">Status</th>
+                        <th style="width: 100px">NABL Scope</th>
+                        <th style="width: 150px">Method Used</th>
+                        <th style="width: 180px">Remarks</th>
+                        <th style="width: 60px">Billable</th>
+                        <th style="width: 120px">Actions</th>
                       </tr>
                     </thead>
 
@@ -168,220 +369,471 @@
                       <tr
                         *ngFor="let row of getParameters(p, t).controls; let r = index"
                         [formGroupName]="r"
-                        [ngClass]="getParameterRowClass(row.value)"
-                      >
+                        [ngClass]="getParameterRowClass(row.value)">
+
+                        <!-- Parameter Dropdown -->
                         <td [class.row-disabled]="isParameterCalculated(row.value)">
+                          <div class="d-flex align-items-center gap-1">
+                            <i *ngIf="row.value.formulaExpression" class="bi bi-calculator text-primary" title="Formula parameter"></i>
+                            <app-searchable-dropdown
+                              class="w-100"
+                              [placeholder]="'Search Parameter'"
+                              [labelName]="'Parameter'"
+                              [fetchDataFn]="getParameterDrop(plans[p].type)"
+                              (itemSelected)="onParameterSelected(p, t, r, $event)"
+                              [hideLabel]="true"
+                              [selectedItem]="row.get('parameterID')?.value"
+                              [isDisabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)"
+                            ></app-searchable-dropdown>
+                          </div>
+                        </td>
+
+                        <!-- Unit (dropdown if equivalent units available) -->
+                        <td>
+                          <ng-container *ngIf="getUnitOptions(row).length > 1; else plainUnit">
+                            <select class="form-select form-select-sm" formControlName="selectedUnit"
+                              (change)="onUnitChanged(p, t, r)"
+                              [attr.disabled]="isViewMode || isTestFinalized(plans[p].tests[t].status) ? true : null">
+                              <option *ngFor="let opt of getUnitOptions(row)" [value]="opt.unitName">
+                                {{ opt.unitName }}
+                              </option>
+                            </select>
+                          </ng-container>
+                          <ng-template #plainUnit>
+                            <input type="text" class="form-control form-control-sm" formControlName="unit" readonly
+                              [class.row-disabled]="isParameterCalculated(row.value)" />
+                          </ng-template>
+                        </td>
+
+                        <!-- Spec Range (General tests only — Chemical uses Min/Max columns) -->
+                        <td *ngIf="plans[p].type !== 'Chemical'" class="text-center small">
+                          <ng-container *ngIf="(row.value.specMinValue != null && row.value.specMinValue !== '') || (row.value.specMaxValue != null && row.value.specMaxValue !== ''); else specEditTpl">
+                            <span class="text-muted"
+                              [title]="row.value.acceptanceCriteria ? 'Acceptance: ' + row.value.acceptanceCriteria : ''">
+                              {{ row.value.specMinValue ?? '-' }} &ndash; {{ row.value.specMaxValue ?? '-' }}
+                            </span>
+                          </ng-container>
+                          <ng-template #specEditTpl>
+                            <div class="d-flex gap-1 align-items-center" *ngIf="!isViewMode">
+                              <input type="number" class="form-control form-control-sm" style="width:55px; font-size:0.75rem"
+                                formControlName="specMinValue" placeholder="Min" />
+                              <span>–</span>
+                              <input type="number" class="form-control form-control-sm" style="width:55px; font-size:0.75rem"
+                                formControlName="specMaxValue" placeholder="Max" />
+                            </div>
+                            <span *ngIf="isViewMode" class="text-muted">- &ndash; -</span>
+                          </ng-template>
+                        </td>
+
+                        <!-- Chemical Only: Min (editable — user enters if not auto-populated from spec) -->
+                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
+                          <input type="text" class="form-control form-control-sm" formControlName="minValue"
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Min"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter minimum value'" />
+                        </td>
+
+                        <!-- Chemical Only: Max (editable — user enters if not auto-populated from spec) -->
+                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
+                          <input type="text" class="form-control form-control-sm" formControlName="maxValue"
+                            [readOnly]="isViewMode || isParameterCalculated(row.value)" appDecimalOnly
+                            placeholder="Max"
+                            [ngClass]="{ 'is-invalid': row.get('maxValue')?.invalid && row.get('maxValue')?.touched }"
+                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter' : 'Enter maximum value'" />
+                          <span *ngIf="row.get('maxValue')?.errors && row.get('maxValue')?.touched" class="text-danger small">
+                            Required
+                          </span>
+                        </td>
+
+                        <!-- Value Input -->
+                        <td [class.row-disabled]="isParameterCalculated(row.value)">
+                          <ng-container *ngIf="row.value.parameterType === 'Qualitative'; else quantitativeInput">
+                            <select class="form-select form-select-sm" formControlName="value"
+                              (change)="onValueChanged(p, t, r)"
+                              [disabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)">
+                              <option value="">-- Select --</option>
+                              <option value="Pass">Pass</option>
+                              <option value="Fail">Fail</option>
+                              <option value="Satisfactory">Satisfactory</option>
+                              <option value="Not Satisfactory">Not Satisfactory</option>
+                            </select>
+                          </ng-container>
+                          <ng-template #quantitativeInput>
+                            <ng-container *ngIf="isTestFinalized(plans[p].tests[t].status); else editableValue">
+                              <span class="form-control form-control-sm bg-light" style="border:none;">
+                                {{ row.value.value != null ? (row.value.value | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2)) : '-' }}
+                              </span>
+                            </ng-container>
+                            <ng-template #editableValue>
+                            <input type="text" class="form-control form-control-sm"
+                              [ngClass]="{ 'bg-primary-subtle': row.value.formulaExpression }"
+                              [attr.data-param-input]="p + '-' + t + '-' + r"
+                              formControlName="value" placeholder="Enter Value"
+                              (input)="onValueChanged(p, t, r)"
+                              (keydown)="onParameterKeyDown($event, p, t, r)"
+                              [readOnly]="isParameterCalculated(row.value)"
+                              [title]="row.value.formulaExpression ? 'Formula: ' + row.value.formulaExpression : (isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : '')"
+                              appDecimalOnly />
+                            </ng-template>
+                            <span *ngIf="row.value.formulaExpression" class="formula-tag" title="{{ row.value.formulaExpression }}">
+                              <i class="bi bi-calculator me-1"></i>{{ getReadableFormula(row.value.formulaExpression, p, t) }}
+                              <button *ngIf="!isViewMode" type="button" class="formula-clear" (click)="clearParameterFormula(p, t, r)" title="Clear formula">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </span>
+                            <span *ngIf="getFormulaDependencyWarning(p, t, r)" class="formula-warning-tag"
+                              [title]="getFormulaDependencyWarning(p, t, r)!">
+                              <i class="bi bi-exclamation-triangle me-1"></i>{{ getFormulaDependencyWarning(p, t, r) }}
+                            </span>
+                            <small *ngIf="row.value.convertedValue != null && row.value.selectedUnit !== row.value.unit"
+                              class="text-primary d-block" style="font-size: 10px;">
+                              <i class="bi bi-arrow-repeat me-1"></i>≈ {{ row.value.convertedValue | number:'1.' + (row.value.decimalPrecision || 2) + '-' + (row.value.decimalPrecision || 2) }} {{ row.value.selectedUnit }}
+                            </small>
+                          </ng-template>
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td class="text-center">
+                          <span *ngIf="row.value.resultStatus" class="badge" [ngClass]="getResultStatusClass(row.value.resultStatus)">
+                            <i class="bi" [ngClass]="getResultStatusIcon(row.value.resultStatus)"></i>
+                            {{ row.value.resultStatus }}
+                          </span>
+                          <span *ngIf="!row.value.resultStatus" class="badge badge-pending">
+                            <i class="bi bi-dash-circle"></i> Pending
+                          </span>
+                          <small *ngIf="row.value.acceptanceCriteria" class="d-block text-muted" style="font-size: 10px;"
+                            [title]="row.value.acceptanceCriteria">
+                            {{ row.value.acceptanceCriteria }}
+                          </small>
+                        </td>
+
+                        <!-- NABL Scope Badge -->
+                        <td class="text-center" style="min-width: 90px;">
+                          <ng-container *ngIf="getNablStatus(plans[p].tests[t].headerId, row.value.parameterID) as nabl">
+                            <!-- Under Scope + Value Within Range -->
+                            <span *ngIf="nabl.scopeStatus === 'WithinScope' && nabl.value != null" class="badge bg-success"
+                              [title]="(nabl.nablLowerLimit != null || nabl.nablUpperLimit != null) ? 'NABL Range: ' + (nabl.nablLowerLimit ?? '-') + ' – ' + (nabl.nablUpperLimit ?? '-') : 'Under NABL Scope'">
+                              <i class="bi bi-shield-check me-1"></i>In Scope
+                            </span>
+                            <!-- Under Scope but no value entered yet -->
+                            <span *ngIf="nabl.scopeStatus === 'WithinScope' && nabl.value == null" class="badge bg-info text-dark"
+                              [title]="'This parameter is under NABL accreditation scope'">
+                              <i class="bi bi-shield-fill-check me-1"></i>Under Scope
+                            </span>
+                            <!-- Outside Range -->
+                            <span *ngIf="nabl.scopeStatus === 'OutsideScope'" class="badge bg-danger"
+                              [title]="'NABL Range: ' + (nabl.nablLowerLimit ?? '-') + ' – ' + (nabl.nablUpperLimit ?? '-') + ' | Value: ' + nabl.value">
+                              <i class="bi bi-shield-exclamation me-1"></i>Outside
+                            </span>
+                            <!-- Not Accredited -->
+                            <span *ngIf="nabl.scopeStatus === 'NotAccredited'" class="badge bg-secondary"
+                              title="This parameter is NOT under NABL accreditation scope">
+                              <i class="bi bi-shield-x me-1"></i>Not in Scope
+                            </span>
+                            <!-- Show range below badge if available -->
+                            <small *ngIf="nabl.nablLowerLimit != null || nabl.nablUpperLimit != null"
+                              class="d-block text-muted" style="font-size: 9px;">
+                              {{ nabl.nablLowerLimit ?? '-' }} – {{ nabl.nablUpperLimit ?? '-' }}
+                            </small>
+                          </ng-container>
+                          <!-- No scope data loaded yet -->
+                          <span *ngIf="!getNablStatus(plans[p].tests[t].headerId, row.value.parameterID) && row.value.parameterID"
+                            class="badge bg-light text-muted border" style="font-size: 9px;">
+                            <i class="bi bi-hourglass-split me-1"></i>Checking...
+                          </span>
+                          <!-- Uncertainty -->
+                          <ng-container *ngIf="getUncertainty(plans[p].tests[t].headerId, row.value.parameterID) as unc">
+                            <small class="d-block text-muted" style="font-size: 9px;" *ngIf="unc.expandedUncertainty">
+                              U={{unc.expandedUncertainty}} (k={{unc.coverageFactor}})
+                            </small>
+                          </ng-container>
+                          <!-- Orientation Mismatch Warning -->
+                          <ng-container *ngIf="getOrientationWarning(plans[p].tests[t].headerId, row.value.parameterID) as ow">
+                            <span class="badge bg-warning text-dark d-block mt-1" style="font-size: 9px;"
+                              [title]="'Spec requires: ' + ow.requiredOrientation + ' | Actual: ' + ow.actualOrientation">
+                              Orientation Mismatch
+                            </span>
+                          </ng-container>
+                        </td>
+
+                        <!-- Method Used -->
+                        <td>
                           <app-searchable-dropdown
                             class="w-100"
-                            [placeholder]="'Search Parameter'"
-                            [labelName]="'Parameter'"
-                            [fetchDataFn]="getParameterDrop(plans[p].type)"
-                            (itemSelected)="onParameterSelected(p, t, r, $event)"
+                            [placeholder]="'Test method'"
+                            [labelName]="'Test Method'"
+                            [fetchDataFn]="getTestMethodSpecDrop"
+                            (itemSelected)="onTestMethodUsedSelected(p, t, r, $event)"
                             [hideLabel]="true"
-                            [selectedItem]="row.get('parameterID')?.value"
-                            [isDisabled]="isParameterCalculated(row.value)"
+                            [selectedItem]="row.get('testMethodUsed')?.value"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode || isTestFinalized(plans[p].tests[t].status)"
                           ></app-searchable-dropdown>
-                        </td>
-                        <!-- Unit (Read-Only) -->
-                        <td>
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            formControlName="unit"
-                            readonly
-                            [class.row-disabled]="isParameterCalculated(row.value)"
-                          />
-                        </td>
-
-                        <!-- Chemical Only: Min -->
-                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            formControlName="minValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)"
-                            appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
-                          />
-                        </td>
-
-                        <!-- Chemical Only: Max -->
-                        <td *ngIf="plans[p].type === 'Chemical'" [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            [ngClass]="{
-                              'is-invalid':
-                                plans[p].type === 'Chemical' &&
-                                row.get('maxValue')?.invalid &&
-                                row.get('maxValue')?.touched &&
-                                row.get('maxValue')?.errors &&
-                                row.get('altered')?.value
-                            }"
-                            formControlName="maxValue"
-                            [readOnly]="!row.value?.altered || isParameterCalculated(row.value)"
-                            appDecimalOnly
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
-                          />
-                          <span
-                            *ngIf="plans[p].type === 'Chemical' && row.get('maxValue')?.errors && row.get('maxValue')?.touched"
-                            class="text-danger small"
-                          >
-                            Max is required
-                          </span>
-                        </td>
-
-                        <!-- Value Input with Auto-Focus -->
-                        <td [class.row-disabled]="isParameterCalculated(row.value)">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            [attr.data-param-input]="p + '-' + t + '-' + r"
-                            formControlName="value"
-                            placeholder="Enter Value"
-                            (input)="onValueChanged(p, t, r)"
-                            (keydown)="onParameterKeyDown($event, p, t, r)"
-                            [readOnly]="isParameterCalculated(row.value)"
-                            [title]="isParameterCalculated(row.value) ? 'Calculated parameter - cannot edit' : ''"
-                            appDecimalOnly
-                          />
-                        </td>
-
-                        <!-- PASS / FAIL Badge (Chemical Only) -->
-                        <td *ngIf="plans[p].type === 'Chemical'" class="text-center">
-                          <span *ngIf="row.value.isWithinLimit === true" class="badge bg-success">
-                            <i class="bi bi-check-circle"></i>
-                            PASS
-                          </span>
-                          <span *ngIf="row.value.isWithinLimit === false" class="badge bg-danger">
-                            <i class="bi bi-x-circle"></i>
-                            FAIL
-                          </span>
-                          <span *ngIf="row.value.isWithinLimit === null" class="badge bg-secondary">
-                            <i class="bi bi-dash-circle"></i>
-                            -
-                          </span>
                         </td>
 
                         <!-- Remarks -->
                         <td>
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            formControlName="remarks"
-                            placeholder="Add Remark"
-                            [readOnly]="isParameterCalculated(row.value)"
-                          />
+                          <input type="text" class="form-control form-control-sm" formControlName="remarks"
+                            placeholder="Add Remark" [readOnly]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)" />
                         </td>
 
-                        <!-- Actions -->
+                        <!-- Billable -->
+                        <td class="text-center" style="vertical-align: middle;">
+                          <div class="form-check d-flex justify-content-center m-0"
+                            [class.pe-none]="isTestFinalized(plans[p].tests[t].status)"
+                            [style.opacity]="isTestFinalized(plans[p].tests[t].status) ? '0.6' : '1'">
+                            <input type="checkbox" class="form-check-input" formControlName="isBillable"
+                              style="width: 18px; height: 18px;"
+                              [style.cursor]="isTestFinalized(plans[p].tests[t].status) ? 'not-allowed' : 'pointer'" />
+                          </div>
+                        </td>
+
+                        <!-- Actions (hidden for finalized tests) -->
                         <td class="text-center">
-                          <div class="btn-group btn-group-sm" role="group">
-                            <!-- Save/Update Button -->
-                            <button
-                              type="button"
-                              class="btn btn-outline-info"
+                          <div *ngIf="!isTestFinalized(plans[p].tests[t].status)" class="d-flex align-items-center justify-content-center gap-1">
+                            <button type="button" class="btn btn-outline-info btn-sm"
                               (click)="updateParameterInline(p, t, r)"
                               [disabled]="isParameterCalculated(row.value) || !row.get('parameterID')?.value"
-                              title="Save parameter"
-                            >
+                              title="Save parameter">
                               <i class="bi bi-cloud-upload"></i>
                             </button>
-                            <!-- Delete Button -->
-                            <button
-                              type="button"
-                              class="btn btn-outline-danger"
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                              (click)="openFormulaBuilder(p, t, r)"
+                              title="Edit formula">
+                              <i class="bi bi-calculator"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm"
                               (click)="removeParameter(p, t, r)"
                               [disabled]="isParameterCalculated(row.value)"
-                              title="Remove parameter"
-                            >
+                              title="Remove parameter">
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
+                          <span *ngIf="isTestFinalized(plans[p].tests[t].status)" class="text-muted">—</span>
                         </td>
                       </tr>
                     </tbody>
                   </table>
 
-                  <button class="btn btn-sm btn-outline-danger-600" type="button" (click)="addParameter(p, t)">
-                    <i class="bi bi-plus-circle-dotted"></i>
-                    Add Parameter
-                  </button>
+                  <!-- Parameter action buttons (removed duplicate standalone param button) -->
+                  <div class="d-flex flex-wrap gap-2 mb-2">
+                    <ng-container *ngIf="!isTestFinalized(plans[p].tests[t].status)">
+                    <button class="btn btn-sm btn-outline-primary" type="button"
+                      (click)="loadParametersFromSpec(p, t)"
+                      [disabled]="loadingParams[plans[p].tests[t].headerId]"
+                      title="Load parameters from specification">
+                      <i class="bi" [ngClass]="loadingParams[plans[p].tests[t].headerId] ? 'bi-arrow-repeat spin' : 'bi-download'"></i>
+                      Load Parameters
+                    </button>
+                    <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)">
+                      <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)">
+                      <i class="bi bi-box-arrow-in-down"></i> Add From Test Method
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" type="button" (click)="calculateParameters(p, t)"
+                      title="Auto-calculate formula-based parameters">
+                      <i class="bi bi-calculator"></i> Auto-Calculate
+                    </button>
+                    </ng-container>
+                  </div>
+
+                  <!-- PRICE CALCULATION SECTION -->
+                  <div class="price-card" *ngIf="!isViewMode || priceSummaryMap[plans[p].tests[t].headerId]">
+                    <div class="price-card-header d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-currency-rupee me-1"></i>Price Calculation</span>
+                      <div class="d-flex align-items-center gap-2" *ngIf="!isViewMode">
+                        <button type="button" class="btn btn-outline-info btn-sm"
+                          (click)="toggleRecPanel(plans[p].tests[t].headerId)"
+                          [disabled]="pricingRecLoading[plans[p].tests[t].headerId]">
+                          <i class="bi bi-lightbulb me-1"></i>
+                          <span *ngIf="pricingRecLoading[plans[p].tests[t].headerId]" class="spinner-border spinner-border-sm me-1"></span>
+                          Smart Pricing
+                        </button>
+                        <select *ngIf="priceSummaryMap[plans[p].tests[t].headerId]?.availablePricingTypes?.length > 1"
+                          class="form-select form-select-sm" style="width: auto; font-size: 0.8rem;"
+                          [value]="priceSummaryMap[plans[p].tests[t].headerId]?.selectedPricingType || priceSummaryMap[plans[p].tests[t].headerId]?.defaultPricingType || ''"
+                          (change)="onPricingTypeChange(plans[p].tests[t].headerId, $event)">
+                          <option value="">Auto-detect</option>
+                          <option *ngFor="let pt of priceSummaryMap[plans[p].tests[t].headerId]?.availablePricingTypes" [value]="pt">
+                            {{ pt === 'Element' ? 'Parameter Count' : pt === 'SizeLoad' ? 'Size + Load' : pt === 'SizeAndLoad' ? 'Size + Load Range' : pt === 'FlatRate' ? 'Flat Rate' : pt }}
+                          </option>
+                        </select>
+                      <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-add btn-sm"
+                          (click)="calculateTestPrice(p, t)"
+                          [disabled]="priceLoadingMap[plans[p].tests[t].headerId]"
+                          title="Calculate Price">
+                          <i class="bi bi-calculator me-1"></i>
+                          <span *ngIf="priceLoadingMap[plans[p].tests[t].headerId]" class="spinner-border spinner-border-sm me-1"></span>
+                          Calculate
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm"
+                          (click)="openPriceOverrideModal(plans[p].tests[t].headerId)"
+                          [disabled]="!priceSummaryMap[plans[p].tests[t].headerId]"
+                          title="Override Price">
+                          <i class="bi bi-pencil-square me-1"></i>Override
+                        </button>
+                      </div>
+                      </div>
+                    </div>
+                    <div class="card-body p-2" *ngIf="priceSummaryMap[plans[p].tests[t].headerId] as priceSummary">
+                      <table class="table table-sm table-bordered mb-2" *ngIf="priceBreakdownMap[plans[p].tests[t].headerId]?.length">
+                        <thead class="table-light">
+                          <tr class="small">
+                            <th>Parameter</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-end">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of priceBreakdownMap[plans[p].tests[t].headerId]" class="small">
+                            <td>{{ item.parameterName }}</td>
+                            <td class="text-end">{{ item.unitPrice | number:'1.2-2' }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end fw-semibold">{{ item.amount | number:'1.2-2' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div class="row g-2 small">
+                        <div class="col-auto">
+                          <span class="text-muted">Calculated:</span>
+                          <span class="fw-semibold ms-1">{{ priceSummary.calculatedPrice | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="col-auto" *ngIf="priceSummary.isOverridden">
+                          <span class="badge badge-warn"><i class="bi bi-exclamation-triangle me-1"></i>Overridden</span>
+                          <span class="fw-semibold ms-1 text-danger">{{ priceSummary.overridePrice | number:'1.2-2' }}</span>
+                          <small class="text-muted ms-1" *ngIf="priceSummary.overrideReason">({{ priceSummary.overrideReason }})</small>
+                        </div>
+                        <div class="col-auto ms-auto">
+                          <span class="fw-bold" [ngClass]="priceSummary.isOverridden ? 'text-danger' : 'text-success'">
+                            Final: {{ priceSummary.finalPrice | number:'1.2-2' }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card-body p-2" *ngIf="!priceSummaryMap[plans[p].tests[t].headerId]">
+                      <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>Click "Calculate" to compute pricing based on test parameters.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SMART PRICING RECOMMENDATION PANEL -->
+                  <div class="card mt-2 border-info" *ngIf="showRecPanel[plans[p].tests[t].headerId] && pricingRecMap[plans[p].tests[t].headerId] as recData">
+                    <div class="card-header bg-info bg-opacity-10 py-1 d-flex justify-content-between align-items-center">
+                      <span class="fw-semibold small"><i class="bi bi-lightbulb-fill me-1 text-info"></i>Smart Pricing — {{ recData.testName }}</span>
+                      <button type="button" class="btn-close btn-sm" (click)="showRecPanel[plans[p].tests[t].headerId] = false"></button>
+                    </div>
+                    <div class="card-body p-2">
+                      <!-- Sample Dimensions -->
+                      <div class="mb-2 small" *ngIf="recData.sampleDimensions as dims">
+                        <span class="text-muted me-1">Sample:</span>
+                        <span *ngIf="dims.thickness" class="badge bg-light text-dark border me-1">T:{{dims.thickness}}mm</span>
+                        <span *ngIf="dims.diameter" class="badge bg-light text-dark border me-1">D:{{dims.diameter}}mm</span>
+                        <span *ngIf="dims.width" class="badge bg-light text-dark border me-1">W:{{dims.width}}mm</span>
+                        <span *ngIf="dims.length" class="badge bg-light text-dark border me-1">L:{{dims.length}}mm</span>
+                        <span *ngIf="!dims.thickness && !dims.diameter && !dims.width && !dims.length" class="text-warning">
+                          <i class="bi bi-exclamation-triangle me-1"></i>No dimensions at inward
+                        </span>
+                      </div>
+
+                      <!-- Recommendations -->
+                      <div *ngFor="let rec of recData.recommendations"
+                           class="d-flex align-items-center justify-content-between border rounded p-2 mb-1 small"
+                           [class.border-success]="rec.isRecommended"
+                           [class.bg-success]="rec.isRecommended"
+                           [class.bg-opacity-10]="rec.isRecommended">
+                        <div class="flex-grow-1 me-2">
+                          <div class="fw-semibold">
+                            {{ rec.displayName }}
+                            <span *ngIf="rec.isRecommended" class="badge bg-success ms-1">Best</span>
+                            <span class="badge bg-secondary ms-1">{{ rec.score }}</span>
+                            <span class="badge bg-light text-dark border ms-1">{{ rec.tierCount }} tier(s)</span>
+                          </div>
+                          <div class="text-muted" style="font-size:0.75rem">{{ rec.reason }}</div>
+                          <div *ngIf="rec.autoDetectedValue != null" class="text-success" style="font-size:0.75rem">
+                            <i class="bi bi-check-circle me-1"></i>Auto: {{ rec.autoDetectedValue }} {{ rec.unit }} ({{ rec.valueSource }})
+                          </div>
+                          <div *ngIf="rec.status === 'needs_input'" class="text-warning" style="font-size:0.75rem">
+                            <i class="bi bi-exclamation-triangle me-1"></i>{{ rec.inputHint }}
+                          </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                          <!-- SizeLoad / SizeAndLoad: TWO inputs -->
+                          <ng-container *ngIf="rec.pricingType === 'SizeLoad' || rec.pricingType === 'SizeAndLoad'">
+                            <input type="number" class="form-control form-control-sm"
+                              style="width:70px; font-size:0.8rem" placeholder="Size mm"
+                              [value]="dimSizeMap[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
+                              (input)="dimSizeMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                            <input type="number" class="form-control form-control-sm"
+                              style="width:70px; font-size:0.8rem" placeholder="Load kN"
+                              [value]="dimLoadMap[plans[p].tests[t].headerId] ?? ''"
+                              (input)="dimLoadMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                          </ng-container>
+                          <!-- Single value types: ONE input -->
+                          <input *ngIf="rec.requiredInput && rec.pricingType !== 'SizeLoad' && rec.pricingType !== 'SizeAndLoad'"
+                            type="number" class="form-control form-control-sm"
+                            style="width:80px; font-size:0.8rem"
+                            [placeholder]="rec.unit || ''"
+                            [value]="dimSizeMap[plans[p].tests[t].headerId] ?? rec.autoDetectedValue ?? ''"
+                            (input)="dimSizeMap[plans[p].tests[t].headerId] = +$any($event.target).value">
+                          <!-- No input needed (Element, FlatRate, Spectro) -->
+                          <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="applyRec(plans[p].tests[t].headerId, rec)"
+                            [disabled]="priceLoadingMap[plans[p].tests[t].headerId]">
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- TEST IMAGES SECTION -->
-                  <!-- TEST IMAGES - Bootstrap card -->
                   <div class="card mt-3 test-images-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                      <h6 class="">Test Images</h6>
-                      <small class="text-muted" style="margin-top: -10px">Images for header: {{ plans[p].tests[t].name }}</small>
+                    <div class="card-header d-flex justify-content-between align-items-center py-1 px-3">
+                      <h6 class="mb-0 small fw-semibold"><i class="bi bi-images me-1"></i>Test Images</h6>
+                      <div class="d-flex align-items-center gap-2">
+                        <span *ngIf="testImagesMap[plans[p].tests[t].headerId]?.length" class="badge bg-secondary">
+                          {{ testImagesMap[plans[p].tests[t].headerId].length }}
+                        </span>
+                        <label *ngIf="!isViewMode" class="btn btn-outline-primary btn-sm mb-0" style="font-size: 0.75rem;">
+                          <i class="bi bi-plus-circle me-1"></i>Add Images
+                          <input type="file" accept="image/*" multiple class="d-none"
+                            (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
+                        </label>
+                      </div>
                     </div>
-                    <div class="card-body">
-                      <!-- Upload controls hidden in view/read-only mode -->
-                      <div [class.d-none]="isViewMode">
-                        <div class="mb-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            class="form-control"
-                            (change)="onFilesSelected($event, plans[p].tests[t].headerId)"
-                          />
-                        </div>
-
-                        <div
-                          *ngIf="selectedFilesMap[plans[p].tests[t].headerId] && selectedFilesMap[plans[p].tests[t].headerId].length"
-                          class="mb-2"
-                        >
-                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index" class="input-group mb-2">
-                            <span class="input-group-text p-0" style="width: 90px">
-                              <img
-                                [src]="sf.preview"
-                                style="width: 90px; height: 60px; object-fit: cover; cursor: pointer"
-                                (click)="openImage(sf.preview)"
-                              />
-                            </span>
-                            <input
-                              type="text"
-                              class="form-control form-control-sm"
-                              [value]="sf.caption"
-                              (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)"
-                              placeholder="Optional caption"
-                            />
+                    <div class="card-body p-2">
+                      <!-- Pending uploads (staged files) -->
+                      <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="img-staged-bar mb-2">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index" class="img-staged-item">
+                            <img [src]="sf.preview" (click)="openImage(sf.preview)" />
+                            <input type="text" class="form-control form-control-sm" [value]="sf.caption"
+                              (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)" placeholder="Caption" />
                           </div>
-                          <div class="text-end">
-                            <button class="btn btn-sm btn-primary" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
-                              Upload Images
-                            </button>
-                          </div>
+                          <button class="btn btn-sm btn-save" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
+                            <i class="bi bi-cloud-upload me-1"></i>Upload
+                          </button>
                         </div>
                       </div>
 
-                      <!-- Existing images grid (visible always) -->
-                      <div
-                        *ngIf="testImagesMap[plans[p].tests[t].headerId] && testImagesMap[plans[p].tests[t].headerId].length; else noImages"
-                      >
-                        <div class="row g-2">
-                          <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="col-6 col-md-3 col-lg-2">
-                            <div
-                              class="card image-thumb-card h-100"
-                              role="button"
-                              (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)"
-                            >
-                              <img
-                                [src]="baseUrl + img.filePath || img.fileUrl || img.thumbnailUrl"
-                                class="card-img-top"
-                                style="height: 100px; object-fit: cover"
-                              />
-                              <div class="card-body p-2 small text-truncate">{{ img.caption || img.name || "-" }}</div>
-                            </div>
-                          </div>
+                      <!-- Uploaded images gallery (horizontal scroll) -->
+                      <div *ngIf="testImagesMap[plans[p].tests[t].headerId]?.length; else noImages" class="img-gallery">
+                        <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="img-gallery-item"
+                          (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
+                          <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" />
+                          <span class="img-gallery-caption">{{ img.caption || '-' }}</span>
                         </div>
                       </div>
                       <ng-template #noImages>
-                        <div class="alert alert-secondary small mb-0">No images uploaded yet.</div>
+                        <div class="text-muted small text-center py-2"><i class="bi bi-image me-1"></i>No images uploaded yet.</div>
                       </ng-template>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -389,75 +841,573 @@
         </div>
       </div>
     </div>
+
+    <!-- Action Bar (hidden when all tests are finalized) -->
+    <div class="action-bar" *ngIf="!isViewMode && canSaveAnyTest()">
+      <button class="btn btn-secondary action-btn" type="button" (click)="cancel()">Cancel</button>
+      <button class="btn action-btn action-btn-primary" type="button" (click)="saveResults()">
+        <i class="bi bi-check-circle me-1"></i>Save Results
+      </button>
+    </div>
+
+    <!-- Submit for Report Review — shown only when tests are verified and report not yet submitted/reviewed/approved -->
+    <div class="action-bar" *ngIf="canSubmitForReportReview()">
+      <button class="btn btn-primary action-btn"
+              type="button"
+              [disabled]="isSubmittingReport"
+              (click)="submitForReportReview()">
+        <i class="bi bi-send me-1"></i>
+        {{ isSubmittingReport ? 'Submitting...' : 'Submit for Report Review' }}
+      </button>
+    </div>
   </div>
 
-  <!-- Action Buttons -->
-  <div class="text-end mt-3">
-    <button class="btn btn-warning me-2" type="button" (click)="cancel()" >Cancel</button>
-    <button class="btn btn-success me-2" type="button" (click)="saveResults()">Save</button>
-    <!-- <button class="btn btn-danger" type="button" (click)="completeResults()">Complete</button> -->
+  <!-- ================================================================ -->
+  <!-- TAB 2: PREPARATION & PRICING                                     -->
+  <!-- ================================================================ -->
+  <div class="main-tab-content" *ngIf="activeMainTab === 'preparation'">
+    <div class="row g-4">
+
+      <!-- Left Column: Preparation Status -->
+      <div class="col-lg-7">
+        <div class="prep-card">
+          <div class="prep-card-header">
+            <i class="bi bi-scissors me-2"></i>Sample Preparation
+          </div>
+          <div class="card-body p-3">
+            <div class="alert alert-warning mb-3" *ngIf="isPreparationRequired && !isPreparationRecorded">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Sample preparation is required but not yet recorded in the system.
+            </div>
+
+            <div *ngIf="!isPreparationRequired" class="text-muted">
+              <i class="bi bi-info-circle me-1"></i>No sample preparation required for this sample.
+            </div>
+
+            <div *ngIf="preparationStatus && isPreparationRequired" class="row g-3">
+              <div class="col-md-6">
+                <small class="text-muted d-block">Preparation Required</small>
+                <span class="fw-semibold">{{ isPreparationRequired ? 'YES' : 'NO' }}</span>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Status</small>
+                <span class="fw-semibold" [ngClass]="isPreparationRecorded ? 'text-success' : 'text-warning'">
+                  {{ preparationStatus.preparationStatus || 'Not Recorded' }}
+                </span>
+              </div>
+              <div class="col-md-6" *ngIf="preparationStatus.cuttingCharges">
+                <small class="text-muted d-block">Cutting Charges</small>
+                <span class="fw-semibold">&#8377;{{ preparationStatus.cuttingCharges | number:'1.2-2' }}</span>
+              </div>
+              <div class="col-12" *ngIf="preparationStatus.machiningCharges || machiningItems.length">
+                <small class="text-muted d-block mb-1">Machining Charges</small>
+                <!-- Machining line items table -->
+                <table class="table table-sm table-bordered mb-2" *ngIf="machiningItems.length">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="small">Description</th>
+                      <th class="small text-end" style="width: 120px;">Amount</th>
+                      <th class="small" style="width: 50px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of machiningItems">
+                      <td class="small">{{ item.description }}
+                        <span *ngIf="item.remark" class="text-muted d-block" style="font-size: 11px;">{{ item.remark }}</span>
+                      </td>
+                      <td class="small text-end">&#8377;{{ item.amount | number:'1.2-2' }}</td>
+                      <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-remove p-0 px-1" (click)="deleteMachiningItem(item.id)" title="Delete">
+                          <i class="bi bi-trash" style="font-size: 12px;"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-light">
+                      <td class="small fw-semibold">Subtotal</td>
+                      <td class="small text-end fw-bold">&#8377;{{ machiningSubtotal | number:'1.2-2' }}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <!-- Add new machining line (hidden in view mode) -->
+                <ng-container *ngIf="!isViewMode">
+                <div class="d-flex gap-2 align-items-end">
+                  <div class="flex-grow-1">
+                    <input type="text" class="form-control form-control-sm" placeholder="Description..." [(ngModel)]="newMachiningDesc" />
+                  </div>
+                  <div style="width: 110px;">
+                    <input type="number" class="form-control form-control-sm text-end" placeholder="Amount" [(ngModel)]="newMachiningAmount" />
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-success" (click)="addMachiningLine()" [disabled]="!newMachiningDesc || !newMachiningAmount">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
+              </ng-container>
+              </div>
+            </div>
+
+            <div class="mt-3" *ngIf="isPreparationRequired">
+              <button type="button" class="btn btn-sm btn-add me-2" (click)="openPreparationForm()">
+                <i class="bi bi-pencil-square me-1"></i>Open Preparation Form
+              </button>
+              <button type="button" class="btn btn-sm btn-cancel" (click)="refreshPreparationData()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Pricing Summary -->
+      <div class="col-lg-5">
+        <div class="pricing-sidebar">
+          <div class="pricing-sidebar-header">
+            <i class="bi bi-currency-rupee me-2"></i>Price Summary
+          </div>
+          <div class="card-body p-0" *ngIf="unifiedPriceSummary; else noPricing">
+
+            <!-- Cutting Charges -->
+            <div *ngIf="unifiedPriceSummary.cuttingCharges > 0" class="p-3 border-bottom">
+              <h6 class="text-muted small fw-semibold mb-2">Cutting Charges</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <tr *ngFor="let line of unifiedPriceSummary.cuttingBreakdown">
+                  <td class="small">{{ line.cuttingType }} ({{ line.unitType }})</td>
+                  <td class="text-end small">x {{ line.quantity }}</td>
+                  <td class="text-end fw-semibold small">&#8377;{{ line.total | number:'1.2-2' }}</td>
+                </tr>
+                <tr class="border-top">
+                  <td colspan="2" class="fw-semibold small">Subtotal</td>
+                  <td class="text-end fw-bold small">&#8377;{{ unifiedPriceSummary.cuttingCharges | number:'1.2-2' }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Machining Charges -->
+            <div *ngIf="unifiedPriceSummary.machiningCharges > 0" class="p-3 border-bottom">
+              <h6 class="text-muted small fw-semibold mb-2">Machining Charges</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <ng-container *ngIf="unifiedPriceSummary.machiningBreakdown?.length; else singleMachining">
+                  <tr *ngFor="let line of unifiedPriceSummary.machiningBreakdown">
+                    <td class="small">{{ line.description }}</td>
+                    <td class="text-end fw-semibold small">&#8377;{{ line.amount | number:'1.2-2' }}</td>
+                  </tr>
+                </ng-container>
+                <ng-template #singleMachining>
+                  <tr>
+                    <td class="small">Machining</td>
+                    <td class="text-end fw-semibold small">&#8377;{{ unifiedPriceSummary.machiningCharges | number:'1.2-2' }}</td>
+                  </tr>
+                </ng-template>
+                <tr class="border-top">
+                  <td class="fw-semibold small">Subtotal</td>
+                  <td class="text-end fw-bold small">&#8377;{{ unifiedPriceSummary.machiningCharges | number:'1.2-2' }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Other Preparation Charges -->
+            <div *ngIf="unifiedPriceSummary.otherPreparationCharges > 0" class="p-3 border-bottom">
+              <h6 class="text-muted small fw-semibold mb-2">Other Preparation</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <tr>
+                  <td class="small">Other Charges</td>
+                  <td class="text-end fw-semibold small">&#8377;{{ unifiedPriceSummary.otherPreparationCharges | number:'1.2-2' }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Test Charges -->
+            <div *ngIf="unifiedPriceSummary.testCharges?.length" class="p-3 border-bottom">
+              <h6 class="text-muted small fw-semibold mb-2">Test Charges</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <tr *ngFor="let test of unifiedPriceSummary.testCharges">
+                  <td class="small">
+                    {{ test.testName }}
+                    <span *ngIf="test.isOverridden" class="badge badge-warn ms-1" style="font-size: 9px;">Overridden</span>
+                  </td>
+                  <td class="text-end fw-semibold small">&#8377;{{ test.finalPrice | number:'1.2-2' }}</td>
+                </tr>
+                <tr class="border-top">
+                  <td class="fw-semibold small">Subtotal</td>
+                  <td class="text-end fw-bold small">&#8377;{{ unifiedPriceSummary.totalTestCharges | number:'1.2-2' }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Grand Total -->
+            <div class="pricing-total-box">
+              <span>TOTAL</span>
+              <span>&#8377;{{ unifiedPriceSummary.grandTotal | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <ng-template #noPricing>
+            <div class="card-body p-3 text-muted small text-center">
+              <i class="bi bi-info-circle me-1"></i>Price data will appear after test prices are calculated.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+    </div>
   </div>
+
 </div>
 
 <!-- ================================================================ -->
-<!-- MOVE TO LONG-TERM MODAL -->
+<!-- MOVE TO LONG-TERM MODAL                                          -->
 <!-- ================================================================ -->
 <div *ngIf="showMoveToLongTermModal" class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Move Test to Long-Term Tracking</h5>
+      <div class="modal-header modal-header-red">
+        <h5 class="modal-title"><i class="bi bi-hourglass-split me-2"></i>Move Test to Long-Term Tracking</h5>
         <button type="button" class="btn-close" (click)="closeMoveToLongTermModal()"></button>
       </div>
-
       <form [formGroup]="moveToLongTermForm" (ngSubmit)="submitMoveToLongTerm()">
         <div class="modal-body">
           <div class="alert alert-info mb-3">
             <i class="bi bi-info-circle"></i>
-            <strong>Long-Term Tracking</strong>
-            <br />
+            <strong>Long-Term Tracking</strong><br />
             This test will be moved to long-term tracking where periodic readings can be recorded.
           </div>
-
-          <!-- Duration Hours Input -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">
-              Duration (Hours)
-              <span class="text-danger">*</span>
-            </label>
-            <input
-              type="number"
-              class="form-control"
-              formControlName="durationHours"
-              placeholder="Enter duration in hours (e.g., 72, 168, 720)"
-              min="1"
-              max="10000"
-              [ngClass]="{
-                'is-invalid': moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched
-              }"
-            />
+            <label class="form-label fw-semibold">Duration (Hours) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="durationHours"
+              placeholder="Enter duration in hours (e.g., 72, 168, 720)" min="1" max="10000"
+              [ngClass]="{ 'is-invalid': moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched }" />
             <small class="d-block mt-2 text-muted">
-              <i class="bi bi-lightbulb"></i>
-              <strong>Common durations:</strong>
-              24h (1 day), 72h (3 days), 168h (1 week), 720h (30 days)
+              <i class="bi bi-lightbulb"></i> <strong>Common:</strong> 24h (1 day), 72h (3 days), 168h (1 week), 720h (30 days)
             </small>
-            <small
-              class="text-danger d-block mt-2"
-              *ngIf="moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched"
-            >
+            <small class="text-danger d-block mt-2"
+              *ngIf="moveToLongTermForm.get('durationHours')?.invalid && moveToLongTermForm.get('durationHours')?.touched">
               Please enter a valid duration (1 to 10000 hours)
             </small>
           </div>
         </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeMoveToLongTermModal()">Cancel</button>
-          <button type="submit" class="btn btn-warning" [disabled]="moveToLongTermForm.invalid">
-            <i class="bi bi-hourglass"></i>
-            Move to Long-Term
+          <button type="submit" class="btn btn-cancel" [disabled]="moveToLongTermForm.invalid">
+            <i class="bi bi-hourglass"></i> Move to Long-Term
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- ADD STANDALONE PARAMETER MODAL                                    -->
+<!-- ================================================================ -->
+<div *ngIf="showStandaloneParamModal" class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header modal-header-red">
+        <h5 class="modal-title"><i class="bi bi-plus-square me-2"></i>Add Standalone Parameter</h5>
+        <button type="button" class="btn-close" (click)="closeStandaloneParamModal()"></button>
+      </div>
+      <form [formGroup]="standaloneParamForm" (ngSubmit)="submitStandaloneParam()">
+        <div class="modal-body">
+          <div class="alert alert-info mb-3 small">
+            <i class="bi bi-info-circle"></i>
+            Add a custom parameter that is not part of the original test plan.
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Parameter Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="parameterName" placeholder="e.g., Yield Ratio" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Unit <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="unit" placeholder="e.g., MPa, %, mm" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Formula Expression</label>
+            <input type="text" class="form-control" formControlName="formulaExpression"
+              placeholder="e.g., YieldStrength / UTS (optional)" />
+            <small class="text-muted">Leave blank if this is a manually entered value.</small>
+          </div>
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label class="form-label fw-semibold">Spec Min</label>
+              <input type="number" class="form-control" formControlName="specMinValue" placeholder="Min value" />
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label fw-semibold">Spec Max</label>
+              <input type="number" class="form-control" formControlName="specMaxValue" placeholder="Max value" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeStandaloneParamModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="standaloneParamForm.invalid">
+            <i class="bi bi-plus-circle"></i> Add Parameter
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PRICE OVERRIDE MODAL                                              -->
+<!-- ================================================================ -->
+<div *ngIf="showPriceOverrideModal" class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header modal-header-red">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Override Price</h5>
+        <button type="button" class="btn-close" (click)="closePriceOverrideModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-3 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Overriding the calculated price will replace it with the entered amount. A reason is required for audit purposes.
+        </div>
+        <div class="mb-3" *ngIf="priceSummaryMap[priceOverrideHeaderId] as summary">
+          <label class="form-label fw-semibold">Current Calculated Price</label>
+          <div class="form-control bg-light">{{ summary.calculatedPrice | number:'1.2-2' }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Override Amount <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" [(ngModel)]="priceOverrideAmount"
+            placeholder="Enter override amount" min="0" step="0.01" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" [(ngModel)]="priceOverrideReason"
+            placeholder="Enter reason for override" rows="3" maxlength="500"></textarea>
+          <small class="text-muted">{{ priceOverrideReason.length || 0 }}/500 characters</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePriceOverrideModal()">Cancel</button>
+        <button type="button" class="btn btn-cancel" (click)="submitPriceOverride()"
+          [disabled]="!priceOverrideAmount || priceOverrideAmount <= 0 || !priceOverrideReason.trim()">
+          <i class="bi bi-check-circle me-1"></i> Override Price
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- ADD PARAMETER FROM METHOD MODAL                                   -->
+<!-- ================================================================ -->
+<div *ngIf="showFromMethodModal" class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header modal-header-red">
+        <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>Add Parameter From Test Method</h5>
+        <button type="button" class="btn-close" (click)="closeFromMethodModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3 small">
+          <i class="bi bi-info-circle"></i>
+          Select a test method and choose a parameter to add to this test.
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Test Method <span class="text-danger">*</span></label>
+          <app-searchable-dropdown
+            [placeholder]="'Search Test Method'"
+            [labelName]="'Test Method'"
+            [fetchDataFn]="getTestMethodDropdown"
+            (itemSelected)="onTestMethodSelected($event)"
+            [hideLabel]="true"
+          ></app-searchable-dropdown>
+        </div>
+        <div *ngIf="loadingMethodParams" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <span class="ms-2">Loading parameters...</span>
+        </div>
+        <div *ngIf="!loadingMethodParams && methodParameters.length > 0">
+          <label class="form-label fw-semibold">Select Parameter <span class="text-danger">*</span></label>
+          <div class="list-group">
+            <button *ngFor="let mp of methodParameters" type="button"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              [class.active]="fromMethodForm.get('parameterID')?.value === (mp.id || mp.parameterId)"
+              (click)="selectMethodParameter(mp)">
+              <div>
+                <span class="fw-semibold">{{ mp.parameterName || mp.name }}</span>
+                <small class="text-muted ms-2">({{ mp.unit || '-' }})</small>
+              </div>
+              <i *ngIf="fromMethodForm.get('parameterID')?.value === (mp.id || mp.parameterId)"
+                class="bi bi-check-circle-fill text-white"></i>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="!loadingMethodParams && fromMethodForm.get('testMethodId')?.value && methodParameters.length === 0"
+          class="alert alert-warning small">
+          No parameters found for the selected test method.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeFromMethodModal()">Cancel</button>
+        <button type="button" class="btn btn-save" [disabled]="fromMethodForm.invalid" (click)="submitFromMethod()">
+          <i class="bi bi-box-arrow-in-down"></i> Add Parameter
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- FORMULA BUILDER MODAL                                             -->
+<!-- ================================================================ -->
+<div *ngIf="showFormulaBuilderModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header modal-header-red">
+        <h5 class="modal-title"><i class="bi bi-calculator me-2"></i>Formula Builder</h5>
+        <button type="button" class="btn-close" (click)="closeFormulaBuilder()"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Mode Toggle -->
+        <div class="d-flex justify-content-end mb-2">
+          <button type="button" class="btn btn-sm"
+            [ngClass]="smartFormulaMode ? 'btn-outline-secondary' : 'btn-outline-primary'"
+            (click)="toggleSmartFormulaMode()">
+            <i class="bi me-1" [ngClass]="smartFormulaMode ? 'bi-grid-3x3-gap' : 'bi-pencil-square'"></i>
+            {{ smartFormulaMode ? 'Switch to Click Mode' : 'Switch to Type Mode' }}
+          </button>
+        </div>
+
+        <!-- ═══ CLICK MODE (existing) ═══ -->
+        <ng-container *ngIf="!smartFormulaMode">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-tags me-1"></i>Parameters</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button *ngFor="let param of formulaAvailableParams" type="button"
+                class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
+                [title]="param.parameterName + (param.unit ? ' (' + param.unit + ')' : '')">
+                <span class="formula-param-ref">{{ param.ref }}</span>
+                <span class="formula-param-name">{{ param.parameterName }}</span>
+              </button>
+            </div>
+            <small class="text-muted" *ngIf="!formulaAvailableParams.length">
+              No other parameters available. Add parameters to the test first.
+            </small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1"></i>Operators</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button *ngFor="let op of formulaOperators" type="button"
+                class="formula-op-btn" (click)="insertFormulaToken(op)">{{ op }}</button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Numeric Constant</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="number" class="form-control form-control-sm" style="width: 150px"
+                placeholder="e.g. 100, 0.5" #constantInput>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                (click)="insertFormulaToken(constantInput.value); constantInput.value = ''">+ Add</button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Formula Expression</label>
+            <textarea class="form-control formula-textarea" rows="3"
+              [(ngModel)]="formulaExpression"
+              (click)="onFormulaInputChange($event)"
+              (keyup)="onFormulaInputChange($event)"
+              placeholder="Click parameters and operators above to build formula..."></textarea>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-info-circle me-1"></i>
+              Use <code>P&#123;ID&#125;</code> to reference parameters. Example: <code>(P5 * 1000) / P7</code>
+            </small>
+          </div>
+        </ng-container>
+
+        <!-- ═══ SMART TYPE MODE (new) ═══ -->
+        <ng-container *ngIf="smartFormulaMode">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-pencil-square me-1"></i>Type Formula</label>
+            <textarea class="form-control" rows="2"
+              [(ngModel)]="smartFormulaInput"
+              (input)="parseSmartFormula()"
+              placeholder="Type formula using parameter names, e.g. (UTL * 1000) / So"></textarea>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-lightbulb me-1"></i>
+              Use parameter names directly. Example: <code>(UTL * 1000) / So</code> or <code>3.1416 * (D / 2) * (D / 2)</code>
+            </small>
+          </div>
+
+          <!-- Available parameters reference -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted" style="font-size: 0.8rem">
+              <i class="bi bi-tags me-1"></i>Available Parameters (click to insert)
+            </label>
+            <div class="d-flex flex-wrap gap-1">
+              <button *ngFor="let param of formulaAvailableParams" type="button"
+                class="badge bg-light text-dark border" style="font-size: 0.75rem; cursor: pointer;"
+                (click)="smartFormulaInput = smartFormulaInput + ' ' + param.parameterName; parseSmartFormula()"
+                [title]="param.ref + ' — ' + param.unit">
+                {{ param.parameterName }} <small class="text-muted">{{ param.ref }}</small>
+              </button>
+            </div>
+          </div>
+
+          <!-- Validation Results -->
+          <div class="mb-3" *ngIf="smartFormulaTokens.length > 0">
+            <label class="form-label fw-semibold">Validation</label>
+            <div class="border rounded p-2" style="background: #fafbfc; font-size: 0.85rem;">
+              <div *ngFor="let t of smartFormulaTokens; let i = index" class="d-inline">
+                <span *ngIf="t.type === 'param'" class="badge bg-success-subtle text-success border border-success me-1 mb-1"
+                  [title]="t.matched + ' → ' + t.paramRef">
+                  {{ t.token }} <i class="bi bi-check-circle-fill ms-1"></i>
+                </span>
+                <span *ngIf="t.type === 'number'" class="badge bg-info-subtle text-info border border-info me-1 mb-1">
+                  {{ t.token }}
+                </span>
+                <span *ngIf="t.type === 'operator'" class="badge bg-light text-dark border me-1 mb-1">
+                  {{ t.token }}
+                </span>
+                <span *ngIf="t.type === 'function'" class="badge bg-warning-subtle text-warning border border-warning me-1 mb-1">
+                  {{ t.token }}()
+                </span>
+                <span *ngIf="t.type === 'unknown'" class="badge bg-danger-subtle text-danger border border-danger me-1 mb-1">
+                  {{ t.token }} <i class="bi bi-x-circle-fill ms-1"></i>
+                </span>
+              </div>
+
+              <!-- Parsed output -->
+              <div class="mt-2 pt-2 border-top" *ngIf="smartFormulaValid">
+                <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Formula is valid</small>
+                <div class="text-muted mt-1" style="font-size: 0.8rem; font-family: monospace;">
+                  Parsed: <span *ngFor="let t of smartFormulaTokens">{{ t.paramRef || t.token }} </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Errors -->
+            <div *ngIf="smartFormulaErrors.length > 0" class="mt-2">
+              <div *ngFor="let err of smartFormulaErrors" class="text-danger small">
+                <i class="bi bi-exclamation-triangle me-1"></i>{{ err }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-cancel" (click)="smartFormulaMode ? smartFormulaInput = '' : clearFormula()">
+          <i class="bi bi-eraser me-1"></i>Clear
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeFormulaBuilder()">Cancel</button>
+        <button *ngIf="!smartFormulaMode" type="button" class="btn btn-primary"
+          (click)="applyFormula()" [disabled]="!formulaExpression.trim()">
+          <i class="bi bi-check-circle me-1"></i>Apply Formula
+        </button>
+        <button *ngIf="smartFormulaMode" type="button" class="btn btn-success"
+          (click)="applySmartFormula()" [disabled]="!smartFormulaValid">
+          <i class="bi bi-check-circle me-1"></i>Apply Formula
+        </button>
+      </div>
     </div>
   </div>
 </div>

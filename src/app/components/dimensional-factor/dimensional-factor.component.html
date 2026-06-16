@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -25,6 +25,7 @@
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
                             <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
@@ -36,25 +37,22 @@
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
                                             (click)="applySorting(column.key)"></i>
                                     </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
                                         (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
                                         (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                                 </div>
                             </th>
-                            <th class="align-middle text-center">Actions</th>
                         </tr>
 
 
                     </thead>
                     <tbody>
                         <tr *ngFor="let customerType of DimensionalFactorList; let i = index" class="text-sm">
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
+                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
                                     <a (click)="openModal('view',customerType.id)" class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
@@ -68,13 +66,24 @@
                             </td>
 
 
-                        </tr>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td><span class="text-primary fw-medium">{{ customerType.code }}</span></td>
+                            <td>{{ customerType.name }}</td>
+                            <td>
+                                <span *ngFor="let form of customerType.applicableForms" class="badge bg-info text-dark me-1">
+                                    {{ form.productForm?.name || form.name }}
+                                </span>
+                            </td>
+                            <td>{{ customerType.parameterUnit?.name || '-' }}</td>
+                            <td>{{ customerType.defaultTestMethod?.name || customerType.defaultTestMethod?.standard || '-' }}</td>
+                            <td>{{ customerType.instrument || '-' }}</td>
+                            <td>{{ customerType.toleranceType }}</td>                        </tr>
                     </tbody>
                 </table>
 
 
             </div>
-            <div *ngIf="DimensionalFactorList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="DimensionalFactorList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -82,27 +91,15 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center">
-                <!-- Page Size Selector -->
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-
-                <!-- Pagination Controls -->
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
 
 
         </div>
@@ -145,13 +142,13 @@
     </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<!-- Modal for Add/Edit/Update Dimensional Factor -->
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
-                <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+                <label class="modal-title fw-medium" id="customerTypeModalLabel">
                     {{formTitle}}
                 </label>
                 <button type="button" class="btn-close btn-close-white" aria-label="Close"
@@ -159,25 +156,116 @@
             </div>
             <form [formGroup]="DimensionalFactorForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': DimensionalFactorForm.get('name')?.touched && DimensionalFactorForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="DimensionalFactorForm.get('name')?.invalid && DimensionalFactorForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <div class="row">
+                        <!-- Code Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code" maxlength="50"
+                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <app-field-error [control]="DimensionalFactorForm.get('code')" label="Code" [submitted]="submitted"/>
+                        </div>
+                        <!-- Name Field -->
+                        <div class="col-md-6 mb-1">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" maxlength="200"
+                                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <app-field-error [control]="DimensionalFactorForm.get('name')" label="Name" [submitted]="submitted"/>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Unit Dropdown -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getUnitDropdown"
+                                        [selectedItem]="DimensionalFactorForm.get('parameterUnitID')?.value"
+                                        (itemSelected)="DimensionalFactorForm.get('parameterUnitID')?.setValue($event?.id || null)"
+                                        [placeholder]="'Select Unit'"
+                                        [labelName]="'Unit'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/parameter-unit')"
+                                    title="Open Parameter Unit" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Instrument -->
+                        <div class="col-md-6 mb-1">
+                            <label for="instrument" class="form-label">Instrument</label>
+                            <input type="text" id="instrument" class="form-control" formControlName="instrument"
+                                placeholder="Enter Instrument"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Tolerance Type -->
+                        <div class="col-md-6 mb-1">
+                            <label for="toleranceType" class="form-label">Tolerance Type</label>
+                            <ng-select
+                                [items]="toleranceTypes"
+                                bindLabel="name"
+                                bindValue="value"
+                                formControlName="toleranceType"
+                                placeholder="Select Tolerance Type"
+                                [clearable]="false"
+                                [searchable]="false"
+                                [readonly]="isViewMode">
+                            </ng-select>
+                        </div>
+                        <!-- Test Method Dropdown -->
+                        <div class="col-md-6 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [fetchDataFn]="getTestMethodDropdown"
+                                        [selectedItem]="DimensionalFactorForm.get('defaultTestMethodID')?.value"
+                                        (itemSelected)="DimensionalFactorForm.get('defaultTestMethodID')?.setValue($event?.id || null)"
+                                        [placeholder]="'Select Test Method Specification'"
+                                        [labelName]="'Test Method Specification'"
+                                        [isDisabled]="isViewMode">
+                                    </app-searchable-dropdown>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Applicable Forms Multi-Select -->
+                        <div class="col-md-12 mb-1">
+                            <div class="d-flex align-items-start gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [placeholder]="'Select Forms...'"
+                                        [labelName]="'Applicable Forms'"
+                                        [fetchDataFn]="getProductFormDropdown"
+                                        [selectedValues]="DimensionalFactorForm.get('applicableFormIds')?.value"
+                                        (itemsSelected)="onFormSelected($event)"
+                                        [isDisabled]="isViewMode">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
+                                    (click)="openLinkedMaster('/product-form')"
+                                    title="Open Product Form" *ngIf="!isViewMode">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white" [disabled]="DimensionalFactorForm.invalid">
+                    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save"
+                        [disabled]="submitted && !DimensionalFactorForm.valid">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

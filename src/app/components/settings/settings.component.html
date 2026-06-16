@@ -1,0 +1,673 @@
+<div class="settings-container">
+  <!-- Main Layout: Sidebar + Content -->
+  <div class="settings-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="settings-sidebar">
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Settings</div>
+          <ul class="nav-menu">
+            <li class="nav-menu-item" *ngFor="let tab of tabs; let i = index">
+              <button class="nav-menu-btn" [class.active]="activeTab === tab.key"
+                [class.has-error]="submitted && hasTabErrors(tab.key)" (click)="setActiveTab(tab.key)" type="button">
+                <span class="nav-icon">
+                  <i class="bi" [ngClass]="tab.icon"></i>
+                </span>
+                <span class="nav-label">{{ tab.label }}</span>
+                <span class="nav-dirty-dot" *ngIf="tabDirty[tab.key]" title="Unsaved changes"></span>
+                <span class="nav-error-dot" *ngIf="submitted && hasTabErrors(tab.key)"
+                  title="Validation errors"></span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Content Area -->
+    <div class="settings-main">
+      <div [formGroup]="settingsForm">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: ORGANIZATION                        -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 1" class="settings-tab-pane fade-in-slide">
+          <div class="form-title">
+            <i class="bi bi-building"></i>
+            Organization Settings
+            <div class="tab-actions ms-auto">
+              <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(1)">Reset</button>
+              <button type="button" class="btn btn-save btn-sm" (click)="saveTab(1)"
+                [disabled]="!tabDirty[1]">Save</button>
+            </div>
+          </div>
+          <div [formGroup]="organizationInfo" class="compact-form">
+            <!-- Lab Name -->
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">
+                  Lab Name <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="labName" placeholder="Laboratory name"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'labName') }" maxlength="200" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'labName')">
+                  {{ getFieldError('organizationInfo', 'labName') }}
+                </div>
+              </div>
+              <!-- Lab Code -->
+              <div class="form-col">
+                <label class="form-label">
+                  Lab Code <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="labCode" placeholder="e.g., DMSPL-01"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'labCode') }" maxlength="50" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'labCode')">
+                  {{ getFieldError('organizationInfo', 'labCode') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Email & Phone -->
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">
+                  Contact Email <span class="required">*</span>
+                </label>
+                <input type="email" class="form-control" formControlName="contactEmail" placeholder="email@example.com"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'contactEmail') }" maxlength="200" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'contactEmail')">
+                  {{ getFieldError('organizationInfo', 'contactEmail') }}
+                </div>
+              </div>
+              <div class="form-col">
+                <label class="form-label">
+                  Contact Phone <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="contactPhone" placeholder="+91 00 0000 0000"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'contactPhone') }" maxlength="20" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'contactPhone')">
+                  {{ getFieldError('organizationInfo', 'contactPhone') }}
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Mobile No</label>
+                <input type="text" class="form-control" formControlName="mobileNo" placeholder="+91 00000 00000" maxlength="20" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label class="form-label">CIN</label>
+                <input type="text" class="form-control" formControlName="cin" placeholder="Company CIN Number" maxlength="100" />
+              </div>
+              <div>
+                <label class="form-label">Website</label>
+                <input type="text" class="form-control" formControlName="website" placeholder="https://..." maxlength="100" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label class="form-label">ULR Prefix</label>
+                <input type="text" class="form-control" formControlName="ulrPrefix" placeholder="e.g., TC5098" maxlength="50" />
+                <small class="text-muted">Used for ULR number generation on test certificates</small>
+              </div>
+              <div>
+                <label class="form-label">Lab Location Code</label>
+                <input type="text" class="form-control" formControlName="labLocationCode" placeholder="e.g., 0 or 25000" maxlength="20" />
+                <small class="text-muted">Location identifier in ULR number</small>
+              </div>
+            </div>
+
+            <!-- Lab Address -->
+            <div class="form-row-full">
+              <label class="form-label">
+                Lab Address <span class="required">*</span>
+              </label>
+              <textarea class="form-control" formControlName="labAddress" rows="4" placeholder="Complete address"
+                [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'labAddress') }"
+                maxlength="500"></textarea>
+              <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'labAddress')">
+                {{ getFieldError('organizationInfo', 'labAddress') }}
+              </div>
+              <small class="char-count"
+                *ngIf="organizationInfo.get('labAddress')?.value">{{ organizationInfo.get('labAddress')?.value?.length
+                }}/500</small>
+            </div>
+
+            <!-- Organization Logo -->
+            <div class="form-row-full">
+              <label class="form-label">Organization Logo</label>
+              <div class="file-upload-inline" [class.has-file]="organizationLogoPreview"
+                [class.file-error]="fileErrors['organizationLogo']">
+                <input type="file" class="form-control" id="orgLogoInput" accept="image/png,image/jpeg,image/jpg"
+                  (change)="onOrganizationLogoChange($event)" />
+                <span class="file-label" *ngIf="!organizationLogoPreview">
+                  <i class="bi bi-cloud-upload"></i> Click to upload or drag
+                </span>
+                <span class="file-preview" *ngIf="organizationLogoPreview">
+                  <img [src]="organizationLogoPreview" alt="Logo" />
+                  <button type="button" class="btn-remove" (click)="clearOrganizationLogo()"><i
+                      class="bi bi-x"></i></button>
+                </span>
+              </div>
+              <div class="file-error-msg" *ngIf="fileErrors['organizationLogo']">
+                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['organizationLogo'] }}
+              </div>
+              <small class="file-hint">PNG or JPG, max 2MB</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: ACCREDITATION (NABL)                -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 2" class="settings-tab-pane fade-in-slide">
+          <div class="form-title">
+            <i class="bi bi-award"></i>
+            NABL Accreditation
+            <div class="tab-actions ms-auto">
+              <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(2)">Reset</button>
+              <button type="button" class="btn btn-save btn-sm" (click)="saveTab(2)"
+                [disabled]="!tabDirty[2]">Save</button>
+            </div>
+          </div>
+          <div [formGroup]="nablAccreditation" class="compact-form">
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Enable NABL</label>
+                <div class="form-switch switch-primary">
+                  <input type="checkbox" class="form-check-input" formControlName="nablEnabled" id="nablSwitch" />
+                  <label class="form-check-label ms-2" for="nablSwitch">Enable NABL Accreditation</label>
+                </div>
+              </div>
+              <div class="form-col" *ngIf="isNablEnabled">
+                <label class="form-label">
+                  NABL TC Number <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="nablTcNumber" placeholder="e.g., TC5098"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('nablAccreditation', 'nablTcNumber') }" maxlength="100" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('nablAccreditation', 'nablTcNumber')">
+                  {{ getFieldError('nablAccreditation', 'nablTcNumber') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- NABL Certificate (PDF) -->
+            <div class="form-row-full" *ngIf="isNablEnabled">
+              <label class="form-label">NABL Certificate (PDF)</label>
+              <div class="file-upload-inline" [class.has-file]="nablCertificateFile || nablCertificateLoadedPath"
+                [class.file-error]="fileErrors['nablCertificate']">
+                <input type="file" class="form-control" accept="application/pdf"
+                  (change)="onNablCertificateChange($event)" />
+                <span class="file-label" *ngIf="!nablCertificateFile && !nablCertificateLoadedPath">
+                  <i class="bi bi-file-pdf"></i> Click to upload PDF
+                </span>
+                <span class="file-preview" *ngIf="nablCertificateFile">
+                  {{ nablCertificateFile.name }}
+                  <button type="button" class="btn-remove" (click)="clearNablCertificate()"><i
+                      class="bi bi-x"></i></button>
+                </span>
+                <span class="file-preview" *ngIf="!nablCertificateFile && nablCertificateLoadedPath">
+                  <i class="bi bi-file-pdf-fill text-danger me-1"></i> Certificate uploaded
+                  <a [href]="nablCertificateLoadedPath" target="_blank" class="ms-1" title="View"><i class="bi bi-box-arrow-up-right"></i></a>
+                  <button type="button" class="btn-remove" (click)="nablCertificateLoadedPath = null" title="Replace"><i class="bi bi-arrow-repeat"></i></button>
+                </span>
+              </div>
+              <div class="file-error-msg" *ngIf="fileErrors['nablCertificate']">
+                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['nablCertificate'] }}
+              </div>
+              <small class="file-hint">PDF only, max 10MB</small>
+            </div>
+
+            <!-- NABL Logo -->
+            <div class="form-row-full" *ngIf="isNablEnabled">
+              <label class="form-label">NABL Logo</label>
+              <div class="file-upload-inline" [class.has-file]="nablLogoPreview"
+                [class.file-error]="fileErrors['nablLogo']">
+                <input type="file" class="form-control" accept="image/png,image/jpeg,image/jpg"
+                  (change)="onNablLogoChange($event)" />
+                <span class="file-label" *ngIf="!nablLogoPreview">
+                  <i class="bi bi-cloud-upload"></i> Click to upload
+                </span>
+                <span class="file-preview" *ngIf="nablLogoPreview">
+                  <img [src]="nablLogoPreview" alt="NABL Logo" />
+                  <button type="button" class="btn-remove" (click)="clearNablLogo()"><i
+                      class="bi bi-x"></i></button>
+                </span>
+              </div>
+              <div class="file-error-msg" *ngIf="fileErrors['nablLogo']">
+                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['nablLogo'] }}
+              </div>
+              <small class="file-hint">PNG or JPG, max 2MB</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: NUMBERING                           -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 3" class="form-page">
+          <div class="form-title">
+            <i class="bi bi-hash"></i>
+            Numbering Configuration
+            <div class="tab-actions ms-auto">
+              <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(3)">Reset</button>
+              <button type="button" class="btn btn-save btn-sm" (click)="saveTab(3)"
+                [disabled]="!tabDirty[3]">Save</button>
+            </div>
+          </div>
+          <div [formGroup]="numbering" class="compact-form">
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">
+                  TC Base Number <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="tcBaseNumber" placeholder="e.g., TC5098"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('numbering', 'tcBaseNumber') }" maxlength="100" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('numbering', 'tcBaseNumber')">
+                  {{ getFieldError('numbering', 'tcBaseNumber') }}
+                </div>
+              </div>
+              <div class="form-col">
+                <label class="form-label">
+                  Report Prefix <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="reportNumberPrefix" placeholder="e.g., DMSPL"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('numbering', 'reportNumberPrefix') }" maxlength="100" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('numbering', 'reportNumberPrefix')">
+                  {{ getFieldError('numbering', 'reportNumberPrefix') }}
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Year Code (Auto)</label>
+                <input type="text" class="form-control" formControlName="yearCode" readonly
+                  placeholder="System managed" />
+              </div>
+              <div class="form-col">
+                <label class="form-label">Counter (Auto)</label>
+                <input type="text" class="form-control" formControlName="runningCounter" readonly
+                  placeholder="System managed" />
+              </div>
+            </div>
+
+            <div class="preview-box">
+              <strong>Preview:</strong>
+              <code>{{ reportNumberExample }}</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: GST & FINANCE                       -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 4" class="form-page">
+          <div class="form-title">
+            <i class="bi bi-receipt"></i>
+            GST & Financial Settings
+            <div class="tab-actions ms-auto">
+              <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(4)">Reset</button>
+              <button type="button" class="btn btn-save btn-sm" (click)="saveTab(4)"
+                [disabled]="!tabDirty[4]">Save</button>
+            </div>
+          </div>
+
+          <!-- GST Section -->
+          <div [formGroup]="gstConfig" class="compact-form">
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">GST Applicable</label>
+                <div class="form-switch switch-primary">
+                  <input type="checkbox" class="form-check-input" formControlName="gstApplicable" id="gstSwitch" />
+                  <label class="form-check-label ms-2" for="gstSwitch">Enable GST</label>
+                </div>
+              </div>
+              <div class="form-col" *ngIf="isGstApplicable">
+                <label class="form-label">
+                  GSTIN <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="gstin" placeholder="22AAAAA0000A1Z5"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('gstConfig', 'gstin') }" maxlength="15"
+                  style="text-transform: uppercase;" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('gstConfig', 'gstin')">
+                  {{ getFieldError('gstConfig', 'gstin') }}
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row" *ngIf="isGstApplicable">
+              <div class="form-col">
+                <label class="form-label">PAN Number</label>
+                <input type="text" class="form-control" formControlName="panNumber" placeholder="ABCDE1234F"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('gstConfig', 'panNumber') }" maxlength="10"
+                  style="text-transform: uppercase;" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('gstConfig', 'panNumber')">
+                  {{ getFieldError('gstConfig', 'panNumber') }}
+                </div>
+              </div>
+              <div class="form-col">
+                <label class="form-label">
+                  State Code <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="stateCode" placeholder="24 – Gujarat"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('gstConfig', 'stateCode') }" maxlength="50" />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('gstConfig', 'stateCode')">
+                  {{ getFieldError('gstConfig', 'stateCode') }}
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row" *ngIf="isGstApplicable">
+              <div class="form-col">
+                <label class="form-label">
+                  Default GST Rate <span class="required">*</span>
+                </label>
+                <select class="form-control" formControlName="defaultGstRate"
+                  [ngClass]="{ 'is-invalid': isFieldInvalid('gstConfig', 'defaultGstRate') }">
+                  <option [ngValue]="null" disabled>Select Rate</option>
+                  <option *ngFor="let rate of gstRateOptions" [ngValue]="rate">{{ rate }}%</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('gstConfig', 'defaultGstRate')">
+                  {{ getFieldError('gstConfig', 'defaultGstRate') }}
+                </div>
+              </div>
+              <div class="form-col">
+                <div class="gst-breakdown">
+                  <div class="gst-item">
+                    <label>CGST:</label>
+                    <input type="text" class="form-control-small" formControlName="cgst" readonly /> %
+                  </div>
+                  <div class="gst-item">
+                    <label>SGST:</label>
+                    <input type="text" class="form-control-small" formControlName="sgst" readonly /> %
+                  </div>
+                  <div class="gst-item">
+                    <label>IGST:</label>
+                    <input type="text" class="form-control-small" formControlName="igst" readonly /> %
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Invoice Configuration -->
+            <div class="form-title-small mt-3" *ngIf="isGstApplicable">Invoice Configuration</div>
+            <div class="form-row" *ngIf="isGstApplicable">
+              <div class="form-col">
+                <label class="form-label">PI GST Applicable</label>
+                <div class="form-switch switch-primary">
+                  <input type="checkbox" class="form-check-input" formControlName="piGstApplicable"
+                    id="piGstSwitch" />
+                  <label class="form-check-label ms-2" for="piGstSwitch">Apply GST on Proforma Invoice</label>
+                </div>
+              </div>
+              <div class="form-col">
+                <div class="info-box mt-4">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Interstate GST (IGST) is auto-determined by comparing company state (above) with customer state.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Year Section -->
+          <div class="compact-form mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="form-title-small mb-0">Financial Year Management</div>
+              <button type="button" class="btn btn-sm btn-primary" (click)="openAddFY()" *ngIf="!showFYForm">
+                <i class="bi bi-plus-lg me-1"></i> Add
+              </button>
+            </div>
+
+            <!-- Add/Edit FY Form -->
+            <div *ngIf="showFYForm" class="fy-form-card" [formGroup]="financialYear">
+              <div class="fy-form-title">{{ editingFYId ? 'Edit Financial Year' : 'New Financial Year' }}</div>
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label class="form-label">Start Date <span class="required">*</span></label>
+                  <input type="date" class="form-control" formControlName="startDate"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'startDate') }" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">End Date <span class="required">*</span></label>
+                  <input type="date" class="form-control" formControlName="endDate"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'endDate') }" />
+                </div>
+                <div class="col-md-4 d-flex gap-2 align-items-end">
+                  <button type="button" class="btn btn-sm btn-save" (click)="saveFY()">
+                    <i class="bi" [ngClass]="editingFYId ? 'bi-check-lg' : 'bi-plus-lg'"></i>
+                    {{ editingFYId ? 'Update' : 'Save' }}
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelFYForm()">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <div class="group-error mt-1" *ngIf="getGroupError('financialYear')">
+                <i class="bi bi-exclamation-triangle"></i> {{ getGroupError('financialYear') }}
+              </div>
+            </div>
+
+            <!-- FY Table -->
+            <div class="table-responsive" *ngIf="financialYearsList.length > 0">
+              <table class="table table-sm table-hover align-middle mb-0 fy-table">
+                <thead>
+                  <tr>
+                    <th style="width: 25%">Financial Year</th>
+                    <th style="width: 22%">Start Date</th>
+                    <th style="width: 22%">End Date</th>
+                    <th style="width: 16%" class="text-center">Status</th>
+                    <th style="width: 15%" class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let fy of financialYearsList" [class.fy-row-active]="fy.isCurrent">
+                    <td>
+                      <span class="fw-semibold">{{ fy.year }}</span>
+                    </td>
+                    <td>{{ fy.startDate | date:'dd-MMM-yyyy' }}</td>
+                    <td>{{ fy.endDate | date:'dd-MMM-yyyy' }}</td>
+                    <td class="text-center">
+                      <span *ngIf="fy.isCurrent" class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Default
+                      </span>
+                      <button *ngIf="!fy.isCurrent" type="button"
+                        class="btn btn-sm btn-outline-secondary py-0 px-2"
+                        style="font-size: 0.75rem"
+                        (click)="setDefaultFY(fy)">
+                        Set Default
+                      </button>
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-primary border-0 p-1" (click)="editFY(fy)"
+                        title="Edit"><i class="bi bi-pencil-square"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" (click)="deleteFY(fy)"
+                        title="Delete" [disabled]="fy.isCurrent"
+                        [class.opacity-25]="fy.isCurrent"><i class="bi bi-trash3"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty state -->
+            <div *ngIf="financialYearsList.length === 0" class="fy-empty-state">
+              <i class="bi bi-calendar3 d-block mb-1" style="font-size: 1.5rem; opacity: 0.4"></i>
+              <span>No financial years configured yet.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: AUTHORIZED SIGNATURES               -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 5" class="form-page">
+          <div class="form-title">
+            <i class="bi bi-pen"></i>
+            Report Authority Signatures
+            <div class="tab-actions ms-auto d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(5)">Reset</button>
+              <button type="button" class="btn btn-save btn-sm" (click)="saveTab(5)"
+                [disabled]="!tabDirty[5]">Save</button>
+            </div>
+          </div>
+          <div class="col-12 row">
+            <!-- Add/Edit Signature Form (left) -->
+            <div class="col-6">
+              <div class="form-panel">
+                <div class="form-panel-title">{{ editingSignatoryIndex >= 0 ? 'Edit Signatory' : 'Add New Signatory' }}
+                </div>
+                <div [formGroup]="authorizedSignatory" class="compact-form">
+                  <!-- Signatory Name -->
+                  <div class="form-row">
+                    <div class="form-col">
+                      <label class="form-label">
+                        Name <span class="required">*</span>
+                      </label>
+                      <input type="text" class="form-control" formControlName="signatoryName" placeholder="Full name"
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('authorizedSignatory', 'signatoryName') }"
+                        maxlength="200" />
+                      <div class="invalid-feedback"
+                        *ngIf="isFieldInvalid('authorizedSignatory', 'signatoryName')">
+                        {{ getFieldError('authorizedSignatory', 'signatoryName') }}
+                      </div>
+                    </div>
+                    <!-- Designation -->
+                    <div class="form-col">
+                      <label class="form-label">
+                        Designation <span class="required">*</span>
+                      </label>
+                      <input type="text" class="form-control" formControlName="designation"
+                        placeholder="e.g., Authorized Signatory"
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('authorizedSignatory', 'designation') }"
+                        maxlength="200" />
+                      <div class="invalid-feedback"
+                        *ngIf="isFieldInvalid('authorizedSignatory', 'designation')">
+                        {{ getFieldError('authorizedSignatory', 'designation') }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Signature Image -->
+                  <div class="form-row-full">
+                    <label class="form-label">
+                      Signature Image <span class="required">*</span>
+                    </label>
+                    <div class="file-upload-inline signature-upload" [class.has-file]="signaturePreview"
+                      [class.file-error]="fileErrors['signature']">
+                      <input type="file" class="form-control" id="signatureInput"
+                        accept="image/png,image/jpeg,image/jpg" (change)="onSignatureChange($event)" />
+                      <span class="file-label" *ngIf="!signaturePreview">
+                        <i class="bi bi-cloud-upload"></i> Click to upload signature
+                      </span>
+                      <span class="file-preview" *ngIf="signaturePreview">
+                        <img [src]="signaturePreview" alt="Signature" />
+                        <button type="button" class="btn-remove" (click)="clearSignature()"><i
+                            class="bi bi-x"></i></button>
+                      </span>
+                    </div>
+                    <div class="file-error-msg" *ngIf="fileErrors['signature']">
+                      <i class="bi bi-exclamation-circle"></i> {{ fileErrors['signature'] }}
+                    </div>
+                    <small class="file-hint">PNG or JPG, max 2MB</small>
+                  </div>
+
+                  <!-- Status & Applicable -->
+                  <div class="form-row">
+                    <div class="form-col">
+                      <label class="form-label">Status</label>
+                      <div class="radio-group">
+                        <label class="radio-option">
+                          <input type="radio" formControlName="status" [value]="true" />
+                          <span>Active</span>
+                        </label>
+                        <label class="radio-option">
+                          <input type="radio" formControlName="status" [value]="false" />
+                          <span>Inactive</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="form-col">
+                      <label class="form-label">Applicable For</label>
+                      <div class="checkbox-control form-check">
+                        <input type="checkbox" class="form-check-input" formControlName="applicableFor"
+                          id="reportApproval" />
+                        <label class="form-check-label" for="reportApproval">Report Approval</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Add/Update buttons -->
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-primary" (click)="addSignatory()"
+                      [disabled]="authorizedSignatory.invalid || !(signaturePreview || signatureFile)">
+                      {{ editingSignatoryIndex >= 0 ? 'Update' : 'Add' }} Signatory
+                    </button>
+                    <button type="button" class="btn btn-secondary" *ngIf="editingSignatoryIndex >= 0"
+                      (click)="cancelEditSignatory()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signatures List (right) -->
+            <div class="col-6">
+              <div class="signatures-list" *ngIf="signatories && signatories.length > 0">
+                <div class="signature-item" *ngFor="let sig of signatories; let i = index">
+                  <div class="signature-header">
+                    <div class="signature-info">
+                      <h6 class="signature-name">{{ sig.signatoryName }}</h6>
+                      <span class="signature-designation">{{ sig.designation }}</span>
+                      <span class="signature-status" [class.active]="sig.status">{{ sig.status ? 'Active' : 'Inactive'
+                        }}</span>
+                    </div>
+                    <div class="signature-actions">
+                      <button type="button" class="btn btn-edit" (click)="editSignatory(i)">
+                        <i class="bi bi-pencil"></i> Edit
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-delete" (click)="deleteSignatory(i)">
+                        <i class="bi bi-trash"></i> Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div class="signature-preview" *ngIf="sig.preview || sig.signatureImage">
+                    <img [src]="sig.preview || sig.signatureImage" alt="Signature" />
+                  </div>
+                  <div class="signature-preview empty" *ngIf="!sig.preview && !sig.signatureImage">
+                    <span class="no-signature">No signature uploaded</span>
+                  </div>
+                </div>
+              </div>
+              <div class="no-data-msg" *ngIf="!signatories || signatories.length === 0">
+                <i class="bi bi-person-plus"></i>
+                <span>No signatories added yet. Use the form on the left to add one.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="form-footer">
+        <div class="action-info">
+          <small>
+            <i class="bi bi-info-circle me-1"></i>
+            Click Save to apply changes
+          </small>
+        </div>
+        <div class="action-buttons">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </button>
+          <button type="button" class="btn btn-save" (click)="onSave()">
+            <i class="bi bi-check-circle me-1"></i> Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

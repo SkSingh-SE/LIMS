@@ -1,0 +1,280 @@
+/* ===== COMPACT KPI CARD - SMALL DESIGN ===== */
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* Card Container - Compact */
+.dashboard-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #DA261C;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.dashboard-card.clickable {
+  cursor: pointer;
+}
+
+.dashboard-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.1);
+  border-left-width: 3px;
+}
+
+.dashboard-card.clickable:focus-visible {
+  outline: 2px solid #DA261C;
+  outline-offset: 1px;
+}
+
+/* Status Colors */
+.dashboard-card.card-status-normal { border-left-color: #DA261C; }
+.dashboard-card.card-status-warning { border-left-color: #FFBF00; }
+.dashboard-card.card-status-critical { border-left-color: #8B0000; }
+
+/* Card Header - Minimal */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Icon Badge - Small Circle */
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(218, 38, 28, 0.06);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.dashboard-card.clickable:hover .card-icon {
+  background: rgba(218, 38, 28, 0.1);
+}
+
+.card-icon i {
+  font-size: 1rem;
+  color: #DA261C;
+}
+
+/* Urgent Indicator - Compact */
+.urgent-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem 0.375rem;
+  background: #DA261C;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.urgent-indicator i {
+  font-size: 0.625rem;
+}
+
+/* Card Body - Compact Layout */
+.card-body {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-metrics {
+  margin-bottom: 0.125rem;
+}
+
+/* Metric Value - Emphasized but Compact */
+.count-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #DA261C;
+  line-height: 1;
+  display: block;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card Title - Compact */
+.card-title,
+.card-title-text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.card-title-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+  display: block;
+}
+
+.card-title-link:hover .card-title,
+.card-title-link:hover .card-title-text {
+  color: #DA261C;
+}
+
+/* Card Description - Hidden for Compact Design */
+.card-description {
+  display: none;
+}
+
+/* Card Footer - Hidden for Compact Design */
+.card-footer {
+  display: none;
+}
+
+/* Loading Skeleton - Compact */
+.card-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-header,
+.skeleton-count,
+.skeleton-description {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-header { 
+  height: 32px; 
+  width: 32px;
+  border-radius: 8px;
+}
+
+.skeleton-count { 
+  height: 24px; 
+  width: 60%; 
+}
+
+.skeleton-description { 
+  height: 12px; 
+  width: 80%; 
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Error State - Compact */
+.card-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+  height: 100%;
+}
+
+.error-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon i {
+  font-size: 1.125rem;
+  color: #EF4444;
+}
+
+.error-message {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Responsive - Even Smaller on Mobile */
+@media (max-width: 767px) {
+  .dashboard-card {
+    padding: 0.75rem 0.875rem;
+    min-height: 80px;
+  }
+  
+  .card-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .card-icon i {
+    font-size: 0.875rem;
+  }
+  
+  .count-number {
+    font-size: 1.375rem;
+  }
+  
+  .card-title {
+    font-size: 0.75rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-card,
+  .dashboard-card.clickable:hover,
+  .card-icon {
+    transition: none !important;
+    transform: none !important;
+  }
+  
+  .skeleton-header,
+  .skeleton-count,
+  .skeleton-description {
+    animation: none !important;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .dashboard-card {
+    border: 2px solid #000;
+  }
+  
+  .count-number {
+    color: #000;
+  }
+}

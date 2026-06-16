@@ -1,0 +1,120 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="auditorForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="docNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="issueDate" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Auditor Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('auditorDetails')">
+            <i class="bi" [ngClass]="openSections['auditorDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Internal Auditor Details</span>
+          </div>
+          <div *ngIf="openSections['auditorDetails']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label">
+                  Auditor Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="auditorName" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  Qualification
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="qualification" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Training Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="trainingDate" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Exam Score
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="examScore" placeholder="e.g. 85" min="0" max="100" />
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Remarks</label>
+                <textarea class="form-control" formControlName="remarks" rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <app-nabl-signature-section [parentForm]="auditorForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="auditorForm.invalid">
+            {{ isEditMode ? "Update Record" : "Save Record" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

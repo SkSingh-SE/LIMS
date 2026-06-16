@@ -1,0 +1,134 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Impartiality Agreement Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="employee" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-1'"
+          [mainTitle]="'IMPARTIALITY & CONFIDENTIALITY AGREEMENT'"
+          [docNo]="'DMSPL / Level-04 / Format / F-1'"
+          [issueNo]="'01'"
+          [revNo]="'00'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <p class="mb-4">
+        I, <strong>{{ employee.name }}</strong>, holding the position of <strong>{{ employee.designationName }}</strong>
+        at <strong>Divine Metallurgical Services Pvt. Ltd.</strong>, do hereby solemnly declare and agree to the following:
+      </p>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">1. IMPARTIALITY COMMITMENT</div>
+        <div class="sec-body">
+          <p>
+            I am aware that Divine Metallurgical Services Pvt. Ltd. (DMSPL) is committed to ensure impartiality in its laboratory activities.
+            DMSPL laboratory activities are structured and managed so as to safeguard impartiality.
+          </p>
+          <p>
+            I commit myself to carry out all laboratory activities impartially and not to allow commercial, financial or other pressures to compromise impartiality.
+            I will identify risks to my impartiality on an on-going basis. This shall include those risks that arise from my activities, or from my relationships,
+            or from the relationships of DMSPL personnel.
+          </p>
+          <p>
+            If a risk to impartiality is identified, I shall immediately inform the Quality Manager/Director to enable the laboratory to demonstrate how it eliminates or minimizes such risk.
+          </p>
+        </div>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">2. CONFIDENTIALITY COMMITMENT</div>
+        <div class="sec-body">
+          <p>
+            I am responsible, through legally enforceable commitments, for the management of all information obtained or created during the performance of laboratory activities.
+            I shall inform the customer in advance, of the information it intends to place in the public domain. Except for information that the customer makes publicly available,
+            or when agreed between the laboratory and the customer (e.g. for the purpose of responding to complaints), all other information is considered proprietary information and shall be regarded as confidential.
+          </p>
+          <p>
+            When the laboratory is required by law or authorized by contractual arrangements to release confidential information, the customer or individual concerned shall,
+            unless prohibited by law, be notified of the information provided.
+          </p>
+          <p>
+            Information about the customer obtained from sources other than the customer (e.g. complainant, regulators) shall be confidential between the customer and the laboratory.
+            The provider (source) of this information shall be confidential to the laboratory and shall not be shared with the customer, unless agreed by the source.
+          </p>
+        </div>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">3. CONFLICT OF INTEREST</div>
+        <div class="sec-body">
+          <p>
+            I declare that I have no personal, financial or other interest which might influence my judgment in performing laboratory activities.
+            I will not engage in any activity that may conflict with the interests of DMSPL or its customers.
+          </p>
+        </div>
+      </div>
+
+      <div class="doc-section mt-5">
+        <div class="sec-title">ACCEPTANCE</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td style="width: 50%;">
+                <div class="signature-line"></div>
+                <div>Signature of Employee</div>
+              </td>
+              <td style="width: 50%;" class="text-end">
+                <div>Date: <strong>{{ currentDate | date: 'dd/MM/yyyy' }}</strong></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="'Quality Manager'"
+          [issuedByName]="'Quality Manager'"
+          [reviewedApprovedByName]="'Director'">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

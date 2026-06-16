@@ -1,66 +1,254 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+@import "quill/dist/quill.snow.css";
 
 /* You can add global styles to this file, and also import other style files */
 
-:root {
-    --nav-height: 60px;
-    --transition-speed: 0.3s;
-    --primary-color: #DA261C;
-    /* Bootstrap 5 primary color by default */
-    --primary-hover: #d50a0ace;
-    --select2-multiple-height: 35px !important;
-    --select2-option-highlighted-background: #d50a0ace;
-    --select2-selection-border-radius: 5px;
-    --select2-selection-choice-line-height: 23px;
-    /* Default value, will be updated by JavaScript */
+/* CDK overlay must sit above Bootstrap modals (z-index 1055) */
+.cdk-overlay-container {
+  z-index: 1060 !important;
 }
 
-
+:root {
+  --nav-height: 60px;
+  --transition-speed: 0.3s;
+  --primary-color: #da261c;
+  --bs-primary: #da261c;
+  --bs-primary-rgb: 218, 38, 28;
+  --primary-hover: #d50a0ace;
+  --select2-multiple-height: 35px !important;
+  --select2-option-highlighted-background: #d50a0ace;
+  --select2-selection-border-radius: 5px;
+  --select2-selection-choice-line-height: 23px;
+  accent-color: #da261c;
+}
 
 body {
-    margin: 0;
-    font-family: var(--bs-font-sans-serif);
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #1F2937;
 }
 
 .content-container {
-    margin-top: var(--nav-height);
-    margin-bottom: auto;
-    min-height: fit-content;
-    transition: margin-top var(--transition-speed) ease-in-out;
+  margin-top: var(--nav-height);
+  margin-bottom: auto;
+  min-height: fit-content;
+  transition: margin-top var(--transition-speed) ease-in-out;
+}
+
+@media print {
+  app-navbar,
+  .navbar,
+  app-toast,
+  app-global-loader,
+  #btn-back-to-top,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .content-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+  }
+
+  * {
+    box-sizing: border-box !important;
+  }
+
+  /* NABL Print Frame Framework (v3) */
+  :root {
+    --print-page-width: 210mm;
+    --print-header-height: 170px; /* Standard NABL Header Height */
+    --print-footer-height: 130px; /* Standard NABL Footer Height */
+    --print-margin-top: 5mm;
+    --print-margin-bottom: 10mm;
+    --print-margin-side: 5mm;
+    --print-content-width: calc(var(--print-page-width) - (2 * var(--print-margin-side)));
+  }
+
+  .print-frame {
+    width: var(--print-content-width);
+    margin-left: var(--print-margin-side) !important;
+    margin-right: auto !important;
+    padding: 0 !important;
+    background: white;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  .print-table td {
+    padding: 0 !important;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table tfoot {
+    display: table-footer-group;
+  }
+
+  .print-footer-spacer {
+    display: none; /* tfoot with table-footer-group repeats naturally — no manual spacer needed */
+  }
+
+  .footer-container {
+    /* position: fixed removed — caused blank first page in Chrome print */
+    display: block !important;
+    width: 100%;
+    background: white;
+    box-sizing: border-box;
+  }
+
+  .no-screen-display {
+    display: none !important;
+  }
+
+  /* Orientation handling */
+  .orientation-portrait {
+    --print-page-width: 210mm;
+  }
+
+  .orientation-landscape {
+    --print-page-width: 297mm;
+  }
+
+  @page {
+    margin: 5mm 0 12mm 0; /* fixed values — CSS variables don't work inside @page */
+
+    /* Override Chrome's default browser headers/footers:
+       blank out date, title, URL — keep only page number at bottom-right */
+    @top-left    { content: ""; }
+    @top-center  { content: ""; }
+    @top-right   { content: ""; }
+    @bottom-left { content: ""; }
+    @bottom-center { content: ""; }
+    @bottom-right  {
+      content: counter(page);
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
+      color: #333;
+    }
+  }
+
+  /* Prevent content break inside essential blocks, but allow it for large editors */
+  .section,
+  .info-table,
+  .header-block {
+    page-break-inside: avoid !important;
+  }
+
+  /* Allow multipart rendering for rich text content */
+  .ql-editor,
+  .content-body,
+  .body-block {
+    page-break-inside: auto !important;
+    overflow: visible !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* The print-frame's outer tbody <tr> wraps the ENTIRE body content.
+     Keeping page-break-inside: avoid on it makes Chrome push all content to page 2.
+     Override it to allow natural flow starting from page 1. */
+  .print-table > tbody > tr {
+    page-break-inside: auto !important;
+  }
+
+  /* Ensure scrollable table wrappers don't clip content in print */
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  /* utility helpers that developers can apply when they need explicit
+       page breaks or want to prevent one inside an element */
+  .page-break-before {
+    page-break-before: always;
+  }
+  .page-break-after {
+    page-break-after: always;
+  }
+  .page-break-inside-avoid,
+  .avoid-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* Force background colors/images to print for all content inside the print frame */
+  .header-container *,
+  .body-block *,
+  .footer-container * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove Quill's default min-height so short content doesn't create blank space in print */
+  .ql-editor {
+    min-height: 0 !important;
+  }
+
+  /* Clear default bootstrap container padding in print */
+  .container,
+  .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 
 .navbar-background {
-    background-color: #DA261C !important;
+  background-color: #da261c !important;
 }
 .bg-theme {
-    background-color: #DA261C !important;
+  background-color: #da261c !important;
 }
-.theme-color{
- color: #DA261C;
+.theme-color {
+  color: #da261c;
 }
-.theme-border{
-  border: 1px solid #DA261C !important;
+.theme-border {
+  border: 1px solid #da261c !important;
 }
 .card-form-header {
-    font-family: 'Poppins', none;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: lighter;
-    background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-
+  font-family: "Poppins", sans-serif;
+  font-size: var(--font-md);
+  font-style: normal;
+  font-weight: 500;
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%) !important;
+  color: #fff;
+  padding: 0.65rem 1.25rem;
+}
+/* Standardize title inside card-form-header */
+.card-form-header h6,
+.card-form-header label,
+.card-form-header span {
+  font-size: var(--font-md);
+  font-weight: 500;
+  margin-bottom: 0;
+  color: #fff;
 }
 
 .header-font {
-    font-family: 'Poppins', none;
-    font-size: 14px;
-    font-style: normal;
-    font-weight: lighter;
+  font-family: "Poppins", none;
+  font-size: var(--font-md);
+  font-style: normal;
+  font-weight: lighter;
 }
 .label-font {
-    font-family: 'Poppins', none;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: normal;
+  font-family: "Poppins", none;
+  font-size: var(--font-xs);
+  font-style: normal;
+  font-weight: normal;
 }
 
 /* @media (max-width: 768px) {
@@ -74,25 +262,38 @@ body {
       }
   } */
 
+/* ── Global is-invalid override ──
+   Component-scoped CSS (Angular emulated encapsulation) has higher specificity
+   than Bootstrap's .form-select.is-invalid, so we must restore it globally. */
+.form-control.is-invalid,
+.form-select.is-invalid,
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+  border-color: var(--danger-main, #dc3545) !important;
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15) !important;
+}
+
+.invalid-feedback,
+.text-danger.text-sm {
+  color: var(--danger-main, #dc3545) !important;
+}
+
 .input-group-text.is-invalid {
-    border: 1px solid #dc3545 !important;
-    border-radius: 0.375rem;
+  border: 1px solid #dc3545 !important;
+  border-radius: 0.375rem;
 }
 
 .input-group .form-control.is-invalid {
-    border-right: none !important;
+  border-right: none !important;
 }
 
 .input-group.left-input-group .form-control.is-invalid {
   border-right: 1px solid #dc3545 !important;
 }
 .card .card-header {
-    padding: 0.5rem 0.5rem !important;
-    height: 47px !important;
+  padding: 0.5rem 0.5rem !important;
+  height: 47px !important;
 }
-
-
-
 
 .input-group .form-check-input {
   border: 1px solid var(--text-secondary-light);
@@ -105,8 +306,6 @@ body {
   margin-top: 0;
   cursor: pointer;
 }
-
-
 
 .input-group .form-check-input:checked::before {
   transform: translate(-50%, -50%) scale(1);
@@ -122,7 +321,7 @@ body {
 .input-group .form-check-input::before {
   position: absolute;
   content: "";
-  width:80%;
+  width: 80%;
   height: 80%;
   background-color: var(--red);
   border-radius: inherit;
@@ -139,28 +338,26 @@ body {
 }
 
 .form-check-input:checked {
-    background-color: transparent !important;
-    border-color: #FF2C1F !important;
+  background-color: transparent !important;
+  border-color: #ff2c1f !important;
 }
 
-.select2-selection__placeholder{
-    color: #6B7280 !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
+.select2-selection__placeholder {
+  color: #94a3b8 !important;
+  font-size: var(--font-sm) !important;
+  font-weight: 400 !important;
 }
-.select2-selection--multiple{
-    color: #6B7280 !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
-    padding: 3px !important;
-    
+.select2-selection--multiple {
+  color: #6b7280 !important;
+  font-size: var(--font-sm) !important;
+  font-weight: 400 !important;
+  padding: 3px !important;
 }
-.select2-selection--multiple:disabled{
-    background: var(--bs-secondary-bg) !important;
+.select2-selection--multiple:disabled {
+  background: var(--bs-secondary-bg) !important;
 }
 
 /* select css start here */
-
 
 /* pagination css */
 .pagination-container {
@@ -251,7 +448,7 @@ body {
   border-spacing: 0;
   margin-top: 5px;
   border-radius: 10px;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .table-compact th,
@@ -269,7 +466,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-   padding: 0.4rem 0.5rem !important;
+  padding: 0.4rem 0.5rem !important;
 }
 
 .table-compact tbody tr:nth-child(odd) {
@@ -283,7 +480,1971 @@ body {
 /* Action buttons inside table */
 .table-compact .btn {
   padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 /* Table css end here */
+
+/* Normalize Angular Material controls to look like Bootstrap form-control */
+.mat-form-field.mat-form-field-appearance-outline .mat-form-field-wrapper {
+  padding: 0 !important;
+}
+
+.mat-form-field .mat-form-field-infix {
+  padding: 6px 12px !important; /* match Bootstrap-like padding */
+  height: 38px !important; /* desired consistent height */
+  align-items: center !important;
+}
+
+.mat-form-field-appearance-outline .mat-form-field-outline {
+  border-radius: 4px !important;
+}
+
+/* Autocomplete panel: inherit font-size and padding similar to selects */
+.mat-autocomplete-panel {
+  font-size: var(--font-sm) !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Chips should visually match form-control height */
+.mat-chip-list .mat-chip {
+  height: 28px;
+  line-height: 28px;
+  margin: 0 4px 0 0;
+}
+
+/* Reduce the extra Mat subscript/hint spacing when placed inline */
+.mat-form-field-subscript-wrapper {
+  margin-top: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Utility: make our component look bootstrap-like */
+.mat-bootstrap-like .mat-form-field-infix {
+  padding: 6px 12px !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL ACCORDION SECTIONS — standard pattern for all forms
+   Usage:
+     <div class="accordion-section">
+       <div class="section-header" (click)="toggleSection('key')">
+         <i class="bi" [ngClass]="openSections['key'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+         <span>Section Title</span>
+       </div>
+       <div *ngIf="openSections['key']" class="section-body"> ... </div>
+     </div>
+════════════════════════════════════════════════════════════════ */
+.accordion-section {
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.section-header:hover {
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+}
+
+.section-header .bi {
+  font-size: var(--font-sm);
+  color: var(--primary-color);
+  transition: transform 0.2s;
+}
+
+.section-header span {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin-left: 0.5rem;
+}
+
+.section-body {
+  padding: 1.25rem;
+  background: #fff;
+}
+
+/* ── Section divider — lightweight inline label for subsections ── */
+.section-divider {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+/* ── Bootstrap accordion styled to match accordion-section ── */
+.accordion-item {
+  border: 1px solid #dee2e6 !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+.accordion-button {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+  font-size: var(--font-sm) !important;
+  font-weight: 600 !important;
+  color: var(--neutral-800) !important;
+  padding: 0.7rem 1rem !important;
+  box-shadow: none !important;
+}
+.accordion-button:not(.collapsed) {
+  background: linear-gradient(135deg, #e9ecef, #dee2e6) !important;
+  color: var(--neutral-800) !important;
+}
+.accordion-button::after {
+  filter: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23da261c'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+}
+.accordion-body {
+  padding: 1.25rem;
+  background: #fff;
+}
+
+/* Global Quill Editor Refinement */
+.ql-toolbar.ql-snow {
+  border: 1px solid #ced4da !important;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  background-color: #f8f9fa;
+  padding: 8px;
+  display: block;
+  width: 100%;
+}
+
+.ql-container.ql-snow {
+  border: 1px solid #ced4da !important;
+  border-top: none !important;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  font-family: "Poppins", sans-serif;
+  font-size: var(--font-sm);
+  height: auto !important;
+  min-height: 150px;
+  background-color: #ffffff;
+  width: 100%;
+}
+
+.ql-editor {
+  height: auto !important;
+  min-height: 150px;
+  color: #212529;
+  padding: 12px 15px;
+}
+
+/* Form Control Hover & Focus Effects */
+.form-control,
+.form-select {
+  transition: all 0.2s ease-in-out;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: #da261c;
+  background-color: #fff8f8;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #da261c !important;
+  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1) !important;
+}
+
+/* Native select — red dropdown arrow + red accent */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  accent-color: #da261c;
+}
+
+.form-select option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  color: #fff;
+}
+
+/* Native option hover — light red (Firefox/Edge) */
+.form-select option:hover {
+  background-color: #fef2f2 !important;
+  color: #da261c;
+}
+
+/* Chrome: highlight uses system accent — override via ::highlight (future) */
+select:focus option:checked {
+  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%) !important;
+  color: #fff !important;
+}
+
+/* Flat Card Styling for List items inside forms */
+.flat-card {
+  border: 1px solid #eee !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  transition: transform 0.2s ease;
+}
+
+.flat-card:hover {
+  transform: translateY(-2px);
+  border-color: #da261c !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* NABL Form Utility Classes */
+.input-narrow {
+  max-width: 80px;
+}
+.input-format-no {
+  max-width: 130px;
+}
+.signature-block-col {
+  width: 200px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NABL DOCUMENT BODY — Shared section / table styling
+   Used by ALL preview components for a consistent A4 document look.
+   Mirrors the JD preview design: black-bordered sections, gray title
+   bars, fixed-layout inner tables, and label-cell shading.
+════════════════════════════════════════════════════════════════ */
+
+/* Section block: thick black border wraps each logical section */
+.doc-section {
+  border: 2px solid #000;
+  overflow: visible;
+  margin-bottom: 12px;
+}
+
+/* Section title bar: gray background, uppercase label */
+.sec-title {
+  background: #e8e8e8 !important;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: var(--font-sm);
+  border-bottom: 2px solid #000;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Section rich-text / prose body */
+.sec-body {
+  padding: 10px 14px;
+  font-size: var(--font-md);
+  line-height: 1.7;
+  color: #000;
+}
+
+/* Label cell inside a table — light gray, bold */
+.lbl {
+  background: #f2f2f2 !important;
+  font-weight: 700;
+  color: #000 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Inner table: fixed layout prevents overflow beyond A4 frame */
+.inner-table {
+  table-layout: fixed;
+  word-wrap: break-word;
+  margin-bottom: 0 !important;
+  width: 100%;
+}
+
+.inner-table td,
+.inner-table th {
+  padding: 7px 10px;
+  font-size: var(--font-sm);
+  color: #000;
+  border: 1px solid #000 !important;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Table header row: gray background, uppercase */
+.tbl-head th {
+  background: #f2f2f2 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-sm);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NABL PREVIEW PAGE — Document Viewer Background
+   Applied to every container that wraps an app-print-frame,
+   giving all preview pages a consistent dark gray document-viewer look.
+════════════════════════════════════════════════════════════════ */
+@media screen {
+  /* Any Bootstrap container-fluid/container that directly holds
+     a print-frame host element gets the dark gray viewer background. */
+  .nabl-preview-page {
+    background: #6b6b6b;
+    min-height: calc(100vh - 60px);
+    padding: 32px 24px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: auto;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIMS DESIGN SYSTEM — Extended Theme Variables
+   Full color palette aligned with primary red (#DA261C)
+   These variables are also referenced by existing styles above.
+════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Primary (Red) Palette ─────────────────────────────── */
+  --primary-50:  #fdeaea;
+  --primary-100: #fcd5d5;
+  --primary-200: #f9abab;
+  --primary-300: #f68181;
+  --primary-400: #f35757;
+  --primary-500: #f02d2d;
+  --primary-600: #DA261C;
+  --primary-700: #9b1c1c;
+  --primary-800: #c62828;
+  --primary-900: #5c1212;
+
+  /* ── Neutral Palette ───────────────────────────────────── */
+  --neutral-50:  #F5F6FA;
+  --neutral-100: #F3F4F6;
+  --neutral-200: #EBECEF;
+  --neutral-300: #D1D5DB;
+  --neutral-400: #9CA3AF;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563;
+  --neutral-700: #374151;
+  --neutral-800: #1F2937;
+  --neutral-900: #111827;
+
+  /* ── Semantic Color Tokens ─────────────────────────────── */
+  --success-main:    #45B369;
+  --success-surface: #DAF0E1;
+  --success-border:  #B5E1C3;
+
+  --warning-main:    #D97706;
+  --warning-surface: #FFF9E2;
+  --warning-border:  #FFEBA6;
+
+  --info-main:    #1D4ED8;
+  --info-surface: #EFF6FF;
+  --info-border:  #BFDBFE;
+
+  --danger-main:    #DC2626;
+  --danger-surface: #FEF2F2;
+  --danger-border:  #FECACA;
+
+  /* ── Semantic Text / Input Tokens ─────────────────────── */
+  --text-primary-light:   var(--neutral-900);
+  --text-secondary-light: var(--neutral-600);
+  --input-form-light:     var(--neutral-300);
+  --input-bg:             var(--neutral-50);
+  --input-stroke:         var(--neutral-300);
+  --border-color:         #d1d5db80;
+
+  /* ── Misc ───────────────────────────────────────────────── */
+  --red:   #E30A0A;
+  --brand: var(--primary-600);
+
+  /* ── Font size scale ─────────────────────────────────── */
+  --font-xxs: 0.6875rem;  /* 11px */
+  --font-xs:  0.75rem;    /* 12px */
+  --font-sm:  0.8125rem;  /* 13px — base UI size */
+  --font-md:  0.9375rem;  /* 15px */
+  --font-lg:  1.0625rem;  /* 17px */
+  --font-xl:  1.25rem;    /* 20px */
+  --font-2xl: 1.125rem;   /* 18px — page/section headers */
+
+  /* ── Line height scale ───────────────────────────────── */
+  --line-height-tight:  1.2;
+  --line-height-normal: 1.5;
+  --line-height-loose:  1.7;
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.12);
+
+  /* ── Border radius ───────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL BUTTON OVERRIDES — red theme primary button
+   Override Bootstrap 5 CSS variables to force red theme
+════════════════════════════════════════════════════════════════ */
+.btn-primary {
+  --bs-btn-bg: #da261c;
+  --bs-btn-border-color: #da261c;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: #b91c1c;
+  --bs-btn-hover-border-color: #b91c1c;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #a51a1a;
+  --bs-btn-active-border-color: #a51a1a;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-bg: #da261c;
+  --bs-btn-disabled-border-color: #da261c;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-focus-shadow-rgb: 218, 38, 28;
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+  color: #fff !important;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--primary-hover) !important;
+  border-color:     var(--primary-hover) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25) !important;
+}
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-color: var(--primary-300) !important;
+  border-color:     var(--primary-300) !important;
+  opacity: 0.65;
+}
+
+.btn-theme {
+  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+.btn-theme:hover {
+  opacity: 0.92;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(218, 38, 28, 0.35);
+}
+.btn-theme:focus {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.35);
+  color: #fff;
+}
+
+/* All buttons – tighter default sizing */
+.btn {
+  font-size: var(--font-sm);
+  padding: 0.375rem 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm) !important;
+  transition: all 0.2s ease;
+}
+.btn-sm {
+  padding: 0.22rem 0.55rem !important;
+  font-size: var(--font-xs) !important;
+}
+.btn-lg {
+  padding: 0.55rem 1.25rem !important;
+  font-size: var(--font-md) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STANDARDIZED ACTION BUTTONS — use these for all form actions
+   .btn-save    → Save / Submit (theme red)
+   .btn-cancel  → Cancel / Back (warning yellow)
+   .btn-remove  → Delete / Remove row (red outline)
+   .btn-add     → Add row / Add item (primary outline)
+════════════════════════════════════════════════════════════════ */
+.btn-save {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #fff !important;
+  font-weight: 500;
+  min-width: 90px;
+}
+.btn-save:hover,
+.btn-save:focus {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25) !important;
+}
+.btn-save:disabled,
+.btn-save.disabled {
+  background-color: var(--primary-300) !important;
+  border-color: var(--primary-300) !important;
+  color: #fff !important;
+  opacity: 0.65;
+}
+
+.btn-cancel {
+  --bs-btn-bg: #ffc107 !important;
+  --bs-btn-border-color: #ffc107 !important;
+  --bs-btn-color: #000;
+  --bs-btn-hover-bg: #e0a800;
+  --bs-btn-hover-border-color: #d39e00 !important;
+  --bs-btn-hover-color: #000;
+  font-weight: 500;
+  min-width: 90px;
+}
+
+/* ── .btn-remove — Delete / Remove (danger outline) ── */
+.btn-remove {
+  color: var(--danger-main);
+  border: 1px solid var(--danger-main);
+  background-color: transparent;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.btn-remove:hover,
+.btn-remove:focus {
+  background-color: var(--danger-main);
+  border-color: var(--danger-main);
+  color: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.2);
+}
+.btn-remove:active {
+  background-color: #c82333;
+  border-color: #c82333;
+  color: #fff;
+}
+
+/* ── .btn-add — Add row / Add item (solid, clearly visible button) ── */
+.btn-add {
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff4b3a 0%, var(--primary-color) 100%) !important;
+  border: none !important;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: var(--font-sm);
+  transition: all 0.2s ease;
+  gap: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+}
+.btn-add i {
+  font-size: var(--font-md);
+  transition: transform 0.2s ease;
+}
+.btn-add:hover,
+.btn-add:focus {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #b71c1c 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+  transform: translateY(-1px);
+}
+.btn-add:hover i {
+  transform: rotate(90deg);
+}
+.btn-add:active {
+  background: #b71c1c !important;
+  color: #fff !important;
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.2);
+}
+
+/* ── .btn-add-row — Standalone "Add" below a table/section ── */
+.btn-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff4b3a 0%, var(--primary-color) 100%) !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+}
+.btn-add-row i {
+  font-size: var(--font-md);
+  transition: transform 0.2s ease;
+}
+.btn-add-row:hover {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #b71c1c 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+  transform: translateY(-1px);
+}
+.btn-add-row:hover i {
+  transform: rotate(90deg);
+}
+
+/* ── .btn-delete-row — Small circular trash button inside table rows ── */
+.btn-delete-row {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #adb5bd;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-delete-row:hover {
+  background-color: var(--danger-main);
+  border-color: var(--danger-main);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+  transform: scale(1.1);
+}
+
+/* ── Form action bar — consistent spacing at bottom of forms ── */
+.form-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARD IMPROVEMENTS
+════════════════════════════════════════════════════════════════ */
+.card {
+  border: 1px solid #e9ecef !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── BASIC DATA TABLE CARD — list page wrapper ── */
+.basic-data-table {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+
+.basic-data-table > .card-body {
+  padding: 1rem 1.25rem;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BORDERED TABLE — global, replaces duplicated component CSS
+════════════════════════════════════════════════════════════════ */
+.bordered-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: var(--font-sm);
+}
+
+.bordered-table thead {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f3f5 100%);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.bordered-table thead tr th {
+  padding: 9px 10px !important;
+  font-weight: 600;
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--neutral-700);
+  border: 1px solid #e9ecef;
+  white-space: nowrap;
+  vertical-align: middle;
+  background: #f8f9fa;
+  user-select: none;
+}
+
+.bordered-table thead tr th:hover {
+  background-color: #eef0f2;
+  cursor: pointer;
+}
+
+.bordered-table tbody tr td {
+  padding: 7px 10px !important;
+  border: 1px solid #e9ecef;
+  font-size: var(--font-sm);
+  color: var(--neutral-800);
+  vertical-align: middle;
+}
+
+.bordered-table tbody tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+.bordered-table tbody tr:hover {
+  background-color: #fff3f3 !important;
+  transition: background-color 0.15s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SORTING ICONS — global, replaces component duplicates
+════════════════════════════════════════════════════════════════ */
+.sorting-icon-up {
+  font-size: var(--font-lg);
+  line-height: 11px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -3px;
+  color: var(--neutral-400);
+  transition: color 0.15s;
+  display: block;
+}
+.sorting-icon-up:hover { color: var(--primary-color); }
+
+.sorting-icon-down {
+  font-size: var(--font-lg);
+  line-height: 11px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: -3px;
+  color: var(--neutral-400);
+  transition: color 0.15s;
+  display: block;
+}
+.sorting-icon-down:hover { color: var(--primary-color); }
+
+/* ════════════════════════════════════════════════════════════════
+   CUSTOM SEARCH INPUT — global
+════════════════════════════════════════════════════════════════ */
+.custom-search {
+  height: 36px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s;
+}
+
+.custom-search:focus-within {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12);
+}
+
+.custom-search input,
+.custom-search .input-group-text {
+  height: 100%;
+  border-color: #dee2e6;
+}
+
+.custom-search input:focus { box-shadow: none; }
+
+.custom-search .input-group-text {
+  background: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.custom-search .input-group-text:hover {
+  background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ICON ACTION LINKS — global, replaces component duplicates
+════════════════════════════════════════════════════════════════ */
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s, transform 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.icon-link:hover {
+  background-color: var(--neutral-100);
+  transform: scale(1.1);
+}
+
+.icon-svg {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  display: block;
+  flex-shrink: 0;
+}
+.icon-svg:hover { transform: scale(1.15); }
+
+/* ════════════════════════════════════════════════════════════════
+   FILTER MODAL — floating column filter popup
+════════════════════════════════════════════════════════════════ */
+.filter-modal {
+  position: absolute;
+  display: none;
+  z-index: 1050;
+  min-width: 220px;
+  max-width: calc(100vw - 20px);
+  animation: fadeInDown 0.15s ease;
+}
+
+.filter-modal .card {
+  border: 1px solid #dee2e6 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-modal) !important;
+  background: #fff;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FORM ENHANCEMENTS — Two canonical sets
+   Normal  → .form-label  + .form-control  / .form-select   (36px)
+   Compact → .form-label-sm + .form-control-sm / .form-select-sm (30px)
+════════════════════════════════════════════════════════════════ */
+
+/* ── Normal label ── */
+.form-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin-bottom: 0.28rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Compact label (use alongside form-control-sm) ── */
+.form-label-sm {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: 0.15rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Normal controls (36px) ── */
+.form-control,
+.form-select {
+  font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-300);
+  color: var(--neutral-900);
+  min-height: 36px;
+}
+
+/* ── Compact controls (30px) ── */
+.form-control-sm,
+.form-select-sm {
+  font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-300);
+  color: var(--neutral-900);
+  min-height: 30px !important;
+  padding: 0.2rem 0.5rem !important;
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+.form-control-sm::placeholder,
+.form-select-sm::placeholder {
+  color: var(--neutral-400);
+  font-size: var(--font-sm);
+}
+
+.form-control:disabled,
+.form-select:disabled,
+.form-control[readonly] {
+  background-color: var(--neutral-100);
+  color: var(--neutral-500);
+  cursor: not-allowed;
+}
+
+fieldset {
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1.125rem 0.75rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}
+
+legend {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--primary-color);
+  background: #fff;
+  padding: 0 6px;
+  float: none;
+  width: auto;
+  margin-bottom: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Required asterisk */
+.form-label .text-danger,
+label .text-danger {
+  font-size: var(--font-sm);
+  margin-left: 2px;
+}
+
+/* Validation feedback */
+.invalid-feedback {
+  font-size: var(--font-xs);
+  margin-top: 3px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODAL ENHANCEMENTS
+════════════════════════════════════════════════════════════════ */
+.modal-content {
+  border-radius: var(--radius-lg) !important;
+  border: none !important;
+  box-shadow: var(--shadow-modal) !important;
+  overflow: hidden;
+}
+
+.modal-header.card-form-header {
+  padding: 0.75rem 1.1rem;
+}
+
+.modal-footer {
+  padding: 0.65rem 1.1rem;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  gap: 0.5rem;
+}
+
+.modal-body {
+  padding: 1.25rem 1.1rem;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATUS BADGES
+════════════════════════════════════════════════════════════════ */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  letter-spacing: 0.25px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.badge-success {
+  background-color: var(--success-surface);
+  color: var(--success-main);
+  border: 1px solid var(--success-border);
+}
+
+.badge-warning {
+  background-color: var(--warning-surface);
+  color: var(--warning-main);
+  border: 1px solid var(--warning-border);
+}
+
+.badge-danger {
+  background-color: var(--danger-surface);
+  color: var(--danger-main);
+  border: 1px solid var(--danger-border);
+}
+
+.badge-info {
+  background-color: var(--info-surface);
+  color: var(--info-main);
+  border: 1px solid var(--info-border);
+}
+
+.badge-neutral {
+  background-color: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 1px solid var(--neutral-300);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NAV TABS — enhanced
+════════════════════════════════════════════════════════════════ */
+.nav-tabs {
+  border-bottom: 2px solid #dee2e6;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.nav-tabs .nav-link {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-600);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 7px 14px;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-50);
+  border-bottom-color: var(--primary-300);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active:focus {
+  color: var(--primary-color) !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  background: transparent !important;
+  font-weight: 600;
+  border-radius: 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EMPTY STATE — "No records found"
+════════════════════════════════════════════════════════════════ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  color: var(--neutral-500);
+  text-align: center;
+  border: 1.5px dashed var(--neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--neutral-50);
+  margin: 0.5rem 0;
+}
+
+.empty-state i.bi {
+  font-size: 2.25rem;
+  margin-bottom: 0.6rem;
+  color: var(--neutral-300);
+}
+
+.empty-state .empty-title {
+  font-weight: 600;
+  font-size: var(--font-md);
+  color: var(--neutral-700);
+  margin-bottom: 0.2rem;
+}
+
+.empty-state .empty-desc {
+  font-size: var(--font-sm);
+  color: var(--neutral-500);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NG-SELECT OVERRIDES — matches Bootstrap form-control height/style
+════════════════════════════════════════════════════════════════ */
+.ng-select .ng-select-container {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-sm) !important;
+  min-height: 36px !important;
+  font-size: var(--font-sm) !important;
+  font-family: 'Poppins', sans-serif !important;
+  background-color: #fff !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ng-select.ng-select-focused .ng-select-container {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+}
+
+.ng-select .ng-select-container:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ng-select .ng-placeholder {
+  color: var(--neutral-400) !important;
+  font-size: var(--font-sm) !important;
+}
+
+.ng-select .ng-value {
+  font-size: var(--font-sm) !important;
+}
+
+.ng-select .ng-input > input {
+  font-size: var(--font-sm) !important;
+}
+
+/* Allow ng-select dropdown panel to overflow modal-content (fixes clipping of ng-select inside Bootstrap modals) */
+.modal .modal-content {
+  overflow: visible;
+}
+.modal .modal-body {
+  overflow: visible;
+}
+
+.ng-dropdown-panel .ng-option {
+  font-size: var(--font-sm) !important;
+  padding: 8px 12px !important;
+  color: var(--neutral-800) !important;
+  background-color: #fff !important;
+  transition: background-color 0.15s ease;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-marked {
+  background-color: #fef2f2 !important;
+  color: var(--primary-color) !important;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-selected {
+  background-color: #fff !important;
+  color: var(--primary-color) !important;
+  font-weight: 500 !important;
+  position: relative;
+  padding-right: 32px !important;
+}
+
+.ng-dropdown-panel .ng-option.ng-option-selected::after {
+  content: '\2713';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: var(--font-sm);
+}
+
+.ng-dropdown-panel .ng-option.ng-option-selected.ng-option-marked {
+  background-color: var(--neutral-100) !important;
+  color: var(--primary-color) !important;
+}
+
+.ng-select.ng-invalid.ng-touched .ng-select-container {
+  border-color: #dc3545 !important;
+}
+
+.ng-select.ng-select-disabled .ng-select-container {
+  background-color: var(--neutral-100) !important;
+  cursor: not-allowed;
+}
+
+/* ─── ng-select Multi-Select Tags (Red Theme) ─── */
+.ng-select.ng-select-multiple .ng-value {
+  background-color: #fef2f2 !important;
+  border: 1px solid #da261c !important;
+  border-radius: 4px !important;
+  color: #da261c !important;
+  font-size: var(--font-sm) !important;
+  padding: 0 6px !important;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-label {
+  color: #da261c !important;
+  font-weight: 500;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-icon {
+  color: #da261c !important;
+  border-right: 1px solid rgba(218, 38, 28, 0.3) !important;
+}
+
+.ng-select.ng-select-multiple .ng-value .ng-value-icon:hover {
+  background-color: #da261c !important;
+  color: #fff !important;
+}
+
+/* ─── ng-select SM (smallInput=true) — matches Bootstrap form-control-sm ─── */
+.ng-select-sm .ng-select-container {
+  min-height: 30px !important;
+  height: 30px !important;
+  font-size: var(--font-sm, 0.8125rem) !important;
+  padding: 0 0.5rem !important;
+  align-items: center !important;
+}
+/* Multi-select: allow container to grow only when tags wrap */
+.ng-select-sm.ng-select-multiple .ng-select-container {
+  height: auto !important;
+  min-height: 30px !important;
+  padding: 0 0.25rem !important;
+  align-items: center !important;
+}
+.ng-select-sm .ng-select-container .ng-value-container {
+  padding: 0 !important;
+  align-items: center !important;
+}
+.ng-select-sm.ng-select-multiple .ng-select-container .ng-value-container {
+  padding: 2px 4px !important;
+  gap: 2px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+}
+.ng-select-sm .ng-placeholder {
+  font-size: 0.8rem !important;
+  line-height: 1.5 !important;
+  padding: 0 !important;
+}
+.ng-select-sm .ng-value {
+  font-size: 0.8rem !important;
+}
+/* Compact tags for multi-select-sm */
+.ng-select-sm.ng-select-multiple .ng-value {
+  font-size: 0.72rem !important;
+  padding: 0 4px !important;
+  margin: 1px 2px 1px 0 !important;
+  line-height: 20px !important;
+  height: 20px !important;
+}
+.ng-select-sm.ng-select-multiple .ng-value .ng-value-label {
+  padding: 0 2px !important;
+  line-height: 20px !important;
+}
+.ng-select-sm.ng-select-multiple .ng-value .ng-value-icon {
+  padding: 0 4px !important;
+  line-height: 20px !important;
+}
+.ng-select-sm .ng-input {
+  padding: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.ng-select-sm .ng-input > input {
+  font-size: 0.8rem !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
+}
+.ng-select-sm .ng-arrow-wrapper {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 4px !important;
+}
+.ng-select-sm .ng-clear-wrapper {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.ng-select-sm .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  font-size: 0.8rem !important;
+  padding: 5px 10px !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+════════════════════════════════════════════════════════════════ */
+/* Text sizes */
+.text-xxs { font-size: var(--font-xxs) !important; }
+.text-xs  { font-size: var(--font-xs) !important; }
+.text-sm  { font-size: var(--font-sm) !important; }
+.text-md  { font-size: var(--font-md) !important; }
+.text-lg  { font-size: var(--font-lg) !important; }
+.text-xl  { font-size: var(--font-xl) !important; }
+
+/* Page / section header — replaces hardcoded 18px in list components */
+.page-header-title {
+  font-size: var(--font-2xl);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  color: var(--neutral-800);
+}
+
+/* Font weight utilities */
+.fw-light   { font-weight: 300 !important; }
+.fw-normal  { font-weight: 400 !important; }
+.fw-medium  { font-weight: 500 !important; }
+.fw-semi    { font-weight: 600 !important; }
+.fw-bold    { font-weight: 700 !important; }
+
+/* Cursor */
+.cursor         { cursor: pointer; }
+.cursor-pointer { cursor: pointer; }
+.cursor-default { cursor: default; }
+
+/* Quick theme color utilities */
+.text-theme   { color: var(--primary-color) !important; }
+.bg-theme-50  { background-color: var(--primary-50) !important; }
+.bg-theme-100 { background-color: var(--primary-100) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   SCROLLBAR — thin, themed
+════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--neutral-100); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-300); }
+
+/* ════════════════════════════════════════════════════════════════
+   CHECKBOX & RADIO — red-themed, replaces Bootstrap blue default
+════════════════════════════════════════════════════════════════ */
+
+/* Base state — all form-check inputs */
+.form-check-input {
+  cursor: pointer;
+  border-color: var(--neutral-300);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 0.5rem !important;
+}
+
+.form-check-input:hover {
+  border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+  outline: none;
+}
+
+/* Standard checkbox inside .form-check (higher specificity overrides the
+   global "transparent" rule set earlier in this file for .input-group use) */
+.form-check .form-check-input[type="checkbox"]:checked,
+.form-check-inline .form-check-input[type="checkbox"]:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Standard radio inside .form-check */
+.form-check .form-check-input[type="radio"]:checked,
+.form-check-inline .form-check-input[type="radio"]:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Indeterminate checkbox */
+.form-check-input[type="checkbox"]:indeterminate {
+  background-color: var(--primary-200) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* Disabled state */
+.form-check-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.form-check-input:disabled ~ .form-check-label {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* form-check-label */
+.form-check-label {
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--neutral-700);
+  user-select: none;
+  line-height: 1.5;
+}
+
+/* Small form-check variant — used as .form-check.form-check-sm */
+.form-check-sm .form-check-input {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: 0.22rem !important;
+}
+.form-check-sm .form-check-label {
+  font-size: var(--font-xs);
+}
+
+/* Inline checks — even spacing */
+.form-check-inline {
+  margin-right: 1rem;
+  margin-bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TOGGLE SWITCH — form-switch with color variants
+   Usage: <div class="form-switch switch-primary">
+            <input class="form-check-input" type="checkbox" role="switch">
+          </div>
+════════════════════════════════════════════════════════════════ */
+
+/* Base switch track */
+.form-switch .form-check-input {
+  width: 2.5em;
+  height: 1.3em;
+  border-radius: 2em;
+  border-color: var(--neutral-300);
+  background-color: var(--neutral-200);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-switch .form-check-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+}
+
+/* switch-primary (red) — default for the app */
+.form-switch.switch-primary .form-check-input:checked,
+.form-switch .form-check-input:checked {
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
+}
+
+/* switch-success (green) */
+.form-switch.switch-success .form-check-input:checked {
+  background-color: var(--success-main) !important;
+  border-color:     var(--success-main) !important;
+}
+.form-switch.switch-success .form-check-input:focus {
+  border-color: var(--success-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(69, 179, 105, 0.2) !important;
+}
+
+/* switch-danger (danger red) */
+.form-switch.switch-danger .form-check-input:checked {
+  background-color: var(--danger-main) !important;
+  border-color:     var(--danger-main) !important;
+}
+.form-switch.switch-danger .form-check-input:focus {
+  border-color: var(--danger-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.2) !important;
+}
+
+/* switch-warning (amber) */
+.form-switch.switch-warning .form-check-input:checked {
+  background-color: var(--warning-main) !important;
+  border-color:     var(--warning-main) !important;
+}
+.form-switch.switch-warning .form-check-input:focus {
+  border-color: var(--warning-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(217, 119, 6, 0.2) !important;
+}
+
+/* switch-info (blue) */
+.form-switch.switch-info .form-check-input:checked {
+  background-color: var(--info-main) !important;
+  border-color:     var(--info-main) !important;
+}
+.form-switch.switch-info .form-check-input:focus {
+  border-color: var(--info-main) !important;
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.2) !important;
+}
+
+/* Large switch — apply as .form-switch.switch-lg */
+.form-switch.switch-lg .form-check-input {
+  width: 3.25em !important;
+  height: 1.65em !important;
+}
+
+/* Disabled switch */
+.form-switch .form-check-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RANGE SLIDER — red-themed track and thumb
+════════════════════════════════════════════════════════════════ */
+.form-range {
+  cursor: pointer;
+  padding: 0;
+  accent-color: var(--primary-color); /* Modern browser fallback */
+}
+
+/* Webkit thumb */
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--primary-color);
+  border: 2px solid #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6.5px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+}
+.form-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.15);
+}
+.form-range::-webkit-slider-thumb:active {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 8px rgba(218, 38, 28, 0.2);
+}
+
+/* Webkit track */
+.form-range::-webkit-slider-runnable-track {
+  background-color: var(--neutral-200);
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Firefox thumb */
+.form-range::-moz-range-thumb {
+  background-color: var(--primary-color);
+  border: 2px solid #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+}
+
+/* Firefox track */
+.form-range::-moz-range-track {
+  background-color: var(--neutral-200);
+  height: 5px;
+  border-radius: 3px;
+}
+
+/* Firefox filled portion */
+.form-range::-moz-range-progress {
+  background-color: var(--primary-color);
+  height: 5px;
+  border-radius: 3px;
+}
+
+.form-range:focus { outline: none; box-shadow: none; }
+.form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+}
+.form-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TEXTAREA
+════════════════════════════════════════════════════════════════ */
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FILE INPUT
+════════════════════════════════════════════════════════════════ */
+.form-control[type="file"] {
+  padding: 5px 10px;
+  cursor: pointer;
+  line-height: 1.7;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button {
+  background: var(--primary-50);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm);
+  padding: 3px 12px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-right: 12px;
+}
+.form-control[type="file"]::-webkit-file-upload-button:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-300);
+}
+
+/* Firefox / standard */
+.form-control[type="file"]::file-selector-button {
+  background: var(--primary-50);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm);
+  padding: 3px 12px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-right: 12px;
+}
+.form-control[type="file"]::file-selector-button:hover {
+  background: var(--primary-100);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INPUT GROUP ENHANCEMENTS
+════════════════════════════════════════════════════════════════ */
+.input-group-text {
+  background-color: var(--neutral-50);
+  border-color: var(--neutral-300);
+  color: var(--neutral-600);
+  font-size: var(--font-sm);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+/* Red border on all parts when group is focused */
+.input-group:focus-within .input-group-text {
+  border-color: var(--primary-color);
+}
+.input-group:focus-within > .form-control,
+.input-group:focus-within > .form-select {
+  border-color: var(--primary-color);
+  box-shadow: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SELECT2 OVERRIDES — theme alignment for single & multiple
+════════════════════════════════════════════════════════════════ */
+.select2-container--default .select2-selection--single {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-sm) !important;
+  height: 36px !important;
+  display: flex;
+  align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px !important;
+  font-size: var(--font-sm);
+  color: var(--neutral-900) !important;
+  padding-left: 10px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 34px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: var(--neutral-400) !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+  outline: none !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default.select2-container--open .select2-selection--multiple {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+}
+
+.select2-dropdown {
+  border-color: var(--neutral-300) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-modal) !important;
+  font-size: var(--font-sm);
+}
+
+.select2-results__option {
+  padding: 6px 12px !important;
+  color: var(--neutral-800) !important;
+}
+
+.select2-results__option--highlighted[aria-selected] {
+  background-color: var(--neutral-100) !important;
+  color: var(--neutral-800) !important;
+}
+
+.select2-results__option[aria-selected="true"] {
+  background-color: #fff !important;
+  color: var(--primary-color) !important;
+  font-weight: 500 !important;
+}
+
+.select2-container--default .select2-selection--single.select2-selection--disabled,
+.select2-container--default .select2-selection--multiple.select2-selection--disabled {
+  background-color: var(--neutral-100) !important;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BTN-OUTLINE-DANGER-600 — red outlined action button
+   Used heavily for "Add row / Add item" actions across all forms
+════════════════════════════════════════════════════════════════ */
+.btn-outline-primary {
+  --bs-btn-color: #da261c;
+  --bs-btn-border-color: #da261c;
+  --bs-btn-hover-bg: #da261c;
+  --bs-btn-hover-border-color: #da261c;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #b91c1c;
+  --bs-btn-active-border-color: #b91c1c;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-color: #da261c;
+  --bs-btn-disabled-border-color: #da261c;
+  --bs-btn-focus-shadow-rgb: 218, 38, 28;
+  color:        #da261c !important;
+  border-color: #da261c !important;
+  background:   transparent !important;
+  font-weight:  500;
+  transition:   background-color 0.18s ease, color 0.18s ease,
+                box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus-visible {
+  background-color: #da261c !important;
+  border-color:     #da261c !important;
+  color:            #fff !important;
+  box-shadow:       0 2px 8px rgba(218, 38, 28, 0.3);
+}
+.btn-outline-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.22);
+  outline: none;
+}
+.btn-outline-primary:active {
+  background-color: #b91c1c !important;
+  border-color:     #b91c1c !important;
+  color:            #fff !important;
+}
+.btn-outline-primary:disabled,
+.btn-outline-primary.disabled {
+  color:        #da261c !important;
+  border-color: #da261c !important;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ENHANCED TABS — Standard nav-tabs, Wizard tabs, Pills, nav-fill
+════════════════════════════════════════════════════════════════ */
+
+/* ── Standard nav-tabs (override previous basic definition) ── */
+.nav-tabs {
+  border-bottom: 2px solid #e5e7eb;
+  gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0;
+  background: transparent;
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tabs .nav-item { flex-shrink: 0; }
+
+.nav-tabs .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-500);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 9px 18px;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Underline slide-in on hover */
+.nav-tabs .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-300);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+  border-radius: 2px 2px 0 0;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-50);
+  border-bottom-color: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.nav-tabs .nav-link:hover::after { transform: scaleX(1); }
+
+/* Active state */
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active:focus {
+  color:            var(--primary-color) !important;
+  font-weight:      600;
+  background:       #fff !important;
+  border-top:       2px solid var(--primary-color) !important;
+  border-left:      1px solid #e5e7eb !important;
+  border-right:     1px solid #e5e7eb !important;
+  border-bottom:    2px solid #fff !important;
+  border-radius:    var(--radius-sm) var(--radius-sm) 0 0 !important;
+  box-shadow:       0 -2px 0 var(--primary-color), 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom:    -2px;
+  z-index:          1;
+}
+.nav-tabs .nav-link.active::after { display: none; }
+
+/* Tab content */
+.tab-content > .tab-pane { display: none; }
+.tab-content > .active   { display: block; }
+.tab-content > .tab-pane.fade { opacity: 0; transition: opacity 0.2s ease; }
+.tab-content > .tab-pane.fade.show { opacity: 1; }
+
+/* Tab content body spacing */
+.tab-content {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 0.75rem;
+}
+
+/* ── nav-fill equal-width tabs (sample-inward-form) ── */
+.nav-tabs.nav-fill .nav-link { justify-content: center; flex: 1; }
+
+/* ── nav-pills ── */
+.nav-pills {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-pills .nav-link {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+  border: 1.5px solid var(--neutral-200);
+  border-radius: var(--radius-md) !important;
+  padding: 6px 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.nav-pills .nav-link:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+  color: var(--primary-color);
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background:   var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color:        #fff !important;
+  font-weight:  600;
+  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.28);
+}
+
+/* ── Form Wizard Step Tabs (employee-form)
+   Classes: nav-tabs.form-wizard-list.list2
+   Each step is a <li class="nav-item"> with .activated (past) / .active (current)
+── */
+.form-wizard { position: relative; }
+
+.form-wizard-list {
+  display: flex;
+  align-items: center;
+  border-bottom: none !important;
+  padding: 0 0 1rem;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  counter-reset: wizard-step;
+}
+.form-wizard-list::-webkit-scrollbar { display: none; }
+
+.form-wizard-list .nav-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 90px;
+  position: relative;
+}
+
+/* Connector line between steps */
+.form-wizard-list .nav-item::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--neutral-200);
+  transition: background 0.3s ease;
+  margin: 0 4px;
+}
+.form-wizard-list .nav-item:last-child::after { display: none; }
+
+/* Activated steps — past/completed */
+.form-wizard-list .nav-item.activated::after {
+  background: var(--primary-color);
+}
+
+/* Each step tab */
+.form-wizard-list .nav-item .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--neutral-400);
+  background: transparent;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 4px 8px;
+  white-space: nowrap;
+  text-align: center;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Step counter circle via ::before */
+.form-wizard-list .nav-item .nav-link::before {
+  counter-increment: wizard-step;
+  content: counter(wizard-step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  background: var(--neutral-200);
+  color: var(--neutral-500);
+  border: 2px solid var(--neutral-300);
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  flex-shrink: 0;
+}
+
+/* Completed step */
+.form-wizard-list .nav-item.activated .nav-link {
+  color: var(--primary-color);
+}
+.form-wizard-list .nav-item.activated .nav-link::before {
+  background: var(--primary-100);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  content: '✓';
+}
+
+/* Active / current step */
+.form-wizard-list .nav-item .nav-link.active,
+.form-wizard-list .nav-item .nav-link.active:focus {
+  color:       var(--primary-color) !important;
+  font-weight: 700;
+  background:  transparent !important;
+  border:      none !important;
+  box-shadow:  none !important;
+  border-radius: var(--radius-md) !important;
+}
+.form-wizard-list .nav-item .nav-link.active::before {
+  background:   var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color:        #fff !important;
+  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.35);
+}
+.form-wizard-list .nav-item .nav-link.active::after { display: none; }
+
+/* Wizard tab-content (borderless, blends with card) */
+.form-wizard .tab-content {
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}

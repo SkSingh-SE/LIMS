@@ -1,13 +1,186 @@
-.cursor-pointer {
-  cursor: pointer;
+/* ═══ Account Dashboard — Premium Compact ═══ */
+
+.dashboard-content { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.dashboard-section {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  border: 1px solid #f0f0f0;
 }
 
-.cursor-pointer:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+.section-title {
+  color: #1e293b; font-weight: 700; font-size: 0.9rem; margin: 0 0 0.9rem;
+  display: flex; align-items: center; gap: 0.45rem;
+  padding-left: 0.65rem;
+  border-left: 3px solid var(--primary-color, #DA261C);
 }
+.section-title i { font-size: 0.95rem; opacity: 0.7; }
 
-.card {
+/* ═══ Financial Summary — Gradient Cards ═══ */
+.fin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; }
+
+.fin-card {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  position: relative; overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
 }
+.fin-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
 
+.fin-card--revenue  { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+.fin-card--outstanding { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
+.fin-card--overdue  { background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border: 1px solid #fca5a5; }
+.fin-card--collection { background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%); border: 1px solid #86efac; }
+
+.fin-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; backdrop-filter: blur(4px);
+}
+.fin-icon i { font-size: 1.1rem; }
+.fin-icon--green  { background: rgba(22,163,74,0.15); color: #16a34a; }
+.fin-icon--blue   { background: rgba(37,99,235,0.15); color: #2563eb; }
+.fin-icon--red    { background: rgba(220,38,38,0.15); color: #dc2626; }
+
+.fin-info { min-width: 0; }
+.fin-amount { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.02em; }
+.fin-label  { font-size: 0.68rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+
+/* Sparkline decoration on cards */
+.fin-card::after {
+  content: ''; position: absolute; right: -8px; bottom: -8px;
+  width: 60px; height: 60px; border-radius: 50%;
+  opacity: 0.06;
+}
+.fin-card--revenue::after  { background: #16a34a; }
+.fin-card--outstanding::after { background: #2563eb; }
+.fin-card--overdue::after  { background: #dc2626; }
+.fin-card--collection::after { background: #16a34a; }
+
+/* ═══ Case Status — Compact Tiles ═══ */
+.status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+.status-card {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 11px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-left: 3.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.status-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); transform: translateY(-1px); border-color: transparent; }
+.status-card:focus-visible { outline: 2px solid var(--primary-color, #DA261C); outline-offset: 2px; }
+
+.status-card--warning { border-left-color: #f59e0b; }
+.status-card--warning:hover { background: #fffbeb; }
+.status-card--blue    { border-left-color: #3b82f6; }
+.status-card--blue:hover { background: #eff6ff; }
+.status-card--red     { border-left-color: #ef4444; }
+.status-card--red:hover { background: #fef2f2; }
+.status-card--green   { border-left-color: #22c55e; }
+.status-card--green:hover { background: #f0fdf4; }
+
+.status-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.status-icon i { font-size: 0.9rem; }
+.status-icon--warning { background: #fef3c7; color: #d97706; }
+.status-icon--blue    { background: #dbeafe; color: #2563eb; }
+.status-icon--red     { background: #fee2e2; color: #dc2626; }
+.status-icon--green   { background: #dcfce7; color: #16a34a; }
+
+.status-info { min-width: 0; }
+.status-count { font-size: 1.5rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.02em; }
+.status-label { font-size: 0.73rem; font-weight: 600; color: #334155; margin-top: 2px; }
+.status-desc  { font-size: 0.63rem; color: #94a3b8; line-height: 1.2; }
+
+/* ═══ Customer Type Breakdown ═══ */
+.breakdown-table { font-size: 0.82rem; margin: 0; border-collapse: separate; border-spacing: 0; }
+.breakdown-table th {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #64748b; background: #f8fafc; padding: 0.55rem 0.85rem;
+  border-bottom: 2px solid #e2e8f0; border-top: none;
+}
+.breakdown-table td { padding: 0.6rem 0.85rem; vertical-align: middle; border-color: #f1f5f9; }
+.breakdown-table tbody tr { transition: background 0.15s; }
+.breakdown-table tbody tr:hover { background: #f8fafc; }
+
+.type-badge {
+  font-size: 0.68rem; padding: 0.25em 0.7em; border-radius: 20px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.type-badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+}
+.type-badge.bg-success::before { background: rgba(255,255,255,0.5); }
+.type-badge.bg-primary::before { background: rgba(255,255,255,0.5); }
+.type-badge.bg-info::before    { background: rgba(255,255,255,0.5); }
+
+.outstanding-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ═══ Quick Actions — Compact 2-row grid ═══ */
+.actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55rem; }
+
+.action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.76rem; font-weight: 600;
+  border-radius: 9px;
+  border: 1.5px solid;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative; overflow: hidden;
+}
+.action-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+.action-btn:active { transform: translateY(0); }
+.action-btn i { font-size: 0.82rem; }
+
+.action-btn--primary {
+  border-color: var(--primary-color,#DA261C); color: #fff;
+  background: linear-gradient(135deg, #DA261C 0%, #ef4444 100%);
+  box-shadow: 0 2px 6px rgba(218,38,28,0.2);
+}
+.action-btn--primary:hover { box-shadow: 0 4px 14px rgba(218,38,28,0.3); }
+
+.action-btn--success   { border-color: #22c55e; color: #16a34a; }
+.action-btn--success:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+.action-btn--info      { border-color: #3b82f6; color: #2563eb; }
+.action-btn--info:hover    { background: #2563eb; color: #fff; border-color: #2563eb; }
+.action-btn--warning   { border-color: #f59e0b; color: #d97706; }
+.action-btn--warning:hover { background: #d97706; color: #fff; border-color: #d97706; }
+.action-btn--danger    { border-color: #ef4444; color: #dc2626; }
+.action-btn--danger:hover  { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+/* ═══ Empty State ═══ */
+.empty-state { text-align: center; padding: 2.5rem 1rem; }
+.empty-state-icon { font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; }
+.empty-state h4 { color: #1e293b; font-weight: 600; font-size: 1rem; }
+
+/* ═══ Refresh ═══ */
+.refresh-status small { font-size: 0.72rem; color: rgba(255,255,255,0.8); }
+
+/* ═══ Responsive ═══ */
+@media (max-width: 1100px) {
+  .fin-grid { grid-template-columns: repeat(2, 1fr); }
+  .status-grid { grid-template-columns: repeat(2, 1fr); }
+  .actions-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+  .fin-grid, .status-grid, .actions-grid { grid-template-columns: 1fr; }
+  .fin-amount { font-size: 1.1rem; }
+  .status-count { font-size: 1.2rem; }
+  .dashboard-section { padding: 0.85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-card, .fin-card, .action-btn { transition: none; }
+  .status-card:hover, .fin-card:hover, .action-btn:hover { transform: none; }
+}

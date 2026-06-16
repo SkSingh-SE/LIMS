@@ -1,0 +1,136 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      NC &amp; Corrective Action Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'NON-CONFORMITY & CORRECTIVE ACTION REPORT'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Basic Info -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">BASIC INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 15%">Date</td>
+              <td style="width: 20%">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 15%">NC No.</td>
+              <td style="width: 15%">{{ data.ncNo }}</td>
+              <td class="lbl" style="width: 15%">Clause No.</td>
+              <td style="width: 20%">{{ data.clauseNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Section</td>
+              <td colspan="2">{{ data.section }}</td>
+              <td class="lbl">Activity</td>
+              <td colspan="2">{{ data.activityAssessed }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Auditor</td>
+              <td colspan="2">{{ data.auditor }}</td>
+              <td class="lbl">Auditee</td>
+              <td colspan="2">{{ data.auditee }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Non-Conformity Observed -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">NON-CONFORMITY OBSERVED</div>
+        <div class="sec-body" [innerHTML]="data.ncObserved"></div>
+      </div>
+
+      <!-- Corrective Action Proposed -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CORRECTIVE ACTION PROPOSED</div>
+        <div class="sec-body" [innerHTML]="data.correctiveActionProposed"></div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Time Required</td>
+              <td style="width: 25%">{{ data.timeRequired }}</td>
+              <td class="lbl" style="width: 25%">Proposed By</td>
+              <td style="width: 25%">{{ data.proposedBy }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Approved By (MD/TD)</td>
+              <td colspan="3">{{ data.approvedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Corrective Action Taken -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">CORRECTIVE ACTION TAKEN</div>
+        <div class="sec-body" [innerHTML]="data.correctiveActionTaken"></div>
+      </div>
+
+      <!-- Preventive Action -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">PREVENTIVE ACTION</div>
+        <div class="sec-body" [innerHTML]="data.preventiveAction"></div>
+      </div>
+
+      <!-- Effectiveness of Corrective Action -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">EFFECTIVENESS OF CORRECTIVE ACTION</div>
+        <div class="sec-body" [innerHTML]="data.effectivenessOfAction"></div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="data.auditee"
+        [issuedByName]="data.auditor"
+        [reviewedApprovedByName]="data.approvedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

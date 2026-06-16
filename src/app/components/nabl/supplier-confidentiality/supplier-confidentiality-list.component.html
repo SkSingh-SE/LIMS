@@ -1,0 +1,13 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    title="F-2: Supplier Confidentiality Agreement"
+    [columns]="columns"
+    [data]="items"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [addRoute]="'/supplier-confidentiality-agreement/create'"
+    [baseRoute]="'/supplier-confidentiality-agreement'"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="onDelete($event)">
+  </app-nabl-register-table>
+</div>

@@ -6,6 +6,15 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class PermissionService {
   private perms$ = new BehaviorSubject<Set<string>>(new Set());
+  private _isAdmin = false;
+
+  setAdmin(isAdmin: boolean): void {
+    this._isAdmin = isAdmin;
+  }
+
+  get isAdmin(): boolean {
+    return this._isAdmin;
+  }
 
   setPermissions(perms: string[] | Set<string> | undefined) {
     let newPerms: Set<string>;
@@ -27,16 +36,19 @@ export class PermissionService {
   }
 
   has(permission?: string): boolean {
+    if (this._isAdmin) return true;
     if (!permission) return false;
     return this.perms$.value.has(permission);
   }
 
   hasAny(permissions?: string[] | null): boolean {
+    if (this._isAdmin) return true;
     if (!permissions || permissions.length === 0) return false;
     return permissions.some(p => this.perms$.value.has(p));
   }
 
   hasAll(permissions?: string[] | null): boolean {
+    if (this._isAdmin) return true;
     if (!permissions || permissions.length === 0) return false;
     return permissions.every(p => this.perms$.value.has(p));
   }

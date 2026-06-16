@@ -2,20 +2,24 @@ import { HttpErrorResponse, HttpEventType, HttpInterceptorFn } from '@angular/co
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
-import { catchError, switchMap, tap, throwError } from 'rxjs';
+import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { LoaderService } from '../services/loader.service';
+import { ToastService } from '../services/toast.service';
 
 let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
 
 const errorMessages: { [key: number]: string } = {
-  0: 'Service Unavailable',
-  400: 'Bad Request',
-  401: 'Unauthorized',
-  403: 'Forbidden',
-  404: 'Not Found',
-  500: 'Internal Server Error',
-  503: 'Service Unavailable',
+  0: 'Unable to connect to the server. Please check your internet connection.',
+  400: 'Invalid request. Please check your input and try again.',
+  401: 'Your session has expired. Please log in again.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested resource was not found. Please refresh and try again.',
+  409: 'A conflict occurred. The record may have been modified by another user.',
+  422: 'The submitted data is invalid. Please check and try again.',
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'An unexpected server error occurred. Please try again or contact your administrator.',
+  503: 'The server is temporarily unavailable. Please try again in a few minutes.',
 };
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -23,14 +27,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const loaderService = inject(LoaderService);
+  const toastService = inject(ToastService);
 
   let token = authService.getUserData()?.token; // Retrieve token from service
   const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
-  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/DepartmentMaster/dropdown', '/api/DesignationMaster/dropdown', '/api/EmployeeMaster/dropdown'];
+  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/DepartmentMaster/dropdown', '/api/DesignationMaster/dropdown', '/api/EmployeeMaster/dropdown', '/api/GstValidator'];
 
+  const isDropdownCall = req.url.includes('/dropdown');
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
-  const getErrorMessage = (error: HttpErrorResponse) => {
+  const getErrorMessage = (error: HttpErrorResponse): string => {
     if (error.status === 0) {
       return errorMessages[0];
     }
@@ -38,17 +44,36 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (typeof error.error === 'string') {
         return error.error;
       }
+      // Handle: { message: "..." } or { Message: "..." }
       if (error.error.message) {
         return error.error.message;
       }
-      if (typeof error.error === 'object') {
-        return JSON.stringify(error.error);
+      if (error.error.Message) {
+        return error.error.Message;
+      }
+      // Handle: { errors: { field: ["error"] } } (validation errors)
+      if (error.error.errors) {
+        const errors = error.error.errors;
+        const messages = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+        return messages.join('; ');
+      }
+      // Handle: { title: "..." } (ASP.NET problem details)
+      if (error.error.title) {
+        return error.error.title;
       }
     }
+    // Use user-friendly status message (before raw error.message which contains URLs)
     if (errorMessages[error.status]) {
       return errorMessages[error.status];
     }
-    return 'An unexpected error occurred';
+    return 'An unexpected error occurred. Please try again.';
+  };
+
+  // Auto-show toast for all API errors (except 401 which triggers logout)
+  const showErrorToast = (error: HttpErrorResponse, message: string) => {
+    if (error.status === 401) return; // handled by logout flow
+    const type = error.status === 400 ? 'warning' : 'error';
+    toastService.show(message, type);
   };
 
   const handleRequest = (accessToken: any) => {
@@ -56,22 +81,23 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       setHeaders: { Authorization: `Bearer ${accessToken}` }
     });
 
-    if (!excludeLoaderUrl.some(url => req.url.includes(url))) {
+    if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
       loaderService.show();
     }
 
+    let responseReceived = false;
     return next(modifiedReq).pipe(
       tap(event => {
         if (event.type === HttpEventType.Response) {
+          responseReceived = true;
           unauthorizedCount = 0;
-          loaderService.hide();
           console.log(modifiedReq.url, 'returned a response with status', event.status);
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        loaderService.hide();
+        responseReceived = true;
         if (error.status === 401) {
-          unauthorizedCount++; // Increment on 401 Unauthorized
+          unauthorizedCount++;
           if (unauthorizedCount >= unauthorizedLimit) {
             unauthorizedCount = 0;
             authService.logout();
@@ -79,9 +105,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           }
         }
         const message = getErrorMessage(error);
-        // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
-        const enhancedError = Object.assign(error, { errorMessage: message });
+        showErrorToast(error, message);
+        if (error.error && typeof error.error === 'object') {
+          error.error.message = message;
+        }
+        const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
+      }),
+      finalize(() => {
+        // Always hide loader: covers success, error, AND cancel
+        loaderService.hide();
       })
     );
   }
@@ -101,38 +134,40 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }),
       switchMap(() => handleRequest(token!)),
       catchError((error: HttpErrorResponse) => {
+        const message = getErrorMessage(error);
+        showErrorToast(error, message);
+        if (error.error && typeof error.error === 'object') {
+          error.error.message = message;
+        }
+        const enhancedError = Object.assign(error, { errorMessage: message, message });
+        return throwError(() => enhancedError);
+      }),
+      finalize(() => {
         loaderService.hide();
-      const message = getErrorMessage(error);
-      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
-      const enhancedError = Object.assign(error, { errorMessage: message });
-      return throwError(() => enhancedError);
       })
     );
   }
 
-  // No token or excluded
-  if (!excludeLoaderUrl.some(url => req.url.includes(req.url))) {
-    loaderService.show();
-  }
-
-  // Token exists and not expiring
+  // Token exists and not expiring — handleRequest manages loader internally
   if (token && !shouldExclude) {
     return handleRequest(token);
   }
 
+  // No token or excluded — show loader for non-excluded URLs
+  if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
+    loaderService.show();
+  }
+
   return next(req).pipe(
     tap(event => {
-      // Log only final response
       if (event.type === HttpEventType.Response) {
         unauthorizedCount = 0;
-        loaderService.hide();
         console.log(req.url, 'returned a response with status', event.status);
       }
     }),
     catchError((error: HttpErrorResponse) => {
-      loaderService.hide();
       if (error.status === 401) {
-        unauthorizedCount++; // Increment on 401 Unauthorized
+        unauthorizedCount++;
         if (unauthorizedCount >= unauthorizedLimit) {
           unauthorizedCount = 0;
           authService.logout();
@@ -140,9 +175,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
       const message = getErrorMessage(error);
-      // Attach errorMessage in a safe way without modifying HttpErrorResponse directly
-      const enhancedError = Object.assign(error, { errorMessage: message });
+      showErrorToast(error, message);
+      if (error.error && typeof error.error === 'object') {
+        error.error.message = message;
+      }
+      const enhancedError = Object.assign(error, { errorMessage: message, message });
       return throwError(() => enhancedError);
+    }),
+    finalize(() => {
+      loaderService.hide();
     })
   );
 };

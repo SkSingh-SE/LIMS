@@ -52,19 +52,81 @@ export class AccountService {
   }
 
   /**
-   * Generate invoice for a case
-   * POST /api/accounts/cases/{inwardId}/generate-invoice
+   * Generate Proforma Invoice (PI) for a case
+   * POST /api/accounts/cases/{inwardId}/generate-pi
    */
-  generateInvoice(inwardId: number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-invoice`, {});
+  generatePI(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-proforma-invoice`, {});
+  }
+
+  downloadPIPdf(piId: number): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/SampleInward/${piId}/pdf`, { responseType: 'blob' });
   }
 
   /**
-   * Send invoice
-   * POST /api/accounts/invoices/{invoiceId}/send
+   * Generate Final Invoice for a case
+   * POST /api/accounts/cases/{inwardId}/generate-invoice
    */
+  generateInvoice(inwardId: number, exchangeRate?: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/generate-invoice`, exchangeRate ? { exchangeRate } : {});
+  }
+
+  getInvoiceDetails(invoiceId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/invoices/${invoiceId}`);
+  }
+
   sendInvoice(invoiceId: number, method?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/invoices/${invoiceId}/send`, { method: method || 'email' });
+  }
+
+  getInvoiceLineItems(invoiceHeaderId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/invoice-line-items/${invoiceHeaderId}`);
+  }
+
+  getLineItemsByTaxInvoiceId(taxInvoiceId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tax-invoice-line-items/${taxInvoiceId}`);
+  }
+
+  addInvoiceLineItem(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/invoice-line-items`, payload);
+  }
+
+  updateInvoiceLineItem(id: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/invoice-line-items/${id}`, payload);
+  }
+
+  deleteInvoiceLineItem(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/invoice-line-items/${id}`);
+  }
+
+  /**
+   * Calculate/Recalculate pricing for a case (creates/refreshes DRAFT ChargeEvents)
+   * POST /api/account/cases/{inwardId}/calculate-pricing
+   */
+  calculatePricing(inwardId: number, confirmed: boolean = false): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/calculate-pricing?confirmed=${confirmed}`, {});
+  }
+
+  getLedgerPeriodSummary(customerId: number, periodStart: string, periodEnd: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/ledger-summary/${customerId}`, {
+      params: { periodStart, periodEnd }
+    });
+  }
+
+  checkPaymentGate(sampleInwardId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/payment-gate/${sampleInwardId}`);
+  }
+
+  checkCreditLimit(customerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/credit-check/${customerId}`);
+  }
+
+  canCloseCase(inwardId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/cases/${inwardId}/can-close`);
+  }
+
+  closeCase(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cases/${inwardId}/close`, {});
   }
 }
 

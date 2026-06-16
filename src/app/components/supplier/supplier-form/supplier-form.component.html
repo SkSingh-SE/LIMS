@@ -1,6 +1,6 @@
 <div class="card shadow-lg m-2">
     <div class="card-header card-form-header text-white text-center">
-        <h6 class="text-center">Supplier Form</h6>
+        <label class="fw-medium">Supplier Form</label>
     </div>
     <div class="card-body ">
         <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()">
@@ -11,9 +11,8 @@
                     <label class="form-label">Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" formControlName="name" placeholder="Enter Name"
                         maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid }" />
-                    <div *ngIf="supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid"
-                        class="text-danger text-sm">Name is required.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
+                    <app-field-error [control]="supplierForm.get('name')" label="Name" [submitted]="submitted"/>
                 </div>
                 <!--Product Type-->
                 <div>
@@ -36,9 +35,8 @@
                     <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" formControlName="contactPerson1"
                         placeholder="Enter Contact Person 1" maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid }" />
-                    <div *ngIf="supplierForm.get('contactPerson1')?.touched && supplierForm.get('contactPerson1')?.invalid"
-                        class="text-danger text-sm">Contact Person 1 is required.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson1') }" />
+                    <app-field-error [control]="supplierForm.get('contactPerson1')" label="Contact Person 1" [submitted]="submitted"/>
                 </div>
                 <!--Contact No 1-->
                 <div>
@@ -47,8 +45,10 @@
                         placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
                         (blur)="checkPhoneNumber($event)"
                         [ngClass]="{ 'is-invalid': supplierForm.get('contactNo1')?.touched && supplierForm.get('contactNo1')?.invalid }" />
-                    <div *ngIf="supplierForm.get('contactNo1')?.touched && supplierForm.get('contactNo1')?.invalid"
-                        class="text-danger text-sm">Contact No 1 is required.</div>
+                    <span *ngIf="supplierForm.get('contactNo1')?.hasError('required') && supplierForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact No 1 is required.</span>
+                    <span *ngIf="supplierForm.get('contactNo1')?.hasError('pattern') && !supplierForm.get('contactNo1')?.hasError('required') && supplierForm.get('contactNo1')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 1-->
@@ -73,6 +73,8 @@
                     <label class="form-label">Contact No 2</label>
                     <input type="text" class="form-control" formControlName="contactNo2"
                         placeholder="Enter Contact No 2" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="supplierForm.get('contactNo2')?.hasError('pattern') && supplierForm.get('contactNo2')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 2-->
@@ -97,6 +99,8 @@
                     <label class="form-label">Contact No 3</label>
                     <input type="text" class="form-control" formControlName="contactNo3"
                         placeholder="Enter Contact No 3" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                    <span *ngIf="supplierForm.get('contactNo3')?.hasError('pattern') && supplierForm.get('contactNo3')?.touched"
+                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 3-->
@@ -123,8 +127,8 @@
 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File</label>
-                    <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value; else uploadField">
+                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
+                    <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value || supplierForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                             <span class="text-truncate me-2" type="button"
                                 (click)="openFileInNewTab(supplierForm.get('agreementFilePath')?.value)"
@@ -143,6 +147,8 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
+                    <div *ngIf="supplierForm.get('fileName')?.touched && supplierForm.get('fileName')?.invalid"
+                        class="text-danger text-sm">Agreement File is required.</div>
                 </div>
 
 
@@ -165,12 +171,17 @@
                         placeholder="Enter Reason For Blacklisting"></textarea>
                 </div> -->
 
+                <div>
+                    <label class="form-label">Blacklist Date</label>
+                    <input type="date" class="form-control" formControlName="blacklistDate" />
+                </div>
+
 
             </div>
-            <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
+            <div class="d-flex justify-content-end gap-2 mt-4">
 
-                <a [routerLink]="['/supplier']" class="btn btn-warning">Cancel</a>
-                <button type="submit" class="btn btn-success px-3">Save</button>
+                <a [routerLink]="['/supplier']" class="btn btn-cancel">Cancel</a>
+                <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
             </div>
 
         </form>

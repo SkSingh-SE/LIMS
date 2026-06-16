@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-7C: Competence Requirement'"
+    [addButtonLabel]="'Add Requirement'"
+    [addRoute]="'/competence-requirement/create'"
+    [baseRoute]="'/competence-requirement'"
+    [columns]="columns"
+    [data]="requirements"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRequirement($event)">
+  </app-nabl-register-table>
+</div>

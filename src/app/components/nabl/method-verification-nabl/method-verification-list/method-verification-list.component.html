@@ -1,0 +1,11 @@
+<app-nabl-register-table
+  title="F-29: Method Verification Records"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/nabl/method-verification"
+  addRoute="/nabl/method-verification/create"
+  (onPageChange)="onPageChange($event)"
+   (onDelete)="delete($event)"
+></app-nabl-register-table>

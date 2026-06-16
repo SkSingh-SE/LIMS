@@ -1,0 +1,104 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Responsibility &amp; Authority Matrix Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Orientation Toggle -->
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+
+    <!-- Print -->
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="matrix" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header [formatNo]="matrix.formCode || 'F-4'" [mainTitle]="'RESPONSIBILITY & AUTHORITY MATRIX'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + matrix.formCode" [issueNo]="matrix.issueNo" [issueDate]="matrix.date"
+        [revNo]="matrix.revNo">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- I. Designation Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. DESIGNATION DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%;">Designation</td>
+              <td class="fw-bold">{{ matrix.designationName }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- II. Responsibilities -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. RESPONSIBILITIES</div>
+        <div class="sec-body ql-editor" [innerHTML]="matrix.responsibilities"></div>
+      </div>
+
+      <!-- III. Authorities -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. AUTHORITIES</div>
+        <div class="sec-body ql-editor" [innerHTML]="matrix.authorities"></div>
+      </div>
+
+      <!-- IV. Employee Acceptance -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. EMPLOYEE ACCEPTANCE</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%;">Status</td>
+              <td>{{ matrix.employeeAccepted ? 'Digitally Accepted' : 'Pending' }}</td>
+            </tr>
+            <tr *ngIf="matrix.employeeAccepted">
+              <td class="lbl">Accepted On</td>
+              <td>{{ matrix.acceptanceTimestamp | date:'dd.MM.yyyy HH:mm' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''">
+      </app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

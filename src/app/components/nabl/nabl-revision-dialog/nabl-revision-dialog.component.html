@@ -1,0 +1,44 @@
+<div class="modal-backdrop fade show" *ngIf="visible" (click)="cancel()"></div>
+<div class="modal fade show d-block" tabindex="-1" *ngIf="visible">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title mb-0">Create New Revision</h6>
+                <button type="button" class="btn-close btn-close-white" (click)="cancel()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Revision Type</label>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="revisionType" id="revMinor" value="Minor"
+                            [(ngModel)]="revisionType" />
+                        <label class="form-check-label" for="revMinor">
+                            <strong>Minor Revision</strong>
+                            <small class="text-muted d-block">Correction, clarification, formatting — Rev No increments (e.g., 00 → 01)</small>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="revisionType" id="revMajor" value="Major"
+                            [(ngModel)]="revisionType" />
+                        <label class="form-check-label" for="revMajor">
+                            <strong>Major Revision</strong>
+                            <small class="text-muted d-block">Technical/scope change — Issue No increments (e.g., 01 → 02), Rev No resets to 00</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Reason for Revision <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="reason"
+                        placeholder="Describe why this revision is needed..."></textarea>
+                    <small class="text-danger" *ngIf="!reason.trim()">Reason is required</small>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="cancel()">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="confirm()" [disabled]="!reason.trim()">
+                    Create Revision
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

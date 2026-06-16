@@ -1,31 +1,37 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { DepartmentService } from '../../../services/department.service';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
-import { ParameterService } from '../../../services/parameter.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 
 
 @Component({
   selector: 'app-laboratory-test',
   templateUrl: './laboratory-test.component.html',
   styleUrl: './laboratory-test.component.css',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent, FormFieldErrorComponent],
 
 })
 export class LaboratoryTestComponent implements OnInit {
   labTestForm!: FormGroup;
+  submitted = false;
   labTestId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
-  parameterReloadKey: any;
+  testNameSuggestions: string[] = [];
+
+  private nameSearchSubject = new Subject<string>();
 
   invoiceCaseOptions = [
     // Element Count
@@ -54,11 +60,9 @@ export class LaboratoryTestComponent implements OnInit {
     { label: '45mm', value: '45mm' }
   ];
   filteredInvoiceCaseOptions = this.invoiceCaseOptions;
-  selectedDepartment: any = null;
 
   constructor(private fb: FormBuilder, private departmentService: DepartmentService,
-    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService, private invoiceConfig: InvoiceCaseConfigurationService,
-    private parameterService: ParameterService) {
+    private route: ActivatedRoute, private router: Router, private labService: LaboratoryTestService, private toastService: ToastService, private metalService: MetalClassificationService, private invoiceConfig: InvoiceCaseConfigurationService) {
 
   }
   ngOnInit(): void {
@@ -82,19 +86,43 @@ export class LaboratoryTestComponent implements OnInit {
     if (this.isViewMode) {
       this.labTestForm.disable();
     }
+
+    // Load initial suggestions
+    this.loadTestNameSuggestions('');
+
+    // Debounced search for test name autocomplete
+    this.nameSearchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(term => {
+      this.loadTestNameSuggestions(term);
+    });
   }
   initForm() {
     this.labTestForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      labDepartmentID: [0, Validators.required],
-      subGroup: ['', Validators.required],
-      invoiceCaseIDs: [''],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      labDepartmentID: [null, Validators.required],
+      subGroup: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      testCaption: [''],
+      invoiceCaption: [''],
+      testDuration: [null],
+      invoiceCaseIDs: ['', Validators.required],
       invoiceCases: this.fb.array([]),
-      equation: [''],
-      parameterIDs: [[]],
-      parameters: this.fb.array([])
+      equation: ['']
     });
+  }
+
+  loadTestNameSuggestions(term: string) {
+    this.labService.getDistinctTestNames(term, 30).subscribe({
+      next: (names) => { this.testNameSuggestions = names; },
+      error: () => { this.testNameSuggestions = []; }
+    });
+  }
+
+  onTestNameInput(event: any) {
+    const value = event.target.value;
+    this.nameSearchSubject.next(value);
   }
 
   getLabTestById(id: number) {
@@ -115,23 +143,10 @@ export class LaboratoryTestComponent implements OnInit {
               })
             );
           });
-          const ids: number[] = [];
-          const arr = this.labTestForm.get('parameters') as FormArray;
-          arr.clear();
-          response?.parameters?.forEach((p: any) => {
-            ids.push(p.parameterID);
-            arr.push(this.fb.group({
-              id: [0],
-              laboratoryTestID: [id],
-              parameterID: [p.parameterID]
-            }));
-          });
-
-          // ✅ defer patchValue
+          // defer patchValue
           setTimeout(() => {
             this.labTestForm.patchValue({
-              invoiceCaseIDs: selectIds,
-              parameterIDs: ids
+              invoiceCaseIDs: selectIds
             });
           });
 
@@ -142,32 +157,38 @@ export class LaboratoryTestComponent implements OnInit {
       }
     });
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.labTestForm, path, this.submitted);
+  }
+
   onSubmit(): void {
-    if (this.labTestForm.valid) {
-      if (this.labTestId > 0) {
-        this.labService.updateLaboratoryTest(this.labTestForm.value).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/test']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      } else {
-        this.labService.createLaboratoryTest(this.labTestForm.value).subscribe({
-          next: (response) => {
-            this.labTestId = response.id;
-            this.toastService.show(response.message, 'success');
-            this.router.navigate(['/test']);
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        })
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.labTestForm);
+    if (!this.labTestForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    if (this.labTestId > 0) {
+      this.labService.updateLaboratoryTest(this.labTestForm.value).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/test']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      })
     } else {
-      this.labTestForm.markAllAsTouched();
+      this.labService.createLaboratoryTest(this.labTestForm.value).subscribe({
+        next: (response) => {
+          this.labTestId = response.id;
+          this.toastService.show(response.message, 'success');
+          this.router.navigate(['/test']);
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      })
     }
   }
 
@@ -176,25 +197,11 @@ export class LaboratoryTestComponent implements OnInit {
   };
 
   onDepartmentSelected(item: any) {
-
+    if (!item) {
+      this.labTestForm.patchValue({ labDepartmentID: null });
+      return;
+    }
     this.labTestForm.patchValue({ labDepartmentID: item.id });
-    this.selectedDepartment = item;
-
-    // const arr = this.labTestForm.get('parameters') as FormArray;
-    // this.resetParameters();
-
-    queueMicrotask(() => {
-      this.parameterReloadKey = Date.now();
-    });
-
-  }
-  resetParameters(): void {
-    (this.labTestForm.get('parameters') as FormArray).clear();
-
-    this.labTestForm.patchValue(
-      { parameterIDs: [] },
-      { emitEvent: false }
-    );
   }
 
   getInvoiceCaseConfig = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -215,47 +222,6 @@ export class LaboratoryTestComponent implements OnInit {
       );
     });
     this.labTestForm.patchValue({ invoiceCaseIDs: selectIds })
-  }
-
-
-  getParameters = (term: string, page: number, pageSize: number): Observable<any[]> => {
-
-    const dept = this.selectedDepartment?.name.toLowerCase();
-    if (dept === 'mechanical') {
-      return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
-    }
-    if (dept === 'chemical') {
-      return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
-    }
-    return this.parameterService.getParameterDropdown(term, page, pageSize);
-  };
-
-
-
-  onParameterChange(selectedItems: any[]) {
-
-    if (selectedItems.length < 1) return;
-
-    const arr = this.labTestForm.get('parameters') as FormArray;
-    const ids: number[] = [];
-
-    this.resetParameters();
-
-    selectedItems.forEach(item => {
-      ids.push(item.id);
-      arr.push(
-        this.fb.group({
-          id: [0],
-          laboratoryTestID: [this.labTestForm.get('id')?.value || 0],
-          parameterID: [item.id]
-        })
-      );
-    });
-
-    this.labTestForm.patchValue(
-      { parameterIDs: ids },
-      { emitEvent: false }
-    );
   }
 
 

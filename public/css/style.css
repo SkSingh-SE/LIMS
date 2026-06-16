@@ -1,8 +1,8 @@
-/** ================================= Table Of Contents =================================== /
-1. Abstract Css 
-    1.1 Function Css 
-    1.2 Variables Css 
-    1.3 Mixins Css 
+/* * ================================= Table Of Contents =================================== /
+1. Abstract Css
+    1.1 Function Css
+    1.2 Variables Css
+    1.3 Mixins Css
 
 
 2. Component Css
@@ -157,16 +157,16 @@
   --font-sm: 0.875rem;
   --font-xs: 0.75rem;
   --font-xxs: 0.625rem;
-  --primary-50: #E4F1FF;
-  --primary-100: #BFDCFF;
-  --primary-200: #95C7FF;
-  --primary-300: #6BB1FF;
-  --primary-400: #519FFF;
-  --primary-500: #458EFF;
-  --primary-600: #487FFF;
-  --primary-700: #486CEA;
-  --primary-800: #4759D6;
-  --primary-900: #4536B6;
+  --primary-50: #fdeaea;
+  --primary-100: #fcd5d5;
+  --primary-200: #f9abab;
+  --primary-300: #f68181;
+  --primary-400: #f35757;
+  --primary-500: #f02d2d;
+  --primary-600: #DA261C;
+  --primary-700: #9b1c1c;
+  --primary-800: #c62828;
+  --primary-900: #5c1212;
   --neutral-50: #F5F6FA;
   --neutral-100: #F3F4F6;
   --neutral-200: #EBECEF;
@@ -275,16 +275,17 @@
   --yellow: #F4941E;
   --orange: #F86624;
   --pink: #DE3ACE;
-  --primary-light: rgba(72, 127, 255, 0.15);
+  --primary-light: rgba(229, 57, 53, 0.15);
   --yellow-light: rgba(255, 159, 41, 0.15);
   --purple-light: rgba(130, 82, 233, 0.15);
   --pink-light: rgba(250, 54, 230, 0.15);
-  --primary-light-white: rgba(72, 127, 255, 0.25);
+  --primary-light-white: rgba(229, 57, 53, 0.25);
   --yellow-light-white: rgba(255, 159, 41, 0.25);
   --purple-light-white: rgba(132, 90, 223, 0.25);
   --pink-light-white: rgba(250, 54, 230, 0.25);
   --base: #fff;
   --brand: var(--primary-600);
+  --primary: var(--primary-600);
   --button-secondary: var(--primary-50);
   --black: var(--dark-2);
   --white: var(--base);
@@ -311,7 +312,7 @@
   --input-form-dark: #D1D5DB;
   --input-bg: var(--dark-3);
   --input-stroke: #F3F4F6;
-  --primary-50: #e4f1ff0f;
+  --primary-50: #ffebee0f;
   --info-50: #EFF6FF0f;
   --warning-50: #FEFCE80f;
   --success-50: #F0FDF40f;
@@ -10747,19 +10748,19 @@ h6, .h6 {
   border-color: var(--danger-800) !important;
 }
 
-.btn-outline-danger-600 {
+.btn-outline-primary {
   background-color: transparent !important;
   color: var(--danger-600) !important;
   border-color: var(--danger-600) !important;
 }
 
-.btn-outline-danger-600:hover {
+.btn-outline-primary:hover {
   background-color: var(--danger-600) !important;
   color: #fff !important;
   border-color: var(--danger-600) !important;
 }
 
-.btn-outline-danger-600:active, .btn-outline-danger-600:focus {
+.btn-outline-primary:active, .btn-outline-primary:focus {
   background-color: var(--danger-800) !important;
   color: #fff !important;
   border-color: var(--danger-800) !important;
@@ -12520,6 +12521,7 @@ select:invalid {
 
 .form-check .form-check-input:focus {
   box-shadow: none;
+  border-color: var(--primary-200);
 }
 
 /* input Radio Css End */
@@ -12618,7 +12620,7 @@ select:invalid {
   box-shadow: none !important;
   margin: 0;
   position: relative;
-  background-color: var(--neutral-400);
+  background-color: var(--neutral-600);
   border: 0;
   background-image: none !important;
   width: 36px;
@@ -12626,7 +12628,7 @@ select:invalid {
 }
 
 .form-switch .form-check-input:checked {
-  background-color: var(--primary-600);
+  background-color: var(--primary-800);
 }
 
 .form-switch .form-check-input:checked::before {
@@ -12635,7 +12637,7 @@ select:invalid {
 }
 
 .form-switch .form-check-input:checked ~ .form-check-label {
-  color: var(--text-primary-light) !important;
+  color: var(--primary-800) !important;
 }
 
 .form-switch .form-check-input::before {
@@ -12725,7 +12727,7 @@ select:invalid {
   border-color: var(--primary-600) !important;
 }
 
-.btn-check:checked + .btn-outline-danger-600 {
+.btn-check:checked + .btn-outline-primary {
   background-color: var(--danger-600) !important;
   border-color: var(--danger-600) !important;
 }
@@ -14074,7 +14076,7 @@ td.fc-header-center {
 
 .ql-editor {
   border-radius: 12px;
-  min-height: 600px;
+  min-height: 50px;
 }
 
 .ql-picker-label, .ql-formats {

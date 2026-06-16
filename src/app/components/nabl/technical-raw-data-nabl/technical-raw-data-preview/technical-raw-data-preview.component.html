@@ -1,0 +1,141 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Technical Raw Data Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="record" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="record.formatNo"
+        [mainTitle]="'TECHNICAL RAW DATA RECORD'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + record.formatNo"
+        [issueNo]="record.issueNo"
+        [issueDate]="record.date"
+        [revNo]="record.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Section I: Test Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. TEST INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width:25%">Test Method</td>
+              <td style="width:25%">{{ record.testMethodName }}</td>
+              <td class="lbl" style="width:20%">Reference</td>
+              <td>{{ record.testMethodRef }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Equipment Used</td>
+              <td>{{ record.equipmentUsed }}</td>
+              <td class="lbl">Sample Description</td>
+              <td>{{ record.sampleDescription }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Analyst Name</td>
+              <td colspan="3">{{ record.analystName }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section II: Raw Data Readings -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. RAW DATA READINGS</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width:40px">Sr.</th>
+              <th>Sample / CRM ID</th>
+              <th>Parameter</th>
+              <th style="width:60px">Unit</th>
+              <th style="width:85px">Reading 1</th>
+              <th style="width:85px">Reading 2</th>
+              <th style="width:85px">Reading 3</th>
+              <th style="width:85px">Mean</th>
+              <th style="width:75px">SD</th>
+              <th style="width:75px">RSD %</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of record.readings">
+              <td>{{ r.srNo }}</td>
+              <td class="text-start fw-medium">{{ r.sampleId }}</td>
+              <td>{{ r.parameter }}</td>
+              <td>{{ r.unit }}</td>
+              <td>{{ r.reading1 }}</td>
+              <td>{{ r.reading2 }}</td>
+              <td>{{ r.reading3 }}</td>
+              <td class="fw-bold">{{ r.mean }}</td>
+              <td class="font-monospace text-muted" style="font-size:0.8rem">{{ r.sd }}</td>
+              <td class="fw-bold">{{ r.rsd }}%</td>
+              <td class="text-start">{{ r.remarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section III: Conclusion -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. CONCLUSION</div>
+        <div class="sec-body">{{ record.conclusion || "N/A" }}</div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [preparedByName]="record.preparedBy"
+        [issuedByName]="record.issuedBy"
+        [reviewedApprovedByName]="record.reviewedApprovedBy"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

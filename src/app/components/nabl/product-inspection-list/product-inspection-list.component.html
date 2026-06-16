@@ -1,0 +1,14 @@
+<app-nabl-register-table
+  title="F-23: Product & Service Inspection Plan"
+  [columns]="columns"
+  [data]="plans"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/product-inspection"
+  addRoute="/product-inspection/create"
+   [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+  (onPageChange)="onPageChange($event)"
+      (onDelete)="deleteProductInspection($event)"  
+></app-nabl-register-table>

@@ -1,0 +1,14 @@
+<app-nabl-register-table
+  title="F-20: Approved List of Suppliers"
+  [columns]="columns"
+  [data]="suppliers"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/approved-supplier"
+  addRoute="/approved-supplier/create"
+  [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+  (onDelete)="deleteApprovedSupplier($event)"
+></app-nabl-register-table>

@@ -1,14 +1,24 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { DimensionalFactorService } from '../../services/dimensional-factor.service';
+import { ProductFormService } from '../../services/product-form.service';
+import { ParameterUnitService } from '../../services/parameter-unit.service';
+import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-dimensional-factor',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, SearchableDropdownComponent, MultiSelectDropdownComponent, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './dimensional-factor.component.html',
   styleUrl: './dimensional-factor.component.css'
 })
@@ -18,19 +28,28 @@ export class DimensionalFactorComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: true },
+    { key: 'unit', type: 'string', label: 'Unit', filter: true },
+    { key: 'testMethod', type: 'string', label: 'Test Method', filter: true },
+    { key: 'instrument', type: 'string', label: 'Instrument', filter: true },
+    { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    code: 'string',
     name: 'string',
-    createdOn: 'date'
+    applicableForms: 'string',
+    unit: 'string',
+    testMethod: 'string',
+    instrument: 'string',
+    toleranceType: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
+  filterColumn: string = '';
+  filterColumnTitle: string = '';
   filterType: string = 'Contains';
   filterValue: string = '';
   filterValue2: string = '';
@@ -41,12 +60,11 @@ export class DimensionalFactorComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -59,22 +77,47 @@ export class DimensionalFactorComponent implements OnInit {
 
   // form
   DimensionalFactorForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   dimensionalFactorId: number = 0;
   formTitle = 'Dimensional Factor Form';
+  modalReloadKey = 0;
+  toleranceTypes = [
+    { name: 'Bilateral', value: 'Bilateral' },
+    { name: 'Unilateral', value: 'Unilateral' },
+    { name: 'Limit', value: 'Limit' }
+  ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private dimensionalService: DimensionalFactorService, private toastService: ToastService) {
-
-  }
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private dimensionalService: DimensionalFactorService,
+    private productFormService: ProductFormService,
+    private parameterUnitService: ParameterUnitService,
+    private testMethodSpecificationService: TestMethodSpecificationService,
+    private toastService: ToastService,
+  ) {}
 
 
   ngOnInit() {
     this.fetchData();
+    this.initForm();
+  }
+
+  initForm() {
     this.DimensionalFactorForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required]
+      code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      parameterUnitID: [null],
+      instrument: [''],
+      toleranceType: ['Bilateral'],
+      defaultTestMethodID: [null],
+      applicableFormIds: [[]],
+      applicableForms: this.fb.array([]),
     });
   }
 
@@ -85,22 +128,25 @@ export class DimensionalFactorComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.DimensionalFactorList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   getDetails(): void {
-    this.dimensionalService.getDimensionalFactorById(this.dimensionalFactorId).subscribe({
+    const requestId = this.dimensionalFactorId;
+    this.dimensionalService.getDimensionalFactorById(requestId).subscribe({
       next: (response) => {
+        if (this.dimensionalFactorId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.DimensionalFactorForm.patchValue(response);
+        this.DimensionalFactorForm.patchValue({
+          applicableFormIds: response?.applicableForms?.map((x: any) => x.productFormID ?? x.id) ?? [],
+        });
       },
       error: (error) => {
         console.error('Error fetching tax data:', error);
@@ -154,6 +200,17 @@ export class DimensionalFactorComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -201,6 +258,8 @@ export class DimensionalFactorComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -209,6 +268,14 @@ export class DimensionalFactorComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -228,12 +295,18 @@ export class DimensionalFactorComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    // Force dropdown reset by setting sentinel value before reinitializing form
+    if (this.DimensionalFactorForm) {
+      this.DimensionalFactorForm.patchValue({ parameterUnitID: -1, defaultTestMethodID: -1, applicableFormIds: [-1] });
+    }
+    this.initForm();
+    this.dimensionalFactorId = 0;
     if (id > 0) {
       this.dimensionalFactorId = id;
       this.getDetails();
@@ -241,15 +314,11 @@ export class DimensionalFactorComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.DimensionalFactorForm.reset();
       this.formTitle = 'Dimensional Factor Form';
-      this.DimensionalFactorForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Dimensional Factor Form';
-      this.DimensionalFactorForm.enable();
-      
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -262,42 +331,89 @@ export class DimensionalFactorComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.DimensionalFactorForm, path, this.submitted);
+  }
+
   closeModal(): void {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.initForm();
+    this.dimensionalFactorId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+    this.submitted = false;
   }
 
+  // Dropdown functions
+  getUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getProductFormDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.productFormService.getProductFormDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getTestMethodDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onFormSelected(items: any[]) {
+    const selectIds: number[] = [];
+    const formArray = this.DimensionalFactorForm.get('applicableForms') as FormArray;
+    formArray.clear();
+    items.forEach((x) => {
+      const id = x.id || x;
+      selectIds.push(id);
+      formArray.push(
+        this.fb.group({
+          ProductFormID: [id],
+        })
+      );
+    });
+    this.DimensionalFactorForm.patchValue({ applicableFormIds: selectIds });
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
+
   onSubmit(): void {
-    if (this.DimensionalFactorForm.valid) {
-      let formData = this.DimensionalFactorForm.value;
-      if (this.isEditMode) {
-        this.dimensionalService.updateDimensionalFactor(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.dimensionalService.createDimensionalFactor(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.DimensionalFactorForm);
+    if (!this.DimensionalFactorForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.DimensionalFactorForm.value;
+    if (this.isEditMode) {
+      this.dimensionalService.updateDimensionalFactor(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.dimensionalService.createDimensionalFactor(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
     }
   }
 
 }
-
-

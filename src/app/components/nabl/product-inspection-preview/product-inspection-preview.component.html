@@ -1,0 +1,119 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Product Inspection Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="record()" [title]="'Product & Service Inspection Plan (F-23)'" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header mainTitle="Product & Service Inspection Plan" [formatNo]="record()?.formatNo || 'F-23'"
+        [issueNo]="record()?.issueNo || '01'" [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-23')"
+        [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''" [revDate]="'--'"></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Section I: Product Info -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. PRODUCT / SERVICE INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Plan No.</td>
+              <td style="width: 25%">{{ record()?.planNo }}</td>
+              <td class="lbl" style="width: 25%">Product / Service Name</td>
+              <td style="width: 25%">{{ record()?.productName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Product Code</td>
+              <td style="width: 25%">{{ record()?.productCode }}</td>
+              <td class="lbl">Category</td>
+              <td>{{ record()?.category }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Inspection Stage</td>
+              <td class="fw-bold text-success">{{ record()?.inspectionStage }}</td>
+              <td class="lbl" style="width: 25%">Risk Level</td>
+              <td style="width: 25%">{{ record()?.risklevel }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Doc Number</td>
+              <td>{{ record()?.documentNo }}</td>
+              <td class="lbl">Date</td>
+              <td>{{ record()?.date | date: "dd/MM/yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section II: Inspection Parameters -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. INSPECTION PARAMETERS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 40px">SN</th>
+              <th>Parameter</th>
+              <th>Requirement</th>
+              <th>Reference Standard</th>
+              <th style="width: 100px">Method</th>
+              <th>Frequency</th>
+              <th>Acceptance Criteria</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of record()?.parameters; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ p.parameterName }}</td>
+              <td>{{ p.requirement }}</td>
+              <td>{{ p.referenceStandard }}</td>
+              <td>{{ p.methodOfCheck }}</td>
+              <td>{{ p.frequency }}</td>
+              <td>{{ p.acceptanceCriteria }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section III: Remarks -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. SPECIAL INSTRUCTIONS &amp; REMARKS</div>
+        <div class="sec-body" [innerHTML]="record()?.remarks || 'No additional instructions provided.'"></div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

@@ -1,20 +1,51 @@
 <div class="m-2">
-  <!-- Nav Tabs -->
-  <ul class="nav nav-tabs nav-fill text-center mb-3 gap-2" id="formTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
-        Customer & Company Info
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
-        Sample Details
-      </button>
-    </li>
-    <!-- <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
-      <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab">Plan</button>
-    </li> -->
-  </ul>
+  <!-- Main Card -->
+  <div class="card shadow-sm inward-main-card">
+
+    <!-- ── Card Header: Tabs + Status + Actions ── -->
+    <div class="card-header inward-header d-flex align-items-stretch justify-content-between p-0 ps-1">
+      <!-- Nav Tabs -->
+      <ul class="nav nav-tabs card-header-tabs ps-2 mb-0 border-0" id="formTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+            <i class="bi bi-person-lines-fill me-1"></i> Customer & Company Info
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
+            <i class="bi bi-box-seam me-1"></i> Sample Details
+          </button>
+        </li>
+        <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+          <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
+                  (click)="switchToPlanTab()">
+            <i class="bi bi-clipboard-check me-1"></i> Plan
+          </button>
+        </li>
+        <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
+          <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
+            <i class="bi bi-credit-card me-1"></i> Payment Info
+          </button>
+        </li>
+      </ul>
+
+      <!-- Right: Status Badge + Actions -->
+      <div class="d-flex align-items-center gap-2 px-3">
+        <app-test-status-badge
+          *ngIf="sampleId > 0 && currentInwardStatus"
+          [status]="currentInwardStatus">
+        </app-test-status-badge>
+        <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-outline-danger btn-sm" (click)="printJobCard()">
+          <i class="bi bi-printer me-1"></i> Print Job Card
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Card Body ── -->
+    <div class="card-body p-3">
 
   <!-- removed global ngSubmit to avoid accidental nested submissions -->
   <form [formGroup]="sampleInwardForm" class="needs-validation" novalidate>
@@ -24,7 +55,7 @@
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Customer Details
           </legend>
@@ -33,9 +64,10 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <app-searchable-dropdown
-                [placeholder]="'Search Customer'"
+                [placeholder]="'Type & Search Customer'"
                 [labelName]="'Select Customer'"
                 [fetchDataFn]="getCustomers"
+                [smallInput]="true"
                 (itemSelected)="onCustomerSelect($event)"
                 [required]="true"
                 [isDisabled]="isViewMode"
@@ -58,6 +90,9 @@
                   <div>
                     <strong>PIN Code:</strong>
                     {{ sampleInwardForm.get("pinCode")?.value || "-" }}
+                    <span *ngIf="sampleInwardForm.get('pinCode')?.hasError('pattern') && sampleInwardForm.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                      PIN Code must be exactly 6 digits
+                    </span>
                   </div>
                   <div>
                     <strong>Area:</strong>
@@ -78,6 +113,9 @@
                   <div>
                     <strong>GST No.:</strong>
                     {{ sampleInwardForm.get("gstNo")?.value || "-" }}
+                    <span *ngIf="sampleInwardForm.get('gstNo')?.hasError('pattern') && sampleInwardForm.get('gstNo')?.touched" class="text-danger text-sm d-block">
+                      Enter valid GST No (e.g., 22AAAAA0000A1Z5)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -122,7 +160,7 @@
                       (change)="onDispatchModeToggle($event)"
                       [disabled]="isViewMode"
                     />
-                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label">{{ mode.name }}</label>
+                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label mt-1">{{ mode.name }}</label>
                   </div>
                 </div>
                 <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger">
@@ -133,16 +171,17 @@
           </div>
         </fieldset>
 
-        <div class="billing-note">
+        <!-- <div class="billing-note">
+          <i class="bi bi-info-circle-fill me-1"></i>
           <strong>Billing Note:</strong>
           All invoices will be generated as of 06:07 PM IST on Friday, July 25, 2025. Please ensure payment is cleared within 15 days from
           the invoice date to avoid late fees.
-        </div>
+        </div> -->
 
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Contacts
           </legend>
@@ -197,18 +236,40 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light">Reporting To</div>
               <div class="card-body small">
+                <!-- Override customer selector -->
+                <div class="mb-2">
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getCustomers"
+                    [selectedItem]="reportingTo.get('customerID')?.value"
+                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
+                    [labelName]="'Customer'"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode"
+                    (itemSelected)="onReportingToCustomerChange($event)">
+                  </app-searchable-dropdown>
+                </div>
                 <div formGroupName="reportingTo" class="mb-3">
                   <label class="form-label">
-                    Customer Name
+                    Contact Person
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('reportingTo', $event)">
-                    <option value="">Select Customer</option>
-                    <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('reportingTo', $event)"
+                    [ngClass]="{'is-invalid': reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)}">
+                    <option value="null">Select Contact Person</option>
+                    <ng-container *ngIf="reportingToOverrideContacts.length > 0; else primaryReportingContacts">
+                      <option *ngFor="let cPerson of reportingToOverrideContacts" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                    </ng-container>
+                    <ng-template #primaryReportingContacts>
+                      <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
+                    </ng-template>
                   </select>
+                  <div *ngIf="reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
+                    Contact Person is required.
+                  </div>
                 </div>
 
-                <!-- Show Details if Customer is selected -->
+                <!-- Show Details if Contact Person is selected -->
                 <ng-container *ngIf="reportingTo">
                   <div class="row row-cols-1 row-cols-md-2 g-2">
                     <div>
@@ -218,6 +279,9 @@
                     <div>
                       <strong>PIN Code:</strong>
                       {{ reportingTo.get("pinCode")?.value }}
+                      <span *ngIf="reportingTo.get('pinCode')?.hasError('pattern') && reportingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                        PIN Code must be exactly 6 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Area:</strong>
@@ -238,10 +302,16 @@
                     <div>
                       <strong>Mobile No:</strong>
                       {{ reportingTo.get("mobileNo")?.value || "-" }}
+                      <span *ngIf="reportingTo.get('mobileNo')?.hasError('pattern') && reportingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
+                        Contact number must be 10-13 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Email ID:</strong>
                       {{ reportingTo.get("emailId")?.value || "-" }}
+                      <span *ngIf="reportingTo.get('emailId')?.hasError('email') && reportingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
+                        Enter a valid email address
+                      </span>
                     </div>
                   </div>
                 </ng-container>
@@ -254,18 +324,40 @@
             <div class="card border shadow-sm h-100">
               <div class="card-header fw-semibold bg-light d-flex justify-content-between align-items-center">Billing To</div>
               <div class="card-body small">
+                <!-- Override customer selector -->
+                <div class="mb-2">
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getCustomers"
+                    [selectedItem]="billingTo.get('customerID')?.value"
+                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
+                    [labelName]="'Customer'"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode"
+                    (itemSelected)="onBillingToCustomerChange($event)">
+                  </app-searchable-dropdown>
+                </div>
                 <div formGroupName="billingTo" class="mb-3">
                   <label class="form-label">
-                    Customer Name
+                    Contact Person
                     <span class="text-danger">*</span>
                   </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressCustomerChange('billingTo', $event)">
-                    <option value="">Select Customer</option>
-                    <option *ngFor="let customer of billingToContactPerson" [value]="customer.contactID">{{ customer.name }}</option>
+                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('billingTo', $event)"
+                    [ngClass]="{'is-invalid': billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)}">
+                    <option value="null">Select Contact Person</option>
+                    <ng-container *ngIf="billingToOverrideContacts.length > 0; else primaryBillingContacts">
+                      <option *ngFor="let contactPerson of billingToOverrideContacts" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
+                    </ng-container>
+                    <ng-template #primaryBillingContacts>
+                      <option *ngFor="let contactPerson of billingToContactPerson" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
+                    </ng-template>
                   </select>
+                  <div *ngIf="billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
+                    Contact Person is required.
+                  </div>
                 </div>
 
-                <!-- Show Details if Customer is selected -->
+                <!-- Show Details if Contact Person is selected -->
                 <ng-container *ngIf="billingTo">
                   <div class="row row-cols-1 row-cols-md-2 g-2">
                     <div>
@@ -275,6 +367,9 @@
                     <div>
                       <strong>PIN Code:</strong>
                       {{ billingTo.get("pinCode")?.value }}
+                      <span *ngIf="billingTo.get('pinCode')?.hasError('pattern') && billingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                        PIN Code must be exactly 6 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Area:</strong>
@@ -295,10 +390,16 @@
                     <div>
                       <strong>Mobile No:</strong>
                       {{ billingTo.get("mobileNo")?.value || "-" }}
+                      <span *ngIf="billingTo.get('mobileNo')?.hasError('pattern') && billingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
+                        Contact number must be 10-13 digits
+                      </span>
                     </div>
                     <div>
                       <strong>Email ID:</strong>
                       {{ billingTo.get("emailId")?.value || "-" }}
+                      <span *ngIf="billingTo.get('emailId')?.hasError('email') && billingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
+                        Enter a valid email address
+                      </span>
                     </div>
                   </div>
                 </ng-container>
@@ -310,73 +411,7 @@
         <fieldset class="border rounded p-3 mb-4 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
-          >
-            Payment Info
-          </legend>
-          <div class="row row-cols-1 row-cols-md-4 mb-3">
-            <div>
-              <label class="form-label">Advance Payment</label>
-              <div class="input-group">
-                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
-                <span class="input-group-text">Rs</span>
-              </div>
-            </div>
-            <div>
-              <label class="form-label">PO Number</label>
-              <input type="number" class="form-control" formControlName="poNumber" placeholder="Enter PO Number" />
-            </div>
-            <div>
-              <label class="form-label d-block">Bill Required</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
-                <label class="form-label" for="billRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
-                <label class="form-label" for="billRequiredNo">No</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label d-block">Advance PI Required</label>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="radio"
-                  id="advancePIRequiredYes"
-                  formControlName="advancePIRequired"
-                  [value]="true"
-                />
-                <label class="form-label" for="advancePIRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input mt-1"
-                  type="radio"
-                  id="advancePIRequiredNo"
-                  formControlName="advancePIRequired"
-                  [value]="false"
-                />
-                <label class="form-label" for="advancePIRequiredNo">No</label>
-              </div>
-            </div>
-            <div class="d-flex align-items-center">
-              <div class="form-check">
-                <input
-                  class="form-check-input mt-1"
-                  type="checkbox"
-                  id="holdTestingUntilPIApproved"
-                  formControlName="holdTestingUntilPIApproved"
-                />
-                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI approved</label>
-              </div>
-            </div>
-          </div>
-        </fieldset>
-        <fieldset class="border rounded p-3 mb-4 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Document
           </legend>
@@ -410,14 +445,16 @@
                 />
               </ng-template>
               <!-- <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
-              <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
+              <button type="button" class="btn btn-remove btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
             </div>
           </div>
         </fieldset>
 
         <!-- Add Go To Sample Details button -->
         <div class="d-flex justify-content-end mt-3">
-          <button type="button" class="btn btn-outline-danger-600" (click)="goToSampleTab()">Sample Details</button>
+          <button type="button" class="btn btn-add" (click)="goToSampleTab()">
+            <i class="bi bi-arrow-right me-1"></i> Sample Details
+          </button>
         </div>
       </div>
 
@@ -426,64 +463,140 @@
         <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Sample Details
           </legend>
 
+          <div class="alert alert-info py-1 px-2 small mb-2">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Note:</strong> If Metal Classification and Product Condition are selected, the Test Plan specification list will be filtered accordingly.
+            To see all specifications, either link them in Material Specification master or remove Metal Classification / Product Condition selection.
+          </div>
           <div class="table-responsive">
-            <table class="table table-compact">
+            <table class="table table-compact w-100" style="table-layout: auto;">
+              <colgroup>
+                <col style="width:105px" />   <!-- Auto-Generated -->
+                <col />                        <!-- Sample Identification — flexible -->
+                <col />                        <!-- Metal Classification — flexible -->
+                <col />                        <!-- Product Condition — flexible -->
+                <col style="width:72px" />     <!-- Thickness -->
+                <col style="width:72px" />     <!-- Diameter -->
+                <col style="width:72px" />     <!-- Width -->
+                <col style="width:72px" />     <!-- Length -->
+                <col style="width:88px" />     <!-- Qty -->
+                <col style="width:110px" />    <!-- Image -->
+                <col style="width:44px" />     <!-- Action -->
+              </colgroup>
               <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Auto-Generated</th>
-                  <th class="fw-medium text-center">Sample Description</th>
-                  <th class="fw-medium text-center">Metal Classification</th>
-                  <th class="fw-medium text-center">Product Condition</th>
-                  <th class="fw-medium text-center">Remarks</th>
-                  <th class="fw-medium text-center">Quantity</th>
-                  <th class="fw-medium text-center">Image</th>
+                <tr class="text-muted small">
+                  <th class="fw-medium text-center text-nowrap">Auto-Generated</th>
+                  <th class="fw-medium text-center text-nowrap">Sample Identification</th>
+                  <th class="fw-medium text-center text-nowrap">Metal Classification</th>
+                  <th class="fw-medium text-center text-nowrap">Product Condition</th>
+                  <!-- <th class="fw-medium text-center">Specimen Orientation</th> -->
+                  <!-- <th class="fw-medium text-center">Product Form</th> -->
+                  <th class="fw-medium text-center" style="white-space:normal">Thickness (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Diameter (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Width (mm)</th>
+                  <th class="fw-medium text-center" style="white-space:normal">Length (mm)</th>
+                  <th class="fw-medium text-center text-nowrap">Qty</th>
+                  <th class="fw-medium text-center text-nowrap">Image</th>
                   <th class="fw-medium text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let sample of sampleDetails.controls; let i = index" [formGroupName]="i">
-                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly /></td>
-                  <td><input class="form-control form-control-sm" formControlName="details" placeholder="Enter details" required /></td>
+                <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i"
+                    [class.table-secondary]="sample.get('isCancelled')?.value"
+                    [class.opacity-75]="sample.get('isCancelled')?.value">
+                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly />
+                  <span *ngIf="sample.get('isCancelled')?.value"
+                          class="badge bg-secondary mt-1"
+                          style="font-size:0.7rem"
+                          [title]="'Cancellation reason: ' + sample.get('cancellationReason')?.value">
+                      Cancelled
+                    </span>
+                  </td>
+                  <td>
+                    <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details"
+                      [ngClass]="{'is-invalid': sample.get('details')?.invalid && (sample.get('details')?.touched || submitted)}" />
+
+                  </td>
                   <td>
                     <app-searchable-dropdown
-                      [placeholder]="'Search Metal Classification'"
+                      [placeholder]="'Type & Search Metal Classification'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getMetalClassification"
                       (itemSelected)="onMetalClassificationSelected($event,i)"
                       [selectedItem]="sample.get('metalClassificationID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
                   <td>
                     <app-searchable-dropdown
-                      [placeholder]="'Search Product Condition'"
+                      [placeholder]="'Type & Search Product Condition'"
                       [hideLabel]="true"
+                      [smallInput]="true"
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
                       [selectedItem]="sample.get('productConditionID')?.value"
-                      [isDisabled]="isViewMode"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
-                  <td><input class="form-control form-control-sm" formControlName="remarks" placeholder="Remarks" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" /></td>
+                  <!-- <td>
+                    <app-searchable-dropdown
+                      [placeholder]="'Type & Search Specimen Orientation'"
+                      [hideLabel]="true"
+                      [smallInput]="true"
+                      [fetchDataFn]="getSpecimenOrientationDrop(i)"
+                      (itemSelected)="onSpecimenOrientationSelected($event,i)"
+                      [selectedItem]="sample.get('specimenOrientationID')?.value"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
+                    ></app-searchable-dropdown>
+                  </td>
                   <td>
-                    <ng-container *ngIf="sample.get('sampleFilePath')?.value; else uploadField">
-                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                    <app-searchable-dropdown
+                      [placeholder]="'Product Form'"
+                      [hideLabel]="true"
+                      [smallInput]="true"
+                      [fetchDataFn]="getProductFormDrop"
+                      (itemSelected)="onProductFormSelected($event,i)"
+                      [selectedItem]="sample.get('productFormID')?.value"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
+                    ></app-searchable-dropdown>
+                  </td> -->
+                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-1">
+                      <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:48px;min-width:0"
+                             (keydown.enter)="$event.preventDefault(); sample.get('quantity')?.value > 1 && applyQty(i)" />
+                      <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value && sample.get('quantity')?.value > 1"
+                              type="button"
+                              class="btn btn-sm btn-outline-primary p-1 lh-1"
+                              title="Expand into {{ sample.get('quantity')?.value }} rows"
+                              (click)="applyQty(i)">
+                        <i class="bi bi-layers-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <ng-container *ngIf="sample.get('sampleFilePath')?.value || sample.get('fileName')?.value; else uploadField">
+                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded" style="min-width:0">
                         <span
-                          class="text-truncate me-2"
-                          type="button"
-                          (click)="openFileInNewTab(sample.get('sampleFilePath')?.value)"
+                          class="text-truncate me-1"
+                          style="max-width:140px; display:inline-block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle;"
+                          [class.cursor-pointer]="sample.get('sampleFilePath')?.value"
+                          (click)="sample.get('sampleFilePath')?.value && openFileInNewTab(sample.get('sampleFilePath')?.value)"
                           title="{{ sample.get('fileName')?.value }}"
                         >
-                          <i class="bi bi-file-earmark-fill"></i>
+                          <i class="bi bi-file-earmark-image-fill text-success"></i>
                           {{ sample.get("fileName")?.value }}
                         </span>
-                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
+                        <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
                           <i class="bi bi-trash-fill fs-6 me-1"></i>
                         </button>
                       </div>
@@ -494,29 +607,67 @@
                         class="form-control form-control-sm input-file"
                         type="file"
                         accept=".jpg,.jpeg,.png"
-                        [disabled]="isViewMode"
+                        [disabled]="isViewMode || !!sample.get('isCancelled')?.value"
                         (change)="onUploadSampleImage(i, $event)"
                       />
                     </ng-template>
                   </td>
                   <td class="text-center">
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="removeSample(i)">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                      <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value"
+                              type="button" class="btn btn-sm btn-remove" title="Delete sample"
+                              (click)="removeSample(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                      <button *ngIf="canCancelThisSample(sample) && !sample.get('isCancelled')?.value && sample.get('id')?.value > 0"
+                              type="button" class="btn btn-sm btn-outline-danger p-1 lh-1"
+                              title="Cancel this sample"
+                              (click)="openCancelDialog(i)">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    </div>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addSample()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addSample()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Sample
           </button>
         </fieldset>
+
+        <!-- Cancel Sample Confirmation Dialog -->
+        <div *ngIf="showCancelDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1050">
+          <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+            <div class="modal-content shadow">
+              <div class="modal-header py-2 bg-danger text-white">
+                <h6 class="modal-title mb-0"><i class="bi bi-x-circle me-1"></i> Cancel Sample</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" (click)="showCancelDialog = false"></button>
+              </div>
+              <div class="modal-body py-3">
+                <p class="small text-muted mb-2">Provide a reason for cancellation (required):</p>
+                <textarea class="form-control form-control-sm" rows="3"
+                          [(ngModel)]="cancelReason"
+                          [ngModelOptions]="{standalone: true}"
+                          placeholder="Enter reason..."></textarea>
+              </div>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" (click)="showCancelDialog = false">Close</button>
+                <button type="button" class="btn btn-sm btn-danger"
+                        [disabled]="!cancelReason?.trim()"
+                        (click)="confirmCancelSample()">
+                  <i class="bi bi-x-circle me-1"></i> Confirm Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- SECTION 2: CASE DETAILS + IDENTIFICATION INFO -->
         <fieldset class="border rounded p-3 mb-3 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Case & Sample Identification
           </legend>
@@ -549,7 +700,7 @@
                     </td>
                   </ng-container>
                   <td>
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
@@ -557,7 +708,7 @@
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger-600" (click)="addAdditionalSampleRow()">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addAdditionalSampleRow()">
             <i class="bi bi-plus-circle-dotted"></i>
             Add Additional Info
           </button>
@@ -566,7 +717,7 @@
         <fieldset class="border rounded p-3 mb-2 position-relative">
           <legend
             class="w-auto px-2 fw-semibold theme-color"
-            style="font-size: 1rem; position: absolute; top: -0.9em; left: 1em; background: white"
+
           >
             Additional Information
           </legend>
@@ -604,18 +755,258 @@
             </div>
           </div>
         </fieldset>
-        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
-          <button type="button" class="btn btn-warning" (click)="onCancel()">Cancel</button>
-          <button type="button" class="btn btn-success px-3" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">Save</button>
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-3">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
+            <i class="bi bi-check-circle me-1"></i> Save
+          </button>
         </div>
       </div>
 
-      <!-- PLAN TAB TABLE FORMAT -->
-      <!-- <div class="tab-pane fade show" id="plan" role="tabpanel">
-        <app-plan-form [inwardID]="sampleId" [mode]="'review'"></app-plan-form>
-      </div> -->
+
+      <!-- TAB 3: PLAN (visible only after save, lazy-loaded on tab click) -->
+      <div *ngIf="sampleId > 0" class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
+        <app-plan-form *ngIf="planTabLoaded" [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
+      </div>
+
+      <!-- TAB 4: PAYMENT INFO (visible only after inward is saved) -->
+      <div *ngIf="sampleId > 0" class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
+        <fieldset class="border rounded p-3 mb-4 position-relative">
+          <legend class="w-auto px-2 fw-semibold theme-color">Payment Info</legend>
+          <div class="row row-cols-1 row-cols-md-4 mb-3">
+            <div>
+              <label class="form-label">Advance Payment</label>
+              <div class="input-group">
+                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
+                <span class="input-group-text">Rs</span>
+              </div>
+            </div>
+            <div *ngIf="showPODropdown">
+              <app-searchable-dropdown
+                [placeholder]="'Search Purchase Order'"
+                [labelName]="'Purchase Order'"
+                [fetchDataFn]="getPurchaseOrders"
+                (itemSelected)="onPOSelect($event)"
+                [isDisabled]="isViewMode"
+                [selectedItem]="sampleInwardForm.get('purchaseOrderId')?.value"
+              ></app-searchable-dropdown>
+              <div *ngIf="selectedPODetails" class="mt-1 small text-muted">
+                <span class="badge bg-info me-1">Amount: ₹{{ (selectedPODetails.additionalValues?.POAmount || selectedPODetails.poAmount || 0) | number:'1.2-2' }}</span>
+                <span class="badge bg-success me-1">Remaining: ₹{{ (selectedPODetails.additionalValues?.RemainingAmount || selectedPODetails.remainingAmount || 0) | number:'1.2-2' }}</span>
+                <span *ngIf="selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
+                  Valid Until: {{ (selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil) | date:'dd-MMM-yyyy' }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Bill Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
+                <label class="form-label" for="billRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
+                <label class="form-label" for="billRequiredNo">No</label>
+              </div>
+            </div>
+            <div>
+              <label class="form-label d-block">Advance PI Required</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredYes" formControlName="advancePIRequired" [value]="true" />
+                <label class="form-label" for="advancePIRequiredYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredNo" formControlName="advancePIRequired" [value]="false" />
+                <label class="form-label" for="advancePIRequiredNo">No</label>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="form-check">
+                <input class="form-check-input mt-1" type="checkbox" id="holdTestingUntilPIApproved" formControlName="holdTestingUntilPIApproved" />
+                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI Approved</label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-save px-4" (click)="savePaymentInfo()">
+            <i class="bi bi-check-circle me-1"></i> Save
+          </button>
+        </div>
+      </div>
 
       <!-- removed global bottom save/cancel to keep actions scoped per tab -->
     </div>
   </form>
+
+    </div><!-- /card-body -->
+  </div><!-- /inward-main-card -->
+
+  <!-- ═══════ JOB CARD PRINT SECTION (hidden on screen, visible on print) ═══════ -->
+  <div class="job-card-print" id="jobCardPrint">
+
+    <!-- ── Header ── -->
+    <div class="jc-header">
+      <h2 class="jc-title">Job Card</h2>
+      <div class="jc-meta">
+        <div><strong>Case No:</strong> {{ sampleInwardForm.get('caseNo')?.value }}</div>
+        <div><strong>Date:</strong> {{ sampleInwardForm.get('collectionDate')?.value | date:'dd-MM-yyyy' }}</div>
+        <div><strong>Time:</strong> {{ sampleInwardForm.get('collectionTime')?.value }}</div>
+      </div>
+    </div>
+
+    <!-- ── Customer Details ── -->
+    <div class="jc-section">
+      <div class="jc-section-title">Customer Details</div>
+      <table class="jc-info-table">
+        <tr>
+          <td><strong>Customer:</strong> {{ customerData?.name || '-' }}</td>
+          <td><strong>Contact:</strong> {{ sampleInwardForm.get('reportingTo.contactPersonName')?.value || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Address:</strong> {{ sampleInwardForm.get('address')?.value || '-' }}, {{ sampleInwardForm.get('city')?.value || '' }}</td>
+          <td *ngIf="sampleInwardForm.get('gstNo')?.value"><strong>GST No:</strong> {{ sampleInwardForm.get('gstNo')?.value }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── Case Flags (only if any flag or receipt note is set) ── -->
+    <div class="jc-section" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value || sampleInwardForm.get('sampleReceiptNote')?.value">
+      <div class="jc-section-title">Case Information</div>
+      <div class="jc-flag-row" *ngIf="sampleInwardForm.get('urgent')?.value || sampleInwardForm.get('returnSample')?.value || sampleInwardForm.get('notDestroyed')?.value">
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('urgent')?.value">URGENT</span>
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('returnSample')?.value">RETURN SAMPLE</span>
+        <span class="jc-flag" *ngIf="sampleInwardForm.get('notDestroyed')?.value">NOT TO BE DESTROYED</span>
+      </div>
+      <div class="jc-receipt-note" *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value">
+        <strong>Receipt Note:</strong> {{ sampleInwardForm.get('sampleReceiptNote')?.value }}
+      </div>
+    </div>
+
+    <!-- ── Conformity & Decision (only if not "Not Applicable") ── -->
+    <div class="jc-section">
+      <div class="jc-section-title">Conformity &amp; Decision Rule</div>
+      <table class="jc-kv-table">
+        <tr>
+          <td class="jc-kv-key">Statement of Conformity</td>
+          <td class="jc-kv-val">{{ sampleInwardForm.get('statementOfConformity')?.value }}</td>
+        </tr>
+        <tr >
+          <td class="jc-kv-key">Decision Rule</td>
+          <td class="jc-kv-val">{{ sampleInwardForm.get('decisionRule')?.value }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── Sample Details (one block per sample) ── -->
+    <div class="jc-section">
+      <div class="jc-section-title">Sample Details</div>
+      <div *ngFor="let sample of sampleDetails.controls; let i = index" class="jc-sample-block">
+
+        <!-- Sample block header: Sample No + Qty -->
+        <div class="jc-sample-header">
+          <span><strong>#{{ i + 1 }}</strong>&nbsp;&nbsp;{{ sample.get('sampleNo')?.value }}</span>
+          <span>Qty: <strong>{{ sample.get('quantity')?.value }}</strong></span>
+        </div>
+
+        <!-- Key-Value table — only rows with values are rendered -->
+        <table class="jc-kv-table">
+          <!-- Description (always shown) -->
+          <tr>
+            <td class="jc-kv-key">Description</td>
+            <td class="jc-kv-val">{{ sample.get('details')?.value || '-' }}</td>
+          </tr>
+          <!-- Metal Classification -->
+          <tr *ngIf="sample.get('metalClassificationName')?.value">
+            <td class="jc-kv-key">Metal Classification</td>
+            <td class="jc-kv-val">{{ sample.get('metalClassificationName')?.value }}</td>
+          </tr>
+          <!-- Product Condition -->
+          <tr *ngIf="sample.get('productConditionName')?.value">
+            <td class="jc-kv-key">Product Condition</td>
+            <td class="jc-kv-val">{{ sample.get('productConditionName')?.value }}</td>
+          </tr>
+          <!-- Specimen Orientation — commented out per client requirement
+          <tr *ngIf="sample.get('specimenOrientationName')?.value">
+            <td class="jc-kv-key">Specimen Orientation</td>
+            <td class="jc-kv-val">{{ sample.get('specimenOrientationName')?.value }}</td>
+          </tr> -->
+          <!-- Dimensions -->
+          <tr *ngIf="sample.get('thickness')?.value || sample.get('diameter')?.value || sample.get('width')?.value || sample.get('length')?.value">
+            <td class="jc-kv-key">Dimensions</td>
+            <td class="jc-kv-val">
+              <ng-container *ngIf="sample.get('thickness')?.value">T: {{ sample.get('thickness')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('diameter')?.value">D: {{ sample.get('diameter')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('width')?.value">W: {{ sample.get('width')?.value }}mm&nbsp;</ng-container>
+              <ng-container *ngIf="sample.get('length')?.value">L: {{ sample.get('length')?.value }}mm</ng-container>
+            </td>
+          </tr>
+          <!-- Additional Details (Heat No, Batch No, etc.) -->
+          <tr *ngFor="let ad of getJobCardAdditionalDetails(i)">
+            <td class="jc-kv-key">{{ ad.label }}</td>
+            <td class="jc-kv-val">{{ ad.value }}</td>
+          </tr>
+          <!-- Remarks -->
+          <tr *ngIf="sample.get('remarks')?.value">
+            <td class="jc-kv-key">Remarks</td>
+            <td class="jc-kv-val">{{ sample.get('remarks')?.value }}</td>
+          </tr>
+          <!-- Sample Preparation -->
+          <tr *ngIf="sample.get('preparationRequired')?.value">
+            <td class="jc-kv-key">Sample Preparation</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- Machining -->
+          <tr *ngIf="sample.get('machiningRequired')?.value">
+            <td class="jc-kv-key">Machining</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- Specimen (shown when machining is required) -->
+          <tr *ngIf="sample.get('machiningRequired')?.value && sample.get('specimen')?.value">
+            <td class="jc-kv-key">Specimen</td>
+            <td class="jc-kv-val">{{ sample.get('specimen')?.value }}</td>
+          </tr>
+          <!-- Other Preparation -->
+          <tr *ngIf="sample.get('otherPreparation')?.value">
+            <td class="jc-kv-key">Other Preparation</td>
+            <td class="jc-kv-val">Required</td>
+          </tr>
+          <!-- TPI -->
+          <tr *ngIf="sample.get('tpiRequired')?.value">
+            <td class="jc-kv-key">TPI</td>
+            <td class="jc-kv-val">
+              Required
+              <ng-container *ngIf="sample.get('tpiAgencyName')?.value">&nbsp;· Agency: {{ sample.get('tpiAgencyName')?.value }}</ng-container>
+            </td>
+          </tr>
+          <!-- Test Instructions -->
+          <tr *ngIf="sample.get('testInstructions')?.value">
+            <td class="jc-kv-key">Test Instructions</td>
+            <td class="jc-kv-val">{{ sample.get('testInstructions')?.value }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Signatures ── -->
+    <div class="jc-footer">
+      <div class="jc-sign-block">
+        <div class="jc-sign-line"></div>
+        <div>Received By</div>
+      </div>
+      <div class="jc-sign-block">
+        <div class="jc-sign-line"></div>
+        <div>Authorized By</div>
+      </div>
+      <div class="jc-sign-block">
+        <div class="jc-sign-line"></div>
+        <div>Customer Signature</div>
+      </div>
+    </div>
+  </div>
 </div>

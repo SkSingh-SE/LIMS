@@ -1,0 +1,277 @@
+/* ===== USER MANAGEMENT CONTAINER ===== */
+.user-management-container {
+    background-color: #fff;
+    border-radius: 0.75rem;
+}
+
+/* ===== TAB NAVIGATION ===== */
+.nav-pills .nav-link {
+    color: #495057;
+    transition: all 0.2s ease;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #DA261C; /* Project red theme */
+    color: white;
+    box-shadow: 0 2px 8px rgba(218, 38, 28, 0.25);
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    background-color: #fde8e8; /* Light red hover */
+    color: #DA261C;
+}
+
+/* ===== ANIMATIONS ===== */
+.animation-fade-in {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.animation-slide-down {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== CARD STYLING ===== */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+/* ===== FORM CONTROLS ===== */
+.form-control:focus,
+.form-select:focus {
+    border-color: #DA261C;
+    box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.15);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* ===== TOGGLE SWITCHES ===== */
+.form-check-input:checked {
+    background-color: #DA261C;
+    border-color: #DA261C;
+}
+
+.form-check-input:focus {
+    border-color: #DA261C;
+    box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.15);
+}
+
+/* ===== BUTTONS ===== */
+.btn-danger {
+    background-color: #DA261C;
+    border-color: #DA261C;
+}
+
+.btn-danger:hover {
+    background-color: #BD1C14;
+    border-color: #BD1C14;
+}
+
+.btn-danger:focus {
+    box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25);
+}
+
+.btn-outline-danger {
+    color: #DA261C;
+    border-color: #DA261C;
+}
+
+.btn-outline-danger:hover {
+    background-color: #DA261C;
+    border-color: #DA261C;
+    color: white;
+}
+
+/* ===== BADGES ===== */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+.badge.bg-success {
+    background-color: #22C55E !important;
+}
+
+.badge.bg-warning {
+    background-color: #FF9F29 !important;
+}
+
+.badge.bg-danger {
+    background-color: #EF4444 !important;
+}
+
+.badge.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+/* ===== 2FA METHOD CARDS ===== */
+.card-radio {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.card-radio:hover {
+    border-color: #DA261C !important;
+    background-color: #fff5f5 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(218, 38, 28, 0.15);
+}
+
+.card-radio input:checked ~ label {
+    color: #DA261C;
+    font-weight: bold;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* ===== INPUT GROUPS ===== */
+.input-group-text {
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.input-group .form-control:focus {
+    z-index: 3;
+}
+
+/* ===== ALERTS ===== */
+.alert {
+    border-radius: 0.5rem;
+}
+
+.alert-info {
+    background-color: #EFF6FF;
+    border-color: #BFDBFE;
+    color: #1E40AF;
+}
+
+.alert-warning {
+    background-color: #FFF9E2;
+    border-color: #FFEBA6;
+    color: #C28800;
+}
+
+.alert-success {
+    background-color: #F0FDF4;
+    border-color: #BBF7D0;
+    color: #15803D;
+}
+
+.alert-light {
+    background-color: #F8F9FA;
+    border-color: #DEE2E6;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .user-management-container {
+        padding: 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .nav-pills {
+        flex-wrap: wrap;
+    }
+
+    .nav-pills .nav-link {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Stack columns on mobile */
+    .col-md-6,
+    .col-md-4 {
+        margin-bottom: 1rem;
+    }
+
+    /* Adjust button sizes */
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Smaller badges */
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.text-danger {
+    color: #DA261C !important;
+}
+
+.bg-danger {
+    background-color: #DA261C !important;
+}
+
+.border-danger {
+    border-color: #DA261C !important;
+}
+
+/* ===== LOADING SPINNER ===== */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.spinner-border.text-primary {
+    color: #DA261C !important;
+}
+
+/* ===== SMOOTH TRANSITIONS ===== */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+button,
+.btn,
+.card,
+.form-control,
+.form-select {
+    transition: all 0.2s ease;
+}
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ===== FOCUS STATES FOR ACCESSIBILITY ===== */
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+    outline: 2px solid #DA261C;
+    outline-offset: 2px;
+}

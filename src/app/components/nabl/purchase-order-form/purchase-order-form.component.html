@@ -1,0 +1,316 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg border-0">
+    <!-- Premium Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-file-earmark-text-fill fs-4 me-2"></i>
+        <header class="text-md fw-medium">{{ formTitle }}</header>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i> Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="poForm" (ngSubmit)="onSubmit()">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">I. Document Control Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Form Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-22">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Issue No <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Doc Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Supplier Details -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('supplier')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['supplier'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Supplier Information</span>
+          </div>
+          <div *ngIf="openSections['supplier']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Indent No(Reference)<span
+                    class="text-danger">*</span></label>
+                <!-- <input type="text" class="form-control shadow-sm" formControlName="referenceIndentNo"> -->
+                <select class="form-select form-select-sm" formControlName="referenceIndentNo"
+                  (change)="onIndentNoChange($event)">
+                  <option value="" disabled selected>
+                    Select Indent No
+                  </option>
+                  <option *ngFor="let indent of indentNoList" [value]="indent.id || indent.Id">
+                    {{ indent.Name || indent.name }}
+                  </option>
+                </select>
+                <div *ngIf="poForm.get('referenceIndentNo')?.invalid && poForm.get('referenceIndentNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reference indent no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">PO No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="poNo" placeholder="po no.">
+                <div *ngIf="poForm.get('poNo')?.invalid && poForm.get('poNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  po no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Supplier Name <span
+                    class="text-danger">*</span></label>
+                <!-- <input type="text" class="form-control shadow-sm" formControlName="supplierName"> -->
+                <select class="form-select form-select-sm" formControlName="approvedSupplierId"
+                  (change)="onSupplierChange($event)">
+                  <option [ngValue]="null">Select Supplier</option>
+                  <option *ngFor="let supplier of supplierList" [value]="supplier.id || supplier.Id">
+                    {{ supplier.name || supplier.Name }}
+                  </option>
+                </select>
+                <div *ngIf="poForm.get('approvedSupplierId')?.invalid && poForm.get('approvedSupplierId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier name is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Email <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="email" placeholder="email" readonly>
+                <div *ngIf="poForm.get('referenceIndentNo')?.invalid && poForm.get('referenceIndentNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reference indent no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Phone No.<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="phoneNo" placeholder="phone no."
+                  readonly>
+                <div *ngIf="poForm.get('phoneNo')?.invalid && poForm.get('phoneNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  phone no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">GST Selection / No.</label>
+                <input type="text" class="form-control shadow-sm" formControlName="gstNo" placeholder="gst no."
+                  readonly>
+
+              </div>
+              <div class="col-3">
+                <label class="form-label fw-semibold text-dark small">Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="supplierAddress"
+                  placeholder="address" readonly>
+                <div *ngIf="poForm.get('supplierAddress')?.invalid && poForm.get('supplierAddress')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier address is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">PO Type</label>
+                <select class="form-select shadow-sm" formControlName="orderType">
+                  <option *ngFor="let t of poTypes" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Currency</label>
+                <select class="form-select shadow-sm" formControlName="currency">
+                  <option *ngFor="let c of currencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Requested Qty. <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="requestedQuantity"
+                  placeholder="qauntity" readonly>
+                <div *ngIf="poForm.get('requestedQuantity')?.invalid && poForm.get('requestedQuantity')?.touched"
+                  class="text-danger text-sm mt-1">
+                  requested quantity is required
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Items List -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('items')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['items'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Line Items</span>
+          </div>
+          <div *ngIf="openSections['items']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Description / Specification <span class="text-danger">*</span></th>
+                    <th style="width: 100px;">Qty <span class="text-danger">*</span></th>
+                    <th style="width: 100px;">Unit <span class="text-danger">*</span></th>
+                    <th style="width: 150px;">Unit Price <span class="text-danger">*</span></th>
+                    <th style="width: 150px;">Amount</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="description"
+                        rows="1" [readonly]="isViewMode" placeholder="description"></textarea>
+
+                      <small class="text-danger"
+                        *ngIf="item.get('description')?.invalid && (item.get('description')?.touched)">
+                        Description is required.
+                      </small>
+                    </td>
+                    <input type="number" class="form-control form-control-sm text-center border-dashed"
+                      formControlName="quantity" [readonly]="isViewMode" (input)="validateOrderedQuantity()">
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm text-center border-dashed"
+                        formControlName="unitOfMeasure" [readonly]="isViewMode">
+                      <small class="text-danger"
+                        *ngIf="item.get('unitOfMeasure')?.invalid && (item.get('unitOfMeasure')?.touched)">
+                        Unit is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-end border-dashed"
+                        formControlName="unitPrice" [readonly]="isViewMode">
+                      <small class="text-danger"
+                        *ngIf="item.get('unitPrice')?.invalid && (item.get('unitPrice')?.touched)">
+                        Unit Price is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm text-end bg-light border-dashed fw-bold"
+                        formControlName="totalAmount" [readonly]="isViewMode">
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeItem(i)"
+                        [disabled]="items.length <= 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-light font-sm">
+                  <tr>
+                    <td colspan="5" class="text-end fw-bold">Sub Total</td>
+                    <td class="text-end fw-bold">{{ poForm.get('totalAmount')?.value | number:'1.2-2' }}</td>
+                    <td *ngIf="!isViewMode"></td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="text-end fw-bold border-0 bg-white"></td>
+                    <td class="text-end fw-bold">GST (%)
+                      <input type="number" class="form-control form-control-sm d-inline-block text-center ms-2"
+                        style="width: 60px;" formControlName="gstPercentage">
+                    </td>
+                    <td class="text-end fw-bold text-secondary">{{ poForm.get('gstAmount')?.value | number:'1.2-2' }}
+                    </td>
+                    <td *ngIf="!isViewMode"></td>
+                  </tr>
+                  <tr class="table-primary">
+                    <td colspan="5" class="text-end fw-bold text-uppercase">Grand Total</td>
+                    <td class="text-end fw-bold fs-6">{{ poForm.get('grandTotal')?.value | number:'1.2-2' }}</td>
+                    <td *ngIf="!isViewMode"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+              <button type="button" class="btn btn-add btn-sm px-3" (click)="addItem()">
+                <i class="bi bi-plus-circle me-1"></i> Add More Item
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Terms & Conditions -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('terms')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['terms'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Terms, Conditions & Signatories</span>
+          </div>
+          <div *ngIf="openSections['terms']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Expected Delivery Date<span
+                    class="text-danger">*</span></label>
+                <input type="date" class="form-control shadow-sm" formControlName="deliveryDate">
+                <div *ngIf="poForm.get('deliveryDate')?.invalid && poForm.get('deliveryDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  expected date is required
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark small">Payment Terms <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="paymentTerms"
+                  placeholder="e.g. 30 Days Net">
+                <div *ngIf="poForm.get('paymentTerms')?.invalid && poForm.get('paymentTerms')?.touched"
+                  class="text-danger text-sm mt-1">
+                  payment terms is required
+                </div>
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-semibold text-dark small">Terms & Conditions</label>
+                <quill-editor formControlName="tearmCondition" [modules]="quillModules"
+                  placeholder="Enter standard terms and conditions..."></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <app-nabl-signature-section [parentForm]="poForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Purchase Order
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

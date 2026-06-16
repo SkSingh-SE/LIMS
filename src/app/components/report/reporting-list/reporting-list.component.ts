@@ -5,13 +5,16 @@ import { Router, RouterModule } from '@angular/router';
 import { ReportingService, ReportingListItem } from '../../../services/reporting.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { ToastService } from '../../../services/toast.service';
-import { PaymentService } from '../../../services/payment.service';
+import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
+import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent]
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective, PaginationComponent ]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -19,14 +22,14 @@ export class ReportingListComponent implements OnInit {
   columns = [
     { key: 'sampleNo', type: 'string', label: 'Sample No', filter: true },
     { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
-    { key: 'customerName', type: 'string', label: 'Customer', filter: true },
+    { key: 'customer', type: 'string', label: 'Customer', filter: true },
     { key: 'material', type: 'string', label: 'Material', filter: true },
     { key: 'condition', type: 'string', label: 'Condition', filter: true },
     { key: 'status', type: 'string', label: 'Status', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
-    customerName: 'string',
+    customer: 'string',
     sampleNo: 'string',
     material: 'string',
     condition: 'string',
@@ -44,123 +47,63 @@ export class ReportingListComponent implements OnInit {
 
   reportingData: ReportingListItem[] = [];
   filteredData: ReportingListItem[] = [];
-  isLoading = signal(false);
 
   // Search and Filter
   searchTerm: string = '';
 
   // Sorting
   sortByColumn: string = 'sampleNo';
-  sortOrder: string = 'asc';
+  sortOrder: string = 'desc';
 
   // Pagination
   pageNumber: number = 1;
   pageSize: number = 10;
-  pageSizes = [5, 10, 20, 50];
-  totalRecords: number = 0;
-
+  pageSizes = [10, 25, 50, 100, 200, 500];
+  isSubmitting = false;
   totalItems = 0;
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
   // Available filter values (dummy)
   customers: string[] = ['ABC Metals', 'Shreenath Steel', 'Tata Steel', 'JSW Steel', 'ArcelorMittal', 'SAIL'];
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
   statuses: string[] = ['Pending', 'Completed', 'ReadyForReport'];
 
-  constructor(private reportingService: ReportingService, private router: Router, private toast: ToastService, private paymentService: PaymentService) { }
+  constructor(
+    private reportingService: ReportingService,
+    private router: Router,
+    private toast: ToastService,
+    private statusHelper: StatusHelperService,
+    private roleHelper: RoleHelperService
+  ) { }
 
   ngOnInit(): void {
     this.fetchData();
   }
 
   fetchData(): void {
-    this.isLoading.set(true);
-    // Prefer dashboard API which supports paging/filtering. Fall back to local list when not available.
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
-    this.payload.searchTerm = this.searchTerm;
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
-    this.payload.filter = this.filters ?? null;
+    const payload = {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      searchTerm: this.searchTerm,
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: this.filters ?? null
+    };
 
-    this.reportingService.getReportDashboardList(this.payload).subscribe({
+    this.reportingService.getReportDashboardList(payload).subscribe({
       next: (resp) => {
-        // Response shapes vary: try common properties
-        const items = resp?.items || resp?.data || resp || [];
-        this.reportingData = Array.isArray(items) ? items : [];
-
-        this.totalRecords = resp?.totalRecords || this.reportingData.length;
+        const items = resp?.items ?? resp?.data ?? [];
+        this.filteredData = Array.isArray(items) ? items : [];
+        this.totalItems = resp?.totalRecords ?? this.filteredData.length;
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
-        this.applyFiltersAndSort();
-        this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error loading reporting data (dashboard API):', error);
-        // fallback
-        this.reportingService.getReportingList().subscribe({
-          next: (data) => {
-            this.reportingData = data || [];
-            this.applyFiltersAndSort();
-            this.isLoading.set(false);
-          },
-          error: (err) => {
-            console.error('Fallback error loading reporting data:', err);
-            this.isLoading.set(false);
-          }
-        });
+        console.error('Error loading reporting data:', error);
+        this.toast.show('Failed to load reporting data', 'error');
       }
     });
-  }
-
-  applyFiltersAndSort(): void {
-    let filtered = [...this.reportingData];
-
-    // Apply search filter
-    if (this.searchTerm.trim()) {
-      const searchLower = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.sampleNo.toLowerCase().includes(searchLower) ||
-        item.caseNo.toLowerCase().includes(searchLower) ||
-        item.customer.toLowerCase().includes(searchLower)
-      );
-    }
-
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let valueA = (a as any)[this.sortByColumn];
-      let valueB = (b as any)[this.sortByColumn];
-
-      if (typeof valueA === 'string') {
-        valueA = valueA.toLowerCase();
-        valueB = (valueB as any).toLowerCase();
-      }
-
-      if (valueA < valueB) {
-        return this.sortOrder === 'asc' ? -1 : 1;
-      } else if (valueA > valueB) {
-        return this.sortOrder === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-
-    this.totalRecords = filtered.length;
-    this.pageNumber = 1; // Reset to first page
-
-    // Apply pagination
-    const startIndex = (this.pageNumber - 1) * this.pageSize;
-    this.filteredData = filtered.slice(startIndex, startIndex + this.pageSize);
   }
 
   performWorkflowAction(item: any, action: 'Next' | 'Cancel' | 'Back') {
-    debugger;
     const selectedAction = item.actions?.find(
       (a: any) => a.action === action
     );
@@ -178,7 +121,7 @@ export class ReportingListComponent implements OnInit {
         `Enter comments for ${action.toLowerCase()} (optional):`,
         ''
       );
-      if (input === null && input === "") {
+      if (input === null || input === "") {
         return; // user cancelled
       }
       comments = input;
@@ -195,14 +138,16 @@ export class ReportingListComponent implements OnInit {
       remarks: comments || ''
     };
 
+    this.isSubmitting = true;
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
+        this.isSubmitting = false;
         this.toast.show('Action completed successfully.', 'success');
         this.fetchData();
       },
       error: (err) => {
-        console.error('Workflow action failed:', err);
-        this.toast.show('Action failed. See console for details.', 'error');
+        this.isSubmitting = false;
+        this.toast.show(err?.error?.message || 'Action failed. Please try again.', 'error');
       }
     });
   }
@@ -225,16 +170,23 @@ export class ReportingListComponent implements OnInit {
     }
 
     this.pdfGeneratingId = item.reportHeaderId;
-    this.reportingService.generateReportPdf(item.sampleId).subscribe({
-      next: (response) => {
+    // Download PDF directly via format endpoint (returns blob)
+    const headerId = +(item.reportHeaderId || 0);
+    this.reportingService.generateByFormat(headerId, 0).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Report-${item.sampleNo || headerId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
         this.pdfGeneratingId = null;
-        alert('PDF generated successfully.');
-        // Optionally: download PDF or refresh list
+        this.fetchData();
       },
       error: (err) => {
         this.pdfGeneratingId = null;
         console.error('PDF generation failed:', err);
-        alert('PDF generation failed. See console for details.');
+        this.toast.show('PDF generation failed', 'error');
       }
     });
   }
@@ -243,12 +195,27 @@ export class ReportingListComponent implements OnInit {
    * Check if report status allows PDF generation
    */
   canGeneratePdf(status: string): boolean {
-    const allowedStatuses = ['Completed', 'Approved'];
-    return allowedStatuses.includes(status);
+    return this.statusHelper.canGeneratePDF(status);
+  }
+
+  /**
+   * Check if user can approve reports
+   */
+  canApproveReport(): boolean {
+    return this.roleHelper.canApproveReport();
+  }
+
+  /**
+   * Check if user can request amendments
+   */
+  canRequestAmendment(): boolean {
+    return true;
+    return this.roleHelper.canRequestAmendment();
   }
 
   onSearch(): void {
-    this.applyFiltersAndSort();
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
   applySorting(column: string): void {
@@ -258,35 +225,30 @@ export class ReportingListComponent implements OnInit {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.applyFiltersAndSort();
+    this.fetchData();
   }
 
   onPageChange(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.pageNumber = page;
-      this.applyFiltersAndSort();
-    }
+    this.pageNumber = page;
+    this.fetchData();
   }
 
   changePageSize(size: number): void {
     this.pageSize = size;
     this.pageNumber = 1;
-    this.applyFiltersAndSort();
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.totalRecords / this.pageSize);
+    this.fetchData();
   }
 
   onFilterChange(): void {
-    this.applyFiltersAndSort();
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
 
 
 
   getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalRecords);
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
   getStartRecord(): number {
@@ -329,6 +291,17 @@ export class ReportingListComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -350,7 +323,6 @@ export class ReportingListComponent implements OnInit {
 
   resetFilter(column: string) {
     this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
     this.fetchData();
   }
 
@@ -368,26 +340,28 @@ export class ReportingListComponent implements OnInit {
   }
 
   canAmend(status: string): boolean {
-    return ['Completed', 'Approved', 'Report Generated'].includes(status);
+    return true;
+    return this.statusHelper.canAmendReport(status);
   }
+
   openAmendment(item: any): void {
     this.router.navigate(['/reporting/amend', item.reportHeaderId]);
   }
-  generatePi(item: any) {
-    const payload = {
-      paymentType: 2,
-      sampleID: item.sampleId,
-      customerId: item.customerID,
-      caseNo: item.caseNo,
-      amount: 150
-    };
-    this.paymentService.processPayment(payload).subscribe({
-      next: (resp) => {
-        this.toast.show('PI generated successfully.', 'success');
-      },
-      error: (err) => {
-        this.toast.show('Failed to generate PI.', 'error');
-      }
-    });
+
+  /**
+   * Check if pricing can be viewed (read-only after approval)
+   */
+  canViewPricing(item: any): boolean {
+    return this.statusHelper.canViewPricing(item.status || '');
+  }
+
+  getItemPrice(item: ReportingListItem): string | number {
+    const itemAny = item as any;
+    return itemAny.totalAmount || itemAny.price || itemAny.pricing?.totalAmount || 'N/A';
+  }
+
+  // Expose statusHelper to template
+  get statusHelperService() {
+    return this.statusHelper;
   }
 }

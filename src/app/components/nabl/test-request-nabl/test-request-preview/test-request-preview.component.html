@@ -1,0 +1,206 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Test Request Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header formatNo="F-27" [issueNo]="testRequest?.issueNo || '01'"
+        [revNo]="testRequest?.revNo || '00'" mainTitle="Test Request & Sample Receipt Record"
+        [issueDate]="testRequest?.date || ''"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (testRequest?.formCode || 'F-27')"
+        [revDate]="'--'"></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="doc-section mb-2">
+        <table class="table table-bordered inner-table test-request-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 22%;">Company Name:</td>
+              <td style="width: 48%;">{{ data.customerName }}</td>
+              <td class="lbl" style="width: 12%;">Date:</td>
+              <td style="width: 18%;">{{ data.date | date:'dd-MM-yyyy' }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Address:</td>
+              <td colspan="3">{{ data.address }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">GST No:</td>
+              <td>{{ data.gstNo || '-' }}</td>
+              <td class="lbl">Phone No:</td>
+              <td>{{ data.contactPhone || data.contactPhone || '-' }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Email Id:</td>
+              <td>{{ data.contactEmail || '-' }}</td>
+              <td class="lbl">Contact Person:</td>
+              <td>{{ data.contactPerson || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section mb-2">
+        <table class="table table-bordered inner-table sample-table">
+          <thead>
+            <tr class="text-center">
+              <th style="width: 50px">S.N.</th>
+              <th style="width: 28%;">Sample No.</th>
+              <th style="width: 28%;">Sample Details</th>
+              <th style="width: 28%">Qty</th>
+
+              <th style="width: 28%;">Material Classification</th>
+              <th style="width: 28%;">Material Specification</th>
+              <th style="width: 44%;">Test to perform</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let sample of data.samples; let i = index;">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="fw-medium text-center">{{ sample.sampleNo }}</td>
+              <td class="text-center">
+                {{ sample.description }}
+              </td>
+              <td class="text-center">
+                {{ sample.quantity }}
+              </td>
+
+              <td class="text-center">
+                {{sample.metalClassification }}
+              </td>
+              <td class="text-center">
+                {{ sample.materialSpecification}}
+              </td>
+              <td class="text-center">{{ sample.testToPerform}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box mb-2">
+        <div class="doc-section mb-3">
+          <table class="table table-bordered inner-table">
+            <tbody>
+              <tr>
+                <td class="p-2" style="font-size: 12px; line-height: 1.6;">
+                  <strong>Note:</strong>
+                  <div class="ql-editor mt-1" [innerHTML]="data.note || '—'"
+                    style="padding: 0; border: none; min-height: auto;">
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="doc-section mb-2">
+        <table class="table table-bordered inner-table small">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%;">Statement of Conformity required:</td>
+              <td>
+                <span class="me-4">
+                  <i class="bi"
+                    [ngClass]="data.confirmityRequired ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                  Yes
+                </span>
+                <span>
+                  <i class="bi"
+                    [ngClass]="!data.confirmityRequired ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                  No
+                </span>
+              </td>
+              <td rowspan="3" style="width: 25%; background: #fff;"></td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Applicable Decision Rule (If required):</td>
+              <td>
+                <span class="me-3" *ngFor="let mode of dispatchModeOptions">
+                  <i class="bi" [ngClass]="isDispatchModeChecked(mode, data.dispatchModes)
+                ? 'bi-check-square-fill text-success'
+                : 'bi-square'"></i>
+                  {{ mode }}
+                </span>
+              </td>
+
+            <tr>
+              <td class="lbl">Bill Required:</td>
+              <td>
+                <span class="me-4">
+                  <i class="bi" [ngClass]="data.billRequired ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                  Yes
+                </span>
+                <span>
+                  <i class="bi" [ngClass]="!data.billRequired ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
+                  No
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl" colspan="2">
+                T&amp;C: By affixing their signature to this document, the customer acknowledges their commitment to
+                payment for the laboratory test conducted on the provided sample details. Additionally, this Test
+                request serves as a formalized purchase order.
+              </td>
+              <td class="lbl text-center" style="width: 25%;">Customer Signature</td>
+            </tr>
+
+            <tr>
+              <td colspan="2">
+                Laboratory Accepts / Reject to carry out tests specified above
+              </td>
+              <td class="text-center">Reviewed and signed by</td>
+            </tr>
+
+            <tr>
+              <td class="lbl" style="width: 20%;">Remark:</td>
+              <td>{{ data.remarks || '-' }}</td>
+              <td class="text-center">{{ data.reviewedBy || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+  </app-print-frame>
+</div>

@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { Observable } from 'rxjs';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
@@ -12,18 +15,19 @@ import { GroupService } from '../../../services/group.service';
 import { SubGroupService } from '../../../services/sub-group.service';
 import { LabScopeService } from '../../../services/lab-scope.service';
 import { ToastService } from '../../../services/toast.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { EquipmentService } from '../../../services/equipment.service';
-import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SearchableDropdownModalComponent } from '../../../utility/components/searchable-dropdown-modal/searchable-dropdown-modal.component';
 @Component({
   selector: 'app-scope',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterLink, MultiSelectDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, RouterModule, SearchableDropdownModalComponent, FormFieldErrorComponent],
   templateUrl: './scope.component.html',
   styleUrl: './scope.component.css'
 })
 
 export class ScopeComponent implements OnInit {
   scopeForm!: FormGroup;
+  submitted = false;
   labScopeId: number = 0;
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -33,6 +37,10 @@ export class ScopeComponent implements OnInit {
   subGroupData: any[] = [];
   groupOptionsPerParam: { [key: string]: any[] } = {};
   subGroupOptionsPerParam: { [key: string]: any[] } = {};
+
+  // Accordion open/close state
+  openSections: { [key: string]: boolean } = { header: true };
+  openSpecs: { [key: number]: boolean } = { 0: true };
 
   lowerLimitOptions = [
     { label: '>', value: '>' },
@@ -78,6 +86,10 @@ export class ScopeComponent implements OnInit {
     this.scopeForm = this.fb.group({
       ID: [0],
       laboratoryTestID: ['', Validators.required],
+      validFrom: [null],
+      validUntil: [null],
+      nextReviewDate: [null],
+      scopeRemarks: [''],
       specifications: this.fb.array([]),
     });
   }
@@ -92,6 +104,7 @@ export class ScopeComponent implements OnInit {
       labScopeID: [this.scopeForm.get('ID')?.value || 0],
       testMethodSpecification: [''],
       testMethodSpecificationID: ['', Validators.required],
+      testMethodSpecificationVersionID: [null],
       parameters: this.fb.array([]),
     });
     this.specifications.push(specGroup);
@@ -99,6 +112,17 @@ export class ScopeComponent implements OnInit {
 
   removeSpecification(index: number): void {
     this.specifications.removeAt(index);
+    // Rebuild specVersionsMap indices after removal
+    const newMap = new Map<number, any[]>();
+    this.specifications.controls.forEach((spec, idx) => {
+      const specId = spec.get('testMethodSpecificationID')?.value;
+      // Try to find existing data from old map, otherwise empty
+      const oldData = this.specVersionsMap.get(idx >= index ? idx + 1 : idx);
+      if (oldData) {
+        newMap.set(idx, oldData);
+      }
+    });
+    this.specVersionsMap = newMap;
   }
 
   parameters(specIndex: number): FormArray {
@@ -114,8 +138,10 @@ export class ScopeComponent implements OnInit {
       qualitativeQuantitative: ['', Validators.required],
       isUnderISO: [false],
       lowerLimit: [''],
+      lowerLimitValue: [null],
       upperLimit: [''],
-      disciplineID: [''],
+      upperLimitValue: [null],
+      disciplineID: [null],
       groupID: [null],
       subGroupID: [null],
       equipmentIDs: [[]],
@@ -132,7 +158,9 @@ export class ScopeComponent implements OnInit {
       } else {
         paramGroup.patchValue({
           lowerLimit: '',
+          lowerLimitValue: null,
           upperLimit: '',
+          upperLimitValue: null,
         });
         lowerLimitControl?.disable({ emitEvent: false });
         upperLimitControl?.disable({ emitEvent: false });
@@ -155,36 +183,117 @@ export class ScopeComponent implements OnInit {
     });
   }
 
+  toggleSection(section: string) {
+    this.openSections[section] = !this.openSections[section];
+  }
+
+  toggleSpec(index: number) {
+    this.openSpecs[index] = !this.openSpecs[index];
+  }
+
+  scrollToEnd(specIndex: number) {
+    const container = document.getElementById(`scroll-params-${specIndex}`);
+    if (container) {
+      container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+    }
+  }
+
+  scrollToStart(specIndex: number) {
+    const container = document.getElementById(`scroll-params-${specIndex}`);
+    if (container) {
+      container.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }
+
   getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
   };
 
   onLaboratorySelected(item: any) {
+    if (!item) {
+      this.scopeForm.patchValue({ laboratoryTestID: '' });
+      return;
+    }
     this.scopeForm.patchValue({ laboratoryTestID: item.id });
   };
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
+  specVersionsMap: Map<number, any[]> = new Map();
   onTestSpecificationSelected(item: any, index: number) {
-    this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id });
+    if (!item) {
+      this.specifications.at(index).patchValue({ testMethodSpecificationID: '', testMethodSpecificationVersionID: null, testMethodSpecification: '' });
+      this.specVersionsMap.set(index, []);
+      return;
+    }
+    this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
     this.specifications.at(index).patchValue({ testMethodSpecification: item.name });
+    this.loadSpecVersionsForIndex(item.id, index);
   };
+  loadSpecVersionsForIndex(specId: number, index: number) {
+    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+      next: (data) => {
+        this.specVersionsMap.set(index, data || []);
+        if (data?.length === 1) {
+          this.specifications.at(index).patchValue({ testMethodSpecificationVersionID: data[0].id });
+        }
+      },
+      error: () => { this.specVersionsMap.set(index, []); }
+    });
+  }
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
   onParameterSelected(item: any, specIndex: number, paramIndex: number) {
-    const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    spec.patchValue({ parameterID: item.id });
+    const params = this.parameters(specIndex);
+    const param = params.at(paramIndex) as FormGroup;
+
+    if (!item) {
+      param.patchValue({ parameterID: '', parameterUnitID: '' });
+      param.get('parameterUnitID')?.enable();
+      return;
+    }
+
+    // Duplicate check within same specification
+    const isDuplicate = params.controls.some((ctrl, i) =>
+      i !== paramIndex && ctrl.get('parameterID')?.value === item.id
+    );
+    if (isDuplicate) {
+      this.toastService.show(`Parameter "${item.name}" is already added in this specification.`, 'warning');
+      param.patchValue({ parameterID: -1, parameterUnitID: '' });
+      setTimeout(() => param.patchValue({ parameterID: '', parameterUnitID: '' }), 0);
+      param.get('parameterUnitID')?.enable();
+      return;
+    }
+
+    const unitID = item?.additionalValues?.UnitID || item?.additionalValues?.unitID || '';
+    param.patchValue({ parameterID: item.id, parameterUnitID: unitID });
+    // Disable unit dropdown after parameter auto-fills it
+    const unitControl = param.get('parameterUnitID');
+    if (unitID) {
+      unitControl?.disable();
+    } else {
+      unitControl?.enable();
+    }
   };
   getDiscipline = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.disciplineService.getDisciplineDropdown(term, page, pageSize);
   };
   onDisciplineSelected(item: any, specIndex: number, paramIndex: number) {
     const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    spec.patchValue({ disciplineID: item.id });
+    const key = `${specIndex}-${paramIndex}`;
+
+    if (!item) {
+      spec.patchValue({ disciplineID: null, groupID: null, subGroupID: null });
+      this.groupOptionsPerParam[key] = [];
+      this.subGroupOptionsPerParam[key] = [];
+      return;
+    }
+
+    spec.patchValue({ disciplineID: item.id, groupID: null, subGroupID: null });
+    this.subGroupOptionsPerParam[key] = [];
     this.groupService.getGroupDropdown('', 0, 100, item.id).subscribe({
       next: (data) => {
-        const key = `${specIndex}-${paramIndex}`;
         this.groupOptionsPerParam[key] = data;
       },
       error: (error) => {
@@ -198,11 +307,12 @@ export class ScopeComponent implements OnInit {
 
     const paramForm = this.parameters(specIndex).at(paramIndex) as FormGroup;
     paramForm.patchValue({ groupID: +selectedGroupId, subGroupID: null });
+    this.subGroupOptionsPerParam[key] = [];
 
     if (selectedGroupId) {
-      this.groupService.getGroupById(+selectedGroupId).subscribe({
+      this.subGroupService.getDropdownByGroupId(+selectedGroupId).subscribe({
         next: (data) => {
-          this.subGroupOptionsPerParam[key] = data;
+          this.subGroupOptionsPerParam[key] = data || [];
         },
         error: (err) => {
           console.error('Error loading sub-groups:', err);
@@ -239,11 +349,12 @@ export class ScopeComponent implements OnInit {
   getEquipment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
   }
-  onEquipmentSelect(item: any, specIndex: number, paramIndex: number) {
+  onEquipmentSelect(items: any[], specIndex: number, paramIndex: number) {
     const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
+    spec.patchValue({ equipmentIDs: items.map(e => e.id) });
     const equipmentsArray = this.equipments(specIndex, paramIndex);
-    equipmentsArray.clear(); // Clear existing equipments
-    item.forEach((equipment: any) => {
+    equipmentsArray.clear();
+    items.forEach((equipment: any) => {
       const equipmentGroup = this.fb.group({
         ID: [0],
         labScopeSpecificationParameterID: [spec.get('ID')?.value || 0],
@@ -253,53 +364,80 @@ export class ScopeComponent implements OnInit {
       equipmentsArray.push(equipmentGroup);
     });
   }
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.scopeForm, path, this.submitted);
+  }
+
+  onCancel(): void {
+    this.submitted = false;
+    this.router.navigate(['/scope']);
+  }
+
   onSubmit() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.scopeForm);
     if (this.scopeForm.valid) {
+      const payload = this.scopeForm.getRawValue(); // includes disabled controls like parameterUnitID
       if (this.labScopeId > 0) {
-        this.scopeService.updateLabScope(this.scopeForm.value).subscribe({
+        this.scopeService.updateLabScope(payload).subscribe({
           next: (data) => {
             this.scopeForm.reset();
             this.toastService.show(data.message, 'success');
             this.router.navigate(['/scope']);
           },
           error: (err) => {
-            console.error('Error updating scope', err);
-            this.toastService.show(err.error.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to update scope', 'error');
           }
         });
       }
       else {
-        this.scopeService.createLabScope(this.scopeForm.value).subscribe({
+        this.scopeService.createLabScope(payload).subscribe({
           next: (data) => {
             this.toastService.show(data.message, 'success');
             this.scopeForm.reset();
             this.router.navigate(['/scope']);
           },
           error: (err) => {
-            this.toastService.show(err.error.message, 'error');
+            this.toastService.show(err?.error?.message || 'Failed to create scope', 'error');
           }
         });
       }
     }
     else {
-      this.scopeForm.markAllAsTouched();
+      const missing: string[] = [];
+      if (this.scopeForm.get('laboratoryTestID')?.invalid) missing.push('Laboratory Test');
+      this.specifications.controls.forEach((spec, si) => {
+        if (spec.get('testMethodSpecificationID')?.invalid) missing.push(`Spec ${si + 1}: Test Method`);
+        const params = spec.get('parameters') as FormArray;
+        params?.controls.forEach((p, pi) => {
+          if (p.get('parameterID')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Parameter`);
+          if (p.get('parameterUnitID')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Unit`);
+          if (p.get('qualitativeQuantitative')?.invalid) missing.push(`Spec ${si + 1}, Param ${pi + 1}: Type`);
+        });
+      });
+      this.toastService.show(`Please fix: ${missing.length > 0 ? missing.join(', ') : 'required fields'}`, 'warning');
     }
-
   }
   loadScope(id: number) {
     this.scopeService.getLabScopeById(id).subscribe({
       next: (data) => {
         this.scopeForm.patchValue({
           ID: data.id,
-          laboratoryTestID: data.laboratoryTestID
+          laboratoryTestID: data.laboratoryTestID,
+          validFrom: data.validFrom ? data.validFrom.split('T')[0] : null,
+          validUntil: data.validUntil ? data.validUntil.split('T')[0] : null,
+          nextReviewDate: data.nextReviewDate ? data.nextReviewDate.split('T')[0] : null,
+          scopeRemarks: data.scopeRemarks || '',
         });
         this.specifications.clear();
         data.specifications.forEach((spec: any) => {
+          const specName = spec?.testMethodSpecification?.name || spec?.testMethodSpecificationName || '';
           const specGroup = this.fb.group({
             ID: [spec.id],
             labScopeID: [data.id],
-            testMethodSpecification: [spec?.testMethodSpecification || ''],
+            testMethodSpecification: [specName],
             testMethodSpecificationID: [spec.testMethodSpecificationID, Validators.required],
+            testMethodSpecificationVersionID: [spec.testMethodSpecificationVersionID || null],
             parameters: this.fb.array([]),
           });
 
@@ -316,7 +454,9 @@ export class ScopeComponent implements OnInit {
               qualitativeQuantitative: [param.qualitativeQuantitative, Validators.required],
               isUnderISO: [param.isUnderISO],
               lowerLimit: [param.lowerLimit || ''],
+              lowerLimitValue: [param.lowerLimitValue ?? null],
               upperLimit: [param.upperLimit || ''],
+              upperLimitValue: [param.upperLimitValue ?? null],
               disciplineID: [param.disciplineID],
               groupID: [param.groupID],
               subGroupID: [param.subGroupID || null],
@@ -338,10 +478,41 @@ export class ScopeComponent implements OnInit {
               }
             });
 
+            // G13: Apply initial Qualitative/Quantitative state (disable limits for Qualitative)
+            if (param.qualitativeQuantitative !== 'Quantitative') {
+              paramGroup.get('lowerLimit')?.disable({ emitEvent: false });
+              paramGroup.get('upperLimit')?.disable({ emitEvent: false });
+            }
+
             paramsArray.push(paramGroup);
+
+            // Load group and sub-group dropdowns for edit mode
+            const paramIndex = paramsArray.length - 1;
+            const specIndex = this.specifications.length; // will be pushed next
+            const key = `${specIndex}-${paramIndex}`;
+
+            if (param.disciplineID) {
+              this.groupService.getGroupDropdown('', 0, 100, param.disciplineID).subscribe({
+                next: (data) => {
+                  this.groupOptionsPerParam[key] = data;
+                },
+              });
+            }
+            if (param.groupID) {
+              this.subGroupService.getDropdownByGroupId(param.groupID).subscribe({
+                next: (data) => {
+                  this.subGroupOptionsPerParam[key] = data || [];
+                },
+              });
+            }
           });
 
           this.specifications.push(specGroup);
+          // Load version dropdown for this specification
+          const specIndex = this.specifications.length - 1;
+          if (spec.testMethodSpecificationID) {
+            this.loadSpecVersionsForIndex(spec.testMethodSpecificationID, specIndex);
+          }
         });
 
         if (this.isViewMode) {

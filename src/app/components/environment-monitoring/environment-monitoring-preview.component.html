@@ -1,0 +1,111 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <!-- Action Bar (hidden on print) -->
+  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
+    <button class="btn btn-cancel btn-sm" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </button>
+    <button class="btn btn-save btn-sm" (click)="printPage()">
+      <i class="bi bi-printer"></i> Print
+    </button>
+  </div>
+
+  <app-print-frame *ngIf="record" orientation="landscape">
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="record.FormCode || 'F-12'"
+          mainTitle="ENVIRONMENT CONDITION & HUMIDITY RECORD"
+          [docNo]="'DMSPL / Level-04 / Format / ' + (record.FormCode || 'F-12')"
+          [issueNo]="record.issueNo.toString()"
+          [revNo]="record.revNo.toString()">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Header Info -->
+      <table class="table table-bordered border-2 border-dark mb-3 info-table">
+        <tbody>
+          <tr>
+            <td class="label-cell border-2 border-dark" style="width: 20%;">Room / Location</td>
+            <td class="border-2 border-dark fw-bold">{{ record.location }}</td>
+            <td class="label-cell border-2 border-dark" style="width: 20%;">Month/Year</td>
+            <td class="border-2 border-dark">{{ getMonthName(record.monitoringMonth) }} {{ record.monitoringYear }}</td>
+            <td class="label-cell border-2 border-dark" style="width: 20%;">Issue Date</td>
+            <td class="border-2 border-dark">{{ record.issueDate | date:'dd.MM.yyyy' }}</td>
+          </tr>
+          <tr>
+            <td class="label-cell border-2 border-dark">Temp Limits</td>
+            <td class="border-2 border-dark">{{ record.minTempLimit }} - {{ record.maxTempLimit }} °C</td>
+            <td class="label-cell border-2 border-dark">Humidity Limits</td>
+            <td class="border-2 border-dark">{{ record.minHumidityLimit }} - {{ record.maxHumidityLimit }} %</td>
+            <td colspan="2" class="border-2 border-dark bg-light"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Daily Records -->
+      <div class="table-responsive">
+        <table class="table table-bordered border-2 border-dark table-sm text-center align-middle mb-0">
+          <thead class="bg-light">
+            <tr class="small text-uppercase">
+              <th style="width: 80px;">Date</th>
+              <th>Temp (°C)</th>
+              <th>Humidity (%)</th>
+              <th>Pressure (mb)</th>
+              <th>Air Quality</th>
+              <th>Remarks/Verification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rec of record.dailyRecords" [class.table-warning]="checkDeviation(rec.temperature, rec.humidity)">
+              <td class="fw-bold">{{ rec.date | date:'dd.MM.yyyy' }}</td>
+              <td>{{ rec.temperature }}</td>
+              <td>{{ rec.humidity }}</td>
+              <td>{{ rec.pressure || '-' }}</td>
+              <td>{{ rec.airQuality || '-' }}</td>
+              <td class="text-start px-2 small">{{ rec.remarks }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- General Remarks -->
+      <div class="mt-3 section border-2 border-dark">
+        <div class="section-title border-bottom-2 px-2 py-1 fw-bold bg-light">Observations / Deviations / Actions Taken</div>
+        <div class="section-content p-2 small" style="white-space: pre-wrap;">{{ record.deviationsObserved || 'None' }} <br> {{ record.correctionsTaken }}</div>
+      </div>
+
+      <!-- Footer Signatures -->
+      <div class="mt-4">
+        <table class="table table-bordered border-2 border-dark text-center">
+          <tbody>
+            <tr>
+              <td style="width: 50%; height: 60px;" class="align-bottom pb-1">
+                <div class="fw-bold">Recorded By</div>
+                <div class="small">{{ record.recordedBy || 'Technical Staff' }}</div>
+              </td>
+              <td style="width: 50%;" class="align-bottom pb-1">
+                <div class="fw-bold">Verified By</div>
+                <div class="small">(Quality Manager)</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+      [preparedByName]="record.preparedBy || ''"
+      [issuedByName]="record.reviewedBy || ''"
+      [reviewedApprovedByName]="record.approvedBy || ''">
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+  <!-- Loading State -->
+  <div *ngIf="false" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+</div>

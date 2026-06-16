@@ -1,0 +1,215 @@
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Method Verification Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <div *ngIf="!data" class="text-center py-5">
+    <div class="spinner-border" style="color: #DA261C;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header [formatNo]="data()?.formatNo || 'F-29'" [issueNo]="data()?.issueNo || '01'"
+        [docNo]="'DMSPL / Level-04 / Format / F-29'" [revNo]="data()?.revNo || '01'" [issueDate]="data()?.date || ''"
+        [revDate]="data()?.date || ''" [mainTitle]="'METHOD VERIFICATION RECORD'"></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- I. TEST METHOD INFORMATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. TEST METHOD INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Test Method Code</td>
+              <td>{{ data()?.testMethodCode}}</td>
+              <td class="lbl">Test Method Name</td>
+              <td>{{ data()?.testMethodName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Reference Standard</td>
+              <td>{{ data()?.referenceStandard }}</td>
+              <td class="lbl">Rev / Issue</td>
+              <td>{{ data()?.revIssue }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Verification Date</td>
+              <td>{{ data()?.verificationDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Verification By</td>
+              <td>{{ data()?.verifiedBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- II. CRM / REFERENCE MATERIAL -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. CRM / REFERENCE MATERIAL</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th>SN</th>
+              <th>CRM Sample ID</th>
+              <th>Certificate No.</th>
+              <th>Reference Value</th>
+              <th>Unit</th>
+              <th>Measurement Uncertainty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of data()?.crmParameters; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ c.crmSampleId }}</td>
+              <td>{{ c.certificateNo }}</td>
+              <td>{{ c.referenceValue }}</td>
+              <td>{{ c.unit }}</td>
+              <td>{{ c.measurementUncertainty }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- III. EQUIPMENT INFORMATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. EQUIPMENT INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Equipment Name</td>
+              <td>{{ data()?.equipmentName }}</td>
+              <td class="lbl">Equipment ID</td>
+              <td>{{ data()?.equipmentId }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Calibration Due Date</td>
+              <td>{{ data()?.calibrationDueDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Temperature</td>
+              <td>{{ data()?.temperature }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Humidity</td>
+              <td>{{ data()?.humidity }}</td>
+              <td class="lbl"></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- IV. ACCEPTANCE CRITERIA -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. ACCEPTANCE CRITERIA</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Recovery Minimum (%)</td>
+              <td>{{ data()?.recoveryMin }}</td>
+              <td class="lbl">Recovery Maximum (%)</td>
+              <td>{{ data()?.recoveryMax }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Maximum RSD (%)</td>
+              <td>{{ data()?.rsdMax }}</td>
+              <td class="lbl">Maximum Bias Allowed</td>
+              <td>{{ data()?.biasMax }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- V. VERIFICATION DATA -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. VERIFICATION DATA</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th>SN</th>
+              <th>CRM Sample ID</th>
+              <th>Ref Value</th>
+              <th>Unit</th>
+              <th>Observation Value</th>
+              <th>Difference</th>
+              <th>Recovery %</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of data()?.verificationData; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ v.crmSampleId }}</td>
+              <td>{{ v.referenceValue }}</td>
+              <td>{{ v.unit }}</td>
+              <td>{{ v.observationValue }}</td>
+              <td>{{ v.difference }}</td>
+              <td>{{ v.recovery }}</td>
+              <td class="fw-bold" [class.text-success]="v.status === 'PASS'" [class.text-danger]="v.status === 'FAIL'">
+                {{ v.status }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- VI. CONCLUSION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">VI. CONCLUSION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Verification Status</td>
+              <td class="fw-bold" [class.text-success]="data()?.verificationStatus === 'Verified'" [class.text-danger]="data()?.verificationStatus === 'Not Verified'">{{ data()?.verificationStatus }}</td>
+            </tr>
+            <tr *ngIf="data()?.verificationStatus === 'Not Verified'">
+              <td class="lbl">Reason Not Verified</td>
+              <td>{{ data()?.reasonNotVerified }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Conclusion</td>
+              <td [innerHTML]="data()?.conclusion"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="data()?.preparedBy || ''" [issuedByName]="data()?.reviewedBy || ''"
+        [reviewedApprovedByName]="data()?.approvedBy || ''"></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

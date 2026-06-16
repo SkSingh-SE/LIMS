@@ -1,0 +1,130 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Sample Muster Register
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [issueNo]="data.issueNo"
+        [revNo]="data.revNo"
+        [title]="'SAMPLE MUSTER REGISTER'"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <div class="doc-section mb-3">
+        <div class="sec-title">REGISTER ENTRIES</div>
+        <table class="table table-bordered inner-table align-middle small text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width:40px">Sr. No.</th>
+              <th style="width:100px">Sample ID</th>
+              <th style="width:90px">Receipt Date</th>
+              <th>Description of Sample</th>
+              <th>Test Required / Parameter</th>
+              <th>Name of Analyst</th>
+              <th style="width:90px">Analysis Started</th>
+              <th style="width:90px">Analysis Completed</th>
+              <th style="width:80px">Status</th>
+              <th style="width:100px">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data.entries">
+              <td>{{ entry.srNo }}</td>
+              <td class="fw-bold">{{ entry.sampleId }}</td>
+              <td>{{ entry.receiptDate | date: "dd-MM-yyyy" }}</td>
+              <td class="text-start">{{ entry.description }}</td>
+              <td class="text-start">{{ entry.testParameters }}</td>
+              <td>{{ entry.analystName }}</td>
+              <td>{{ entry.analysisStartDate | date: "dd-MM-yyyy" }}</td>
+              <td>{{ entry.analysisEndDate | date: "dd-MM-yyyy" }}</td>
+              <td class="extra-small fw-bold">{{ entry.status }}</td>
+              <td>{{ entry.remarks }}</td>
+            </tr>
+            <!-- Empty rows for visual consistency -->
+            <tr *ngFor="let i of [].constructor(Math.max(0, 10 - data.entries.length))">
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Signatures -->
+      <div class="row mt-4 pt-3">
+        <div class="col-6">
+          <div class="border-top border-dark pt-2 text-center signature-block-col">
+            <p class="m-0 fw-bold small text-uppercase">{{ data.preparedBy }}</p>
+            <p class="m-0 extra-small text-muted">Lab Incharge / QC Supervisor</p>
+          </div>
+        </div>
+        <div class="col-6 text-end d-flex justify-content-end">
+          <div class="border-top border-dark pt-2 text-center signature-block-col">
+            <p class="m-0 fw-bold small text-uppercase">{{ data.reviewedBy }}</p>
+            <p class="m-0 extra-small text-muted">Technical Manager</p>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

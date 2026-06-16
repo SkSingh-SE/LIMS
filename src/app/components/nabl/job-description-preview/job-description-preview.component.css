@@ -1,0 +1,237 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACTION TOOLBAR
+═══════════════════════════════════════════════════════════════ */
+.preview-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    gap: 12px;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.toolbar-right { justify-content: flex-end; }
+
+.toolbar-center {
+    flex: 2;
+    text-align: center;
+}
+
+.doc-title-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.3px;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.toolbar-btn.btn-outline-dark {
+    background: #fff;
+    border-color: #555;
+    color: #333;
+}
+
+.toolbar-btn.btn-outline-dark:hover { background: #f5f5f5; border-color: #333; }
+
+.toolbar-btn.btn-primary-red {
+    background: #DA261C;
+    border-color: #DA261C;
+    color: #fff;
+}
+
+.toolbar-btn.btn-primary-red:hover { background: #c0201a; border-color: #c0201a; }
+
+/* Orientation Toggle */
+.orientation-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.orient-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    background: #f8f9fa;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-right: 1px solid #ccc;
+}
+
+.orient-btn:last-child { border-right: none; }
+.orient-btn.active { background: #DA261C; color: #fff; }
+.orient-btn:not(.active):hover { background: #e9ecef; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DOCUMENT CONTENT STYLES
+═══════════════════════════════════════════════════════════════ */
+
+.lbl {
+    background: #f2f2f2 !important;
+    font-weight: 700;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.doc-section {
+    border: 2px solid #000;
+    overflow: visible;
+}
+
+.sec-title {
+    background: #e8e8e8 !important;
+    padding: 7px 14px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-bottom: 2px solid #000;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.sec-body {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #000;
+}
+
+.inner-table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+
+.inner-table td,
+.inner-table th {
+    padding: 7px 10px;
+    font-size: 0.88rem;
+    color: #000;
+    border: 1px solid #000 !important;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.tbl-head th {
+    background: #f2f2f2 !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.ql-editor {
+    padding: 0 !important;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #000;
+}
+
+.auth-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.auth-badge.granted {
+    background: #d4edda !important;
+    color: #155724 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.auth-badge.not-granted {
+    background: #f8d7da !important;
+    color: #721c24 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-badge.status-draft     { background: #fff3cd !important; color: #856404 !important; }
+.status-badge.status-submitted { background: #cce5ff !important; color: #004085 !important; }
+.status-badge.status-reviewed  { background: #d1ecf1 !important; color: #0c5460 !important; }
+.status-badge.status-approved  { background: #d4edda !important; color: #155724 !important; }
+.status-badge.status-rejected  { background: #f8d7da !important; color: #721c24 !important; }
+
+.sig-cell {
+    height: 64px;
+    min-width: 140px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT OVERRIDES
+═══════════════════════════════════════════════════════════════ */
+@media print {
+    .no-print { display: none !important; }
+
+    .print-frame {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 auto !important;
+    }
+
+    /* Rich text from quill carries white-space: pre-wrap — override to
+       allow normal line-wrapping inside print page bounds */
+    .ql-editor,
+    .sec-body {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Keep small table-only sections together on a page */
+    .doc-section {
+        page-break-inside: avoid;
+    }
+
+    /* Allow sections containing rich text to break across pages */
+    .doc-section:has(.sec-body) {
+        page-break-inside: auto;
+    }
+}

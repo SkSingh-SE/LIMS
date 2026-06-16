@@ -6,10 +6,11 @@ import { Modal } from 'bootstrap';
 import { TPIService } from '../../services/tpi.service';
 import { ToastService } from '../../services/toast.service';
 import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-tpi',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, PaginationComponent ],
   templateUrl: './tpi.component.html',
   styleUrl: './tpi.component.css'
 })
@@ -19,18 +20,17 @@ export class TPIComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'agencyName', type: 'string', label: 'Agency Name', filter: true },
     { key: 'emailId', type: 'string', label: 'Email', filter: true },
     { key: 'contactNo', type: 'string', label: 'Contact number', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     agencyName: 'string',
     emailId: 'string',
     contactNo: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -46,12 +46,11 @@ export class TPIComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -83,8 +82,8 @@ export class TPIComponent implements OnInit {
     this.TPIForm = this.fb.group({
       id: [0],
       agencyName: ['', Validators.required],
-      emailId: ['', Validators.required],
-      contactNo: ['', Validators.required]
+      emailId: ['', [Validators.required, Validators.email]],
+      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]]
     });
   }
 
@@ -96,20 +95,20 @@ export class TPIComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
         this.toastService.show(error.message, 'error');
         this.TPIList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   loadBankData(): void {
-    this.tpiService.getTPIById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.tpiService.getTPIById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.TPIForm.patchValue(response);
       },
@@ -165,6 +164,17 @@ export class TPIComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -212,6 +222,8 @@ export class TPIComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -220,6 +232,14 @@ export class TPIComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -245,6 +265,9 @@ export class TPIComponent implements OnInit {
     }
   }
   openModal(type: string, id: number): void {
+    this.TPIForm.reset();
+    this.TPIForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadBankData();
@@ -254,7 +277,6 @@ export class TPIComponent implements OnInit {
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'TPI Form';
-      this.TPIForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -277,35 +299,43 @@ export class TPIComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.TPIForm.reset();
+    this.TPIForm.enable();
+    this.bankId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
-    if (this.TPIForm.valid) {
-      let formData = this.TPIForm.value;
-      if (this.isEditMode) {
-        this.tpiService.updateTPI(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.tpiService.createTPI(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.TPIForm.markAllAsTouched();
+    if (!this.TPIForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.TPIForm.value;
+    if (this.isEditMode) {
+      this.tpiService.updateTPI(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.tpiService.createTPI(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        }
+      });
     }
   }
 

@@ -1,26 +1,37 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import {
-  FormBuilder,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { NgSelectModule } from '@ng-select/ng-select';
+  ChangeDetectorRef,
+  Component,
+  ComponentRef,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+  ViewChild,
+  ViewContainerRef,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
 import {
   debounceTime,
   distinctUntilChanged,
+  forkJoin,
   Observable,
   Subject,
   Subscription,
   switchMap,
   tap,
 } from 'rxjs';
+import { MultiSelectPanelComponent } from '../multi-select-panel/multi-select-panel.component';
 
 @Component({
   selector: 'app-multi-select-dropdown',
-  imports: [CommonModule, FormsModule, NgSelectModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './multi-select-dropdown.component.html',
   styleUrl: './multi-select-dropdown.component.css',
 })
@@ -34,53 +45,74 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   @Input() labelName: string = 'Select Item';
   @Input() hideLabel: boolean = false;
   @Input() reloadKey: any;
+  @Input() smallInput: boolean = false;
+
+  @ViewChild('triggerRef') triggerRef!: ElementRef;
 
   selectedItems: any[] = [];
-  multiForm: FormGroup;
   items: any[] = [];
+  searchTerm = '';
   page = 0;
   pageSize = 20;
   hasMore = true;
   loading = false;
-  searchTerm = '';
+  touched = false;
+  isOpen = false;
 
-  typeahead = new Subject<string>();
-  private subscriptions: Subscription[] = [];
+  // switchMap subject — cancels in-flight search requests when term changes
+  private typeaheadSubject = new Subject<string>();
+  private overlayRef!: OverlayRef;
+  private panelRef!: ComponentRef<MultiSelectPanelComponent>;
+  private subs = new Subscription();
 
-  constructor(private fb: FormBuilder) {
-    this.multiForm = this.fb.group({
-      search: [[]],
-    });
+  constructor(private overlay: Overlay, private vcr: ViewContainerRef, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit(): void {
+    // Typeahead pipe: debounce + distinct + switchMap (cancels previous in-flight request)
+    const searchSub = this.typeaheadSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(term => {
+          this.searchTerm = term;
+          this.page = 0;
+          this.items = [];
+          this.hasMore = true;
+          this.loading = true;
+          this.syncPanelState();
+          this.cdr.markForCheck();
+        }),
+        switchMap(term => this.fetchDataFn(term, 0, this.pageSize))
+      )
+      .subscribe({
+        next: data => {
+          this.items = data;
+          this.hasMore = data.length === this.pageSize;
+          this.loading = false;
+          this.syncPanelState();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loading = false;
+          this.syncPanelState();
+          this.cdr.markForCheck();
+        },
+      });
+
+    this.subs.add(searchSub);
+    this.fetchPage(0);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-
-    // Handle required validator dynamically
-    if (changes['required']) {
-      if (this.required) {
-        this.multiForm.get('search')?.setValidators(Validators.required);
-      } else {
-        this.multiForm.get('search')?.clearValidators();
-      }
-      this.multiForm.get('search')?.updateValueAndValidity();
-    }
-
     if (changes['selectedValues']) {
       const newValues = changes['selectedValues'].currentValue || [];
       const oldValues = changes['selectedValues'].previousValue || [];
-
-      // only act if actual change
       if (JSON.stringify(newValues) !== JSON.stringify(oldValues)) {
-        this.multiForm.get('search')?.setValue(newValues, { emitEvent: false });
-
-        const missingIds = newValues.filter(
-          (id: any) => !this.items.some(item => item.id === id)
-        );
-
+        const missingIds = newValues.filter((id: any) => !this.items.some(item => +item.id === +id));
         if (missingIds.length > 0) {
-          this.fetchMissingItems(missingIds, true); // pass emit=true
+          this.fetchMissingItems(missingIds);
         } else {
-          this.syncSelectedItems(true); // emit on init/change
+          this.syncSelectedItems();
         }
       }
     }
@@ -89,135 +121,224 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
     }
   }
 
-  ngOnInit(): void {
-    // Set required validator on init
-    if (this.required) {
-      this.multiForm.get('search')?.setValidators(Validators.required);
-      this.multiForm.get('search')?.updateValueAndValidity();
-    }
-    this.setupTypeahead();
-    this.loadItems();
-  }
+  // ─── Data loading ───────────────────────────────────────────────────────────
 
-  private setupTypeahead(): void {
-    const typeaheadSub = this.typeahead.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      tap(() => {
-        this.loading = true;
-        this.page = 0;
-        this.items = [];
-      }),
-      switchMap(term => this.fetchDataFn(term || '', this.page, this.pageSize))
-    ).subscribe(data => {
-      this.items = data;
-      this.loading = false;
-      this.hasMore = data.length === this.pageSize;
-    });
-
-    this.subscriptions.push(typeaheadSub);
-  }
-
-  onScrollToEnd(): void {
-    if (this.hasMore && !this.loading) {
-      this.page++;
-      this.loadItems();
-    }
-  }
-
-  customSearchFn(term: string): void {
-    this.searchTerm = term;
-    this.page = 0;
-    this.items = [];
-    this.hasMore = true;
-    this.loadItems();
-  }
-
-  private loadItems(): void {
+  // Single entry-point for both initial load and scroll-to-end pagination.
+  // Page is incremented ONLY inside the success callback to prevent drift when
+  // the guard (loading flag) or errors block the request.
+  private fetchPage(page: number): void {
     if (this.loading) return;
-
     this.loading = true;
-    this.fetchDataFn(this.searchTerm, this.page, this.pageSize).subscribe({
-      next: (data) => {
-        this.items = [
-          ...this.items,
-          ...data.filter(d => !this.items.some(i => i.id === d.id)) // de-dup
-        ];
+    this.syncPanelState();
+
+    const sub = this.fetchDataFn(this.searchTerm, page, this.pageSize).subscribe({
+      next: data => {
+        this.page = page;
+        this.items =
+          page === 0
+            ? data
+            : [...this.items, ...data.filter(d => !this.items.some(i => +i.id === +d.id))];
         this.hasMore = data.length === this.pageSize;
         this.loading = false;
-
-        // After loading, sync selected items silently
-        this.syncSelectedItems();
+        this.syncPanelState();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loading = false;
-      }
+        this.syncPanelState();
+        this.cdr.markForCheck();
+      },
     });
+    this.subs.add(sub);
   }
 
-  //  Fetch missing items (initial selection not in first page)
-  private fetchMissingItems(ids: any[], emit: boolean = false): void {
+  // Fetch individual items by ID for initial selectedValues rebind
+  private fetchMissingItems(ids: any[]): void {
     const requests = ids.map(id => this.fetchDataFn(id.toString(), 0, 1));
-
-    const sub = new Observable<any[]>(subscriber => {
-      let collected: any[] = [];
-      let completed = 0;
-
-      requests.forEach(req => {
-        req.subscribe({
-          next: (data) => {
-            if (data && data.length > 0) {
-              collected.push(data[0]);
-            }
-          },
-          complete: () => {
-            completed++;
-            if (completed === requests.length) {
-              subscriber.next(collected);
-              subscriber.complete();
-            }
-          }
-        });
-      });
-    }).subscribe(fetchedItems => {
-      this.items = [
-        ...this.items,
-        ...fetchedItems.filter(f => !this.items.some(i => i.id === f.id))
-      ];
-      this.syncSelectedItems(emit); // only sync, no emit
+    const sub = forkJoin(requests).subscribe({
+      next: (results: any[][]) => {
+        const collected = results.filter(d => d?.length > 0).map(d => d[0]);
+        this.items = [...this.items, ...collected.filter(f => !this.items.some(i => +i.id === +f.id))];
+        this.syncSelectedItems();
+        this.cdr.markForCheck();
+      },
+      error: () => this.syncSelectedItems(),
     });
-
-    this.subscriptions.push(sub);
+    this.subs.add(sub);
   }
 
-  //  Sync selected values with available items
-  private syncSelectedItems(emit: boolean = false): void {
+  // Used only for external selectedValues rebind (not during user interaction)
+  private syncSelectedItems(): void {
+    this.selectedItems = (this.selectedValues || [])
+      .map(id => this.items.find(item => +item.id === +id))
+      .filter(Boolean);
+  }
 
-    this.selectedValues = this.selectedValues || [];
-    this.selectedItems = this.selectedValues?.map(id => this.items.find(item => item.id === id)).filter(Boolean);
+  // ─── Overlay ─────────────────────────────────────────────────────────────────
 
-    if (emit) {
-      this.itemsSelected.emit(this.selectedItems);
+  private openDropdown(): void {
+    if (!this.triggerRef) return;
+    const triggerWidth = this.triggerRef.nativeElement.getBoundingClientRect().width;
+
+    const positionStrategy = this.overlay
+      .position()
+      .flexibleConnectedTo(this.triggerRef.nativeElement)
+      .withPositions([
+        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
+        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
+      ])
+      .withFlexibleDimensions(false)
+      .withPush(false);
+
+    if (!this.overlayRef) {
+      this.overlayRef = this.overlay.create({
+        positionStrategy,
+        scrollStrategy: this.overlay.scrollStrategies.reposition(),
+        hasBackdrop: false,
+        width: triggerWidth,
+        panelClass: 'ms-overlay-panel',
+      });
+    } else {
+      this.overlayRef.updatePositionStrategy(positionStrategy);
+      this.overlayRef.updateSize({ width: triggerWidth });
+    }
+
+    if (!this.overlayRef.hasAttached()) {
+      const portal = new ComponentPortal(MultiSelectPanelComponent, this.vcr);
+      this.panelRef = this.overlayRef.attach(portal);
+      this.panelRef.instance.items = this.items;
+      this.panelRef.instance.selectedIds = [...(this.selectedValues || [])];
+      this.panelRef.instance.loading = this.loading;
+
+      this.panelRef.instance.itemToggled.subscribe((item: any) => this.toggleItem(item));
+      this.panelRef.instance.scrolledToEnd.subscribe(() => this.onScrollToEnd());
+      this.panelRef.instance.searchChanged.subscribe((term: string) => this.typeaheadSubject.next(term));
+
+      this.isOpen = true;
+      this.cdr.markForCheck();
+
+      // mousedown capture fires before Angular handlers — immune to stopPropagation.
+      // setTimeout defers registration so the opening mousedown itself doesn't close immediately.
+      setTimeout(() => {
+        document.addEventListener('mousedown', this.handleOutsideClick, true);
+        this.panelRef?.instance?.focusSearch();
+      });
+    } else {
+      this.syncPanelState();
     }
   }
 
+  private syncPanelState(): void {
+    if (!this.panelRef || !this.overlayRef?.hasAttached()) return;
+    this.panelRef.instance.items = this.items;
+    this.panelRef.instance.selectedIds = [...(this.selectedValues || [])];
+    this.panelRef.instance.loading = this.loading;
+    this.panelRef.changeDetectorRef.detectChanges();
+  }
 
-  //  Only user actions should emit
-  onChange(selected: any[]): void {
-    this.selectedItems = selected;
+  closeDropdown(): void {
+    if (this.overlayRef?.hasAttached()) {
+      this.overlayRef.detach();
+    }
+    document.removeEventListener('mousedown', this.handleOutsideClick, true);
+    this.isOpen = false;
+    this.cdr.markForCheck();
+
+    // Reset search state and reload base list when user closed with a search term active
+    if (this.searchTerm) {
+      this.searchTerm = '';
+      this.page = 0;
+      this.items = [];
+      this.hasMore = true;
+      this.loading = false;
+      this.fetchPage(0);
+    }
+  }
+
+  // ─── Event handlers ──────────────────────────────────────────────────────────
+
+  onTriggerClick(): void {
+    if (this.isDisabled) return;
+    this.touched = true;
+    if (!this.overlayRef?.hasAttached()) {
+      this.openDropdown();
+    }
+  }
+
+  onChevronClick(event: Event): void {
+    event.stopPropagation();
+    if (this.isDisabled) return;
+    this.touched = true;
+    if (this.overlayRef?.hasAttached()) {
+      this.closeDropdown();
+    } else {
+      this.openDropdown();
+    }
+  }
+
+  handleOutsideClick = (event: MouseEvent) => {
+    // Auto-remove listener if overlay was already detached externally
+    if (!this.overlayRef?.hasAttached()) {
+      document.removeEventListener('mousedown', this.handleOutsideClick, true);
+      return;
+    }
+    const triggerEl = this.triggerRef?.nativeElement;
+    const overlayEl = this.overlayRef?.overlayElement;
+    if (!triggerEl?.contains(event.target as Node) && !overlayEl?.contains(event.target as Node)) {
+      this.closeDropdown();
+      this.cdr.markForCheck();
+    }
+  };
+
+  // Append next page — page is incremented ONLY after a successful fetch (inside fetchPage)
+  onScrollToEnd(): void {
+    if (!this.hasMore || this.loading) return;
+    this.fetchPage(this.page + 1);
+  }
+
+  // Toggle selection — mutates selectedItems directly, never re-derives from items list
+  // (items may be filtered by search and not contain previously selected entries)
+  toggleItem(item: any): void {
+    const currentIds: any[] = [...(this.selectedValues || [])];
+    const idx = currentIds.findIndex(id => +id === +item.id);
+    if (idx >= 0) {
+      currentIds.splice(idx, 1);
+      this.selectedItems = this.selectedItems.filter(i => +i.id !== +item.id);
+    } else {
+      currentIds.push(item.id);
+      this.selectedItems = [...this.selectedItems, item];
+    }
+    this.selectedValues = currentIds;
     this.itemsSelected.emit(this.selectedItems);
+    this.syncPanelState();
+    this.cdr.markForCheck();
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+  removeItem(event: Event, item: any): void {
+    event.stopPropagation();
+    this.toggleItem(item);
   }
+
+  clearAll(event: Event): void {
+    event.stopPropagation();
+    this.selectedValues = [];
+    this.selectedItems = [];
+    this.itemsSelected.emit([]);
+    this.syncPanelState();
+    this.cdr.markForCheck();
+  }
+
   private reloadDropdown(): void {
     this.page = 0;
     this.items = [];
     this.hasMore = true;
     this.loading = false;
-
-    this.loadItems();
+    this.fetchPage(0);
   }
 
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+    this.overlayRef?.dispose();
+    document.removeEventListener('mousedown', this.handleOutsideClick, true);
+  }
 }

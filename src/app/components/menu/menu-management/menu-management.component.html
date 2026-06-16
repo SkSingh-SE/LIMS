@@ -5,82 +5,118 @@
   <div class="card-body">
 
     <form [formGroup]="menuForm" (ngSubmit)="submit()">
-      <!-- Main Menu Info -->
-      <div class="card mb-4">
+
+      <!-- Main Menu Info (L0) -->
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2 py-2">
+          <span class="badge bg-secondary">L0</span>
+          <strong class="text-sm">Root Menu</strong>
+        </div>
         <div class="card-body">
-          <div class="row row-col-md-4 g-2">
-            <div class="col">
-              <label class="form-label">Menu Title</label>
-              <input class="form-control" formControlName="title" placeholder="Enter menu title" maxlength="50" />
+          <div class="row g-2">
+            <div class="col-md-3">
+              <label class="form-label">Title</label>
+              <input class="form-control" formControlName="title" placeholder="Menu title" maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('title')}" />
+              <app-field-error [control]="menuForm.get('title')" label="Title" [submitted]="submitted" />
             </div>
-            <div class="col">
+            <div class="col-md-3">
               <label class="form-label">Icon</label>
-              <input class="form-control" formControlName="icon" placeholder="Enter icon name" maxlength="50" />
+              <input class="form-control" formControlName="icon" placeholder="e.g. bi-layout-text-sidebar" maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('icon')}" />
+              <app-field-error [control]="menuForm.get('icon')" label="Icon" [submitted]="submitted" />
             </div>
-            <div class="col">
-              <label class="form-label">Path</label>
-              <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="100" />
+            <div class="col-md-4">
+              <label class="form-label">Route</label>
+              <input type="text" class="form-control" formControlName="route" placeholder="/path" maxlength="200"
+                [ngClass]="{'is-invalid': isFieldInvalid('route')}" />
+              <app-field-error [control]="menuForm.get('route')" label="Route" [submitted]="submitted" />
             </div>
-            <div class="col">
+            <div class="col-md-2">
               <label class="form-label">Color</label>
-               <input type="color" class="form-control form-control-color" formControlName="color" />
+              <input type="color" class="form-control form-control-color" formControlName="color" />
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Submenu Recursive Section -->
+      <!-- Submenus card -->
       <div class="card">
-        <div class="card-header d-flex justify-content-between">
-          <strong>Submenus</strong>
-          <button *ngIf="!isViewMode" class="btn btn-sm btn-outline-danger-600" type="button" (click)="addSubmenu(submenuArray)">
-            <i class="bi bi-plus-circle-dotted"></i> Add Submenu</button>
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+          <strong class="text-sm">Submenus</strong>
+          <button *ngIf="!isViewMode" class="btn btn-sm btn-add" type="button" (click)="addSubmenu(submenuArray)">
+            <i class="bi bi-plus-circle-dotted"></i> Add L1 Item
+          </button>
         </div>
-        <div class="card-body">
-          <!-- Here, bind to the full parent FormGroup -->
-          <div [formGroup]="menuForm">
-            <div formArrayName="submenu">
-              <ng-container *ngTemplateOutlet="submenuTemplate; context: { submenuArray: submenuArray }"></ng-container>
-            </div>
+        <div class="card-body p-2">
+
+          <!-- Depth-1 items -->
+          <ng-container *ngTemplateOutlet="submenuTemplate; context: { arr: submenuArray, depth: 1 }"></ng-container>
+
+          <div *ngIf="submenuArray.length === 0" class="text-muted text-sm py-3 text-center">
+            No submenus. Click "Add L1 Item" to add one.
           </div>
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <div *ngIf="!isViewMode" class="mt-4 d-flex justify-content-end gap-2">
-        <button [routerLink]="['/menu']" class="btn btn-warning" type="button" >Cancel</button>
-        <button class="btn btn-success px-3" type="submit">Save</button>
+      <!-- Recursive template — inside <form> so *ngTemplateOutlet embedded views share form directives -->
+      <ng-template #submenuTemplate let-arr="arr" let-depth="depth">
+        <div *ngFor="let sub of arr.controls; let i = index"
+          class="submenu-node"
+          [style.borderLeftColor]="depthBorderColor(depth)">
+
+          <!-- Row: badge + remove -->
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge" [ngClass]="depthBadgeClass(depth)">L{{ depth }}</span>
+            <span class="text-muted" style="font-size:0.75rem;">Item {{ i + 1 }}</span>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove ms-auto py-0 px-2"
+              (click)="removeSubmenu(arr, i)">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+
+          <!-- Fields -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-4">
+              <label class="form-label text-xs">Title</label>
+              <input type="text" class="form-control"
+                [formControl]="getFormControl(sub, 'title')"
+                placeholder="Title" maxlength="100"
+                [ngClass]="{'is-invalid': isSubFieldInvalid(sub, 'title')}" />
+              <app-field-error [control]="getFormControl(sub, 'title')" label="Title" [submitted]="submitted" />
+            </div>
+            <div class="col-md-5">
+              <label class="form-label text-xs">Route</label>
+              <input type="text" class="form-control"
+                [formControl]="getFormControl(sub, 'route')"
+                placeholder="/route" maxlength="200" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-xs">Color</label>
+              <input type="color" class="form-control form-control-color"
+                [formControl]="getFormControl(sub, 'color')" />
+            </div>
+          </div>
+
+          <!-- Nested children (max depth 3) -->
+          <div class="ms-3" *ngIf="getSubmenuFormArray(sub).length > 0 || !isViewMode">
+            <ng-container *ngTemplateOutlet="submenuTemplate; context: { arr: getSubmenuFormArray(sub), depth: depth + 1 }"></ng-container>
+            <button *ngIf="!isViewMode && depth < 3" type="button"
+              class="btn btn-sm btn-outline-secondary mt-1 mb-1" style="font-size:0.75rem;"
+              (click)="addSubmenu(getSubmenuFormArray(sub))">
+              <i class="bi bi-plus-circle-dotted"></i> Add L{{ depth + 1 }} Item
+            </button>
+          </div>
+
+        </div>
+      </ng-template>
+
+      <!-- Action bar -->
+      <div *ngIf="!isViewMode" class="mt-3 d-flex justify-content-end gap-2">
+        <button [routerLink]="['/menu']" class="btn btn-cancel" type="button">Cancel</button>
+        <button class="btn btn-save px-3" type="submit">Save</button>
       </div>
+
     </form>
   </div>
 </div>
-
-<!-- Recursive Submenu Template -->
-<ng-template #submenuTemplate let-submenuArray="submenuArray">
-  <div *ngFor="let sub of submenuArray.controls; let i = index">
-    <div [formGroup]="sub" class="border-start ps-3 mb-3">
-      <div class="row g-2">
-        <div class="col-md-3">
-          <input type="text" class="form-control" formControlName="title" placeholder="Submenu Title" maxlength="50" />
-        </div>
-        <!-- <div class="col-md-3">
-          <input type="text" class="form-control" formControlName="route" placeholder="Route" maxlength="100" />
-        </div> -->
-        <div class="col-md-3">
-          <input type="color" class="form-control form-control-color" formControlName="color" />
-        </div>
-        <div *ngIf="!isViewMode" class="col-md-3 d-flex align-items-center">
-          <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeSubmenu(submenuArray, i)">Remove</button>
-        </div>
-      </div>
-
-      <!-- Recursive Nested Submenus -->
-      <!-- <div class="ms-3 mt-2" formArrayName="submenu">
-        <ng-container *ngTemplateOutlet="submenuTemplate; context: { submenuArray: getSubmenuArray(sub) }"></ng-container>
-        <button *ngIf="!isViewMode" class="btn btn-sm btn-outline-secondary mt-2" type="button" (click)="addSubmenu(getSubmenuArray(sub))">
-          Add Nested Submenu
-        </button>
-      </div> -->
-    </div>
-  </div>
-</ng-template>

@@ -2,6 +2,8 @@ export interface Designation {
     id: number;
     name: string;
     description?: string;
+    roleID?: number;
+    roleName?: string;
     createdBy?: number;
     createdOn: string;
     modifiedBy?: number;

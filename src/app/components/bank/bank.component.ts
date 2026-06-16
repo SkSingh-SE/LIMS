@@ -4,11 +4,15 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { BankService } from '../../services/bank.service';
 import { ToastService } from '../../services/toast.service';
+import { noWhitespaceValidator, ifscValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { CommonModule } from '@angular/common';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-bank',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './bank.component.html',
   styleUrl: './bank.component.css'
 })
@@ -18,18 +22,18 @@ export class BankComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'bankName', type: 'string', label: 'Bank Name', filter: true },
     { key: 'accountHolderName', type: 'string', label: 'Account Holder Name', filter: true },
     { key: 'accountNumber', type: 'string', label: 'Account Number', filter: true },
-    { key: 'createdOn', type: 'string', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     bankName: 'string',
     accountHolderName: 'string',
     accountNumber: 'string',
-    accountType: 'string'
+    accountType: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -45,12 +49,11 @@ export class BankComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -63,6 +66,7 @@ export class BankComponent implements OnInit {
 
   // form
   bankForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -88,12 +92,12 @@ export class BankComponent implements OnInit {
     this.fetchData();
     this.bankForm = this.fb.group({
       id: [0],
-      bankName: ['', Validators.required],
-      accountHolderName: ['', Validators.required],
-      accountNumber: ['', Validators.required],
+      bankName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      accountHolderName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      accountNumber: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^\d+$/)]],
       accountType: ['', Validators.required],
-      branchName: [''],
-      ifscCode: [''],
+      branchName: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      ifscCode: ['', [Validators.required, Validators.maxLength(11), ifscValidator()]],
     });
   }
 
@@ -104,20 +108,19 @@ export class BankComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
         this.bankList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   loadBankData(): void {
-    this.bankService.getBankById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.bankService.getBankById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.bankForm.patchValue({
           id: this.customerTypeObject.id || 0,
@@ -181,6 +184,17 @@ export class BankComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -228,6 +242,8 @@ export class BankComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -236,6 +252,14 @@ export class BankComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -254,13 +278,15 @@ export class BankComponent implements OnInit {
           this.fetchData();
           this.toastService.show(response.message, 'success');
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
+        error: () => {
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.bankForm.reset();
+    this.bankForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadBankData();
@@ -268,9 +294,7 @@ export class BankComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.bankForm.reset();
       this.formTitle = 'Bank Form';
-      this.bankForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -293,35 +317,49 @@ export class BankComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.bankForm.reset();
+    this.bankForm.enable();
+    this.bankId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.bankForm, path, this.submitted);
   }
 
   onSubmit(): void {
-    if (this.bankForm.valid) {
-      let formData = this.bankForm.value;
-      if (this.isEditMode) {
-        this.bankService.updateBank(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.bankService.createBank(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.bankForm);
+    if (!this.bankForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.bankForm.value;
+    if (this.isEditMode) {
+      this.bankService.updateBank(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || 'Failed to update bank', 'error');
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.bankService.createBank(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || 'Failed to create bank', 'error');
+        }
+      });
     }
   }
 

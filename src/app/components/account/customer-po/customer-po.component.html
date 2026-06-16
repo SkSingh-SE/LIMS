@@ -1,0 +1,280 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100 border-0 shadow-sm">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">Customer Purchase Orders</label>
+      <button class="btn btn-outline-light btn-sm me-3" (click)="openCreateForm()" *ngIf="!showForm">
+        <i class="bi bi-plus-circle me-1"></i> Create PO
+      </button>
+    </div>
+    <div class="card-body">
+
+  <!-- Create/Edit Form -->
+  <div class="card shadow-sm mb-4" *ngIf="showForm">
+    <div class="card-header bg-white">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-pencil-square me-2"></i>
+        {{ editingId ? 'Edit Purchase Order' : 'Create Purchase Order' }}
+      </h5>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="poForm" (ngSubmit)="onSubmit()">
+        <div class="row g-3">
+          <!-- Customer -->
+          <div class="col-md-6">
+            <app-searchable-dropdown
+              [placeholder]="'Type & Search Customer'"
+              [labelName]="'Select Customer'"
+              [fetchDataFn]="getCustomers"
+              (itemSelected)="onCustomerSelect($event)"
+              [required]="true"
+              [selectedItem]="poForm.get('customerId')?.value"
+            ></app-searchable-dropdown>
+            <div *ngIf="poForm.get('customerId')?.touched && poForm.get('customerId')?.invalid"
+                 class="text-danger small mt-1">
+              Customer is required.
+            </div>
+          </div>
+
+          <!-- PO Number -->
+          <div class="col-md-6">
+            <label class="form-label">PO Number <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="poNumber" placeholder="Enter PO number" />
+            <div *ngIf="poForm.get('poNumber')?.touched && poForm.get('poNumber')?.invalid"
+                 class="text-danger small mt-1">
+              PO number is required.
+            </div>
+          </div>
+
+          <!-- PO Date -->
+          <div class="col-md-4">
+            <label class="form-label">PO Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="poDate" />
+            <div *ngIf="poForm.get('poDate')?.touched && poForm.get('poDate')?.invalid"
+                 class="text-danger small mt-1">
+              PO date is required.
+            </div>
+          </div>
+
+          <!-- Valid Until -->
+          <div class="col-md-4">
+            <label class="form-label">Valid Until</label>
+            <input type="date" class="form-control" formControlName="validUntil" />
+          </div>
+
+          <!-- Amount -->
+          <div class="col-md-4">
+            <label class="form-label">Amount <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">INR</span>
+              <input type="number" class="form-control" formControlName="poAmount"
+                     placeholder="Enter PO amount" step="0.01" min="0" />
+            </div>
+            <div *ngIf="poForm.get('poAmount')?.touched && poForm.get('poAmount')?.invalid"
+                 class="text-danger small mt-1">
+              Amount is required and must be greater than 0.
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="col-12">
+            <label class="form-label">Terms & Conditions</label>
+            <textarea class="form-control" formControlName="terms" rows="3"
+                      placeholder="Enter terms and conditions"></textarea>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-save" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+            <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i>
+            {{ isSubmitting ? 'Saving...' : (editingId ? 'Update PO' : 'Create PO') }}
+          </button>
+          <button type="button" class="btn btn-cancel" (click)="cancelForm()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="d-flex justify-content-end mb-3" *ngIf="!showForm">
+    <div class="w-25 input-group custom-search">
+      <input type="text" class="form-control" placeholder="Search..."
+             [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+      <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
+        <i class="bi bi-search"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div *ngIf="poList.length > 0 && !showForm" class="table-responsive">
+    <table class="table bordered-table align-middle w-100 small">
+      <thead class="table-light">
+        <tr class="text-center align-middle">
+          <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+          <th *ngFor="let column of columns" class="fw-semibold">
+            <div class="d-flex align-items-center justify-content-center">
+              <span class="dt-column-order">{{ column.label }}</span>
+              <span class="d-flex flex-column ms-2 mt-1">
+                <i *ngIf="column.filter"
+                   class="bi bi-caret-up sorting-icon-up"
+                   [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                   (click)="applySorting(column.key)"></i>
+                <i *ngIf="column.filter"
+                   class="bi bi-caret-down sorting-icon-down"
+                   [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                   (click)="applySorting(column.key)"></i>
+              </span>
+              <span *ngIf="!hasFilter(column.key) && column.filter"
+                    class="cursor ms-2 mt-1"
+                    (click)="openFilterModal(column.key, $event)">
+                <i class="bi bi-funnel"></i>
+              </span>
+              <span *ngIf="hasFilter(column.key) && column.filter"
+                    class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                <i class="bi bi-x-lg text-danger"></i>
+              </span>
+            </div>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let po of poList" class="align-middle text-center">
+          <td class="text-center">
+            <div class="d-flex justify-content-center gap-3">
+              <a class="icon-link" title="View" (click)="viewPOItems(po)">
+                <img src="/icons/view.svg" alt="View" class="icon-svg">
+              </a>
+              <a class="icon-link" title="Edit" (click)="openEditForm(po)">
+                <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+              </a>
+              <a class="icon-link" title="Delete" (click)="deletePO(po)">
+                <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
+              </a>
+            </div>
+          </td>
+          <td class="fw-semibold">{{ po.poNumber }}</td>
+          <td>{{ po.customerName || '-' }}</td>
+          <td>{{ formatDate(po.poDate) }}</td>
+          <td class="text-end">{{ (po.poAmount || 0) | number:'1.2-2' }}</td>
+          <td class="text-end">{{ (po.utilizedAmount || 0) | number:'1.2-2' }}</td>
+          <td class="text-end fw-bold">{{ (po.remainingAmount || 0) | number:'1.2-2' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusBadgeClass(po.status)">
+              {{ po.status || 'Active' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="poList.length === 0 && !showForm" class="alert alert-light border border-secondary text-center py-4">
+    <i class="bi bi-info-circle text-secondary"></i>
+    <p class="mb-0 text-secondary">No records found matching your criteria.</p>
+  </div>
+
+  <!-- PO Items Detail -->
+  <div *ngIf="selectedPO" class="border-top mt-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">
+          <i class="bi bi-box-seam me-1"></i>
+          Items for PO: <strong>{{ selectedPO.poNumber }}</strong>
+        </h6>
+        <button class="btn btn-sm btn-cancel" (click)="closePOItems()">
+          <i class="bi bi-x"></i> Close
+        </button>
+      </div>
+      <div *ngIf="isLoadingItems" class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <div *ngIf="!isLoadingItems && poItems.length > 0" class="table-responsive">
+        <table class="table table-sm table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Item Code</th>
+              <th>Description</th>
+              <th class="text-end">Quantity</th>
+              <th class="text-end">Unit Price (&#8377;)</th>
+              <th class="text-end">Total (&#8377;)</th>
+              <th class="text-end">Billed (&#8377;)</th>
+              <th class="text-end">Remaining (&#8377;)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of poItems">
+              <td>{{ item.itemCode || '-' }}</td>
+              <td>{{ item.description || '-' }}</td>
+              <td class="text-end">{{ item.quantity || 0 }}</td>
+              <td class="text-end">{{ (item.unitPrice || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (item.totalAmount || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (item.billedAmount || 0) | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">{{ (item.remainingAmount || 0) | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!isLoadingItems && poItems.length === 0" class="text-center text-muted py-3">
+        <i class="bi bi-inbox"></i> No items found for this purchase order.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <!-- Pagination -->
+  <app-pagination
+    [currentPage]="pageNumber"
+    [pageSize]="pageSize"
+    [totalItems]="totalItems"
+    [pageSizes]="pageSizes"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+  </app-pagination>
+
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative border-0">
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2 border-secondary" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input *ngIf="filterColumnTypes[filterColumn] === 'string'"
+           type="text" class="form-control mb-2 border-secondary"
+           [(ngModel)]="filterValue" placeholder="Enter value"
+           (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'number'"
+           type="number" class="form-control mb-2 border-secondary"
+           [(ngModel)]="filterValue" placeholder="Enter number"
+           (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
+           type="date" class="form-control mb-2 border-secondary"
+           [(ngModel)]="filterValue" />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2 border-secondary" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-danger btn-sm mb-2 fw-semibold" (click)="applyFilter()">Apply</button>
+  </div>
+</div>

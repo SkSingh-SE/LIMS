@@ -32,6 +32,34 @@ export interface TestResultParameterDto {
   maxValue?: number | null;
   isWithinLimit?: boolean | null;
   altered?: boolean;
+  // Phase 2A fields
+  formulaExpression?: string;
+  dependsOnParamsJson?: string;
+  specMinValue?: number | null;
+  specMaxValue?: number | null;
+  acceptanceCriteria?: string;
+  isStandalone?: boolean;
+  sourceTestMethodId?: number | null;
+  resultStatus?: 'Pass' | 'Fail' | 'Marginal' | null;
+}
+
+// ================================================================
+// Standalone Parameter DTO (for adding standalone parameters)
+// ================================================================
+export interface AddStandaloneParameterDto {
+  parameterName: string;
+  unit: string;
+  formulaExpression?: string;
+  specMinValue?: number | null;
+  specMaxValue?: number | null;
+}
+
+// ================================================================
+// Add Parameter From Method DTO
+// ================================================================
+export interface AddParameterFromMethodDto {
+  testMethodId: number;
+  parameterID: number;
 }
 
 // ================================================================

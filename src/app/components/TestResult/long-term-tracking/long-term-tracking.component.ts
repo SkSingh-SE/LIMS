@@ -10,8 +10,8 @@ import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge
 
 @Component({
   selector: 'app-long-term-tracking',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, TestStatusBadgeComponent],
+
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, TestStatusBadgeComponent ],
   templateUrl: './long-term-tracking.component.html',
   styleUrls: ['./long-term-tracking.component.css']
 })
@@ -19,7 +19,6 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
   // Data
   longTermTests: LongTermTestDto[] = [];
   isSaving = signal(false);
-  isLoading = signal(false);
 
   // Search & Filter
   searchTerm: string = '';
@@ -116,7 +115,6 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
   // LOAD & FETCH
   // ================================================================
   loadLongTermTests(): void {
-    this.isLoading.set(true);
     const filter = {
       pageNumber: this.pageNumber,
       pageSize: this.pageSize,
@@ -156,12 +154,10 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
         });
 
         console.log('Loaded long-term tests:', this.longTermTests.length);
-        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading long-term tests:', error);
         this.toastService.show('Failed to load long-term tests', 'error');
-        this.isLoading.set(false);
       }
     });
   }
@@ -220,10 +216,10 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
     this.showRecordModal = true;
 
     // Load available parameters for this test
-    if(test?.headerId)
-    this.loadAvailableParameters(test);
-  else
-    this.toastService.show('Header ID is missing for this test', 'error');
+    if (test?.headerId)
+      this.loadAvailableParameters(test);
+    else
+      this.toastService.show('Header ID is missing for this test', 'error');
   }
 
   loadAvailableParameters(test: LongTermTestDto): void {
@@ -235,12 +231,12 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
         console.log('Loaded', this.availableParameters.length, 'available parameters');
         const control = this.recordForm.get('parameterId');
 
-          // Auto-select if empty
-          if (!control?.value || control.value === '') {
-            if (this.availableParameters.length > 0) {
-              control?.setValue(this.availableParameters[0].id);
-            }
+        // Auto-select if empty
+        if (!control?.value || control.value === '') {
+          if (this.availableParameters.length > 0) {
+            control?.setValue(this.availableParameters[0].id);
           }
+        }
       },
       error: (error) => {
         console.error('Error loading parameters:', error);
@@ -259,6 +255,7 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
 
   saveReading(): void {
     if (!this.recordForm.valid) {
+      this.recordForm.markAllAsTouched();
       this.toastService.show('Please fill in all required fields', 'warning');
       return;
     }
@@ -351,20 +348,20 @@ export class LongTermTrackingComponent implements OnInit, OnDestroy {
 
   canCompleteTest(test: LongTermTestDto): boolean {
 
-  const allowedStatus =
-    test.status === 'Active' ||
-    test.status === 'In Progress' ||
-    test.status === 'Started';
+    const allowedStatus =
+      test.status === 'Active' ||
+      test.status === 'In Progress' ||
+      test.status === 'Started';
 
-  // 72 hours = 259200000 ms
-  const hrs = test.durationHours || 1;
-  const expiryMs = hrs * 60 * 60 * 1000;
+    // 72 hours = 259200000 ms
+    const hrs = test.durationHours || 1;
+    const expiryMs = hrs * 60 * 60 * 1000;
 
-  const startTime = new Date(test.startedAt).getTime();
-  const now = Date.now();
+    const startTime = new Date(test.startedAt).getTime();
+    const now = Date.now();
 
-  const isExpired = (now - startTime) >= expiryMs;
+    const isExpired = (now - startTime) >= expiryMs;
 
-  return allowedStatus || isExpired;
+    return allowedStatus || isExpired;
   }
 }

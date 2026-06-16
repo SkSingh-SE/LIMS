@@ -1,0 +1,132 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Meeting Agenda Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="data" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header
+        [formatNo]="data.formatNo"
+        [mainTitle]="'MEETING NOTICE / AGENDA FOR MRM'"
+        [docNo]="data.docNo"
+        [issueNo]="data.issueNo"
+        [issueDate]="data.issueDate"
+        [revNo]="data.revNo"
+      ></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+      <!-- Meeting Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">MEETING DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Date of Meeting</td>
+              <td style="width: 25%">{{ data.meetingDate | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 25%">Time</td>
+              <td style="width: 25%">{{ data.meetingTime }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Venue</td>
+              <td colspan="3">{{ data.venue }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Chairperson</td>
+              <td colspan="3">{{ data.chairperson }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>A Management Review Meeting is scheduled as per details above.</p>
+
+      <!-- Proposed Attendees -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">PROPOSED ATTENDEES</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 60px">Sr. No.</th>
+              <th>Name</th>
+              <th>Designation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let attendee of data.attendees; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ attendee.name }}</td>
+              <td>{{ attendee.designation }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Agenda Items -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">AGENDA ITEMS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 60px">Sr. No.</th>
+              <th>Agenda Item</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let agenda of data.agendaItems; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ agenda.item }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer
+        [showSignatures]="true"
+        [preparedByName]="'Quality Manager'"
+        [issuedByName]="'Quality Manager'"
+        [reviewedApprovedByName]="'Managing Director'"
+      ></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+</div>

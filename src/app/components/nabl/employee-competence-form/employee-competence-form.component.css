@@ -1,0 +1,62 @@
+.form-label {
+    margin-bottom: 0.25rem;
+}
+
+.evaluation-table {
+    border-color: #dee2e6;
+}
+
+.evaluation-table th {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.rating-cell {
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    color: transparent;
+    border: 1px solid #dee2e6;
+}
+
+.rating-cell:hover:not(.disabled) {
+    background-color: #f8f9fa;
+}
+
+.rating-cell.selected {
+    color: #198754;
+    background-color: #e8f5e9;
+    font-weight: bold;
+}
+
+.rating-box {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    background-color: #fff;
+}
+
+.rating-box:hover:not(.disabled) {
+    background-color: #f8f9fa;
+    border-color: #b71c1c;
+    color: #b71c1c;
+}
+
+.rating-box.active {
+    background-color: #b71c1c;
+    color: white;
+    border-color: #b71c1c;
+    box-shadow: 0 2px 4px rgba(183, 28, 28, 0.2);
+}
+
+.rating-box.disabled, .rating-cell.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}

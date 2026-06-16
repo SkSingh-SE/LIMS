@@ -1,0 +1,172 @@
+.print-frame {
+  background: white;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.print-header {
+  border-bottom: 2px solid #333;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.print-header h4 {
+  color: #dc3545;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.print-header h5 {
+  color: #666;
+  font-weight: normal;
+  margin-top: 0;
+}
+
+.print-content {
+  min-height: 400px;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+.section h6 {
+  color: #333;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+}
+
+.section p {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.section strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.print-footer {
+  border-top: 2px solid #333;
+  padding-top: 20px;
+  margin-top: 30px;
+}
+
+.signature-block {
+  text-align: center;
+  min-height: 80px;
+}
+
+.signature-block p {
+  margin: 5px 0;
+  line-height: 1.2;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.badge-success {
+  background-color: #198754;
+  color: white;
+}
+
+.badge-warning {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.badge-info {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+.badge-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.badge-light {
+  background-color: #f8f9fa;
+  color: #000;
+  border: 1px solid #dee2e6;
+}
+
+.btn-primary {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-primary:hover {
+  background-color: #bb2d3b;
+  border-color: #b02a37;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background-color: #5c636a;
+  border-color: #565e64;
+}
+
+.container-fluid {
+  padding: 1.5rem;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-frame {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  
+  .container-fluid {
+    padding: 0;
+  }
+  
+  .section {
+    page-break-inside: avoid;
+  }
+  
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .print-frame {
+    padding: 10px;
+  }
+  
+  .signature-block {
+    margin-bottom: 20px;
+  }
+}

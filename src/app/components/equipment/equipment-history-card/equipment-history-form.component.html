@@ -1,0 +1,152 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ getTitle() }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="false" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <form [formGroup]="historyForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="historyForm.disabled">
+
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('equipment')">
+            <i class="bi" [ngClass]="openSections['equipment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header & Equipment Information</span>
+          </div>
+          <div *ngIf="openSections['equipment']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Form Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-14">
+                <datalist id="formNumbers">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Issue No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rev No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Equipment ID <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="equipmentId" [readonly]="isEditMode">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Equipment Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentName">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Equipment Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentNo">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Record Type <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="recordType" (change)="onRecordTypeChange()">
+                  <option *ngFor="let type of recordTypes" [value]="type.value">{{ type.label }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Status <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="status">
+                  <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Record Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('record')">
+            <i class="bi" [ngClass]="openSections['record'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Record Details</span>
+          </div>
+          <div *ngIf="openSections['record']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Record Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="recordDate">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Performed By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="performedBy">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Cost (₹)</label>
+                <input type="number" class="form-control" formControlName="cost">
+              </div>
+
+              <!-- Calibration specific fields -->
+              <ng-container *ngIf="historyForm.get('recordType')?.value === 'calibration'">
+                <div class="col-md-4">
+                  <label class="form-label">Agency <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="agency">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Certificate Number <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="certificateNo">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Next Due Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" formControlName="nextDueDate">
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Description & Observations -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('details')">
+            <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Description & Observations</span>
+          </div>
+          <div *ngIf="openSections['details']" class="section-body">
+            <div class="d-flex gap-3">
+              <div class="col d-flex flex-column">
+                <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                <quill-editor formControlName="description" [modules]="quillModules"
+                  placeholder="Enter details of work performed..."></quill-editor>
+              </div>
+              <div class="col d-flex flex-column">
+                <label class="form-label fw-bold">Observations</label>
+                <quill-editor formControlName="observations" [modules]="quillModules"
+                  placeholder="Enter any observations made..."></quill-editor>
+              </div>
+              <div class="col d-flex flex-column">
+                <label class="form-label fw-bold">Actions Taken</label>
+                <quill-editor formControlName="actionsTaken" [modules]="quillModules"
+                  placeholder="Enter actions taken if any..."></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!historyForm.disabled" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="historyForm.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

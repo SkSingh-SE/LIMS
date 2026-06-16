@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
                 <div class="w-25 input-group custom-search">
@@ -25,6 +25,7 @@
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
                             <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
@@ -36,25 +37,22 @@
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
                                             (click)="applySorting(column.key)"></i>
                                     </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
                                         (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
                                         (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                                 </div>
                             </th>
-                            <th class="align-middle text-center">Actions</th>
                         </tr>
 
 
                     </thead>
                     <tbody>
                         <tr *ngFor="let customerType of HeatTreatmentList; let i = index" class="text-sm">
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.createdOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
+                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
                                     <a (click)="openModal('view',customerType.id)" class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
@@ -68,13 +66,16 @@
                             </td>
 
 
-                        </tr>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>{{ customerType.code }}</td>
+                            <td>{{ customerType.name }}</td>
+                            <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
 
 
             </div>
-            <div *ngIf="HeatTreatmentList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="HeatTreatmentList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
@@ -82,27 +83,15 @@
                 </div>
             </div>
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center">
-                <!-- Page Size Selector -->
-                <div class="d-flex align-items-center">
-                    <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                        <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                    </select>
-                </div>
-
-                <!-- Pagination Controls -->
-                <ul class="pagination mb-0 d-flex align-items-center">
-                    <li class="page-item" [class.disabled]="pageNumber === 1">
-                        <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                    </li>
-                    <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                        <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                    </li>
-                    <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                        <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Pagination -->
+            <app-pagination
+              [currentPage]="pageNumber"
+              [pageSize]="pageSize"
+              [totalItems]="totalItems"
+              [pageSizes]="pageSizes"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
 
 
         </div>
@@ -146,12 +135,12 @@
 </div>
 
 <!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
     aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header card-form-header text-white">
-                <label class="modal-title fs-6 fw-medium" id="customerTypeModalLabel">
+                <label class="modal-title fw-medium" id="customerTypeModalLabel">
                     {{formTitle}}
                 </label>
                 <button type="button" class="btn-close btn-close-white" aria-label="Close"
@@ -159,25 +148,113 @@
             </div>
             <form [formGroup]="HeatTreatmentForm" (ngSubmit)="onSubmit()">
                 <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" required
-                            [ngClass]="{'is-invalid': HeatTreatmentForm.get('name')?.touched && HeatTreatmentForm.get('name')?.invalid}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <span *ngIf="HeatTreatmentForm.get('name')?.invalid && HeatTreatmentForm.get('name')?.touched"
-                            class="text-danger text-sm">
-                            Name is required.
-                        </span>
+                    <!-- Row 1: Code + Name -->
+                    <div class="row mb-1">
+                        <div class="col-md-4">
+                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="code" class="form-control" formControlName="code"
+                                placeholder="Enter Code" maxlength="50"
+                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <app-field-error [control]="HeatTreatmentForm.get('code')" label="Code" [submitted]="submitted"/>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" class="form-control" formControlName="name"
+                                placeholder="Enter Name" maxlength="200"
+                                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                                [attr.disabled]="isViewMode ? true : null" />
+                            <app-field-error [control]="HeatTreatmentForm.get('name')" label="Name" [submitted]="submitted"/>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Category + Cooling Medium -->
+                    <div class="row mb-1">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [labelName]="'Category'"
+                                        [fetchDataFn]="getCategoryDropdown"
+                                        [selectedItem]="HeatTreatmentForm.get('heatTreatmentCategoryID')?.value"
+                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="HeatTreatmentForm.get('heatTreatmentCategoryID')?.setValue($event?.id)">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/heat-treatment-category')" title="Add Category">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-searchable-dropdown
+                                        [labelName]="'Cooling Medium'"
+                                        [fetchDataFn]="getCoolingMediumDropdown"
+                                        [selectedItem]="HeatTreatmentForm.get('coolingMediumID')?.value"
+                                        [isDisabled]="isViewMode"
+                                        (itemSelected)="HeatTreatmentForm.get('coolingMediumID')?.setValue($event?.id)">
+                                    </app-searchable-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/cooling-medium')" title="Add Cooling Medium">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Temp Min + Temp Max + Temp Description -->
+                    <div class="row mb-1">
+                        <div class="col-md-4">
+                            <label for="tempRangeMin" class="form-label">Temp Min (&deg;C)</label>
+                            <input type="number" id="tempRangeMin" class="form-control" formControlName="tempRangeMin"
+                                placeholder="Min"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tempRangeMax" class="form-label">Temp Max (&deg;C)</label>
+                            <input type="number" id="tempRangeMax" class="form-control" formControlName="tempRangeMax"
+                                placeholder="Max"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tempRangeDescription" class="form-label">Temp Description</label>
+                            <input type="text" id="tempRangeDescription" class="form-control" formControlName="tempRangeDescription"
+                                placeholder="e.g. 850-950"
+                                [attr.disabled]="isViewMode ? true : null" />
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Applicable Classifications -->
+                    <div class="row mb-1">
+                        <div class="col-md-12">
+                            <div class="d-flex align-items-end gap-1">
+                                <div class="flex-grow-1">
+                                    <app-multi-select-dropdown
+                                        [labelName]="'Applicable Classifications'"
+                                        [fetchDataFn]="getMetalClassificationDropdown"
+                                        [selectedValues]="HeatTreatmentForm.get('applicableClassificationIds')?.value"
+                                        [isDisabled]="isViewMode"
+                                        (itemsSelected)="onClassificationSelected($event)">
+                                    </app-multi-select-dropdown>
+                                </div>
+                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm mb-1"
+                                    (click)="openLinkedMaster('/metal-classification')" title="Add Classification">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn navbar-background text-white" [disabled]="HeatTreatmentForm.invalid">
+                    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

@@ -1,0 +1,150 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Approved Supplier Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="record()" [title]="'Approved List of Suppliers (F-20)'" [orientation]="orientation">
+    <ng-container header>
+      <app-nabl-print-header mainTitle="Approved List of Suppliers" [formatNo]="record()?.formatNo || 'F-20'"
+        [issueNo]="record()?.issueNo || '01'" [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-20')"
+        [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''"></app-nabl-print-header>
+    </ng-container>
+
+    <ng-container body>
+
+      <!-- Section I: Supplier Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. SUPPLIER INFORMATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 20%">Supplier Name</td>
+              <td style="width: 30%">{{ record()?.supplierName }}</td>
+              <td class="lbl" style="width: 20%">Service Provider Name</td>
+              <td style="width: 30%">{{ record()?.serviceProviderName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width:20%">Contact Person</td>
+              <td style="width: 30%">{{ record()?.contactPerson }}</td>
+              <td class="lbl" style="width:20%">Mobile</td>
+              <td style="width: 30%">{{ record()?.mobileNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Email</td>
+              <td style="width: 30%">{{ record()?.email}}</td>
+              <td class="lbl" style="width: 30%"> GST No.</td>
+              <td style="width: 30%">{{ record()?.gstNo }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Address</td>
+              <td style="width: 30%">{{ record()?.address}}</td>
+              <td class="lbl" style="width: 30%"> Present Status Enlisted / Delisted</td>
+              <td style="width: 30%">{{ record()?.isPresentStatus ? "Enlisted":"Denlisted" }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Date Of Enlistment</td>
+              <td style="width: 30%">{{ (record()?.enlistmentDate | date: "dd/MM/yyyy") || "-"}}</td>
+              <td class="lbl" style="width: 30%">Product/Service Approved</td>
+              <td style="width: 30%">{{ record()?.productApproved ? "Yes" : "No" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section II: Registration & Status -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. REGISTRATION &amp; STATUS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Registration No.</td>
+              <td style="width: 25%">{{ record()?.registerNo || "N/A" }}</td>
+              <td class="lbl" style="width: 25%">Blacklist Status</td>
+              <td style="width: 25%" [class.text-danger]="record()?.isBlacklisted"
+                [class.fw-bold]="record()?.isBlacklisted">
+                {{ record()?.isBlacklisted ? "Yes" : "No" }}
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Blacklist Reason</td>
+              <td colspan="3">{{ record()?.blacklistReason ||  "-" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section III: Performance Evaluation -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. PERFORMANCE EVALUATION</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Latest Grade</td>
+              <td style="width: 25%">{{ record()?.performanceRating || "N/A" }}</td>
+              <td class="lbl" style="width: 25%">Latest Score</td>
+              <td style="width: 25%">{{ record()?.lastScore || 0 }}%</td>
+            </tr>
+            <tr>
+              <td class="lbl">Evaluation Date</td>
+              <td colspan="3">{{ record()?.lastReviewDate| date: "dd/MM/yyyy" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section IV: Remarks / Notes -->
+      <!-- <div class="doc-section mb-3">
+        <div class="sec-title">IV. REMARKS / NOTES</div>
+        <div class="sec-body" [innerHTML]="record()?.remarks || 'No additional remarks.'"></div>
+      </div> -->
+
+    </ng-container>
+
+    <ng-container footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
+    </ng-container>
+  </app-print-frame>
+
+</div>

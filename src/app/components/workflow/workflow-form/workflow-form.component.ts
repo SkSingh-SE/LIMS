@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { Observable } from 'rxjs';
 import { RoleService } from '../../../services/role.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { UserService } from '../../../services/user.service';
@@ -9,14 +13,18 @@ import { MultiSelectDropdownComponent } from '../../../utility/components/multi-
 import { ConfigService } from '../../../services/config.service';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
 @Component({
   selector: 'app-workflow-form',
-  imports: [CommonModule, ReactiveFormsModule, MultiSelectDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, MultiSelectDropdownComponent, FormFieldErrorComponent],
   templateUrl: './workflow-form.component.html',
   styleUrl: './workflow-form.component.css'
 })
-export class WorkflowFormComponent implements OnInit {
+export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
+  saved = false;
+  submitted = false;
   workflowForm!: FormGroup;
   isViewMode = false;
   isEditMode = false;
@@ -24,7 +32,7 @@ export class WorkflowFormComponent implements OnInit {
   selectedUsers: any[][] = [];
 
   // Add mock data for dropdowns
-  entityTypes = ['Sample', 'Plan', 'Report'];
+  entityTypes = ['Request Review', 'Test Result Verification', 'Report Review', 'Report Amendment', 'Customer Field Change'];
   users = ['Lab Technician', 'Receptionist', 'Manager'];
   roles = ['Receptionist', 'Quality Manager', 'Lab Supervisor'];
   permissions = ['Approve Sample', 'View Report', 'Edit Plan'];
@@ -39,7 +47,8 @@ export class WorkflowFormComponent implements OnInit {
     private configService: ConfigService,
     private workflowService: WorkflowService,
     private route: ActivatedRoute,
-    private toast: ToastService
+    private toast: ToastService,
+    private unsavedChangesService: UnsavedChangesService
   ) {
 
   }
@@ -82,7 +91,7 @@ export class WorkflowFormComponent implements OnInit {
   initform() {
     this.workflowForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       entityType: ['', Validators.required],
       steps: this.fb.array([], [Validators.required, this.duplicateStepNameValidator]),
     });
@@ -97,7 +106,7 @@ export class WorkflowFormComponent implements OnInit {
       id: [0],
       workflowID: [0],
       orderNo: [this.steps.length + 1],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       assignedToType: ['User', Validators.required],
       assignedToValue: ['', Validators.required],
       selectedIDs: ['', Validators.required],
@@ -154,13 +163,20 @@ export class WorkflowFormComponent implements OnInit {
     }
   };
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.workflowForm, path, this.submitted);
+  }
+
   submit() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.workflowForm);
     if (this.workflowForm.valid) {
       console.log('Workflow Definition:', this.workflowForm.value);
       // TODO: call API
       if (this.workflowId > 0 && this.isEditMode) {
         this.workflowService.updateWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
+            this.saved = true;
             this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
@@ -172,6 +188,7 @@ export class WorkflowFormComponent implements OnInit {
       } else {
         this.workflowService.createWorkflow(this.workflowForm.value).subscribe({
           next: (res) => {
+            this.saved = true;
             this.toast.show(res.message, 'success');
             this.router.navigate(['/workflow']);
           },
@@ -181,9 +198,13 @@ export class WorkflowFormComponent implements OnInit {
           }
         });
       }
+    } else {
+      this.toast.show('Please fix validation errors before submitting.', 'warning');
     }
   }
+
   onCancel(): void {
+    this.submitted = false;
     this.workflowForm.reset();
     this.router.navigate(['/workflow']);
   }
@@ -262,7 +283,7 @@ export class WorkflowFormComponent implements OnInit {
                 id: [step.id],
                 workflowID: [step.workflowID],
                 orderNo: [step.orderNo],
-                name: [step.name, Validators.required],
+                name: [step.name, [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
                 assignedToType: [step.assignedToType, Validators.required],
                 assignedToValue: [step.assignedToValue, Validators.required],
                 selectedIDs: [selectedIds, Validators.required],
@@ -285,6 +306,16 @@ export class WorkflowFormComponent implements OnInit {
     });
   }
 
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.workflowForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
 
-
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.workflowForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
 }

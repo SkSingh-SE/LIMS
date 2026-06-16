@@ -1,0 +1,196 @@
+import { Component, OnInit , HostListener } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { QuillModule } from 'ngx-quill';
+import { MeetingMinutesService } from '../../../../services/meeting-minutes.service';
+import { NablFormsHelper } from '../../../../utility/nabl-helpers/nabl-forms.helper';
+import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
+import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
+import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../../services/nabl-header.service';
+
+@Component({
+    selector: 'app-meeting-minutes-form',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
+    templateUrl: './meeting-minutes-form.component.html',
+    styleUrl: './meeting-minutes-form.component.css'
+})
+export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnInit {
+  saved = false;
+    minutesForm!: FormGroup;
+    isEditMode = false;
+    isViewMode = false;
+    recordId: number = 0;
+    formTitle = 'Minutes of Management Review Meeting';
+    formNumbers = NablFormsHelper.getFormNumbers();
+
+    openSections: { [key: string]: boolean } = {
+        header: true,
+        meetingInfo: true,
+        discussions: true,
+        actionItems: true
+    };
+
+    quillModules = {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['clean']
+        ]
+    };
+
+    constructor(
+        private fb: FormBuilder,
+        private route: ActivatedRoute,
+        private router: Router,
+        private service: MeetingMinutesService
+    , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService) {
+        this.initForm();
+        this.nablHeaderService.getFormDefaults('MeetingMinutes').subscribe({
+            next: (defaults) => {
+                this.minutesForm.patchValue({ formatNo: defaults.formCode });
+            },
+            error: () => {}
+        });
+    }
+
+    ngOnInit() {
+        this.route.paramMap.subscribe(params => {
+            const id = params.get('id');
+            const mode = this.route.snapshot.url[1]?.path;
+
+            if (id && id !== 'create') {
+                this.recordId = +id;
+                this.isEditMode = mode === 'edit';
+                this.isViewMode = mode === 'details';
+                this.formTitle = this.isViewMode ? 'View Meeting Minutes' : 'Edit Meeting Minutes';
+                this.loadRecord();
+            } else {
+                this.addDiscussion();
+                this.addActionItem();
+            }
+        });
+    }
+
+    private initForm() {
+        this.minutesForm = this.fb.group({
+            formatNo: ['F-54'],
+            docNo: [''],
+            issueNo: ['03'],
+            issueDate: ['', Validators.required],
+            revNo: ['00'],
+            revDate: ['--', Validators.required],
+
+            meetingDate: ['', Validators.required],
+            chairperson: ['', Validators.required],
+            reviewPeriod: ['', Validators.required],
+            discussions: this.fb.array([]),
+            actionItems: this.fb.array([]),
+            preparedBy: [''],
+            reviewedBy: [''],
+            approvedBy: ['']
+        });
+
+        // System-managed fields — always readonly
+        this.minutesForm.get('docNo')?.disable();
+        this.minutesForm.get('issueNo')?.disable();
+        this.minutesForm.get('revNo')?.disable();
+        this.minutesForm.get('formatNo')?.disable();
+    }
+
+    get discussions(): FormArray {
+        return this.minutesForm.get('discussions') as FormArray;
+    }
+
+    get actionItems(): FormArray {
+        return this.minutesForm.get('actionItems') as FormArray;
+    }
+
+    addDiscussion() {
+        const group = this.fb.group({
+            agendaItem: ['', Validators.required],
+            discussion: ['', Validators.required],
+            decision: ['', Validators.required]
+        });
+        this.discussions.push(group);
+    }
+
+    removeDiscussion(index: number) {
+        this.discussions.removeAt(index);
+    }
+
+    addActionItem() {
+        const group = this.fb.group({
+            action: ['', Validators.required],
+            responsibility: ['', Validators.required],
+            targetDate: ['', Validators.required]
+        });
+        this.actionItems.push(group);
+    }
+
+    removeActionItem(index: number) {
+        this.actionItems.removeAt(index);
+    }
+
+    private loadRecord() {
+        this.service.getById(this.recordId).subscribe(data => {
+            if (data) {
+                while (this.discussions.length) this.discussions.removeAt(0);
+                while (this.actionItems.length) this.actionItems.removeAt(0);
+
+                data.discussions.forEach(() => this.addDiscussion());
+                data.actionItems.forEach(() => this.addActionItem());
+
+                this.minutesForm.patchValue(data);
+                // Lock form if not in editable status
+                const status = (data as any).status;
+                if (status && status !== 'Draft' && status !== 'Rejected') {
+                    this.minutesForm.disable();
+                    this.isViewMode = true;
+                } else if (this.isViewMode) {
+                    this.minutesForm.disable();
+                }
+                // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                this.minutesForm.get('docNo')?.disable();
+                this.minutesForm.get('issueNo')?.disable();
+                this.minutesForm.get('revNo')?.disable();
+                this.minutesForm.get('formatNo')?.disable();
+            }
+        });
+    }
+
+    toggleSection(section: string) {
+        this.openSections[section] = !this.openSections[section];
+    }
+
+    onSubmit() {
+        if (this.minutesForm.valid) {
+            if (this.isEditMode) {
+                this.service.update(this.recordId, this.minutesForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
+            } else {
+                this.service.create(this.minutesForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
+            }
+        }
+    }
+
+    onCancel() {
+        this.router.navigate(['/meeting-minutes']);
+    }
+
+  canDeactivate(): Observable<boolean> | boolean {
+    if (!this.minutesForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.minutesForm?.dirty && !this.saved) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+}

@@ -1,0 +1,440 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg border-0">
+    <!-- Premium Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-building-fill-gear fs-4 me-2"></i>
+        <header class="text-md fw-medium">{{ formTitle }}</header>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" (click)="onCancel()">
+          <i class="bi bi-arrow-left me-1"></i>
+          Back to List
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">I. Document Control Information</span>
+            <div class="ms-auto text-muted small">F-19</div>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList"
+                  placeholder="e.g. F-19" />
+                <datalist id="formNumbersList">
+                  <option *ngFor="let form of formNumbers" [value]="form"></option>
+                </datalist>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly
+                  placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control bg-light" formControlName="revNo" readonly placeholder="Auto" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold text-dark small">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Document No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo"
+                  placeholder="e.g. SR-2025-001" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Basic Information -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('basic')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['basic'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Supplier Basic Information</span>
+          </div>
+          <div *ngIf="openSections['basic']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Supplier Name
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" placeholder="supplier name"
+                  formControlName="supplierName" />
+                <div
+                  *ngIf="registrationForm.get('supplierName')?.invalid && registrationForm.get('supplierName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier name is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Mobile No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="mobileNo"
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="mobile no." />
+                <span
+                  *ngIf="registrationForm.get('mobileNo')?.hasError('required') && registrationForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number is required.
+                </span>
+
+                <!-- Pattern -->
+                <span
+                  *ngIf="registrationForm.get('mobileNo')?.hasError('pattern') && !registrationForm.get('mobileNo')?.hasError('required') && registrationForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number must be 10-13 digits.
+                </span>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Email ID
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="email" class="form-control shadow-sm" formControlName="email" placeholder="email" />
+                <span
+                  *ngIf="registrationForm.get('email')?.hasError('required') && registrationForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  email Id is required.
+                </span>
+
+                <!-- Invalid Email -->
+                <span
+                  *ngIf="registrationForm.get('email')?.hasError('email') && !registrationForm.get('email')?.hasError('required') && registrationForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  Please enter a valid email address.
+                </span>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Address
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="address" placeholder="address" />
+                <div *ngIf="registrationForm.get('address')?.invalid && registrationForm.get('address')?.touched"
+                  class="text-danger text-sm mt-1">
+                  address is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Designation
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="designation"
+                  placeholder="designation" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Contact Person
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="contactPerson"
+                  placeholder="contact person" />
+                <div
+                  *ngIf="registrationForm.get('contactPerson')?.invalid && registrationForm.get('contactPerson')?.touched"
+                  class="text-danger text-sm mt-1">
+                  contact person is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Website</label>
+                <input type="text" class="form-control shadow-sm" formControlName="website" placeholder="website" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Business Details -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('business')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['business'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Nature of Business & Registration</span>
+          </div>
+          <div *ngIf="openSections['business']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Register No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="registerNo" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Nature of Business
+                </label>
+                <select class="form-select shadow-sm" formControlName="natureOfBusiness">
+                  <option value="Manufacturer">Manufacturer</option>
+                  <option value="Authorized Dealer">Authorized Dealer</option>
+                  <option value="Stockist">Stockist</option>
+                  <option value="Service Provider">Service Provider</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Description of Items/Services to be Supplied
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="productsServicesOffered"
+                  placeholder="description of items/services to be supplied" />
+                <div
+                  *ngIf="registrationForm.get('productsServicesOffered')?.invalid && registrationForm.get('productsServicesOffered')?.touched"
+                  class="text-danger text-sm mt-1">
+                  description of items/dervices to be supplied
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  GST No <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="gstNo"
+                  placeholder="gst no" />
+                <span
+                  *ngIf="registrationForm.get('gstNo')?.hasError('required') && registrationForm.get('gstNo')?.touched"
+                  class="text-danger text-sm">
+                  gst number is required.
+                </span>
+
+                <!-- Pattern -->
+                <span
+                  *ngIf="registrationForm.get('gstNo')?.hasError('pattern') && !registrationForm.get('gstNo')?.hasError('required') && registrationForm.get('gstNo')?.touched"
+                  class="text-danger text-sm">
+                  invalid gst format. Expected: 22AAAAA0000A1Z5
+                </span>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  PAN No
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="panNo"
+                  placeholder="pan no" />
+                <span *ngIf="registrationForm.get('panNo')?.hasError('pattern') && registrationForm.get('panNo')?.touched"
+                  class="text-danger text-sm">
+                  invalid pan format. Expected: ABCDE1234F
+                </span>
+
+              </div>
+              <div class="col-md-4 d-flex align-items-center mt-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="isoCertified" id="isoCertified" />
+                  <label class="form-check-label fw-semibold" for="isoCertified">ISO Certified?</label>
+                </div>
+              </div>
+              <div class="col-12" *ngIf="registrationForm.get('isoCertified')?.value">
+                <label class="form-label fw-semibold text-dark small">ISO Certification Details</label>
+                <input type="text" class="form-control shadow-sm" formControlName="isoDetails"
+                  placeholder="e.g. ISO 9001:2015" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Bank Details -->
+        <!-- <div class="accordion-section mb-4" formGroupName="bankDetail">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('bank')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['bank'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Bank Details (for Payments)</span>
+          </div>
+          <div *ngIf="openSections['bank']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Bank Name
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="bankName" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Account Number
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="accountNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  IFSC Code
+                </label>
+                <input type="text" class="form-control shadow-sm text-uppercase" formControlName="ifscCode" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Branch
+                </label>
+                <input type="text" class="form-control shadow-sm" formControlName="branch" />
+              </div>
+            </div>
+          </div>
+        </div> -->
+
+        <!-- Section V: Document Submission -->
+        <div class="accordion-section mb-4" formGroupName="documentsSubmitted">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('documents')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['documents'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">V. Document Checklist</span>
+          </div>
+          <div *ngIf="openSections['documents']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="monopolyCert" id="monopolyCert" />
+                  <label class="form-check-label fw-semibold small" for="monopolyCert">Monopoly</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="popularBrandCert"
+                    id="popularBrandCert" />
+                  <label class="form-check-label fw-semibold small" for="popularBrandCert">Popular Brand</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="isoCertificate" id="isoCert" />
+                  <label class="form-check-label fw-semibold small" for="isoCert">ISO 17025/NABL accredited</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="workmanshipCert"
+                    id="workmanshipCert" />
+                  <label class="form-check-label fw-semibold small" for="workmanshipCert">Workmanship</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="deliveryRecord"
+                    id="deliveryRecord" />
+                  <label class="form-check-label fw-semibold small" for="deliveryRecord">Delivery Record</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="price" id="price" />
+                  <label class="form-check-label fw-semibold small" for="price">Price</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="supplierConfidentiality"
+                    id="supplierConfidentiality" />
+                  <label class="form-check-label fw-semibold small" for="supplierConfidentiality">Supplier
+                    Confidentiality Agreement Signed?</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="evaluationRequired"
+                    id="evaluationRequired" />
+                  <label class="form-check-label fw-semibold small" for="evaluationRequired">EvaluationRequired</label>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="supplierApproved"
+                    id="supplierApproved" />
+                  <label class="form-check-label fw-semibold small" for="supplierApproved">Supplier to be
+                    Approved?</label>
+                </div>
+              </div>
+              <!-- Show only when Supplier Approved is unchecked -->
+              <div class="col-12" *ngIf="registrationForm.get('documentsSubmitted.supplierApproved')?.value === false">
+
+                <label class="form-label fw-semibold">
+                  Reason if Supplier is Not Approved
+                  <span class="text-danger">*</span>
+                </label>
+
+                <textarea formControlName="reasonNotApproved" rows="3" class="form-control form-control-sm"
+                  placeholder="State reason for not approving this supplier" [ngClass]="{
+            'is-invalid':
+            registrationForm.get('documentsSubmitted.reasonNotApproved')?.touched &&
+            registrationForm.get('documentsSubmitted.reasonNotApproved')?.invalid
+        }">
+    </textarea>
+
+                <div *ngIf="
+            registrationForm.get('documentsSubmitted.reasonNotApproved')?.touched &&
+            registrationForm.get('documentsSubmitted.reasonNotApproved')?.invalid
+        " class="invalid-feedback d-block">
+                  Reason is required when supplier is not approved.
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <!-- Section VI: Status & Remarks -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('status')" style="cursor: pointer">
+            <i class="bi" [ngClass]="openSections['status'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">VI. Status & Personnel</span>
+          </div>
+          <div *ngIf="openSections['status']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">
+                  Registration Status
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select shadow-sm" formControlName="registrationStatus">
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-semibold text-dark small">Remarks</label>
+                <input type="text" class="form-control shadow-sm" formControlName="remarks"
+                  placeholder="write remarks..." />
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <app-nabl-signature-section [parentForm]="registrationForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i>
+            {{ isEditMode ? "Update" : "Save" }} Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

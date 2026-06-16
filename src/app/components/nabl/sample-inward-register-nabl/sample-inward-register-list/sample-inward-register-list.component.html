@@ -1,0 +1,10 @@
+<app-nabl-register-table
+  title="F-31: Sample Inward Register"
+  [columns]="columns"
+  [data]="listData"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/nabl/sample-inward-register"
+  addRoute="/nabl/sample-inward-register/create"
+  (onPageChange)="onPageChange($event)"
+></app-nabl-register-table>

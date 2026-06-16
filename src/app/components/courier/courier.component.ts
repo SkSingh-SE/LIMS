@@ -6,10 +6,14 @@ import { CourierService } from '../../services/courier.service';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
+import { noWhitespaceValidator, phoneValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-courier',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,NumberOnlyDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './courier.component.html',
   styleUrl: './courier.component.css'
 })
@@ -19,16 +23,15 @@ export class CourierComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'contactNo', type: 'string', label: 'Contact Number', filter: true },
-    { key: 'createdOn', type: 'string', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     contactNo: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -44,12 +47,11 @@ export class CourierComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -62,6 +64,7 @@ export class CourierComponent implements OnInit {
 
   // form
   courierForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
@@ -89,8 +92,8 @@ export class CourierComponent implements OnInit {
     this.fetchData();
     this.courierForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      contactNo: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/), Validators.maxLength(13), phoneValidator()]],
     });
   }
 
@@ -101,20 +104,19 @@ export class CourierComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
         this.courierList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   loadCourierData(): void {
-    this.courierService.getCourierById(this.bankId).subscribe({
+    const requestId = this.bankId;
+    this.courierService.getCourierById(requestId).subscribe({
       next: (response) => {
+        if (this.bankId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.courierForm.patchValue(response);
       },
@@ -170,6 +172,17 @@ export class CourierComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -217,6 +230,8 @@ export class CourierComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -225,6 +240,14 @@ export class CourierComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -244,12 +267,15 @@ export class CourierComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.message || 'Failed to delete courier.', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.courierForm.reset();
+    this.courierForm.enable();
+    this.bankId = 0;
     if (id > 0) {
       this.bankId = id;
       this.loadCourierData();
@@ -257,9 +283,7 @@ export class CourierComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.courierForm.reset();
       this.formTitle = 'Courier Form';
-      this.courierForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
@@ -278,39 +302,51 @@ export class CourierComponent implements OnInit {
     this.bsModal.show();
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.courierForm, path, this.submitted);
+  }
+
   closeModal(): void {
+    this.submitted = false;
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.courierForm.reset();
+    this.courierForm.enable();
+    this.bankId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
-    if (this.courierForm.valid) {
-      let formData = this.courierForm.value;
-      if (this.isEditMode) {
-        this.courierService.updateCourier(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      } else {
-        formData.id = 0;
-        this.courierService.createCourier(formData).subscribe({
-          next: (response) => {
-            this.toastService.show(response.message, 'success');
-            this.closeModal();
-            this.fetchData();
-          },
-          error: (error) => {
-            this.toastService.show(error.message, 'error');
-          }
-        });
-      }
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.courierForm);
+    if (!this.courierForm.valid) {
+      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      return;
+    }
+    let formData = this.courierForm.value;
+    if (this.isEditMode) {
+      this.courierService.updateCourier(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
+    } else {
+      formData.id = 0;
+      this.courierService.createCourier(formData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: () => {
+        }
+      });
     }
   }
 

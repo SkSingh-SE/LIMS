@@ -8,7 +8,7 @@
             </a>
         </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
+        <div class="card-body">
 
             <!-- Search -->
             <div class="d-flex justify-content-end mb-2">
@@ -26,6 +26,7 @@
                 <table class="table bordered-table  align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
+                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
                             <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
@@ -37,28 +38,22 @@
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
                                             (click)="applySorting(column.key)"></i>
                                     </span>
-                                    <span *ngIf="!hasFilter(column.key) && i != 0" class="cursor ms-2 mt-1"
+                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
                                         (click)="openFilterModal(column.key, $event)"><i
                                             class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1"
+                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
                                         (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                                 </div>
                             </th>
-                            <th class="align-middle text-center">Actions</th>
                         </tr>
 
 
                     </thead>
                     <tbody>
                         <tr *ngFor="let material of listData; let i = index" class="text-sm">
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ material.laboratoryTestName }}</td>
-                            <td>{{ material.testMethodSpecificationName }}</td>
-                            <td>{{ material.parameterName }}</td>
-                            <td>{{ material.parameterUnit }}</td>
-                            <td>{{material.isUnderISO ? 'Yes' : 'No'}}</td>
+
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2"> <!-- Flex for spacing -->
+                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
                                     <a *hasPermission="['CanReadLabScopeMaster','CanManageLabScopeMaster']" [routerLink]="['/scope/details', material.id]"
                                     [state]="{ mode: 'view' }" 
                                      class="icon-link"
@@ -71,7 +66,7 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']" class="icon-link"
+                                    <a *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']" (click)="deleteScope(material.id)" class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
@@ -79,11 +74,23 @@
                             </td>
 
 
-                        </tr>
+                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td class="fw-semibold">
+                                <a [routerLink]="['/scope/details', material.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary text-decoration-none cursor-pointer"
+                                   [title]="'View details for ' + material.laboratoryTestName">
+                                    {{ material.laboratoryTestName }}
+                                </a>
+                            </td>
+                            <td>{{ material.testMethodSpecificationName }}</td>
+                            <td class="text-center">{{ material.parameterCount }}</td>
+                            <td>{{ material.isUnderISO }}</td>
+                            <td>{{ material.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="listData.length == 0 && !isLoading()"
+            <div *ngIf="listData.length == 0"
                 class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
@@ -92,27 +99,15 @@
                 </div>
             </div>
            <!-- Pagination -->
-           <div class="d-flex justify-content-between align-items-center">
-            <!-- Page Size Selector -->
-            <div class="d-flex align-items-center">
-                <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-                    <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-                </select>
-            </div>
-
-            <!-- Pagination Controls -->
-            <ul class="pagination mb-0 d-flex align-items-center">
-                <li class="page-item" [class.disabled]="pageNumber === 1">
-                    <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-                </li>
-                <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-                    <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-                </li>
-                <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-                    <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-                </li>
-            </ul>
-        </div>
+           <!-- Pagination -->
+           <app-pagination
+             [currentPage]="pageNumber"
+             [pageSize]="pageSize"
+             [totalItems]="totalItems"
+             [pageSizes]="pageSizes"
+             (pageChange)="onPageChange($event)"
+             (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+           </app-pagination>
         </div>
     </div>
 </div>

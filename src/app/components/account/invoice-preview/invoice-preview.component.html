@@ -1,54 +1,176 @@
 <div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100 border-0 shadow-sm">
+  <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-receipt"></i>
-        Invoice Preview
+      <label class="text-md fw-medium ms-3">
+        <i class="bi bi-receipt me-2"></i>Invoice Preview
       </label>
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-light me-2" (click)="printInvoice()">
-          <i class="bi bi-printer"></i> Print
+      <div class="d-flex gap-2 me-3">
+        <span class="badge bg-light text-dark" *ngIf="invoiceData?.status">{{ invoiceData.status }}</span>
+        <button class="btn btn-outline-light btn-sm" (click)="printInvoice()">
+          <i class="bi bi-printer me-1"></i> Print
         </button>
-        <button class="btn btn-outline-light" (click)="goBack()">
-          <i class="bi bi-arrow-left"></i> Back
+        <button class="btn btn-outline-light btn-sm"
+          (click)="sendInvoice('email')" [disabled]="isSendingInvoice()">
+          <i class="bi bi-envelope me-1"></i> Email
         </button>
-      </div>
-    </div>
-
-    <div *ngIf="!isLoading()" class="card-body">
-      <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        Invoice preview functionality. In a production system, this would display the actual invoice PDF or formatted invoice.
-      </div>
-
-      <div class="d-flex justify-content-center gap-3 mt-4">
-        <button
-          class="btn btn-success btn-lg"
-          (click)="sendInvoice('email')"
-          [disabled]="isSendingInvoice()"
-        >
-          <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i>
-          {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
-        </button>
-        <button
-          class="btn btn-success btn-lg"
-          (click)="sendInvoice('whatsapp')"
-          [disabled]="isSendingInvoice()"
-        >
-          <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!isSendingInvoice()" class="bi bi-whatsapp me-2"></i>
-          {{ isSendingInvoice() ? 'Sending...' : 'Send WhatsApp' }}
+        <button class="btn btn-outline-light btn-sm" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> Back
         </button>
       </div>
     </div>
 
-    <!-- Loading State -->
+    <!-- Loading -->
     <div *ngIf="isLoading()" class="card-body text-center py-5">
       <div class="spinner-border text-danger" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
+
+    <!-- Invoice Content -->
+    <div class="card-body p-4" *ngIf="!isLoading() && invoiceData">
+
+      <!-- Invoice Header -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <h5 class="fw-bold mb-1">Tax Invoice</h5>
+          <div class="text-muted small">SAC: {{ invoiceData.sacCode }}</div>
+        </div>
+        <div class="col-md-6 text-end">
+          <div class="fw-bold" style="font-size: 1.1rem;">{{ invoiceData.invoiceNo }}</div>
+          <div class="text-muted small">Date: {{ invoiceData.invoiceDate | date:'dd-MMM-yyyy' }}</div>
+          <div class="text-muted small" *ngIf="invoiceData.paymentDueDate">
+            Due: {{ invoiceData.paymentDueDate | date:'dd-MMM-yyyy' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer & Case Info -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <fieldset class="border-start border-3 border-danger ps-3">
+            <legend class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Bill To</legend>
+            <div class="fw-semibold">{{ invoiceData.customerName }}</div>
+            <div class="small text-muted" *ngIf="invoiceData.customerAddress">{{ invoiceData.customerAddress }}</div>
+            <div class="small text-muted" *ngIf="invoiceData.customerState">State: {{ invoiceData.customerState }}</div>
+            <div class="small" *ngIf="invoiceData.customerGSTIN">GSTIN: <strong>{{ invoiceData.customerGSTIN }}</strong></div>
+          </fieldset>
+        </div>
+        <div class="col-md-6">
+          <fieldset class="border-start border-3 border-primary ps-3">
+            <legend class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Case Details</legend>
+            <div>Case No: <strong>{{ invoiceData.caseNo }}</strong></div>
+            <div *ngIf="invoiceData.purchaseOrderNo" class="small">PO: {{ invoiceData.purchaseOrderNo }}</div>
+            <div *ngIf="invoiceData.paymentTerms" class="small">Terms: {{ invoiceData.paymentTerms }}</div>
+          </fieldset>
+        </div>
+      </div>
+
+      <!-- Charge Lines Table -->
+      <div class="table-responsive mb-3" *ngIf="invoiceData.chargeLines?.length">
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 50px;" class="text-center">SR</th>
+              <th>Description</th>
+              <th style="width: 120px;">Type</th>
+              <th style="width: 130px;" class="text-end">Amount (&#8377;)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let line of invoiceData.chargeLines; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ line.description }}</td>
+              <td><span class="badge bg-secondary">{{ line.chargeType }}</span></td>
+              <td class="text-end fw-semibold">{{ line.amount | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ad-hoc Line Items -->
+      <div class="table-responsive mb-3" *ngIf="invoiceData.adHocLines?.length">
+        <h6 class="fw-semibold small text-muted">Additional Charges</h6>
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Description</th>
+              <th class="text-end" style="width: 110px;">Amount</th>
+              <th class="text-end" style="width: 80px;">Tax %</th>
+              <th class="text-end" style="width: 110px;">Tax</th>
+              <th class="text-end" style="width: 120px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let line of invoiceData.adHocLines">
+              <td>{{ line.description }}</td>
+              <td class="text-end">{{ line.amount | number:'1.2-2' }}</td>
+              <td class="text-end">{{ line.taxPercent | number:'1.2-2' }}</td>
+              <td class="text-end">{{ line.taxAmount | number:'1.2-2' }}</td>
+              <td class="text-end fw-semibold">{{ line.totalAmount | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tax Breakdown -->
+      <div class="row justify-content-end">
+        <div class="col-md-5">
+          <table class="table table-sm mb-0">
+            <tbody>
+              <tr>
+                <td class="text-muted">Sub Total</td>
+                <td class="text-end">&#8377; {{ invoiceData.subTotal | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.discountAmount > 0">
+                <td class="text-muted">
+                  Discount
+                  <span *ngIf="invoiceData.discountPercentage">({{ invoiceData.discountPercentage }}%)</span>
+                </td>
+                <td class="text-end text-success">- &#8377; {{ invoiceData.discountAmount | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.discountAmount > 0">
+                <td class="text-muted">Taxable Amount</td>
+                <td class="text-end">&#8377; {{ invoiceData.taxableAmount | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.cgst > 0">
+                <td class="text-muted">CGST</td>
+                <td class="text-end">&#8377; {{ invoiceData.cgst | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.sgst > 0">
+                <td class="text-muted">SGST</td>
+                <td class="text-end">&#8377; {{ invoiceData.sgst | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.igst > 0">
+                <td class="text-muted">IGST</td>
+                <td class="text-end">&#8377; {{ invoiceData.igst | number:'1.2-2' }}</td>
+              </tr>
+              <tr class="border-top border-2">
+                <td class="fw-bold">Grand Total</td>
+                <td class="text-end fw-bold" style="font-size: 1.1rem;">&#8377; {{ invoiceData.grandTotal | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.advanceAdjusted > 0">
+                <td class="text-muted">Advance Adjusted</td>
+                <td class="text-end text-success">- &#8377; {{ invoiceData.advanceAdjusted | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="invoiceData.advanceAdjusted > 0" class="border-top">
+                <td class="fw-bold text-danger">Balance Payable</td>
+                <td class="text-end fw-bold text-danger" style="font-size: 1.1rem;">&#8377; {{ invoiceData.balancePayable | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- No Data -->
+    <div *ngIf="!isLoading() && !invoiceData" class="card-body text-center py-5">
+      <i class="bi bi-exclamation-circle text-muted" style="font-size: 2rem;"></i>
+      <p class="text-muted mt-2">Invoice not found or could not be loaded.</p>
+      <button class="btn btn-outline-danger btn-sm" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i> Back to Cases
+      </button>
+    </div>
+
   </div>
 </div>
-

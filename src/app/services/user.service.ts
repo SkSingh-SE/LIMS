@@ -12,25 +12,39 @@ export class UserService {
 
   constructor(private http: HttpClient) { }
 
-  // getAllUsers(filter:any): Observable<any> {
-  //   return this.http.post<any>(this.apiUrl+"/list", filter);
-  // }
 
-  // getUserById(id: number): Observable<any> {
-  //   return this.http.get<any>(`${this.apiUrl}/details/${id}`);
-  // }
+  getUserById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/details/${id}`);
+  }
 
-  // createUser(payload: any): Observable<any> {
-  //   return this.http.post<any>(`${this.apiUrl}/create`, payload);
-  // }
+  getUserByEmployeeId(employeeId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/by-employee/${employeeId}`);
+  }
+  updateUserByEmployeeId(employeeId: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/by-employee/${employeeId}`, payload);
+  }
 
-  // updateUser( payload: any): Observable<any> {
-  //   return this.http.put<any>(`${this.apiUrl}/update`, payload);
-  // }
+  updateUser(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update`, payload);
+  }
 
-  // deleteUser(id: number): Observable<any> {
-  //   return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
-  // }
+  resetPassword(employeeId: number, newPassword: string) {
+    return this.http.post<void>(`${this.apiUrl}/reset-password`, { employeeId, newPassword });
+  }
+
+  sendOtp(employeeId: number, method: 'email' | 'sms') {
+    return this.http.post(`${this.apiUrl}/2fa/send-otp`, {
+      employeeId,
+      method
+    });
+  }
+
+  verifyOtp(employeeId: number, otp: string) {
+    return this.http.post(`${this.apiUrl}/2fa/verify`, {
+      employeeId,
+      otp
+    });
+  }
 
   getUserDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/getUserDropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);

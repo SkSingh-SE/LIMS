@@ -1,0 +1,348 @@
+<div class="container-fluid d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">Performance Record</label>
+      <button
+        *ngIf="!isViewMode"
+        class="btn btn-outline-light me-3"
+        (click)="openAddPerformanceModal()">
+        <i class="bi bi-plus-lg"></i> Add Review
+      </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div *ngIf="false" class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Performance Overview Cards -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-gear fs-2 text-primary mb-2"></i>
+              <h3 class="mb-0 fw-bold" [ngClass]="getRatingClass(summaryData.avgTechnicalRating)">
+                {{ summaryData.avgTechnicalRating }}
+              </h3>
+              <p class="text-muted small mb-0">Avg Technical Rating</p>
+              <div class="mt-1">
+                <i *ngFor="let filled of getStarArray(summaryData.avgTechnicalRating)"
+                   class="bi"
+                   [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+                   style="font-size: 0.8rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-people fs-2 text-info mb-2"></i>
+              <h3 class="mb-0 fw-bold" [ngClass]="getRatingClass(summaryData.avgBehavioralRating)">
+                {{ summaryData.avgBehavioralRating }}
+              </h3>
+              <p class="text-muted small mb-0">Avg Behavioral Rating</p>
+              <div class="mt-1">
+                <i *ngFor="let filled of getStarArray(summaryData.avgBehavioralRating)"
+                   class="bi"
+                   [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+                   style="font-size: 0.8rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-trophy fs-2 text-success mb-2"></i>
+              <h3 class="mb-0 fw-bold text-success">{{ summaryData.overallScore }}</h3>
+              <p class="text-muted small mb-0">Overall Score</p>
+              <div class="mt-1">
+                <i *ngFor="let filled of getStarArray(summaryData.overallScore)"
+                   class="bi"
+                   [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+                   style="font-size: 0.8rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-calendar-check fs-2 text-danger mb-2"></i>
+              <h6 class="mb-0 fw-bold">{{ summaryData.lastReviewDate | date: 'dd MMM, yyyy' }}</h6>
+              <p class="text-muted small mb-0">Last Review Date</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="w-25 input-group custom-search">
+          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()">
+          <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance History Table -->
+      <div *ngIf="performanceRecords.length > 0 || filters.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100">
+          <thead class="table-light">
+            <tr class="align-middle text-center">
+              <th *ngFor="let column of columns; let i = index">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <span class="d-flex flex-column ms-2 mt-2">
+                    <i class="bi bi-caret-up sorting-icon-up"
+                      [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                      (click)="applySorting(column.key)"></i>
+                    <i class="bi bi-caret-down sorting-icon-down"
+                      [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                      (click)="applySorting(column.key)"></i>
+                  </span>
+                  <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
+                    (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
+                    (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
+                </div>
+              </th>
+              <th class="text-center" style="width: 130px; min-width: 130px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of performanceRecords; let i = index" class="text-sm text-center">
+              <td class="fw-bold">{{ record.reviewPeriod }}</td>
+              <td>
+                <span [ngClass]="getRatingClass(record.technicalRating)">
+                  {{ record.technicalRating }}/5
+                </span>
+                <div class="small">
+                  <i *ngFor="let filled of getStarArray(record.technicalRating)"
+                     class="bi"
+                     [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+                     style="font-size: 0.7rem;"></i>
+                </div>
+              </td>
+              <td>
+                <span [ngClass]="getRatingClass(record.behavioralRating)">
+                  {{ record.behavioralRating }}/5
+                </span>
+                <div class="small">
+                  <i *ngFor="let filled of getStarArray(record.behavioralRating)"
+                     class="bi"
+                     [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"
+                     style="font-size: 0.7rem;"></i>
+                </div>
+              </td>
+              <td>
+                <span [ngClass]="getRatingClass(record.overallRating)" class="fs-6">
+                  {{ record.overallRating }}/5
+                </span>
+              </td>
+              <td>{{ record.reviewerName }}</td>
+              <td>{{ record.reviewDate | date: 'dd MMM, yyyy' }}</td>
+              <td>
+                <span [ngClass]="getStatusClass(record.status)">
+                  {{ record.status }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-1">
+                  <button class="btn btn-sm btn-add" title="View" (click)="viewPerformance(record)">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button *ngIf="!isViewMode && record.status === 'Draft'"
+                    class="btn btn-sm btn-cancel" title="Edit" (click)="editPerformance(record)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button *ngIf="!isViewMode && record.status === 'Draft'"
+                    class="btn btn-sm btn-remove" title="Delete" (click)="deletePerformance(record.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No Records -->
+      <div *ngIf="performanceRecords.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
+        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
+          <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
+          <div class="fw-semibold">No performance records found</div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div #filterModal class="filter-modal">
+  <div class="card py-2 px-3 shadow position-relative">
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
+      (click)="closeFilterModal()"></button>
+
+    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+
+    <select class="form-select mb-2" [(ngModel)]="filterType">
+      <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
+      <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
+      <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
+    </select>
+
+    <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
+      [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
+    <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
+      class="form-control mb-2" [(ngModel)]="filterValue" />
+    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
+      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    </div>
+
+    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>
+
+<!-- Performance Review Modal -->
+<div class="modal fade" [class.show]="showPerformanceModal()" [style.display]="showPerformanceModal() ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-clipboard-data me-2"></i>
+          {{ editingId ? (performanceForm.disabled ? 'View Performance Review' : 'Edit Performance Review') : 'Add Performance Review' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="performanceForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Review Period <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="reviewPeriod">
+                <option value="">Select Period</option>
+                <option value="Q1 2025">Q1 2025</option>
+                <option value="Q2 2025">Q2 2025</option>
+                <option value="Q3 2025">Q3 2025</option>
+                <option value="Q4 2025">Q4 2025</option>
+                <option value="H1 2025">H1 2025 (Half-Year)</option>
+                <option value="H2 2025">H2 2025 (Half-Year)</option>
+                <option value="Annual 2025">Annual 2025</option>
+                <option value="Q1 2026">Q1 2026</option>
+                <option value="Q2 2026">Q2 2026</option>
+                <option value="Q3 2026">Q3 2026</option>
+                <option value="Q4 2026">Q4 2026</option>
+                <option value="H1 2026">H1 2026 (Half-Year)</option>
+                <option value="H2 2026">H2 2026 (Half-Year)</option>
+                <option value="Annual 2026">Annual 2026</option>
+              </select>
+              <div class="text-danger small" *ngIf="performanceForm.get('reviewPeriod')?.invalid && performanceForm.get('reviewPeriod')?.touched">
+                Review period is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Review Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="reviewDate">
+              <div class="text-danger small" *ngIf="performanceForm.get('reviewDate')?.invalid && performanceForm.get('reviewDate')?.touched">
+                Review date is required
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Technical Rating (1-5) <span class="text-danger">*</span></label>
+              <input type="range" class="form-range" min="0" max="5" step="1" formControlName="technicalRating">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-primary">{{ performanceForm.get('technicalRating')?.value || 0 }}/5</span>
+                <div>
+                  <i *ngFor="let filled of getStarArray(performanceForm.get('technicalRating')?.value || 0)"
+                     class="bi"
+                     [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Behavioral Rating (1-5) <span class="text-danger">*</span></label>
+              <input type="range" class="form-range" min="0" max="5" step="1" formControlName="behavioralRating">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-info">{{ performanceForm.get('behavioralRating')?.value || 0 }}/5</span>
+                <div>
+                  <i *ngFor="let filled of getStarArray(performanceForm.get('behavioralRating')?.value || 0)"
+                     class="bi"
+                     [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Overall Rating (Auto-Calculated)</label>
+              <div class="alert alert-success mb-0 py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold fs-5">{{ performanceForm.get('overallRating')?.value || 0 }}/5</span>
+                  <div>
+                    <i *ngFor="let filled of getStarArray(performanceForm.get('overallRating')?.value || 0)"
+                       class="bi"
+                       [ngClass]="filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Reviewer <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="reviewerName" placeholder="Reviewer name">
+              <div class="text-danger small" *ngIf="performanceForm.get('reviewerName')?.invalid && performanceForm.get('reviewerName')?.touched">
+                Reviewer name is required
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Remarks</label>
+              <textarea class="form-control" rows="3" formControlName="remarks" placeholder="Enter performance review remarks"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="savePerformance()"
+          *ngIf="!isViewMode && !performanceForm.disabled"
+          [disabled]="performanceForm.invalid">
+          <i class="bi bi-save me-1"></i>{{ editingId ? 'Update Review' : 'Save Review' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showPerformanceModal()" *ngIf="showPerformanceModal()"></div>

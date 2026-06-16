@@ -1,0 +1,348 @@
+import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Modal } from 'bootstrap';
+import { HardnessEquivalenceService } from '../../services/hardness-equivalence.service';
+import { ToastService } from '../../services/toast.service';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
+
+@Component({
+  selector: 'app-hardness-equivalence',
+  imports: [ CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent ],
+  templateUrl: './hardness-equivalence.component.html',
+  styleUrl: './hardness-equivalence.component.css',
+})
+export class HardnessEquivalenceComponent implements OnInit {
+  @ViewChild('filterModal') filterModal!: ElementRef;
+  @ViewChild('modalRef') modalElement!: ElementRef;
+  private bsModal!: Modal;
+
+  columns = [
+    { key: 'id', type: 'number', label: 'SN', filter: false },
+    { key: 'hardnessScale', type: 'string', label: 'Scale', filter: true },
+    { key: 'indenterSize', type: 'string', label: 'Indenter', filter: true },
+    { key: 'load', type: 'string', label: 'Load', filter: true },
+    { key: 'fromValue', type: 'number', label: 'From', filter: true },
+    { key: 'toValue', type: 'number', label: 'To', filter: true },
+    { key: 'equivalentScale', type: 'string', label: 'Equiv. Scale', filter: true },
+    { key: 'equivalentFromValue', type: 'number', label: 'Equiv. From', filter: true },
+    { key: 'equivalentToValue', type: 'number', label: 'Equiv. To', filter: true },
+    { key: 'standardReference', type: 'string', label: 'Standard', filter: true },
+  ];
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+    hardnessScale: 'string',
+    indenterSize: 'string',
+    load: 'string',
+    fromValue: 'number',
+    toValue: 'number',
+    equivalentScale: 'string',
+    equivalentFromValue: 'number',
+    equivalentToValue: 'number',
+    standardReference: 'string',
+  };
+
+  filters: { column: string; type: string; value: any; value2?: any }[] = [];
+  filterColumn: string = 'string';
+  filterColumnTitle: string = 'string';
+  filterType: string = 'Contains';
+  filterValue: string = '';
+  filterValue2: string = '';
+  filterPosition = { top: '0px', left: '0px' };
+  isFilterOpen = false;
+  hardnessEquivalenceList: any[] = [];
+
+  pageNumber = 1;
+  pageSize = 10;
+  totalItems = 0;
+  pageSizes = [10, 25, 50, 100, 200, 500];
+
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
+  searchTerm: string = '';
+
+  payload = {
+    PageNumber: this.pageNumber,
+    PageSize: this.pageSize,
+    searchTerm: this.searchTerm,
+    sortByColumn: this.sortByColumn,
+    sortOrder: this.sortOrder,
+    filter: this.filters ?? null,
+  };
+
+  hardnessEquivalenceForm!: FormGroup;
+  isEditMode: boolean = false;
+  isViewMode: boolean = true;
+  hardnessEquivalenceId: number = 0;
+  formTitle = 'Hardness Equivalence Form';
+
+  constructor(
+    private fb: FormBuilder,
+    private hardnessEquivalenceService: HardnessEquivalenceService,
+    private toastService: ToastService
+  ) {}
+
+  ngOnInit() {
+    this.fetchData();
+    this.initForm();
+  }
+
+  initForm() {
+    this.hardnessEquivalenceForm = this.fb.group({
+      id: [0],
+      hardnessScale: ['', Validators.required],
+      indenterSize: [''],
+      load: [''],
+      fromValue: [null, Validators.required],
+      toValue: [null, Validators.required],
+      equivalentScale: ['', Validators.required],
+      equivalentFromValue: [null, Validators.required],
+      equivalentToValue: [null, Validators.required],
+      standardReference: [''],
+    });
+  }
+
+  fetchData() {
+    this.hardnessEquivalenceService.getAllHardnessEquivalences(this.payload).subscribe({
+      next: (response) => {
+        this.hardnessEquivalenceList = response?.items || [];
+        this.totalItems = response?.totalRecords || 0;
+        this.pageSize = response?.pageSize || 10;
+        this.pageNumber = response?.pageNumber || 1;
+      },
+      error: (error) => {
+        this.toastService.show(error.message, 'error');
+        this.hardnessEquivalenceList = [];
+      },
+    });
+  }
+
+  getDetails(): void {
+    const requestId = this.hardnessEquivalenceId;
+    this.hardnessEquivalenceService.getHardnessEquivalenceById(requestId).subscribe({
+      next: (response) => {
+        if (this.hardnessEquivalenceId !== requestId) return; // discard stale response
+        this.hardnessEquivalenceForm.patchValue(response);
+      },
+      error: (error) => {
+        console.error('Error fetching hardness equivalence data:', error);
+      },
+    });
+  }
+
+  applySorting(column: string) {
+    if (this.sortByColumn === column) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortByColumn = column;
+      this.sortOrder = 'asc';
+    }
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.fetchData();
+  }
+
+  openFilterModal(column: string, event: MouseEvent) {
+    this.filterColumn = column;
+    this.columns.forEach((col) => {
+      if (col.key === column) {
+        this.filterColumnTitle = col.label;
+      }
+    });
+    this.filterValue = '';
+    this.filterValue2 = '';
+
+    const columnType = this.filterColumnTypes[column];
+    switch (columnType) {
+      case 'string':
+        this.filterType = 'Contains';
+        break;
+      case 'number':
+        this.filterType = 'Equal';
+        break;
+      case 'date':
+        this.filterType = 'Between';
+        break;
+      default:
+        this.filterType = 'Contains';
+    }
+
+    this.isFilterOpen = true;
+    const target = event.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    if (this.filterModal) {
+      const modal = this.filterModal.nativeElement;
+      modal.style.display = 'block';
+      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
+      modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
+    }
+  }
+
+  applyFilter() {
+    if (!this.filterColumn || this.filterValue === '') return;
+
+    const existingFilterIndex = this.filters.findIndex((f) => f.column === this.filterColumn);
+    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
+
+    if (existingFilterIndex > -1) {
+      this.filters[existingFilterIndex] = filterData;
+    } else {
+      this.filters.push(filterData);
+    }
+
+    this.fetchData();
+    this.closeFilterModal();
+  }
+
+  resetFilter(column: string) {
+    this.filters = this.filters.filter((filter) => filter.column !== column);
+    this.payload.filter = this.filters;
+    this.fetchData();
+  }
+
+  closeFilterModal() {
+    if (this.filterModal) {
+      this.filterModal.nativeElement.style.display = 'none';
+    }
+  }
+
+  onPageChange(page: number) {
+    this.pageNumber = page;
+    this.payload.PageNumber = this.pageNumber;
+    this.fetchData();
+  }
+
+  changePageSize(event: Event) {
+    this.pageSize = Number((event.target as HTMLSelectElement).value);
+    this.pageNumber = 1;
+    this.payload.PageNumber = this.pageNumber;
+    this.payload.PageSize = this.pageSize;
+    this.fetchData();
+  }
+
+  onSearch() {
+    if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
+      this.payload.searchTerm = this.searchTerm;
+      this.fetchData();
+    }
+  }
+
+  get totalPages(): number[] {
+    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
+  }
+
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
+  hasFilter(column: string): boolean {
+    return this.filters?.some((f) => f.column === column) ?? false;
+  }
+
+  getColumnType(columnKey: string): string | undefined {
+    const column = this.columns.find((col) => col.key === columnKey);
+    return column ? column.type : undefined;
+  }
+
+  deleteFn(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this item?');
+    if (confirmed) {
+      this.hardnessEquivalenceService.deleteHardnessEquivalence(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message, 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        },
+      });
+    }
+  }
+
+  openModal(type: string, id: number): void {
+    this.hardnessEquivalenceForm.reset();
+    this.hardnessEquivalenceForm.enable();
+    this.hardnessEquivalenceId = 0;
+    if (id > 0) {
+      this.hardnessEquivalenceId = id;
+      this.getDetails();
+    }
+    if (type === 'create') {
+      this.isEditMode = false;
+      this.isViewMode = false;
+      this.formTitle = 'Hardness Equivalence Form';
+    } else if (type === 'edit') {
+      this.isEditMode = true;
+      this.isViewMode = false;
+      this.formTitle = 'Hardness Equivalence Form';
+      this.hardnessEquivalenceForm.enable();
+    } else if (type === 'view') {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.formTitle = 'View Hardness Equivalence';
+      this.hardnessEquivalenceForm.disable();
+    }
+
+    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
+    this.hardnessEquivalenceForm.reset();
+    this.hardnessEquivalenceForm.enable();
+    this.hardnessEquivalenceId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+  }
+
+  onSubmit(): void {
+    if (this.hardnessEquivalenceForm.valid) {
+      let formData = this.hardnessEquivalenceForm.value;
+      if (this.isEditMode) {
+        this.hardnessEquivalenceService.updateHardnessEquivalence(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.closeModal();
+            this.fetchData();
+          },
+          error: (error) => {
+            this.toastService.show(error.message, 'error');
+          },
+        });
+      } else {
+        formData.id = 0;
+        this.hardnessEquivalenceService.createHardnessEquivalence(formData).subscribe({
+          next: (response) => {
+            this.toastService.show(response.message, 'success');
+            this.closeModal();
+            this.fetchData();
+          },
+          error: (error) => {
+            this.toastService.show(error.message, 'error');
+          },
+        });
+      }
+    }
+  }
+}

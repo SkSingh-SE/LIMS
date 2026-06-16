@@ -1,30 +1,113 @@
-.permission-list {
-  max-height: 55vh; /* keeps it responsive to viewport */
-  overflow-y: auto;
-  border-radius: 6px;
-  padding: 8px;
-  background: #fff;
-  border: 1px solid #e9ecef;
-}
-
-.assigned-list {
+/* Container & Layout */
+.custom-scrollbar {
   max-height: 55vh;
   overflow-y: auto;
-  border-radius: 6px;
-  padding: 8px;
-  background: #fafafa;
-  border: 1px solid #e9ecef;
+  overflow-x: hidden;
+  padding-right: 4px;
 }
 
-.group-header {
+/* Custom Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Cards & Items */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.permission-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+.permission-item:hover {
+  background-color: #f8f9fa !important; /* bootstrap light */
+  border-color: #dee2e6;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+}
+
+.cursor-pointer {
   cursor: pointer;
 }
 
-.permission-card,
-.user-permission-card {
-  align-items: center;
+.pointer-events-none {
+  pointer-events: none;
 }
 
-/* small aesthetics */
-.pointer { cursor: pointer; }
+/* Header Gradients if not in global css */
+.bg-gradient-primary {
+  background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+}
 
+/* Buttons */
+.action-btn {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-width: 2px;
+}
+
+.transition-transform {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.transition-transform:active {
+  transform: scale(0.95);
+}
+.transition-transform:hover {
+  transform: scale(1.1);
+}
+
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+/* Animations */
+.animation-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animation-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Toggle Switch for Permissions */
+.form-check-input {
+    cursor: pointer;
+}
+.form-check-input:checked {
+    background-color: #198754; /* Success green for assigned */
+    border-color: #198754;
+}
+
+/* Left side (Available) overrides if needed */
+.card-header.bg-gradient-primary + .card-body .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}

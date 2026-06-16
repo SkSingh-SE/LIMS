@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-34: Technical Raw Data Records'"
+    [addButtonLabel]="'Add Record'"
+    [addRoute]="'/nabl/technical-raw-data/create'"
+    [baseRoute]="'/nabl/technical-raw-data'"
+    [columns]="columns"
+    [data]="listData"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)"
+  ></app-nabl-register-table>
+</div>

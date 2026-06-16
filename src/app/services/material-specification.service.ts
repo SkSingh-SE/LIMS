@@ -59,4 +59,10 @@ export class MaterialSpecificationService {
   getChemicalElementsBySpecifications(spec1Id: number, spec2Id: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/GetChemicalElementsBySpecifications?spec1Id=${spec1Id}&spec2Id=${spec2Id}`);
   }
+
+  getMechanicalLimitsByGrade(gradeId: number, gradeId2?: number): Observable<any[]> {
+    let url = `${this.apiUrl}/GetMechanicalLimitsByGrade?gradeId=${gradeId}`;
+    if (gradeId2) url += `&gradeId2=${gradeId2}`;
+    return this.http.get<any[]>(url);
+  }
 }

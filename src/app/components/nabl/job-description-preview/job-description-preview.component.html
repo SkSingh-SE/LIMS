@@ -1,0 +1,243 @@
+<!-- ════════════════════════════════════════════════════════════════
+     ACTION TOOLBAR  (hidden on print)
+════════════════════════════════════════════════════════════════ -->
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Job Description Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Orientation Toggle -->
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'"
+              (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'"
+              (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+
+    <!-- Reset to auto-detect -->
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
+            title="Auto-detect orientation from content"
+            *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+
+    <!-- Print -->
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DOCUMENT VIEWER
+════════════════════════════════════════════════════════════════ -->
+<div class="nabl-preview-page">
+
+  <!-- A4 Document -->
+  <app-print-frame *ngIf="jobDesc" [orientation]="orientation">
+
+    <!-- ── HEADER ─────────────────────────────────────────────── -->
+    <ng-container header>
+      <app-nabl-print-header
+          [formatNo]="'F-3'"
+          [mainTitle]="'JOB DESCRIPTION'"
+          [docNo]="'DMSPL / Level-04 / Format / ' + (jobDesc.formatNo || 'F-3')"
+          [issueNo]="jobDesc.issueNo || '01'"
+          [issueDate]="jobDesc.date || ''"
+          [revNo]="jobDesc.revNo || '00'"
+          [revDate]="'--'">
+      </app-nabl-print-header>
+    </ng-container>
+
+    <!-- ── BODY ──────────────────────────────────────────────── -->
+    <ng-container body>
+
+        <!-- I · Identification -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">I. Identification Details</div>
+          <table class="table table-bordered mb-0 inner-table">
+            <tbody>
+              <tr>
+                <td class="lbl" style="width:22%;">Designation</td>
+                <td>{{ jobDesc.designationName || '—' }}</td>
+                <td class="lbl" style="width:22%;">Department</td>
+                <td>{{ jobDesc.departmentName || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="lbl">Reporting To</td>
+                <td>{{ jobDesc.reportingTo || '—' }}</td>
+                <td class="lbl">Document No.</td>
+                <td>{{ jobDesc.documentNo || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="lbl">Status</td>
+                <td>
+                  <span class="status-badge status-{{ (jobDesc.status || 'draft').toLowerCase() }}">
+                    {{ jobDesc.status || 'Draft' }}
+                  </span>
+                </td>
+                <td class="lbl">Date</td>
+                <td>{{ (jobDesc.date | date:'dd MMM yyyy') || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- II · Educational & Experience Criteria -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">II. Educational &amp; Experience Criteria</div>
+          <table class="table table-bordered mb-0 inner-table">
+            <tbody>
+              <tr>
+                <td class="lbl" style="width:28%;">Minimum Qualification</td>
+                <td [innerHTML]="jobDesc.minimumQualification || '—'"></td>
+              </tr>
+              <tr>
+                <td class="lbl">Technical Training</td>
+                <td [innerHTML]="jobDesc.technicalTraining || '—'"></td>
+              </tr>
+              <tr>
+                <td class="lbl">Experience</td>
+                <td [innerHTML]="jobDesc.experience || '—'"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- III · Principal Accountabilities -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">III. Principal Accountabilities &amp; Duties</div>
+          <div class="ql-editor sec-body" [innerHTML]="jobDesc.principalAccountabilities || '—'"></div>
+        </div>
+
+        <!-- IV · Authorities -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">IV. Authorities</div>
+          <table class="table table-bordered mb-0 inner-table">
+            <thead>
+              <tr class="tbl-head">
+                <th>Authority</th>
+                <th class="text-center" style="width:100px;">Granted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Authority to Stop Testing</td>
+                <td class="text-center">
+                  <span class="auth-badge" [class.granted]="jobDesc.authorityStopTesting"
+                        [class.not-granted]="!jobDesc.authorityStopTesting">
+                    {{ jobDesc.authorityStopTesting ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Authority to Issue Test Reports</td>
+                <td class="text-center">
+                  <span class="auth-badge" [class.granted]="jobDesc.authorityIssueReports"
+                        [class.not-granted]="!jobDesc.authorityIssueReports">
+                    {{ jobDesc.authorityIssueReports ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Authority to Access Confidential Data</td>
+                <td class="text-center">
+                  <span class="auth-badge" [class.granted]="jobDesc.authorityAccessConfidential"
+                        [class.not-granted]="!jobDesc.authorityAccessConfidential">
+                    {{ jobDesc.authorityAccessConfidential ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Authority for Equipment Calibration</td>
+                <td class="text-center">
+                  <span class="auth-badge" [class.granted]="jobDesc.authorityEquipmentCalibration"
+                        [class.not-granted]="!jobDesc.authorityEquipmentCalibration">
+                    {{ jobDesc.authorityEquipmentCalibration ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- V · QMS Responsibilities -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">V. Quality Management System (QMS) Responsibilities</div>
+          <div class="ql-editor sec-body" [innerHTML]="jobDesc.qmsResponsibilities || '—'"></div>
+        </div>
+
+        <!-- VI · Confidentiality -->
+        <div class="doc-section mb-3">
+          <div class="sec-title">VI. Confidentiality &amp; Impartiality Commitment</div>
+          <div class="ql-editor sec-body" [innerHTML]="jobDesc.confidentialityClause || '—'"></div>
+        </div>
+
+        <!-- VII · Approval & Acceptance -->
+        <!-- <div class="doc-section mb-3 avoid-break">
+          <div class="sec-title">VII. Approval &amp; Acceptance</div>
+          <table class="table table-bordered mb-0 inner-table">
+            <thead>
+              <tr class="tbl-head">
+                <th>Role</th>
+                <th>Name</th>
+                <th class="text-center">Signature &amp; Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="lbl">Prepared By (Quality Manager)</td>
+                <td>{{ jobDesc.preparedBy || '—' }}</td>
+                <td class="sig-cell"></td>
+              </tr>
+              <tr>
+                <td class="lbl">Approved By (Director)</td>
+                <td>{{ jobDesc.approvedBy || '—' }}</td>
+                <td class="sig-cell"></td>
+              </tr>
+              <tr>
+                <td class="lbl">Employee Acceptance</td>
+                <td>
+                  <span class="auth-badge" [class.granted]="jobDesc.employeeAccepted"
+                        [class.not-granted]="!jobDesc.employeeAccepted">
+                    {{ jobDesc.employeeAccepted ? 'Accepted' : 'Pending' }}
+                  </span>
+                </td>
+                <td class="sig-cell"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div> -->
+
+    </ng-container>
+
+    <!-- ── FOOTER ─────────────────────────────────────────────── -->
+    <ng-container footer>
+      <app-nabl-print-footer
+          [preparedByName]="jobDesc.preparedBy"
+          [issuedByName]="jobDesc.reviewedBy"
+          [reviewedApprovedByName]="jobDesc.approvedBy">
+      </app-nabl-print-footer>
+    </ng-container>
+
+  </app-print-frame>
+</div>

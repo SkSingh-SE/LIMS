@@ -1,0 +1,14 @@
+<app-nabl-register-table
+  title="F-22: Purchase Order"
+  [columns]="columns"
+  [data]="orders"
+  [totalItems]="totalItems"
+  [isLoading]="false"
+  baseRoute="/purchase-order"
+  addRoute="/purchase-order/create"
+  [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+  (onPageChange)="onPageChange($event)"
+    (onDelete)="deletePurchaseOrder($event)"
+></app-nabl-register-table>

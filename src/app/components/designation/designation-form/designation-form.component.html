@@ -1,35 +1,69 @@
-<div id="designationModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+<div id="designationModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
   aria-labelledby="designationModalLabel" aria-modal="true" role="dialog">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
-        <label class="modal-title fs-6 fw-medium" id="designationModalLabel">
+        <label class="modal-title fw-medium" id="designationModalLabel">
           {{formTitle}}
         </label>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="designationForm" (ngSubmit)="onSubmit()">
         <div class="modal-body">
-          <div class="mb-3">
-            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-            <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Designation"
-              required
-              [ngClass]="{'is-invalid': designationForm.get('name')?.touched && designationForm.get('name')?.invalid}"
-              [attr.disabled]="isViewMode ? true : null" />
-            <span *ngIf="designationForm.get('name')?.invalid && designationForm.get('name')?.touched"
-              class="text-danger text-sm">
-              Name is required.
-            </span>
-          </div>
-          <div class="mb-3">
-            <label for="description" class="form-label">Description</label>
-            <input type="text" id="description" class="form-control" formControlName="description"
-              placeholder="Enter Designation Description" required [attr.disabled]="isViewMode ? true : null" />
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+              <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Designation"
+                maxlength="100"
+                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                [attr.disabled]="isViewMode ? true : null" />
+              <app-field-error [control]="designationForm.get('name')" label="Name" [submitted]="submitted"/>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="description" class="form-label">Description</label>
+              <input type="text" id="description" class="form-control" formControlName="description"
+                placeholder="Enter Designation Description"
+                [attr.disabled]="isViewMode ? true : null" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <app-searchable-dropdown
+                [placeholder]="'Search Role'"
+                [labelName]="'Role'"
+                [fetchDataFn]="getRoles"
+                (itemSelected)="onRoleSelected($event)"
+                [isDisabled]="isViewMode"
+                [selectedItem]="designationForm.get('roleID')?.value"
+              ></app-searchable-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="qualification" class="form-label">Qualification</label>
+              <input type="text" id="qualification" class="form-control" formControlName="qualification"
+                placeholder="Enter Qualification" maxlength="500"
+                [attr.disabled]="isViewMode ? true : null" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="minExperience" class="form-label">Min Experience (Years)</label>
+              <input type="number" id="minExperience" class="form-control" formControlName="minExperience"
+                placeholder="Enter Minimum Experience"
+                [attr.disabled]="isViewMode ? true : null" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="personalityTraits" class="form-label">Personality Traits</label>
+              <textarea id="personalityTraits" class="form-control" formControlName="personalityTraits"
+                placeholder="Enter Personality Traits" rows="3"
+                [attr.disabled]="isViewMode ? true : null"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="rolesAndResponsibilities" class="form-label">Roles & Responsibilities</label>
+              <textarea id="rolesAndResponsibilities" class="form-control" formControlName="rolesAndResponsibilities"
+                placeholder="Enter Roles & Responsibilities" rows="3"
+                [attr.disabled]="isViewMode ? true : null"></textarea>
+            </div>
           </div>
         </div>
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-dark" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn navbar-background text-white" [disabled]="designationForm.invalid">
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

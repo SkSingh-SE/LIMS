@@ -1,15 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
+import { ParameterCategoryService } from '../../../services/parameter-category.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-mechanical-parameter',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, SymbolPickerComponent, PaginationComponent ],
   templateUrl: './mechanical-parameter.component.html',
   styleUrl: './mechanical-parameter.component.css'
 })
@@ -23,23 +29,29 @@ export class MechanicalParameterComponent implements OnInit {
   allParameters: any[] = [];
   tempFormula: string = '';
   numericInput: string = '';
-  formulaPreview: string = ''; // NEW: Store formula with parameter names
+  formulaTokens: { type: string; value: string; display: string }[] = [];
+  formulaPreview: string = '';
+  isFormulaValid = true;
+
+  // Smart formula
+  smartFormulaMode = false;
+  smartFormulaInput = '';
+  smartTokens: { token: string; type: 'param' | 'operator' | 'number' | 'unknown'; matched?: string; paramRef?: string }[] = [];
+  smartValid = false;
+  smartErrors: string[] = [];
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
-    { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
-    { key: 'createdOn', type: 'date', label: 'Created At', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
-    aliasName: 'string',
     unitName: 'string',
     factor: 'string',
-    createdOn: 'date'
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -56,12 +68,11 @@ export class MechanicalParameterComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -80,7 +91,7 @@ export class MechanicalParameterComponent implements OnInit {
   parameterId: number = 0;
   formTitle = 'Parameter Form';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService, private parameterCategoryService: ParameterCategoryService, private specimenOrientationService: SpecimenOrientationService) {
     this.route.params.subscribe(params => {
       this.parameterId = params['id'] || 0;
       if (this.parameterId > 0) {
@@ -101,13 +112,19 @@ export class MechanicalParameterComponent implements OnInit {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      aliasName: [''],
-      parameterUnitID: [0, Validators.required],
+      code: ['', Validators.required],
+      decimalPrecision: [1, [Validators.required, Validators.min(0), Validators.max(6)]],
+      conversionFactor: [1, [Validators.required, Validators.min(0.000001)]],
+      defaultTestMethodID: [null],
+      parameterCategoryID: [null],
+      parameterUnitID: [null],
       note: [''],
       elementType: ['normal'],
       parameterType: ['Mechanical', Validators.required],
       isCalculated: [false],
-      formula: ['']
+      formula: [''],
+      allowedOrientationIds: [[]],
+      allowedOrientations: this.fb.array([])
     });
   }
   fetchData() {
@@ -117,12 +134,10 @@ export class MechanicalParameterComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.ParameterList = [];
-        this.isLoading.set(false);
       }
     }
     );
@@ -133,19 +148,28 @@ export class MechanicalParameterComponent implements OnInit {
         this.ParameterUnits = response || [];
       },
       error: (error) => {
-        console.error('Error fetching parameter units:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameter units', 'error');
       }
     });
   }
 
   getDetails(): void {
-    this.parameterService.getParameterById(this.parameterId).subscribe({
+    const requestId = this.parameterId;
+    this.parameterService.getParameterById(requestId).subscribe({
       next: (response) => {
+        if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
-        this.ParameterForm.patchValue(response);
+        this.ParameterForm.patchValue({
+          ...response,
+          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
+        });
+        if (response.allowedOrientations?.length > 0) {
+          const ids = response.allowedOrientations.map((o: any) => o.specimenOrientationID);
+          this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
+        }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameter details', 'error');
       }
     });
   }
@@ -196,6 +220,17 @@ export class MechanicalParameterComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -243,6 +278,8 @@ export class MechanicalParameterComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -251,6 +288,14 @@ export class MechanicalParameterComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -270,12 +315,14 @@ export class MechanicalParameterComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.initForm();
+    this.parameterId = 0;
     if (id > 0) {
       this.parameterId = id;
       this.getDetails();
@@ -283,15 +330,11 @@ export class MechanicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Parameter Form';
-      this.ParameterForm.enable();
-
     }
     else if (type === 'view') {
       this.isViewMode = true;
@@ -308,6 +351,11 @@ export class MechanicalParameterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.initForm();
+    this.customerTypeObject = null;
+    this.parameterId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
   }
 
   onSubmit(): void {
@@ -318,6 +366,8 @@ export class MechanicalParameterComponent implements OnInit {
         return;
       }
       let formData = this.ParameterForm.value;
+      const orientationIds = formData.allowedOrientationIds || [];
+      formData.allowedOrientations = orientationIds.map((id: number) => ({ specimenOrientationID: id }));
       if (this.isEditMode) {
         this.parameterService.updateParameter(formData).subscribe({
           next: (response) => {
@@ -326,7 +376,7 @@ export class MechanicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       } else {
@@ -338,7 +388,7 @@ export class MechanicalParameterComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
           }
         });
       }
@@ -351,83 +401,247 @@ export class MechanicalParameterComponent implements OnInit {
         this.allParameters = response || [];
       },
       error: (error) => {
-        console.error('Error fetching parameters:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load parameters', 'error');
       }
     });
   }
+
   onCalculatedToggle() {
     if (!this.ParameterForm.value.isCalculated) {
       this.ParameterForm.patchValue({ formula: '' });
     }
   }
-  addParameterToFormula(event: any) {
-    const paramId = event.target.value;
-    if (!paramId) return;
 
-    this.tempFormula += `{P${paramId}}`;
-    this.updateFormulaPreview(); // NEW: Update preview
+  openFormulaBuilder() {
+    this.tempFormula = this.ParameterForm.value.formula || '';
+    this.parseFormulaToTokens(this.tempFormula);
+    this.updateFormulaPreview();
+    this.validateParentheses();
+    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
+    this.formulaBsModal.show();
   }
 
-  addNumberToFormula() {
-    if (!this.numericInput || this.numericInput === '') return;
+  addParamToken(paramId: number, paramName: string): void {
+    this.formulaTokens.push({ type: 'param', value: `{P${paramId}}`, display: paramName });
+    this.rebuildFormula();
+  }
 
+  addOperatorToken(op: string): void {
+    const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
+    this.formulaTokens.push({ type: 'operator', value: ` ${op} `, display: displayMap[op] || op });
+    this.rebuildFormula();
+  }
+
+  addParenToken(paren: string): void {
+    this.formulaTokens.push({ type: 'paren', value: paren, display: paren });
+    this.rebuildFormula();
+  }
+
+  addNumberToken(): void {
+    if (!this.numericInput || this.numericInput === '') return;
     const numValue = parseFloat(this.numericInput);
     if (isNaN(numValue)) {
       this.toastService.show('Please enter a valid number', 'warning');
       return;
     }
-
-    this.tempFormula += ` ${this.numericInput}`;
+    this.formulaTokens.push({ type: 'number', value: ` ${this.numericInput}`, display: this.numericInput });
     this.numericInput = '';
-    this.updateFormulaPreview(); // NEW: Update preview
+    this.rebuildFormula();
   }
 
-  addOperator(op: string) {
-    this.tempFormula += ` ${op} `;
-    this.updateFormulaPreview(); // NEW: Update preview
+  removeToken(index: number): void {
+    this.formulaTokens.splice(index, 1);
+    this.rebuildFormula();
   }
 
-  // NEW: Update formula preview with parameter names
-  private updateFormulaPreview() {
+  undoLastToken(): void {
+    this.formulaTokens.pop();
+    this.rebuildFormula();
+  }
+
+  private rebuildFormula(): void {
+    this.tempFormula = this.formulaTokens.map((t) => t.value).join('');
+    this.updateFormulaPreview();
+    this.validateParentheses();
+  }
+
+  private validateParentheses(): void {
+    let count = 0;
+    for (const token of this.formulaTokens) {
+      if (token.value === '(') count++;
+      if (token.value === ')') count--;
+      if (count < 0) {
+        this.isFormulaValid = false;
+        return;
+      }
+    }
+    this.isFormulaValid = count === 0;
+  }
+
+  private updateFormulaPreview(): void {
     let preview = this.tempFormula;
-
-    // Replace {PX} with parameter name
-    this.allParameters.forEach(param => {
+    this.allParameters.forEach((param) => {
       const regex = new RegExp(`\\{P${param.id}\\}`, 'g');
-      preview = preview.replace(regex, `{P${param.id}:${param.name}}`);
+      preview = preview.replace(regex, param.name);
     });
-
     this.formulaPreview = preview;
+  }
+
+  private parseFormulaToTokens(formula: string): void {
+    this.formulaTokens = [];
+    if (!formula) return;
+    const regex = /(\{P\d+\})|([+\-*/])|([()])|(\d+\.?\d*)/g;
+    let match;
+    while ((match = regex.exec(formula)) !== null) {
+      if (match[1]) {
+        const paramId = parseInt(match[1].replace(/[{}P]/g, ''));
+        const param = this.allParameters.find((p: any) => p.id === paramId);
+        this.formulaTokens.push({ type: 'param', value: match[1], display: param ? param.name : `P${paramId}` });
+      } else if (match[2]) {
+        const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
+        this.formulaTokens.push({ type: 'operator', value: ` ${match[2]} `, display: displayMap[match[2]] || match[2] });
+      } else if (match[3]) {
+        this.formulaTokens.push({ type: 'paren', value: match[3], display: match[3] });
+      } else if (match[4]) {
+        this.formulaTokens.push({ type: 'number', value: ` ${match[4]}`, display: match[4] });
+      }
+    }
   }
 
   saveFormula() {
     this.ParameterForm.patchValue({
-      formula: this.tempFormula
+      formula: this.tempFormula,
     });
 
     this.closeFormulaModal();
   }
+
   closeFormulaModal() {
     if (this.formulaBsModal) {
       this.formulaBsModal.hide();
     }
-    this.numericInput = '';
-    this.formulaPreview = ''; // NEW: Clear preview
   }
+
   clearFormula() {
     this.tempFormula = '';
+    this.formulaTokens = [];
+    this.isFormulaValid = true;
     this.numericInput = '';
-    this.formulaPreview = ''; // NEW: Clear preview
     this.ParameterForm.patchValue({
-      formula: ''
+      formula: '',
     });
   }
-  openFormulaBuilder() {
-    this.tempFormula = this.ParameterForm.value.formula || '';
-    this.updateFormulaPreview(); // NEW: Initialize preview
-    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
-    this.formulaBsModal.show();
+
+  // ── Smart Formula ──
+  toggleSmartMode(): void {
+    this.smartFormulaMode = !this.smartFormulaMode;
+    if (this.smartFormulaMode) {
+      let readable = this.tempFormula || '';
+      this.allParameters.forEach(p => {
+        readable = readable.replace(new RegExp(`\\{P${p.id}\\}`, 'g'), p.name);
+      });
+      this.smartFormulaInput = readable;
+      this.parseSmartInput();
+    }
   }
+
+  parseSmartInput(): void {
+    const input = this.smartFormulaInput.trim();
+    this.smartTokens = [];
+    this.smartErrors = [];
+    this.smartValid = false;
+    if (!input) return;
+
+    const rawTokens = input.match(/([a-zA-Z_][a-zA-Z0-9_ ]*[a-zA-Z0-9_]|[a-zA-Z_][a-zA-Z0-9_]*|[0-9]*\.?[0-9]+|[+\-*/(),])/g) || [];
+    const operators = new Set(['+', '-', '*', '/', '(', ')', ',']);
+    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
+
+    for (const raw of rawTokens) {
+      if (operators.has(raw)) { this.smartTokens.push({ token: raw, type: 'operator' }); continue; }
+      if (/^[0-9]*\.?[0-9]+$/.test(raw)) { this.smartTokens.push({ token: raw, type: 'number' }); continue; }
+      if (constants[raw]) { this.smartTokens.push({ token: raw, type: 'number', matched: `= ${constants[raw]}` }); continue; }
+
+      // Match by name (case-insensitive)
+      const exact = this.allParameters.find((p: any) => p.name.toLowerCase() === raw.toLowerCase());
+      if (exact) { this.smartTokens.push({ token: raw, type: 'param', matched: exact.name, paramRef: `{P${exact.id}}` }); continue; }
+
+      const partial = this.allParameters.find((p: any) => p.name.toLowerCase().startsWith(raw.toLowerCase()));
+      if (partial) {
+        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.name}?`, paramRef: `{P${partial.id}}` });
+        this.smartErrors.push(`"${raw}" → did you mean "${partial.name}"?`);
+        continue;
+      }
+
+      this.smartTokens.push({ token: raw, type: 'unknown' });
+      this.smartErrors.push(`"${raw}" — no matching parameter`);
+    }
+
+    let depth = 0;
+    for (const t of this.smartTokens) {
+      if (t.token === '(') depth++;
+      if (t.token === ')') depth--;
+      if (depth < 0) { this.smartErrors.push('Unmatched ")"'); break; }
+    }
+    if (depth > 0) this.smartErrors.push(`${depth} unclosed bracket(s)`);
+
+    this.smartValid = this.smartErrors.length === 0 && this.smartTokens.length > 0;
+  }
+
+  applySmartFormula(): void {
+    if (!this.smartValid) return;
+    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
+    const parts = this.smartTokens.map(t => {
+      if (t.type === 'param' && t.paramRef) return t.paramRef;
+      if (t.type === 'number' && constants[t.token]) return constants[t.token];
+      if (t.type === 'operator') return t.token === '*' || t.token === '/' || t.token === '+' || t.token === '-' ? ` ${t.token} ` : t.token;
+      return t.token;
+    });
+    this.tempFormula = parts.join('').replace(/\s+/g, ' ').trim();
+    this.parseFormulaToTokens(this.tempFormula);
+    this.updateFormulaPreview();
+    this.validateParentheses();
+    this.smartFormulaMode = false;
+    this.saveFormula();
+  }
+
+  insertSmartParam(name: string): void {
+    this.smartFormulaInput = (this.smartFormulaInput + ' ' + name).trim();
+    this.parseSmartInput();
+  }
+
+  getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterCategoryService.getParameterCategoryDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getOrientationDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.specimenOrientationService.getSpecimenOrientationDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  onParameterUnitSelected(item: any) {
+    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+  }
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+
+  onOrientationSelected(selectedItems: any[]): void {
+    const orientationsArray = this.ParameterForm.get('allowedOrientations') as FormArray;
+    orientationsArray.clear();
+    const ids = selectedItems.map((item: any) => item.id || item);
+    ids.forEach((id: number) => {
+      orientationsArray.push(this.fb.group({ specimenOrientationID: [id] }));
+    });
+    this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
+  }
+
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 }
 
 

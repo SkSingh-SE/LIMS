@@ -13,10 +13,17 @@ import { Select2Option, Select2UpdateEvent, Select2UpdateValue } from 'ng-select
 import { LaboratoryTestService } from '../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { TestMethodSpecificationService } from '../../services/test-method-specification.service';
+import { YearHelper } from '../../utility/helper/year.helper';
+import { ProductTestGroupService } from '../../services/product-test-group.service';
+import { ProductSpecificationGradeService } from '../../services/product-specification-grade.service';
+import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
+import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
+import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-product-specification',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownModalComponent, DecimalOnlyDirective, FormFieldErrorComponent, PaginationComponent ],
   templateUrl: './product-specification.component.html',
   styleUrl: './product-specification.component.css'
 })
@@ -26,18 +33,19 @@ export class ProductSpecificationComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'specificationName', type: 'string', label: 'Specification Name', filter: true },
     { key: 'aliasName', type: 'string', label: 'Alias Name', filter: true },
     { key: 'materialSpecification', type: 'string', label: 'Material Specification', filter: true },
     { key: 'specificationCode', type: 'string', label: 'Specification Code', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date'> = {
-    id: 'number',
+  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specificationName: 'string',
     aliasName: 'string',
     materialSpecification: 'string',
-    specificationCode: 'string'
+    specificationCode: 'string',
+    modifiedOn: 'date',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -53,12 +61,11 @@ export class ProductSpecificationComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [5, 10, 20];
+  pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'id';
-  sortOrder: string = 'asc';
+  sortByColumn: string = 'modifiedOn';
+  sortOrder: string = 'desc';
   searchTerm: string = '';
-  isLoading = signal(false);
 
   payload = {
     PageNumber: this.pageNumber,
@@ -71,11 +78,19 @@ export class ProductSpecificationComponent implements OnInit {
 
   // form
   ProductSpecificationForm!: FormGroup;
+  submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   productSpecificationId: number = 0;
   formTitle = 'Product Specfication Form';
+
+  activeTab = 'details';
+  testGroups: any[] = [];
+  specGrades: any[] = [];
+  newTestGroup: any = { laboratoryTestID: 0, laboratoryTestName: '', testMethodStandardID: 0, testMethodStandardName: '', isPerBatch: false, year: null };
+  yearOptions: number[] = YearHelper.standardYears();
+  newSpecGrade: any = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
 
   testMethods: any[] = [
     { value: 1, label: 'Test Method 1' },
@@ -85,7 +100,7 @@ export class ProductSpecificationComponent implements OnInit {
     { value: 5, label: 'Test Method 5' },
   ];
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService:TestMethodSpecificationService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private productSpecificationService: ProductSpecificationService, private toastService: ToastService, private materialSpecificationService: MaterialSpecificationService, private laboratoryTestService: LaboratoryTestService, private metalService: MetalClassificationService, private testMethodSpecificationService: TestMethodSpecificationService, private productTestGroupService: ProductTestGroupService, private productSpecGradeService: ProductSpecificationGradeService) {
     this.route.params.subscribe(params => {
       this.productSpecificationId = params['id'] || 0;
       if (this.productSpecificationId > 0) {
@@ -103,13 +118,14 @@ export class ProductSpecificationComponent implements OnInit {
   initForm() {
     this.ProductSpecificationForm = this.fb.group({
       id: [0],
-      specificationName: ['', Validators.required],
-      aliasName: ['', Validators.required],
-      specificationCode: ['', Validators.required],
+      specificationName: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      aliasName: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      specificationCode: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       gradeID : ['', Validators.required],
       laboratoryTestID: ['', Validators.required],
       metalClassificationID: ['', Validators.required],
       testMethodSpecificationID: ['', Validators.required],
+      testMethodSpecificationVersionID: [null],
       isCustom: [false],
       size: [''],
     });
@@ -122,25 +138,29 @@ export class ProductSpecificationComponent implements OnInit {
         this.totalItems = response?.totalRecords || 0;
         this.pageSize = response?.pageSize || 10;
         this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error?.error?.message || 'Failed to load product specifications', 'error');
         this.ProductSpecificationList = [];
-        this.isLoading.set(false);
       }
     }
 
     );
   }
   getDetails(): void {
-    this.productSpecificationService.getProductSpecificationById(this.productSpecificationId).subscribe({
+    const requestId = this.productSpecificationId;
+    this.productSpecificationService.getProductSpecificationById(requestId).subscribe({
       next: (response) => {
+        if (this.productSpecificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.ProductSpecificationForm.patchValue(response);
+        // Load version dropdown if spec has testMethodSpecificationID
+        if (response.testMethodSpecificationID) {
+          this.loadSpecVersions(response.testMethodSpecificationID);
+        }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.error?.message || 'Failed to load product specification details', 'error');
       }
     });
   }
@@ -191,6 +211,17 @@ export class ProductSpecificationComponent implements OnInit {
       modal.style.display = 'block';
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
+
+      // Clamp to viewport so the popup doesn't overflow
+      requestAnimationFrame(() => {
+        const modalRect = modal.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+        }
+        if (modalRect.bottom > window.innerHeight) {
+          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+        }
+      });
     }
   }
 
@@ -206,6 +237,7 @@ export class ProductSpecificationComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -238,6 +270,8 @@ export class ProductSpecificationComponent implements OnInit {
 
   onSearch() {
     if (this.searchTerm !== this.payload.searchTerm) {
+      this.pageNumber = 1;
+      this.payload.PageNumber = 1;
       this.payload.searchTerm = this.searchTerm;
       this.fetchData();
     }
@@ -246,6 +280,14 @@ export class ProductSpecificationComponent implements OnInit {
   get totalPages(): number[] {
     return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
   }
+  getStartRecord(): number {
+    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+  }
+
+  getEndRecord(): number {
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+  }
+
 
   hasFilter(column: string): boolean {
     return this.filters?.some(f => f.column === column) ?? false;
@@ -265,30 +307,36 @@ export class ProductSpecificationComponent implements OnInit {
           this.toastService.show(response.message, 'success');
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error?.error?.message || 'Failed to delete product specification', 'error');
         }
       });
     }
   }
   openModal(type: string, id: number): void {
+    this.ProductSpecificationForm.reset();
+    this.ProductSpecificationForm.enable();
+    this.activeTab = 'details';
+    this.productSpecificationId = 0;
     if (id > 0) {
       this.productSpecificationId = id;
       this.getDetails();
+      this.loadTestGroups(id);
+      this.loadSpecGrades(id);
+    } else {
+      this.testGroups = [];
+      this.specGrades = [];
     }
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
       this.initForm();
       this.formTitle = 'Product Specification Form';
-      this.ProductSpecificationForm.enable();
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Product Specification Form';
       this.ProductSpecificationForm.enable();
-
-    }
-    else if (type === 'view') {
+    } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
       this.formTitle = 'View Product Specification';
@@ -303,11 +351,22 @@ export class ProductSpecificationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.ProductSpecificationForm.reset();
+    this.ProductSpecificationForm.enable();
+    this.productSpecificationId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.ProductSpecificationForm, path, this.submitted);
   }
 
   onSubmit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.ProductSpecificationForm);
     if (this.ProductSpecificationForm.valid) {
-      debugger;
       let formData = this.ProductSpecificationForm.value;
       if (this.isEditMode) {
         this.productSpecificationService.updateProductSpecification(formData).subscribe({
@@ -317,7 +376,7 @@ export class ProductSpecificationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || 'Failed to update product specification', 'error');
           }
         });
       } else {
@@ -329,10 +388,12 @@ export class ProductSpecificationComponent implements OnInit {
             this.fetchData();
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            this.toastService.show(error?.error?.message || 'Failed to create product specification', 'error');
           }
         });
       }
+    } else {
+      this.toastService.show('Please fill all required fields.', 'warning');
     }
   }
   getMaterialSpecificationGrade = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -348,20 +409,52 @@ export class ProductSpecificationComponent implements OnInit {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
   onGradeSelected(item: any) {
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ gradeID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ gradeID : item.id });
   }
   onLaboratorySelected(item:any){
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ laboratoryTestID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ laboratoryTestID: item.id });
   }
   onMetalSelected(item:any){
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ metalClassificationID: null });
+      return;
+    }
     this.ProductSpecificationForm.patchValue({ metalClassificationID: item.id });
   }
+  specVersions: any[] = [];
   onTestSpecificationSelected(item:any){
-    this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id });
+    if (!item) {
+      this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: null, testMethodSpecificationVersionID: null });
+      this.specVersions = [];
+      return;
+    }
+    this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
+    this.loadSpecVersions(item.id);
+  }
+  loadSpecVersions(specId: number) {
+    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+      next: (data) => {
+        this.specVersions = data || [];
+        if (this.specVersions.length === 1) {
+          this.ProductSpecificationForm.patchValue({ testMethodSpecificationVersionID: this.specVersions[0].id });
+        }
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load specification versions', 'error');
+        this.specVersions = [];
+      }
+    });
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const line = this.ProductSpecificationForm.get('testMethods') as FormArray;
-    // Reset and rebuild array
     line.clear();
     selectedIds?.options?.forEach(item => {
       const selectedOption = this.testMethods.find((x: any) => x.value === item.value) as Select2Option;
@@ -372,6 +465,126 @@ export class ProductSpecificationComponent implements OnInit {
           laboratoryTestID: [item.value],
           laboratoryTestName: [selectedOption?.label || '']
         }));
+      }
+    });
+  }
+
+  loadTestGroups(productSpecId: number) {
+    this.productTestGroupService.getByProductSpec(productSpecId).subscribe({
+      next: (data) => this.testGroups = data || [],
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load test groups', 'error');
+        this.testGroups = [];
+      }
+    });
+  }
+
+  loadSpecGrades(productSpecId: number) {
+    this.productSpecGradeService.getByProductSpec(productSpecId).subscribe({
+      next: (data) => this.specGrades = data || [],
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to load specification grades', 'error');
+        this.specGrades = [];
+      }
+    });
+  }
+
+  onTestGroupLabTestSelected(item: any) {
+    this.newTestGroup.laboratoryTestID = item.id;
+    this.newTestGroup.laboratoryTestName = item.name;
+  }
+
+  getTestMethodStandardDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+  };
+
+  onTestGroupMethodSelected(item: any) {
+    this.newTestGroup.testMethodStandardID = item.id;
+    this.newTestGroup.testMethodStandardName = item.name;
+  }
+
+  addTestGroup() {
+    if (!this.newTestGroup.laboratoryTestID || !this.newTestGroup.testMethodStandardID) {
+      this.toastService.show('Please select Laboratory Test and Test Method Standard', 'error');
+      return;
+    }
+    const duplicate = this.testGroups.some((g: any) =>
+      g.laboratoryTestID === this.newTestGroup.laboratoryTestID && g.testMethodStandardID === this.newTestGroup.testMethodStandardID
+    );
+    if (duplicate) {
+      this.toastService.show('This test group combination already exists', 'warning');
+      return;
+    }
+    const payload = {
+      id: 0,
+      productSpecificationID: this.productSpecificationId,
+      laboratoryTestID: this.newTestGroup.laboratoryTestID,
+      testMethodStandardID: this.newTestGroup.testMethodStandardID,
+      isPerBatch: this.newTestGroup.isPerBatch,
+      year: this.newTestGroup.year ?? null
+    };
+    this.productTestGroupService.create(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Test Group added', 'success');
+        this.loadTestGroups(this.productSpecificationId);
+        this.newTestGroup = { laboratoryTestID: 0, laboratoryTestName: '', testMethodStandardID: 0, testMethodStandardName: '', isPerBatch: false, year: null };
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to add test group', 'error');
+      }
+    });
+  }
+
+  removeTestGroup(id: number) {
+    if (!confirm('Are you sure you want to remove this test group?')) return;
+    this.productTestGroupService.delete(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Test Group removed', 'success');
+        this.loadTestGroups(this.productSpecificationId);
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to remove test group', 'error');
+      }
+    });
+  }
+
+  onSpecGradeSelected(item: any) {
+    this.newSpecGrade.specificationGradeID = item.id;
+    this.newSpecGrade.specificationGradeName = item.name;
+  }
+
+  addSpecGrade() {
+    if (!this.newSpecGrade.specificationGradeID) {
+      this.toastService.show('Please select a Specification Grade', 'error');
+      return;
+    }
+    const payload = {
+      id: 0,
+      productSpecificationID: this.productSpecificationId,
+      specificationGradeID: this.newSpecGrade.specificationGradeID,
+      aliasName: this.newSpecGrade.aliasName
+    };
+    this.productSpecGradeService.create(payload).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Grade added', 'success');
+        this.loadSpecGrades(this.productSpecificationId);
+        this.newSpecGrade = { specificationGradeID: 0, specificationGradeName: '', aliasName: '' };
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to add specification grade', 'error');
+      }
+    });
+  }
+
+  removeSpecGrade(id: number) {
+    if (!confirm('Are you sure you want to remove this grade?')) return;
+    this.productSpecGradeService.delete(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Grade removed', 'success');
+        this.loadSpecGrades(this.productSpecificationId);
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || 'Failed to remove specification grade', 'error');
       }
     });
   }

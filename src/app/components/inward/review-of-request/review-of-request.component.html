@@ -4,7 +4,7 @@
       <label class="text-center text-md fw-medium ms-3">Review of Request List</label>
     </div>
 
-    <div *ngIf="!isLoading()" class="card-body">
+    <div class="card-body">
       <!-- Search -->
       <div class="d-flex justify-content-end mb-2">
         <div class="w-25 input-group custom-search">
@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="align-middle text-center">Actions</th>
+                            <th class="align-middle text-center" style="width: 140px; min-width: 140px;">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -36,13 +36,13 @@
                     ></i>
                   </span>
                   <span
-                    *ngIf="!hasFilter(column.key) && i != 0 && column.filter"
+                    *ngIf="!hasFilter(column.key) && column.filter"
                     class="cursor ms-2 mt-1"
                     (click)="openFilterModal(column.key, $event)"
                   >
                     <i class="bi bi-funnel"></i>
                   </span>
-                  <span *ngIf="hasFilter(column.key) && i != 0" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
+                  <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
                     <i class="bi bi-x-lg text-danger"></i>
                   </span>
                 </div>
@@ -51,97 +51,77 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of listData; let i = index" class="text-sm">
-              <td class="">
-                <div class="d-flex justify-content-center gap-2">
-                  <!-- Flex for spacing -->
-                  <!-- <a [routerLink]="['/sample/inward/details', item.id]"
-                                    [state]="{ mode: 'view' }"
-                                     class="icon-link"
-                                        title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-
-                                    <a [routerLink]="['/sample/inward/edit', item.id]"
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-
-                                    </a> -->
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-2 align-items-center">
                   <a
-                    *ngIf="!item.reviewStatus"
-                    [routerLink]="['/sample/plan/edit', item.id]"
-                    [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-danger-600"
-                    title="Plan"
-                  >
-                    Plan
-                  </a>
-                  <a
-                    *ngIf="item.canTakeAction"
                     [routerLink]="['/sample/review', item.id]"
-                    [state]="{ mode: 'plan' }"
-                    class="btn btn-sm btn-outline-danger-600"
-                    title="Review"
+                    [state]="{ mode: 'review' }"
+                    class="icon-link"
+                    title="Review Plan"
                   >
-                    Review
+                    <img src="/icons/view.svg" alt="Review" class="icon-svg">
                   </a>
-                  <div *ngIf="item.canTakeAction">
-                    <!-- <a *ngFor="let action of item.actions" class="icon-link d-inline-block" title="{{ action.name }}">
-                      <img src="/icons/{{ action.action }}.svg" alt="Edit" class="icon-svg" />
-                    </a> -->
-                    <div ngbDropdown class="d-inline-block">
-                      <button
-                        *ngFor="let action of item.actions"
-                        type="button"
-                        class="btn btn-sm btn-outline-danger-600 me-2"
-                        (click)="onActionClick(action)"
-                      >
-                        {{ action.name }}
-                      </button>
-                    </div>
-                  </div>
+                  <ng-container *ngIf="item.canTakeAction">
+                    <a
+                      *ngFor="let action of item.actions"
+                      role="button"
+                      class="icon-link action-icon-link"
+                      [class.disabled]="isSubmittingAction"
+                      [title]="action.name"
+                      (click)="!isSubmittingAction && onActionClick(action, item)"
+                    >
+                      <i class="bi action-icon" [ngClass]="[getActionCfg(action.action).icon, getActionCfg(action.action).textClass]"></i>
+                    </a>
+                  </ng-container>
                 </div>
               </td>
-              <td>{{ item.caseNo }}</td>
-              <td>{{ item.customerName }}</td>
+              <td class="fw-semibold">
+                <a
+                  [routerLink]="['/sample/inward/details', item.id]"
+                  [state]="{ mode: 'view' }"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View details for ' + item.caseNo"
+                >
+                  {{ item.caseNo }}
+                </a>
+              </td>
               <td>
-                 <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
+                <a
+                  *ngIf="item.customerID"
+                  [routerLink]="['/customer/details', item.customerID]"
+                  [state]="{ mode: 'view' }"
+                  class="text-primary text-decoration-none cursor-pointer"
+                  [title]="'View customer details for ' + item.customerName"
+                >
+                  {{ item.customerName }}
+                </a>
+                <span *ngIf="!item.customerID">{{ item.customerName }}</span>
+              </td>
+              <td>
+                <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
               </td>
               <td>{{ item.modifiedBy }}</td>
-              <td>{{ item.modifiedOn | date : "dd MMM, yyyy" }}</td>
+              <td>{{ item.modifiedOn | date : "dd MMM, yyyy hh:mm a" }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div *ngIf="listData.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
+      <div *ngIf="listData.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
         <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
           <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
           <div class="fw-semibold">No records found</div>
         </div>
       </div>
       <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center">
-        <!-- Page Size Selector -->
-        <div class="d-flex align-items-center">
-          <select [(ngModel)]="pageSize" class="form-select w-auto" (change)="changePageSize($event)">
-            <option *ngFor="let size of pageSizes" [value]="size">{{ size }} per page</option>
-          </select>
-        </div>
-
-        <!-- Pagination Controls -->
-        <ul class="pagination mb-0 d-flex align-items-center">
-          <li class="page-item" [class.disabled]="pageNumber === 1">
-            <a class="page-link" (click)="onPageChange(pageNumber - 1)">Previous</a>
-          </li>
-          <li *ngFor="let page of totalPages" class="page-item" [class.active]="pageNumber === page">
-            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="pageNumber === totalPages.length">
-            <a class="page-link" (click)="onPageChange(pageNumber + 1)">Next</a>
-          </li>
-        </ul>
-      </div>
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
     </div>
   </div>
 </div>
@@ -191,5 +171,38 @@
     </div>
 
     <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+  </div>
+</div>
+
+<!-- Remark Modal for Reject / Send Back actions -->
+<div class="modal-backdrop-custom" *ngIf="showRemarkModal" (click)="closeRemarkModal()"></div>
+<div class="modal-custom" *ngIf="showRemarkModal" role="dialog" aria-modal="true">
+  <div class="modal-header card-form-header text-white d-flex justify-content-between align-items-center">
+    <label class="modal-title fw-medium">
+      <i class="bi me-2" [ngClass]="getActionCfg(pendingAction?.action).icon"></i>
+      {{ pendingAction?.name }} - Case {{ pendingItem?.caseNo }}
+    </label>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeRemarkModal()"></button>
+  </div>
+  <div class="modal-body">
+    <label class="form-label">Remarks <span class="text-danger">*</span></label>
+    <textarea
+      class="form-control"
+      rows="4"
+      [(ngModel)]="actionRemark"
+      placeholder="Enter remarks..."
+      maxlength="1000"
+    ></textarea>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-cancel" (click)="closeRemarkModal()" [disabled]="isSubmittingAction">Cancel</button>
+    <button
+      type="button"
+      class="btn btn-save"
+      [disabled]="!actionRemark?.trim() || isSubmittingAction"
+      (click)="confirmRemarkAction()"
+    >
+      <i class="bi bi-send-check me-1"></i>Submit
+    </button>
   </div>
 </div>

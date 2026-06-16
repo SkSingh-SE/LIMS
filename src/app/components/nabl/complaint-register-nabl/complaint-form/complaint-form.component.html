@@ -1,0 +1,188 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <div class="card w-100 shadow-lg">
+    <!-- Main Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+      <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+        <i class="bi bi-arrow-left"></i>
+        Back to List
+      </button>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="complaintForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+        <!-- Section I: Header Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('header')">
+            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">I. Header Information</span>
+          </div>
+          <div *ngIf="openSections['header']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Form Number
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="formatNo">
+                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="docNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="issueDate" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section II: Basic Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('basicInfo')">
+            <i class="bi" [ngClass]="openSections['basicInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Basic Information</span>
+          </div>
+          <div *ngIf="openSections['basicInfo']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Month & Year
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="monthYear" placeholder="e.g. Dec-25" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Complaint No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="complaintNo" placeholder="e.g. 04" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Date of Complaint
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="dateOfComplaint" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Name of Complainant
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="complainantName" placeholder="Client Name" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section III: Details & Validation -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('details')">
+            <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Details & Validation</span>
+          </div>
+          <div *ngIf="openSections['details']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">
+                  Details of Complaint
+                  <span class="text-danger">*</span>
+                </label>
+                <quill-editor
+                  formControlName="detailsOfComplaint"
+                  [modules]="quillModules"
+                  placeholder="Describe the complaint..."
+                ></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Validation of Complaint</label>
+                <quill-editor
+                  formControlName="validationOfComplaint"
+                  [modules]="quillModules"
+                  placeholder="Initial validation findings..."
+                ></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section IV: Investigation -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('investigation')">
+            <i class="bi" [ngClass]="openSections['investigation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Investigation Outcome</span>
+          </div>
+          <div *ngIf="openSections['investigation']" class="section-body">
+            <div class="col-12">
+              <quill-editor
+                formControlName="outcomeOfInvestigation"
+                [modules]="quillModules"
+                placeholder="Root cause and investigation results..."
+              ></quill-editor>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section V: Actions & Closure -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('action')">
+            <i class="bi" [ngClass]="openSections['action'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Corrective Actions & Closure</span>
+          </div>
+          <div *ngIf="openSections['action']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-12">
+                <label class="form-label fw-bold">Corrective Actions Taken</label>
+                <quill-editor formControlName="correctiveActionsTaken" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Reference No & Date (Customer Response)</label>
+                <input type="text" class="form-control" formControlName="referenceNoDate" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">QM Signature / Name</label>
+                <input type="text" class="form-control" formControlName="signatureQM" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <app-nabl-signature-section [parentForm]="complaintForm"></app-nabl-signature-section>
+
+        <!-- Footer Actions -->
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save" [disabled]="complaintForm.invalid">
+            {{ isEditMode ? "Update Entry" : "Save Entry" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

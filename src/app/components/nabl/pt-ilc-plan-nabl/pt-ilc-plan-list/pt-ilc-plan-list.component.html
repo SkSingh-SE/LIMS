@@ -1,0 +1,17 @@
+<div class="container-fluid mt-4 d-flex flex-column align-items-center">
+  <app-nabl-register-table
+    [title]="'F-36: PT / ILC Plan'"
+    [addButtonLabel]="'Add Plan'"
+    [addRoute]="'/pt-ilc-plan/create'"
+    [baseRoute]="'/pt-ilc-plan'"
+    [columns]="columns"
+    [data]="listData"
+    [totalItems]="totalItems"
+    [isLoading]="false"
+    [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+    (onDelete)="deleteRecord($event)"
+  ></app-nabl-register-table>
+</div>

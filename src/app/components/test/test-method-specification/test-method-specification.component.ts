@@ -2,18 +2,22 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ToastService } from '../../../services/toast.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { Observable } from 'rxjs';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
+import { MetalClassificationService } from '../../../services/metal-classification.service';
+import { ParameterService } from '../../../services/parameter.service';
+import { ParameterUnitService } from '../../../services/parameter-unit.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { VersionStatus } from '../../../utility/status_flow/enums/version-status.enum';
 import { YearHelper } from '../../../utility/helper/year.helper';
 
 @Component({
   selector: 'app-test-method-specification',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent, MultiSelectDropdownComponent],
   templateUrl: './test-method-specification.component.html',
   styleUrl: './test-method-specification.component.css',
 })
@@ -25,11 +29,25 @@ export class TestMethodSpecificationComponent implements OnInit {
   selectedStandardOrganization: any = {};
   testMethodSpecificationID: number = 0;
   VersionStatus = VersionStatus;
+  // Pre-selected metal classification IDs for the multi-select ([selectedValues] expects IDs, not objects).
+  selectedMetalClassificationIds: any[] = [];
+  // Per-parameter-row unit options (primary unit first, then its equivalents) fetched on parameter selection.
+  equivalentUnitsByRow = new WeakMap<AbstractControl, any[]>();
+
+  // Accordion open/close state (mirrors material-specification form pattern)
+  openSections: { [key: string]: boolean } = { header: true, metal: true, versions: true };
+
+  toggleSection(section: string) {
+    this.openSections[section] = !this.openSections[section];
+  }
 
   constructor(
     private fb: FormBuilder,
     private toastService: ToastService,
     private standardOrganizationService: StandardOrgnizationService,
+    private metalClassificationService: MetalClassificationService,
+    private parameterService: ParameterService,
+    private parameterUnitService: ParameterUnitService,
     private testMethodService: TestMethodSpecificationService,
     private route: ActivatedRoute,
     private router: Router,
@@ -55,6 +73,8 @@ export class TestMethodSpecificationComponent implements OnInit {
     } else {
       this.addVersion(true);
       this.onActivateVersion(0);
+      // First version is the default by default.
+      this.setDefaultVersion(0);
     }
   }
 
@@ -66,6 +86,8 @@ export class TestMethodSpecificationComponent implements OnInit {
       testMethodStandard: ['', Validators.required],
       name: ['', Validators.required],
       part: [''],
+      displayTitle: [{ value: '', disabled: true }],
+      metalClassificationIDs: [[]],
       versions: this.fb.array([]),
     });
   }
@@ -73,6 +95,102 @@ export class TestMethodSpecificationComponent implements OnInit {
     return this.testSpecificationForm.get('versions') as FormArray;
   }
 
+  // ── Metal Classifications (multi-select) ──────────────────────────────
+  getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.metalClassificationService.getMetalClassificationDropdown(term, page, pageSize);
+  };
+
+  onMetalClassificationsSelected(items: any[]) {
+    const ids = (items || []).map((i) => i.id);
+    this.selectedMetalClassificationIds = ids;
+    this.testSpecificationForm.get('metalClassificationIDs')?.setValue(ids);
+    this.testSpecificationForm.markAsDirty();
+  }
+
+  // ── Parameters (version-level FormArray) ──────────────────────────────
+  getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getParameterDropdown(term, page, pageSize);
+  };
+
+  /** Parameters FormArray for a given version index. */
+  versionParameters(versionIndex: number): FormArray {
+    return this.versions.at(versionIndex).get('parameters') as FormArray;
+  }
+
+  createParameterGroup(): FormGroup {
+    return this.fb.group({
+      id: [0],
+      parameterID: [null, Validators.required],
+      parameterName: [''],
+      // Base unit (auto-set from the parameter's default unit; used to load equivalents).
+      parameterUnitID: [null],
+      // Chosen unit: null = base/primary unit, else an equivalent unit ID.
+      parameterUnitEquivalentID: [null],
+      comment: [''],
+    });
+  }
+
+  addParameter(versionIndex: number): void {
+    this.versionParameters(versionIndex).push(this.createParameterGroup());
+    this.testSpecificationForm.markAsDirty();
+  }
+
+  removeParameter(versionIndex: number, paramIndex: number): void {
+    this.versionParameters(versionIndex).removeAt(paramIndex);
+    this.testSpecificationForm.markAsDirty();
+  }
+
+  onParameterSelected(item: any, versionIndex: number, paramIndex: number) {
+    const row = this.versionParameters(versionIndex).at(paramIndex) as FormGroup;
+    if (!item) {
+      row.patchValue({ parameterID: null, parameterName: '', parameterUnitID: null, parameterUnitEquivalentID: null });
+      this.equivalentUnitsByRow.set(row, []);
+      return;
+    }
+    // Duplicate guard within the same version.
+    const isDuplicate = this.versionParameters(versionIndex).controls.some(
+      (ctrl, i) => i !== paramIndex && ctrl.get('parameterID')?.value === item.id,
+    );
+    if (isDuplicate) {
+      this.toastService.show(`"${item.name || 'Parameter'}" is already added in this version.`, 'warning');
+      row.patchValue({ parameterID: -1, parameterName: '', parameterUnitID: null, parameterUnitEquivalentID: null });
+      setTimeout(() => row.patchValue({ parameterID: null }), 0);
+      this.equivalentUnitsByRow.set(row, []);
+      return;
+    }
+    const additional = item?.additionalValues || {};
+    const rawUnit = additional.UnitID ?? additional.unitID ?? null;
+    const unitID = rawUnit != null && rawUnit !== '' ? Number(rawUnit) : null;
+    row.patchValue({ parameterID: item.id, parameterName: item.name });
+    // Fetch equivalent units for this parameter's default unit; primary unit auto-selected (equivalent = null).
+    this.loadEquivalentUnits(row, unitID, true);
+  }
+
+  /** Fetches equivalent-unit options for a parameter row and (optionally) sets the base unit. */
+  loadEquivalentUnits(group: AbstractControl, unitId: number | null, setSelected: boolean): void {
+    if (!unitId) {
+      this.equivalentUnitsByRow.set(group, []);
+      if (setSelected) {
+        group.get('parameterUnitID')?.setValue(null);
+        group.get('parameterUnitEquivalentID')?.setValue(null);
+      }
+      return;
+    }
+    if (setSelected) {
+      group.get('parameterUnitID')?.setValue(Number(unitId));
+      group.get('parameterUnitEquivalentID')?.setValue(null);
+    }
+    this.parameterUnitService.getEquivalentUnits(unitId).subscribe({
+      next: (units: any[]) => this.equivalentUnitsByRow.set(group, units || []),
+      error: () => this.equivalentUnitsByRow.set(group, []),
+    });
+  }
+
+  getRowEquivalentUnits(group: AbstractControl): any[] {
+    return this.equivalentUnitsByRow.get(group) || [];
+  }
+
+  // ── Versions ──────────────────────────────────────────────────────────
   createVersionGroup(flag: boolean = false): FormGroup {
     return this.fb.group({
       id: [0],
@@ -89,15 +207,48 @@ export class TestMethodSpecificationComponent implements OnInit {
       uploadReferenceID: [null],
       file: [null],
       isVersionAdded: [flag],
+      isDefault: [false],
+      parameters: this.fb.array([]),
     });
   }
 
   addVersion(flag: boolean = false): void {
+    const newGroup = this.createVersionGroup(flag);
+    // Clone parameters from the current default version as a starting point.
+    this.cloneDefaultParametersInto(newGroup);
     if (flag) {
-      this.versions.insert(0, this.createVersionGroup(flag));
+      this.versions.insert(0, newGroup);
     } else {
-      this.versions.push(this.createVersionGroup(flag));
+      this.versions.push(newGroup);
     }
+  }
+
+  /** Copies the default (or first) version's parameter rows into a freshly-created version group. */
+  private cloneDefaultParametersInto(targetVersion: FormGroup): void {
+    const source =
+      this.versions.controls.find((g) => g.get('isDefault')?.value) ||
+      this.versions.controls.find((g) => g.get('status')?.value === VersionStatus.Active) ||
+      this.versions.at(0);
+    if (!source) return;
+    const sourceParams = source.get('parameters') as FormArray;
+    const targetParams = targetVersion.get('parameters') as FormArray;
+    sourceParams?.controls.forEach((sp) => {
+      const grp = this.createParameterGroup();
+      const unitId = sp.get('parameterUnitID')?.value;
+      grp.patchValue({
+        id: 0, // new row in the new version
+        parameterID: sp.get('parameterID')?.value,
+        parameterName: sp.get('parameterName')?.value,
+        parameterUnitID: unitId,
+        parameterUnitEquivalentID: sp.get('parameterUnitEquivalentID')?.value ?? null,
+        comment: sp.get('comment')?.value ?? '',
+      });
+      // Carry over the source row's equivalent options if present.
+      const srcUnits = this.equivalentUnitsByRow.get(sp);
+      if (srcUnits && srcUnits.length) this.equivalentUnitsByRow.set(grp, srcUnits);
+      else if (unitId) this.loadEquivalentUnits(grp, Number(unitId), false);
+      targetParams.push(grp);
+    });
   }
 
   removeVersion(index: number): void {
@@ -108,8 +259,26 @@ export class TestMethodSpecificationComponent implements OnInit {
         this.toastService.show('Cannot remove superseded or withdrawn versions.', 'warning');
         return;
       }
+      const wasDefault = version.get('isDefault')?.value;
       this.versions.removeAt(index);
+      // If the removed version was the default, fall back to the Active version (else the first).
+      if (wasDefault && this.versions.length > 0) {
+        const activeIdx = this.versions.controls.findIndex((g) => g.get('status')?.value === VersionStatus.Active);
+        this.setDefaultVersion(activeIdx >= 0 ? activeIdx : 0);
+      }
     }
+  }
+
+  /** Marks the version at `index` as the default; clears the flag on all others. */
+  setDefaultVersion(index: number): void {
+    this.versions.controls.forEach((group, idx) => {
+      group.get('isDefault')?.setValue(idx === index, { emitEvent: false });
+    });
+    this.testSpecificationForm.markAsDirty();
+  }
+
+  isDefaultVersion(index: number): boolean {
+    return !!this.versions.at(index).get('isDefault')?.value;
   }
 
   showaddVersionButton(): boolean {
@@ -132,8 +301,22 @@ export class TestMethodSpecificationComponent implements OnInit {
             testMethodStandard: response.testMethodStandard,
             name: response.name,
             part: response.part || '',
+            displayTitle: response.displayTitle || '',
             isDisabled: response.isDisabled,
           });
+          // Fetch organization name so Display Title can rebuild correctly when header fields are edited.
+          if (response.standardOrganizationID) {
+            this.standardOrganizationService.getStandardOrganizationById(response.standardOrganizationID).subscribe({
+              next: (org) => {
+                this.selectedStandardOrganization = { id: response.standardOrganizationID, name: org?.name || '' };
+              },
+            });
+          }
+          // Bind metal classifications (multi-select expects an array of IDs; names are fetched by the component)
+          const mcLinks = response.metalClassifications || [];
+          this.selectedMetalClassificationIds = mcLinks.map((m: any) => m.metalClassificationID);
+          this.testSpecificationForm.get('metalClassificationIDs')?.setValue([...this.selectedMetalClassificationIds]);
+
           this.versions.clear();
 
           // Versions come pre-sorted from API (Active first)
@@ -152,9 +335,43 @@ export class TestMethodSpecificationComponent implements OnInit {
               standardFile: version.standardFile,
               standardFilePath: version.standardFilePath,
               uploadReferenceID: version.uploadReferenceID,
+              isDefault: response.defaultVersionID != null && version.id === response.defaultVersionID,
             });
+
+            // Bind this version's parameters
+            const paramsArray = versionGroup.get('parameters') as FormArray;
+            (version.parameters || [])
+              .slice()
+              .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+              .forEach((p: any) => {
+                const grp = this.createParameterGroup();
+                grp.patchValue({
+                  id: p.id,
+                  parameterID: p.parameterID,
+                  parameterName: p.parameter?.name,
+                  parameterUnitID: p.parameterUnitID ?? null,
+                  parameterUnitEquivalentID: p.parameterUnitEquivalentID ?? null,
+                  comment: p.comment,
+                });
+                if (p.parameterUnitID) this.loadEquivalentUnits(grp, Number(p.parameterUnitID), false);
+                paramsArray.push(grp);
+              });
+
             this.versions.push(versionGroup);
           });
+
+          // Default-version sync on load:
+          // - prefer the saved default IF it's a non-readonly (Active/Draft) version,
+          // - otherwise fall back to the Active version, else the first.
+          if (this.versions.length > 0) {
+            const savedDefaultIdx = this.versions.controls.findIndex(
+              (g) => g.get('isDefault')?.value && !(g.get('status')?.value === VersionStatus.Superseded || g.get('status')?.value === VersionStatus.Withdrawn),
+            );
+            if (savedDefaultIdx < 0) {
+              const activeIdx = this.versions.controls.findIndex((g) => g.get('status')?.value === VersionStatus.Active);
+              this.setDefaultVersion(activeIdx >= 0 ? activeIdx : 0);
+            }
+          }
 
           // Disable read-only versions (Superseded/Withdrawn)
           this.applyVersionDisabledState();
@@ -184,6 +401,26 @@ export class TestMethodSpecificationComponent implements OnInit {
   onOrganizationSelected(item: any) {
     this.testSpecificationForm.patchValue({ standardOrganizationID: item.id });
     this.selectedStandardOrganization = item;
+    this.buildDisplayTitle();
+  }
+
+  /** Active version ka version-number return karta hai (display title ke liye). */
+  private getActiveVersionLabel(): string {
+    const active = this.versions.controls.find((g) => g.get('status')?.value === VersionStatus.Active);
+    const fallback = this.versions.controls.find((g) => g.get('status')?.value === VersionStatus.Draft);
+    return (active?.get('version')?.value || fallback?.get('version')?.value || '').toString().trim();
+  }
+
+  /** Display Title = "{StdOrg} {TestMethodStandard} {Part} : {ActiveVersion}" — year nahi, version dikhata hai. */
+  buildDisplayTitle(): void {
+    const org = (this.selectedStandardOrganization?.name || '').toString().trim();
+    const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
+    const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
+    const version = this.getActiveVersionLabel();
+
+    let left = [org, std, part].filter((x) => x).join(' ');
+    const display = version ? (left ? `${left} : ${version}` : version) : left;
+    this.testSpecificationForm.get('displayTitle')?.setValue(display, { emitEvent: false });
   }
 
   onFileChange(event: any, index: number) {
@@ -276,18 +513,10 @@ export class TestMethodSpecificationComponent implements OnInit {
         group.get('effectiveDate')?.setValue(new Date().toISOString().split('T')[0], { emitEvent: false });
       }
     });
+    // Active version becomes the default (keeps Active/Default in sync).
+    this.setDefaultVersion(index);
     this.applyVersionDisabledState();
-  }
-
-  onWithdrawVersion(index: number) {
-    const reason = prompt('Enter reason for withdrawal:');
-    if (reason !== null) {
-      const version = this.versions.at(index);
-      version.get('status')?.setValue(VersionStatus.Withdrawn);
-      version.get('changeReason')?.setValue(reason);
-      version.get('supersededDate')?.setValue(new Date().toISOString().split('T')[0]);
-      this.applyVersionDisabledState();
-    }
+    this.buildDisplayTitle();
   }
 
   isVersionReadOnly(index: number): boolean {
@@ -336,7 +565,9 @@ export class TestMethodSpecificationComponent implements OnInit {
       formData.append('testMethodStandard', raw.testMethodStandard);
       formData.append('name', raw.name);
       formData.append('part', raw.part || '');
+      formData.append('displayTitle', raw.displayTitle || '');
       formData.append('isDisabled', raw.isDisabled ? 'true' : 'false');
+      formData.append('metalClassificationIDs', JSON.stringify(raw.metalClassificationIDs || []));
 
       const versionsArray: any[] = [];
 
@@ -354,6 +585,17 @@ export class TestMethodSpecificationComponent implements OnInit {
           standardFile: version.standardFile,
           standardFilePath: version.standardFilePath,
           uploadReferenceID: version.uploadReferenceID || null,
+          isDefault: !!version.isDefault,
+          parameters: (version.parameters || [])
+            .filter((p: any) => p.parameterID && p.parameterID > 0)
+            .map((p: any, idx: number) => ({
+              id: p.id || 0,
+              parameterID: p.parameterID,
+              parameterUnitID: p.parameterUnitID || null,
+              parameterUnitEquivalentID: p.parameterUnitEquivalentID || null,
+              comment: p.comment || '',
+              sortOrder: idx,
+            })),
         });
 
         if (version.file) {

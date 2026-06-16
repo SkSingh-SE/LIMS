@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, signal } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -71,6 +71,9 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   selectedGradeIndex = 0;
   selectedSpecTab: { [gradeIndex: number]: string } = { 0: 'chemical' };
+
+  activeLineKey = signal<string | null>(null);
+  lineKey(gi: number, tab: string, i: number): string { return `${gi}-${tab}-${i}`; }
 
 
   lowerLimitOptions = [
@@ -158,12 +161,12 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       standard: [''],
       part: [''],
       standardYear: ['', Validators.required],
-      specificationNo: [''],
+      specificationNo: ['', [Validators.required, Validators.maxLength(100)]],
       version: [''],
       displayTitle: [{ value: '', disabled: true }],
       title: ['', [Validators.maxLength(300)]],
       identifierConfigJson: [''],
-      aliasName: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      aliasName: [{ value: '', disabled: true }, [Validators.maxLength(200)]],
       isCustom: [false],
       headerParameters: this.fb.group({
         chemical: this.fb.array([]),
@@ -849,32 +852,19 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   }
 
   generateSpecificationName() {
-    let code = '';
-    const standardOrganizationName = this.selectedStandardOrganization?.name;
-    if (standardOrganizationName) {
-      code = standardOrganizationName;
-    }
-    const part = this.MaterialSpecificationForm.get('part')?.value;
-    if (part) {
-      code += ` ${part}`;
-    }
-    const standardYear =
-      this.MaterialSpecificationForm.get('standardYear')?.value;
-    if (standardYear) {
-      code += `:${standardYear}`;
-    }
+    const orgName  = this.selectedStandardOrganization?.name || '';
+    const specNo   = this.MaterialSpecificationForm.get('specificationNo')?.value || '';
+    const part     = this.MaterialSpecificationForm.get('part')?.value || '';
 
-    if (code.length > 0) {
-      this.MaterialSpecificationForm.patchValue({ aliasName: code });
-    }
+    // aliasName (backend uniqueness key): "{Org} {SpecNo}" + optional part
+    let alias = `${orgName} ${specNo}`.trim();
+    if (part) alias += ` ${part}`;
+    if (alias) this.MaterialSpecificationForm.patchValue({ aliasName: alias });
 
-    // MS-A: Display Title = "{StdOrg} {SpecNo} : {Version}" e.g. "IS 1234 : v1"
-    const orgName = this.selectedStandardOrganization?.name || '';
-    const specNo = this.MaterialSpecificationForm.get('specificationNo')?.value || '';
-    const version = this.MaterialSpecificationForm.get('version')?.value || '';
-    const left = `${orgName} ${specNo}`.trim();
-    const display = version ? `${left} : ${version}` : left;
-    this.MaterialSpecificationForm.patchValue({ displayTitle: display });
+    // Display Title: "{Org} {SpecNo} {Part} {Year}"  e.g. "IS 1234 Part-1 2025"
+    const year    = this.MaterialSpecificationForm.get('standardYear')?.value || '';
+    const parts   = [orgName, specNo, part, year].filter(v => v.trim() !== '');
+    this.MaterialSpecificationForm.patchValue({ displayTitle: parts.join(' ') });
   }
 
   onSubmit() {
@@ -1155,6 +1145,26 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     if (this.openGrades[gradeIndex]) {
       this.selectedSpecTab[gradeIndex] = this.selectedSpecTab[gradeIndex] || 'chemical';
     }
+  }
+
+  // Column group scroll offsets: scrollLeft = column_start_px − sticky_width(254px)
+  readonly specSections = [
+    { label: 'Values',      offset: 0    },
+    { label: 'Tolerances',  offset: 680  },
+    { label: 'Setup',       offset: 1020 },
+    { label: 'Limits',      offset: 1360 },
+    { label: 'Conditions',  offset: 1700 },
+    { label: 'Product',     offset: 2210 },
+  ];
+
+  scrollToSection(gi: number, tab: string, offset: number) {
+    const container = document.getElementById(`scroll-${tab}-${gi}`);
+    if (container) container.scrollTo({ left: offset, behavior: 'smooth' });
+  }
+
+  scrollStep(gi: number, tab: string, dir: 'left' | 'right') {
+    const container = document.getElementById(`scroll-${tab}-${gi}`);
+    if (container) container.scrollBy({ left: dir === 'right' ? 170 : -170, behavior: 'smooth' });
   }
 
   scrollToEnd(gradeIndex: number, tab: string) {

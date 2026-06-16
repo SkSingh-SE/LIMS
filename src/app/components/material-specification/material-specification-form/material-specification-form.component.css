@@ -190,17 +190,35 @@
 /* ─── Scroll Navigation Buttons ─── */
 .btn-scroll-nav {
   color: #6c757d;
-  border: 1px solid #6c757d;
-  background-color: transparent;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
   font-size: var(--font-xs);
-  padding: 0.25rem 0.5rem;
-  transition: all 0.2s ease;
+  padding: 0.2rem 0.45rem;
+  line-height: 1.3;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .btn-scroll-nav:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
   color: #fff;
+}
+
+.scroll-nav-bar {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.scroll-nav-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: #dee2e6;
+  margin: 0 2px;
+  vertical-align: middle;
 }
 
 /* ── MS-A: compact (density-only) form styling ─────────────────────────────── */
@@ -497,3 +515,49 @@
   border-radius: 0 0 6px 6px;
   background: #fff;
 }
+
+/* ── Sticky columns ────────────────────────────────────────────────────────── */
+.spec-col-num {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 44px;
+  width: 44px;
+}
+.spec-col-param {
+  position: sticky;
+  left: 44px;
+  z-index: 3;
+  min-width: 210px;
+  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.18);
+}
+.spec-col-action {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  width: 44px;
+  min-width: 44px;
+  box-shadow: -4px 0 6px -4px rgba(0, 0, 0, 0.18);
+}
+/* Sticky header cells need higher z-index so they sit above sticky body cells */
+.spec-th.spec-col-num,
+.spec-th.spec-col-param {
+  z-index: 5;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+}
+.spec-th.spec-col-action {
+  z-index: 5;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+}
+/* Body cell backgrounds for sticky columns */
+.spec-row td.spec-col-num,
+.spec-row td.spec-col-param,
+.spec-row td.spec-col-action { background: #fff; }
+.spec-row:hover td.spec-col-num,
+.spec-row:hover td.spec-col-param,
+.spec-row:hover td.spec-col-action { background: #f8f9fa; }
+
+/* ── Active row highlight ──────────────────────────────────────────────────── */
+.spec-row-active td { background: #fff3f0 !important; }
+.spec-row-active td.spec-col-num { border-left: 2.5px solid var(--primary-color) !important; }
+

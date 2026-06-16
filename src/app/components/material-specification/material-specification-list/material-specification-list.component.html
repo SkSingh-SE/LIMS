@@ -83,8 +83,8 @@
                                 <a [routerLink]="['/material-specification/details', material.id]"
                                    [state]="{ mode: 'view' }"
                                    class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + material.aliasName">
-                                    {{ material.aliasName }}
+                                   [title]="'View details for ' + material.displayTitle">
+                                    {{ material.displayTitle }}
                                 </a>
                             </td>
                             <td>{{ material.standardOrganizationName }}</td>

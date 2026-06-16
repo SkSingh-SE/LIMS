@@ -17,7 +17,7 @@ export class MaterialSpecificationListComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
+    { key: 'displayTitle', type: 'string', label: 'Display Title', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
     { key: 'metalClassificationName', type: 'string', label: 'Metal Classification', filter: true },
     { key: 'standardYear', type: 'string', label: 'StandardYear', filter: true },
@@ -25,7 +25,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    aliasName: 'string',
+    displayTitle: 'string',
     metalClassificationName: 'string',
     standardOrganizationName: 'string',
     standardYear: 'string',

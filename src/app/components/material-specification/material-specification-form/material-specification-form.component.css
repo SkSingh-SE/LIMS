@@ -561,3 +561,60 @@
 .spec-row-active td { background: #fff3f0 !important; }
 .spec-row-active td.spec-col-num { border-left: 2.5px solid var(--primary-color) !important; }
 
+/* ── Save Parameters button ────────────────────────────────────────────────── */
+:host .btn-primary-action {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+  font-size: var(--font-xs);
+  padding: 0.15rem 0.6rem;
+  transition: background 0.15s ease;
+}
+:host .btn-primary-action:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* ── Grade tab: missing-params warning icon ─────────────────────────────────── */
+:host .grade-tab-warn {
+  font-size: 0.65rem;
+  color: #f59e0b;
+}
+:host .grade-tab.active .grade-tab-warn {
+  color: #d97706;
+}
+
+/* ── Missing params alert strip inside grade body ───────────────────────────── */
+:host .missing-params-alert {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  font-size: var(--font-xs);
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+:host .missing-params-alert .bi {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* ── Empty state when no grades added ──────────────────────────────────────── */
+:host .grade-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  background: #fafafa;
+}
+:host .grade-empty-state .bi {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #c2c8d0;
+}
+

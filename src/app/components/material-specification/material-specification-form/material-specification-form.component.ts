@@ -149,9 +149,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       // MS-A: seed the create form from a cloned spec (IDs already zeroed, Version blank)
       this.bindSpecificationData(this.cloneData);
       this.MaterialSpecificationForm.markAsDirty();
-    } else {
-      this.addGrade();
     }
+    // No auto-grade on create — user adds grades manually after setting up header parameters
   }
 
   initForm() {
@@ -855,16 +854,75 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     const orgName  = this.selectedStandardOrganization?.name || '';
     const specNo   = this.MaterialSpecificationForm.get('specificationNo')?.value || '';
     const part     = this.MaterialSpecificationForm.get('part')?.value || '';
+    const version  = this.MaterialSpecificationForm.get('version')?.value || '';
 
     // aliasName (backend uniqueness key): "{Org} {SpecNo}" + optional part
     let alias = `${orgName} ${specNo}`.trim();
     if (part) alias += ` ${part}`;
     if (alias) this.MaterialSpecificationForm.patchValue({ aliasName: alias });
 
-    // Display Title: "{Org} {SpecNo} {Part} {Year}"  e.g. "IS 1234 Part-1 2025"
+    // Display Title: "{Org} {SpecNo} {Part} {Year} {Version}"  e.g. "IS 1234 Part-1 2025 v2"
     const year    = this.MaterialSpecificationForm.get('standardYear')?.value || '';
-    const parts   = [orgName, specNo, part, year].filter(v => v.trim() !== '');
-    this.MaterialSpecificationForm.patchValue({ displayTitle: parts.join(' ') });
+    const titleParts = [orgName, specNo, part, year, version].filter(v => v.trim() !== '');
+    this.MaterialSpecificationForm.patchValue({ displayTitle: titleParts.join(' ') });
+  }
+
+  /** Save just the header parameters (partial save — grades optional). Stays on page after save. */
+  saveParameterList() {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.MaterialSpecificationForm);
+    const formValue = this.MaterialSpecificationForm.getRawValue();
+    const formattedData = this.formatedPayload(formValue);
+
+    const isNew = !this.materialSpecificationId;
+
+    if (!isNew) {
+      // Edit mode: update in place
+      this.materialSpecificationService.updateMaterialSpecification(formattedData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message || 'Parameters saved.', 'success');
+          this.MaterialSpecificationForm.markAsPristine();
+        },
+        error: (error) => this.toastService.show(error?.error?.message || 'Save failed.', 'error'),
+      });
+    } else {
+      // Create mode: save for the first time, then switch to edit mode without redirecting
+      this.materialSpecificationService.createMaterialSpecification(formattedData).subscribe({
+        next: (response) => {
+          this.toastService.show(response.message || 'Parameters saved.', 'success');
+          const newId = response.id;
+          if (newId) {
+            this.materialSpecificationId = Number(newId);
+            this.isEditMode = true;
+            this.MaterialSpecificationForm.patchValue({ id: this.materialSpecificationId });
+            // Update URL to edit route without full navigation (keeps form state)
+            this.router.navigate(['/material-specification/edit', this.materialSpecificationId], {
+              replaceUrl: true,
+              state: { mode: 'edit' },
+            });
+          }
+          this.MaterialSpecificationForm.markAsPristine();
+        },
+        error: (error) => this.toastService.show(error?.error?.message || 'Save failed.', 'error'),
+      });
+    }
+  }
+
+  /** Returns how many header parameters of a given tab are missing from a grade's spec lines. */
+  getMissingHeaderParamsCount(gradeIndex: number, tab: 'chemical' | 'mechanical'): number {
+    const headerIds = this.headerParametersByTab(tab).controls
+      .map(c => c.get('parameterID')?.value)
+      .filter(id => id != null && id !== '' && id !== null);
+    if (!headerIds.length) return 0;
+    const gradeLineIds = this.getSpecificationLinesByTab(gradeIndex, tab).controls
+      .map(c => c.get('parameterID')?.value);
+    return headerIds.filter(id => !gradeLineIds.includes(id)).length;
+  }
+
+  /** Returns true if the grade is missing any header parameters (either tab). */
+  hasMissingHeaderParams(gradeIndex: number): boolean {
+    return this.getMissingHeaderParamsCount(gradeIndex, 'chemical') > 0
+        || this.getMissingHeaderParamsCount(gradeIndex, 'mechanical') > 0;
   }
 
   onSubmit() {

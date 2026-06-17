@@ -155,10 +155,16 @@
                 </a>
               </li>
             </ul>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add mb-1"
-              (click)="addHeaderParameter($any(selectedHeaderTab))">
-              <i class="bi bi-plus-circle-dotted"></i> Add Parameter
-            </button>
+            <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2 mb-1">
+              <button type="button" class="btn btn-sm btn-add"
+                (click)="addHeaderParameter($any(selectedHeaderTab))">
+                <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+              </button>
+              <button type="button" class="btn btn-sm btn-primary-action"
+                (click)="saveParameterList()" title="Save specification with current parameter list">
+                <i class="bi bi-floppy"></i> Save Parameters
+              </button>
+            </div>
           </div>
 
           <ng-container *ngFor="let tab of ['chemical', 'mechanical']">
@@ -240,6 +246,8 @@
               [class.active]="selectedGradeIndex === gi" (click)="selectGrade(gi)"
               [title]="grade.get('grade')?.value || 'Grade ' + (gi + 1)">
             <span class="grade-tab-label">{{ grade.get("grade")?.value || "Grade " + (gi + 1) }}</span>
+            <i *ngIf="hasMissingHeaderParams(gi)" class="bi bi-exclamation-triangle-fill grade-tab-warn ms-1"
+               title="Some header parameters are missing in this grade"></i>
             <i *ngIf="!isViewMode && grades.length > 1" class="bi bi-x-lg grade-tab-remove"
                title="Remove grade" (click)="removeGradeTab(gi, $event)"></i>
           </li>
@@ -248,8 +256,30 @@
           </li>
         </ul>
 
+        <!-- Empty state: no grades added yet -->
+        <div *ngIf="grades.length === 0 && !isViewMode" class="grade-empty-state">
+          <i class="bi bi-layers"></i>
+          <div class="fw-medium">No grades added yet</div>
+          <small class="text-muted">Add header parameters above, then click <strong>Add Grade</strong> to begin filling in values.</small>
+        </div>
+
         <div *ngFor="let grade of grades.controls; let gi = index" [formGroupName]="gi">
           <div *ngIf="selectedGradeIndex === gi" class="section-body grade-body">
+            <!-- Missing parameters warning -->
+            <div *ngIf="hasMissingHeaderParams(gi)" class="missing-params-alert mb-2">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <span>
+                This grade is missing
+                <span *ngIf="getMissingHeaderParamsCount(gi, 'chemical') > 0">
+                  <strong>{{ getMissingHeaderParamsCount(gi, 'chemical') }}</strong> Chemical
+                </span>
+                <span *ngIf="getMissingHeaderParamsCount(gi, 'chemical') > 0 && getMissingHeaderParamsCount(gi, 'mechanical') > 0"> and </span>
+                <span *ngIf="getMissingHeaderParamsCount(gi, 'mechanical') > 0">
+                  <strong>{{ getMissingHeaderParamsCount(gi, 'mechanical') }}</strong> General
+                </span>
+                parameter(s) from the header parameter list.
+              </span>
+            </div>
               <div class="row gy-3 mb-2">
                 <div class="col-md-3">
                   <label class="form-label">

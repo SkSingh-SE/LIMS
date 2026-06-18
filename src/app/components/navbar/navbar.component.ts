@@ -60,6 +60,17 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   private resizeObserver: ResizeObserver | null = null;
   private routerSub: any = null;
 
+  // ── Multi-branch (demo, UI-only — localStorage based) ──────
+  branches: { code: string; name: string; location: string }[] = [
+    { code: 'BLR', name: 'Bengaluru Lab', location: 'Karnataka' },
+    { code: 'PUN', name: 'Pune Lab', location: 'Maharashtra' },
+    { code: 'CHN', name: 'Chennai Lab', location: 'Tamil Nadu' },
+    { code: 'DEL', name: 'Delhi NCR Lab', location: 'New Delhi' },
+    { code: 'AMD', name: 'Ahmedabad Lab', location: 'Gujarat' },
+  ];
+  selectedBranch: { code: string; name: string; location: string } =
+    this.branches.find(b => b.code === 'AMD') ?? this.branches[0];
+
   loggedInUserName: string = '';
   loggedInUserRole: string = '';
   loggedInUserInitials: string = '';
@@ -99,6 +110,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngOnInit(): void {
+    this.loadSelectedBranch();
     this.routerSub = this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
         this.closeAllMenus();
@@ -528,6 +540,22 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   menuOpenClose() {
     this.isMenu2Open.set(!this.isMenu2Open());
     setTimeout(() => this.updateNavbarHeight(), 300);
+  }
+
+  // ── Multi-branch handlers (demo, UI-only) ─────────────────
+  private loadSelectedBranch(): void {
+    const code = localStorage.getItem('selectedBranchCode');
+    const match = this.branches.find(b => b.code === code);
+    if (match) {
+      this.selectedBranch = match;
+    }
+  }
+
+  selectBranch(branch: { code: string; name: string; location: string }): void {
+    if (branch.code === this.selectedBranch.code) return;
+    this.selectedBranch = branch;
+    localStorage.setItem('selectedBranchCode', branch.code);
+    this.toastService.show(`Switched to ${branch.name}`, 'success');
   }
 
   openProfile() { this.isProfileOpen.set(true); }

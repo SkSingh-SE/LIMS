@@ -1311,3 +1311,27 @@
     border-color: #fca5a5;
     transform: translateY(-1px);
 }
+
+/* ── Branch Switcher (demo) ───────────────────────────────── */
+.role-branch-sep {
+    opacity: 0.6;
+    margin: 0 2px;
+}
+
+.branch-section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--primary-color, #da261c);
+}
+
+.branch-item-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.branch-item-loc {
+    font-size: 0.68rem;
+    color: #6c757d;
+}

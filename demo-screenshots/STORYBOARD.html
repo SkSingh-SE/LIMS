@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LIMS — Demo Storyboard</title>
+<style>
+  :root { --primary: #da261c; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Poppins', system-ui, sans-serif; background: #eef0f2; margin: 0; color: #222; }
+  header {
+    background: var(--primary); color: #fff; padding: 22px 32px;
+    position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,.2);
+  }
+  header h1 { margin: 0; font-size: 1.3rem; }
+  header p { margin: 4px 0 0; font-size: 0.82rem; opacity: .9; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
+  .scene {
+    background: #fff; border-radius: 12px; margin: 22px 0; overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  .scene-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-left: 5px solid var(--primary); background: #fafbfc;
+  }
+  .scene-num {
+    background: var(--primary); color: #fff; border-radius: 8px;
+    min-width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem;
+  }
+  .scene-title { font-size: 1.05rem; font-weight: 600; }
+  .scene-route { font-size: 0.72rem; color: #6c757d; font-family: monospace; }
+  .scene-time { margin-left: auto; font-size: 0.75rem; color: var(--primary); font-weight: 600; }
+  .vo {
+    margin: 0; padding: 14px 20px; font-size: 0.92rem; line-height: 1.6;
+    background: #fff8f1; border-bottom: 1px solid #f0e0d4;
+  }
+  .vo b { color: var(--primary); }
+  .vo .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: .05em; color: #b07b5a; display: block; margin-bottom: 3px; }
+  .action { margin: 0; padding: 10px 20px; font-size: 0.82rem; color: #444; background: #f6f9fc; }
+  .action .lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: .05em; color: #4a7aa0; display: block; margin-bottom: 3px; }
+  .shots { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 20px; }
+  .shot { flex: 1 1 320px; }
+  .shot img { width: 100%; border: 1px solid #ddd; border-radius: 8px; display: block; }
+  .shot .cap { font-size: 0.72rem; color: #6c757d; margin-top: 5px; text-align: center; }
+  .hl { border: 2px solid var(--primary); border-radius: 12px; }
+  .badge { background: var(--primary); color:#fff; font-size:0.62rem; padding:2px 8px; border-radius:10px; margin-left:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LIMS — Demo Storyboard</h1>
+  <p>Sample lifecycle: Inward → Plan → Review → Preparation (if required) → Testing → Verification → Reporting → Invoicing · with Multi-Branch · Target 6–8 min</p>
+</header>
+<div class="wrap">
+
+  <!-- Scene 1 -->
+  <div class="scene hl">
+    <div class="scene-head">
+      <div class="scene-num">1</div>
+      <div>
+        <div class="scene-title">Dashboard + Multi-Branch <span class="badge">HIGHLIGHT</span></div>
+        <div class="scene-route">/ (root — dashboard)</div>
+      </div>
+      <div class="scene-time">0:25–1:10</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "After logging in, this is the dashboard. Look at the top right — the current branch is shown: <b>Ahmedabad Lab</b>.
+      LIMS is multi-branch — many lab locations on a single platform. You can switch the branch in one click."</p>
+    <p class="action"><span class="lbl">Action</span> Zoom in on the navbar avatar → open the dropdown → choose Pune under "Switch Branch" (toast appears) → switch back to Ahmedabad.</p>
+    <div class="shots">
+      <div class="shot"><img src="01-dashboard.png" /><div class="cap">Dashboard</div></div>
+      <div class="shot"><img src="00a-navbar-branch.png" /><div class="cap">Navbar — Admin · Ahmedabad Lab</div></div>
+      <div class="shot"><img src="00b-branch-switch-dropdown.png" /><div class="cap">Switch Branch dropdown (5 branches)</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 2 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">2</div>
+      <div><div class="scene-title">Sample Inward</div><div class="scene-route">/sample/inward → /sample/inward/create</div></div>
+      <div class="scene-time">1:10–2:30</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "The process begins with Sample Inward. Here we register the customer's sample — case number, customer details,
+      material, and test requirements. The form has two tabs: Customer &amp; Company Info, and Sample Details."</p>
+    <p class="action"><span class="lbl">Action</span> Show the list → "Add Inward" → fill the form (select customer, dispatch modes, contacts, reporting/billing) → Sample Details tab → Save → new case shows "Inward Completed".</p>
+    <div class="shots">
+      <div class="shot"><img src="02-sample-inward.png" /><div class="cap">Inward list</div></div>
+      <div class="shot"><img src="02b-inward-overview.png" /><div class="cap">Inward overview (filled)</div></div>
+      <div class="shot"><img src="02c-inward-sample-details.png" /><div class="cap">Sample Details tab</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 3 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">3</div>
+      <div><div class="scene-title">Plan</div><div class="scene-route">/sample/plan</div></div>
+      <div class="scene-time">2:30–3:20</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "After inward comes the Plan. For each sample we assign tests, set parameters, and map the test method specification. The Plan tab shows the full detail."</p>
+    <p class="action"><span class="lbl">Action</span> Plan list → open a case → "Plan" tab → tests/parameters → save the plan.</p>
+    <div class="shots">
+      <div class="shot"><img src="04-test-planning.png" /><div class="cap">Plan list</div></div>
+      <div class="shot"><img src="04b-plan-form.png" /><div class="cap">Plan form (tabs + data)</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 4 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">4</div>
+      <div><div class="scene-title">Review of Request</div><div class="scene-route">/sample/review</div></div>
+      <div class="scene-time">3:20–4:00</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "Once planned, the request goes for Review — the lab confirms feasibility and capability before work starts. This is a mandatory NABL step."</p>
+    <p class="action"><span class="lbl">Action</span> Review list → open a pending case → accept → status changes.</p>
+    <div class="shots">
+      <div class="shot"><img src="03-review-of-request.png" /><div class="cap">Review list</div></div>
+      <div class="shot"><img src="03b-review-form.png" /><div class="cap">Review form / overview</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 5 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">5</div>
+      <div><div class="scene-title">Sample Preparation (if required)</div><div class="scene-route">/sample/preparation</div></div>
+      <div class="scene-time">4:00–4:45</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "If the sample needs preparation — cutting and machining — it is done here. This step is optional, only when required. The system tracks the cutting challan and charges, with full traceability."</p>
+    <p class="action"><span class="lbl">Action</span> Preparation list → open a job → cutting/machining details → complete.</p>
+    <div class="shots">
+      <div class="shot"><img src="05-sample-preparation.png" /><div class="cap">Preparation list</div></div>
+      <div class="shot"><img src="05b-preparation-form.png" /><div class="cap">Preparation form</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 6 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">6</div>
+      <div><div class="scene-title">Test Execution</div><div class="scene-route">/testing/dashboard</div></div>
+      <div class="scene-time">4:45–5:40</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "Now the actual testing. The technician enters results — chemical composition, mechanical properties. The system auto-applies formulas and acceptance limits."</p>
+    <p class="action"><span class="lbl">Action</span> Test dashboard → open a case → enter parameter values → calculated result / pass-fail (with NABL scope &amp; pricing) → save.</p>
+    <div class="shots">
+      <div class="shot"><img src="06-test-execution.png" /><div class="cap">Test execution list / dashboard</div></div>
+      <div class="shot"><img src="06b-test-results.png" /><div class="cap">Result entry — parameters, NABL scope, pricing</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 7 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">7</div>
+      <div><div class="scene-title">Test Verification</div><div class="scene-route">/testing/verification</div></div>
+      <div class="scene-time">5:40–6:10</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "After the results comes verification — a senior reviewer technically verifies them. This is the critical gate for quality control and NABL compliance."</p>
+    <p class="action"><span class="lbl">Action</span> Verification screen → verify/approve → status becomes verified.</p>
+    <div class="shots">
+      <div class="shot"><img src="07-verification.png" /><div class="cap">Verification</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 8 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">8</div>
+      <div><div class="scene-title">Reporting</div><div class="scene-route">/reporting/dashboard</div></div>
+      <div class="scene-time">6:10–7:00</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "The verified results produce a NABL-format test report — with ULR number and signatures. Generate → review → approve → download as PDF."</p>
+    <p class="action"><span class="lbl">Action</span> Reporting dashboard → generate report → NABL preview (header/logo/ULR) → verify flow.</p>
+    <div class="shots">
+      <div class="shot"><img src="08-reporting.png" /><div class="cap">Reporting</div></div>
+    </div>
+  </div>
+
+  <!-- Scene 9 -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">9</div>
+      <div><div class="scene-title">Invoicing / Accounts</div><div class="scene-route">/accounts/cases → /accounts/dashboard</div></div>
+      <div class="scene-time">7:00–7:40</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "And finally, billing. A completed case generates an invoice — tax or proforma, with GST. The Accounts module also handles payments, ledger, aging, and outstanding."</p>
+    <p class="action"><span class="lbl">Action</span> Accounts cases → billable case → generate invoice (GST breakup) → accounts dashboard (outstanding/aging).</p>
+    <div class="shots">
+      <div class="shot"><img src="09-accounts-cases.png" /><div class="cap">Accounts — cases</div></div>
+      <div class="shot"><img src="09b-case-detail.png" /><div class="cap">Case detail / invoice</div></div>
+      <div class="shot"><img src="10-accounts-dashboard.png" /><div class="cap">Accounts dashboard</div></div>
+    </div>
+  </div>
+
+  <!-- Bonus masters -->
+  <div class="scene">
+    <div class="scene-head">
+      <div class="scene-num">+</div>
+      <div><div class="scene-title">Master Data (optional B-roll)</div><div class="scene-route">/customer/create · /invoice-case/create · /test/create · /material-specification/create</div></div>
+      <div class="scene-time">flexible</div>
+    </div>
+    <p class="vo"><span class="lbl">Voiceover</span>
+      "Behind the system is rich master data — customers, lab tests, material specifications, invoice configuration — all fully configurable."</p>
+    <div class="shots">
+      <div class="shot"><img src="11-customer-form.png" /><div class="cap">Customer form</div></div>
+      <div class="shot"><img src="12-invoice-case-form.png" /><div class="cap">Invoice case form</div></div>
+      <div class="shot"><img src="13-lab-test-form.png" /><div class="cap">Lab test form</div></div>
+      <div class="shot"><img src="14-material-spec-form.png" /><div class="cap">Material specification form</div></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

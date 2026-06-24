@@ -31,9 +31,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   let token = authService.getUserData()?.token; // Retrieve token from service
   const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
-  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/DepartmentMaster/dropdown', '/api/DesignationMaster/dropdown', '/api/EmployeeMaster/dropdown', '/api/GstValidator'];
+  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/GstValidator', '/api/ParameterUnitMaster/equivalents'];
 
-  const isDropdownCall = req.url.includes('/dropdown');
+  const isDropdownCall = req.url.includes('dropdown');
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
   const getErrorMessage = (error: HttpErrorResponse): string => {

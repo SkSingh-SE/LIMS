@@ -168,26 +168,23 @@
                   'opacity-75': isVersionReadOnly(i)
                 }"
               >
-                <!-- Version Header: Status Badge + Default toggle + Actions -->
+                <!-- Version Header: Status Badge + Default star + Actions -->
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge" [ngClass]="getStatusBadgeClass(i)">
                       {{ getStatusLabel(i) }}
                     </span>
-                    <div class="form-switch switch-danger" *ngIf="!isVersionReadOnly(i)">
-                      <input
-                        class="form-check-input mt-1"
-                        type="checkbox"
-                        role="switch"
-                        [id]="'default-version-' + i"
-                        [checked]="isDefaultVersion(i)"
-                        (change)="setDefaultVersion(i)"
-                        [disabled]="isViewMode || isDefaultVersion(i) || testSpecificationForm.get('isDisabled')?.value"
-                      />
-                      <label class="form-check-label form-label line-height-1 ms-2 mb-0" [for]="'default-version-' + i" role="button">Default</label>
-                    </div>
-                    <!-- Readonly versions can't toggle the radio, so show a badge instead -->
-                    <span *ngIf="isVersionReadOnly(i) && isDefaultVersion(i)" class="badge bg-primary"><i class="bi bi-star-fill"></i> Default</span>
+                    <button
+                      *ngIf="!isVersionReadOnly(i)"
+                      type="button"
+                      class="btn btn-sm p-0 border-0 bg-transparent"
+                      (click)="setDefaultVersion(i)"
+                      [disabled]="isViewMode || isDefaultVersion(i) || testSpecificationForm.get('isDisabled')?.value"
+                      title="Set as default version"
+                    >
+                      <i class="bi" [ngClass]="isDefaultVersion(i) ? 'bi-star-fill text-warning' : 'bi-star text-muted'"></i>
+                    </button>
+                    <i *ngIf="isVersionReadOnly(i) && isDefaultVersion(i)" class="bi bi-star-fill text-warning" title="Default version"></i>
                   </div>
                   <div class="d-flex gap-2">
                     <button
@@ -195,9 +192,27 @@
                       type="button"
                       class="btn btn-success btn-sm"
                       (click)="onActivateVersion(i)"
-                      title="Set as current active version"
+                      title="Set as active version"
                     >
                       <i class="bi bi-check-circle"></i> Activate
+                    </button>
+                    <button
+                      *ngIf="!isViewMode && group.get('status')?.value === VersionStatus.Withdrawn && !testSpecificationForm.get('isDisabled')?.value"
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      (click)="onActivateVersion(i)"
+                      title="Reactivate version"
+                    >
+                      <i class="bi bi-arrow-counterclockwise"></i> Reactivate
+                    </button>
+                    <button
+                      *ngIf="!isViewMode && (group.get('status')?.value === VersionStatus.Active || group.get('status')?.value === VersionStatus.Superseded) && !testSpecificationForm.get('isDisabled')?.value"
+                      type="button"
+                      class="btn btn-warning btn-sm"
+                      (click)="onWithdrawVersion(i)"
+                      title="Withdraw this version"
+                    >
+                      <i class="bi bi-x-circle"></i> Withdraw
                     </button>
                     <button
                       *ngIf="!isViewMode && !isVersionReadOnly(i) && versions.controls.length > 1 && !testSpecificationForm.get('isDisabled')?.value"
@@ -215,12 +230,7 @@
                   <div class="col-md-3">
                     <div class="d-flex flex-row gap-2">
                       <div *ngIf="versions.controls.length > 1 && !isVersionReadOnly(i)" class="d-flex flex-column align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-danger" [disabled]="i === 0" (click)="moveVersionUp(i)">
-                          <i class="bi bi-arrow-up-circle-fill"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-danger" [disabled]="i === versions.length - 1" (click)="moveVersionDown(i)">
-                          <i class="bi bi-arrow-down-circle-fill"></i>
-                        </button>
+                        <!-- Move up/down removed: UI-only reorder, doesn't persist to backend -->
                       </div>
 
                       <div class="w-100">

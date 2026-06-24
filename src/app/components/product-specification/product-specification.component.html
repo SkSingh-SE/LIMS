@@ -237,9 +237,15 @@
                                 </app-searchable-dropdown-modal>
                             </div>
                             <div *ngIf="specVersions.length > 0">
-                                <label class="form-label">Spec Version</label>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <label class="form-label mb-0">Spec Version</label>
+                                    <div *ngIf="!isViewMode" class="form-check form-switch form-check-inline mb-0">
+                                        <input class="form-check-input" type="checkbox" id="showAllVersions" [checked]="showAllVersions" (change)="toggleShowAllVersions()">
+                                        <label class="form-check-label" for="showAllVersions">Show All</label>
+                                    </div>
+                                </div>
                                 <select class="form-select" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
-                                    <option [ngValue]="null">-- Auto (Active) --</option>
+                                    <option [ngValue]="null">-- Default --</option>
                                     <option *ngFor="let v of specVersions" [ngValue]="v.id">{{ v.name }}</option>
                                 </select>
                             </div>

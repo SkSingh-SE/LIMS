@@ -188,6 +188,7 @@
                       <td>
                         <app-searchable-dropdown [smallInput]="true"
                           class="w-100"
+                          [ngClass]="{'border border-danger rounded': hp.get('parameterID')?.touched && hp.get('parameterID')?.hasError('required')}"
                           [placeholder]="'Search Parameter'"
                           [labelName]="'Parameter'"
                           [fetchDataFn]="tab === 'chemical' ? getChemicalParameter : getMechanicalParameter"
@@ -196,6 +197,7 @@
                           [isDisabled]="isViewMode"
                           [selectedItem]="hp.get('parameterID')?.value"
                         ></app-searchable-dropdown>
+                        <small *ngIf="hp.get('parameterID')?.touched && hp.get('parameterID')?.hasError('required')" class="text-danger">Parameter is required.</small>
                       </td>
                       <td>
                         <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID">
@@ -1345,7 +1347,7 @@
   <div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
     <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
       <div class="custom-modal-header">
-        <h6 class="mb-0">Import Preview — review before adding</h6>
+        <h6 class="mb-0">Import Preview — Review before adding</h6>
         <button type="button" class="btn-close" (click)="cancelImport()"></button>
       </div>
       <div class="custom-modal-body">
@@ -1353,7 +1355,7 @@
           <span class="badge bg-success">{{ importOkCount }} OK</span>
           <span class="badge bg-warning text-dark">{{ importWarnCount }} Warning</span>
           <span class="badge bg-danger">{{ importErrorCount }} Error</span>
-          <span class="text-muted">Error rows ko import nahi kiya jayega.</span>
+          <span class="text-muted">Error rows will not be imported.</span>
         </div>
         <div class="table-responsive import-preview-table">
           <table class="table table-sm table-bordered mb-0">

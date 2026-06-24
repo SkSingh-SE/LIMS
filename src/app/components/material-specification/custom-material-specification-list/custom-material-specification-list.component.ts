@@ -19,12 +19,14 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
  columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
-    { key: 'grade', type: 'string', label: 'Grade', filter: true },
+    { key: 'specificationNo', type: 'string', label: 'Specification No', filter: true },
+    { key: 'version', type: 'string', label: 'Version', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     aliasName: 'string',
-    grade: 'string',
+    specificationNo: 'string',
+    version: 'string',
     modifiedOn: 'date',
   };
 

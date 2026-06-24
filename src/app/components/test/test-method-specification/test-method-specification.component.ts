@@ -335,7 +335,7 @@ export class TestMethodSpecificationComponent implements OnInit {
               standardFile: version.standardFile,
               standardFilePath: version.standardFilePath,
               uploadReferenceID: version.uploadReferenceID,
-              isDefault: response.defaultVersionID != null && version.id === response.defaultVersionID,
+              isDefault: !!version.isDefault,
             });
 
             // Bind this version's parameters
@@ -361,11 +361,11 @@ export class TestMethodSpecificationComponent implements OnInit {
           });
 
           // Default-version sync on load:
-          // - prefer the saved default IF it's a non-readonly (Active/Draft) version,
+          // - prefer the saved default IF it's a non-readonly (Active/Draft/Withdrawn) version,
           // - otherwise fall back to the Active version, else the first.
           if (this.versions.length > 0) {
             const savedDefaultIdx = this.versions.controls.findIndex(
-              (g) => g.get('isDefault')?.value && !(g.get('status')?.value === VersionStatus.Superseded || g.get('status')?.value === VersionStatus.Withdrawn),
+              (g) => g.get('isDefault')?.value && g.get('status')?.value !== VersionStatus.Superseded,
             );
             if (savedDefaultIdx < 0) {
               const activeIdx = this.versions.controls.findIndex((g) => g.get('status')?.value === VersionStatus.Active);
@@ -373,7 +373,7 @@ export class TestMethodSpecificationComponent implements OnInit {
             }
           }
 
-          // Disable read-only versions (Superseded/Withdrawn)
+          // Disable read-only versions (Superseded)
           this.applyVersionDisabledState();
 
           if (this.isViewMode) {
@@ -489,7 +489,7 @@ export class TestMethodSpecificationComponent implements OnInit {
   applyVersionDisabledState() {
     this.versions.controls.forEach((group, idx) => {
       const status = group.get('status')?.value;
-      if (status === VersionStatus.Superseded || status === VersionStatus.Withdrawn) {
+      if (status === VersionStatus.Superseded) {
         group.disable({ emitEvent: false });
         // Keep status readable for UI badges
         group.get('status')?.enable({ emitEvent: false });
@@ -519,16 +519,41 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.buildDisplayTitle();
   }
 
+  onWithdrawVersion(index: number) {
+    const version = this.versions.at(index);
+    const reason = prompt('Reason for withdrawal:');
+    if (!reason) return;
+
+    // If this is an existing version (has ID), call the API.
+    const versionId = version.get('id')?.value;
+    if (versionId && this.testMethodSpecificationID) {
+      this.testMethodService.withdrawVersion(this.testMethodSpecificationID, versionId, reason).subscribe({
+        next: () => {
+          version.get('status')?.setValue(VersionStatus.Withdrawn, { emitEvent: false });
+          version.get('changeReason')?.setValue(reason, { emitEvent: false });
+          this.applyVersionDisabledState();
+          this.toastService.show('Version withdrawn successfully.', 'success');
+        },
+        error: (err) => this.toastService.show(err?.error?.message || 'Failed to withdraw version.', 'error'),
+      });
+    } else {
+      // New/unsaved version — just update locally.
+      version.get('status')?.setValue(VersionStatus.Withdrawn, { emitEvent: false });
+      version.get('changeReason')?.setValue(reason, { emitEvent: false });
+      this.applyVersionDisabledState();
+    }
+  }
+
   isVersionReadOnly(index: number): boolean {
     const status = this.versions.at(index).get('status')?.value;
-    return status === VersionStatus.Superseded || status === VersionStatus.Withdrawn;
+    return status === VersionStatus.Superseded;
   }
 
   getStatusLabel(index: number): string {
     const status = this.versions.at(index).get('status')?.value;
     switch (status) {
       case VersionStatus.Active:
-        return 'CURRENT';
+        return 'ACTIVE';
       case VersionStatus.Draft:
         return 'DRAFT';
       case VersionStatus.Superseded:
@@ -635,19 +660,21 @@ export class TestMethodSpecificationComponent implements OnInit {
     }
   }
 
-  moveVersionUp(index: number): void {
-    if (index === 0) return;
-    const versions = this.versions;
-    const current = versions.at(index);
-    versions.removeAt(index);
-    versions.insert(index - 1, current);
-  }
+  // Move up/down removed: UI-only reorder, doesn't persist to backend.
+  // moveVersionUp(index: number): void {
+  //   if (index === 0) return;
+  //   const versions = this.versions;
+  //   const current = versions.at(index);
+  //   versions.removeAt(index);
+  //   versions.insert(index - 1, current);
+  // }
 
-  moveVersionDown(index: number): void {
-    if (index >= this.versions.length - 1) return;
-    const versions = this.versions;
-    const current = versions.at(index);
-    versions.removeAt(index);
-    versions.insert(index + 1, current);
-  }
+  // Move up/down removed: UI-only reorder, doesn't persist to backend.
+  // moveVersionDown(index: number): void {
+  //   if (index >= this.versions.length - 1) return;
+  //   const versions = this.versions;
+  //   const current = versions.at(index);
+  //   versions.removeAt(index);
+  //   versions.insert(index + 1, current);
+  // }
 }

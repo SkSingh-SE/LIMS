@@ -35,5 +35,10 @@ export class ParameterUnitService {
     getParameterUnitDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
-  
+
+    // Equivalent units for a parameter's default unit (base + SimilarUnit1-7 matches).
+    getEquivalentUnits(unitId: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/equivalents/${unitId}`);
+    }
+
 }

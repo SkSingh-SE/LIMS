@@ -332,7 +332,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           // 1. Set global permissions
           const perms = this.collectPermissionsFromApi(res || []);
           this.permissionService.setPermissions(perms);
-          this.permissionService.setAdmin(true); // TODO: set from user role, skip permission check for now
+          const ud = this.authService.getUserData();
+          const isAdmin = ud?.isAdmin === true || (ud?.role ?? '').toLowerCase() === 'admin';
+          this.permissionService.setAdmin(isAdmin);
 
           // 2. Filter hardcoded menu by API response
 

@@ -72,3 +72,17 @@
   .wide-input {
     max-width: 170px;
   }
+
+  .fieldset-block {
+    border: 1px solid #e3e6ea;
+    border-left: 3px solid var(--primary-color);
+    background-color: #fafbfc;
+    border-radius: 4px;
+  }
+  .fieldset-legend {
+    font-size: 0.85rem;
+    font-weight: 500;
+    width: auto;
+    padding: 0 6px;
+    margin-bottom: 0;
+  }

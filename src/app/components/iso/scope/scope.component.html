@@ -105,9 +105,15 @@
                   <app-field-error [control]="spec.get('testMethodSpecificationID')" label="Test Method Specification" [submitted]="submitted"/>
                 </div>
                 <div class="col-md-3" *ngIf="specVersionsMap.get(i)?.length">
-                  <label class="form-label">Spec Version</label>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <label class="form-label mb-0">Spec Version</label>
+                    <div *ngIf="!isViewMode" class="form-check form-switch form-check-inline mb-0">
+                      <input class="form-check-input" type="checkbox" [id]="'showAllVersions'+i" [checked]="showAllVersionsMap.get(i)" (change)="toggleShowAllVersions(i)">
+                      <label class="form-check-label" [for]="'showAllVersions'+i">Show All</label>
+                    </div>
+                  </div>
                   <select class="form-select" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
-                    <option [ngValue]="null">-- Auto (Active) --</option>
+                    <option [ngValue]="null">-- Default --</option>
                     <option *ngFor="let v of specVersionsMap.get(i)" [ngValue]="v.id">{{ v.name }}</option>
                   </select>
                 </div>

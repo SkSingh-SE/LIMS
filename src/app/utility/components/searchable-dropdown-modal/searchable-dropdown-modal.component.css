@@ -9,12 +9,7 @@
 }
 
 /* ─── Label ─── */
-.form-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #495057;
-  margin-bottom: 0.5rem;
-}
+
 
 /* ─── Input Group (unified container) ─── */
 .input-group {

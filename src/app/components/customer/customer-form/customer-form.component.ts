@@ -54,6 +54,16 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   defaultCurrency: any = null;
   gstFetching = false;
   gstStateName = '';
+
+  // ── Level 2 change request state ─────────────────────────────────────────────
+  pendingChange: any = null;
+  changeHistory: any[] = [];
+  showHistory = false;
+
+  private readonly GROUP_B_FIELDS = [
+    'creditLimitAmount', 'creditLimitTime', 'constantDiscount', 'constantDiscountPercentage',
+    'weeklyBillingCustomer', 'monthlyBillingCustomer', 'billingEvery', 'billingEveryDays',
+  ];
   constructor(
     private fb: FormBuilder,
     private areaService: AreaService,
@@ -947,6 +957,19 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
         console.error('Error fetching customer data:', error);
       }
     });
+
+    // Load pending change request and history
+    this.customerService.getPendingChange(this.customerId).subscribe({
+      next: r => {
+        this.pendingChange = r ?? null;
+        if (this.pendingChange) this.lockGroupBFields();
+      },
+      error: () => { this.pendingChange = null; }
+    });
+    this.customerService.getChangeRequests(this.customerId).subscribe({
+      next: r => { this.changeHistory = r ?? []; },
+      error: () => { this.changeHistory = []; }
+    });
   }
   private applyConditionalValidators(data: any): void {
     // Relationship Credit Customer — credit limit fields required
@@ -1002,6 +1025,54 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       }
     });
   }
+  // ── Level 2 helpers ──────────────────────────────────────────────────────────
+
+  private lockGroupBFields(): void {
+    if (this.isViewMode) return;
+    this.GROUP_B_FIELDS.forEach(f => this.customerForm.get(f)?.disable());
+  }
+
+  hasPendingChange(): boolean {
+    return !!this.pendingChange;
+  }
+
+  getPendingNewValue(field: string): any {
+    return this.pendingChange?.newValues?.[field];
+  }
+
+  getChangedFields(req: any): { label: string; oldValue: any; newValue: any }[] {
+    const labels: Record<string, string> = {
+      customerType: 'Customer Type',
+      creditLimitAmount: 'Credit Limit Amount',
+      creditLimitTime: 'Credit Limit (Days)',
+      constantDiscount: 'Constant Discount',
+      constantDiscountPercentage: 'Discount %',
+      weeklyBillingCustomer: 'Weekly Billing',
+      monthlyBillingCustomer: 'Monthly Billing',
+      billingEvery: 'Billing Days',
+      billingEveryDays: 'Billing Interval (Days)',
+    };
+    const result: { label: string; oldValue: any; newValue: any }[] = [];
+    for (const key of Object.keys(labels)) {
+      const oldVal = req.oldValues?.[key];
+      const newVal = req.newValues?.[key];
+      if (oldVal !== newVal && (oldVal !== null || newVal !== null)) {
+        result.push({ label: labels[key], oldValue: oldVal ?? '—', newValue: newVal ?? '—' });
+      }
+    }
+    return result;
+  }
+
+  getRequestStatusClass(status: string): string {
+    switch (status) {
+      case 'Approved':   return 'bg-success';
+      case 'Rejected':   return 'bg-danger';
+      case 'Pending':    return 'bg-warning text-dark';
+      case 'Superseded': return 'bg-secondary';
+      default:           return 'bg-secondary';
+    }
+  }
+
   verifyCustomer(event: Event): void {
     const checkbox = event.target as HTMLInputElement;
     var status = false;

@@ -116,6 +116,7 @@ export function getAllMenuItems(): MenuItem[] {
             // { id: 43, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 500, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
             // { id: 46, title: 'Machining Charges', route: '/sample/machining', parentMenuID: 500, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() },
             { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
+            { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         }
       ]

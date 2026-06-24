@@ -139,7 +139,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-2">
                                 <label class="form-label">Unit Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" formControlName="name"
+                                <input type="text" class="form-control form-control-sm" formControlName="name"
                                     placeholder="e.g. MPa, %, J, HRC, mm" maxlength="100"
                                     [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                                     [attr.disabled]="isViewMode ? true : null" />
@@ -147,7 +147,7 @@
                             </div>
                             <div class="col-md-6 mb-2">
                                 <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" formControlName="conversaionFactor"
+                                <input type="text" class="form-control form-control-sm" formControlName="conversaionFactor"
                                     placeholder="e.g. 1 (base), 0.001, 10000"
                                     [attr.disabled]="isViewMode ? true : null" />
                                 <small class="text-muted">Factor to convert to SI base unit</small>
@@ -155,15 +155,14 @@
                         </div>
                     </div>
 
-                    <!-- Equivalent Units Section -->
+                    <!-- Equivalent Units Section (normalized child grid — unlimited) -->
                     <div class="border rounded-3 p-3 mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div>
                                 <i class="bi bi-arrow-left-right text-success me-2"></i>
                                 <span class="fw-semibold text-dark">Equivalent Units</span>
                             </div>
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-success btn-sm"
-                                (click)="addSimilarUnit()" [disabled]="similarUnitCount >= 7">
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-outline-success btn-sm" (click)="addEquivalent()">
                                 <i class="bi bi-plus-lg me-1"></i> Add Unit
                             </button>
                         </div>
@@ -171,83 +170,40 @@
                             <span class="fw-medium">Formula: Base Value × Factor = Equivalent Value</span>
                         </small>
 
-                        <div *ngIf="similarUnitCount >= 1" class="row align-items-end mb-2">
-                            <div class="col-md-5">
-                                <label class="form-label">Equivalent Unit</label>
-                                <input type="text" class="form-control" formControlName="similarUnit1" placeholder="e.g. N/mm², ksi" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Conversion Factor</label>
-                                <input type="number" class="form-control" formControlName="conversionFactor1" placeholder="e.g. 1, 0.145" step="any" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-3 d-flex align-items-center gap-2">
-                                <div *ngIf="parameterUnitForm.get('similarUnit1')?.value && parameterUnitForm.get('conversionFactor1')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
-                                    <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ parameterUnitForm.get('conversionFactor1')?.value }} {{ parameterUnitForm.get('similarUnit1')?.value }}</small>
+                        <div formArrayName="equivalents">
+                            <div *ngFor="let eq of equivalents.controls; let i = index" [formGroupName]="i" class="row align-items-start mb-2">
+                                <div class="col-md-5">
+                                    <label class="form-label">Equivalent Unit</label>
+                                    <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g. N/mm², ksi" maxlength="50"
+                                        [ngClass]="{ 'is-invalid': eq.get('name')?.touched && eq.get('name')?.invalid }" />
+                                    <div *ngIf="eq.get('name')?.touched && eq.get('name')?.invalid">
+                                        <span *ngIf="eq.get('name')?.hasError('required') || eq.get('name')?.hasError('whitespace')" class="text-danger text-sm">Unit name is required.</span>
+                                    </div>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(1)" title="Remove"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </div>
-
-                        <div *ngIf="similarUnitCount >= 2" class="row align-items-end mb-2">
-                            <div class="col-md-5">
-                                <label class="form-label">Equivalent Unit</label>
-                                <input type="text" class="form-control" formControlName="similarUnit2" placeholder="e.g. kg/cm²" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Conversion Factor</label>
-                                <input type="number" class="form-control" formControlName="conversionFactor2" placeholder="e.g. 10.197" step="any" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-3 d-flex align-items-center gap-2">
-                                <div *ngIf="parameterUnitForm.get('similarUnit2')?.value && parameterUnitForm.get('conversionFactor2')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
-                                    <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ parameterUnitForm.get('conversionFactor2')?.value }} {{ parameterUnitForm.get('similarUnit2')?.value }}</small>
+                                <div class="col-md-4">
+                                    <label class="form-label">Conversion Factor</label>
+                                    <input type="number" class="form-control form-control-sm" formControlName="conversionFactor" placeholder="e.g. 1, 0.145" step="any"
+                                        [ngClass]="{ 'is-invalid': eq.get('conversionFactor')?.touched && eq.get('conversionFactor')?.invalid }" />
+                                    <div *ngIf="eq.get('conversionFactor')?.touched && eq.get('conversionFactor')?.invalid">
+                                        <span *ngIf="eq.get('conversionFactor')?.hasError('min')" class="text-danger text-sm">Must be greater than 0.</span>
+                                    </div>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(2)" title="Remove"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </div>
-
-                        <div *ngIf="similarUnitCount >= 3" class="row align-items-end mb-2">
-                            <div class="col-md-5">
-                                <label class="form-label">Equivalent Unit</label>
-                                <input type="text" class="form-control" formControlName="similarUnit3" placeholder="e.g. bar" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Conversion Factor</label>
-                                <input type="number" class="form-control" formControlName="conversionFactor3" placeholder="e.g. 0.01" step="any" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-3 d-flex align-items-center gap-2">
-                                <div *ngIf="parameterUnitForm.get('similarUnit3')?.value && parameterUnitForm.get('conversionFactor3')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
-                                    <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ parameterUnitForm.get('conversionFactor3')?.value }} {{ parameterUnitForm.get('similarUnit3')?.value }}</small>
+                                <div class="col-md-3 d-flex align-items-center gap-2" style="margin-top: 1.7rem;">
+                                    <div *ngIf="eq.get('name')?.value && eq.get('conversionFactor')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
+                                        <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ eq.get('conversionFactor')?.value }} {{ eq.get('name')?.value }}</small>
+                                    </div>
+                                    <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeEquivalent(i)" title="Remove"><i class="bi bi-trash"></i></button>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(3)" title="Remove"><i class="bi bi-trash"></i></button>
                             </div>
-                        </div>
 
-                        <div *ngFor="let idx of [4,5,6,7]">
-                          <div *ngIf="similarUnitCount >= idx" class="row align-items-end mb-2">
-                            <div class="col-md-5">
-                                <label class="form-label">Equivalent Unit {{ idx }}</label>
-                                <input type="text" class="form-control" [formControlName]="'similarUnit' + idx" [placeholder]="'e.g. Unit ' + idx" [attr.disabled]="isViewMode ? true : null" />
+                            <div *ngIf="equivalents.length === 0" class="text-center text-muted py-2">
+                                <small>No equivalent units defined. Click "Add Unit" to add one.</small>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Conversion Factor</label>
-                                <input type="number" class="form-control" [formControlName]="'conversionFactor' + idx" placeholder="e.g. 1.0" step="any" [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-3 d-flex align-items-center gap-2">
-                                <div *ngIf="parameterUnitForm.get('similarUnit' + idx)?.value && parameterUnitForm.get('conversionFactor' + idx)?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
-                                    <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ parameterUnitForm.get('conversionFactor' + idx)?.value }} {{ parameterUnitForm.get('similarUnit' + idx)?.value }}</small>
-                                </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-danger btn-sm" (click)="removeSimilarUnit(idx)" title="Remove"><i class="bi bi-trash"></i></button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div *ngIf="similarUnitCount === 0" class="text-center text-muted py-2">
-                            <small>No equivalent units defined. Click "Add Unit" to add one.</small>
                         </div>
                     </div>
 
                     <!-- Live Conversion Calculator -->
-                    <div *ngIf="similarUnitCount > 0 && !isViewMode" class="border rounded-3 p-3 bg-light">
+                    <div *ngIf="equivalents.length > 0 && !isViewMode" class="border rounded-3 p-3 bg-light">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-calculator text-info me-2"></i>
                             <span class="fw-semibold text-dark">Quick Conversion Calculator</span>
@@ -255,22 +211,16 @@
                         <div class="row align-items-end">
                             <div class="col-md-4">
                                 <label class="form-label">Value in {{ parameterUnitForm.get('name')?.value || 'base unit' }}</label>
-                                <input type="number" class="form-control" [(ngModel)]="testValue" [ngModelOptions]="{standalone: true}" placeholder="Enter value" step="any" (input)="calculateConversions()" />
+                                <input type="number" class="form-control form-control-sm" [(ngModel)]="testValue" [ngModelOptions]="{standalone: true}" placeholder="Enter value" step="any" />
                             </div>
                             <div class="col-md-8">
                                 <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <div *ngIf="parameterUnitForm.get('similarUnit1')?.value && parameterUnitForm.get('conversionFactor1')?.value" class="border rounded px-3 py-2 bg-white">
-                                        <small class="text-muted d-block">{{ parameterUnitForm.get('similarUnit1')?.value }}</small>
-                                        <span class="fw-semibold text-primary">{{ getConvertedValue(1) }}</span>
-                                    </div>
-                                    <div *ngIf="parameterUnitForm.get('similarUnit2')?.value && parameterUnitForm.get('conversionFactor2')?.value" class="border rounded px-3 py-2 bg-white">
-                                        <small class="text-muted d-block">{{ parameterUnitForm.get('similarUnit2')?.value }}</small>
-                                        <span class="fw-semibold text-primary">{{ getConvertedValue(2) }}</span>
-                                    </div>
-                                    <div *ngIf="parameterUnitForm.get('similarUnit3')?.value && parameterUnitForm.get('conversionFactor3')?.value" class="border rounded px-3 py-2 bg-white">
-                                        <small class="text-muted d-block">{{ parameterUnitForm.get('similarUnit3')?.value }}</small>
-                                        <span class="fw-semibold text-primary">{{ getConvertedValue(3) }}</span>
-                                    </div>
+                                    <ng-container *ngFor="let eq of equivalents.controls; let i = index">
+                                        <div *ngIf="eq.get('name')?.value && eq.get('conversionFactor')?.value" class="border rounded px-3 py-2 bg-white">
+                                            <small class="text-muted d-block">{{ eq.get('name')?.value }}</small>
+                                            <span class="fw-semibold text-primary">{{ getConvertedValue(i) }}</span>
+                                        </div>
+                                    </ng-container>
                                 </div>
                             </div>
                         </div>

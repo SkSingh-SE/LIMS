@@ -24,6 +24,11 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
+  // MS-A: detached deep-copy of a spec (IDs=0, Version cleared) to seed a new-version create form.
+  getCloneTemplate(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/clone-template/${id}`);
+  }
+
   createMaterialSpecification(payload: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/create`, payload);
   }

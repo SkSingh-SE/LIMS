@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -9,6 +9,7 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { ParameterService } from '../../../services/parameter.service';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { TPIService } from '../../../services/tpi.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
@@ -16,12 +17,13 @@ import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-review-of-request-form',
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent, SearchableDropdownComponent]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
@@ -39,6 +41,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
   metalClassificationMap: { [id: string]: string } = {};
   productConditionMap: { [id: string]: string } = {};
   parameterMap: { [id: string]: string } = {};
+  tpiAgencyMap: { [id: string]: string } = {};
 
   // Filtered test methods and standards for dependent dropdowns
   filteredTestMethods: { [key: string]: any[] } = {};
@@ -47,6 +50,9 @@ export class ReviewOfRequestFormComponent implements OnInit {
   actions: any[] = [];
   selectedAction: any = null;
   showReviewButton = signal(true);
+
+  prepForms: { [sampleId: number]: FormGroup } = {};
+  openPrepSections: { [sampleId: number]: boolean } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -60,7 +66,8 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private router: Router,
     private workflowService: WorkflowService,
     private toast: ToastService,
-    private productConditionService: ProductConditionService
+    private productConditionService: ProductConditionService,
+    private tpiService: TPIService
   ) { }
 
   ngOnInit(): void {
@@ -98,7 +105,15 @@ export class ReviewOfRequestFormComponent implements OnInit {
       this.parameterMap = {};
       (list || []).forEach((item: any) => this.parameterMap[item.id] = item.name);
     });
+    this.tpiService.getTPIDropdown('', 0, 1000).subscribe(list => {
+      this.tpiAgencyMap = {};
+      (list || []).forEach((item: any) => this.tpiAgencyMap[item.id] = item.name);
+    });
   }
+
+  getTPIAgencies = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.tpiService.getTPIDropdown(searchTerm, pageNumber, pageSize);
+  };
 
 
   fetchSampleInwardDetails(inwardId: number): void {
@@ -145,6 +160,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                     methods: (gt.methods || []).map((m: any) => ({
                       testMethodID: m.testMethodID,
                       standardID: m.standardID,
+                      standardName: m.standardName,
                       quantity: m.quantity,
                       reportNo: m.reportNo,
                       ulrNo: m.ulrNo,
@@ -174,6 +190,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 }));
 
               return {
+                id: s.id,
                 sampleNo: s.sampleNo,
                 details: s.details,
                 metalClassificationID: s.metalClassificationID,
@@ -189,6 +206,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 otherPreparation: s.otherPreparation ?? false,
                 otherPreparationCharge: s.otherPreparationCharge ?? 0,
                 tpiRequired: s.tpiRequired ?? false,
+                tpiAgencyID: s.tpiAgencyID ?? null,
                 testInstructions: s.testInstructions ?? '',
                 fileName: s.fileName ?? '',
                 sampleFilePath: s.sampleFilePath ?? '',
@@ -197,6 +215,25 @@ export class ReviewOfRequestFormComponent implements OnInit {
               };
             })
           };
+
+          // Build prep FormGroups for each sample
+          this.prepForms = {};
+          this.openPrepSections = {};
+          (this.plan.samples || []).forEach((s: any) => {
+            this.prepForms[s.id] = this.fb.group({
+              preparationRequired: [s.preparationRequired],
+              machiningRequired: [s.machiningRequired],
+              machiningAmount: [s.machiningAmount],
+              specimen: [s.specimen],
+              otherPreparation: [s.otherPreparation],
+              otherPreparationCharge: [s.otherPreparationCharge],
+              testInstructions: [s.testInstructions],
+              tpiRequired: [s.tpiRequired],
+              tpiAgencyID: [s.tpiAgencyID]
+            });
+            this.openPrepSections[s.id] = !!(s.preparationRequired || s.machiningRequired || s.otherPreparation || s.tpiRequired);
+          });
+
           this.reviewStatus = data.status;
           this.showReviewButton.set(data.canTakeAction);
           this.actions = data.actions || [];
@@ -233,6 +270,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
               specification1: gt.specification1,
               specification2: gt.specification2,
               standardID: method.standardID,
+              standardName: method.standardName,
               testMethodID: method.testMethodID,
               quantity: method.quantity,
               reportNo: method.reportNo,
@@ -332,6 +370,28 @@ export class ReviewOfRequestFormComponent implements OnInit {
     if (filePath) {
       window.open(this.baseUrl + filePath, '_blank');
     }
+  }
+
+  togglePrepSection(sampleId: number): void {
+    this.openPrepSections[sampleId] = !this.openPrepSections[sampleId];
+  }
+
+  savePrepForSample(sampleId: number): void {
+    const form = this.prepForms[sampleId];
+    if (!form) return;
+    this.inwardService.updateSamplePrep(sampleId, form.value).subscribe({
+      next: () => this.toast.show('Preparation details saved.', 'success'),
+      error: () => this.toast.show('Failed to save preparation details.', 'error')
+    });
+  }
+
+  onTPIAgencySelected(item: any, sampleId: number): void {
+    this.prepForms[sampleId]?.patchValue({ tpiAgencyID: item?.id ?? null });
+  }
+
+  getTpiAgencyName(id: any): string {
+    if (!id) return '-';
+    return this.tpiAgencyMap[id] || String(id);
   }
 
   submitReview() {

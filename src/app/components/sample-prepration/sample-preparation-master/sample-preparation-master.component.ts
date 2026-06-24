@@ -29,7 +29,7 @@ export class SamplePreparationMasterComponent implements OnInit {
     { key: 'materialType', type: 'string', label: 'Material Type', filter: true },
     { key: 'charges', type: 'number', label: 'Charges', filter: true },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
-    { key: 'testMethodStandard', type: 'string', label: 'Test Method Standard', filter: true },
+    { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Specification', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     specimenType: 'string',
@@ -37,7 +37,7 @@ export class SamplePreparationMasterComponent implements OnInit {
     materialType: 'string',
     charges: 'number',
     laboratoryTestName: 'string',
-    testMethodStandard: 'string',
+    testMethodSpecificationName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -93,7 +93,7 @@ export class SamplePreparationMasterComponent implements OnInit {
       materialType: [''],
       charges: [0],
       laboratoryTestID: [null],
-      testMethodStandard: [''],
+      testMethodStandardID: [null],
     });
   }
 

@@ -1,27 +1,59 @@
-<form [formGroup]="multiForm">
+<div class="position-relative w-100">
   <label *ngIf="!hideLabel" class="form-label" [ngClass]="{ 'form-label-sm': smallInput }">
     {{ labelName }} <span *ngIf="required" class="text-danger">*</span>
   </label>
-  <ng-select
-    [items]="items"
-    [ngClass]="{ 'ng-select-sm': smallInput }"
-    bindLabel="name"
-    bindValue="id"
-    [multiple]="true"
-    [closeOnSelect]="false"
-    [placeholder]="placeholder"
-    formControlName="search"
-    [loading]="loading"
-    [virtualScroll]="true"
-    [clearable]="true"
-    (scrollToEnd)="onScrollToEnd()"
-    [typeahead]="typeahead"
-    (change)="onChange($event)"
-    [readonly]="isDisabled"
-    dropdownPosition="auto"
+
+  <div
+    #triggerRef
+    class="ms-trigger"
+    [class.ms-trigger-sm]="smallInput"
+    [class.ms-trigger-open]="isOpen"
+    [class.is-invalid]="required && touched && selectedItems.length === 0"
+    [class.ms-trigger-disabled]="isDisabled"
+    (click)="onTriggerClick()"
   >
-  </ng-select>
-  <div *ngIf="multiForm.get('search')?.errors?.['required'] && multiForm.get('search')?.touched" class="text-danger small">
-   {{labelName}} Selection is required.
+    <div class="ms-value-container">
+      <span *ngIf="selectedItems.length === 0" class="ms-placeholder">{{ placeholder }}</span>
+      <span *ngFor="let item of selectedItems" class="ms-chip">
+        <span class="ms-chip-label">{{ item.name }}</span>
+        <button
+          *ngIf="!isDisabled"
+          type="button"
+          class="ms-chip-remove"
+          (click)="removeItem($event, item)"
+          tabindex="-1"
+        >
+          <i class="bi bi-x"></i>
+        </button>
+      </span>
+    </div>
+
+    <div class="ms-controls">
+      <button
+        *ngIf="!isDisabled && selectedItems.length > 0"
+        type="button"
+        class="ms-action-btn"
+        (click)="clearAll($event)"
+        title="Clear all"
+        tabindex="-1"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <span class="ms-divider" *ngIf="!isDisabled && selectedItems.length > 0"></span>
+      <button
+        *ngIf="!isDisabled"
+        type="button"
+        class="ms-action-btn ms-chevron"
+        [class.ms-chevron-open]="isOpen"
+        (click)="onChevronClick($event)"
+        tabindex="-1"
+      >
+        <i class="bi bi-chevron-down"></i>
+      </button>
+    </div>
   </div>
-</form>
+
+  <div *ngIf="required && touched && selectedItems.length === 0" class="text-danger small">
+    {{ labelName }} Selection is required.
+  </div>
+</div>

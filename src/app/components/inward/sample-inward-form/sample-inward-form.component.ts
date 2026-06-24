@@ -49,6 +49,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   contactPersons: any[] = [];
   billingToContactPerson: any[] = [];
   reportingToContactPerson: any[] = [];
+  reportingToOverrideContacts: any[] = [];
+  billingToOverrideContacts: any[] = [];
+  // Holds contact IDs to restore after override customer contacts load in edit mode
+  private editRestoreContactIDs: { reporting?: number | null; billing?: number | null } = {};
   dispatchModes: any[] = [];
   selectedDispatchModes: number[] = [];
   sampleNumbers: string[] = [];
@@ -146,12 +150,15 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       returnSample: [false],
       notDestroyed: [false],
       sampleReceiptNote: [''],
+      statementOfConformity: ['Not Applicable'],
+      decisionRule: ['Not Applicable'],
       requestFilePath: [''],
       requestFileName: [''],
       file: [null],
       contacts: this.fb.array([]),
       reportingTo: this.fb.group({
         id: [0],
+        customerID: [null],
         contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
@@ -166,6 +173,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       }),
       billingTo: this.fb.group({
         id: [0],
+        customerID: [null],
         contactPersonID: [null, Validators.required],
         contactPersonName: [''],
         address: [''],
@@ -358,6 +366,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           this.contactPersons = [];
           this.billingToContactPerson = [];
           this.reportingToContactPerson = [];
+          this.reportingToOverrideContacts = [];
+          this.billingToOverrideContacts = [];
+          this.reportingTo.patchValue({ customerID: null });
+          this.billingTo.patchValue({ customerID: null });
 
           if (Array.isArray(this.customerData?.contactPersons)) {
             const defaultSelected = this.sampleId === 0;
@@ -458,6 +470,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               returnSample: data.returnSample,
               notDestroyed: data.notDestroyed,
               sampleReceiptNote: data.sampleReceiptNote,
+              statementOfConformity: data.statementOfConformity || 'Not Applicable',
+              decisionRule: data.decisionRule || 'Not Applicable',
               requestFileName: data.requestFileName,
               requestFilePath: data.requestFilePath,
               uploadReferenceId: data.uploadReferenceID,
@@ -528,16 +542,25 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               this.updateContactLists();
             }
 
-            // Override Reporting To & Billing To
+            // Restore Reporting To & Billing To (with override customer support)
             if (data.reportingTo) {
+              // Capture contact ID before SearchableDropdown [selectedItem] triggers onReportingToCustomerChange
+              if (data.reportingTo.customerID && data.reportingTo.customerID !== data.customerID) {
+                this.editRestoreContactIDs.reporting = data.reportingTo.contactPersonID;
+              }
               this.sampleInwardForm.get('reportingTo')?.patchValue(data.reportingTo);
             }
             if (data.billingTo) {
+              if (data.billingTo.customerID && data.billingTo.customerID !== data.customerID) {
+                this.editRestoreContactIDs.billing = data.billingTo.contactPersonID;
+              }
               this.sampleInwardForm.get('billingTo')?.patchValue(data.billingTo);
             }
 
             // Override Samples + Additional Details
             this.sampleDetails.clear();
+            this.sampleAdditionalDetails.clear();
+            this.bufferedAdditionalDetails = {};
             this.sampleNumbers = [];
             data.sampleDetails?.forEach((sd: any) => {
               const additionalSampleDetail = data.sampleAdditionalDetails?.filter(
@@ -620,7 +643,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       return;
     }
 
-    const selectedCustomer = this.contactPersons.find(c => c.contactID === selectedValue);
+    const overrideList = section === 'reportingTo'
+      ? this.reportingToOverrideContacts
+      : this.billingToOverrideContacts;
+    const selectedCustomer =
+      overrideList.find(c => c.contactID === selectedValue) ||
+      this.contactPersons.find(c => c.contactID === selectedValue);
     this.updateAddressHelper(selectedCustomer, section);
   }
 
@@ -680,9 +708,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset billingTo if sendBill is unchecked and this contact was selected
+    // Reset billingTo if sendBill is unchecked and this contact was selected (only if no override customer)
     if (!contact.sendBill && this.billingTo.get('contactPersonID')?.value === contact.contactID) {
-      this.billingTo.reset();
+      if (!this.billingTo.get('customerID')?.value) {
+        this.billingTo.reset();
+        this.billingTo.patchValue({ type: 'billing' });
+      }
     }
   }
 
@@ -694,9 +725,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset reportingTo if sendReport is unchecked and this contact was selected
+    // Reset reportingTo if sendReport is unchecked and this contact was selected (only if no override customer)
     if (!contact.sendReport && this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
-      this.reportingTo.reset();
+      if (!this.reportingTo.get('customerID')?.value) {
+        this.reportingTo.reset();
+        this.reportingTo.patchValue({ type: 'reporting' });
+      }
     }
   }
 
@@ -708,13 +742,17 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     // Update contact lists based on selected, sendBill, and sendReport
     this.updateContactLists();
 
-    // Reset billingTo/reportingTo if contact is deselected and was currently selected
+    // Reset billingTo/reportingTo if contact is deselected and was currently selected (only if no override customer)
     if (!contact.selected) {
-      if (this.billingTo.get('contactPersonID')?.value === contact.contactID) {
+      if (this.billingTo.get('contactPersonID')?.value === contact.contactID
+          && !this.billingTo.get('customerID')?.value) {
         this.billingTo.reset();
+        this.billingTo.patchValue({ type: 'billing' });
       }
-      if (this.reportingTo.get('contactPersonID')?.value === contact.contactID) {
+      if (this.reportingTo.get('contactPersonID')?.value === contact.contactID
+          && !this.reportingTo.get('customerID')?.value) {
         this.reportingTo.reset();
+        this.reportingTo.patchValue({ type: 'reporting' });
       }
     }
   }
@@ -731,6 +769,70 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       customerID: item.id
     });
     this.getCustomerDetails(item.id);
+  }
+
+  onReportingToCustomerChange(item: any): void {
+    if (!item) {
+      this.reportingToOverrideContacts = [];
+      this.editRestoreContactIDs.reporting = undefined;
+      this.reportingTo.patchValue({
+        customerID: null, contactPersonID: null, contactPersonName: '',
+        address: '', pinCode: '', area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+      });
+      return;
+    }
+    this.reportingTo.patchValue({ customerID: item.id });
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        if (!data) return;
+        this.reportingToOverrideContacts = (data.contactPersons || []).map((c: any) => ({ ...c, contactID: c.id }));
+        const restoreId = this.editRestoreContactIDs.reporting;
+        this.editRestoreContactIDs.reporting = undefined;
+        if (restoreId) {
+          // Edit-mode restore: contacts just loaded, re-bind the saved contact person
+          setTimeout(() => this.reportingTo.patchValue({ contactPersonID: restoreId }));
+        } else {
+          // User manually changed customer: clear the contact selection
+          this.reportingTo.patchValue({
+            contactPersonID: null, contactPersonName: '', address: '', pinCode: '',
+            area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+          });
+        }
+      },
+      error: (err) => console.error('Error fetching reporting-to override customer:', err)
+    });
+  }
+
+  onBillingToCustomerChange(item: any): void {
+    if (!item) {
+      this.billingToOverrideContacts = [];
+      this.editRestoreContactIDs.billing = undefined;
+      this.billingTo.patchValue({
+        customerID: null, contactPersonID: null, contactPersonName: '',
+        address: '', pinCode: '', area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+      });
+      return;
+    }
+    this.billingTo.patchValue({ customerID: item.id });
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        if (!data) return;
+        this.billingToOverrideContacts = (data.contactPersons || []).map((c: any) => ({ ...c, contactID: c.id }));
+        const restoreId = this.editRestoreContactIDs.billing;
+        this.editRestoreContactIDs.billing = undefined;
+        if (restoreId) {
+          // Edit-mode restore: contacts just loaded, re-bind the saved contact person
+          setTimeout(() => this.billingTo.patchValue({ contactPersonID: restoreId }));
+        } else {
+          // User manually changed customer: clear the contact selection
+          this.billingTo.patchValue({
+            contactPersonID: null, contactPersonName: '', address: '', pinCode: '',
+            area: '', city: '', state: '', country: '', mobileNo: '', emailId: ''
+          });
+        }
+      },
+      error: (err) => console.error('Error fetching billing-to override customer:', err)
+    });
   }
 
   isDispatchModeSelected(id: number): boolean {
@@ -819,7 +921,16 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       length: [existingSample?.length || null],
       sampleStatus: [existingSample?.sampleStatus || ''],
       isCancelled: [existingSample?.isCancelled || false],
-      cancellationReason: [existingSample?.cancellationReason || '']
+      cancellationReason: [existingSample?.cancellationReason || ''],
+      preparationRequired: [existingSample?.preparationRequired ?? false],
+      machiningRequired: [existingSample?.machiningRequired ?? false],
+      machiningAmount: [existingSample?.machiningAmount ?? null],
+      specimen: [existingSample?.specimen || ''],
+      otherPreparation: [existingSample?.otherPreparation ?? false],
+      otherPreparationCharge: [existingSample?.otherPreparationCharge ?? null],
+      tpiRequired: [existingSample?.tpiRequired ?? false],
+      tpiAgencyName: [existingSample?.tpiAgencyName || ''],
+      testInstructions: [existingSample?.testInstructions || '']
     });
 
     this.sampleDetails.push(sampleForm);
@@ -1117,33 +1228,34 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     });
   }
 
-  getSpecimenOrientationDrop = (sampleIndex: number) => {
-    return (term: string, page: number, pageSize: number): Observable<any[]> => {
-      const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-      const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
-      if (metalClassificationID) {
-        return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
-      }
-      return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
-    };
-  };
+  // Specimen Orientation & Product Form — commented out per client requirement
+  // getSpecimenOrientationDrop = (sampleIndex: number) => {
+  //   return (term: string, page: number, pageSize: number): Observable<any[]> => {
+  //     const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //     const metalClassificationID = sampleDetailGroup?.get('metalClassificationID')?.value;
+  //     if (metalClassificationID) {
+  //       return this.specimenOrientationService.getByClassification(metalClassificationID, term, page, pageSize);
+  //     }
+  //     return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  //   };
+  // };
 
-  onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
-    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({
-      specimenOrientationID: item?.id || null,
-      specimenOrientationName: item?.name || '',
-    });
-  }
+  // onSpecimenOrientationSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({
+  //     specimenOrientationID: item?.id || null,
+  //     specimenOrientationName: item?.name || '',
+  //   });
+  // }
 
-  getProductFormDrop = (term: string, page: number, pageSize: number) => {
-    return this.productFormService.getProductFormDropdown(term, page, pageSize);
-  };
+  // getProductFormDrop = (term: string, page: number, pageSize: number) => {
+  //   return this.productFormService.getProductFormDropdown(term, page, pageSize);
+  // };
 
-  onProductFormSelected(item: any, sampleIndex: number): void {
-    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({ productFormID: item?.id || null });
-  }
+  // onProductFormSelected(item: any, sampleIndex: number): void {
+  //   const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
+  //   sampleDetailGroup.patchValue({ productFormID: item?.id || null });
+  // }
 
   // File Handling
   private validateFile(file: File, allowedTypes: string[], maxSizeMB = 5): boolean {
@@ -1284,6 +1396,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       // Map camelCase to PascalCase for backend
       const fieldMapping: Record<string, string> = {
         'id': 'Id',
+        'customerID': 'CustomerID',
         'contactPersonID': 'ContactPersonID',
         'contactPersonName': 'ContactPersonName',
         'address': 'Address',
@@ -1432,6 +1545,17 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
   printJobCard(): void {
     window.print();
+  }
+
+  getJobCardAdditionalDetails(sampleIdx: number): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = [];
+    (this.sampleAdditionalDetails as FormArray).controls.forEach(row => {
+      const label = row.get('label')?.value;
+      const valuesArray = row.get('values') as FormArray;
+      const value = valuesArray.at(sampleIdx)?.value;
+      if (label && value) result.push({ label, value });
+    });
+    return result;
   }
 
   // Custom method to check if inward is completed

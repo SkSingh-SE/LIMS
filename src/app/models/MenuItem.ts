@@ -32,6 +32,7 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 19, title: 'Equipment', route: '/equipment', parentMenuID: 1, permissions: ['CanReadEquipment'], children: [], color: getRandomColor() },
         { id: 20, title: 'OEM Master', route: '/oem', parentMenuID: 1, permissions: ['CanReadOEM'], children: [], color: getRandomColor() },
         { id: 21, title: 'Calibration Agency', route: '/calibration-agency', parentMenuID: 1, permissions: ['CanReadCalibrationAgency'], children: [], color: getRandomColor() }
+        // Inventory Management - no route yet
       ]
     },
     {
@@ -59,6 +60,16 @@ export function getAllMenuItems(): MenuItem[] {
                 { id: 27, title: 'Specimen Orientation', route: '/specimen-orientation', parentMenuID: 201, permissions: ['CanReadSpecimenOrientation'], children: [], color: getRandomColor() },
                 { id: 22, title: 'Dimensional Factor', route: '/dimesional-factor', parentMenuID: 201, permissions: ['CanReadDimensionalFactors'], children: [], color: getRandomColor() },
                 // { id: 29, title: 'Universal Code Type', route: '/universal-code-type', parentMenuID: 201, permissions: ['CanReadUniversalCode'], children: [], color: getRandomColor() },
+                { id: 220, title: 'Product Form', route: '/product-form', parentMenuID: 201, permissions: ['CanReadProductForm'], children: [], color: getRandomColor() },
+                { id: 221, title: 'Product Size', route: '/product-size-master', parentMenuID: 201, permissions: ['CanReadProductSize'], children: [], color: getRandomColor() },
+                { id: 222, title: 'Product Condition Category', route: '/product-condition-category', parentMenuID: 201, permissions: ['CanReadProductConditionCategory'], children: [], color: getRandomColor() },
+                { id: 223, title: 'Specimen Orientation Category', route: '/specimen-orientation-category', parentMenuID: 201, permissions: ['CanReadSpecimenOrientationCategory'], children: [], color: getRandomColor() },
+                { id: 224, title: 'Property Type', route: '/property-type', parentMenuID: 201, permissions: ['CanReadPropertyType'], children: [], color: getRandomColor() },
+                { id: 225, title: 'Heat Treatment Category', route: '/heat-treatment-category', parentMenuID: 201, permissions: ['CanReadHeatTreatmentCategory'], children: [], color: getRandomColor() },
+                { id: 226, title: 'Cooling Medium', route: '/cooling-medium', parentMenuID: 201, permissions: ['CanReadCoolingMedium'], children: [], color: getRandomColor() },
+                { id: 227, title: 'Parameter Category', route: '/parameter-category', parentMenuID: 201, permissions: ['CanReadParameterCategory'], children: [], color: getRandomColor() },
+                { id: 228, title: 'Tolerance Master', route: '/tolerance-master', parentMenuID: 201, permissions: ['CanReadTolerance'], children: [], color: getRandomColor() },
+                { id: 229, title: 'Hardness Equivalence', route: '/hardness-equivalence', parentMenuID: 201, permissions: ['CanReadHardnessEquivalence'], children: [], color: getRandomColor() },
               ], color: getRandomColor()
             }
           ], color: getRandomColor()
@@ -82,7 +93,10 @@ export function getAllMenuItems(): MenuItem[] {
       children: [
         { id: 35, title: 'Laboratory Test', route: '/test', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() },
         { id: 36, title: 'Test Method Specification', route: '/test-specification', parentMenuID: 3, permissions: ['CanReadTestMethodSpecification'], children: [], color: getRandomColor() },
-        { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() }
+        { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() },
+        { id: 371, title: 'Price Dimension Type', route: '/master/price-dimension-type', parentMenuID: 3, permissions: ['CanReadPriceDimensionType'], children: [], color: getRandomColor() },
+        { id: 372, title: 'Analysis Technique', route: '/analysis-technique', parentMenuID: 3, permissions: ['CanReadAnalysisTechnique'], children: [], color: getRandomColor() },
+        { id: 373, title: 'Chemical Sample Category', route: '/chemical-sample-category', parentMenuID: 3, permissions: ['CanReadChemicalSampleCategory'], children: [], color: getRandomColor() }
       ]
     },
     {
@@ -113,10 +127,9 @@ export function getAllMenuItems(): MenuItem[] {
         {
           id: 500, title: 'Sample Preparation', route: '', parentMenuID: 5, permissions: [], children: [
             { id: 130, title: 'Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
-            // { id: 43, title: 'Sample Cutting', route: '/sample/cutting', parentMenuID: 500, permissions: ['CanReadSampleCutting'], children: [], color: getRandomColor() },
-            // { id: 46, title: 'Machining Charges', route: '/sample/machining', parentMenuID: 500, permissions: ['CanReadMachiningChallan'], children: [], color: getRandomColor() },
             { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
             { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
+            { id: 48, title: 'Sample Preparation Master', route: '/sample-preparation-master', parentMenuID: 500, permissions: ['CanReadSamplePreparationMaster'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         }
       ]
@@ -265,12 +278,6 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 49, title: 'Lab Scope Master', route: '/scope', parentMenuID: 7, permissions: ['CanReadLabScopeMaster'], children: [], color: getRandomColor() }
       ]
     },
-    // User Management hidden — Lab Employee & Lab Score components not yet implemented
-    // {
-    //   id: 8,
-    //   title: 'User Management',
-    //   ...
-    // },
     {
       id: 9,
       title: 'Testing',
@@ -284,7 +291,7 @@ export function getAllMenuItems(): MenuItem[] {
         // { id: 57, title: 'Perform Test', route: '/testing/perform/:id', parentMenuID: 9, permissions: ['CanReadPerformTest'], children: [], color: getRandomColor() },
         { id: 60, title: 'Test Verification', route: '/testing/verification', parentMenuID: 9, permissions: ['CanReadTestVerification'], children: [], color: getRandomColor() },
         { id: 58, title: 'Long Term Tracking', route: '/testing/longterm', parentMenuID: 9, permissions: ['CanReadLongTermTracking'], children: [], color: getRandomColor() },
-        // { id: 59, title: 'Test Results', route: '/testing/results/:id', parentMenuID: 9, permissions: ['CanReadTestResults'], children: [], color: getRandomColor() }
+        { id: 61, title: 'Test Result', route: '/test-result', parentMenuID: 9, permissions: ['CanReadTestResult'], children: [], color: getRandomColor() },
       ]
     },
     {

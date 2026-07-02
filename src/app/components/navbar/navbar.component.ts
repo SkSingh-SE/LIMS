@@ -340,9 +340,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
           const filtered = this.filterMenusByApi(res || []);
 
-          // commented for development
-          // const afterPermFilter = this.applyPermissionFilter(filtered);
-          // this.menuItems = afterPermFilter;
+          const afterPermFilter = this.applyPermissionFilter(filtered);
+          this.menuItems = afterPermFilter;
 
           // 3. Update visible/overflow
           this.visibleMenuItems = [...this.menuItems];

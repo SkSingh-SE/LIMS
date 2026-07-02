@@ -268,6 +268,7 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <app-searchable-dropdown
                     [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                    [smallInput]="true"
                     [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
                     [isInvalid]="submitted && !personalInfoForm.get('designationID')?.value"
@@ -289,6 +290,7 @@
                     [placeholder]="'Search department'" [labelName]="'Department'"
                     [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
+                    [smallInput]="true"
                     [isInvalid]="submitted && !personalInfoForm.get('departmentID')?.value"
                     [selectedItem]="personalInfoForm.get('departmentID')?.value"></app-searchable-dropdown>
                 </div>
@@ -299,6 +301,7 @@
                     [placeholder]="'Search employee'" [labelName]="'Reporting Manager'"
                     [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
+                    [smallInput]="true"
                     [isInvalid]="submitted && !personalInfoForm.get('reportingManagerID')?.value"
                     [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"></app-searchable-dropdown>
                 </div>

@@ -86,7 +86,7 @@ export class TestMethodSpecificationComponent implements OnInit {
       testMethodStandard: ['', Validators.required],
       name: ['', Validators.required],
       part: [''],
-      displayTitle: [{ value: '', disabled: true }],
+      displayTitle: [''],
       metalClassificationIDs: [[]],
       versions: this.fb.array([]),
     });
@@ -411,16 +411,40 @@ export class TestMethodSpecificationComponent implements OnInit {
     return (active?.get('version')?.value || fallback?.get('version')?.value || '').toString().trim();
   }
 
-  /** Display Title = "{StdOrg} {TestMethodStandard} {Part} : {ActiveVersion}" — year nahi, version dikhata hai. */
+  /** Active version ka year return karta hai. */
+  private getActiveVersionYear(): string {
+    const active = this.versions.controls.find((g) => g.get('status')?.value === VersionStatus.Active);
+    const fallback = this.versions.controls.find((g) => g.get('status')?.value === VersionStatus.Draft);
+    const year = active?.get('year')?.value || fallback?.get('year')?.value || '';
+    return year ? year.toString().trim() : '';
+  }
+
+  /**
+   * Display Title = "{Org} {Std}-{Part} : {Version} {Year}"
+   * Example: "ASTM E8/E8M-1 : V1 2016"
+   * Auto-generated based on active version, editable.
+   */
   buildDisplayTitle(): void {
     const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
     const version = this.getActiveVersionLabel();
+    const year = this.getActiveVersionYear();
 
-    let left = [org, std, part].filter((x) => x).join(' ');
-    const display = version ? (left ? `${left} : ${version}` : version) : left;
-    this.testSpecificationForm.get('displayTitle')?.setValue(display, { emitEvent: false });
+    let parts: string[] = [org];
+    if (part) {
+      parts.push(`${std}-${part}`);
+    } else {
+      parts.push(std);
+    }
+    parts = parts.filter(x => x);
+    if (parts.length && version) {
+      parts.push(`: ${version}`);
+    }
+    if (year) {
+      parts.push(year);
+    }
+    this.testSpecificationForm.get('displayTitle')?.setValue(parts.join(' '), { emitEvent: false });
   }
 
   onFileChange(event: any, index: number) {
@@ -462,10 +486,26 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
+  /** Test Method Caption — display title jaisa hi format but year ke sath */
   getCaption(year: any): string {
-    const org = this.selectedStandardOrganization?.name;
-    const std = this.testSpecificationForm.get('testMethodStandard')?.value;
-    return org && std && year ? `${org} ${std} - ${year}` : '';
+    const org = this.selectedStandardOrganization?.name || '';
+    const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
+    const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
+    const version = this.getActiveVersionLabel();
+    let parts: string[] = [org];
+    if (part) {
+      parts.push(`${std} - ${part}`);
+    } else {
+      parts.push(std);
+    }
+    parts = parts.filter(x => x);
+    if (parts.length && version) {
+      parts.push(`: ${version}`);
+    }
+    if (year) {
+      parts.push(year);
+    }
+    return parts.join(' ');
   }
 
   onDisable() {

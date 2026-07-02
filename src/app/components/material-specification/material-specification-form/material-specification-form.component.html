@@ -86,10 +86,10 @@
                 maxlength="50" (blur)="generateSpecificationName()" />
             </div>
 
-            <!-- 6. Display Title (auto-generated, read-only) -->
+            <!-- 6. Display Title (auto-generated, editable) -->
             <div class="col-md-3">
               <label class="form-label">Display Title</label>
-              <input type="text" class="form-control form-control-sm" formControlName="displayTitle" placeholder="Auto-generated" readonly />
+              <input type="text" class="form-control form-control-sm" formControlName="displayTitle" placeholder="Auto-generated" />
             </div>
 
             <!-- 7. Material Specification Title (last) -->
@@ -293,7 +293,7 @@
                     formControlName="grade"
                     placeholder="Enter grade"
                     maxlength="100"
-                    (blur)="generateSpecificationName()"
+                    (input)="onGradeInput(gi, $any($event.target).value)"
                     [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
                   />
                   <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger small">Grade is required.</span>
@@ -331,7 +331,8 @@
                 <div class="col-md-3" *ngIf="getActiveIdentifiers().length">
                   <label class="form-label">Identifier</label>
                   <select class="form-select form-select-sm" [(ngModel)]="gradeIdentifierValues[gi].key"
-                    [ngModelOptions]="{ standalone: true }" [disabled]="isViewMode">
+                    [ngModelOptions]="{ standalone: true }" [disabled]="isViewMode"
+                    (ngModelChange)="onGradeIdentifierChange(gi)">
                     <option [ngValue]="''">-- Select --</option>
                     <option *ngFor="let idf of getActiveIdentifiers()" [ngValue]="idf.key">{{ idf.label }}</option>
                   </select>
@@ -341,7 +342,8 @@
                   <input class="form-control form-control-sm" type="text"
                     [placeholder]="'Enter ' + getIdentifierLabel(gradeIdentifierValues[gi].key)"
                     [(ngModel)]="gradeIdentifierValues[gi].value" [ngModelOptions]="{ standalone: true }"
-                    [disabled]="isViewMode" maxlength="100" />
+                    [disabled]="isViewMode" maxlength="100"
+                    (input)="onGradeIdentifierChange(gi)" />
                 </div>
               </div>
               <ul class="nav nav-tabs">

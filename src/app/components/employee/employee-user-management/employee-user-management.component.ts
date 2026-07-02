@@ -27,6 +27,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
   activeTab = signal<number>(1);
   userForm!: FormGroup;
+  submitted = false;
 
   tabs = [
     { id: 1, label: 'Login Details', icon: 'bi-person-badge' },
@@ -70,11 +71,15 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   }
 
   initForm() {
+    const passwordValidators = this.employeeId > 0
+      ? [Validators.minLength(8)]
+      : [Validators.required, Validators.minLength(8)];
+
     this.userForm = this.fb.group({
       // Login Details
       userName: [{ value: '', disabled: true }], // Read-only
       email: [{ value: '', disabled: true }],
-      password: ['', [Validators.required, Validators.minLength(8)]], // Only for reset
+      password: ['', passwordValidators], // Required only in create mode
       isLoginEnabled: [true],
       lastLoginDate: [{ value: '', disabled: true }],
       accountStatus: [{ value: '', disabled: true }],
@@ -146,8 +151,11 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   }
 
   saveUserManagement() {
-    if (this.userForm.invalid) {
-      this.toastService.show('Please fix the errors in the form.', 'warning');
+    this.submitted = true;
+    const tabId = this.activeTab();
+    if (!this.isTabValid(tabId)) {
+      const missing = this.getInvalidFieldNames(tabId);
+      this.toastService.show(`Please fix: ${missing.join(', ')}`, 'warning');
       return;
     }
     // Build a whitelisted payload (exclude password, role, account status, 2FA fields)
@@ -337,6 +345,68 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     if (attempts === 0) return 'badge bg-success';
     if (attempts < 3) return 'badge bg-warning';
     return 'badge bg-danger';
+  }
+
+  private labelMap: Record<string, string> = {
+    userName: 'Username',
+    email: 'Email',
+    password: 'Password',
+    isLoginEnabled: 'Login Access',
+    allowRemoteLogin: 'Remote Login',
+    ipRestriction: 'IP Restriction',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    sessionTimeout: 'Session Timeout',
+    forcePasswordChange: 'Force Password Change',
+  };
+
+  private isTabValid(tabId: number): boolean {
+    const skipPassword = this.employeeId > 0 && tabId === 1;
+    const controls = this.userForm.controls;
+    for (const key of Object.keys(controls)) {
+      if (key === 'password' && skipPassword) continue;
+      if (key === 'newRole' || key === 'roleEffectiveFrom' || key === 'roleChangeReason') continue;
+      const ctrl = controls[key];
+      if (ctrl && ctrl.invalid && !ctrl.disabled) return false;
+    }
+    // Cross-field validation for tab 1 (end time)
+    if (tabId === 1) {
+      const start = controls['startTime']?.value;
+      const end = controls['endTime']?.value;
+      if (start && end && end <= start) return false;
+    }
+    return true;
+  }
+
+  getInvalidFieldNames(tabId: number): string[] {
+    const labels: string[] = [];
+    const skipPassword = this.employeeId > 0 && tabId === 1;
+    const controls = this.userForm.controls;
+
+    for (const key of Object.keys(controls)) {
+      if (key === 'password' && skipPassword) continue;
+      if (key === 'newRole' || key === 'roleEffectiveFrom' || key === 'roleChangeReason') continue;
+      const ctrl = controls[key];
+      if (ctrl && ctrl.invalid && !ctrl.disabled) {
+        labels.push(this.labelMap[key] || key);
+      }
+    }
+
+    if (tabId === 1) {
+      const start = controls['startTime']?.value;
+      const end = controls['endTime']?.value;
+      if (start && end && end <= start) {
+        labels.push('End Time');
+      }
+    }
+
+    return labels;
+  }
+
+  isFieldInvalid(path: string, touched = true): boolean {
+    const ctrl = this.userForm.get(path);
+    if (!ctrl) return false;
+    return touched ? ctrl.touched && ctrl.invalid : ctrl.invalid;
   }
 
   // Single range builder

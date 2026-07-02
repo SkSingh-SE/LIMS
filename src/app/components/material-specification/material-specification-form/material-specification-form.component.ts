@@ -90,6 +90,9 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   // store per-grade selected metal classification (UI-only state)
   selectedMetalByGrade: any[] = [];
 
+  /** Base grade name (user-typed part, without displayTitle prefix or identifier suffix). */
+  gradeBaseNames: string[] = [];
+
   // Accordion open/close state
   openSections: { [key: string]: boolean } = { header: true, headerParams: true };
   openGrades: { [key: number]: boolean } = { 0: true };
@@ -163,7 +166,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       standardYear: ['', Validators.required],
       specificationNo: ['', [Validators.required, Validators.maxLength(100)]],
       version: [''],
-      displayTitle: [{ value: '', disabled: true }],
+      displayTitle: [''],
       title: ['', [Validators.maxLength(300)]],
       identifierConfigJson: [''],
       aliasName: [{ value: '', disabled: true }, [Validators.maxLength(200)]],
@@ -191,9 +194,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   // Per grade only ONE identifier may be selected: { key, value }. Index-aligned with grades.
   gradeIdentifierValues: Array<{ key: string; value: string }> = [];
 
-  /** Label for an identifier key (built-in or custom). */
+  /** Label for an identifier key (built-in or custom). Splits by space and returns only the first word. */
   getIdentifierLabel(key: string): string {
-    return this.getActiveIdentifiers().find(i => i.key === key)?.label ?? key;
+    const fullLabel = this.getActiveIdentifiers().find(i => i.key === key)?.label ?? key;
+    return fullLabel.split(' ')[0] || fullLabel;
   }
 
   /**
@@ -358,6 +362,11 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.selectedSpecTab[newIndex] = this.selectedSpecTab[newIndex] || 'chemical';
     if (seedFromHeader) this.selectedGradeIndex = newIndex; // jump to the new grade tab (not on rebind)
     // MS-B: the legacy UNS/Steel single field is replaced by configurable grade identifiers — no required validator.
+    // Auto-compose initial grade name from display title if user hasn't typed anything yet.
+    this.gradeBaseNames[newIndex] = '';
+    if (seedFromHeader) {
+      this.composeGradeName(newIndex);
+    }
   }
 
   /** Switch the active grade tab. */
@@ -900,10 +909,22 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     if (part) alias += ` ${part}`;
     if (alias) this.MaterialSpecificationForm.patchValue({ aliasName: alias });
 
-    // Display Title: "{Org} {SpecNo} {Part} {Year} {Version}"  e.g. "IS 1234 Part-1 2025 v2"
-    const year    = this.MaterialSpecificationForm.get('standardYear')?.value || '';
-    const titleParts = [orgName, specNo, part, year, version].filter(v => v.trim() !== '');
-    this.MaterialSpecificationForm.patchValue({ displayTitle: titleParts.join(' ') });
+    // Display Title: "{Org} {SpecNo}-{Part}:{Year} {Version}"  e.g. "IS 1234 1608-1:2020"
+    const year = this.MaterialSpecificationForm.get('standardYear')?.value || '';
+    let displayTitle = orgName;
+    if (part) {
+      displayTitle += ` ${specNo}-${part}`;
+      const yearVersion = [year, version].filter(v => v.trim() !== '').join(' ');
+      if (yearVersion) {
+        displayTitle += `:${yearVersion}`;
+      }
+    } else {
+      const parts = [specNo, year, version].filter(v => v.trim() !== '');
+      if (parts.length) {
+        displayTitle += ' ' + parts.join(' ');
+      }
+    }
+    this.MaterialSpecificationForm.patchValue({ displayTitle: displayTitle.trim() });
   }
 
   /** Save just the header parameters (partial save — grades optional). Stays on page after save. */
@@ -1168,6 +1189,47 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
   };
+
+  /**
+   * Compose the full grade name for a given grade index:
+   *   "{displayTitle} Grade {baseName} {IdentifierLabel} {IdentifierValue}"
+   * Stores the user-typed base name separately (gradeBaseNames) so re-composition
+   * doesn't overwrite manual edits, only appends/changes the identifier suffix.
+   */
+  composeGradeName(gi: number): void {
+    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
+    const baseName = this.gradeBaseNames[gi] || '';
+    const idf = this.gradeIdentifierValues[gi];
+    let composed = displayTitle.trim() ? `${displayTitle} Grade` : 'Grade';
+    if (baseName.trim()) composed += ` ${baseName.trim()}`;
+    if (idf?.key && idf?.value?.trim()) {
+      const label = this.getIdentifierLabel(idf.key);
+      composed += ` ${label} ${idf.value.trim()}`;
+    }
+    this.grades.at(gi).patchValue({ grade: composed }, { emitEvent: false });
+  }
+
+  /** Called when user types in the grade field — captures the base name, then re-composes. */
+  onGradeInput(gi: number, value: string): void {
+    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
+    const prefix = displayTitle.trim() ? `${displayTitle} Grade ` : 'Grade ';
+    // Extract typed text after the prefix
+    let typed = value;
+    if (typed.startsWith(prefix)) typed = typed.substring(prefix.length);
+    // Strip any identifier suffix at the end (e.g. " UNS K92460")
+    const idf = this.gradeIdentifierValues[gi];
+    if (idf?.key && idf?.value?.trim()) {
+      const idfLabel = this.getIdentifierLabel(idf.key);
+      const idfSuffix = ` ${idfLabel} ${idf.value.trim()}`;
+      if (typed.endsWith(idfSuffix)) typed = typed.substring(0, typed.length - idfSuffix.length);
+    }
+    this.gradeBaseNames[gi] = typed.trim();
+  }
+
+  /** Called when grade identifier key or value changes — re-compose the grade name. */
+  onGradeIdentifierChange(gi: number): void {
+    this.composeGradeName(gi);
+  }
 
   onMetalClassificationSelected(item: any, gradeIndex: number) {
     if (!item) {

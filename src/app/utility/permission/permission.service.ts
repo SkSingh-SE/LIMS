@@ -38,19 +38,28 @@ export class PermissionService {
   has(permission?: string): boolean {
     if (this._isAdmin) return true;
     if (!permission) return false;
-    return this.perms$.value.has(permission);
+    
+    if (this.perms$.value.has(permission)) return true;
+    
+    if (permission.startsWith('CanRead') || permission.startsWith('CanCreate') || 
+        permission.startsWith('CanUpdate') || permission.startsWith('CanDelete')) {
+      const managePerm = permission.replace(/^Can(Read|Create|Update|Delete)/, 'CanManage');
+      if (this.perms$.value.has(managePerm)) return true;
+    }
+    
+    return false;
   }
 
   hasAny(permissions?: string[] | null): boolean {
     if (this._isAdmin) return true;
     if (!permissions || permissions.length === 0) return false;
-    return permissions.some(p => this.perms$.value.has(p));
+    return permissions.some(p => this.has(p));
   }
 
   hasAll(permissions?: string[] | null): boolean {
     if (this._isAdmin) return true;
     if (!permissions || permissions.length === 0) return false;
-    return permissions.every(p => this.perms$.value.has(p));
+    return permissions.every(p => this.has(p));
   }
 
   // observable for permission changes

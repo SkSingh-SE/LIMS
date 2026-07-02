@@ -9,13 +9,8 @@
     <!-- Menu cell: browser gives this the exact 1fr pixel width -->
     <div class="nav-menu-cell">
       <div #menuContainer class="menu-container">
-        <div
-          *ngFor="let menu of visibleMenuItems; let i = index"
-          #menuItem
-          class="menu-item header-font"
-          (click)="openSubMenu(menu)"
-          [ngClass]="{ active: activeMenu() === menu.title }"
-        >
+        <div *ngFor="let menu of visibleMenuItems; let i = index" #menuItem class="menu-item header-font"
+          (click)="openSubMenu(menu)" [ngClass]="{ active: activeMenu() === menu.title }">
           <div class="d-flex gap-2 align-items-center">
             <i class="bi" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
@@ -31,19 +26,15 @@
       </button>
       <!-- Down Arrow Icon -->
       <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
-        <i class="bi" [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
+        <i class="bi"
+          [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
       </button>
 
       <app-notification-bell></app-notification-bell>
       <!-- User Profile Dropdown -->
       <div class="me-2 user-dropdown-wrapper">
-        <button
-          class="btn user-avatar-btn border-0 p-0 d-flex align-items-center gap-2"
-          type="button"
-          id="userDropdown"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
+        <button class="btn user-avatar-btn border-0 p-0 d-flex align-items-center gap-2" type="button" id="userDropdown"
+          data-bs-toggle="dropdown" aria-expanded="false">
           <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
           <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
           <div class="user-name-display d-none d-lg-flex flex-column align-items-start">
@@ -94,7 +85,9 @@
               <i class="bi bi-gear me-2"></i>Settings
             </a>
           </li>
-          <li><hr class="dropdown-divider my-1" /></li>
+          <li>
+            <hr class="dropdown-divider my-1" />
+          </li>
           <li class="px-1 pb-1">
             <a class="dropdown-item rounded text-danger cursor-pointer" role="button" (click)="logout()">
               <i class="bi bi-box-arrow-right me-2"></i>Logout
@@ -113,30 +106,17 @@
       <!-- Input Row -->
       <div class="cmd-input-row">
         <i class="bi bi-search cmd-search-icon"></i>
-        <input
-          #searchInput
-          type="text"
-          class="cmd-input"
-          placeholder="Search menu, features, reports..."
-          [(ngModel)]="searchQuery"
-          (input)="onSearchInput()"
-          (keydown)="onSearchKeydown($event)"
-          autocomplete="off"
-        />
+        <input #searchInput type="text" class="cmd-input" placeholder="Search menu, features, reports..."
+          [(ngModel)]="searchQuery" (input)="onSearchInput()" (keydown)="onSearchKeydown($event)" autocomplete="off" />
         <span class="cmd-esc-badge" (click)="collapseSearch()">Esc</span>
       </div>
 
       <!-- Results -->
       <div class="cmd-results" *ngIf="isSearchOpen() && searchResults.length > 0">
         <div class="cmd-results-label">Results</div>
-        <div
-          *ngFor="let item of searchResults; let i = index"
-          [id]="'search-result-' + i"
-          class="cmd-result-item"
-          [class.cmd-highlighted]="i === searchHighlightIndex"
-          (mousedown)="navigateToSearch(item)"
-          (mouseenter)="searchHighlightIndex = i"
-        >
+        <div *ngFor="let item of searchResults; let i = index" [id]="'search-result-' + i" class="cmd-result-item"
+          [class.cmd-highlighted]="i === searchHighlightIndex" (mousedown)="navigateToSearch(item)"
+          (mouseenter)="searchHighlightIndex = i">
           <div class="cmd-result-icon" [class.cmd-icon-active]="i === searchHighlightIndex">
             <i class="bi bi-grid-3x3-gap"></i>
           </div>
@@ -174,18 +154,16 @@
   </ng-container>
 
   <!-- menu2: rendered when overflow available -->
-  <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2" *ngIf="menu2Items && menu2Items.length > 0">
+  <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2"
+    *ngIf="menu2Items && menu2Items.length > 0">
     <div class="menu2-outer d-flex align-items-center bg-theme">
       <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('left')">
         <i class="bi bi-chevron-left text-white"></i>
       </button>
-      <div #menu2Scroll class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
-        <div
-          *ngFor="let menu of menu2Items"
-          class="menu2-item header-font"
-          (click)="openSubMenu(menu)"
-          [ngClass]="{ active: activeMenu() === menu.title }"
-        >
+      <div #menu2Scroll
+        class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
+        <div *ngFor="let menu of menu2Items" class="menu2-item header-font" (click)="openSubMenu(menu)"
+          [ngClass]="{ active: activeMenu() === menu.title }">
           <div class="d-flex gap-2 align-items-center">
             <i class="bi" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
@@ -199,40 +177,32 @@
   </div>
 
   <!-- submenu: show when subMenus signal has items and submenu open -->
-  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()"> <!-- (mouseleave)="closeSubMenu()" -->
+  <div class="card card-body flex-row submenu-container" *ngIf="subMenus().length > 0 && isSubMenuOpen()">
+    <!-- (mouseleave)="closeSubMenu()" -->
     <!-- (mouseleave)="onSubmenuLeave()" -->
-    <div
-      *ngFor="let subMenuItem of subMenus()"
-      class="submenu-item"
-      (click)="setActiveSubMenu(subMenuItem)"
-      (mouseenter)="onSubmenuEnter(subMenuItem.id)"
-
-      [ngClass]="{ active: activeSubmenu() === subMenuItem.title }"
-    >
+    <div *ngFor="let subMenuItem of subMenus()" class="submenu-item" (click)="setActiveSubMenu(subMenuItem)"
+      (mouseenter)="onSubmenuEnter(subMenuItem.id)" [ngClass]="{ active: activeSubmenu() === subMenuItem.title }">
 
       <ng-container *ngIf="subMenuItem.children && subMenuItem.children.length > 0; else leafLink">
         <div class="dropdown">
           <span class="submenu-label dropdown-toggle">{{ subMenuItem.title }}</span>
-          <ul class="dropdown-menu"
-              [class.show]="hoveredSubmenuId() === subMenuItem.id"
-              (mouseenter)="onDropdownEnter(subMenuItem.id)">
-              <!-- (mouseleave)="onDropdownLeave()" -->
+          <ul class="dropdown-menu" [class.show]="hoveredSubmenuId() === subMenuItem.id"
+            (mouseenter)="onDropdownEnter(subMenuItem.id)">
+            <!-- (mouseleave)="onDropdownLeave()" -->
             <ng-container *ngFor="let nestedSubMenu of subMenuItem.children">
               <!-- Group with children: fly-out panel -->
               <ng-container *ngIf="nestedSubMenu.children && nestedSubMenu.children.length > 0; else singleNestedItem">
-                <li class="dropdown-submenu"
-                    [ngClass]="{ 'active-group': activeNestedItemId() === nestedSubMenu.id }"
+                <li class="dropdown-submenu" [ngClass]="{ 'active-group': activeNestedItemId() === nestedSubMenu.id }"
+                  (mouseenter)="onGroupEnter(nestedSubMenu.id)">
+                  <!-- (mouseleave)="onGroupLeave()" -->
+                  <a class="has-submenu">{{ nestedSubMenu.title }}</a>
+                  <ul class="dropdown-menu submenu-panel" [class.show]="hoveredGroupId() === nestedSubMenu.id"
                     (mouseenter)="onGroupEnter(nestedSubMenu.id)">
                     <!-- (mouseleave)="onGroupLeave()" -->
-                  <a class="has-submenu">{{ nestedSubMenu.title }}</a>
-                  <ul class="dropdown-menu submenu-panel"
-                      [class.show]="hoveredGroupId() === nestedSubMenu.id"
-                      (mouseenter)="onGroupEnter(nestedSubMenu.id)">
-                      <!-- (mouseleave)="onGroupLeave()" -->
                     <li *ngFor="let deepItem of nestedSubMenu.children"
-                        [ngClass]="{ 'active-deep': activeDeepItemId() === deepItem.id }">
-                      <a [routerLink]="deepItem.route"
-                         (click)="setActiveDeepItem(deepItem, nestedSubMenu.id)">{{ deepItem.title }}</a>
+                      [ngClass]="{ 'active-deep': activeDeepItemId() === deepItem.id }">
+                      <a [routerLink]="deepItem.route" (click)="setActiveDeepItem(deepItem, nestedSubMenu.id)">{{
+                        deepItem.title }}</a>
                     </li>
                   </ul>
                 </li>
@@ -240,8 +210,8 @@
               <!-- Leaf: direct link -->
               <ng-template #singleNestedItem>
                 <li [ngClass]="{ 'active-nested': activeNestedItemId() === nestedSubMenu.id }">
-                  <a [routerLink]="nestedSubMenu.route"
-                     (click)="setActiveNestedItem(nestedSubMenu)">{{ nestedSubMenu.title }}</a>
+                  <a [routerLink]="nestedSubMenu.route" (click)="setActiveNestedItem(nestedSubMenu)">{{
+                    nestedSubMenu.title }}</a>
                 </li>
               </ng-template>
             </ng-container>
@@ -284,13 +254,7 @@
           <i class="bi bi-arrow-repeat pd-spin"></i>
         </div>
       </div>
-      <input
-        #profileImageInput
-        type="file"
-        accept="image/*"
-        class="d-none"
-        (change)="onProfileImageSelected($event)"
-      />
+      <input #profileImageInput type="file" accept="image/*" class="d-none" (change)="onProfileImageSelected($event)" />
       <!-- Camera Capture Overlay -->
       <div class="camera-overlay" *ngIf="isCameraOpen()">
         <div class="camera-container">
@@ -350,6 +314,28 @@
           <div class="pd-stat-icon pds-blue"><i class="bi bi-clock-history"></i></div>
           <div class="pd-stat-label">Last Login</div>
           <div class="pd-stat-val pd-stat-xs">{{ loggedInLastLogin }}</div>
+        </div>
+      </div>
+
+      <!-- Section Label -->
+      <div class="pd-section-label">App Theme</div>
+      <div class="pd-theme-grid px-3 py-2">
+        <button *ngFor="let t of themeOptions" [class]="'theme-swatch swatch-' + t.key"
+          [class.active]="activeTheme() === t.key" [title]="t.name" (click)="selectTheme(t.key)">
+        </button>
+      </div>
+      <div
+        class="pd-custom-theme-picker px-3 pb-2 d-flex align-items-center justify-content-between gap-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <button class="theme-swatch swatch-custom" [class.active]="activeTheme() === 'custom'"
+            [style.background-color]="customColor()" title="Apply Custom Theme Color" (click)="selectTheme('custom')">
+          </button>
+          <span class="text-xs text-muted fw-semibold">Custom Color</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input type="color" class="custom-color-input" [value]="customColor()" (input)="onCustomColorChange($event)"
+            title="Choose Custom Color" />
+          <span class="custom-color-hex text-muted text-xs font-monospace">{{ customColor() }}</span>
         </div>
       </div>
 

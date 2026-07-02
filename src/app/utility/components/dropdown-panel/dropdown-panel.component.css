@@ -42,15 +42,15 @@ ul.list-group {
 
 /* ─── Mouse Hover ─── */
 .dropdown-panel .list-group-item:hover {
-  background-color: rgba(218, 38, 28, 0.08);
-  color: #da261c;
+  background-color: var(--primary-50);
+  color: var(--primary-color);
   padding-left: 16px;
 }
 
 /* ─── Keyboard Active / Selected ─── */
 .dropdown-panel .list-group-item.active,
 .dropdown-panel .list-group-item:hover.active {
-  background-color: #da261c;
+  background-color: var(--primary-color);
   color: #fff;
   padding-left: 16px;
   font-weight: 500;

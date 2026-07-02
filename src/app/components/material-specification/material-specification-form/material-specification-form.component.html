@@ -86,10 +86,10 @@
                 maxlength="50" (blur)="generateSpecificationName()" />
             </div>
 
-            <!-- 6. Display Title (auto-generated, read-only) -->
+            <!-- 6. Display Title (auto-generated, editable) -->
             <div class="col-md-3">
               <label class="form-label">Display Title</label>
-              <input type="text" class="form-control form-control-sm" formControlName="displayTitle" placeholder="Auto-generated" readonly />
+              <input type="text" class="form-control form-control-sm" formControlName="displayTitle" placeholder="Auto-generated" />
             </div>
 
             <!-- 7. Material Specification Title (last) -->
@@ -188,6 +188,7 @@
                       <td>
                         <app-searchable-dropdown [smallInput]="true"
                           class="w-100"
+                          [ngClass]="{'border border-danger rounded': hp.get('parameterID')?.touched && hp.get('parameterID')?.hasError('required')}"
                           [placeholder]="'Search Parameter'"
                           [labelName]="'Parameter'"
                           [fetchDataFn]="tab === 'chemical' ? getChemicalParameter : getMechanicalParameter"
@@ -196,6 +197,7 @@
                           [isDisabled]="isViewMode"
                           [selectedItem]="hp.get('parameterID')?.value"
                         ></app-searchable-dropdown>
+                        <small *ngIf="hp.get('parameterID')?.touched && hp.get('parameterID')?.hasError('required')" class="text-danger">Parameter is required.</small>
                       </td>
                       <td>
                         <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID">
@@ -291,7 +293,7 @@
                     formControlName="grade"
                     placeholder="Enter grade"
                     maxlength="100"
-                    (blur)="generateSpecificationName()"
+                    (input)="onGradeInput(gi, $any($event.target).value)"
                     [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }"
                   />
                   <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger small">Grade is required.</span>
@@ -329,7 +331,8 @@
                 <div class="col-md-3" *ngIf="getActiveIdentifiers().length">
                   <label class="form-label">Identifier</label>
                   <select class="form-select form-select-sm" [(ngModel)]="gradeIdentifierValues[gi].key"
-                    [ngModelOptions]="{ standalone: true }" [disabled]="isViewMode">
+                    [ngModelOptions]="{ standalone: true }" [disabled]="isViewMode"
+                    (ngModelChange)="onGradeIdentifierChange(gi)">
                     <option [ngValue]="''">-- Select --</option>
                     <option *ngFor="let idf of getActiveIdentifiers()" [ngValue]="idf.key">{{ idf.label }}</option>
                   </select>
@@ -339,7 +342,8 @@
                   <input class="form-control form-control-sm" type="text"
                     [placeholder]="'Enter ' + getIdentifierLabel(gradeIdentifierValues[gi].key)"
                     [(ngModel)]="gradeIdentifierValues[gi].value" [ngModelOptions]="{ standalone: true }"
-                    [disabled]="isViewMode" maxlength="100" />
+                    [disabled]="isViewMode" maxlength="100"
+                    (input)="onGradeIdentifierChange(gi)" />
                 </div>
               </div>
               <ul class="nav nav-tabs">
@@ -1345,7 +1349,7 @@
   <div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
     <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
       <div class="custom-modal-header">
-        <h6 class="mb-0">Import Preview — review before adding</h6>
+        <h6 class="mb-0">Import Preview — Review before adding</h6>
         <button type="button" class="btn-close" (click)="cancelImport()"></button>
       </div>
       <div class="custom-modal-body">
@@ -1353,7 +1357,7 @@
           <span class="badge bg-success">{{ importOkCount }} OK</span>
           <span class="badge bg-warning text-dark">{{ importWarnCount }} Warning</span>
           <span class="badge bg-danger">{{ importErrorCount }} Error</span>
-          <span class="text-muted">Error rows ko import nahi kiya jayega.</span>
+          <span class="text-muted">Error rows will not be imported.</span>
         </div>
         <div class="table-responsive import-preview-table">
           <table class="table table-sm table-bordered mb-0">

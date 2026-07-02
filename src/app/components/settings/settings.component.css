@@ -92,15 +92,15 @@
 }
 
 .nav-menu-btn:hover {
-  background: rgba(218, 38, 28, 0.08);
-  border-color: rgba(218, 38, 28, 0.15);
-  color: #DA261C;
+  background: rgba(var(--bs-primary-rgb), 0.08);
+  border-color: rgba(var(--bs-primary-rgb), 0.15);
+  color: var(--primary-color);
 }
 
 .nav-menu-btn.active {
-  background: rgba(218, 38, 28, 0.12);
-  border-left: 3px solid #DA261C;
-  color: #DA261C;
+  background: rgba(var(--bs-primary-rgb), 0.12);
+  border-left: 3px solid var(--primary-color);
+  color: var(--primary-color);
   padding-left: calc(1rem - 1px);
   font-weight: 600;
 }
@@ -111,18 +111,18 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: rgba(218, 38, 28, 0.12);
+  background: rgba(var(--bs-primary-rgb), 0.12);
   border-radius: 6px;
   font-size: 1.1rem;
-  color: #DA261C;
+  color: var(--primary-color);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 .nav-menu-btn.active .nav-icon {
-  background: #DA261C;
+  background: var(--primary-color);
   color: white;
-  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 .nav-label {
@@ -147,10 +147,10 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #DA261C;
+  background: var(--primary-color);
   border-radius: 50%;
   margin-left: 0.5rem;
-  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.08);
+  box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.08);
 }
 
 .settings-main {
@@ -202,7 +202,7 @@
 }
 
 .form-title i {
-  color: #DA261C;
+  color: var(--primary-color);
   font-size: 1.15rem;
 }
 
@@ -265,7 +265,7 @@
 }
 
 .form-label .required {
-  color: #DA261C;
+  color: var(--primary-color);
   font-weight: 700;
   margin-left: 0.2rem;
 }
@@ -282,9 +282,9 @@
 }
 
 .form-control:focus {
-  border-color: #DA261C;
+  border-color: var(--primary-color);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.08);
+  box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.08);
 }
 
 .form-control:hover:not(:focus) {
@@ -357,7 +357,7 @@ select.form-control {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #DA261C;
+  accent-color: var(--primary-color);
 }
 
 /* ============================================
@@ -393,8 +393,8 @@ select.form-control {
 }
 
 .file-upload-inline:hover {
-  border-color: #DA261C;
-  background: rgba(218, 38, 28, 0.03);
+  border-color: var(--primary-color);
+  background: rgba(var(--bs-primary-rgb), 0.03);
 }
 
 .file-upload-inline.has-file {
@@ -551,7 +551,7 @@ select.form-control {
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 0.85rem;
-  background: #DA261C;
+  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 4px;
@@ -563,8 +563,8 @@ select.form-control {
 }
 
 .btn-edit:hover {
-  background: #c82333;
-  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.2);
+  background: var(--primary-hover);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 .btn-edit i {
@@ -655,7 +655,7 @@ select.form-control {
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   display: block;
-  color: #DA261C;
+  color: var(--primary-color);
   font-weight: 600;
   font-family: 'Courier New', monospace;
   word-break: break-all;
@@ -713,13 +713,13 @@ select.form-control {
 }
 
 .btn-primary {
-  background: #DA261C;
+  background: var(--primary-color);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #c82333;
-  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.25);
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .btn-secondary {
@@ -744,7 +744,7 @@ select.form-control {
   gap: 1.5rem;
   background: white;
   border: 1px solid #ddd;
-  border-top: 3px solid #DA261C;
+  border-top: 3px solid var(--primary-color);
   border-radius: 0 0 8px 8px;
   padding: 1rem 1.5rem;
   margin: 1.5rem -1.5rem -1.5rem -1.5rem;
@@ -1079,7 +1079,7 @@ input::placeholder {
 
 /* Save button accent */
 .btn-save {
-  background: #DA261C;
+  background: var(--primary-color);
   color: white;
   border: none;
   font-weight: 600;
@@ -1088,13 +1088,13 @@ input::placeholder {
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #b91d14;
-  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.3);
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .btn-save:disabled,
 .btn-save[disabled] {
-  background: #DA261C !important;
+  background: var(--primary-color) !important;
   color: white !important;
   cursor: not-allowed;
   opacity: 0.55 !important;
@@ -1107,7 +1107,7 @@ input::placeholder {
 
 .fy-form-card {
   border: 1px solid #dee2e6;
-  border-left: 3px solid var(--primary-color, #da261c);
+  border-left: 3px solid var(--primary-color);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   background: #fafbfc;

@@ -41,10 +41,10 @@
   border-color: #adb5bd;
 }
 
-/* Red border when panel is open */
+/* Border when panel is open */
 .ms-trigger.ms-trigger-open {
-  border-color: #da261c;
-  box-shadow: 0 0 0 0.18rem rgba(218, 38, 28, 0.12);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.18rem rgba(var(--bs-primary-rgb), 0.12);
 }
 
 .ms-trigger.is-invalid {
@@ -89,12 +89,12 @@
   text-overflow: ellipsis;
 }
 
-/* ─── Chips — ng-select red theme ─── */
+/* ─── Chips — ng-select theme ─── */
 .ms-chip {
   display: inline-flex;
   align-items: center;
-  background: #fef2f2;
-  border: 1px solid #da261c;
+  background: var(--primary-50);
+  border: 1px solid var(--primary-color);
   border-radius: 3px;
   overflow: hidden;
   max-width: 180px;
@@ -105,7 +105,7 @@
   padding: 1px 4px 1px 6px;
   font-size: 0.72rem;
   font-family: 'Poppins', sans-serif;
-  color: #da261c;
+  color: var(--primary-color);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -116,10 +116,10 @@
 .ms-chip-remove {
   background: none;
   border: none;
-  border-left: 1px solid rgba(218, 38, 28, 0.3);
+  border-left: 1px solid rgba(var(--bs-primary-rgb), 0.3);
   padding: 1px 4px;
   cursor: pointer;
-  color: #da261c;
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   font-size: 0.8rem;
@@ -129,7 +129,7 @@
 }
 
 .ms-chip-remove:hover {
-  background-color: #da261c;
+  background-color: var(--primary-color);
   color: #fff;
 }
 

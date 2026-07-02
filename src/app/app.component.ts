@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NotificationStoreService } from './services/notification-store.service';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +13,10 @@ import { NotificationStoreService } from './services/notification-store.service'
 export class AppComponent implements OnInit {
   title = 'LIMS';
 
-  constructor(private notificationStore: NotificationStoreService) { }
+  constructor(
+    private notificationStore: NotificationStoreService,
+    private themeService: ThemeService
+  ) { }
   ngOnInit(): void {
     navigator.serviceWorker?.addEventListener('message', (event) => {
       debugger;

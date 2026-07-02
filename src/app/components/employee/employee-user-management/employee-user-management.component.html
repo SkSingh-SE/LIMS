@@ -131,7 +131,12 @@
                         formControlName="password"
                         [disabled]="isViewMode"
                         placeholder="Enter new password..."
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('password', submitted) }"
                       />
+                      <div *ngIf="isFieldInvalid('password', submitted)">
+                        <span *ngIf="userForm.get('password')?.hasError('required')" class="text-danger text-sm">Password is required.</span>
+                        <span *ngIf="userForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 8 characters.</span>
+                      </div>
 
                       <button type="button" class="btn btn-add" (click)="togglePasswordVisibility()" [disabled]="isViewMode">
                         <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
@@ -140,7 +145,7 @@
 
                     <small class="text-muted d-block mt-1">Leave blank to keep current password</small>
 
-                    <button type="button" class="btn btn-danger w-100 mt-2" [disabled]="isViewMode" (click)="resetPassword()">
+                    <button type="button" class="btn btn-primary w-100 mt-2" [disabled]="isViewMode" (click)="resetPassword()">
                       <i class="bi bi-key me-2"></i>
                       Reset Password
                     </button>
@@ -227,7 +232,7 @@
 
                     <small
                       class="text-danger d-block mt-1"
-                      *ngIf="userForm.get('ipRestriction')?.errors?.['invalidIpRestriction'] && userForm.get('ipRestriction')?.touched"
+                      *ngIf="userForm.get('ipRestriction')?.errors?.['invalidIpRestriction'] && (userForm.get('ipRestriction')?.touched || submitted)"
                     >
                       Enter valid IPv4 addresses (comma-separated). CIDR notation is supported.
                     </small>
@@ -247,37 +252,39 @@
                               Define the allowed login time window for this user. Leave empty to allow access at any time.
                             </p>
 
-                            <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
-                              <div style="width: 140px">
-                                <label class="form-label small fw-bold mb-1">Start Time</label>
-                                <input
-                                  type="time"
-                                  class="form-control"
-                                  formControlName="startTime"
-                                  [disabled]="isViewMode"
-                                  placeholder="Type here e.g., 09:00"
-                                  aria-label="Start time"
-                                />
-                                <small class="text-muted">e.g., 09:00</small>
-                              </div>
+                                <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
+                                  <div style="width: 140px">
+                                    <label class="form-label small fw-bold mb-1">Start Time</label>
+                                    <input
+                                      type="time"
+                                      class="form-control"
+                                      formControlName="startTime"
+                                      [disabled]="isViewMode"
+                                      placeholder="Type here e.g., 09:00"
+                                      aria-label="Start time"
+                                      [ngClass]="{ 'is-invalid': isFieldInvalid('startTime', submitted) }"
+                                    />
+                                    <small class="text-muted">e.g., 09:00</small>
+                                  </div>
 
-                              <div style="width: 140px">
-                                <label class="form-label small fw-bold mb-1">End Time</label>
-                                <input
-                                  type="time"
-                                  class="form-control"
-                                  formControlName="endTime"
-                                  [disabled]="isViewMode"
-                                  placeholder="Type here e.g., 18:00"
-                                  aria-label="End time"
-                                />
-                                <small class="text-muted">e.g., 18:00</small>
-                              </div>
+                                  <div style="width: 140px">
+                                    <label class="form-label small fw-bold mb-1">End Time</label>
+                                    <input
+                                      type="time"
+                                      class="form-control"
+                                      formControlName="endTime"
+                                      [disabled]="isViewMode"
+                                      placeholder="Type here e.g., 18:00"
+                                      aria-label="End time"
+                                      [ngClass]="{ 'is-invalid': isFieldInvalid('endTime', submitted) }"
+                                    />
+                                    <small class="text-muted">e.g., 18:00</small>
+                                  </div>
 
-                              <div *ngIf="userForm.get('endTime')?.hasError('endBeforeStart')" class="text-danger small">
-                                End time must be after start time.
-                              </div>
-                            </div>
+                                  <div *ngIf="isFieldInvalid('endTime', submitted)" class="text-danger small">
+                                    End time must be after start time.
+                                  </div>
+                                </div>
 
                             <div class="mt-2">
                               <small class="text-muted">Example: 09:00–18:00</small>
@@ -313,7 +320,8 @@
                   <!-- Session Timeout -->
                   <div class="col-md-6">
                     <label class="form-label text-muted small fw-bold">SESSION TIMEOUT</label>
-                    <select class="form-select" formControlName="sessionTimeout" [disabled]="isViewMode">
+                    <select class="form-select" formControlName="sessionTimeout" [disabled]="isViewMode"
+                      [ngClass]="{ 'is-invalid': isFieldInvalid('sessionTimeout', submitted) }">
                       <option [value]="0">Default Session</option>
                       <option [value]="15">15 Minutes</option>
                       <option [value]="30">30 Minutes</option>
@@ -321,6 +329,9 @@
                       <option [value]="120">120 Minutes</option>
                     </select>
                     <small class="text-muted">Auto logout after inactivity</small>
+                    <div *ngIf="isFieldInvalid('sessionTimeout', submitted)">
+                      <span *ngIf="userForm.get('sessionTimeout')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
+                    </div>
                   </div>
 
                   <!-- Force Password Change -->
@@ -556,7 +567,7 @@
 
     <!-- Action Buttons (for Tabs 1-3) -->
     <div class="mt-4 border-top pt-3 d-flex justify-content-end" *ngIf="activeTab() !== 4 && !isViewMode">
-      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="userForm.invalid || false">
+      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="submitted && userForm.invalid">
         <i class="bi bi-save me-1"></i>
         Save User Settings
       </button>

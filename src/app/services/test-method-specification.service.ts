@@ -56,8 +56,8 @@ export class TestMethodSpecificationService {
       return this.http.get<any>(`${this.apiUrl}/version-impact/${versionId}`);
     }
 
-    getVersionsDropdown(specId: number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/${specId}/versions/dropdown`);
+    getVersionsDropdown(specId: number, includeAll: boolean = false): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/${specId}/versions/dropdown?includeAll=${includeAll}`);
     }
 
 }

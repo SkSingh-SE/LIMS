@@ -68,8 +68,8 @@
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
-  background: linear-gradient(135deg, rgba(218, 38, 28, 0.08) 0%, rgba(218, 38, 28, 0.04) 100%);
-  color: #DA261C;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  color: var(--primary-color);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   flex-shrink: 0;
@@ -97,9 +97,9 @@
 }
 
 .btn-icon:hover {
-  background: rgba(218, 38, 28, 0.04);
-  color: #DA261C;
-  border-color: rgba(218, 38, 28, 0.2);
+  background: var(--primary-50);
+  color: var(--primary-color);
+  border-color: var(--primary-100);
   transform: translateY(-1px);
 }
 
@@ -169,7 +169,7 @@
   height: 64px;
   margin: 0 auto 1rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(218, 38, 28, 0.08) 0%, rgba(218, 38, 28, 0.04) 100%);
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +177,7 @@
 
 .error-icon i {
   font-size: 2rem;
-  color: #DA261C;
+  color: var(--primary-color);
   opacity: 0.6;
 }
 

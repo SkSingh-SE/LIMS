@@ -12,7 +12,7 @@
   padding: 0.875rem 1rem;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  border-left: 3px solid #DA261C;
+  border-left: 3px solid var(--primary-color);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
   min-height: 90px;
@@ -29,17 +29,17 @@
 
 .dashboard-card.clickable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.1);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.1);
   border-left-width: 3px;
 }
 
 .dashboard-card.clickable:focus-visible {
-  outline: 2px solid #DA261C;
+  outline: 2px solid var(--primary-color);
   outline-offset: 1px;
 }
 
 /* Status Colors */
-.dashboard-card.card-status-normal { border-left-color: #DA261C; }
+.dashboard-card.card-status-normal { border-left-color: var(--primary-color); }
 .dashboard-card.card-status-warning { border-left-color: #FFBF00; }
 .dashboard-card.card-status-critical { border-left-color: #8B0000; }
 
@@ -62,18 +62,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(218, 38, 28, 0.06);
+  background: var(--primary-50);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 .dashboard-card.clickable:hover .card-icon {
-  background: rgba(218, 38, 28, 0.1);
+  background: var(--primary-100);
 }
 
 .card-icon i {
   font-size: 1rem;
-  color: #DA261C;
+  color: var(--primary-color);
 }
 
 /* Urgent Indicator - Compact */
@@ -82,7 +82,7 @@
   align-items: center;
   gap: 0.125rem;
   padding: 0.125rem 0.375rem;
-  background: #DA261C;
+  background: var(--primary-color);
   color: white;
   border-radius: 4px;
   font-size: 0.625rem;
@@ -112,7 +112,7 @@
 .count-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #DA261C;
+  color: var(--primary-color);
   line-height: 1;
   display: block;
   letter-spacing: -0.01em;
@@ -143,7 +143,7 @@
 
 .card-title-link:hover .card-title,
 .card-title-link:hover .card-title-text {
-  color: #DA261C;
+  color: var(--primary-color);
 }
 
 /* Card Description - Hidden for Compact Design */

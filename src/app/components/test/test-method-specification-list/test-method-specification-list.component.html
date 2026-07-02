@@ -69,11 +69,11 @@
                 </div>
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ supplier.name }}</td>
+              <td>{{ supplier.displayTitle || supplier.name || '-' }}</td>
               <td>{{ supplier.standardOrganizationName }}</td>
               <td>{{ supplier.testMethodStandard }}</td>
-              <td>{{ supplier.currentVersion || '-' }}</td>
-              <td>{{ supplier.currentVersionYear || '-' }}</td>
+              <td>{{ supplier.defaultVersion || '-' }}</td>
+              <td>{{ supplier.defaultVersionYear || '-' }}</td>
               <td>{{ supplier.isDisabled ? "Yes" : "No" }}</td>
               <td>{{ supplier.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
             </tr>

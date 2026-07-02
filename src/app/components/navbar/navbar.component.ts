@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, AfterViewChecked, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, signal } from '@angular/core';
+import { AfterViewInit, AfterViewChecked, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, signal, computed } from '@angular/core';
 import { NavigationStart, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -10,6 +10,7 @@ import { ToastService } from '../../services/toast.service';
 import { getAllMenuItems, MenuItem } from '../../models/MenuItem';
 import { PermissionService } from '../../utility/permission/permission.service';
 import { environment } from '../../../environments/environment';
+import { ThemeService } from '../../services/theme.service';
 
 export interface FlatMenuItem {
   title: string;
@@ -96,6 +97,27 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   isSearchExpanded = signal(false);
   allFlatMenuItems: FlatMenuItem[] = [];
 
+  activeTheme = computed(() => this.themeService.currentTheme());
+  customColor = computed(() => this.themeService.customColor());
+  
+  themeOptions = [
+    { key: 'red', name: 'Classic Red' },
+    { key: 'blue', name: 'Deep Blue' },
+    { key: 'green', name: 'Forest Green' },
+    { key: 'slate', name: 'Charcoal Slate' },
+    { key: 'teal', name: 'Deep Teal' },
+    { key: 'purple', name: 'Royal Purple' },
+    { key: 'amber', name: 'Amber Gold' },
+    { key: 'rose', name: 'Crimson Rose' },
+    { key: 'sky', name: 'Sky Blue' },
+    { key: 'emerald', name: 'Emerald Green' },
+    { key: 'tptl', name: 'Tripearl Blue' },
+    { key: 'coral', name: 'Vibrant Coral' },
+    { key: 'midnight', name: 'Midnight Indigo' },
+    { key: 'olive', name: 'Olive Green' },
+    { key: 'magenta', name: 'Orchid Magenta' }
+  ];
+
   constructor(
     private renderer: Renderer2,
     private cdr: ChangeDetectorRef,
@@ -104,9 +126,21 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     private employeeService: EmployeeService,
     private toastService: ToastService,
     private permissionService: PermissionService,
-    private router: Router
+    private router: Router,
+    private themeService: ThemeService
   ) {
     this.allFlatMenuItems = this.flattenMenuItems(this.menuItems);
+  }
+
+  selectTheme(theme: string): void {
+    this.themeService.setTheme(theme as any);
+  }
+
+  onCustomColorChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input && input.value) {
+      this.themeService.setCustomColor(input.value);
+    }
   }
 
   ngOnInit(): void {
@@ -352,9 +386,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
           const filtered = this.filterMenusByApi(res || []);
 
-          // commented for development
-          // const afterPermFilter = this.applyPermissionFilter(filtered);
-          // this.menuItems = afterPermFilter;
+          const afterPermFilter = this.applyPermissionFilter(filtered);
+          this.menuItems = afterPermFilter;
 
           // 3. Update visible/overflow
           this.visibleMenuItems = [...this.menuItems];

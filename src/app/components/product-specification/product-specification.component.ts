@@ -430,6 +430,7 @@ export class ProductSpecificationComponent implements OnInit {
     this.ProductSpecificationForm.patchValue({ metalClassificationID: item.id });
   }
   specVersions: any[] = [];
+  showAllVersions = false;
   onTestSpecificationSelected(item:any){
     if (!item) {
       this.ProductSpecificationForm.patchValue({ testMethodSpecificationID: null, testMethodSpecificationVersionID: null });
@@ -440,7 +441,7 @@ export class ProductSpecificationComponent implements OnInit {
     this.loadSpecVersions(item.id);
   }
   loadSpecVersions(specId: number) {
-    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+    this.testMethodSpecificationService.getVersionsDropdown(specId, this.showAllVersions).subscribe({
       next: (data) => {
         this.specVersions = data || [];
         if (this.specVersions.length === 1) {
@@ -452,6 +453,13 @@ export class ProductSpecificationComponent implements OnInit {
         this.specVersions = [];
       }
     });
+  }
+  toggleShowAllVersions() {
+    this.showAllVersions = !this.showAllVersions;
+    const specId = this.ProductSpecificationForm.get('testMethodSpecificationID')?.value;
+    if (specId) {
+      this.loadSpecVersions(specId);
+    }
   }
   onLaboratoryTestChange(selectedIds: Select2UpdateEvent<Select2UpdateValue>) {
     const line = this.ProductSpecificationForm.get('testMethods') as FormArray;

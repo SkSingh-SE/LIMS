@@ -437,8 +437,8 @@
                      [formGroupName]="i" class="d-flex align-items-center">
                   <input class="form-control me-2" formControlName="name"
                          placeholder="Enter alias name" (keydown.enter)="addAlias()" />
-                  <button type="button" class="btn btn-danger btn-sm"
-                          *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">×</button>
+                    <button type="button" class="btn btn-remove btn-sm"
+                           *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">×</button>
                 </div>
               </div>
             </div>

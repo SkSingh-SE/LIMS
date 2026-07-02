@@ -17,20 +17,20 @@ export class TestMethodSpecificationListComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
+    { key: 'displayTitle', type: 'string', label: 'Display Name', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
     { key: 'testMethodStandard', type: 'string', label: 'Standard', filter: true },
-    { key: 'currentVersion', type: 'string', label: 'Current Version', filter: true },
-    { key: 'currentVersionYear', type: 'string', label: 'Year', filter: true },
+    { key: 'defaultVersion', type: 'string', label: 'Default Version', filter: true },
+    { key: 'defaultVersionYear', type: 'string', label: 'Year', filter: true },
     { key: 'isDisabled', type: 'bool', label: 'Disabled', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
+    displayTitle: 'string',
     standardOrganizationName: 'string',
     testMethodStandard: 'string',
-    currentVersion: 'string',
-    currentVersionYear: 'string',
+    defaultVersion: 'string',
+    defaultVersionYear: 'string',
     isDisabled: 'bool',
     modifiedOn: 'date',
   };

@@ -59,22 +59,6 @@
                 </span>
               </div>
 
-              <!-- Standard Title -->
-              <div class="col-md-3">
-                <label class="form-label">Standard Title <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  formControlName="name"
-                  placeholder="Enter Standard Title"
-                  maxlength="100"
-                  [ngClass]="{ 'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched }"
-                />
-                <span *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched" class="text-danger text-sm">
-                  Standard Title is required.
-                </span>
-              </div>
-
               <!-- Part / Sec -->
               <div class="col-md-3">
                 <label class="form-label">Part / Sec</label>
@@ -88,16 +72,31 @@
                 />
               </div>
 
-              <!-- Display Title (auto-generated) -->
-              <div class="col-md-6">
+              <!-- Display Title (auto-generated, editable) -->
+              <div class="col-md-3">
                 <label class="form-label">Display Title</label>
                 <input
                   type="text"
                   class="form-control form-control-sm"
                   formControlName="displayTitle"
                   placeholder="Auto-generated"
-                  readonly
                 />
+              </div>
+
+              <!-- Standard Title -->
+              <div class="col-md-6">
+                <label class="form-label">Standard Title <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  formControlName="name"
+                  placeholder="Enter Standard Title"
+                  maxlength="100"
+                  [ngClass]="{ 'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched }"
+                />
+                <span *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched" class="text-danger text-sm">
+                  Standard Title is required.
+                </span>
               </div>
 
               <!-- Disable switch -->
@@ -168,26 +167,12 @@
                   'opacity-75': isVersionReadOnly(i)
                 }"
               >
-                <!-- Version Header: Status Badge + Default toggle + Actions -->
+                <!-- Version Header: Status Badge + Default star + Actions -->
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge" [ngClass]="getStatusBadgeClass(i)">
                       {{ getStatusLabel(i) }}
                     </span>
-                    <div class="form-switch switch-danger" *ngIf="!isVersionReadOnly(i)">
-                      <input
-                        class="form-check-input mt-1"
-                        type="checkbox"
-                        role="switch"
-                        [id]="'default-version-' + i"
-                        [checked]="isDefaultVersion(i)"
-                        (change)="setDefaultVersion(i)"
-                        [disabled]="isViewMode || isDefaultVersion(i) || testSpecificationForm.get('isDisabled')?.value"
-                      />
-                      <label class="form-check-label form-label line-height-1 ms-2 mb-0" [for]="'default-version-' + i" role="button">Default</label>
-                    </div>
-                    <!-- Readonly versions can't toggle the radio, so show a badge instead -->
-                    <span *ngIf="isVersionReadOnly(i) && isDefaultVersion(i)" class="badge bg-primary"><i class="bi bi-star-fill"></i> Default</span>
                   </div>
                   <div class="d-flex gap-2">
                     <button
@@ -195,9 +180,27 @@
                       type="button"
                       class="btn btn-success btn-sm"
                       (click)="onActivateVersion(i)"
-                      title="Set as current active version"
+                      title="Set as active version"
                     >
                       <i class="bi bi-check-circle"></i> Activate
+                    </button>
+                    <button
+                      *ngIf="!isViewMode && group.get('status')?.value === VersionStatus.Withdrawn && !testSpecificationForm.get('isDisabled')?.value"
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      (click)="onActivateVersion(i)"
+                      title="Reactivate version"
+                    >
+                      <i class="bi bi-arrow-counterclockwise"></i> Reactivate
+                    </button>
+                    <button
+                      *ngIf="!isViewMode && (group.get('status')?.value === VersionStatus.Active || group.get('status')?.value === VersionStatus.Superseded) && !testSpecificationForm.get('isDisabled')?.value"
+                      type="button"
+                      class="btn btn-warning btn-sm"
+                      (click)="onWithdrawVersion(i)"
+                      title="Withdraw this version"
+                    >
+                      <i class="bi bi-x-circle"></i> Withdraw
                     </button>
                     <button
                       *ngIf="!isViewMode && !isVersionReadOnly(i) && versions.controls.length > 1 && !testSpecificationForm.get('isDisabled')?.value"
@@ -215,12 +218,7 @@
                   <div class="col-md-3">
                     <div class="d-flex flex-row gap-2">
                       <div *ngIf="versions.controls.length > 1 && !isVersionReadOnly(i)" class="d-flex flex-column align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-danger" [disabled]="i === 0" (click)="moveVersionUp(i)">
-                          <i class="bi bi-arrow-up-circle-fill"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-danger" [disabled]="i === versions.length - 1" (click)="moveVersionDown(i)">
-                          <i class="bi bi-arrow-down-circle-fill"></i>
-                        </button>
+                        <!-- Move up/down removed: UI-only reorder, doesn't persist to backend -->
                       </div>
 
                       <div class="w-100">
@@ -242,7 +240,7 @@
 
                   <div class="col-md-3">
                     <label class="form-label">Year</label>
-                    <select class="form-select form-select-sm" formControlName="year" [attr.disabled]="isVersionReadOnly(i) ? true : null">
+                    <select class="form-select form-select-sm" formControlName="year" [attr.disabled]="isVersionReadOnly(i) ? true : null" (blur)="buildDisplayTitle()">
                       <option [ngValue]="null">Select Year</option>
                       <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
                     </select>

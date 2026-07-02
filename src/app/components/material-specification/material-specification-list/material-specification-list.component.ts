@@ -19,17 +19,17 @@ export class MaterialSpecificationListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'displayTitle', type: 'string', label: 'Display Title', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
-    { key: 'metalClassificationName', type: 'string', label: 'Metal Classification', filter: true },
-    { key: 'standardYear', type: 'string', label: 'StandardYear', filter: true },
-    { key: 'grade', type: 'string', label: 'Grade', filter: true },
+    { key: 'specificationNo', type: 'string', label: 'Specification No', filter: true },
+    { key: 'standardYear', type: 'string', label: 'Standard Year', filter: true },
+    { key: 'version', type: 'string', label: 'Version', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     displayTitle: 'string',
-    metalClassificationName: 'string',
     standardOrganizationName: 'string',
+    specificationNo: 'string',
     standardYear: 'string',
-    grade: 'string',
+    version: 'string',
     modifiedOn: 'date',
   };
 

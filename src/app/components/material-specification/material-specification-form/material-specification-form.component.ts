@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, HostListener, signal } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectorRef, signal } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -90,6 +90,9 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   // store per-grade selected metal classification (UI-only state)
   selectedMetalByGrade: any[] = [];
 
+  /** Base grade name (user-typed part, without displayTitle prefix or identifier suffix). */
+  gradeBaseNames: string[] = [];
+
   // Accordion open/close state
   openSections: { [key: string]: boolean } = { header: true, headerParams: true };
   openGrades: { [key: number]: boolean } = { 0: true };
@@ -114,8 +117,9 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     private testMethodSpecificationService: TestMethodSpecificationService,
     private laboratoryTestService: LaboratoryTestService,
     private productSizeMasterService: ProductSizeMasterService,
-    private toastService: ToastService
-  , private unsavedChangesService: UnsavedChangesService) { }
+    private toastService: ToastService,
+    private unsavedChangesService: UnsavedChangesService,
+    private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -162,7 +166,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       standardYear: ['', Validators.required],
       specificationNo: ['', [Validators.required, Validators.maxLength(100)]],
       version: [''],
-      displayTitle: [{ value: '', disabled: true }],
+      displayTitle: [''],
       title: ['', [Validators.maxLength(300)]],
       identifierConfigJson: [''],
       aliasName: [{ value: '', disabled: true }, [Validators.maxLength(200)]],
@@ -190,9 +194,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   // Per grade only ONE identifier may be selected: { key, value }. Index-aligned with grades.
   gradeIdentifierValues: Array<{ key: string; value: string }> = [];
 
-  /** Label for an identifier key (built-in or custom). */
+  /** Label for an identifier key (built-in or custom). Splits by space and returns only the first word. */
   getIdentifierLabel(key: string): string {
-    return this.getActiveIdentifiers().find(i => i.key === key)?.label ?? key;
+    const fullLabel = this.getActiveIdentifiers().find(i => i.key === key)?.label ?? key;
+    return fullLabel.split(' ')[0] || fullLabel;
   }
 
   /**
@@ -357,6 +362,11 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.selectedSpecTab[newIndex] = this.selectedSpecTab[newIndex] || 'chemical';
     if (seedFromHeader) this.selectedGradeIndex = newIndex; // jump to the new grade tab (not on rebind)
     // MS-B: the legacy UNS/Steel single field is replaced by configurable grade identifiers — no required validator.
+    // Auto-compose initial grade name from display title if user hasn't typed anything yet.
+    this.gradeBaseNames[newIndex] = '';
+    if (seedFromHeader) {
+      this.composeGradeName(newIndex);
+    }
   }
 
   /** Switch the active grade tab. */
@@ -722,132 +732,170 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   /** Binds a specification payload (from load-by-id or clone-template) into the form. */
   bindSpecificationData(data: any) {
-          // set header-level fields
-          this.MaterialSpecificationForm.patchValue({
-            id: data.id,
-            standardOrganizationID: data.standardOrganizationID,
-            standard: data.standard,
-            part: data.part,
-            standardYear: data.standardYear,
-            specificationNo: data.specificationNo,
-            version: data.version,
-            displayTitle: data.displayTitle,
-            title: data.title,
-            aliasName: data.aliasName,
-            isCustom: data.isCustom
+    // Detach CD during bulk rebuild to avoid thousands of change-detection cycles
+    this.cdr.detach();
+
+    // ── 1.  Set header-level fields ──────────────────────────────────
+    this.MaterialSpecificationForm.patchValue({
+      id: data.id,
+      standardOrganizationID: data.standardOrganizationID,
+      standard: data.standard,
+      part: data.part,
+      standardYear: data.standardYear,
+      specificationNo: data.specificationNo,
+      version: data.version,
+      displayTitle: data.displayTitle,
+      title: data.title,
+      aliasName: data.aliasName,
+      isCustom: data.isCustom
+    });
+
+    // ── 2.  Rebind header parameter template ─────────────────────────
+    // Collect { tabIndex, group } for header param rows to map to equivalent units later.
+    const headerEquivRows: Array<{ group: AbstractControl; unitId: number }> = [];
+    this.headerParametersByTab('chemical').clear();
+    this.headerParametersByTab('mechanical').clear();
+    (data.headerParameters || []).forEach((hp: any) => {
+      const tab = hp.type === 'mechanical' ? 'mechanical' : 'chemical';
+      const group = this.createHeaderParameterGroup(hp);
+      this.headerParametersByTab(tab).push(group);
+      const savedUnit = hp.defaultParameterUnitID ?? hp.parameterUnitID ?? null;
+      if (savedUnit) {
+        headerEquivRows.push({ group, unitId: Number(savedUnit) });
+      }
+    });
+
+    // ── 3.  Rebind identifier config ─────────────────────────────────
+    this.enabledIdentifiers = {};
+    this.customIdentifiers = [];
+    try {
+      const cfg: Array<{ key: string; label: string; isCustom: boolean }> = JSON.parse(data.identifierConfigJson || '[]');
+      cfg.forEach(c => {
+        if (c.isCustom) this.customIdentifiers.push({ key: c.key, label: c.label });
+        else this.enabledIdentifiers[c.key] = true;
+      });
+    } catch { /* ignore malformed config */ }
+
+    // ── 4.  Rebind grades + specification lines ──────────────────────
+    // Keep a flat list of { group, unitId } pairs for batch equivalent-unit fetch.
+    const equivRows: Array<{ group: AbstractControl; unitId: number }> = [...headerEquivRows];
+
+    this.grades.clear();
+    this.selectedMetalByGrade = [];
+    this.gradeIdentifierValues = [];
+
+    data.grades?.forEach((grade: any) => {
+      this.addGrade(false);
+      const gradeIndex = this.grades.length - 1;
+      const gradeGroup = this.grades.at(gradeIndex);
+
+      this.gradeIdentifierValues[gradeIndex] = this.normalizeGradeIdentifier(grade.identifierValuesJson);
+
+      gradeGroup.patchValue({
+        id: grade.id,
+        specificationHeaderID: grade.specificationHeaderID,
+        grade: grade.grade,
+        isUNS: grade.isUNS,
+        unsSteelNumber: grade.unsSteelNumber,
+        metalClassificationID: grade.metalClassificationID
+      });
+
+      const linesGroup = gradeGroup.get('specificationLines') as FormGroup;
+
+      grade.specificationLines?.forEach((line: any) => {
+        const tab = line.type as 'chemical' | 'mechanical' | 'other';
+        const formArray = linesGroup.get(tab) as FormArray;
+        const lineGroup = this.createSpecificationLineFormGroup(tab);
+        lineGroup.patchValue({
+          id: line.id,
+          gradeID: line.gradeID,
+          manualSelection: line.manualSelection,
+          parameterID: line.parameterID,
+          minValue: line.minValue,
+          maxValue: line.maxValue,
+          notes: line.notes,
+          equation: line.equation,
+          minEquation: line.minEquation,
+          maxEquation: line.maxEquation,
+          parameterUnitID: line.parameterUnitID,
+          parameterUnitEquivalentID: line.parameterUnitEquivalentID,
+          minValueEquation: line.minValueEquation,
+          maxValueEquation: line.maxValueEquation,
+          minTolerance: line.minTolerance,
+          maxTolerance: line.maxTolerance,
+          specimenOrientationID: line.specimenOrientationID,
+          dimensionalFactorID: line.dimensionalFactorID,
+          lowerLimitValue: line.lowerLimitValue,
+          upperLimitValue: line.upperLimitValue,
+          lowerLimitDecimalValue: line.lowerLimitDecimalValue,
+          upperLimitDecimalValue: line.upperLimitDecimalValue,
+          heatTreatmentID: line.heatTreatmentID,
+          productConditionID1: line.productConditionID1,
+          productConditionID2: line.productConditionID2,
+          productSizeMasterID: line.productSizeMasterID,
+          testCondition: line.testCondition,
+          testNote: line.testNote,
+          laboratoryTestID: line.laboratoryTestID ?? null,
+          laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || [],
+          decimalPrecision: line.parameter?.decimalPrecision ?? 2,
+          parameterSymbol: line.parameter?.symbol ?? '',
+          parameterName: line.parameter?.name ?? '',
+          minReportableLimit: line.parameter?.minReportableLimit ?? null
+        });
+        // MS-E matrix: rebuild test-method spec slots (pad/truncate to exactly 5)
+        const tmArray = lineGroup.get('testMethodMapping') as FormArray;
+        tmArray.clear();
+        const saved = (line.testMethodMappings || [])
+          .slice()
+          .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+        for (let s = 0; s < 5; s++) tmArray.push(this.createTestMethodMappingRow(saved[s]));
+        formArray.push(lineGroup);
+        if (line.parameterUnitID) {
+          equivRows.push({ group: lineGroup, unitId: Number(line.parameterUnitID) });
+        }
+      });
+    });
+
+    // ── 5.  Batch-fetch equivalent units (deduplicated) ──────────────
+    if (equivRows.length) {
+      const uniqueUnitIds = [...new Set(equivRows.map(r => r.unitId))];
+      const unitObs: { [unitId: number]: Observable<any[]> } = {};
+      uniqueUnitIds.forEach(uid => {
+        unitObs[uid] = this.prameterUnitService.getEquivalentUnits(uid);
+      });
+      forkJoin(unitObs).subscribe({
+        next: (results: any) => {
+          equivRows.forEach(r => {
+            const units = results[r.unitId] || [];
+            this.equivalentUnitsByRow.set(r.group, units);
           });
+          // Reattach CD and run a single check
+          this.cdr.reattach();
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // On error: set empty arrays so dropdowns still render
+          equivRows.forEach(r => this.equivalentUnitsByRow.set(r.group, []));
+          this.cdr.reattach();
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      // No equiv calls needed — reattach and run a single CD cycle
+      this.cdr.reattach();
+      this.cdr.detectChanges();
+    }
 
-          // Rebind header parameter template (split by type into Chemical / General tabs)
-          this.headerParametersByTab('chemical').clear();
-          this.headerParametersByTab('mechanical').clear();
-          (data.headerParameters || []).forEach((hp: any) => {
-            const tab = hp.type === 'mechanical' ? 'mechanical' : 'chemical';
-            const group = this.createHeaderParameterGroup(hp);
-            this.headerParametersByTab(tab).push(group);
-            // Populate equivalent-unit options for the saved unit (preserve the bound value).
-            const savedUnit = hp.defaultParameterUnitID ?? hp.parameterUnitID ?? null;
-            if (savedUnit) this.loadEquivalentUnits(group, Number(savedUnit), false);
-          });
-
-          // MS-B: rebind identifier config (enabled built-ins + customs)
-          this.enabledIdentifiers = {};
-          this.customIdentifiers = [];
-          try {
-            const cfg: Array<{ key: string; label: string; isCustom: boolean }> = JSON.parse(data.identifierConfigJson || '[]');
-            cfg.forEach(c => {
-              if (c.isCustom) this.customIdentifiers.push({ key: c.key, label: c.label });
-              else this.enabledIdentifiers[c.key] = true;
-            });
-          } catch { /* ignore malformed config */ }
-
-          this.grades.clear();
-          this.selectedMetalByGrade = [];
-          this.gradeIdentifierValues = [];
-
-          data.grades?.forEach((grade: any) => {
-            this.addGrade(false);
-            const gradeIndex = this.grades.length - 1;
-            const gradeGroup = this.grades.at(gradeIndex);
-
-            this.gradeIdentifierValues[gradeIndex] = this.normalizeGradeIdentifier(grade.identifierValuesJson);
-
-            gradeGroup.patchValue({
-              id: grade.id,
-              specificationHeaderID: grade.specificationHeaderID,
-              grade: grade.grade,
-              isUNS: grade.isUNS,
-              unsSteelNumber: grade.unsSteelNumber,
-              metalClassificationID: grade.metalClassificationID
-            });
-
-            const linesGroup = gradeGroup.get('specificationLines') as FormGroup;
-
-            grade.specificationLines?.forEach((line: any) => {
-              const tab = line.type as 'chemical' | 'mechanical' | 'other';
-              const formArray = linesGroup.get(tab) as FormArray;
-              const lineGroup = this.createSpecificationLineFormGroup(tab);
-              lineGroup.patchValue({
-                id: line.id,
-                gradeID: line.gradeID,
-                manualSelection: line.manualSelection,
-                parameterID: line.parameterID,
-                minValue: line.minValue,
-                maxValue: line.maxValue,
-                notes: line.notes,
-                equation: line.equation,
-                minEquation: line.minEquation,
-                maxEquation: line.maxEquation,
-                parameterUnitID: line.parameterUnitID,
-                parameterUnitEquivalentID: line.parameterUnitEquivalentID,
-                minValueEquation: line.minValueEquation,
-                maxValueEquation: line.maxValueEquation,
-                minTolerance: line.minTolerance,
-                maxTolerance: line.maxTolerance,
-                specimenOrientationID: line.specimenOrientationID,
-                dimensionalFactorID: line.dimensionalFactorID,
-                lowerLimitValue: line.lowerLimitValue,
-                upperLimitValue: line.upperLimitValue,
-                lowerLimitDecimalValue: line.lowerLimitDecimalValue,
-                upperLimitDecimalValue: line.upperLimitDecimalValue,
-                heatTreatmentID: line.heatTreatmentID,
-                productConditionID1: line.productConditionID1,
-                productConditionID2: line.productConditionID2,
-                productSizeMasterID: line.productSizeMasterID,
-                testCondition: line.testCondition,
-                testNote: line.testNote,
-                laboratoryTestID: line.laboratoryTestID ?? null,
-                laboratoryTestIDs: line.laboratoryTests?.map((lt: any) => lt.laboratoryTestID) || [],
-                // Parameter metadata from joined Parameter navigation (for precision/UI only)
-                decimalPrecision: line.parameter?.decimalPrecision ?? 2,
-                parameterSymbol: line.parameter?.symbol ?? '',
-                parameterName: line.parameter?.name ?? '',
-                minReportableLimit: line.parameter?.minReportableLimit ?? null
-              });
-              // MS-E matrix: rebuild test-method spec slots (pad/truncate to exactly 5)
-              const tmArray = lineGroup.get('testMethodMapping') as FormArray;
-              tmArray.clear();
-              const saved = (line.testMethodMappings || [])
-                .slice()
-                .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-              for (let s = 0; s < 5; s++) tmArray.push(this.createTestMethodMappingRow(saved[s]));
-              formArray.push(lineGroup);
-              // Populate equivalent-unit options for the saved unit (preserve the bound value).
-              if (line.parameterUnitID) {
-                this.loadEquivalentUnits(lineGroup, Number(line.parameterUnitID), false);
-              }
-            });
-          });
-
-          if (this.selectedStandardOrganization == null) {
-            this.selectedStandardOrganization = { id: data.standardOrganizationID, name: data.standard };
-            // Fetch numberType for the selected standard organization
-            this.standardOrganizationService.getStandardOrganizationById(data.standardOrganizationID).subscribe({
-              next: (org) => {
-                this.selectedNumberType = org?.numberType || 'None';
-                this.updateUnsSteelValidation();
-              }
-            });
-          }
+    // ── 6.  Fetch numberType for standard org (fire-and-forget) ──────
+    if (this.selectedStandardOrganization == null) {
+      this.selectedStandardOrganization = { id: data.standardOrganizationID, name: data.standard };
+      this.standardOrganizationService.getStandardOrganizationById(data.standardOrganizationID).subscribe({
+        next: (org) => {
+          this.selectedNumberType = org?.numberType || 'None';
+          this.updateUnsSteelValidation();
+        }
+      });
+    }
   }
 
   generateSpecificationName() {
@@ -861,10 +909,22 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     if (part) alias += ` ${part}`;
     if (alias) this.MaterialSpecificationForm.patchValue({ aliasName: alias });
 
-    // Display Title: "{Org} {SpecNo} {Part} {Year} {Version}"  e.g. "IS 1234 Part-1 2025 v2"
-    const year    = this.MaterialSpecificationForm.get('standardYear')?.value || '';
-    const titleParts = [orgName, specNo, part, year, version].filter(v => v.trim() !== '');
-    this.MaterialSpecificationForm.patchValue({ displayTitle: titleParts.join(' ') });
+    // Display Title: "{Org} {SpecNo}-{Part}:{Year} {Version}"  e.g. "IS 1234 1608-1:2020"
+    const year = this.MaterialSpecificationForm.get('standardYear')?.value || '';
+    let displayTitle = orgName;
+    if (part) {
+      displayTitle += ` ${specNo}-${part}`;
+      const yearVersion = [year, version].filter(v => v.trim() !== '').join(' ');
+      if (yearVersion) {
+        displayTitle += `:${yearVersion}`;
+      }
+    } else {
+      const parts = [specNo, year, version].filter(v => v.trim() !== '');
+      if (parts.length) {
+        displayTitle += ' ' + parts.join(' ');
+      }
+    }
+    this.MaterialSpecificationForm.patchValue({ displayTitle: displayTitle.trim() });
   }
 
   /** Save just the header parameters (partial save — grades optional). Stays on page after save. */
@@ -1129,6 +1189,47 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
   };
+
+  /**
+   * Compose the full grade name for a given grade index:
+   *   "{displayTitle} Grade {baseName} {IdentifierLabel} {IdentifierValue}"
+   * Stores the user-typed base name separately (gradeBaseNames) so re-composition
+   * doesn't overwrite manual edits, only appends/changes the identifier suffix.
+   */
+  composeGradeName(gi: number): void {
+    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
+    const baseName = this.gradeBaseNames[gi] || '';
+    const idf = this.gradeIdentifierValues[gi];
+    let composed = displayTitle.trim() ? `${displayTitle} Grade` : 'Grade';
+    if (baseName.trim()) composed += ` ${baseName.trim()}`;
+    if (idf?.key && idf?.value?.trim()) {
+      const label = this.getIdentifierLabel(idf.key);
+      composed += ` ${label} ${idf.value.trim()}`;
+    }
+    this.grades.at(gi).patchValue({ grade: composed }, { emitEvent: false });
+  }
+
+  /** Called when user types in the grade field — captures the base name, then re-composes. */
+  onGradeInput(gi: number, value: string): void {
+    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
+    const prefix = displayTitle.trim() ? `${displayTitle} Grade ` : 'Grade ';
+    // Extract typed text after the prefix
+    let typed = value;
+    if (typed.startsWith(prefix)) typed = typed.substring(prefix.length);
+    // Strip any identifier suffix at the end (e.g. " UNS K92460")
+    const idf = this.gradeIdentifierValues[gi];
+    if (idf?.key && idf?.value?.trim()) {
+      const idfLabel = this.getIdentifierLabel(idf.key);
+      const idfSuffix = ` ${idfLabel} ${idf.value.trim()}`;
+      if (typed.endsWith(idfSuffix)) typed = typed.substring(0, typed.length - idfSuffix.length);
+    }
+    this.gradeBaseNames[gi] = typed.trim();
+  }
+
+  /** Called when grade identifier key or value changes — re-compose the grade name. */
+  onGradeIdentifierChange(gi: number): void {
+    this.composeGradeName(gi);
+  }
 
   onMetalClassificationSelected(item: any, gradeIndex: number) {
     if (!item) {

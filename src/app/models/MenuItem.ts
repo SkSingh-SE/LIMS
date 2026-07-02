@@ -303,9 +303,9 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-gear',
       color: '',
       children: [
-        { id: 60, title: 'Configuration Manager', route: '/config', parentMenuID: 10, permissions: ['CanReadConfiguration'], children: [], color: getRandomColor() },
-        { id: 61, title: 'Menu Management', route: '/menu', parentMenuID: 10, permissions: ['CanReadMenuManagement'], children: [], color: getRandomColor() },
-        { id: 62, title: 'Menu Permission', route: '/menu-permission', parentMenuID: 10, permissions: ['CanReadMenuPermission'], children: [], color: getRandomColor() },
+        // { id: 60, title: 'Configuration Manager', route: '/config', parentMenuID: 10, permissions: ['CanReadConfiguration'], children: [], color: getRandomColor() },
+        // { id: 61, title: 'Menu Management', route: '/menu', parentMenuID: 10, permissions: ['CanReadMenuManagement'], children: [], color: getRandomColor() },
+        // { id: 62, title: 'Menu Permission', route: '/menu-permission', parentMenuID: 10, permissions: ['CanReadMenuPermission'], children: [], color: getRandomColor() },
         { id: 63, title: 'Role Management', route: '/role', parentMenuID: 10, permissions: ['CanReadRoleManagement'], children: [], color: getRandomColor() },
         { id: 64, title: 'User Permission', route: '/user-permission', parentMenuID: 10, permissions: ['CanReadUserPermission'], children: [], color: getRandomColor() },
         { id: 65, title: 'Workflow', route: '/workflow', parentMenuID: 10, permissions: ['CanReadWorkflow'], children: [], color: getRandomColor() }

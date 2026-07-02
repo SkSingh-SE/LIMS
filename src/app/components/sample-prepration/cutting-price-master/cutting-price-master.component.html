@@ -265,8 +265,8 @@
 
           <!-- Year-wise Rates -->
           <div class="col-12">
-            <fieldset class="fieldset-block p-2 mt-1">
-              <legend class="fieldset-legend">Year-wise Rates <span class="text-danger">*</span></legend>
+            <fieldset class="border p-2 mt-1">
+              <legend>Year-wise Rates <span class="text-danger">*</span></legend>
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-2">
                   <thead class="table-light">
@@ -339,7 +339,7 @@
                         <button
                           *ngIf="!isViewMode && versions.length > 1"
                           type="button"
-                          class="btn btn-sm btn-outline-danger border-0 p-1"
+                          class="btn btn-sm btn-remove"
                           title="Remove"
                           (click)="removeVersion(vi)"
                         >
@@ -350,7 +350,7 @@
                   </tbody>
                 </table>
               </div>
-              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-primary" (click)="addVersion()">
+              <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addVersion()">
                 <i class="bi bi-plus-lg"></i> Add Year
               </button>
             </fieldset>

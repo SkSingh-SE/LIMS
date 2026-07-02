@@ -51,7 +51,7 @@
 
 /* Header Gradients if not in global css */
 .bg-gradient-primary {
-  background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+  background: linear-gradient(45deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
 }
 
 /* Buttons */
@@ -108,6 +108,6 @@
 
 /* Left side (Available) overrides if needed */
 .card-header.bg-gradient-primary + .card-body .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }

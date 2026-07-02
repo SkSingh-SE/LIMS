@@ -11,15 +11,11 @@
 :root {
   --nav-height: 60px;
   --transition-speed: 0.3s;
-  --primary-color: #da261c;
-  --bs-primary: #da261c;
-  --bs-primary-rgb: 218, 38, 28;
-  --primary-hover: #d50a0ace;
   --select2-multiple-height: 35px !important;
-  --select2-option-highlighted-background: #d50a0ace;
+  --select2-option-highlighted-background: var(--primary-hover);
   --select2-selection-border-radius: 5px;
   --select2-selection-choice-line-height: 23px;
-  accent-color: #da261c;
+  accent-color: var(--primary-color);
 }
 
 body {
@@ -208,23 +204,23 @@ body {
 }
 
 .navbar-background {
-  background-color: #da261c !important;
+  background-color: var(--primary-color) !important;
 }
 .bg-theme {
-  background-color: #da261c !important;
+  background-color: var(--primary-color) !important;
 }
 .theme-color {
-  color: #da261c;
+  color: var(--primary-color);
 }
 .theme-border {
-  border: 1px solid #da261c !important;
+  border: 1px solid var(--primary-color) !important;
 }
 .card-form-header {
   font-family: "Poppins", sans-serif;
   font-size: var(--font-md);
   font-style: normal;
   font-weight: 500;
-  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%) !important;
+  background: linear-gradient(90deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) !important;
   color: #fff;
   padding: 0.65rem 1.25rem;
 }
@@ -339,7 +335,7 @@ body {
 
 .form-check-input:checked {
   background-color: transparent !important;
-  border-color: #ff2c1f !important;
+  border-color: var(--primary-color) !important;
 }
 
 .select2-selection__placeholder {
@@ -393,14 +389,14 @@ body {
 }
 
 .page-link:hover {
-  background-color: #ffebee !important;
-  border-color: #ffcdd2 !important;
+  background-color: var(--primary-50) !important;
+  border-color: var(--primary-100) !important;
 }
 
 .page-item.active .page-link {
-  background-color: #d32f2f;
+  background-color: var(--primary-color) !important;
   color: white !important;
-  border-color: #d32f2f;
+  border-color: var(--primary-color) !important;
 }
 
 .page-item.disabled .page-link {
@@ -418,13 +414,13 @@ body {
 /* Animation for active page */
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4);
+    box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0.4);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(211, 47, 47, 0);
+    box-shadow: 0 0 0 10px rgba(var(--bs-primary-rgb), 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+    box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0);
   }
 }
 
@@ -655,36 +651,36 @@ body {
 
 .form-control:hover,
 .form-select:hover {
-  border-color: #da261c;
-  background-color: #fff8f8;
+  border-color: var(--primary-color);
+  background-color: var(--primary-50);
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #da261c !important;
-  box-shadow: 0 0 0 0.25rem rgba(218, 38, 28, 0.1) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.1) !important;
 }
 
-/* Native select — red dropdown arrow + red accent */
+/* Native select — themed dropdown arrow + accent */
 .form-select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
-  accent-color: #da261c;
+  background-image: var(--form-select-arrow) !important;
+  accent-color: var(--primary-color);
 }
 
 .form-select option:checked {
-  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  background: var(--primary-color) linear-gradient(0deg, var(--primary-color) 0%, var(--primary-color) 100%);
   color: #fff;
 }
 
-/* Native option hover — light red (Firefox/Edge) */
+/* Native option hover — light primary */
 .form-select option:hover {
-  background-color: #fef2f2 !important;
-  color: #da261c;
+  background-color: var(--primary-50) !important;
+  color: var(--primary-color);
 }
 
 /* Chrome: highlight uses system accent — override via ::highlight (future) */
 select:focus option:checked {
-  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%) !important;
+  background: var(--primary-color) linear-gradient(0deg, var(--primary-color) 0%, var(--primary-color) 100%) !important;
   color: #fff !important;
 }
 
@@ -698,7 +694,7 @@ select:focus option:checked {
 
 .flat-card:hover {
   transform: translateY(-2px);
-  border-color: #da261c !important;
+  border-color: var(--primary-color) !important;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -811,7 +807,14 @@ select:focus option:checked {
    These variables are also referenced by existing styles above.
 ════════════════════════════════════════════════════════════════ */
 :root {
-  /* ── Primary (Red) Palette ─────────────────────────────── */
+  /* ── Default Fallback variables matching Red theme ── */
+  --primary-color: #da261c;
+  --bs-primary: #da261c;
+  --bs-primary-rgb: 218, 38, 28;
+  --primary-hover: #b91c1c;
+  --primary-gradient-start: #ff2c1f;
+  --primary-gradient-end: #da271c;
+
   --primary-50:  #fdeaea;
   --primary-100: #fcd5d5;
   --primary-200: #f9abab;
@@ -823,7 +826,326 @@ select:focus option:checked {
   --primary-800: #c62828;
   --primary-900: #5c1212;
 
-  /* ── Neutral Palette ───────────────────────────────────── */
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23da261c'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+/* ── Theme Declarations ───────────────────────────────── */
+[data-theme="red"] {
+  --primary-color: #da261c;
+  --bs-primary: #da261c;
+  --bs-primary-rgb: 218, 38, 28;
+  --primary-hover: #b91c1c;
+  --primary-gradient-start: #ff2c1f;
+  --primary-gradient-end: #da271c;
+  --primary-50:  #fdeaea;
+  --primary-100: #fcd5d5;
+  --primary-200: #f9abab;
+  --primary-300: #f68181;
+  --primary-400: #f35757;
+  --primary-500: #f02d2d;
+  --primary-600: #DA261C;
+  --primary-700: #9b1c1c;
+  --primary-800: #c62828;
+  --primary-900: #5c1212;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23da261c'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="blue"] {
+  --primary-color: #1e40af;
+  --bs-primary: #1e40af;
+  --bs-primary-rgb: 30, 64, 175;
+  --primary-hover: #1d4ed8;
+  --primary-gradient-start: #3b82f6;
+  --primary-gradient-end: #1e40af;
+  --primary-50:  #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e40af' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231e40af'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="green"] {
+  --primary-color: #166534;
+  --bs-primary: #166534;
+  --bs-primary-rgb: 22, 101, 52;
+  --primary-hover: #15803d;
+  --primary-gradient-start: #22c55e;
+  --primary-gradient-end: #166534;
+  --primary-50:  #f0fdf4;
+  --primary-100: #dcfce7;
+  --primary-200: #bbf7d0;
+  --primary-300: #86efac;
+  --primary-400: #4ade80;
+  --primary-500: #22c55e;
+  --primary-600: #16a34a;
+  --primary-700: #15803d;
+  --primary-800: #166534;
+  --primary-900: #14532d;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23166534' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23166534'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="slate"] {
+  --primary-color: #1e293b;
+  --bs-primary: #1e293b;
+  --bs-primary-rgb: 30, 41, 59;
+  --primary-hover: #334155;
+  --primary-gradient-start: #64748b;
+  --primary-gradient-end: #0f172a;
+  --primary-50:  #f8fafc;
+  --primary-100: #f1f5f9;
+  --primary-200: #e2e8f0;
+  --primary-300: #cbd5e1;
+  --primary-400: #94a3b8;
+  --primary-500: #64748b;
+  --primary-600: #475569;
+  --primary-700: #334155;
+  --primary-800: #1e293b;
+  --primary-900: #0f172a;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e293b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231e293b'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="teal"] {
+  --primary-color: #0f766e;
+  --bs-primary: #0f766e;
+  --bs-primary-rgb: 15, 118, 110;
+  --primary-hover: #0d9488;
+  --primary-gradient-start: #14b8a6;
+  --primary-gradient-end: #115e59;
+  --primary-50:  #f0fdfa;
+  --primary-100: #ccfbf1;
+  --primary-200: #99f6e4;
+  --primary-300: #5eead4;
+  --primary-400: #2dd4bf;
+  --primary-500: #14b8a6;
+  --primary-600: #0d9488;
+  --primary-700: #0f766e;
+  --primary-800: #115e59;
+  --primary-900: #134e4a;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230f766e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230f766e'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="purple"] {
+  --primary-color: #6b21a8;
+  --bs-primary: #6b21a8;
+  --bs-primary-rgb: 107, 33, 168;
+  --primary-hover: #7e22ce;
+  --primary-gradient-start: #a855f7;
+  --primary-gradient-end: #581c87;
+  --primary-50:  #faf5ff;
+  --primary-100: #f3e8ff;
+  --primary-200: #e9d5ff;
+  --primary-300: #d8b4fe;
+  --primary-400: #c084fc;
+  --primary-500: #a855f7;
+  --primary-600: #9333ea;
+  --primary-700: #7e22ce;
+  --primary-800: #6b21a8;
+  --primary-900: #581c87;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b21a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236b21a8'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="amber"] {
+  --primary-color: #b45309;
+  --bs-primary: #b45309;
+  --bs-primary-rgb: 180, 83, 9;
+  --primary-hover: #d97706;
+  --primary-gradient-start: #f59e0b;
+  --primary-gradient-end: #92400e;
+  --primary-50:  #fffbeb;
+  --primary-100: #fef3c7;
+  --primary-200: #fde68a;
+  --primary-300: #fcd34d;
+  --primary-400: #fbbf24;
+  --primary-500: #f59e0b;
+  --primary-600: #d97706;
+  --primary-700: #b45309;
+  --primary-800: #92400e;
+  --primary-900: #78350f;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23b45309' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b45309'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="rose"] {
+  --primary-color: #be123c;
+  --bs-primary: #be123c;
+  --bs-primary-rgb: 190, 18, 60;
+  --primary-hover: #e11d48;
+  --primary-gradient-start: #f43f5e;
+  --primary-gradient-end: #9f1239;
+  --primary-50:  #fff1f2;
+  --primary-100: #ffe4e6;
+  --primary-200: #fecdd3;
+  --primary-300: #fda4af;
+  --primary-400: #fb7185;
+  --primary-500: #f43f5e;
+  --primary-600: #e11d48;
+  --primary-700: #be123c;
+  --primary-800: #9f1239;
+  --primary-900: #881337;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23be123c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23be123c'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="sky"] {
+  --primary-color: #0369a1;
+  --bs-primary: #0369a1;
+  --bs-primary-rgb: 3, 105, 161;
+  --primary-hover: #0284c7;
+  --primary-gradient-start: #38bdf8;
+  --primary-gradient-end: #075985;
+  --primary-50:  #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230369a1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230369a1'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="emerald"] {
+  --primary-color: #047857;
+  --bs-primary: #047857;
+  --bs-primary-rgb: 4, 120, 87;
+  --primary-hover: #059669;
+  --primary-gradient-start: #10b981;
+  --primary-gradient-end: #065f46;
+  --primary-50:  #ecfdf5;
+  --primary-100: #d1fae5;
+  --primary-200: #a7f3d0;
+  --primary-300: #6ee7b7;
+  --primary-400: #34d399;
+  --primary-500: #10b981;
+  --primary-600: #059669;
+  --primary-700: #047857;
+  --primary-800: #065f46;
+  --primary-900: #064e3b;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23047857' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+[data-theme="tptl"] {
+  --primary-color: #0b1c8a;
+  --bs-primary: #0b1c8a;
+  --bs-primary-rgb: 11, 28, 138;
+  --primary-hover: #071258;
+  --primary-gradient-start: #0b1c8a;
+  --primary-gradient-end: #ea580c;
+  --primary-50:  #f4f6ff;
+  --primary-100: #e5e8ff;
+  --primary-200: #ccd2ff;
+  --primary-300: #99a6ff;
+  --primary-400: #6679ff;
+  --primary-500: #0b1c8a;
+  --primary-600: #071258;
+  --primary-700: #050d42;
+  --primary-800: #03082a;
+  --primary-900: #010415;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230b1c8a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%230b1c8a'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="coral"] {
+  --primary-color: #d35400;
+  --bs-primary: #d35400;
+  --bs-primary-rgb: 211, 84, 0;
+  --primary-hover: #a04000;
+  --primary-gradient-start: #d35400;
+  --primary-gradient-end: #e67e22;
+  --primary-50:  #fdf5e6;
+  --primary-100: #faebcc;
+  --primary-200: #f4cf99;
+  --primary-300: #eba04d;
+  --primary-400: #e58224;
+  --primary-500: #d35400;
+  --primary-600: #a04000;
+  --primary-700: #7d3200;
+  --primary-800: #592400;
+  --primary-900: #361500;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23d35400' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d35400'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="midnight"] {
+  --primary-color: #1e1b4b;
+  --bs-primary: #1e1b4b;
+  --bs-primary-rgb: 30, 27, 75;
+  --primary-hover: #110e3d;
+  --primary-gradient-start: #1e1b4b;
+  --primary-gradient-end: #312e81;
+  --primary-50:  #f0f0f6;
+  --primary-100: #e0e0ed;
+  --primary-200: #c1c0db;
+  --primary-300: #9390c2;
+  --primary-400: #6560aa;
+  --primary-500: #1e1b4b;
+  --primary-600: #110e3d;
+  --primary-700: #0a0928;
+  --primary-800: #050414;
+  --primary-900: #020207;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e1b4b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231e1b4b'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="olive"] {
+  --primary-color: #3f6212;
+  --bs-primary: #3f6212;
+  --bs-primary-rgb: 63, 98, 18;
+  --primary-hover: #2d460d;
+  --primary-gradient-start: #3f6212;
+  --primary-gradient-end: #4d7c0f;
+  --primary-50:  #f4f9eb;
+  --primary-100: #e8f4d6;
+  --primary-200: #d1e8ad;
+  --primary-300: #acd76d;
+  --primary-400: #8ec342;
+  --primary-500: #3f6212;
+  --primary-600: #2d460d;
+  --primary-700: #213209;
+  --primary-800: #141f06;
+  --primary-900: #080c02;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233f6212' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233f6212'%3e%3cpath fill-rule='evenodd' d='M1.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+[data-theme="magenta"] {
+  --primary-color: #86198f;
+  --bs-primary: #86198f;
+  --bs-primary-rgb: 134, 25, 143;
+  --primary-hover: #5f1166;
+  --primary-gradient-start: #86198f;
+  --primary-gradient-end: #a21caf;
+  --primary-50:  #fdf2fb;
+  --primary-100: #fae6f7;
+  --primary-200: #f4ccee;
+  --primary-300: #e999dd;
+  --primary-400: #db66cc;
+  --primary-500: #86198f;
+  --primary-600: #5f1166;
+  --primary-700: #4a0d50;
+  --primary-800: #35093a;
+  --primary-900: #200523;
+  --form-select-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2386198f' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --accordion-button-arrow: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2386198f'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+:root {
   --neutral-50:  #F5F6FA;
   --neutral-100: #F3F4F6;
   --neutral-200: #EBECEF;
@@ -894,19 +1216,19 @@ select:focus option:checked {
    Override Bootstrap 5 CSS variables to force red theme
 ════════════════════════════════════════════════════════════════ */
 .btn-primary {
-  --bs-btn-bg: #da261c;
-  --bs-btn-border-color: #da261c;
+  --bs-btn-bg: var(--primary-color);
+  --bs-btn-border-color: var(--primary-color);
   --bs-btn-color: #fff;
-  --bs-btn-hover-bg: #b91c1c;
-  --bs-btn-hover-border-color: #b91c1c;
+  --bs-btn-hover-bg: var(--primary-hover);
+  --bs-btn-hover-border-color: var(--primary-hover);
   --bs-btn-hover-color: #fff;
-  --bs-btn-active-bg: #a51a1a;
-  --bs-btn-active-border-color: #a51a1a;
+  --bs-btn-active-bg: var(--primary-700);
+  --bs-btn-active-border-color: var(--primary-700);
   --bs-btn-active-color: #fff;
-  --bs-btn-disabled-bg: #da261c;
-  --bs-btn-disabled-border-color: #da261c;
+  --bs-btn-disabled-bg: var(--primary-color);
+  --bs-btn-disabled-border-color: var(--primary-color);
   --bs-btn-disabled-color: #fff;
-  --bs-btn-focus-shadow-rgb: 218, 38, 28;
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
   background-color: var(--primary-color) !important;
   border-color:     var(--primary-color) !important;
   color: #fff !important;
@@ -915,7 +1237,7 @@ select:focus option:checked {
 .btn-primary:focus {
   background-color: var(--primary-hover) !important;
   border-color:     var(--primary-hover) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25) !important;
 }
 .btn-primary:disabled,
 .btn-primary.disabled {
@@ -925,7 +1247,7 @@ select:focus option:checked {
 }
 
 .btn-theme {
-  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
+  background: linear-gradient(90deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) !important;
   border: none;
   color: #fff;
   font-weight: 500;
@@ -935,10 +1257,10 @@ select:focus option:checked {
 .btn-theme:hover {
   opacity: 0.92;
   color: #fff;
-  box-shadow: 0 3px 10px rgba(218, 38, 28, 0.35);
+  box-shadow: 0 3px 10px rgba(var(--bs-primary-rgb), 0.35);
 }
 .btn-theme:focus {
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.35);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.35);
   color: #fff;
 }
 
@@ -978,7 +1300,7 @@ select:focus option:checked {
   background-color: var(--primary-hover) !important;
   border-color: var(--primary-hover) !important;
   color: #fff !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.25) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25) !important;
 }
 .btn-save:disabled,
 .btn-save.disabled {
@@ -1024,7 +1346,7 @@ select:focus option:checked {
 /* ── .btn-add — Add row / Add item (solid, clearly visible button) ── */
 .btn-add {
   color: #fff !important;
-  background: linear-gradient(135deg, #ff4b3a 0%, var(--primary-color) 100%) !important;
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-color) 100%) !important;
   border: none !important;
   font-weight: 600;
   border-radius: 6px;
@@ -1034,7 +1356,7 @@ select:focus option:checked {
   gap: 0.4rem;
   display: inline-flex;
   align-items: center;
-  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.25);
 }
 .btn-add i {
   font-size: var(--font-md);
@@ -1042,19 +1364,19 @@ select:focus option:checked {
 }
 .btn-add:hover,
 .btn-add:focus {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #b71c1c 100%) !important;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
   color: #fff !important;
-  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.35);
   transform: translateY(-1px);
 }
 .btn-add:hover i {
   transform: rotate(90deg);
 }
 .btn-add:active {
-  background: #b71c1c !important;
+  background: var(--primary-hover) !important;
   color: #fff !important;
   transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.2);
+  box-shadow: 0 1px 3px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 /* ── .btn-add-row — Standalone "Add" below a table/section ── */
@@ -1063,7 +1385,7 @@ select:focus option:checked {
   align-items: center;
   gap: 0.4rem;
   color: #fff !important;
-  background: linear-gradient(135deg, #ff4b3a 0%, var(--primary-color) 100%) !important;
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-color) 100%) !important;
   border: none !important;
   border-radius: 6px;
   padding: 0.45rem 1.1rem;
@@ -1072,16 +1394,16 @@ select:focus option:checked {
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 0.5rem;
-  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.25);
 }
 .btn-add-row i {
   font-size: var(--font-md);
   transition: transform 0.2s ease;
 }
 .btn-add-row:hover {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #b71c1c 100%) !important;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
   color: #fff !important;
-  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.35);
   transform: translateY(-1px);
 }
 .btn-add-row:hover i {
@@ -1140,6 +1462,47 @@ select:focus option:checked {
 
 .basic-data-table > .card-body {
   padding: 1rem 1.25rem;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FIELDSET — global theme fieldset (replace per-component duplicates)
+   Usage: <fieldset class="border"><legend>Title</legend>...</fieldset>
+════════════════════════════════════════════════════════════════ */
+fieldset.border {
+  border: none !important;
+  border-left: 3px solid var(--primary-color) !important;
+  background: #fafbfc;
+  border-radius: 0 6px 6px 0;
+  padding: 0.6rem 0.8rem !important;
+  margin-bottom: 0.75rem !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+fieldset.border:hover {
+  box-shadow: 0 2px 10px rgba(var(--bs-primary-rgb), 0.09);
+}
+
+fieldset.border legend {
+  font-size: var(--font-xs) !important;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: transparent;
+  padding: 0 0.4rem;
+  margin-bottom: 0.35rem;
+  border: none;
+  float: none;
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  letter-spacing: 0.2px;
+}
+
+fieldset.border legend i {
+  font-size: 0.9rem;
+  vertical-align: -1px;
+  opacity: 0.85;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1230,7 +1593,7 @@ select:focus option:checked {
 }
 
 .custom-search:focus-within {
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.12);
 }
 
 .custom-search input,
@@ -1562,7 +1925,7 @@ label .text-danger {
 
 .ng-select.ng-select-focused .ng-select-container {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.12) !important;
 }
 
 .ng-select .ng-select-container:hover {
@@ -1647,17 +2010,17 @@ label .text-danger {
 }
 
 .ng-select.ng-select-multiple .ng-value .ng-value-label {
-  color: #da261c !important;
+  color: var(--primary-color) !important;
   font-weight: 500;
 }
 
 .ng-select.ng-select-multiple .ng-value .ng-value-icon {
-  color: #da261c !important;
-  border-right: 1px solid rgba(218, 38, 28, 0.3) !important;
+  color: var(--primary-color) !important;
+  border-right: 1px solid rgba(var(--bs-primary-rgb), 0.3) !important;
 }
 
 .ng-select.ng-select-multiple .ng-value .ng-value-icon:hover {
-  background-color: #da261c !important;
+  background-color: var(--primary-color) !important;
   color: #fff !important;
 }
 
@@ -1801,7 +2164,7 @@ label .text-danger {
 
 .form-check-input:focus {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.18) !important;
   outline: none;
 }
 
@@ -1881,7 +2244,7 @@ label .text-danger {
 
 .form-switch .form-check-input:focus {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.18) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.18) !important;
 }
 
 /* switch-primary (red) — default for the app */
@@ -1964,15 +2327,15 @@ label .text-danger {
   cursor: pointer;
   margin-top: -6.5px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+  box-shadow: 0 1px 4px rgba(var(--bs-primary-rgb), 0.35);
 }
 .form-range::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.15);
+  box-shadow: 0 0 0 6px rgba(var(--bs-primary-rgb), 0.15);
 }
 .form-range::-webkit-slider-thumb:active {
   transform: scale(1.3);
-  box-shadow: 0 0 0 8px rgba(218, 38, 28, 0.2);
+  box-shadow: 0 0 0 8px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 /* Webkit track */
@@ -1991,7 +2354,7 @@ label .text-danger {
   height: 18px;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.35);
+  box-shadow: 0 1px 4px rgba(var(--bs-primary-rgb), 0.35);
 }
 
 /* Firefox track */
@@ -2010,10 +2373,10 @@ label .text-danger {
 
 .form-range:focus { outline: none; box-shadow: none; }
 .form-range:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+  box-shadow: 0 0 0 6px rgba(var(--bs-primary-rgb), 0.2);
 }
 .form-range:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 6px rgba(218, 38, 28, 0.2);
+  box-shadow: 0 0 0 6px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2118,14 +2481,14 @@ textarea.form-control {
 .select2-container--default.select2-container--focus .select2-selection--single,
 .select2-container--default.select2-container--open .select2-selection--single {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.12) !important;
   outline: none !important;
 }
 
 .select2-container--default.select2-container--focus .select2-selection--multiple,
 .select2-container--default.select2-container--open .select2-selection--multiple {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.12) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.12) !important;
 }
 
 .select2-dropdown {
@@ -2162,19 +2525,19 @@ textarea.form-control {
    Used heavily for "Add row / Add item" actions across all forms
 ════════════════════════════════════════════════════════════════ */
 .btn-outline-primary {
-  --bs-btn-color: #da261c;
-  --bs-btn-border-color: #da261c;
-  --bs-btn-hover-bg: #da261c;
-  --bs-btn-hover-border-color: #da261c;
+  --bs-btn-color: var(--primary-color);
+  --bs-btn-border-color: var(--primary-color);
+  --bs-btn-hover-bg: var(--primary-color);
+  --bs-btn-hover-border-color: var(--primary-color);
   --bs-btn-hover-color: #fff;
-  --bs-btn-active-bg: #b91c1c;
-  --bs-btn-active-border-color: #b91c1c;
+  --bs-btn-active-bg: var(--primary-hover);
+  --bs-btn-active-border-color: var(--primary-hover);
   --bs-btn-active-color: #fff;
-  --bs-btn-disabled-color: #da261c;
-  --bs-btn-disabled-border-color: #da261c;
-  --bs-btn-focus-shadow-rgb: 218, 38, 28;
-  color:        #da261c !important;
-  border-color: #da261c !important;
+  --bs-btn-disabled-color: var(--primary-color);
+  --bs-btn-disabled-border-color: var(--primary-color);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+  color:        var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
   background:   transparent !important;
   font-weight:  500;
   transition:   background-color 0.18s ease, color 0.18s ease,
@@ -2182,24 +2545,24 @@ textarea.form-control {
 }
 .btn-outline-primary:hover,
 .btn-outline-primary:focus-visible {
-  background-color: #da261c !important;
-  border-color:     #da261c !important;
+  background-color: var(--primary-color) !important;
+  border-color:     var(--primary-color) !important;
   color:            #fff !important;
-  box-shadow:       0 2px 8px rgba(218, 38, 28, 0.3);
+  box-shadow:       0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
 }
 .btn-outline-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.22);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.22);
   outline: none;
 }
 .btn-outline-primary:active {
-  background-color: #b91c1c !important;
-  border-color:     #b91c1c !important;
+  background-color: var(--primary-hover) !important;
+  border-color:     var(--primary-hover) !important;
   color:            #fff !important;
 }
 .btn-outline-primary:disabled,
 .btn-outline-primary.disabled {
-  color:        #da261c !important;
-  border-color: #da261c !important;
+  color:        var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
   opacity: 0.5;
   pointer-events: none;
 }
@@ -2328,7 +2691,7 @@ textarea.form-control {
   border-color: var(--primary-color) !important;
   color:        #fff !important;
   font-weight:  600;
-  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.28);
+  box-shadow:   0 2px 8px rgba(var(--bs-primary-rgb), 0.28);
 }
 
 /* ── Form Wizard Step Tabs (employee-form)
@@ -2437,7 +2800,7 @@ textarea.form-control {
   background:   var(--primary-color) !important;
   border-color: var(--primary-color) !important;
   color:        #fff !important;
-  box-shadow:   0 2px 8px rgba(218, 38, 28, 0.35);
+  box-shadow:   0 2px 8px rgba(var(--bs-primary-rgb), 0.35);
 }
 .form-wizard-list .nav-item .nav-link.active::after { display: none; }
 

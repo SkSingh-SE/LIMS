@@ -50,7 +50,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
     }
 
     .unsaved-icon-area {
-      background: linear-gradient(135deg, #ff4b3a 0%, #da261c 100%);
+      background: linear-gradient(135deg, var(--primary-gradient-start, #ff4b3a) 0%, var(--primary-color, #da261c) 100%);
       padding: 28px 0 20px;
     }
 
@@ -114,7 +114,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
     }
 
     .btn-leave {
-      background: linear-gradient(135deg, #ff4b3a 0%, #da261c 100%);
+      background: linear-gradient(135deg, var(--primary-gradient-start, #ff4b3a) 0%, var(--primary-color, #da261c) 100%);
       color: #fff;
       border: none;
       font-weight: 500;
@@ -122,13 +122,13 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
       padding: 8px 20px;
       border-radius: 8px;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(218, 38, 28, 0.3);
+      box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3);
     }
 
     .btn-leave:hover {
-      background: linear-gradient(135deg, #da261c 0%, #b71c1c 100%);
+      background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, var(--primary-hover, #b71c1c) 100%);
       color: #fff;
-      box-shadow: 0 4px 12px rgba(218, 38, 28, 0.4);
+      box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.4);
       transform: translateY(-1px);
     }
   `]

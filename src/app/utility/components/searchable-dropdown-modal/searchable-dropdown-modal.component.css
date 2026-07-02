@@ -23,13 +23,13 @@
 }
 
 .input-group:hover {
-  border-color: var(--primary-color, #da261c);
-  background-color: #fff8f8;
+  border-color: var(--primary-color);
+  background-color: var(--primary-50);
 }
 
 .input-group:focus-within {
-  border-color: var(--primary-color, #da261c);
-  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.12);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.12);
 }
 
 /* ─── Input Field ─── */
@@ -131,8 +131,8 @@
 }
 
 .input-group .input-group-text.dropdown-toggle-icon:hover {
-  color: var(--primary-color, #da261c);
-  background: rgba(218, 38, 28, 0.06);
+  color: var(--primary-color);
+  background: rgba(var(--bs-primary-rgb), 0.06);
 }
 
 .input-group .input-group-text.dropdown-toggle-icon i {
@@ -256,13 +256,13 @@
 }
 
 .dropdown-item:hover {
-  background-color: rgba(218, 38, 28, 0.08);
-  color: #da261c;
+  background-color: var(--primary-50);
+  color: var(--primary-color);
   padding-left: 16px;
 }
 
 .dropdown-item.active {
-  background-color: #da261c;
+  background-color: var(--primary-color);
   color: #fff;
   padding-left: 16px;
   font-weight: 500;
@@ -302,19 +302,19 @@
 
 /* ─── Multi-select checkbox items ─── */
 .dropdown-item.multi-selected {
-  background-color: rgba(218, 38, 28, 0.06);
-  color: #da261c;
+  background-color: var(--primary-50);
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .dropdown-item.multi-selected:hover {
-  background-color: rgba(218, 38, 28, 0.12);
-  color: #b71c1c;
+  background-color: var(--primary-100);
+  color: var(--primary-hover);
 }
 
 /* ─── Checkbox icons ─── */
 .check-selected {
-  color: #da261c;
+  color: var(--primary-color);
 }
 
 .check-unselected {

@@ -24,7 +24,7 @@
                             <th *ngFor="let column of columns; let i = index">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
+                                    <span class="d-flex flex-column ms-2 mt-2" *ngIf="column.filter">
                                         <i class="bi bi-caret-up sorting-icon-up" [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}" (click)="applySorting(column.key)"></i>
                                         <i class="bi bi-caret-down sorting-icon-down" [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}" (click)="applySorting(column.key)"></i>
                                     </span>

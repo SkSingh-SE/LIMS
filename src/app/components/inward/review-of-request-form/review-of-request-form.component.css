@@ -66,12 +66,23 @@
 
 .sample-card-header {
   padding: 0.6rem 1rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
+  background: var(--primary-color, #da261c) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+}
+.sample-card-header strong {
+  color: #fff !important;
+}
+.sample-card-header .text-muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+.sample-card-header .sample-badge {
+  background: #fff !important;
+  color: var(--primary-color, #da261c) !important;
 }
 
 .sample-badge {

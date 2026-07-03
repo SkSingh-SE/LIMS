@@ -1,0 +1,41 @@
+@import '../main-dashboard/main-dashboard.component.css';
+
+.branch-selector {
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-right: 15px;
+}
+
+.branch-selector select {
+  cursor: pointer;
+  box-shadow: none;
+  min-width: 150px;
+}
+
+/* Make Charts more compact and side-by-side */
+.charts-container {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.chart-item-wrapper {
+  height: 250px;
+}
+
+.charts-dual-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.charts-stack-compact {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1023px) {
+  .charts-dual-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,7 +3,8 @@
     <!-- Logo -->
     <div class="nav-logo border-end bg-white px-2">
       <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
-        <img src="LIMS.png" alt="Logo" width="50" height="40" />
+        <!-- <img src="LIMS.png" alt="Logo" width="50" height="40" /> -->
+        <img src="TPTL-icon.png" alt="Logo" width="40" height="40" />
       </a>
     </div>
     <!-- Menu cell: browser gives this the exact 1fr pixel width -->
@@ -41,7 +42,7 @@
             <span class="user-display-name">{{ loggedInUserName }}</span>
             <span class="user-display-role">
               {{ loggedInUserRole }} <span class="role-branch-sep">·</span>
-              <i class="bi bi-building"></i> {{ selectedBranch.name }}
+              <i class="bi bi-building"></i> {{ selectedBranch().name }}
             </span>
           </div>
           <i class="bi bi-chevron-down text-white" style="font-size: 10px;"></i>
@@ -73,7 +74,7 @@
                 <span class="branch-item-name">{{ branch.name }}</span>
                 <span class="branch-item-loc">{{ branch.location }}</span>
               </span>
-              <i class="bi bi-check-lg text-success" *ngIf="branch.code === selectedBranch.code"></i>
+              <i class="bi bi-check-lg text-success" *ngIf="branch.code === selectedBranch().code"></i>
             </a>
           </li>
           <li><hr class="dropdown-divider my-1" /></li>

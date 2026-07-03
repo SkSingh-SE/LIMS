@@ -23,7 +23,7 @@ img {
     max-height: 250px;
 }
 .header-border {
-    border-top: 4px solid;
+    border-top: 4px solid var(--primary-color);
     width: 40px;
 }
 .verticle-line{

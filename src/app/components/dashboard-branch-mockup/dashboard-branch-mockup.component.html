@@ -1,0 +1,218 @@
+<div class="main-dashboard-container" role="main" aria-label="Mockup Dashboard">
+  <!-- Enhanced Dashboard Header -->
+  <header class="dashboard-header">
+    <div class="row align-items-center">
+      <div class="col-md-5">
+        <div class="header-content">
+          <h4 class="dashboard-title">
+            <i class="bi bi-speedometer2 me-2"></i>
+            Dashboard
+          </h4>
+          <p class="dashboard-subtitle">Welcome back, {{ currentUser?.userName || 'User' }}</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <!-- Branch Selector Mockup -->
+        <div class="branch-selector">
+          <label for="branchSelect" class="form-label mb-0 me-2 fw-bold text-nowrap"><i
+              class="bi bi-diagram-3 me-1"></i>Branch:</label>
+          <select id="branchSelect" class="form-select form-select-sm" (change)="onBranchChange($event)">
+            <option *ngFor="let branch of branchService.branches" [value]="branch.code"
+              [selected]="branch.code === branchService.selectedBranch().code">{{ branch.name }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="header-actions">
+          <div class="action-group">
+            <button class="btn btn-primary btn-sm" (click)="onRefresh()" title="Refresh dashboard">
+              <i class="bi bi-arrow-clockwise"></i>
+              <span class="btn-text">Refresh</span>
+            </button>
+          </div>
+        </div>
+        <div class="refresh-status">
+          <div class="status-item">
+            <i class="bi bi-clock me-1"></i>
+            <span class="status-text">Last updated: {{ formatTimestamp(lastRefresh()) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dashboard Content: Modern Grid Layout -->
+  <div class="dashboard-content">
+
+    <!-- Stats Area: Overview Cards -->
+    <div class="dashboard-stats-area" *ngIf="cards().length > 0">
+      <section class="dashboard-section stats-section">
+        <div class="section-header">
+          <div class="section-content">
+            <h6 class="section-title">
+              <i class="bi bi-grid-3x3-gap me-2"></i>
+              Key Metrics - <span class="text-primary">{{ branchService.selectedBranch().name }}</span>
+            </h6>
+          </div>
+        </div>
+
+        <div class="cards-grid">
+          <div class="card-item-wrapper" *ngFor="let card of cards(); trackBy: trackByCardKey">
+            <app-dashboard-card [card]="card" [isLoading]="false" [isCustomizationMode]="false"
+              (cardClick)="onCardClick($event)">
+            </app-dashboard-card>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== BRANCH WISE OVERVIEW (ONLY FOR 'ALL BRANCHES' LAYOUT) ==================== -->
+    <div class="dashboard-branch-summaries mt-2 mb-4" *ngIf="isAllBranches && branchSummaries.length > 0">
+      <section class="dashboard-section bg-light border-0">
+        <h6 class="mb-3 text-secondary border-bottom pb-2"><i class="bi bi-buildings me-2"></i>Branch-Wise Summary</h6>
+        <div class="row g-3">
+          <div class="col-md-4" *ngFor="let bs of branchSummaries">
+            <div class="card h-100 border-1 border-light shadow-sm">
+              <div class="card-body">
+                <h6 class="card-title fw-bold text-primary mb-3">{{ bs.name }}</h6>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-muted small">Total Samples</span>
+                  <span class="fw-bold">{{ bs.total }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-muted small">Pending Approval</span>
+                  <span class="badge bg-warning text-dark rounded-pill">{{ bs.pending }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <span class="text-muted small">OOS Alerts</span>
+                  <span class="badge" [ngClass]="bs.oos > 0 ? 'bg-danger' : 'bg-success'">{{ bs.oos }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                  <span class="text-muted small">Revenue</span>
+                  <span class="fw-bold text-success">₹{{ bs.revenue | number }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Main Area: Analytics + Activity -->
+    <div class="dashboard-main-area">
+      <!-- Analytics Area: Charts -->
+      <div class="dashboard-analytics-area" *ngIf="charts().length > 0">
+        <section class="dashboard-section analytics-section">
+          <div class="section-header">
+            <div class="section-content">
+              <h6 class="section-title">
+                <i class="bi bi-graph-up me-2"></i>
+                Analytics - <span class="text-primary">{{ branchService.selectedBranch().name }}</span>
+              </h6>
+            </div>
+          </div>
+          <div [class]="getChartGridClass()" class="charts-container">
+            <div class="chart-item-wrapper" *ngFor="let chart of charts(); trackBy: trackByChartKey">
+              <app-dashboard-chart [chartData]="chart"></app-dashboard-chart>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Activity Area: Notifications -->
+      <div class="dashboard-activity-area" *ngIf="notifications().length > 0">
+        <section class="dashboard-section activity-section">
+          <div class="section-header">
+            <div class="section-content">
+              <h6 class="section-title">
+                <i class="bi bi-bell me-2"></i>
+                Activity - <span class="text-primary">{{ branchService.selectedBranch().name }}</span>
+              </h6>
+            </div>
+          </div>
+          <div class="notifications-wrapper">
+            <app-dashboard-notification-panel [notifications]="notifications()" [isLoading]="false"
+              [maxDisplayCount]="10" (notificationClick)="onNotificationClick($event)"
+              (viewAllClick)="onViewAllNotifications()">
+            </app-dashboard-notification-panel>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Quick Info Area: Tables (ONLY FOR SINGLE BRANCH LAYOUT) -->
+    <div class="dashboard-tables-area mt-3" *ngIf="!isAllBranches && (equipmentList().length > 0 || oosList().length > 0)">
+      <div class="row">
+        <!-- Equipment Table -->
+        <div class="col-md-6 mb-3" *ngIf="equipmentList().length > 0">
+          <section class="dashboard-section h-100">
+            <div class="section-header">
+              <div class="section-content">
+                <h6 class="section-title">
+                  <i class="bi bi-tools me-2 text-primary"></i>
+                  Equipment Status
+                </h6>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Status</th>
+                    <th>Next Calibration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let eq of equipmentList()">
+                    <td class="fw-medium">{{ eq.name }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="eq.status === 'Working' ? 'bg-success' : 'bg-warning text-dark'">
+                        {{ eq.status }}
+                      </span>
+                    </td>
+                    <td class="text-nowrap">{{ eq.nextCalibration | date:'mediumDate' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- OOS Alerts Table -->
+        <div class="col-md-6 mb-3" *ngIf="oosList().length > 0">
+          <section class="dashboard-section h-100">
+            <div class="section-header">
+              <div class="section-content">
+                <h6 class="section-title text-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  OOS / NCR Alerts
+                </h6>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Sample No</th>
+                    <th>Parameter</th>
+                    <th>Result</th>
+                    <th>Limit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let oos of oosList()">
+                    <td class="fw-bold text-danger">{{ oos.sampleNo }}</td>
+                    <td>{{ oos.parameter }}</td>
+                    <td class="text-danger fw-medium">{{ oos.result }}</td>
+                    <td class="text-muted">{{ oos.limit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

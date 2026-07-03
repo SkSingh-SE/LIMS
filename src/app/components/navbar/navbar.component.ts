@@ -11,6 +11,7 @@ import { getAllMenuItems, MenuItem } from '../../models/MenuItem';
 import { PermissionService } from '../../utility/permission/permission.service';
 import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
+import { BranchService, BranchInfo } from '../../services/branch.service';
 
 export interface FlatMenuItem {
   title: string;
@@ -61,16 +62,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   private resizeObserver: ResizeObserver | null = null;
   private routerSub: any = null;
 
-  // ── Multi-branch (demo, UI-only — localStorage based) ──────
-  branches: { code: string; name: string; location: string }[] = [
-    { code: 'BLR', name: 'Bengaluru Lab', location: 'Karnataka' },
-    { code: 'PUN', name: 'Pune Lab', location: 'Maharashtra' },
-    { code: 'CHN', name: 'Chennai Lab', location: 'Tamil Nadu' },
-    { code: 'DEL', name: 'Delhi NCR Lab', location: 'New Delhi' },
-    { code: 'AMD', name: 'Ahmedabad Lab', location: 'Gujarat' },
-  ];
-  selectedBranch: { code: string; name: string; location: string } =
-    this.branches.find(b => b.code === 'AMD') ?? this.branches[0];
+  // ── Multi-branch via Service ──────
+  branches!: BranchInfo[];
+  selectedBranch!: any;
 
   loggedInUserName: string = '';
   loggedInUserRole: string = '';
@@ -127,9 +121,12 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     private toastService: ToastService,
     private permissionService: PermissionService,
     private router: Router,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private branchService: BranchService
   ) {
     this.allFlatMenuItems = this.flattenMenuItems(this.menuItems);
+    this.branches = this.branchService.branches;
+    this.selectedBranch = computed(() => this.branchService.selectedBranch());
   }
 
   selectTheme(theme: string): void {
@@ -144,7 +141,6 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   }
 
   ngOnInit(): void {
-    this.loadSelectedBranch();
     this.routerSub = this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
         this.closeAllMenus();
@@ -575,19 +571,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     setTimeout(() => this.updateNavbarHeight(), 300);
   }
 
-  // ── Multi-branch handlers (demo, UI-only) ─────────────────
-  private loadSelectedBranch(): void {
-    const code = localStorage.getItem('selectedBranchCode');
-    const match = this.branches.find(b => b.code === code);
-    if (match) {
-      this.selectedBranch = match;
-    }
-  }
-
-  selectBranch(branch: { code: string; name: string; location: string }): void {
-    if (branch.code === this.selectedBranch.code) return;
-    this.selectedBranch = branch;
-    localStorage.setItem('selectedBranchCode', branch.code);
+  // ── Multi-branch handlers ─────────────────
+  selectBranch(branch: BranchInfo): void {
+    if (branch.code === this.selectedBranch().code) return;
+    this.branchService.setBranch(branch.code);
     this.toastService.show(`Switched to ${branch.name}`, 'success');
   }
 

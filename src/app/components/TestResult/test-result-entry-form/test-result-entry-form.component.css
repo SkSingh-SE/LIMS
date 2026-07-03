@@ -1,7 +1,7 @@
 /* Clean Lab Theme — Red accent (navbar color) with gray/white base */
 
 /* Page Header — red gradient (matches card-form-header / navbar) — ONLY red bar */
-.page-header-bar { background:linear-gradient(90deg, #ff2c1f 0%, #da271c 100%); color:#fff; padding:.85rem 1.25rem; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:space-between; }
+.page-header-bar { background:linear-gradient(90deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) !important; color:#fff; padding:.85rem 1.25rem; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:space-between; }
 .page-header-bar h4 { margin:0; font-size:1.1rem; font-weight:600; display:flex; align-items:center; gap:.5rem; }
 .page-header-bar .header-meta { font-size:.8rem; opacity:.9; display:flex; gap:1rem; align-items:center; }
 .page-header-bar .header-meta .badge { background:rgba(255,255,255,.2); color:#fff; font-weight:500; padding:.3em .6em; border-radius:20px; font-size:.75rem; }
@@ -51,7 +51,36 @@
 .test-card--completed { border-left:4px solid var(--success-color, #198754) !important; }
 .test-card--longterm { border-left:4px solid var(--warning-color, #ffc107) !important; }
 .test-card--verified { border-left:4px solid var(--info-color, #6f42c1) !important; }
-.test-card-header { display:flex; align-items:center; justify-content:space-between; padding:.65rem 1rem; background:#F8F9FA; border-bottom:1px solid #E9ECEF; }
+.test-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .65rem 1rem;
+  background: var(--primary-color, #da261c) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.test-card-header .fw-semibold {
+  color: #fff !important;
+}
+.test-card-header .text-muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+.test-card-header .btn-outline-primary {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+.test-card-header .btn-outline-primary:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.test-card-header .btn-outline-warning {
+  color: #ffc107 !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.test-card-header .btn-outline-info {
+  color: #0dcaf0 !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
 
 /* Test Toolbar */
 .test-toolbar { border-bottom:1px solid transparent; }

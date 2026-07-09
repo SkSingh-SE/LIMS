@@ -51,7 +51,7 @@ export class LaboratoryTestComponent implements OnInit {
   private nameSearchSubject = new Subject<string>();
 
   // Detail Right Panel Tabs
-  activeTab: 'overview' | 'techniques' | 'parameters' | 'methods' | 'equipment' | 'specifications' | 'invoicing' | 'pricing' = 'overview';
+  activeTab: 'overview' | 'techniques' | 'parameters' | 'methods' | 'equipment' | 'specifications' | 'invoicing' = 'overview';
 
   // SubGroups / AnalysisTypes Technical Tree Config Mappings
   subGroups: any[] = [];

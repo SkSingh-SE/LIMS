@@ -29,17 +29,17 @@
                   <span class="dt-column-order">{{ column.label }}</span>
                   <span class="d-flex flex-column ms-2 mt-2">
                     <i class="bi bi-caret-up sorting-icon-up"
-                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'asc' }"
+                       [ngClass]="{ 'text-primary': sortByColumn === column.key && sortOrder === 'asc' }"
                        (click)="applySorting(column.key)"></i>
                     <i class="bi bi-caret-down sorting-icon-down"
-                       [ngClass]="{ 'text-danger': sortByColumn === column.key && sortOrder === 'desc' }"
+                       [ngClass]="{ 'text-primary': sortByColumn === column.key && sortOrder === 'desc' }"
                        (click)="applySorting(column.key)"></i>
                   </span>
                   <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)">
                     <i class="bi bi-funnel"></i>
                   </span>
                   <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)">
-                    <i class="bi bi-x-lg text-danger"></i>
+                    <i class="bi bi-x-lg text-primary"></i>
                   </span>
                 </div>
               </th>

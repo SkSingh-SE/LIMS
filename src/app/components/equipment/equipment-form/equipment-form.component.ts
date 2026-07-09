@@ -9,10 +9,12 @@ import { DepartmentService } from '../../../services/department.service';
 import { OEMService } from '../../../services/oem.service';
 import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { Modal } from 'bootstrap';
 import { EquipmentTypeService } from '../../../services/equipment-type.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { EquipmentReferenceMaterialService } from '../../../services/equipment-reference-material.service';
+import { AnalysisTechniqueService } from '../../../services/analysis-technique.service';
 import { environment } from '../../../../environments/environment';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
@@ -22,7 +24,7 @@ import { FormFieldErrorComponent } from '../../../utility/components/form-field-
 
 @Component({
   selector: 'app-equipment-form',
-  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent, FormFieldErrorComponent],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent, MultiSelectDropdownComponent, FormFieldErrorComponent],
   templateUrl: './equipment-form.component.html',
   styleUrl: './equipment-form.component.css',
 })
@@ -63,6 +65,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     private equipmentTypeService: EquipmentTypeService,
     private equipmentService: EquipmentService,
     private refMaterialService: EquipmentReferenceMaterialService,
+    private analysisTechniqueService: AnalysisTechniqueService,
     private route: ActivatedRoute,
     private router: Router,
     private unsavedChangesService: UnsavedChangesService
@@ -117,6 +120,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       lastCalibrationDate: [null],
       calibrationFrequencyDays: [null],
       maintenanceSchedule: [''],
+      techniqueIds: [[]],
+      analysisTechniques: this.fb.array([]),
       calibrations: this.fb.array([]),
       maintenances: this.fb.array([]),
       sops: this.fb.array([]),
@@ -269,6 +274,16 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           });
           this.optimizeVideoPlayback();
         }
+        // Rebind analysis techniques (A4) — junction → multiselect + FormArray
+        const techItems = data.analysisTechniques ?? [];
+        this.equipmentForm.patchValue({
+          techniqueIds: techItems.map((x: any) => x.analysisTechniqueID),
+        });
+        const techArray = this.equipmentForm.get('analysisTechniques') as FormArray;
+        techArray.clear();
+        techItems.forEach((x: any) => {
+          techArray.push(this.fb.group({ analysisTechniqueID: [x.analysisTechniqueID] }));
+        });
         if (this.isViewMode) {
           this.equipmentForm.disable();
         }
@@ -400,6 +415,18 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     }
     this.equipmentForm.patchValue({ equipmentTypeID: item.id });
   }
+  getAnalysisTechnique = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.analysisTechniqueService.getAnalysisTechniqueDropdown(term, page, pageSize);
+  };
+  onTechniqueSelected(items: any[]) {
+    const ids = items.map(x => x.id ?? x);
+    this.equipmentForm.patchValue({ techniqueIds: ids });
+    const techArray = this.equipmentForm.get('analysisTechniques') as FormArray;
+    techArray.clear();
+    ids.forEach((id: number) => {
+      techArray.push(this.fb.group({ analysisTechniqueID: [id] }));
+    });
+  }
   isFieldInvalid(path: string): boolean {
     return FormValidationHelper.isFieldInvalid(this.equipmentForm, path, this.submitted);
   }
@@ -412,7 +439,9 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       return;
     }
     // Strip nested arrays — calibrations/maintenances/sops are managed via separate endpoints
-    const { calibrations, maintenances, sops, ...payload } = this.equipmentForm.value;
+    // Keep analysisTechniques — synced inline in the same save
+    const { calibrations, maintenances, sops, techniqueIds, ...payload } = this.equipmentForm.value;
+    payload.analysisTechniques = (this.equipmentForm.get('analysisTechniques') as FormArray).value;
     // Convert empty strings to proper types for backend
     if (!payload.nextCalibrationDueDate) payload.nextCalibrationDueDate = null;
     if (!payload.nextMaintenanceDueDate) payload.nextMaintenanceDueDate = null;

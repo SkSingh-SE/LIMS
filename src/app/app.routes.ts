@@ -183,6 +183,8 @@ export const routes: Routes = [
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
+            { path: 'chemical-sample-category', loadComponent: () => import('./components/chemical-sample-category/chemical-sample-category.component').then(m => m.ChemicalSampleCategoryComponent) },
+            { path: 'analysis-technique', loadComponent: () => import('./components/analysis-technique/analysis-technique.component').then(m => m.AnalysisTechniqueComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent) , canDeactivate: [unsavedChangesGuard]},
@@ -634,7 +636,7 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            // { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },

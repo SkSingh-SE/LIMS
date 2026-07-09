@@ -17,15 +17,15 @@ export class LaboratoryTestListComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Method Name', filter: true },
+    { key: 'name', type: 'string', label: 'Test Name', filter: true },
     { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'subGroup', type: 'string', label: 'Sub Group', filter: true },
+    { key: 'isChemicalTest', type: 'bool', label: 'Test Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     departmentName: 'string',
-    subGroup: 'string',
+    isChemicalTest: 'bool',
     modifiedOn: 'date',
   };
 

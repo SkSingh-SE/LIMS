@@ -60,4 +60,8 @@ export class TestMethodSpecificationService {
       return this.http.get<any>(`${this.apiUrl}/${specId}/versions/dropdown?includeAll=${includeAll}`);
     }
 
+    getTestMethodSpecificationVersionDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/versions/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
@@ -15,7 +15,7 @@ import { MultiSelectDropdownComponent } from '../../../utility/components/multi-
 interface TypeConfig {
   isRange: boolean;
   isSizeLoad?: boolean;
-  inputType: 'text' | 'number' | 'select';
+  inputType: 'text' | 'number' | 'select' | 'ecf';
   selectOptions?: { label: string; value: string }[];
   dimensionHint?: string;
   unit: string;
@@ -85,6 +85,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   formTitle = 'Invoice Case Configuration Form';
   rangeError: string = '';
 
+  // ElementCountFormula Override properties
+  selectedOverrideParamIds: number[] = [];
+  selectedOverrideParamItems: any[] = [];
+
   selectionTypes = [
     { label: 'Flat Rate',             value: 'FlatRate',           group: 'Fixed',        hint: 'Fixed price per test, no parameters needed' },
     { label: 'Element',               value: 'Element',            group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
@@ -100,6 +104,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     { label: 'Size + Load',           value: 'SizeLoad',           group: 'Combo',        hint: 'Size range + Max load capacity' },
     { label: 'Size + Load Range',     value: 'SizeAndLoad',        group: 'Combo',        hint: 'Size range + Load range' },
     { label: 'Spectro Combination',   value: 'SpectroCombination', group: 'Special',      hint: 'Full + extra elements (linked via parameter IDs)' },
+    { label: 'Element Count Formula', value: 'ElementCountFormula', group: 'Formula',      hint: 'Tier pricing by element count + special element overrides' },
     { label: 'Per Indent',            value: 'PerIndent',          group: 'Quantity',     hint: 'HV 3 Readings, HV 5 Readings, Vickers 10 Values' },
     { label: 'Per Location',          value: 'PerLocation',        group: 'Quantity',     hint: '3 Locations, 5 Locations, 10 Locations' },
     { label: 'Per Field',             value: 'PerField',           group: 'Quantity',     hint: '5 Fields, 10 Fields, 30 Fields' },
@@ -127,6 +132,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     SizeLoad:            { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
     SizeAndLoad:         { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
     SpectroCombination:  { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'e.g. Full + N + B',           startPlaceholder: '', endPlaceholder: '', defaultValue: 'Full' },
+    ElementCountFormula: { isRange: false, inputType: 'ecf',    unit: '',     valuePlaceholder: '',                            startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerIndent:           { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of test readings (e.g. 3, 5, 10)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerLocation:         { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of locations (e.g. 3, 5, 10)',      startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerField:            { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of fields (e.g. 5, 10, 30)',        startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
@@ -212,6 +218,9 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'Element', name: '18 Element', value: '18', unit: '' },
       { selectionType: 'Element', name: '19 Element', value: '19', unit: '' },
       { selectionType: 'Element', name: '20 Element', value: '20', unit: '' },
+      { selectionType: 'FlatRate', name: 'Flat', value: 'Flat', unit: '' },
+      { selectionType: 'FlatRate', name: 'Standard Rate', value: 'Standard Rate', unit: '' },
+      { selectionType: 'FlatRate', name: 'Premium Rate', value: 'Premium Rate', unit: '' },
       { selectionType: 'Hours', name: '24hr', value: '24', unit: 'hr' },
       { selectionType: 'Hours', name: '24hr@RT', value: '24', unit: 'hr' },
       { selectionType: 'Hours', name: '24hr@HT', value: '24', unit: 'hr' },
@@ -305,8 +314,19 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'WithImage', name: 'Without Image', value: '0', unit: '' },
       { selectionType: 'WithExtenso', name: 'With Extensometer', value: '1', unit: '' },
       { selectionType: 'WithExtenso', name: 'Without Extensometer', value: '0', unit: '' },
+      // ElementCountFormula Tiers
+      { selectionType: 'ElementCountFormula', name: '<=1 elements', value: '<=1', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==2 elements', value: '==2', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==3 elements', value: '==3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>=3 elements', value: '>=3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>3 elements', value: '>3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '<=3 elements', value: '<=3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==4 elements', value: '==4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>=4 elements', value: '>=4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'override (Special Element)', value: 'override', unit: '' }
     ];
 
+  filteredSuggestions: any[] = [];
   nameInput$ = new Subject<string>();
   typeChange$ = new Subject<string>();
   filteredSuggestions$!: Observable<any[]>;
@@ -378,6 +398,16 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
   };
 
+  getOverrideParamsFn = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize, 'special,super');
+  };
+
+  onOverrideSelected(items: any[]): void {
+    this.selectedOverrideParamItems = items || [];
+    const ids = this.selectedOverrideParamItems.map((i: any) => i.id).join(',');
+    this.invoiceForm.patchValue({ overrideParameterIDs: ids });
+  }
+
   onParamSelected(items: any[]): void {
     this.selectedParamItems = items || [];
     const ids = this.selectedParamItems.map((i: any) => i.id).join(',');
@@ -425,6 +455,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.initForm();
     this.fetchData();
     this.setupAutocomplete();
+    this.updateSuggestionsList();
   }
 
   initForm() {
@@ -441,9 +472,55 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       unit: [''],
       sourceParameterIDs: [''],
       isBaseConfig: [false],
-      fallbackToUserInput: [false]
+      fallbackToUserInput: [false],
+      conditionPrefix: ['<='],
+      conditionNumber: [null],
+      isOverrideRow: [false],
+      overrideParameterIDs: ['']
+    });
+
+    // Also auto-update stored value on ECF form control changes
+    this.invoiceForm.get('conditionPrefix')?.valueChanges.subscribe(() => this.updateEcfValueName());
+    this.invoiceForm.get('conditionNumber')?.valueChanges.subscribe(() => this.updateEcfValueName());
+    this.invoiceForm.get('isOverrideRow')?.valueChanges.subscribe(isOverride => {
+      if (isOverride) {
+        this.invoiceForm.get('value')?.setValue('override');
+      } else {
+        this.updateEcfValueName();
+      }
     });
   }
+
+  private updateEcfValueName(): void {
+    if (this.isFormulaType && !this.isOverrideRow) {
+      const prefix = this.invoiceForm.get('conditionPrefix')?.value || '<=';
+      const num = this.invoiceForm.get('conditionNumber')?.value;
+      const combinedVal = prefix + (num != null ? String(num) : '');
+      this.invoiceForm.get('value')?.setValue(combinedVal);
+    }
+  }
+
+  get isFormulaType(): boolean {
+    return this.invoiceForm?.get('selectionType')?.value === 'ElementCountFormula';
+  }
+
+  get isOverrideRow(): boolean {
+    return this.invoiceForm?.get('isOverrideRow')?.value === true;
+  }
+
+  parseCondition(val: string): { prefix: string; number: number | null } {
+    if (!val) return { prefix: '<=', number: null };
+    const match = val.match(/^(<=|==|>=|<|>)\s*(\d+)$/);
+    if (match) {
+      return { prefix: match[1], number: parseInt(match[2], 10) };
+    }
+    return { prefix: '<=', number: null };
+  }
+
+  // Simulator properties
+
+
+
 
   setupAutocomplete(): void {
     const typeSearch$ = this.nameInput$.pipe(
@@ -493,6 +570,13 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
   // ─── Type change ─────────────────────────────────────────────────────────────
 
+  updateSuggestionsList(): void {
+    const currentType = this.invoiceForm?.get('selectionType')?.value;
+    this.filteredSuggestions = this.suggestionList.filter(s =>
+      !currentType || s.selectionType === currentType
+    );
+  }
+
   onTypeChange(): void {
     const config = this.currentConfig;
     const type = this.invoiceForm.get('selectionType')?.value;
@@ -520,6 +604,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     }
     // Emit type change so Name suggestions auto-filter for this type
     this.typeChange$.next(type || '');
+    this.updateSuggestionsList();
   }
 
   private applyValidatorsForType(isRange: boolean): void {
@@ -565,6 +650,8 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
     this.rangeError = '';
 
+    let generatedName = '';
+
     if (config.isSizeLoad) {
       const start = (this.invoiceForm.get('start')?.value ?? '').toString().trim();
       const end   = (this.invoiceForm.get('end')?.value ?? '').toString().trim();
@@ -590,15 +677,11 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           }
         }
         if (!start && !end && !value && !value2) return;
-        const name = `Size ${start}-${end}mm, Load ${value}-${value2}kN`;
-        this.invoiceForm.patchValue({ name });
-        this.selectedSuggestion = { name };
+        generatedName = `Size ${start}-${end}mm, Load ${value}-${value2}kN`;
       } else {
         // SizeLoad: 3 fields → "Size 0-20mm, Load ≤1000kN"
         if (!start && !end && !value) return;
-        const name = `Size ${start}-${end}mm, Load ≤${value}kN`;
-        this.invoiceForm.patchValue({ name });
-        this.selectedSuggestion = { name };
+        generatedName = `Size ${start}-${end}mm, Load ≤${value}kN`;
       }
     } else if (config.isRange) {
       const start = (this.invoiceForm.get('start')?.value ?? '').toString().trim();
@@ -614,11 +697,9 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       }
       if (!start && !end) return;
 
-      const name = config.unit
+      generatedName = config.unit
         ? `${start}${config.unit} to ${end}${config.unit}`
         : `${start} to ${end}`;
-      this.invoiceForm.patchValue({ name });
-      this.selectedSuggestion = { name };
     } else {
       const value = (this.invoiceForm.get('value')?.value ?? '').toString().trim();
       if (!value) return;
@@ -628,9 +709,14 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         const opt = config.selectOptions.find(o => o.value === value);
         if (opt) displayValue = opt.label;
       }
-      const name = config.unit ? `${displayValue}${config.unit}` : displayValue;
-      this.invoiceForm.patchValue({ name });
-      this.selectedSuggestion = { name };
+      generatedName = config.unit ? `${displayValue}${config.unit}` : displayValue;
+    }
+
+    if (generatedName) {
+      const prefix = `[${type}]`;
+      const finalName = generatedName.startsWith(prefix) ? generatedName : `${prefix} ${generatedName}`;
+      this.invoiceForm.patchValue({ name: finalName });
+      this.selectedSuggestion = { name: finalName };
     }
   }
 
@@ -646,8 +732,15 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     if (typeof selection === 'object' && selection.selectionType) {
       const cfg = this.typeConfig[selection.selectionType];
       const isRange = cfg?.isRange ?? selection.selectionType.toLowerCase().includes('range');
+      
+      let suggestionName = selection.name;
+      const prefix = `[${selection.selectionType}]`;
+      if (suggestionName && !suggestionName.startsWith(prefix)) {
+        suggestionName = `${prefix} ${suggestionName}`;
+      }
+
       this.invoiceForm.patchValue({
-        name: selection.name,
+        name: suggestionName,
         selectionType: selection.selectionType,
         unit: selection.unit ?? cfg?.unit ?? '',
         value: selection.value || '',
@@ -656,7 +749,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         end: selection.end || ''
       });
       this.applyValidatorsForType(isRange);
-      this.selectedSuggestion = selection;
+      this.selectedSuggestion = { ...selection, name: suggestionName };
       this.nameLoading = false;
       return;
     }
@@ -752,6 +845,20 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           loadValue2 = parts[1];
         }
 
+        let prefix = '<=';
+        let num: number | null = null;
+        let isOverride = false;
+
+        if (res.selectionType === 'ElementCountFormula') {
+          if (res.value === 'override') {
+            isOverride = true;
+          } else {
+            const parsed = this.parseCondition(res.value || '');
+            prefix = parsed.prefix;
+            num = parsed.number;
+          }
+        }
+
         this.invoiceForm.patchValue({
           id: res.id,
           selectionType: res.selectionType,
@@ -764,8 +871,23 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           unit: res.unit,
           sourceParameterIDs: res.sourceParameterIDs || '',
           isBaseConfig: res.isBaseConfig || false,
-          fallbackToUserInput: res.fallbackToUserInput || false
+          fallbackToUserInput: res.fallbackToUserInput || false,
+          conditionPrefix: prefix,
+          conditionNumber: num,
+          isOverrideRow: isOverride,
+          overrideParameterIDs: res.overrideParameterIDs || ''
         });
+
+        if (res.overrideParameterIDs) {
+          this.selectedOverrideParamIds = res.overrideParameterIDs
+            .split(',')
+            .map((s: string) => parseInt(s.trim(), 10))
+            .filter((id: number) => !isNaN(id) && id > 0);
+        } else {
+          this.selectedOverrideParamIds = [];
+        }
+
+        this.updateSuggestionsList();
 
         // Restore parameter category for the picker
         this.parameterCategory = this.defaultCategoryForType(res.selectionType);
@@ -809,6 +931,22 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     }
 
     const payload = this.invoiceForm.getRawValue();
+
+    // ECF formatting:
+    if (payload.selectionType === 'ElementCountFormula') {
+      if (payload.isOverrideRow) {
+        payload.value = 'override';
+      } else {
+        payload.value = (payload.conditionPrefix || '<=') + String(payload.conditionNumber || 0);
+        payload.overrideParameterIDs = null;
+      }
+    } else {
+      payload.overrideParameterIDs = null;
+    }
+    delete payload.conditionPrefix;
+    delete payload.conditionNumber;
+    delete payload.isOverrideRow;
+
     // Backend expects string fields — number inputs produce numeric values
     payload.value = payload.value != null && payload.value !== '' ? String(payload.value) : '';
     payload.start = payload.start != null && payload.start !== '' ? String(payload.start) : '';
@@ -843,6 +981,8 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.invoiceId = 0;
     this.selectedSuggestion = null;
     this.rangeError = '';
+    this.selectedOverrideParamIds = [];
+    this.selectedOverrideParamItems = [];
 
     if (id > 0) {
       this.invoiceId = id;
@@ -882,6 +1022,8 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.isViewMode = false;
     this.selectedParamIds = [];
     this.selectedParamItems = [];
+    this.selectedOverrideParamIds = [];
+    this.selectedOverrideParamItems = [];
     this.parameterCategory = 'Chemical';
     this.paramPickerReloadKey++;
   }

@@ -263,6 +263,52 @@
                             (itemsSelected)="onParameterSelected($event)">
                         </app-multi-select-dropdown>
                     </div>
+
+                    <!-- Chemical Testing Config (L3) — only for chemical metal bases. Children inherit if left blank. -->
+                    <fieldset *ngIf="MetalClassificationForm.get('hasChemicalParams')?.value" class="chemical-config-fieldset mt-3 p-3">
+                        <legend class="float-none w-auto px-2 fs-6 fw-medium">Chemical Testing Config</legend>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <app-multi-select-dropdown [placeholder]="'Select valid techniques...'"
+                                    [isDisabled]="isViewMode" [labelName]="'Compatible Analysis Techniques'"
+                                    [fetchDataFn]="getAnalysisTechniqueDropdown"
+                                    [selectedValues]="MetalClassificationForm.get('techniqueIds')?.value"
+                                    (itemsSelected)="onTechniqueSelected($event)">
+                                </app-multi-select-dropdown>
+                                <small class="text-muted">Instruments valid for this metal base (OES/WET/ICP/LECO/WDXRF/EDXRF).</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="chemicalBillingGroup" class="form-label">Billing Group</label>
+                                <select id="chemicalBillingGroup" class="form-select form-select-sm"
+                                    formControlName="chemicalBillingGroup" [attr.disabled]="isViewMode ? true : null">
+                                    <option [ngValue]="null">— None —</option>
+                                    <option *ngFor="let g of billingGroups" [ngValue]="g">{{ g }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="spectroElementThreshold" class="form-label">Spectro Threshold</label>
+                                <input type="number" id="spectroElementThreshold" class="form-control form-control-sm"
+                                    formControlName="spectroElementThreshold" min="0" placeholder="e.g. 5"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="surchargeAppliesFromElement" class="form-label">Surcharge From #</label>
+                                <input type="number" id="surchargeAppliesFromElement" class="form-control form-control-sm"
+                                    formControlName="surchargeAppliesFromElement" min="0" placeholder="e.g. 3"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="hasSpectroSpecialSurcharge"
+                                        formControlName="hasSpectroSpecialSurcharge"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="hasSpectroSpecialSurcharge">
+                                        Has special-element surcharge (N/B/Ca for Fe, Ag for Cu)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
                 </div>
 
                 <!-- Modal Footer -->

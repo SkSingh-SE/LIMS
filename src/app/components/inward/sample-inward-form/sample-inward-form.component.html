@@ -494,6 +494,7 @@
                   <th class="fw-medium text-center text-nowrap">Sample Identification</th>
                   <th class="fw-medium text-center text-nowrap">Metal Classification</th>
                   <th class="fw-medium text-center text-nowrap">Product Condition</th>
+                  <th class="fw-medium text-center text-nowrap">Chemical Sample Category</th>
                   <!-- <th class="fw-medium text-center">Specimen Orientation</th> -->
                   <!-- <th class="fw-medium text-center">Product Form</th> -->
                   <th class="fw-medium text-center" style="white-space:normal">Thickness (mm)</th>
@@ -541,6 +542,17 @@
                       [fetchDataFn]="getProductConditions"
                       (itemSelected)="onProductConditionSelected($event,i)"
                       [selectedItem]="sample.get('productConditionID')?.value"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
+                    ></app-searchable-dropdown>
+                  </td>
+                  <td>
+                    <app-searchable-dropdown
+                      [placeholder]="'Type & Search Category'"
+                      [hideLabel]="true"
+                      [smallInput]="true"
+                      [fetchDataFn]="getChemicalSampleCategories"
+                      (itemSelected)="onChemicalSampleCategorySelected($event,i)"
+                      [selectedItem]="sample.get('chemicalSampleCategoryID')?.value"
                       [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
@@ -654,7 +666,7 @@
               <div class="modal-footer py-2">
                 <button type="button" class="btn btn-sm btn-secondary" (click)="showCancelDialog = false">Close</button>
                 <button type="button" class="btn btn-sm btn-danger"
-                        [disabled]="!cancelReason?.trim()"
+                        [disabled]="!cancelReason.trim()"
                         (click)="confirmCancelSample()">
                   <i class="bi bi-x-circle me-1"></i> Confirm Cancel
                 </button>

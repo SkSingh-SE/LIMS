@@ -292,7 +292,7 @@
                     [fetchDataFn]="getTPIAgencies"
                     [hideLabel]="true"
                     [smallInput]="true"
-                    [selectedItem]="prepForms[sample.id]?.get('tpiAgencyID')?.value ? { id: prepForms[sample.id]?.get('tpiAgencyID')?.value, name: getTpiAgencyName(prepForms[sample.id]?.get('tpiAgencyID')?.value) } : null"
+                    [selectedItem]="prepForms[sample.id].get('tpiAgencyID')?.value ? { id: prepForms[sample.id].get('tpiAgencyID')?.value, name: getTpiAgencyName(prepForms[sample.id].get('tpiAgencyID')?.value) } : null"
                     (itemSelected)="onTPIAgencySelected($event, sample.id)">
                   </app-searchable-dropdown>
                 </div>

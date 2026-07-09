@@ -502,9 +502,9 @@ export class TestMethodSpecificationComponent implements OnInit {
     if (parts.length && version) {
       parts.push(`: ${version}`);
     }
-    if (year) {
-      parts.push(year);
-    }
+    // if (year) {
+    //   parts.push(year);
+    // }
     return parts.join(' ');
   }
 

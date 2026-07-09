@@ -10,21 +10,48 @@
     <form [formGroup]="invoiceCaseForm" (ngSubmit)="submit()" novalidate>
 
       <!-- Sub Group Test -->
-      <div class="row mb-3">
+      <div class="row mb-2">
         <div class="col-md-5">
-          <app-searchable-dropdown id="laboratoryTest" [placeholder]="'Search Sub-Group'" [labelName]="'Sub Group Test'"
+          <app-searchable-dropdown id="laboratoryTest" [placeholder]="'Search Sub-Group / AnalysisType'" [labelName]="'Test Subgroup / AnalysisType'"
             [fetchDataFn]="getLaboratoryTest" (itemSelected)="onLaboratorySelected($event)" [hideLabel]="false"
-            [required]="true" [isDisabled]="isViewMode || isEditMode || invoiceId > 0"
+            [required]="true" [isDisabled]="isViewMode || isEditMode || invoiceId > 0" [smallInput]="true"
             [selectedItem]="invoiceCaseForm.get('laboratoryTestID')?.value"></app-searchable-dropdown>
           <div *ngIf="invoiceCaseForm.get('laboratoryTestID')?.touched && invoiceCaseForm.get('laboratoryTestID')?.invalid">
-            <span class="text-danger text-sm">Sub Group Test is required.</span>
+            <span class="text-danger text-sm">Test Subgroup / AnalysisType is required.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Type Selector (Visible only when it is a chemical test) -->
+      <div class="row mb-3" *ngIf="isChemicalTest">
+        <div class="col-md-12">
+          <label class="form-label fw-semibold">Select Analysis Type / Test Subgroup <span class="text-danger">*</span></label>
+          <div class="border rounded p-2 bg-light">
+            <div *ngFor="let sg of subGroups" class="mb-2">
+              <div class="fw-semibold text-primary mb-1" style="font-size: 0.8rem;">
+                <i class="bi bi-folder2-open me-1"></i>{{ sg.name }}
+              </div>
+              <div class="d-flex flex-wrap gap-2 ms-3">
+                <button *ngFor="let at of sg.analysisTypes" type="button"
+                  class="btn btn-sm btn-compact"
+                  [class.btn-primary]="selectedAnalysisTypeId === at.id"
+                  [class.btn-outline-secondary]="selectedAnalysisTypeId !== at.id"
+                  [disabled]="isViewMode"
+                  (click)="selectAnalysisType(at)">
+                  <i class="bi bi-file-earmark-text me-1"></i>{{ at.name }}
+                </button>
+              </div>
+            </div>
+            <div *ngIf="subGroups.length === 0" class="text-muted text-center py-2">
+              No Sub Groups or Analysis Types configured for this Laboratory Test.
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Year-wise version tabs -->
-      <ng-container *ngIf="invoiceCaseForm.get('laboratoryTestID')?.value">
-        <label class="form-label fw-semibold">Year-wise Prices <span class="text-danger">*</span></label>
+      <ng-container *ngIf="invoiceCaseForm.get('laboratoryTestID')?.value && (!isChemicalTest || selectedAnalysisTypeId)">
+        <label class="form-label fw-semibold" style="font-size: 0.8rem;">Year-wise Prices <span class="text-danger">*</span></label>
 
         <ul class="nav nav-tabs fy-tabs mb-0">
           <li class="nav-item" *ngFor="let v of versions.controls; let i = index">
@@ -50,10 +77,10 @@
           <ng-container *ngFor="let v of versions.controls; let i = index">
           <div [formGroupName]="i" [hidden]="activeVersionIndex !== i">
 
-            <div class="row mb-3 align-items-end">
+            <div class="row g-2 mb-3 align-items-end">
               <div class="col-md-3">
-                <label class="form-label fw-semibold">Financial Year <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="financialYearId"
+                <label class="form-label fw-semibold" style="font-size: 0.75rem;">Financial Year <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="financialYearId"
                   (change)="onVersionFyChange(i)"
                   [ngClass]="{ 'is-invalid': v.get('financialYearId')?.touched && v.get('financialYearId')?.invalid }">
                   <option [ngValue]="null" disabled>Select financial year</option>
@@ -66,22 +93,22 @@
                 </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold">Effective From <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" formControlName="effectiveFrom"
+                <label class="form-label fw-semibold" style="font-size: 0.75rem;">Effective From <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" formControlName="effectiveFrom"
                   [ngClass]="{ 'is-invalid': v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid }">
                 <div *ngIf="v.get('effectiveFrom')?.touched && v.get('effectiveFrom')?.invalid">
                   <span class="text-danger text-sm">Effective From date is required.</span>
                 </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold">Default Pricing Type</label>
-                <select class="form-select" formControlName="defaultPricingType">
+                <label class="form-label fw-semibold" style="font-size: 0.75rem;">Default Pricing Type</label>
+                <select class="form-select form-select-sm" formControlName="defaultPricingType">
                   <option [ngValue]="null">Auto-detect (system decides)</option>
-                  <option *ngFor="let pt of pricingTypeOptions" [value]="pt.value">{{ pt.label }}</option>
+                  <option *ngFor="let pt of getDefaultPricingTypeOptions(i)" [value]="pt.value">{{ pt.label }}</option>
                 </select>
               </div>
               <div class="col-md-3 text-end" *ngIf="!isViewMode">
-                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeYear(i)">
+                <button type="button" class="btn btn-sm btn-remove btn-outline-danger" (click)="removeYear(i)">
                   <i class="bi bi-trash"></i> Remove Year
                 </button>
               </div>
@@ -89,38 +116,98 @@
 
             <!-- Price rows -->
             <div formArrayName="prices" class="table-responsive custom-scroll">
-              <table class="table table-borderless align-middle mb-1" style="min-width: 700px">
+              <table class="table align-middle mb-1" style="min-width: 700px">
                 <thead class="table-light">
                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium px-2 wide-input">Invoice Case</th>
-                    <th class="fw-medium px-2 wide-input">Alias Name</th>
-                    <th class="fw-medium px-2 wide-input">Price (&#8377;)</th>
+                    <th class="fw-medium px-2" style="width: 35%;">Invoice Case</th>
+                    <th class="fw-medium px-2" style="width: 30%;">Alias Name</th>
+                    <th class="fw-medium px-2" style="width: 20%;">Price (&#8377;)</th>
+                    <th class="fw-medium px-2 text-center" style="width: 15%;">Rates Mode</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let p of pricesOf(i).controls; let pi = index" [formGroupName]="pi">
-                    <td>
-                      <input type="text" formControlName="name" class="form-control" readonly>
-                    </td>
-                    <td>
-                      <input type="text" formControlName="aliasName" class="form-control" placeholder="Alias Name"
-                        [ngClass]="{ 'is-invalid': p.get('aliasName')?.touched && p.get('aliasName')?.invalid }">
-                      <div *ngIf="p.get('aliasName')?.touched && p.get('aliasName')?.invalid">
-                        <span class="text-danger text-sm">Alias Name is required.</span>
-                      </div>
-                    </td>
-                    <td>
-                      <input type="text" formControlName="price" class="form-control" placeholder="Price" appDecimalOnly
-                        maxlength="10"
-                        [ngClass]="{ 'is-invalid': p.get('price')?.touched && p.get('price')?.invalid }">
-                      <div *ngIf="p.get('price')?.touched && p.get('price')?.invalid">
-                        <span *ngIf="p.get('price')?.hasError('required')" class="text-danger text-sm">Price is required.</span>
-                        <span *ngIf="p.get('price')?.hasError('min')" class="text-danger text-sm">Price must be greater than 0.</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <ng-container *ngFor="let p of pricesOf(i).controls; let pi = index">
+                    <tr [formGroupName]="pi" class="text-sm">
+                      <td>
+                        <div class="d-flex flex-column">
+                          <span class="fw-semibold text-secondary text-sm" style="font-size: 0.78rem;">{{ p.get('name')?.value }}</span>
+                          <div class="d-flex flex-row align-items-center gap-1 mt-0.5">
+                            <span *ngIf="isOverrideRow(i, pi)"
+                                  class="badge bg-warning text-dark px-1.5 py-0.5"
+                                  style="font-size: 0.65rem; cursor: help;"
+                                  [title]="getOverrideHint(i, pi)">
+                              {{ getOverrideText(i, pi) }}
+                            </span>
+                            <span class="badge bg-secondary text-white px-1.5 py-0.5" style="font-size: 0.65rem;">
+                              {{ p.get('groupType')?.value === 'AnalysisType' ? 'Chemical' : 'Mech/Gen' }}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <input type="text" formControlName="aliasName" class="form-control form-control-sm py-0.5" placeholder="Alias Name" style="font-size: 0.78rem;"
+                          [ngClass]="{ 'is-invalid': p.get('aliasName')?.touched && p.get('aliasName')?.invalid }">
+                        <div *ngIf="p.get('aliasName')?.touched && p.get('aliasName')?.invalid">
+                          <span class="text-danger text-sm" style="font-size: 0.7rem;">Alias Name is required.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input type="text" formControlName="price" class="form-control form-control-sm py-0.5 text-end" placeholder="Price" appDecimalOnly
+                          maxlength="10" style="font-size: 0.78rem;"
+                          [ngClass]="{ 'is-invalid': p.get('price')?.touched && p.get('price')?.invalid }">
+                        <!-- <small *ngIf="isOverrideRow(i, pi)" class="text-muted d-block text-end mt-0.5" style="font-size: 0.68rem; line-height: 1.1;">
+                          Surcharge per element
+                        </small> -->
+                        <div *ngIf="p.get('price')?.touched && p.get('price')?.invalid">
+                          <span *ngIf="p.get('price')?.hasError('required')" class="text-danger text-sm" style="font-size: 0.7rem;">Required.</span>
+                          <span *ngIf="p.get('price')?.hasError('min')" class="text-danger text-sm" style="font-size: 0.7rem;">Min 0.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div *ngIf="isOverrideRow(i, pi)" class="text-center">
+                          <button type="button" 
+                                  class="btn btn-xs py-1 px-2 d-inline-flex align-items-center gap-1"
+                                  [class.btn-success]="isElementWiseMode(i, pi)"
+                                  [class.btn-outline-secondary]="!isElementWiseMode(i, pi)"
+                                  (click)="toggleElementWiseMode(i, pi)"
+                                  [disabled]="isViewMode"
+                                  style="font-size: 0.72rem; line-height: 1; min-height: 24px;">
+                            <i class="bi" [class.bi-list-check]="isElementWiseMode(i, pi)" [class.bi-plus-circle]="!isElementWiseMode(i, pi)"></i>
+                            {{ isElementWiseMode(i, pi) ? 'Active' : 'Set Rates' }}
+                          </button>
+                        </div>
+                        <div *ngIf="!isOverrideRow(i, pi)" class="text-muted text-center text-xs">—</div>
+                      </td>
+                    </tr>
+
+                    <!-- Expanded Element-wise input fields sub-row -->
+                    <tr *ngIf="isOverrideRow(i, pi) && isElementWiseMode(i, pi)" class="bg-light-subtle">
+                      <td colspan="4" class="p-2 border-bottom">
+                        <div class="border rounded p-2 bg-white" style="box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); background-color: #fafbfc !important;">
+                          <div class="fw-semibold text-secondary text-xxs mb-2 d-flex align-items-center justify-content-between" style="font-size: 0.72rem;">
+                            <span><i class="bi bi-gear-fill me-1"></i>Element-Wise Surcharges (Added on top of base tier)</span>
+                            <span class="badge bg-info-subtle text-info-emphasis px-1.5 py-0.5" style="font-size: 0.65rem;">Override Parameter Rates</span>
+                          </div>
+                          <div class="row g-2">
+                            <div *ngFor="let el of getElementWiseList(i, pi); trackBy: trackByElementId" class="col-md-3 col-sm-4 col-6">
+                              <div class="input-group input-group-sm">
+                                <span class="input-group-text py-0.5 px-1.5 bg-light border-secondary-subtle" >{{ el.name }}</span>
+                                <input type="number" 
+                                       class="form-control form-control-sm py-0.5 px-1.5 text-end font-monospace border-secondary-subtle" 
+                            
+                                       [value]="el.price" 
+                                       (input)="updateElementPriceValue(i, pi, el.id, $event)" 
+                                       [disabled]="isViewMode"
+                                       placeholder="0">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
                   <tr *ngIf="pricesOf(i).length === 0">
-                    <td colspan="3" class="text-center text-muted py-3">
+                    <td colspan="4" class="text-center text-muted py-3">
                       No prices set for this year — select the Sub Group Test or add price rows.
                     </td>
                   </tr>
@@ -135,8 +222,8 @@
 
       <!-- Action bar -->
       <div class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/invoice-case']" class="btn btn-cancel">Cancel</a>
-        <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
+        <a [routerLink]="['/invoice-case']" class="btn btn-sm  btn-cancel">Cancel</a>
+        <button *ngIf="!isViewMode" type="submit" class="btn btn-sm btn-save px-3">Save</button>
       </div>
     </form>
   </div>

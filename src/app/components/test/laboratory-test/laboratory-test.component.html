@@ -1252,7 +1252,6 @@
                       <tr>
                         <th style="width: 50px" class="text-center">#</th>
                         <th>Invoice Case Name</th>
-                        <th>Description</th>
                         <th style="width: 150px" class="text-center">Linked On</th>
                         <th style="width: 100px" class="text-center">Status</th>
                         <th class="text-center" style="width: 80px" *ngIf="!isViewMode">Action</th>
@@ -1262,7 +1261,6 @@
                       <tr *ngFor="let ic of getActiveInvoiceCases().controls || []; let icIdx = index" [formGroupName]="icIdx">
                         <td class="text-center fw-medium text-secondary">{{ icIdx + 1 }}</td>
                         <td class="fw-bold text-dark">{{ ic.get("invoiceCaseConfigName")?.value }}</td>
-                        <td class="text-muted text-xxs">{{ ic.get("description")?.value || '-' }}</td>
                         <td class="text-center text-secondary text-xxs">{{ (ic.get("createdOn")?.value | date:'dd MMM yyyy') || '-' }}</td>
                         <td class="text-center">
                           <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Active</span>
@@ -1274,7 +1272,7 @@
                         </td>
                       </tr>
                       <tr *ngIf="getActiveInvoiceCases().controls.length === 0">
-                        <td colspan="6" class="text-center py-3 text-muted text-xxs">
+                        <td colspan="5" class="text-center py-3 text-muted text-xxs">
                           No invoice configurations mapped. Use searchable dropdown above to link.
                         </td>
                       </tr>

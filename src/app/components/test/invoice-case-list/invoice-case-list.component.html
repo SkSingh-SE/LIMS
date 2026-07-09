@@ -70,6 +70,7 @@
                                 <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                                 <td>{{ item.financialYear }}</td>
                                 <td>{{ item.laboratoryTest }}</td>
+                                <td>{{ item.analysisTypeName || '—' }}</td>
                                 <td>
                                     <span class="badge bg-secondary cursor" (click)="toggleRow(item.id)"
                                           title="Click to expand/collapse pricing tiers">
@@ -82,7 +83,7 @@
 
                             <!-- Expanded Tier Row -->
                             <tr *ngIf="isExpanded(item.id)" class="tier-row">
-                                <td colspan="6" class="p-0">
+                                <td colspan="7" class="p-0">
                                     <div class="tier-container">
                                         <table class="table table-sm table-bordered mb-0 tier-table">
                                             <thead>

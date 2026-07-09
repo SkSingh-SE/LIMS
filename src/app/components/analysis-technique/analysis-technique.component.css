@@ -1,32 +1,32 @@
 .table thead th {
     cursor: pointer;
   }
-  
+
   .table thead th:hover {
     background-color: #f8f9fa;
   }
-  
+
   .card .card-header {
     padding: 0.5rem 0.5rem !important;
     height: 47px !important;
   }
-  
-  
+
+
   .filter-modal {
     position: absolute;
     display: none;
     z-index: 1000;
   }
   .sorting-icon-up {
-    font-size: 18px;  
-    line-height: 12px; 
+    font-size: 18px;
+    line-height: 12px;
     cursor: pointer;
     padding: 0;
     margin-bottom: -3px;
   }
   .sorting-icon-down {
-    font-size: 18px;  
-    line-height: 12px; 
+    font-size: 18px;
+    line-height: 12px;
     cursor: pointer;
     padding: 0;
     margin-top: -3px;
@@ -41,40 +41,31 @@
     padding: 0.2rem 0.5rem !important;
   }
   .custom-search {
-    height: 36px; /* Adjust as needed */
+    height: 36px;
   }
-  
+
   .custom-search input,
   .custom-search .input-group-text {
     height: 100%;
   }
   .icon-svg {
-    width: 30px;  /* Adjust size */
+    width: 30px;
     height: 30px;
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
   }
-  
+
   .icon-svg:hover {
     transform: scale(1.1);
   }
-  
+
   .icon-link {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  
+
   .table-responsive {
     overflow-x: auto;
     max-width: 100%;
   }
-.chemical-config-fieldset {
-  border: 1px solid #e6e6e6;
-  border-left: 3px solid var(--primary-color);
-  background: #fafbfc;
-  border-radius: 4px;
-}
-.chemical-config-fieldset legend {
-  color: var(--primary-color);
-}

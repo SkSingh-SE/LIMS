@@ -39,8 +39,12 @@ export class ParameterService {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
 
-  getParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number, elementTypes?: string): Observable<any> {
+    let url = `${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`;
+    if (elementTypes) {
+      url += `&elementTypes=${elementTypes}`;
+    }
+    return this.http.get<any>(url);
   }
   getChemicalParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);

@@ -38,5 +38,9 @@ export class MetalClassificationService {
     getMetalClassificationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
+
+    getTechniquesForMetal(id: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/technologies/${id}`);
+    }
   
 }

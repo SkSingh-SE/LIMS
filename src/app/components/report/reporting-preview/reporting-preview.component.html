@@ -488,7 +488,7 @@
       ></textarea>
 
       <button class="btn btn-primary btn-sm px-4"
-        [disabled]="!selectedAction || (selectedAction?.action !== 'Next' && !actionRemark)"
+        [disabled]="!selectedAction || (selectedAction.action !== 'Next' && !actionRemark)"
         (click)="submitReview()">
         <i class="bi bi-send-check me-1"></i>Submit
       </button>

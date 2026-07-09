@@ -235,7 +235,7 @@
             </ng-container>
 
             <!-- Single-value types (hidden for SpectroCombination — value is auto-set from name) -->
-            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType">
+            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType && !isFormulaType">
               <label class="form-label">Value <span class="text-danger">*</span></label>
               <!-- Select type (e.g. WithImage, WithExtenso) -->
               <select *ngIf="currentConfig.inputType === 'select'"
@@ -260,6 +260,67 @@
               </small>
               <span *ngIf="invoiceForm.get('value')?.invalid && invoiceForm.get('value')?.touched"
                     class="text-danger text-sm">Value is required.</span>
+            </div>
+
+            <!-- ElementCountFormula controls -->
+            <div class="col-12" *ngIf="isFormulaType">
+              <div class="row g-2 border rounded p-2 mb-2 bg-light ms-0 me-0">
+                <div class="col-12 mb-1">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [value]="false" id="ecfBaseType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                    <label class="form-check-label fw-medium" for="ecfBaseType">Base Tier (Count-based)</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [value]="true" id="ecfOverrideType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                    <label class="form-check-label fw-medium" for="ecfOverrideType">Override Row (Special Element)</label>
+                  </div>
+                </div>
+
+                <!-- Base Tier Dropdown + Number -->
+                <div class="col-12" *ngIf="!isOverrideRow">
+                  <label class="form-label" style="font-size:0.75rem;">Count Condition <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm" style="max-width: 320px;">
+                    <select class="form-select form-select-sm" formControlName="conditionPrefix" style="max-width: 80px" [attr.disabled]="isViewMode ? true : null">
+                      <option value="<=">&le;</option>
+                      <option value="==">==</option>
+                      <option value=">=">&ge;</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input class="form-control" type="number" min="1" formControlName="conditionNumber" placeholder="e.g. 3" [readonly]="isViewMode" />
+                    <span class="input-group-text">Elements</span>
+                  </div>
+                  <small class="text-muted mt-1 d-block">Formula evaluates against active element count.</small>
+                </div>
+
+                 <!-- Override Elements MultiSelectDropdown -->
+                <div class="col-12" *ngIf="isOverrideRow">
+                  <label class="form-label" style="font-size:0.75rem;">Override Elements</label>
+                  <div style="max-width: 480px;">
+                    <app-multi-select-dropdown
+                      [fetchDataFn]="getOverrideParamsFn"
+                      [smallInput]="true"
+                      [selectedValues]="selectedOverrideParamIds"
+                      [isDisabled]="isViewMode"
+                      [hideLabel]="true"
+                      placeholder="Search and select override elements..."
+                      (itemsSelected)="onOverrideSelected($event)">
+                    </app-multi-select-dropdown>
+                    <div class="mt-1 text-muted" style="font-size:0.7rem;">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Note: If no parameters are selected, this override rule will apply to ALL special/super parameters by default.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12 mt-2">
+                  <div class="alert alert-light py-1 border px-2 mb-0">
+                    <small class="text-muted">
+                      Stored Value: <code>{{ invoiceForm.get('value')?.value || 'override' }}</code>
+                    </small>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Range types -->
@@ -306,18 +367,16 @@
 
               <!-- All other types: suggestion dropdown -->
               <ng-select *ngIf="!isSpectroType"
-                [items]="filteredSuggestions$ | async"
+                [items]="filteredSuggestions"
                 bindLabel="name"
                 [addTag]="true"
                 addTagText="Use custom name:"
                 notFoundText="Type to add a custom name"
                 [multiple]="false"
                 [hideSelected]="true"
-                [typeahead]="nameInput$"
                 [(ngModel)]="selectedSuggestion"
                 [ngModelOptions]="{standalone: true}"
                 (change)="onSuggestionSelected($event)"
-                [loading]="nameLoading"
                 [placeholder]="namePlaceholder"
                 [disabled]="isViewMode"
               ></ng-select>
@@ -443,6 +502,8 @@
               </div>
             </div>
           </div>
+
+
 
         </div>
 

@@ -189,6 +189,16 @@
             <option *ngFor="let option of intermediateCheckintervalOptions" [value]="option">{{ option }}</option>
           </select>
         </div>
+        <!-- Analysis Techniques (A4) — which instrument-based techniques this equipment can perform -->
+        <div class="w-100 mb-1">
+          <app-multi-select-dropdown [placeholder]="'Select analysis techniques...'"
+            [isDisabled]="isViewMode" [labelName]="'Analysis Techniques'"
+            [fetchDataFn]="getAnalysisTechnique"
+            [selectedValues]="equipmentForm.get('techniqueIds')?.value"
+            (itemsSelected)="onTechniqueSelected($event)">
+          </app-multi-select-dropdown>
+          <small class="text-muted">Instruments/techniques this equipment can perform (OES/ICP/WET/LECO/WDXRF/EDXRF).</small>
+        </div>
         <div>
           <label class="form-label">Last Calibration Date</label>
           <input type="date" class="form-control" formControlName="lastCalibrationDate" />

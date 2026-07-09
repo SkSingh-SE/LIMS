@@ -123,7 +123,7 @@
         <!-- Sticky context mini-header -->
         <div class="active-sample-sticky">
           <span class="active-sample-no">
-            <i class="bi bi-box-seam me-1"></i>{{ getActiveSample()?.get('sampleNo')?.value }}
+            <i class="bi bi-box-seam me-1"></i>{{ getActiveSample().get('sampleNo')?.value }}
           </span>
           <span class="badge ms-2" [ngClass]="getPlanStatusClass(getSamplePlanStatus(activeSampleIdx))">
             {{ getSamplePlanStatus(activeSampleIdx) }}

@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="retestForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="retestForm" (ngSubmit)="onSubmit()" (keydown.enter)="$event.preventDefault()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -70,107 +70,336 @@
           </div>
           <div *ngIf="openSections['sampleInfo']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Sample Name
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="sampleName" />
+              <div class="col-md-3">
+                <app-searchable-dropdown [labelName]="'QC Plan No'" [required]="true" [placeholder]="'Select QC PlanNo'"
+                  [isDisabled]="isViewMode" [fetchDataFn]="fetchQCPlanNo" (itemSelected)="onQcPlanNo($event)"
+                  [selectedItem]=" retestForm.get('qcPlanNoId')?.value" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <small class="text-danger"
+                  *ngIf="retestForm.get('qcPlanNoId')?.invalid && (retestForm.get('qcPlanNoId')?.touched)">
+                  qc plan no is required.
+                </small>
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Original Sample ID
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="originalSampleId" placeholder="LIMS-2024-001" />
+              <div class="col-md-3">
+                <label class="form-label">Plan Year <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="planYear" readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Discipline
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="discipline" placeholder="Chemical" />
+
+              <div class="col-md-3">
+                <label class="form-label">Discipline <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="discipline" readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Group / Subgroups
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="groupSubgroup" placeholder="Metals & Alloys" />
+
+              <div class="col-md-3">
+                <label class="form-label">Group / Subgroup <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="materialProductGroup" readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Date of Original Testing
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="dateOfOriginalTesting" />
+
+              <div class="col-md-3">
+                <label class="form-label">Lab In-charge <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="labIncharge" readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Date of Retesting
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="dateOfRetesting" />
+
+            </div>
+            <br />
+            <div class="row g-3">
+              <h5>QC Plan Activity Details</h5>
+              <div class="col-md-3">
+                <label class="form-label">QC Activity <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="qcActivity" readonly />
               </div>
+              <div class="col-md-3">
+                <label class="form-label">Effective From <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="effectiveFrom" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Effective To <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="effectiveTo" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Next Due Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="nextDueDate" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Department <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="departmentName" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Test Method <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="testMethodName" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Reference Type <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="referenceType" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Reference Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="referenceName" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Frequency Type <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="frequencyType" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Responsible Employee <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="responsibleEmployee" readonly />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Acceptance Criteria <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="acceptanceCriteria" readonly />
+              </div>
+
             </div>
           </div>
         </div>
 
         <!-- Section III: Test Parameters & Result Comparison -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('parameters')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('parameters')">
             <div>
               <i class="bi" [ngClass]="openSections['parameters'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">III. Test Parameters & Result Comparison</span>
             </div>
-            <button
-              *ngIf="!isViewMode"
-              type="button"
-              class="btn btn-sm btn-light py-0 me-3"
-              (click)="addParameter(); $event.stopPropagation()"
-            >
+            <!-- <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-light py-0 me-3"
+              (click)="addParameter(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i>
               Add Parameter
-            </button>
+            </button> -->
           </div>
           <div *ngIf="openSections['parameters']" class="section-body p-0">
-            <div class="table-responsive m-0">
+            <div class="p-3 border-bottom">
+              <div *ngIf="!isRetestingMode">
+                <h6 class="text-primary mb-3">Initial Testing</h6>
+
+                <div class="row g-3">
+
+                  <div class="col-md-3">
+                    <label class="form-label">Date of Testing <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" formControlName="dateOfTesting">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Sample Id <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="sampleId"
+                      placeholder="Enter Sample Id">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Test Result <span class="text-danger">*</span></label>
+
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" formControlName="resultPrefix" placeholder="Prefix">
+                      <span class="input-group-text">-</span>
+                      <input type="number" step="0.001" class="form-control" formControlName="resultValue"
+                        placeholder="Value">
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'" [labelName]="'Tested By'"
+                      [fetchDataFn]="getEmployees" (itemSelected)="onInitialEmployeeSelected($event)" [required]="true"
+                      [isDisabled]="isViewMode" [selectedItem]="retestForm.get('initialEmployeeSelected')?.value">
+                    </app-searchable-dropdown>
+                  </div>
+
+                  <div class="col-md-12">
+                    <label class="form-label">Remarks</label>
+                    <textarea class="form-control form-control-sm" rows="2" formControlName="initialRemarks"
+                      placeholder="Enter Remarks"></textarea>
+                  </div>
+
+                  <div class="col-md-12 text-end">
+                    <button *ngIf="!isViewMode" type="button" class="btn btn-primary btn-sm" (click)="addInitialLog()">
+                      Add Log
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+              <div *ngIf="isRetestingMode">
+                <h6 class="text-success mb-3">Retesting</h6>
+
+                <div class="row g-3">
+
+                  <div class="col-md-3">
+                    <label class="form-label">QC Month <span class="text-danger">*</span></label>
+                    <input type="month" class="form-control form-control-sm" formControlName="qcMonth">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Date of Retesting <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" formControlName="dateOfRetesting">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Sample Id</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="retestSampleId" readonly>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Previous Test Result</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" formControlName="previousPrefix">
+                      <span class="input-group-text">-</span>
+                      <input type="number" class="form-control" formControlName="previousValue">
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Retesting Result <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" formControlName="retestPrefix" placeholder="Prefix">
+                      <span class="input-group-text">-</span>
+                      <input type="number" step="0.001" class="form-control" formControlName="retestValue"
+                        placeholder="Value">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Acceptable Limit</label>
+                    <input type="number" step="0.001" class="form-control form-control-sm"
+                      formControlName="acceptableLimit">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Result Status<span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm" formControlName="resultStatus">
+                      <option value="">Select Status</option>
+                      <option value="OK">OK</option>
+                      <option value="Not OK">Not OK</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-3">
+                    <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'" [labelName]="'Tested By'"
+                      [fetchDataFn]="getEmployees" (itemSelected)="onRetestEmployeeSelected($event)" [required]="true"
+                      [isDisabled]="isViewMode" [selectedItem]="retestForm.get('retestEmployeeSelected')?.value">
+                    </app-searchable-dropdown>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Remarks</label>
+                    <textarea class="form-control form-control-sm" rows="2" formControlName="retestRemarks"></textarea>
+                  </div>
+
+                  <div class="col-md-12 text-end">
+                    <button type="button" class="btn btn-success btn-sm me-2" (click)="addRetestingLog()">
+                      Add Retesting Log
+                    </button>
+
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="cancelRetesting()">
+                      Cancel
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive mt-3">
+              <div class="card-header bg-light">
+                <h6 class="mb-0">Initial testing Comparison Log</h6>
+              </div>
+
               <table class="table table-bordered mb-0 small">
                 <thead class="bg-light">
                   <tr>
-                    <th class="ps-3 py-2 fw-bold text-muted" style="width: 50px">S.N.</th>
-                    <th class="py-2 fw-bold text-muted">Parameter Tested</th>
-                    <th class="py-2 fw-bold text-muted">Original Result</th>
-                    <th class="py-2 fw-bold text-muted">Retest Result</th>
-                    <th class="py-2 fw-bold text-muted">Acceptable Limits / Z-Score</th>
-                    <th class="py-2 fw-bold text-muted">Deviation / Variance</th>
-                    <th class="py-2 fw-bold text-muted">Status</th>
-                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px"></th>
+                    <th>SN</th>
+                    <th>Sample Id</th>
+                    <th>Date of Testing</th>
+                    <th>Test Result</th>
+                    <th>Latest Test Result</th>
+                    <th>Tested By</th>
+                    <th>Remarks</th>
+                    <th *ngIf="!isViewMode">Action</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="parameters">
-                  <tr *ngFor="let param of parameters.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3 text-center">{{ i + 1 }}</td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="parameterTested" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="originalResult" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="retestResult" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="acceptableLimits" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="deviation" /></td>
-                    <td>
-                      <select class="form-select form-select-sm" formControlName="status">
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Not Satisfactory">Not Satisfactory</option>
-                      </select>
+
+                <tbody>
+                  <tr *ngFor="let log of initialTestingLogs.controls; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ log.value.sampleId }}</td>
+                    <td>{{ log.value.dateOfTesting }}</td>
+                    <td>{{ log.value.resultPrefix }}-{{ log.value.resultValue }}</td>
+                    <td>{{ (log.value.latestResultPrefix || log.value.resultPrefix) }}-{{ (log.value.latestResultValue
+                      ?? log.value.resultValue) }}
                     </td>
-                    <td *ngIf="!isViewMode" class="text-center">
-                      <button
-                        type="button"
-                        class="btn btn-sm text-danger"
-                        (click)="removeParameter(i)"
-                        [disabled]="parameters.length === 1"
-                      >
-                        <i class="bi bi-trash3"></i>
+                    <td>{{ log.value.testedByName }}</td>
+                    <td>{{ log.value.remarks }}</td>
+                    <!-- <td>
+                      <button type="button" class="btn btn-outline-success btn-sm" (click)="openRetestingForm(log, i)">
+                        Retesting
                       </button>
+                    </td> -->
+                    <td *ngIf="!isViewMode">
+                      <button *ngIf="isEditMode" type="button" class="btn btn-outline-success btn-sm"
+                        (click)="openRetestingForm(log.value,i)">
+                        Retesting
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="initialTestingLogs.length === 0">
+                    <td [attr.colspan]="!isViewMode ? 13 : 12" class="text-center text-muted">
+                      No testing log added.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-responsive mt-3">
+              <div class="card-header bg-light">
+                <h6 class="mb-0">Retesting Comparison Log</h6>
+              </div>
+
+              <table class="table table-bordered mb-0 small">
+                <thead class="bg-light">
+                  <tr>
+                    <th>SN</th>
+                    <th>QC Month</th>
+                    <th>Sample Id</th>
+                    <th>Date of Retesting</th>
+                    <th>Previous Result</th>
+                    <th>Retesting Result</th>
+                    <th>Difference</th>
+                    <th>Acceptable Limit</th>
+                    <th>Result Status</th>
+                    <th>Tested By</th>
+                    <th>Remarks</th>
+                    <!-- <th *ngIf="!isViewMode">Action</th> -->
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let log of retestingLogs.controls; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ log.value.qcMonth }}</td>
+                    <td>{{ log.value.sampleId }}</td>
+                    <td>{{ log.value.dateOfRetesting }}</td>
+                    <td>{{ log.value.previousPrefix }}-{{ log.value.previousValue }}</td>
+                    <td>{{ log.value.retestPrefix }}-{{ log.value.retestValue }}</td>
+                    <td>{{ log.value.difference }}</td>
+                    <td>{{ log.value.acceptableLimit }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="log.value.resultStatus === 'OK' ? 'bg-success' : 'bg-danger'">
+                        {{ log.value.resultStatus }}
+                      </span>
+                    </td>
+                    <td>{{ log.value.testedByName }}</td>
+                    <td>{{ log.value.remarks }}</td>
+                    <!-- <td *ngIf="!isViewMode">
+                      <button type="button" class="btn btn-outline-primary btn-sm" (click)="editRetestingLog(i)">
+                        Edit
+                      </button>
+                    </td> -->
+                  </tr>
+
+                  <tr *ngIf="retestingLogs.length === 0">
+                    <td [attr.colspan]="!isViewMode ? 13 : 12" class="text-center text-muted">
+                      No retesting log added.
                     </td>
                   </tr>
                 </tbody>
@@ -180,7 +409,7 @@
         </div>
 
         <!-- Section IV: Review & Authorization -->
-        <div class="accordion-section mb-3">
+        <!-- <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('approval')">
             <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">IV. Review & Authorization</span>
@@ -199,30 +428,27 @@
                   Authorized Signatory
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="authorizedSignatory" placeholder="Quality Manager" />
+                <input type="text" class="form-control" formControlName="authorizedSignatory"
+                  placeholder="Quality Manager" />
               </div>
             </div>
             <div class="row">
               <div class="col-12">
                 <label class="form-label fw-bold">Remarks / Conclusion</label>
-                <quill-editor
-                  formControlName="remarks"
-                  [modules]="quillModules"
-                  [readOnly]="isViewMode"
-                  placeholder="Enter remarks or conclusion..."
-                ></quill-editor>
+                <quill-editor formControlName="remarks" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter remarks or conclusion..."></quill-editor>
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
 
-        
+
         <app-nabl-signature-section [parentForm]="retestForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="retestForm.invalid || false">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

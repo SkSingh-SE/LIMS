@@ -10,7 +10,7 @@ import { RetestingOfRetainedSample, RetestingOfRetainedSampleListResponse, Retes
 export class RetestingOfRetainedSampleService {
     private apiUrl = environment.apiUrl + '/Nabl/Retesting';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<RetestingOfRetainedSampleListResponse> {
         return this.http.post<RetestingOfRetainedSampleListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,12 @@ export class RetestingOfRetainedSampleService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getQCPlanNo(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/qcplanno-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+
+    getQcDetails(id: number): Observable<any> {
+        return this.http.get<any[]>(`${this.apiUrl}/qcDetails/${id}`);
     }
 }

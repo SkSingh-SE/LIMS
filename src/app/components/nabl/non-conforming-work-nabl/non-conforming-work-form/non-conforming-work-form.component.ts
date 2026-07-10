@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,7 +10,8 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
-
+import { ToastService } from '../../../../services/toast.service';
+import { Toast } from 'bootstrap';
 @Component({
     selector: 'app-non-conforming-work-form',
     standalone: true,
@@ -19,7 +20,7 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrl: './non-conforming-work-form.component.css'
 })
 export class NonConformingWorkFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     ncForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -41,20 +42,22 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
             ['clean']
         ]
     };
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private service: NonConformingWorkService
-    , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) {
+        , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService,
+        private toastService: ToastService
+    ) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('NonConformingWork').subscribe({
             next: (defaults) => {
                 this.ncForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
 
@@ -76,21 +79,24 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
     private initForm() {
         this.ncForm = this.fb.group({
             formatNo: ['F-41'],
-            docNo: [''],
+            docNo: ['F-41'],
             issueNo: ['03'],
-            issueDate: ['', Validators.required],
+            issueDate: [null],
+            date: [this.today, Validators.required],
             revNo: ['00'],
-            revDate: ['--', Validators.required],
+            revDate: [null],
 
-            dateMonthYear: ['', Validators.required],
-            ncDetail: ['', Validators.required],
+            ncDate: [this.today, Validators.required],
+            ncDescription: ['', Validators.required],
             rootCauseAnalysis: [''],
             correctiveAction: [''],
-            closerDate: [''],
-            signatureTDQM: [''],
+            closerDate: [null],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
         });
 
         // System-managed fields — always readonly
@@ -98,12 +104,19 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         this.ncForm.get('issueNo')?.disable();
         this.ncForm.get('revNo')?.disable();
         this.ncForm.get('formatNo')?.disable();
+        this.ncForm.get('date')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
+
                 this.ncForm.patchValue(data);
+                this.ncForm.patchValue({
+                    date: NablFormsHelper.formatDateForInput(data.date),
+                    ncDate: NablFormsHelper.formatDateForInput(data.ncDate),
+                    closerDate: NablFormsHelper.formatDateForInput(data.closerDate)
+                });
                 // Lock form if not in editable status
                 const status = (data as any).status;
                 if (status && status !== 'Draft' && status !== 'Rejected') {
@@ -125,30 +138,56 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.ncForm.valid) {
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            } else {
-                this.service.create(this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            }
+    onSubmit(): void {
+        if (this.ncForm.invalid) {
+            this.ncForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.ncForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        if (formData.closerDate == "") {
+            formData.closerDate = null;
+        }
+
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/non-conforming-work']);
+                    this.toastService.show('non-conforming-work updated successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
+            });
+        } else {
+            this.service.create(formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/non-conforming-work']);
+                    this.toastService.show('non-conforming-work created successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
+            });
         }
     }
+
 
     onCancel() {
         this.router.navigate(['/non-conforming-work']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.ncForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.ncForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.ncForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.ncForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

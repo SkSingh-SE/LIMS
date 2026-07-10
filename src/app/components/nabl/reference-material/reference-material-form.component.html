@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="materialForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="materialForm.disabled">
+      <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')" style="cursor: pointer;">
@@ -20,7 +20,8 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-17">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-17">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -37,11 +38,11 @@
                 <label class="form-label fw-semibold text-dark">Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark">Document No <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="documentNo">
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark">Issue Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="issueDate">
               </div>
@@ -57,149 +58,472 @@
           </div>
           <div *ngIf="openSections['material']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark">Material Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="materialName">
-              </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark">Material Code <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="materialCode">
+                <input type="text" class="form-control" formControlName="rmCode" placeholder="material code">
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark">Category <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="category">
+                <label class="form-label fw-semibold text-dark">Material Type<span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="type" placeholder="select material type"
+                  (change)="onMaterialTypeChange($event)">
+                  <option value="">Select Category</option>
+                  <option value="CRM (Certified Reference Material)">CRM (Certified Reference Material)
+                  </option>
+                  <option value="Reference Material">Reference Material</option>
+                  <option value="Working Standard">Working Standard</option>
+                  <option value="Check Standard">Check Standard</option>
+                  <option value="Secondary Reference Material">Secondary Reference Material</option>
+                  <option value="Internal Reference Material">Internal Reference Material</option>
+                  <option value="Control Sample">Control Sample</option>
+                  <option value="Calibration Standard">Calibration Standard</option>
+                  <option value="Verification Standard">Verification Standard</option>
+                  <option value="Validation Standard">Validation Standard</option>
+                  <option value="PT Sample">PT Sample</option>
+                  <option value="Standard Solution">Standard Solution</option>
+                  <option value="Stock Solution">Stock Solution</option>
+                  <option value="Working Solution">Working Solution</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div *ngIf="materialForm.get('type')?.invalid && materialForm.get('type')?.touched"
+                  class="text-danger text-sm mt-1">
+                  item category is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark">Type</label>
-                <select class="form-select" formControlName="type">
-                  <option value="physical">Physical</option>
-                  <option value="chemical">Chemical</option>
-                  <option value="biological">Biological</option>
+                <label class="form-label fw-semibold text-dark">Material Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="rmName" placeholder="material name">
+                <div *ngIf="materialForm.get('rmName')?.invalid && materialForm.get('rmName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  material name is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Material Description <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="materialDescription"
+                  placeholder="material description">
+                <div
+                  *ngIf="materialForm.get('materialDescription')?.invalid && materialForm.get('materialDescription')?.touched"
+                  class="text-danger text-sm mt-1">
+                  material description is required
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Material Classification <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="matrixType"
+                  placeholder="material classification">
+                <div *ngIf="materialForm.get('matrixType')?.invalid && materialForm.get('matrixType')?.touched"
+                  class="text-danger text-sm mt-1">
+                  material classification is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Certificate No.<span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="certificateNo" placeholder="certificate no">
+                <div *ngIf="materialForm.get('certificateNo')?.invalid && materialForm.get('certificateNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  certificate no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Certification Issue Date</label>
+                <input type="date" class="form-control" formControlName="certificationDate">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Validity Date<span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="validityDate">
+                <div *ngIf="materialForm.get('validityDate')?.invalid && materialForm.get('validityDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  validity date is required
+                </div>
+              </div>
+              <div class="col-3">
+                <label class="form-label">Traceability Details<span class="text-danger">*</span></label>
+                <textarea class="form-control border-dashed" formControlName="traceability" rows="2"
+                  placeholder="traceability details"></textarea>
+                <div *ngIf="materialForm.get('traceability')?.invalid && materialForm.get('traceability')?.touched"
+                  class="text-danger text-sm mt-1">
+                  traceability is required
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('inventory')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['inventory'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Inventory Management</span>
+          </div>
+          <div *ngIf="openSections['inventory']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3" *ngIf="isInventoryFound">
+                <label class="form-label fw-semibold text-dark">
+                  Inventory Item <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select form-select-sm" formControlName="itemId" (change)="onItemChange($event)">
+                  <option [ngValue]="null">Select Item</option>
+
+                  <option *ngFor="let inventory of inventoryList" [ngValue]="inventory.name || inventory.Name">
+                    {{ inventory.name || inventory.Name }}
+                  </option>
+                </select>
+                <div *ngIf="materialForm.get('itemId')?.invalid && materialForm.get('itemId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  item category is required
+                </div>
+              </div>
+
+              <div class="col-md-3" *ngIf="showManualInventoryFields">
+                <label class="form-label fw-semibold text-dark">
+                  Item Code <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control form-control-sm" formControlName="itemCode"
+                  placeholder="Enter item code" />
+                <div *ngIf="materialForm.get('itemCode')?.touched && materialForm.get('itemCode')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  item code is required
+                </div>
+              </div>
+
+              <div class="col-md-3" *ngIf="showManualInventoryFields">
+                <label class="form-label fw-semibold text-dark">
+                  Item Name <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control form-control-sm" formControlName="itemName"
+                  placeholder="Enter item name" />
+                <div *ngIf="materialForm.get('itemName')?.touched && materialForm.get('itemName')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  item name is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [labelName]="'Department'"
+                  [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
+                  [selectedItem]="materialForm.get('departmentID')?.value"
+                  [isDisabled]="isViewMode || isInventoryLinked">
+                </app-searchable-dropdown>
+                <div *ngIf="materialForm.get('departmentID')?.invalid && materialForm.get('departmentID')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department id is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Supplier Name</label>
+                <select class="form-select form-select-sm" formControlName="supplierId"
+                  [attr.disabled]="isInventoryLinked ? true : null">
+                  <option [ngValue]="null">Select Supplier</option>
+                  <option *ngFor="let supplier of supplierList" [ngValue]="supplier.id || supplier.Id">
+                    {{ supplier.name || supplier.Name }}
+                  </option>
                 </select>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark">Grade</label>
-                <input type="text" class="form-control" formControlName="grade">
+                <label class="form-label fw-semibold text-dark">Manufacturer Name <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="manufacturer" [readonly]="isInventoryLinked"
+                  placeholder="manufacturer name">
+                <div *ngIf="materialForm.get('manufacturer')?.invalid && materialForm.get('manufacturer')?.touched"
+                  class="text-danger text-sm mt-1">
+                  manufacturer name is required
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark">Manufacturer <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="manufacturer">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark">Batch / Lot No. <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="batchNo" [readonly]="isInventoryLinked"
+                  placeholder="batch no">
+                <div *ngIf="materialForm.get('batchNo')?.invalid && materialForm.get('batchNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  batch no is required
+                </div>
               </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark">Batch / Lot No. <span class="text-danger">*</span></label>
-                <input type="text" class="form-control text-uppercase" formControlName="batchNo">
+              <div class="col-md-3">
+                <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                <input type="number" class="form-control " formControlName="initialQuantity"
+                  [readonly]="isInventoryLinked" placeholder="initial quantity">
+                <div
+                  *ngIf="materialForm.get('initialQuantity')?.invalid && materialForm.get('initialQuantity')?.touched"
+                  class="text-danger text-sm mt-1">
+                  initial quantity is required
+                </div>
+              </div>
+              <!-- <div class="col-md-3">
+                <label class="form-label">Available Quantity<span class="text-danger">*</span></label>
+                <input type="number" class="form-control" formControlName="availableQuantity"
+                  placeholder="available quantity">
+                <div
+                  *ngIf="materialForm.get('availableQuantity')?.invalid && materialForm.get('availableQuantity')?.touched"
+                  class="text-danger text-sm mt-1">
+                  available quantity is required
+                </div>
+              </div> -->
+              <div class="col-md-3">
+                <label class="form-label">Minimum Quantity</label>
+                <input type="number" class="form-control" formControlName="minimumQuantity"
+                  [readonly]="isInventoryLinked" placeholder="minimum quantity">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="unitOfMeasure" [readonly]="isInventoryLinked"
+                  placeholder="e.g. Liter, Kg, Number">
+                <div *ngIf="materialForm.get('unitOfMeasure')?.invalid && materialForm.get('unitOfMeasure')?.touched"
+                  class="text-danger text-sm mt-1">
+                  unit of measure is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Storage Location </label>
+                <input type="text" class="form-control" formControlName="storageLocation" [readonly]="isInventoryLinked"
+                  placeholder="storage location">
+              </div>
+              <div class="col-md-12 mt-2" *ngIf="!isViewMode">
+                <button *ngIf="isInventoryLinked" type="button" class="btn btn-sm btn-primary"  (click)="openQtyPopup()">
+                  <i class="bi bi-plus-lg me-1"></i>
+                  Add Qty
+                </button>
+
+                <button *ngIf="showManualInventoryFields && !isInventoryLinked" type="button"
+                  class="btn btn-sm btn-success" (click)="saveInventory()">
+                  <i class="bi bi-save me-1"></i>
+                  Save Inventory
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Section III: Technical Specifications -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('parameters')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['parameters'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">IV. Certified Parameter Details</span>
+          </div>
+          <div *ngIf="openSections['parameters']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Parameter</th>
+                    <th>Certified Value</th>
+                    <th>Lower Limit</th>
+                    <th>Upper Limit</th>
+                    <th>Unit</th>
+                    <th>Measurement Uncertainty</th>
+                    <th>Remarks</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="parameters">
+                  <tr *ngFor="let param of parameters.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="parameterName"
+                        [readonly]="isViewMode" placeholder="parameter name" [ngClass]="{
+      'is-invalid': param.get('parameterName')?.touched && param.get('parameterName')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('parameterName')?.invalid && (param.get('parameterName')?.touched)">
+                        parameter name is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="certifiedValue"
+                        [readonly]="isViewMode" placeholder="certified value" [ngClass]="{
+      'is-invalid': param.get('certifiedValue')?.touched && param.get('certifiedValue')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('certifiedValue')?.invalid && (param.get('certifiedValue')?.touched)">
+                        certified value is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="lowerLimit"
+                        [readonly]="isViewMode" placeholder="lower limit" [ngClass]="{
+      'is-invalid': param.get('lowerLimit')?.touched && param.get('lowerLimit')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('lowerLimit')?.invalid && (param.get('lowerLimit')?.touched)">
+                        lower limit is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm border-dashed"
+                        formControlName="upperLimit" [readonly]="isViewMode" placeholder="upper limit" [ngClass]="{
+      'is-invalid': param.get('upperLimit')?.touched && param.get('upperLimit')?.invalid
+    }">
+                      <small class="text-danger"
+                        *ngIf="param.get('upperLimit')?.invalid && (param.get('upperLimit')?.touched)">
+                        upper limit is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="unit"
+                        [readonly]="isViewMode" placeholder="unit" [ngClass]="{
+      'is-invalid': param.get('unit')?.touched && param.get('unit')?.invalid
+    }">
+                      <small class="text-danger" *ngIf="param.get('unit')?.invalid && (param.get('unit')?.touched)">
+                        unit is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="measurementUncertainty"
+                        [readonly]="isViewMode" placeholder="measurement uncertainty" [ngClass]="{
+      'is-invalid': param.get('measurementUncertainty')?.touched && param.get('measurementUncertainty')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('measurementUncertainty')?.invalid && (param.get('measurementUncertainty')?.touched)">
+                        measurement uncertainty is required.
+                      </small>
+                    </td>
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="remarks" rows="2"
+                        [readonly]="isViewMode" placeholder="remarks"></textarea>
+                      <small class="text-danger"
+                        *ngIf="param.get('remarks')?.invalid && (param.get('remarks')?.touched)">
+                        remarks is required.
+                      </small>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeParameter(i)"
+                        [disabled]="parameters.length <= 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+              <button type="button" class="btn btn-add btn-sm px-3" (click)="addParameter()">
+                <i class="bi bi-plus-circle me-1"></i> Add Parameter
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('technical')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['technical'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Technical Specifications & Storage</span>
+            <span class="fw-bold ms-2">V. Technical Specifications & Storage</span>
           </div>
           <div *ngIf="openSections['technical']" class="section-body">
             <div class="row g-3 mt-2">
               <div class="row mb-2">
                 <label class="form-label">Technical Specifications <span class="text-danger">*</span></label>
-                <quill-editor formControlName="specifications" [modules]="quillModules" placeholder="Type technical specifications here..." [readOnly]="isViewMode"></quill-editor>
+                <quill-editor formControlName="specifications" [modules]="quillModules"
+                  placeholder="Type technical specifications here..." [readOnly]="isViewMode"></quill-editor>
+                <div *ngIf="materialForm.get('specifications')?.invalid && materialForm.get('specifications')?.touched"
+                  class="text-danger text-sm mt-1">
+                  technical specifications is required
+                </div>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Purity (%)</label>
-                <input type="number" class="form-control" formControlName="purity">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Physical State</label>
-                <select class="form-select" formControlName="physicalState">
-                  <option value="solid">Solid</option>
-                  <option value="liquid">Liquid</option>
-                  <option value="gas">Gas</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Shelf Life (Months) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" formControlName="shelfLife">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Expiry Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" formControlName="expiryDate">
-              </div>
-              <div class="col-12 mt-3">
-                  <label class="form-label">Storage Conditions <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control border-dashed" formControlName="storageConditions" placeholder="e.g. Store at 25°C, away from direct sunlight">
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Section IV: Certification -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('certification')" style="cursor: pointer;">
-            <i class="bi" [ngClass]="openSections['certification'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Certification & Traceability</span>
-          </div>
-          <div *ngIf="openSections['certification']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Certificate No.</label>
-                <input type="text" class="form-control" formControlName="certificateNo">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Certification Date</label>
-                <input type="date" class="form-control" formControlName="certificationDate">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Certified By</label>
-                <input type="text" class="form-control" formControlName="certifiedBy">
-              </div>
-              <div class="col-12">
-                <label class="form-label">Traceability Details</label>
-                <textarea class="form-control border-dashed" formControlName="traceability" rows="2"></textarea>
-              </div>
             </div>
           </div>
         </div>
 
         <!-- Section V: Inventory -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('inventory')" style="cursor: pointer;">
-            <i class="bi" [ngClass]="openSections['inventory'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">V. Inventory Management</span>
-          </div>
-          <div *ngIf="openSections['inventory']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label">Current Stock <span class="text-danger">*</span></label>
-                <input type="number" class="form-control fw-bold text-primary" formControlName="currentStock">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="unitOfMeasure" placeholder="e.g. Liter, Kg, Number">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Reorder Level</label>
-                <input type="number" class="form-control text-warning" formControlName="reorderLevel">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Storage Location <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="storageLocation">
-              </div>
-            </div>
-          </div>
-        </div>
 
-        
+
+
         <app-nabl-signature-section [parentForm]="materialForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="materialForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop-custom" *ngIf="showQtyPopup">
+  <div class="qty-modal">
+
+    <div class="modal-header-custom">
+      <h5>Add Quantity</h5>
+      <button type="button" class="close-btn" (click)="closeQtyPopup()">×</button>
+    </div>
+
+    <div class="modal-body-custom">
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label>Item Code</label>
+          <input class="form-control form-control-sm" [value]="selectedInventory?.itemCode" disabled>
+        </div>
+
+        <div class="col-md-4">
+          <label>Item Name</label>
+          <input class="form-control form-control-sm" [value]="selectedInventory?.itemName" disabled>
+        </div>
+
+        <div class="col-md-4">
+          <label>Current Quantity</label>
+          <input class="form-control form-control-sm" [value]="selectedInventory?.quantity" disabled>
+        </div>
+      </div>
+
+      <form [formGroup]="qtyForm">
+        <div class="row align-items-end mb-3">
+          <div class="col-md-4">
+            <label>Add Qty <span class="text-danger">*</span></label>
+            <input type="number" class="form-control form-control-sm" formControlName="addedQuantity"
+              placeholder="Enter quantity">
+
+            <div class="text-danger mt-1"
+              *ngIf="qtyForm.get('addedQuantity')?.touched && qtyForm.get('addedQuantity')?.invalid">
+              Quantity is required
+            </div>
+          </div>
+
+          <div class="col-md-2">
+            <button type="button" class="btn btn-danger btn-sm w-100" (click)="addQuantity()">
+              Add
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <hr>
+
+      <h6 class="mb-2">Quantity Logs</h6>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th>SN</th>
+              <th>Added Qty</th>
+              <th>Previous Qty</th>
+              <th>New Qty</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let log of quantityLogs; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ log.addedQuantity }}</td>
+              <td>{{ log.previousQuantity }}</td>
+              <td>{{ log.newQuantity }}</td>
+              <td>{{ log.addedDate }}</td>
+            </tr>
+
+            <tr *ngIf="quantityLogs.length === 0">
+              <td colspan="5" class="text-center">No logs found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 </div>

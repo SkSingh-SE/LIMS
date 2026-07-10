@@ -1,0 +1,184 @@
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+}
+
+.preview-table th,
+.preview-table td {
+    border: 1px solid #000;
+    padding: 6px;
+    vertical-align: top;
+}
+
+.preview-table th {
+    text-align: center;
+    font-weight: 700;
+}
+
+.preview-table td {
+    word-break: break-word;
+}
+
+.preview-table tbody tr {
+    height: 90px;
+}
+
+.preview-table td:last-child {
+    width: 120px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTION TOOLBAR
+═══════════════════════════════════════════════════════════════ */
+.preview-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    gap: 12px;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.toolbar-right {
+    justify-content: flex-end;
+}
+
+.toolbar-center {
+    flex: 2;
+    text-align: center;
+}
+
+.doc-title-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.3px;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.toolbar-btn.btn-outline-dark {
+    background: #fff;
+    border-color: #555;
+    color: #333;
+}
+
+.toolbar-btn.btn-outline-dark:hover {
+    background: #f5f5f5;
+    border-color: #333;
+}
+
+.toolbar-btn.btn-primary-red {
+    background: #DA261C;
+    border-color: #DA261C;
+    color: #fff;
+}
+
+.toolbar-btn.btn-primary-red:hover {
+    background: #c0201a;
+    border-color: #c0201a;
+}
+
+/* Orientation Toggle */
+.orientation-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.orient-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    background: #f8f9fa;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-right: 1px solid #ccc;
+}
+
+.orient-btn:last-child {
+    border-right: none;
+}
+
+.orient-btn.active {
+    background: #DA261C;
+    color: #fff;
+}
+
+.orient-btn:not(.active):hover {
+    background: #e9ecef;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
+.section-title {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.label-cell {
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+
+.border-2 {
+    border-width: 2px !important;
+}
+
+.border-dark {
+    border-color: #000 !important;
+}
+
+.border-bottom-2 {
+    border-bottom: 2px solid #000 !important;
+}
+
+.ql-editor {
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+.footer-gap {
+    height: 20px;
+    /* Adjust if you need more space */
+}

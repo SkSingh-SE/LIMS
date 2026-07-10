@@ -1,12 +1,20 @@
 export interface QualityControlActivity {
     srNo: number;
     activityName: string;
-    plannedFrequency: string;
-    targetCriteria: string;
-    plannedDate: string;
-    actualDate: string;
+    referenceType: string;
+    frequencyType: string;
     resultStatus: string;
+    referenceName: string;
+    effectiveFrom: string;
+    acceptanceCriteria: string;
+    departmentID: number;
+    employeeId: number;
+    referenceId: number;
+    testMethodId: number;
     remarks: string;
+    departmentName: string;
+    testMethod: string;
+    employeeName: string;
 }
 
 export interface QualityControlPlan {
@@ -15,10 +23,14 @@ export interface QualityControlPlan {
     issueNo: string;
     revNo: string;
     date: string;
+    effectiveFrom: string;
+    effectiveTo: string;
     documentNo: string;
 
     // Header Info
     planYear: string;
+    planNo: string;
+    retentionPeriod: string;
     discipline: string;
     materialProductGroup: string;
     labIncharge: string;

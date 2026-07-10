@@ -1,10 +1,11 @@
 export interface NonConformingWork {
     id: number;
-    dateMonthYear: string;
+    ncDate: string | Date;
+    date: string | Date;
     ncDetail: string;
     rootCauseAnalysis: string;
     correctiveAction: string;
-    closerDate: string;
+    closerDate: string | Date;
     signatureTDQM?: string;
 
     // Header standard fields

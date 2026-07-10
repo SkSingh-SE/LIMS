@@ -31,7 +31,8 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 18, title: 'Supplier Master', route: '/supplier', parentMenuID: 1, permissions: ['CanReadSupplier'], children: [], color: getRandomColor() },
         { id: 19, title: 'Equipment', route: '/equipment', parentMenuID: 1, permissions: ['CanReadEquipment'], children: [], color: getRandomColor() },
         { id: 20, title: 'OEM Master', route: '/oem', parentMenuID: 1, permissions: ['CanReadOEM'], children: [], color: getRandomColor() },
-        { id: 21, title: 'Calibration Agency', route: '/calibration-agency', parentMenuID: 1, permissions: ['CanReadCalibrationAgency'], children: [], color: getRandomColor() }
+        { id: 21, title: 'Calibration Agency', route: '/calibration-agency', parentMenuID: 1, permissions: ['CanReadCalibrationAgency'], children: [], color: getRandomColor() },
+        { id: 29, title: 'Inventory Management', route: '/inventory-management', parentMenuID: 1, permissions: ['CanReadInventoryManagement'], children: [], color: getRandomColor() }
       ]
     },
     {

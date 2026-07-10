@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -68,23 +68,24 @@
           </div>
           <div *ngIf="openSections['basicInfo']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label class="form-label">
-                  Date / Month & Year
+                  Non-Conformance Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="dateMonthYear" />
+                <input type="date" class="form-control" formControlName="ncDate" />
               </div>
-              <div class="col-12">
+              <div class="col-6">
                 <label class="form-label fw-bold">
                   Non-Conformance Detail
                   <span class="text-danger">*</span>
                 </label>
-                <quill-editor
-                  formControlName="ncDetail"
-                  [modules]="quillModules"
-                  placeholder="Describe the non-conformance..."
-                ></quill-editor>
+                <input type="text" class="form-control" formControlName="ncDescription"
+                  placeholder="non-conformance details" />
+                <div *ngIf="ncForm.get('ncDescription')?.touched && ncForm.get('ncDescription')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  complaint name is required.
+                </div>
               </div>
             </div>
           </div>
@@ -97,12 +98,9 @@
             <span class="fw-bold ms-2">III. Root Cause Analysis</span>
           </div>
           <div *ngIf="openSections['analysis']" class="section-body">
-            <div class="col-12">
-              <quill-editor
-                formControlName="rootCauseAnalysis"
-                [modules]="quillModules"
-                placeholder="Analyze the root cause..."
-              ></quill-editor>
+            <div class="col-12 d-flex flex-column">
+              <quill-editor formControlName="rootCauseAnalysis" [modules]="quillModules"
+                placeholder="Analyze the root cause..."></quill-editor>
             </div>
           </div>
         </div>
@@ -115,7 +113,7 @@
           </div>
           <div *ngIf="openSections['action']" class="section-body">
             <div class="row gy-3">
-              <div class="col-12">
+              <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-bold">Corrective Action Taken</label>
                 <quill-editor formControlName="correctiveAction" [modules]="quillModules"></quill-editor>
               </div>
@@ -123,21 +121,21 @@
                 <label class="form-label">NC Closer Date</label>
                 <input type="date" class="form-control" formControlName="closerDate" />
               </div>
-              <div class="col-md-6">
+              <!-- <div class="col-md-6">
                 <label class="form-label">Signature Of TD/QM</label>
                 <input type="text" class="form-control" formControlName="signatureTDQM" />
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="ncForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="ncForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

@@ -10,6 +10,10 @@ export interface FeedbackAnalysis {
     docNo: string;
     issueNo: string | number;
     issueDate: string | Date;
+    date: string | Date;
+    analysisDate: string | Date;
+    verificationDate: string | Date;
+    targetCompletionDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
 }

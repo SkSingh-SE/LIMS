@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { ReferenceMaterialService } from '../../../services/reference-material.service';
 import { ReferenceMaterial } from '../../../models/referenceMaterialModel';
 import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-table/nabl-register-table.component';
-
+import { ToastService } from '../../../services/toast.service';
 @Component({
     selector: 'app-reference-material-list',
 
@@ -17,22 +17,30 @@ export class ReferenceMaterialListComponent implements OnInit {
     searchTerm = '';
 
     columns: RegisterColumn[] = [
-        { key: 'formatNo', label: 'Format No', type: 'string' },
-        { key: 'materialName', label: 'Material Name', type: 'string' },
-        { key: 'materialCode', label: 'Material Code', type: 'string' },
-        { key: 'category', label: 'Category', type: 'string' },
+        { key: 'documentNo', label: 'Document No', type: 'string' },
+        { key: 'rmCode', label: 'Material Code', type: 'string' },
+        { key: 'rmName', label: 'Material Name', type: 'string' },
+        { key: 'batchNo', label: 'Batch No', type: 'string' },
+        { key: 'manufacturer', label: 'Manufacturer', type: 'string' },
         { key: 'type', label: 'Type', type: 'string' },
-        { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
-        { key: 'currentStock', label: 'Stock', type: 'number' }
+        { key: 'validityDate', label: 'Validity Date', type: 'date' },
     ];
 
     constructor(
         private service: ReferenceMaterialService,
-        private router: Router
+        private router: Router,
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -58,9 +66,22 @@ export class ReferenceMaterialListComponent implements OnInit {
     }
 
     onDelete(id: number): void {
-        if (confirm('Are you sure you want to delete this material record?')) {
-            this.service.delete(id).subscribe(() => {
-                this.loadRecords({ PageNumber: 1, PageSize: 10 });
+        if (confirm('Are you sure you want to delete this record?')) {
+            this.service.delete(id).subscribe({
+                next: (res) => {
+                    this.toastService.show(res.message || 'Record deleted successfully', 'success');
+                    this.loadRecords({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'asc',
+                        filter: []
+                    });
+                },
+                error: (err) => {
+                    this.toastService.show(err.message || 'Error deleting record', 'error');
+                }
             });
         }
     }

@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,132 +36,134 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record()" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="record()?.formatNo || 'F-17'"
-          [mainTitle]="'MASTER LIST OF REFERENCE MATERIAL (CRM)'"
-          [docNo]="'DMSPL / Level-04 / Format / F-17'"
-          [issueNo]="record()?.issueNo || '01'"
-          [revNo]="record()?.revNo || '00'"
-          [issueDate]="record()?.date || ''">
+      <app-nabl-print-header [formatNo]="record()?.formatNo || 'F-17'"
+        [mainTitle]="'MASTER LIST OF REFERENCE MATERIAL (CRM)'" [docNo]="'DMSPL / Level-04 / Format / F-17'"
+        [issueNo]="record()?.issueNo || '01'" [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''"   [revDate]="record()?.date || ''">
       </app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
-      <!-- Main Details -->
+
+      <!-- II. MATERIAL IDENTIFICATION -->
       <div class="doc-section mb-3">
-        <div class="sec-title">MATERIAL DETAILS</div>
+        <div class="sec-title">II. MATERIAL IDENTIFICATION</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%;">Material Name</td>
-              <td colspan="3" class="fw-bold">{{ record()?.materialName }}</td>
+              <td class="lbl">Material Code</td>
+              <td>{{ record()?.rmCode }}</td>
+              <td class="lbl">Material Type</td>
+              <td>{{ record()?.type }}</td>
             </tr>
             <tr>
-              <td class="lbl" style="width: 25%;">Material Code</td>
-              <td style="width: 25%;">{{ record()?.materialCode }}</td>
-              <td class="lbl" style="width: 25%;">Category</td>
-              <td style="width: 25%;">{{ record()?.category }}</td>
+              <td class="lbl">Material Name</td>
+              <td>{{ record()?.rmName }}</td>
+              <td class="lbl">Material Description</td>
+              <td>{{ record()?.materialDescription }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Material Classification</td>
+              <td>{{ record()?.matrixType }}</td>
+              <td class="lbl">Certificate No.</td>
+              <td>{{ record()?.certificateNo }}</td>
             </tr>
             <tr>
-              <td class="lbl">Type</td>
-              <td>{{ record()?.type | titlecase }}</td>
-              <td class="lbl">Grade</td>
-              <td>{{ record()?.grade }}</td>
+              <td class="lbl">Certification Issue Date</td>
+              <td>{{ record()?.certificationDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Validity Date</td>
+              <td>{{ record()?.validityDate | date:'dd-MM-yyyy' }}</td>
             </tr>
             <tr>
+              <td class="lbl">Traceability Details</td>
+              <td colspan="3">{{ record()?.traceability }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- V. INVENTORY MANAGEMENT -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. INVENTORY MANAGEMENT</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Inventory Item</td>
+              <td>{{ record()?.itemId }}</td>
               <td class="lbl">Manufacturer</td>
-              <td colspan="3">{{ record()?.manufacturer }}</td>
+              <td>{{ record()?.manufacturer }}</td>
             </tr>
             <tr>
               <td class="lbl">Batch / Lot No.</td>
-              <td>{{ record()?.batchNo }} <span *ngIf="record()?.lotNo">/ {{ record()?.lotNo }}</span></td>
-              <td class="lbl">Document No.</td>
-              <td>{{ record()?.documentNo }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Technical Specifications -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">TECHNICAL SPECIFICATIONS</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Details</td>
-              <td colspan="3"><div [innerHTML]="record()?.specifications"></div></td>
+              <td>{{ record()?.batchNo }}</td>
+              <td class="lbl">Quantity</td>
+              <td>{{ record()?.initialQuantity }}</td>
             </tr>
             <tr>
-              <td class="lbl">Purity</td>
-              <td>{{ record()?.purity || 'N/A' }}%</td>
-              <td class="lbl">Concentration</td>
-              <td>{{ record()?.concentration || 'N/A' }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Physical State</td>
-              <td>{{ record()?.physicalState | titlecase }}</td>
-              <td class="lbl">Shelf Life</td>
-              <td>{{ record()?.shelfLife }} Months</td>
-            </tr>
-            <tr>
-              <td class="lbl">Expiry Date</td>
-              <td colspan="3">{{ record()?.expiryDate | date: 'dd MMM, yyyy' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Certification & Traceability -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">CERTIFICATION &amp; TRACEABILITY</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Certificate No.</td>
-              <td style="width: 25%;">{{ record()?.certificateNo || 'N/A' }}</td>
-              <td class="lbl" style="width: 25%;">Certification Date</td>
-              <td style="width: 25%;">{{ record()?.certificationDate | date: 'dd MMM, yyyy' }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Certified By</td>
-              <td colspan="3">{{ record()?.certifiedBy || 'N/A' }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Traceability</td>
-              <td colspan="3">{{ record()?.traceability || 'N/A' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Inventory & Storage -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">INVENTORY &amp; STORAGE</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Current Stock</td>
-              <td style="width: 25%;">{{ record()?.currentStock }} {{ record()?.unitOfMeasure }}</td>
-              <td class="lbl" style="width: 25%;">Reorder Level</td>
-              <td style="width: 25%;">{{ record()?.reorderLevel }}</td>
+              <td class="lbl">Minimum Quantity</td>
+              <td>{{ record()?.minimumQuantity }}</td>
+              <td class="lbl">Unit of Measure</td>
+              <td>{{ record()?.unitOfMeasure }}</td>
             </tr>
             <tr>
               <td class="lbl">Storage Location</td>
-              <td>{{ record()?.storageLocation }}</td>
-              <td class="lbl">Storage Conditions</td>
-              <td>{{ record()?.storageConditions }}</td>
+              <td colspan="3">{{ record()?.storageLocation }}</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+      <!-- III. CERTIFIED PARAMETER DETAILS -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. CERTIFIED PARAMETER DETAILS</div>
+        <table class="table table-bordered inner-table text-center">
+          <thead>
+            <tr class="tbl-head">
+              <th>SN</th>
+              <th>Parameter</th>
+              <th>Certified Value</th>
+              <th>Lower Limit</th>
+              <th>Upper Limit</th>
+              <th>Unit</th>
+              <th>Measurement Uncertainty</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of record()?.parameters; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ p.parameterName }}</td>
+              <td>{{ p.certifiedValue }}</td>
+              <td>{{ p.lowerLimit }}</td>
+              <td>{{ p.upperLimit }}</td>
+              <td>{{ p.unit }}</td>
+              <td>{{ p.measurementUncertainty }}</td>
+              <td>{{ p.remarks }}</td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- IV. TECHNICAL SPECIFICATIONS & STORAGE -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. TECHNICAL SPECIFICATIONS & STORAGE</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl">Technical Specifications</td>
+              <td colspan="3">
+                <div [innerHTML]="record()?.specifications"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-          [preparedByName]="'Store In-charge'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="'Director'">
-      </app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

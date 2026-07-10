@@ -10,7 +10,7 @@ import { FeedbackAnalysis } from '../models/feedback-analysis';
 export class FeedbackAnalysisService {
     private apiUrl = environment.apiUrl + '/Nabl/FeedbackAnalysis';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -32,4 +32,15 @@ export class FeedbackAnalysisService {
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
+    getCustomerDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/customer-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+    getFeedbackDetails(id: number) {
+        return this.http.get<any>(`${this.apiUrl}/feedback-details/${id}`);
+    }
+    getNextAnalysisNoNo() {
+
+        return this.http.get<any>(`${this.apiUrl}/next-analysis-no`);
+    }
 }
+

@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,35 +36,32 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'NON-CONFORMING WORK'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'NON-CONFORMING WORK'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Basic Info -->
       <div class="doc-section mb-3">
-        <div class="sec-title">BASIC INFORMATION</div>
+        <div class="sec-title">NON-CONFERMANCE INFORMATION</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 30%">Date / Month &amp; Year</td>
-              <td>{{ data.dateMonthYear }}</td>
+              <td class="lbl" style="width: 30%">NON-CONFORMANCE DATE</td>
+              <td>{{ data.ncDate | date:'dd.MM.yyyy'}}</td>
+              <td class="lbl" style="width: 30%">NON-CONFORMANCE DETAIL</td>
+              <td>{{ data.ncDescription }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Non-Conformance Detail -->
-      <div class="doc-section mb-3">
+      <!-- <div class="doc-section mb-3">
         <div class="sec-title">NON-CONFORMANCE DETAIL</div>
-        <div class="sec-body" [innerHTML]="data.ncDetail"></div>
-      </div>
+        <div class="sec-body" [innerHTML]="data.ncDescription"></div>
+      </div> -->
 
       <!-- Root Cause Analysis -->
       <div class="doc-section mb-3">
@@ -83,7 +77,7 @@
 
       <!-- NC Closer Date -->
       <div class="doc-section mb-3">
-        <div class="sec-title">CLOSURE</div>
+        <div class="sec-title">NC CLOSURE</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
@@ -96,11 +90,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'TD/QM'"
-        [preparedByRole]="'Signature Of TD/QM'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

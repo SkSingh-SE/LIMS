@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,7 +10,7 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
-
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-complaint-form',
     standalone: true,
@@ -19,7 +19,7 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrl: './complaint-form.component.css'
 })
 export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     complaintForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -42,20 +42,21 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
             ['clean']
         ]
     };
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private service: ComplaintService
-    , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) {
+        , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService,
+        private toastService: ToastService) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('Complaint').subscribe({
             next: (defaults) => {
                 this.complaintForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
 
@@ -77,25 +78,28 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
     private initForm() {
         this.complaintForm = this.fb.group({
             formatNo: ['F-40'],
-            docNo: [''],
-            issueNo: ['03'],
-            issueDate: ['', Validators.required],
+            docNo: ['F-40'],
+            issueNo: ['00'],
+            date: [this.today, Validators.required],
             revNo: ['00'],
-            revDate: ['--', Validators.required],
+            // revDate: ['--', Validators.required],
 
             monthYear: ['', Validators.required],
             complaintNo: ['', Validators.required],
-            dateOfComplaint: ['', Validators.required],
+            complaintDate: [this.today, Validators.required],
             complainantName: ['', Validators.required],
-            detailsOfComplaint: ['', Validators.required],
+            complaintDescription: ['', Validators.required],
             validationOfComplaint: [''],
             outcomeOfInvestigation: [''],
-            correctiveActionsTaken: [''],
-            referenceNoDate: [''],
+            correctiveAction: [''],
+            referenceNoDate: ['', Validators.required],
             signatureQM: [''],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
         });
 
         // System-managed fields — always readonly
@@ -109,6 +113,13 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.complaintForm.patchValue(data);
+                this.complaintForm.patchValue({
+                    monthYear: data.monthYear ? data.monthYear.substring(0, 7) : '',
+                    complaintDate: NablFormsHelper.formatDateForInput(data.complaintDate),
+                    referenceNoDate: NablFormsHelper.formatDateForInput(data.referenceNoDate),
+                    date: NablFormsHelper.formatDateForInput(data.date),
+
+                });
                 // Lock form if not in editable status
                 const status = (data as any).status;
                 if (status && status !== 'Draft' && status !== 'Rejected') {
@@ -122,6 +133,7 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
                 this.complaintForm.get('issueNo')?.disable();
                 this.complaintForm.get('revNo')?.disable();
                 this.complaintForm.get('formatNo')?.disable();
+                this.complaintForm.get('date')?.disable();
             }
         });
     }
@@ -130,13 +142,39 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.complaintForm.valid) {
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.complaintForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            } else {
-                this.service.create(this.complaintForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            }
+
+
+    onSubmit(): void {
+        if (this.complaintForm.invalid) {
+            this.complaintForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.complaintForm.getRawValue();
+        if (formData.monthYear) {
+            formData.monthYear = `${formData.monthYear}-01`;
+        }
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/complaint-register']);
+                    this.toastService.show('complaint-register updated successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
+            });
+        } else {
+            this.service.create(formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/complaint-register']);
+                    this.toastService.show('complaint-register created successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
+            });
         }
     }
 
@@ -144,16 +182,16 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
         this.router.navigate(['/complaint-register']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.complaintForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.complaintForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.complaintForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.complaintForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

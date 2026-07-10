@@ -30,7 +30,9 @@ export class NablRegisterTableComponent {
     // --- Card Header Inputs ---
     @Input() title: string = '';
     @Input() addButtonLabel: string = 'Add New';
+    @Input() addPrintLabel: string = 'Print List';
     @Input() addRoute: string = '';
+    @Input() printList: string = '';
     @Input() showCardWrapper: boolean = true;
     @Input() disableEditForDelisted: boolean = false;
     // --- Table Data Inputs ---
@@ -39,7 +41,7 @@ export class NablRegisterTableComponent {
     @Input() totalItems: number = 0;
     @Input() isLoading: boolean = false;
     @Input() showSerialNumber: boolean = true;
-
+    @Input() showDelete: boolean = true;
 
     // --- Action Inputs ---
     @Input() showActions: boolean = true;

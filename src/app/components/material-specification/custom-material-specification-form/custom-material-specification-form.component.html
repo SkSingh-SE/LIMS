@@ -397,8 +397,8 @@
                               </select>
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minValue"
                                 placeholder="Enter min value"
@@ -407,10 +407,34 @@
                                 (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValue')"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                              />
+                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select value</option>
+                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                              </select>
+                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                              </select>
+                              <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                type="text" class="form-control form-control-sm wide-input"
+                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
@@ -419,6 +443,17 @@
                                 (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValue')"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                              />
+                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -427,8 +462,17 @@
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
@@ -438,8 +482,17 @@
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
@@ -484,8 +537,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('lowerLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('lowerLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
                             <td>
@@ -496,8 +555,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('upperLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('upperLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
 
@@ -706,8 +771,8 @@
                               </select>
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minValue"
                                 placeholder="Enter min value"
@@ -716,10 +781,34 @@
                                 (blur)="roundToPrecision(group, 'minValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minValue')"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                              />
+                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select value</option>
+                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                              </select>
+                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                              </select>
+                              <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                type="text" class="form-control form-control-sm wide-input"
+                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
@@ -728,6 +817,17 @@
                                 (blur)="roundToPrecision(group, 'maxValue')"
                                 [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxValue')"
+                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                              />
+                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
@@ -736,8 +836,17 @@
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
@@ -747,8 +856,17 @@
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
@@ -793,8 +911,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('lowerLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('lowerLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
                             <td>
@@ -805,8 +929,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('upperLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('upperLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
 
@@ -1001,22 +1131,51 @@
                               </small>
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minValue"
                                 placeholder="Enter min value"
                                 maxlength="10"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minValue"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                              />
+                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select value</option>
+                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                              </select>
+                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                class="form-select form-select-sm wide-input" formControlName="textValue">
+                                <option value="" disabled>Select</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                              </select>
+                              <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                type="text" class="form-control form-control-sm wide-input"
+                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxValue"
                                 placeholder="Enter max value"
                                 maxlength="10"
                               />
+                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxValue"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                              />
+                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
@@ -1052,8 +1211,17 @@
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="minTolerance"
+                                placeholder="Enter min value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'minTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="minTolerance"
                                 placeholder="Enter min value"
@@ -1063,8 +1231,17 @@
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
+                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                type="text" appDecimalOnly
+                                class="form-control form-control-sm wide-input"
+                                formControlName="maxTolerance"
+                                placeholder="Enter max value"
+                                maxlength="10"
+                                [attr.step]="getStep(group)"
+                                (blur)="roundToPrecision(group, 'maxTolerance')"
+                              />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                type="text" appNumberOnly
                                 class="form-control form-control-sm wide-input"
                                 formControlName="maxTolerance"
                                 placeholder="Enter max value"
@@ -1101,8 +1278,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('lowerLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('lowerLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
                             <td>
@@ -1113,8 +1296,14 @@
                                     {{ op.label }}
                                   </option>
                                 </select>
-                                <input *ngIf="group.get('upperLimitValue')?.value" type="number" class="form-control form-control-sm flex-grow-1"
-                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)" />
+                                <ng-container *ngIf="group.get('upperLimitValue')?.value">
+                                  <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                         type="text" appDecimalOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                  <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                         type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
+                                  formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
+                                </ng-container>
                               </div>
                             </td>
 

@@ -25,7 +25,7 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ProductSizeMasterService } from '../../../services/product-size-master.service';
 import { ToastService } from '../../../services/toast.service';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
@@ -68,6 +68,8 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   selectedNumberType: string = 'None';
   productConditionsData: any[] = [];
   filteredProductOptions: any[] = [];
+  chemicalParametersCache: any[] = [];
+  mechanicalParametersCache: any[] = [];
 
   selectedGradeIndex = 0;
   selectedSpecTab: { [gradeIndex: number]: string } = { 0: 'chemical' };
@@ -135,6 +137,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.initForm();
     this.getParameterUnit();
     this.getSpecimenOrientation();
+    this.loadParametersCache();
 
     if (this.isViewMode) {
       this.MaterialSpecificationForm.disable();
@@ -254,6 +257,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       defaultParameterUnitID: [p?.defaultParameterUnitID ?? p?.parameterUnitID ?? null],
       type: [p?.type || 'chemical'],
       displayOrder: [p?.displayOrder ?? null],
+      inputType: [p?.inputType ?? 'Decimal'],
     });
   }
 
@@ -286,8 +290,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     const additional = item?.additionalValues || {};
     const rawUnit = additional.UnitID ?? additional.unitID ?? null;
     const unitID = rawUnit != null && rawUnit !== '' ? Number(rawUnit) : null;
-    row.patchValue({ parameterID: item.id, defaultParameterUnitID: unitID });
-    // API call: fetch equivalent units for this parameter's default unit + bind it.
+    row.patchValue({ 
+      parameterID: item.id, 
+      defaultParameterUnitID: unitID,
+      inputType: additional.InputType || additional.inputType || 'Decimal'
+    });
     this.loadEquivalentUnits(row, unitID, true);
   }
 
@@ -303,7 +310,10 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
           parameterUnitID: unitId,
           parameterUnitEquivalentID: hp.get('parameterUnitEquivalentID')?.value ?? null,
           parameterName: hp.get('parameterName')?.value || '',
+          inputType: hp.get('inputType')?.value || 'Decimal',
+          textValue: hp.get('textValue')?.value || '',
         });
+        this.updateRowControlsState(line);
         (linesGroup.get(tab) as FormArray).push(line);
         // Carry over the header param's equivalent options if present, else fetch.
         const hpUnits = this.equivalentUnitsByRow.get(hp);
@@ -368,9 +378,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   /** Remove a grade from its tab (stops tab-click) and keep selectedGradeIndex valid. */
   removeGradeTab(index: number, event: Event): void {
     event.stopPropagation();
-    this.removeGrade(index);
-    if (this.selectedGradeIndex >= this.grades.length) {
-      this.selectedGradeIndex = Math.max(0, this.grades.length - 1);
+    if (confirm('Are you sure you want to remove this grade?')) {
+      this.removeGrade(index);
+      if (this.selectedGradeIndex >= this.grades.length) {
+        this.selectedGradeIndex = Math.max(0, this.grades.length - 1);
+      }
     }
   }
 
@@ -407,7 +419,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       minEquation: [''],
       maxEquation: [''],
       parameterUnitID: [null],
-      parameterUnitEquivalentID: [null],
+      parameterUnitEquivalentID: [{ value: null, disabled: true }],
       minValueEquation: [0],
       maxValueEquation: [0],
       minTolerance: [0],
@@ -438,7 +450,10 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       decimalPrecision: [2],
       parameterSymbol: [''],
       parameterName: [''],
-      minReportableLimit: [null]
+      minReportableLimit: [null],
+      inputType: ['Decimal'],
+      textValue: [''],
+      parameterDropdownOptions: [[]]
     }, { validators: this.minMaxValidator });
   }
 
@@ -505,6 +520,33 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.minEquationDraft = '';
     this.maxEquationDraft = '';
     this.equationParamChips = [];
+  }
+
+  onGridKeydown(event: KeyboardEvent, ri: number, col: 'min' | 'max', tab: string, gradeIndex: number): void {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      event.preventDefault();
+      
+      const linesArray = this.getSpecificationLinesByTab(gradeIndex, tab as any);
+      let targetRow = ri;
+      let targetCol = col;
+
+      if (event.key === 'ArrowUp') {
+        targetRow = Math.max(0, ri - 1);
+      } else if (event.key === 'ArrowDown') {
+        targetRow = Math.min(linesArray.length - 1, ri + 1);
+      } else if (event.key === 'ArrowLeft') {
+        if (col === 'max') targetCol = 'min';
+      } else if (event.key === 'ArrowRight') {
+        if (col === 'min') targetCol = 'max';
+      }
+
+      const id = `${targetCol}_${gradeIndex}_${tab}_${targetRow}`;
+      const el = document.getElementById(id);
+      if (el) {
+        el.focus();
+        (el as HTMLInputElement).select();
+      }
+    }
   }
 
   // ── MS-F: multi-sheet .xlsx template (download) + import with preview ─────────
@@ -654,6 +696,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
             r.testMethodSpecIDs[s] != null ? { testMethodSpecificationID: r.testMethodSpecIDs[s] } : undefined
           ));
         }
+        this.updateRowControlsState(group);
         lines.push(group);
         if (r.parameterUnitID) this.loadEquivalentUnits(group, Number(r.parameterUnitID), true);
         added++;
@@ -821,7 +864,20 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
                 decimalPrecision: line.parameter?.decimalPrecision ?? 2,
                 parameterSymbol: line.parameter?.symbol ?? '',
                 parameterName: line.parameter?.name ?? '',
-                minReportableLimit: line.parameter?.minReportableLimit ?? null
+                minReportableLimit: line.parameter?.minReportableLimit ?? null,
+                inputType: line.parameter?.inputType ?? line.inputType ?? 'Decimal',
+                textValue: line.textValue ?? ''
+              });
+              const paramCache = this.chemicalParametersCache.find((p: any) => p.id === line.parameterID) ||
+                                 this.mechanicalParametersCache.find((p: any) => p.id === line.parameterID);
+              const dropdownOptions = paramCache?.additionalValues?.DropdownOptions
+                || paramCache?.additionalValues?.dropdownOptions
+                || line.parameter?.dropdownOptions
+                || line.dropdownOptions
+                || line.parameterDropdownOptions
+                || [];
+              lineGroup.patchValue({
+                parameterDropdownOptions: dropdownOptions
               });
               // MS-E matrix: rebuild test-method spec slots (pad/truncate to exactly 5)
               const tmArray = lineGroup.get('testMethodMapping') as FormArray;
@@ -830,6 +886,14 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
                 .slice()
                 .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
               for (let s = 0; s < 5; s++) tmArray.push(this.createTestMethodMappingRow(saved[s]));
+              // Preserve saved textValue before updateRowControlsState (which resets it for numeric types)
+              const savedTextValue = line.textValue ?? '';
+              this.updateRowControlsState(lineGroup);
+              // Restore textValue for non-numeric input types (updateRowControlsState enables the control)
+              const resolvedInputType = lineGroup.get('inputType')?.value || 'Decimal';
+              if (resolvedInputType !== 'Decimal' && resolvedInputType !== 'Integer' && savedTextValue) {
+                lineGroup.get('textValue')?.setValue(savedTextValue, { emitEvent: false });
+              }
               formArray.push(lineGroup);
               // Populate equivalent-unit options for the saved unit (preserve the bound value).
               if (line.parameterUnitID) {
@@ -952,60 +1016,137 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   asFormGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
   }
+  loadParametersCache(): void {
+    this.parameterService.getChemicalParameterDropdown('', 1, 5000).subscribe({
+      next: (data) => this.chemicalParametersCache = data || []
+    });
+    this.parameterService.getMechanicalParameterDropdown('', 1, 5000).subscribe({
+      next: (data) => this.mechanicalParametersCache = data || []
+    });
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus() {
+    this.loadParametersCache();
+  }
+
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+    const isIdSearch = term && !isNaN(Number(term)) && String(Number(term)) === term.trim();
+    if (!this.chemicalParametersCache.length || isIdSearch) {
+      return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
+    }
+    const filtered = this.chemicalParametersCache.filter(p =>
+      (p.name || p.text || '').toLowerCase().includes((term || '').toLowerCase())
+    );
+    const start = (page - 1) * pageSize;
+    return of(filtered.slice(start, start + pageSize));
   };
   getMechanicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+    const isIdSearch = term && !isNaN(Number(term)) && String(Number(term)) === term.trim();
+    if (!this.mechanicalParametersCache.length || isIdSearch) {
+      return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
+    }
+    const filtered = this.mechanicalParametersCache.filter(p =>
+      (p.name || p.text || '').toLowerCase().includes((term || '').toLowerCase())
+    );
+    const start = (page - 1) * pageSize;
+    return of(filtered.slice(start, start + pageSize));
   };
+  updateRowControlsState(row: FormGroup): void {
+    const inputType = row.get('inputType')?.value || 'Decimal';
+    const isNumeric = inputType === 'Decimal' || inputType === 'Integer';
+
+    const numericFields = [
+      'minValue',
+      'maxValue',
+      'minTolerance',
+      'maxTolerance',
+      'lowerLimitValue',
+      'lowerLimitDecimalValue',
+      'upperLimitValue',
+      'upperLimitDecimalValue',
+      'parameterUnitEquivalentID'
+    ];
+
+    if (isNumeric) {
+      numericFields.forEach(f => {
+        row.get(f)?.enable({ emitEvent: false });
+      });
+      row.get('textValue')?.disable({ emitEvent: false });
+      row.get('textValue')?.setValue('', { emitEvent: false });
+    } else {
+      numericFields.forEach(f => {
+        row.get(f)?.disable({ emitEvent: false });
+        row.get(f)?.setValue(null, { emitEvent: false });
+      });
+      row.get('minEquation')?.setValue(null, { emitEvent: false });
+      row.get('maxEquation')?.setValue(null, { emitEvent: false });
+      row.get('textValue')?.enable({ emitEvent: false });
+    }
+  }
+
   onParameterSelected(item: any, gradeIndex: number, index: number, tab: 'chemical' | 'mechanical' | 'other') {
     const lines = this.getSpecificationLinesByTab(gradeIndex, tab);
     if (!item) {
       const specificationLine = lines.at(index) as FormGroup;
-      specificationLine.patchValue({ parameterID: null, parameterUnitID: null });
-      specificationLine.get('parameterUnitID')?.enable();
+      specificationLine.patchValue({ parameterID: null, parameterUnitID: null, parameterUnitEquivalentID: null, inputType: 'Decimal', textValue: '' });
+      specificationLine.get('parameterUnitEquivalentID')?.disable();
       return;
     }
-    // Check for duplicate parameter in the same tab
-    // COMMENTED OUT: Allow duplicate parameters with different values
-    // const isDuplicate = lines.controls.some((ctrl, i) =>
-    //   i !== index && ctrl.get('parameterID')?.value === item.id
-    // );
-    // if (isDuplicate) {
-    //   this.toastService.show(`Parameter "${item.name}" is already added in this section.`, 'warning');
-    //   const specificationLine = lines.at(index) as FormGroup;
-    //   // Use sentinel then clear to force dropdown ngOnChanges to detect the reset
-    //   specificationLine.patchValue({ parameterID: -1, parameterUnitID: null });
-    //   setTimeout(() => specificationLine.patchValue({ parameterID: '', parameterUnitID: null }), 0);
-    //   return;
-    // }
 
     const specificationLine = lines.at(index) as FormGroup;
+    const currentParamId = specificationLine.get('parameterID')?.value;
+    const isRebind = currentParamId === item.id;
+
     const additional = item?.additionalValues || {};
     const rawUnit = additional.UnitID ?? additional.unitID ?? null;
     const unitID = rawUnit != null && rawUnit !== '' ? Number(rawUnit) : null;
     const decimalPrecision = Number(additional.DecimalPrecision ?? additional.decimalPrecision ?? 2);
     const parameterSymbol = additional.Symbol || additional.symbol || '';
     const minReportableLimit = additional.MinReportableLimit ?? additional.minReportableLimit ?? null;
+    const inputType = additional.InputType || additional.inputType || 'Decimal';
 
-    specificationLine.patchValue({
+    const dropdownOptions = additional.DropdownOptions || additional.dropdownOptions || [];
+    let defaultVal = '';
+    if (inputType === 'Dropdown' && dropdownOptions.length > 0) {
+      const defaultOption = dropdownOptions.find((o: any) => o.isDefault || o.IsDefault);
+      if (defaultOption) {
+        defaultVal = defaultOption.value || defaultOption.Value || defaultOption.displayText || defaultOption.DisplayText || '';
+      } else {
+        defaultVal = dropdownOptions[0].value || dropdownOptions[0].Value || dropdownOptions[0].displayText || dropdownOptions[0].DisplayText || '';
+      }
+    }
+
+    const patchPayload: any = {
       parameterID: item.id,
       decimalPrecision,
       parameterSymbol,
       parameterName: item?.name || item?.text || '',
-      minReportableLimit
-    });
+      minReportableLimit,
+      inputType,
+      parameterDropdownOptions: dropdownOptions
+    };
 
-    // Round any existing values to new precision
-    ['minValue', 'maxValue', 'minValueEquation', 'maxValueEquation', 'minTolerance', 'maxTolerance']
-      .forEach(f => this.roundToPrecision(specificationLine, f));
+    if (!isRebind) {
+      patchPayload.textValue = defaultVal;
+    }
+
+    specificationLine.patchValue(patchPayload);
+
+    this.updateRowControlsState(specificationLine);
+
+    if (!isRebind) {
+      // Round any existing values to new precision
+      ['minValue', 'maxValue', 'minValueEquation', 'maxValueEquation', 'minTolerance', 'maxTolerance']
+        .forEach(f => this.roundToPrecision(specificationLine, f));
+    }
 
     // API call: fetch equivalent units for this parameter's default unit + bind it.
     // Kept enabled so the user can switch among equivalents when there is more than one.
-    this.loadEquivalentUnits(specificationLine, unitID, true);
+    this.loadEquivalentUnits(specificationLine, unitID, !isRebind);
   }
   getHeatTreatment = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
@@ -1083,11 +1224,15 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
    *        when false (load/rebind) preserves the already-bound parameterUnitID.
    */
   loadEquivalentUnits(group: AbstractControl, unitId: number | null, setSelected: boolean): void {
+    const isSpecLine = group.get('minValue') !== null;
     if (!unitId) {
       this.equivalentUnitsByRow.set(group, []);
       if (setSelected) {
         group.get('parameterUnitID')?.setValue(null);
         group.get('parameterUnitEquivalentID')?.setValue(null);
+      }
+      if (isSpecLine) {
+        group.get('parameterUnitEquivalentID')?.disable();
       }
       return;
     }
@@ -1095,6 +1240,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     if (setSelected) {
       group.get('parameterUnitID')?.setValue(Number(unitId));
       group.get('parameterUnitEquivalentID')?.setValue(null);
+    }
+    if (isSpecLine) {
+      group.get('parameterUnitEquivalentID')?.enable();
     }
     this.prameterUnitService.getEquivalentUnits(unitId).subscribe({
       next: (units: any[]) => this.equivalentUnitsByRow.set(group, units || []),

@@ -1007,7 +1007,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       this.invoiceForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

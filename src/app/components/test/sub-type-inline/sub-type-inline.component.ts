@@ -45,8 +45,8 @@ export class SubTypeInlineComponent implements OnInit {
     this.techniqueService.getAnalysisTechniqueDropdown(term, page, pageSize);
 
   loadSubTypes(): void {
-    this.labService.getSubTypesBySubGroup(this.subGroupId).subscribe({
-      next: (list) => { this.subTypes = list || []; },
+    this.labService.getAnalysisTypesBySubGroup(this.subGroupId).subscribe({
+      next: (list: any) => { this.subTypes = list || []; },
       error: () => this.toastService.show('Failed to load sub-types.', 'error')
     });
   }
@@ -78,14 +78,14 @@ export class SubTypeInlineComponent implements OnInit {
       return;
     }
     const payload = { ...this.editForm.value, laboratoryTestSubGroupID: this.subGroupId };
-    this.labService.createSubType(payload).subscribe({
+    this.labService.createAnalysisType(payload).subscribe({
       next: () => {
         this.toastService.show('Sub-Type added.', 'success');
         this.cancelEdit();
         this.loadSubTypes();
         this.changed.emit();
       },
-      error: (err) => this.toastService.show(err.error?.message || 'Add failed.', 'error')
+      error: (err: any) => this.toastService.show(err.error?.message || 'Add failed.', 'error')
     });
   }
 
@@ -95,26 +95,26 @@ export class SubTypeInlineComponent implements OnInit {
       return;
     }
     const payload = { ...this.editForm.value, id: st.id, laboratoryTestSubGroupID: this.subGroupId };
-    this.labService.updateSubType(payload).subscribe({
+    this.labService.updateAnalysisType(payload).subscribe({
       next: () => {
         this.toastService.show('Sub-Type updated.', 'success');
         this.cancelEdit();
         this.loadSubTypes();
         this.changed.emit();
       },
-      error: (err) => this.toastService.show(err.error?.message || 'Update failed.', 'error')
+      error: (err: any) => this.toastService.show(err.error?.message || 'Update failed.', 'error')
     });
   }
 
   deleteSubType(st: any): void {
     if (!confirm(`Delete sub-type "${st.name}"?`)) return;
-    this.labService.deleteSubType(st.id).subscribe({
+    this.labService.deleteAnalysisType(st.id).subscribe({
       next: () => {
         this.toastService.show('Sub-Type deleted.', 'success');
         this.loadSubTypes();
         this.changed.emit();
       },
-      error: (err) => this.toastService.show(err.error?.message || 'Delete failed.', 'error')
+      error: (err: any) => this.toastService.show(err.error?.message || 'Delete failed.', 'error')
     });
   }
 }

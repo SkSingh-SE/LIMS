@@ -24,6 +24,10 @@ export class ActiveInputService implements OnDestroy {
     }
   }
 
+  register(target: HTMLInputElement | HTMLTextAreaElement): void {
+    this.lastInput = target;
+  }
+
   getLastInput(): HTMLInputElement | HTMLTextAreaElement | null {
     return this.lastInput;
   }

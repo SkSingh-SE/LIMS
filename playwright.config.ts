@@ -17,7 +17,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4200',
     headless: false,           // UI mode — see browser
-    slowMo: 200,               // slow down for visibility
+    launchOptions: { slowMo: 200 }, // slow down for visibility
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     video: 'retain-on-failure',

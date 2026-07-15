@@ -23,12 +23,12 @@ export class ParameterUnitComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Unit Name', filter: true },
-    { key: 'conversaionFactor', type: 'string', label: 'Base Factor', filter: true },
+    { key: 'conversionFactor', type: 'string', label: 'Base Factor', filter: true },
     { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
-    conversaionFactor: 'string',
+    conversionFactor: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -85,7 +85,7 @@ export class ParameterUnitComponent implements OnInit {
     this.parameterUnitForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      conversaionFactor: [''],
+      conversionFactor: [''],
       // Normalized equivalents (unlimited add/remove). Each row: { id, name, conversionFactor }.
       equivalents: this.fb.array([]),
     });
@@ -307,7 +307,7 @@ export class ParameterUnitComponent implements OnInit {
       this.formTitle = 'View Parameter Unit';
       this.parameterUnitForm.disable();
     }
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

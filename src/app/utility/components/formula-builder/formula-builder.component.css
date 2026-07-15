@@ -1,0 +1,87 @@
+.custom-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+  }
+  
+  .custom-modal-dialog {
+    width: 95%;
+    max-width: 800px;
+    animation: zoomIn 0.2s ease-out;
+  }
+  
+  .custom-modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .custom-modal-header {
+    background-color: var(--primary-color);
+    padding: 12px 16px;
+  }
+  
+  .custom-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  @keyframes zoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .formula-editor-area {
+    min-height: 80px;
+    background-color: #fafbfc;
+    border: 1px dashed #ced4da;
+  }
+  
+  .formula-chip {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .token-close:hover {
+    opacity: 1 !important;
+    color: #ffcccc;
+  }
+  
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  /* Scrollbar for list */
+  .card-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .card-body::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+  }
+  .card-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1; 
+    border-radius: 4px;
+  }
+  .card-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8; 
+  }

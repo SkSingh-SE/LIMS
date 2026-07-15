@@ -591,7 +591,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.calibrationForm.reset({ id: 0, equipmentID: this.equipmentId, calibrationDate: '', calibrationDueDate: '', certificate: '', certificatePath: '', agency: '', calibrationAgencyID: null });
     const modalElement = document.getElementById('calibrationModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -600,7 +600,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.maintenanceForm.reset({ id: 0, equipmentID: this.equipmentId, maintenanceDate: '', certificate: '', certificatePath: '', file: null });
     const modalElement = document.getElementById('maintenanceModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -722,7 +722,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('attachmentModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -733,7 +733,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('videoModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -838,7 +838,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.refMaterialForm.patchValue({ equipmentMasterID: this.equipmentId });
     const modalElement = document.getElementById('refMaterialModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }

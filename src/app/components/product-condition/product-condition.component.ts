@@ -307,7 +307,7 @@ export class ProductConditionComponent implements OnInit {
       this.ProductConditionForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

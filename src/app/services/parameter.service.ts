@@ -53,4 +53,8 @@ export class ParameterService {
     return this.http.get<any>(`${this.apiUrl}/mechanical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
+  validateFormula(formula: string): Observable<{ isValid: boolean; error?: string; paramIds?: number[] }> {
+    return this.http.post<any>(`${this.apiUrl}/formula/validate`, { formula });
+  }
+
 }

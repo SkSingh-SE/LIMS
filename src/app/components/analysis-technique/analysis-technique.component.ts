@@ -273,7 +273,7 @@ export class AnalysisTechniqueComponent implements OnInit {
       this.techniqueForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

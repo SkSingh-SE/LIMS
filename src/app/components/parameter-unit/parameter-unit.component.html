@@ -46,30 +46,12 @@
                             </td>
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td class="fw-medium">{{ item.name }}</td>
-                            <td>{{ item.conversaionFactor }}</td>
+                            <td>{{ item.conversionFactor }}</td>
                             <td>
-                                <span *ngIf="item.similarUnit1" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit1 }} <small class="text-muted">(×{{ item.conversionFactor1 }})</small>
+                                <span *ngIf="item.equivalents?.length > 0" class="badge bg-light text-dark border me-1">
+                                    {{ item.equivalents.length }} Units
                                 </span>
-                                <span *ngIf="item.similarUnit2" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit2 }} <small class="text-muted">(×{{ item.conversionFactor2 }})</small>
-                                </span>
-                                <span *ngIf="item.similarUnit3" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit3 }} <small class="text-muted">(×{{ item.conversionFactor3 }})</small>
-                                </span>
-                                <span *ngIf="item.similarUnit4" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit4 }} <small class="text-muted">(×{{ item.conversionFactor4 }})</small>
-                                </span>
-                                <span *ngIf="item.similarUnit5" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit5 }} <small class="text-muted">(×{{ item.conversionFactor5 }})</small>
-                                </span>
-                                <span *ngIf="item.similarUnit6" class="badge bg-light text-dark border me-1">
-                                    {{ item.similarUnit6 }} <small class="text-muted">(×{{ item.conversionFactor6 }})</small>
-                                </span>
-                                <span *ngIf="item.similarUnit7" class="badge bg-light text-dark border">
-                                    {{ item.similarUnit7 }} <small class="text-muted">(×{{ item.conversionFactor7 }})</small>
-                                </span>
-                                <span *ngIf="!item.similarUnit1 && !item.similarUnit2 && !item.similarUnit3 && !item.similarUnit4 && !item.similarUnit5 && !item.similarUnit6 && !item.similarUnit7" class="text-muted">—</span>
+                                <span *ngIf="!item.equivalents || item.equivalents.length === 0" class="text-muted">—</span>
                             </td>                        </tr>
                     </tbody>
                 </table>
@@ -144,26 +126,26 @@
                                     [attr.disabled]="isViewMode ? true : null" />
                                 <app-field-error [control]="parameterUnitForm.get('name')" label="Name" [submitted]="submitted"/>
                             </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" formControlName="conversaionFactor"
-                                    placeholder="e.g. 1 (base), 0.001, 10000"
-                                    [attr.disabled]="isViewMode ? true : null" />
-                                <small class="text-muted">Factor to convert to SI base unit</small>
-                            </div>
+                             <div class="col-md-6 mb-2">
+                                 <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
+                                 <input type="text" class="form-control form-control-sm" formControlName="conversionFactor"
+                                     placeholder="e.g. 1 (base), 0.001, 10000"
+                                     [attr.disabled]="isViewMode ? true : null" />
+                                 <small class="text-muted">Factor to convert to SI base unit</small>
+                             </div>
                         </div>
                     </fieldset>
 
                     <!-- Equivalent Units Section (normalized child grid — unlimited) -->
                     <fieldset class="border p-3 mb-3">
-                        <legend>
-                            <i class="bi bi-arrow-left-right me-2"></i>Equivalent Units
-                        </legend>
-                        <div class="d-flex justify-content-end mb-2">
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addEquivalent()">
-                                <i class="bi bi-plus-lg me-1"></i> Add Unit
-                            </button>
-                        </div>
+                         <legend>
+                             <i class="bi bi-arrow-left-right me-2"></i>Equivalent Units
+                         </legend>
+                         <div class="d-flex justify-content-end mb-2">
+                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addEquivalent()">
+                                 <i class="bi bi-plus-lg me-1"></i> Add Unit
+                             </button>
+                         </div>
                         <small class="text-muted d-block mb-3">Define units equivalent to the base unit.
                             <span class="fw-medium">Formula: Base Value × Factor = Equivalent Value</span>
                         </small>

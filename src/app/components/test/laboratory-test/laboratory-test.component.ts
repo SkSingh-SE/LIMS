@@ -346,8 +346,8 @@ export class LaboratoryTestComponent implements OnInit {
       this.labTestForm.patchValue({
         labDepartmentID: department.id
       });
-      const deptName = department.name || '';
-      const isChem = deptName.toLowerCase().includes('chem');
+      const additionalIsChem = department.additionalValues?.isChemical ?? department.additionalValues?.['isChemical'] ?? department.additionalValues?.IsChemical ?? department.additionalValues?.['IsChemical'];
+      const isChem = additionalIsChem !== undefined ? !!additionalIsChem : (department.name || '').toLowerCase().includes('chem');
       this.labTestForm.patchValue({
         isChemicalTest: isChem
       });

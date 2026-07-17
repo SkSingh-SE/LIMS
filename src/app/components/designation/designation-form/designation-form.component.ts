@@ -37,7 +37,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   ngOnInit(): void {
     this.designationForm = this.fb.group({
       id: [0],
-      name: ['', [Validators.required, Validators.maxLength(150), noWhitespaceValidator()]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       description: ['', [Validators.maxLength(3000)]],
       roleID: [null],
       qualification: ['', [Validators.maxLength(500)]],

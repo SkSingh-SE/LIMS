@@ -14,7 +14,7 @@
             <div class="col-md-6 mb-3">
               <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
               <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Designation"
-                maxlength="150"
+                maxlength="100"
                 [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                 [attr.disabled]="isViewMode ? true : null" />
               <app-field-error [control]="designationForm.get('name')" label="Name" [submitted]="submitted"/>

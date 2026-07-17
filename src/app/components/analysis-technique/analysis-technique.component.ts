@@ -26,8 +26,6 @@ export class AnalysisTechniqueComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Technique', filter: true },
     { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'aliasNames', type: 'string', label: 'Aliases', filter: true },
-    { key: 'isSpectro', type: 'bool', label: 'Spectro', filter: false },
-    { key: 'sortOrder', type: 'number', label: 'Order', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -51,7 +49,7 @@ export class AnalysisTechniqueComponent implements OnInit {
   totalItems = 0;
   pageSizes = [10, 25, 50, 100, 200, 500];
 
-  sortByColumn: string = 'sortOrder';
+  sortByColumn: string = 'name';
   sortOrder: string = 'asc';
   searchTerm: string = '';
 
@@ -86,9 +84,7 @@ export class AnalysisTechniqueComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       code: ['', [Validators.maxLength(40)]],
       aliasNames: ['', [Validators.maxLength(500)]],
-      isSpectro: [false],
       description: ['', [Validators.maxLength(1000)]],
-      sortOrder: [0],
     });
   }
 
@@ -250,7 +246,7 @@ export class AnalysisTechniqueComponent implements OnInit {
   }
 
   openModal(type: string, id: number): void {
-    this.techniqueForm.reset({ id: 0, name: '', code: '', aliasNames: '', isSpectro: false, description: '', sortOrder: 0 });
+    this.techniqueForm.reset({ id: 0, name: '', code: '', aliasNames: '', description: '' });
     this.techniqueForm.enable();
     this.selectedId = 0;
     if (id > 0) {
@@ -286,7 +282,7 @@ export class AnalysisTechniqueComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.techniqueForm.reset({ id: 0, isSpectro: false, sortOrder: 0 });
+    this.techniqueForm.reset({ id: 0 });
     this.techniqueForm.enable();
     this.selectedId = 0;
     this.isEditMode = false;

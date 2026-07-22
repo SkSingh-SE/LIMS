@@ -92,6 +92,7 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             supplierName: ['', Validators.required],
             supplierRegisterId: [null, Validators.required],
             contactPerson: ['', Validators.required],
+            itemsApproved: [''],
             mobileNo: ['', [Validators.required, Validators.pattern('^[0-9]{10,12}$')]],
             email: ['', [Validators.required, Validators.email]],
             registerNo: ['', Validators.required],
@@ -199,6 +200,7 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
                 registerNo: '',
                 gstNo: '',
                 address: '',
+                itemsApproved: ''
             });
             return;
         }
@@ -211,7 +213,8 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
             email: additional.Email || '',
             registerNo: additional.RegisterNo || '',
             gstNo: additional.GSTNo || '',
-            address: additional.Address || ''
+            address: additional.Address || '',
+            itemsApproved: additional.ProductsServicesOffered
         });
 
 

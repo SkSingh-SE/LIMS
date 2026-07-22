@@ -15,6 +15,7 @@ import { ToastService } from '../../../../services/toast.service';
     styleUrls: ['./purchase-material-verification-list.component.css']
 })
 export class PurchaseMaterialVerificationListComponent implements OnInit {
+    printList = '/purchase-material-verification/previewlist';
     records: PurchaseMaterialVerification[] = [];
     totalItems = 0;
     pageSize = 10;
@@ -31,7 +32,7 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
     constructor(
         private service: PurchaseMaterialVerificationService,
         private router: Router,
-        private toastService:ToastService
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
@@ -75,7 +76,7 @@ export class PurchaseMaterialVerificationListComponent implements OnInit {
     }
 
     onDelete(id: number) {
-         const confirm = window.confirm('Are you sure you want to delete this purchase indent?');
+        const confirm = window.confirm('Are you sure you want to delete this purchase indent?');
         if (confirm) {
             this.service.delete(id).subscribe({
                 next: (response) => {

@@ -9,6 +9,7 @@ export interface Inventorymanagement {
     itemDescription?: string;
     departmentID?: string;
     supplierId?: string;
+    supplier?: string;
     quantity: number;
     minimumQuantity: number;
     storageLocation: string;

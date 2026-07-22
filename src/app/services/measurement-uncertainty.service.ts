@@ -10,7 +10,7 @@ import { MeasurementUncertainty, MeasurementUncertaintyListResponse, Measurement
 export class MeasurementUncertaintyService {
     private apiUrl = environment.apiUrl + '/Nabl/MeasurementUncertainty';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<MeasurementUncertaintyListResponse> {
         return this.http.post<MeasurementUncertaintyListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,9 @@ export class MeasurementUncertaintyService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getNextMUNo() {
+
+        return this.http.get<any>(`${this.apiUrl}/next-mu-no`);
     }
 }

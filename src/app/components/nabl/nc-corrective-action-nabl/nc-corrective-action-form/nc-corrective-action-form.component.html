@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -70,37 +70,67 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">
-                  Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="date" />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">
                   NC No.
                   <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" formControlName="ncNo" placeholder="NC-01" />
+                <div class="text-danger" *ngIf="ncForm.get('ncNo')?.invalid && (ncForm.get('ncNo')?.touched)">
+                  nc no is required.
+                </div>
+
               </div>
-              <div class="col-md-2">
-                <label class="form-label">Clause No.</label>
-                <input type="text" class="form-control" formControlName="clauseNo" placeholder="7.x.x" />
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                  [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="ncForm.get('departmentID')?.value"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div *ngIf="ncForm.get('departmentID')?.invalid && ncForm.get('departmentID')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department id is required
+                </div>
               </div>
-              <div class="col-md-5">
-                <label class="form-label">Section</label>
-                <input type="text" class="form-control" formControlName="section" placeholder="e.g. Chemical - OES" />
+              <div class="col-md-3">
+                <label class="form-label">Activity Assessed <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="activityAssessed"
+                  placeholder="activity assessed" />
+                <div class="text-danger"
+                  *ngIf="ncForm.get('activityAssessed')?.invalid && (ncForm.get('activityAssessed')?.touched)">
+                  activity assessed is required.
+                </div>
+
               </div>
-              <div class="col-md-4">
-                <label class="form-label">Activity Assessed</label>
-                <input type="text" class="form-control" formControlName="activityAssessed" />
+              <div class="col-md-3">
+                <label class="form-label">Clause No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="clauseNo" placeholder="clause no" />
+                <div class="text-danger" *ngIf="ncForm.get('clauseNo')?.invalid && (ncForm.get('clauseNo')?.touched)">
+                  clause no is required.
+                </div>
+
               </div>
-              <div class="col-md-4">
-                <label class="form-label">Auditor</label>
-                <input type="text" class="form-control" formControlName="auditor" />
+              <div class="col-md-3">
+                <label class="form-label">Audit No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="auditNo" placeholder="audit no" />
+                <div class="text-danger" *ngIf="ncForm.get('auditNo')?.invalid && (ncForm.get('auditNo')?.touched)">
+                  audit no is required.
+                </div>
+
               </div>
-              <div class="col-md-4">
-                <label class="form-label">Auditee</label>
-                <input type="text" class="form-control" formControlName="auditee" />
+              <div class="col-md-3">
+                <label class="form-label">Auditor <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="auditor" placeholder="auditor" />
+                <div class="text-danger" *ngIf="ncForm.get('auditor')?.invalid && (ncForm.get('auditor')?.touched)">
+                  auditor is required.
+                </div>
+
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Auditee <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="auditee" placeholder="auditee" />
+                <div class="text-danger" *ngIf="ncForm.get('auditee')?.invalid && (ncForm.get('auditee')?.touched)">
+                  auditee is required.
+                </div>
+
               </div>
             </div>
           </div>
@@ -113,7 +143,25 @@
             <span class="fw-bold ms-2">III. Non-Conformity Observed</span>
           </div>
           <div *ngIf="openSections['observation']" class="section-body">
-            <quill-editor formControlName="ncObserved" [modules]="quillModules" placeholder="Detail the observation..."></quill-editor>
+            <div class="row gy-3">
+              <div class="col-12 d-flex flex-column">
+                <quill-editor formControlName="ncObserved" [modules]="quillModules"
+                  placeholder="Detail the observation..."></quill-editor>
+              </div>
+              <div class="col-md-6">
+
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Sign Of Auditor'"
+                  (itemSelected)="onEmployeeSelected($event,'signOfAuditorID','signOfAuditorName')"
+                  [selectedItem]="ncForm.get('signOfAuditorID')?.value">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-6">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Observed By'"
+                  (itemSelected)="onEmployeeSelected($event,'observedByID','observedByName')"
+                  [selectedItem]="ncForm.get('observedByID')?.value">
+                </app-searchable-dropdown>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -125,20 +173,20 @@
           </div>
           <div *ngIf="openSections['proposed']" class="section-body">
             <div class="row gy-3">
-              <div class="col-12">
+              <div class="col-12 d-flex flex-column">
                 <quill-editor formControlName="correctiveActionProposed" [modules]="quillModules"></quill-editor>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label class="form-label">Time Required</label>
-                <input type="text" class="form-control" formControlName="timeRequired" />
+                <select class="form-select form-select-sm" formControlName="timeRequirement">
+                  <option *ngFor="let item of timeRequirements" [value]="item">{{item}}</option>
+                </select>
               </div>
-              <div class="col-md-4">
-                <label class="form-label">Proposed By</label>
-                <input type="text" class="form-control" formControlName="proposedBy" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Approved By (MD/TD)</label>
-                <input type="text" class="form-control" formControlName="approvedBy" />
+              <div class="col-md-6">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Proposed By'"
+                  (itemSelected)="onEmployeeSelected($event,'proposedById','proposedByName')"
+                  [selectedItem]="ncForm.get('proposedById')?.value">
+                </app-searchable-dropdown>
               </div>
             </div>
           </div>
@@ -148,10 +196,24 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('taken')">
             <i class="bi" [ngClass]="openSections['taken'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">V. Corrective Action Taken</span>
+            <span class="fw-bold ms-2">V. Corrective Action Implemented</span>
           </div>
           <div *ngIf="openSections['taken']" class="section-body">
-            <quill-editor formControlName="correctiveActionTaken" [modules]="quillModules"></quill-editor>
+            <div class="row gy-3">
+              <div class="col-12 d-flex flex-column">
+                <quill-editor formControlName="correctiveActionTaken" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Implemented Date</label>
+                <input type="date" class="form-control" formControlName="implementedDate" />
+              </div>
+              <div class="col-md-6">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Implemented By'"
+                  (itemSelected)="onEmployeeSelected($event,'implementedById','implementedBy')"
+                  [selectedItem]="ncForm.get('implementedById')?.value">
+                </app-searchable-dropdown>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -162,7 +224,25 @@
             <span class="fw-bold ms-2">VI. Preventive Action</span>
           </div>
           <div *ngIf="openSections['preventive']" class="section-body">
-            <quill-editor formControlName="preventiveAction" [modules]="quillModules"></quill-editor>
+            <div class="row gy-3">
+              <div class="col-12 d-flex flex-column">
+                <quill-editor formControlName="preventiveAction" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Verified Date</label>
+                <input type="date" class="form-control" formControlName="verifiedDate" />
+              </div>
+              <div class="col-md-6">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Verified By '"
+                  (itemSelected)="onEmployeeSelected($event,'verifiedById','verifiedBy')"
+                  [selectedItem]="ncForm.get('verifiedById')?.value">
+                </app-searchable-dropdown>
+                <div class="text-danger"
+                  *ngIf="ncForm.get('employeeId')?.invalid && (ncForm.get('employeeId')?.touched)">
+                  employee is required.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -173,7 +253,21 @@
             <span class="fw-bold ms-2">VII. Effectiveness of Corrective Action</span>
           </div>
           <div *ngIf="openSections['effectiveness']" class="section-body">
-            <quill-editor formControlName="effectivenessOfAction" [modules]="quillModules"></quill-editor>
+            <div class="row gy-3">
+              <div class="col-12 d-flex flex-column">
+                <quill-editor formControlName="effectivenessOfAction" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Corrective Action Date</label>
+                <input type="date" class="form-control" formControlName="correctiveActionDate" />
+              </div>
+              <div class="col-md-6">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Signature Of QM'"
+                  (itemSelected)="onEmployeeSelected($event,'signatureOfQMID','signatureOfQMName')"
+                  [selectedItem]="ncForm.get('signatureOfQMID')?.value">
+                </app-searchable-dropdown>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -190,7 +284,8 @@
                   <span class="badge bg-secondary me-2">F-45</span>
                   <strong>Non-Conforming Work</strong>
                   <span class="text-muted ms-2">{{ relatedNcWork.documentNo || 'N/A' }}</span>
-                  <span class="badge ms-2" [ngClass]="'bg-' + (relatedNcWork.status === 'Approved' ? 'success' : relatedNcWork.status === 'Rejected' ? 'danger' : 'info')">
+                  <span class="badge ms-2"
+                    [ngClass]="'bg-' + (relatedNcWork.status === 'Approved' ? 'success' : relatedNcWork.status === 'Rejected' ? 'danger' : 'info')">
                     {{ relatedNcWork.status }}
                   </span>
                 </div>
@@ -202,13 +297,13 @@
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="ncForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="ncForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Report" : "Save Report" }}
           </button>
         </div>

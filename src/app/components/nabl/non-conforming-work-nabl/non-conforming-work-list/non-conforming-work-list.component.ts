@@ -19,7 +19,7 @@ export class NonConformingWorkListComponent implements OnInit {
     columns: RegisterColumn[] = [
         { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'ncDate', label: 'Non-Conformance Date', type: 'date', width: '150px', filter: true },
-        { key: 'ncDescription', label: 'NC Detail', type: 'string', filter: true },
+        { key: 'description', label: 'NC Detail', type: 'string', filter: true },
         { key: 'closerDate', label: 'Closer Date', type: 'date', width: '130px', filter: true }
     ];
 

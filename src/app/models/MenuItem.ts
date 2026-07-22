@@ -158,15 +158,15 @@ export function getAllMenuItems(): MenuItem[] {
           id: 73, title: 'Resource Requirements', route: '', parentMenuID: 7, permissions: [], children: [
             {
               id: 7301, title: 'Personnel', route: '', parentMenuID: 73, permissions: [], children: [
-                { id: 730101, title: 'F-1: Job Description', route: '/job-description', parentMenuID: 7301, permissions: ['CanReadJobDescription'], children: [], color: getRandomColor() },
-                { id: 730102, title: 'F-3: Resp. & Authority', route: '/responsibility-authority', parentMenuID: 7301, permissions: ['CanReadRA'], children: [], color: getRandomColor() },
+                { id: 730101, title: 'F-3: Job Description', route: '/job-description', parentMenuID: 7301, permissions: ['CanReadJobDescription'], children: [], color: getRandomColor() },
+                { id: 730102, title: 'F-4: Resp. & Authority', route: '/responsibility-authority', parentMenuID: 7301, permissions: ['CanReadRA'], children: [], color: getRandomColor() },
                 { id: 730103, title: 'F-5: Competence Req.', route: '/competence-requirement', parentMenuID: 7301, permissions: ['CanReadCompetenceRequirement'], children: [], color: getRandomColor() },
-                { id: 730104, title: 'F-6: Induction Training', route: '/induction-training', parentMenuID: 7301, permissions: ['CanReadInductionTraining'], children: [], color: getRandomColor() },
-                { id: 730105, title: 'F-7: Competence Report', route: '/employee/competence', parentMenuID: 7301, permissions: ['CanReadEmployeeCompetence'], children: [], color: getRandomColor() },
+                { id: 730109, title: 'F-6: Skill Matrix', route: '/skill-matrix', parentMenuID: 7301, permissions: ['CanReadSkillMatrix'], children: [], color: getRandomColor() },
+                { id: 730105, title: 'F-7A: Competence Report', route: '/employee/competence', parentMenuID: 7301, permissions: ['CanReadEmployeeCompetence'], children: [], color: getRandomColor() },
                 { id: 730106, title: 'F-8: Training Plan', route: '/training-plan', parentMenuID: 7301, permissions: ['CanReadTrainingPlan'], children: [], color: getRandomColor() },
                 { id: 730107, title: 'F-9: Training Attendance', route: '/training-attendance', parentMenuID: 7301, permissions: ['CanReadTrainingAttendance'], children: [], color: getRandomColor() },
+                { id: 730104, title: 'F-11: Induction Training', route: '/induction-training', parentMenuID: 7301, permissions: ['CanReadInductionTraining'], children: [], color: getRandomColor() },
                 { id: 730108, title: 'F-10: Training Effectiv.', route: '/training-effectiveness', parentMenuID: 7301, permissions: ['CanReadTrainingEffectiveness'], children: [], color: getRandomColor() },
-                { id: 730109, title: 'F-11: Skill Matrix', route: '/skill-matrix', parentMenuID: 7301, permissions: ['CanReadSkillMatrix'], children: [], color: getRandomColor() },
                 { id: 730110, title: 'F-13: Employee Authorization', route: '/employee/equipment-authorization/list', parentMenuID: 7301, permissions: ['CanReadEmployeeAuthorization'], children: [], color: getRandomColor() },
               ], color: getRandomColor()
             },
@@ -227,6 +227,7 @@ export function getAllMenuItems(): MenuItem[] {
             { id: 7407, title: 'F-39: Test Report', route: '/test-report', parentMenuID: 74, permissions: ['CanReadTestReport'], children: [], color: getRandomColor() },
             { id: 7408, title: 'F-40: Complaint Reg.', route: '/complaint-register', parentMenuID: 74, permissions: ['CanReadComplaintRegister'], children: [], color: getRandomColor() },
             { id: 7409, title: 'F-41: NC Work Records', route: '/non-conforming-work', parentMenuID: 74, permissions: ['CanReadNonConformingWork'], children: [], color: getRandomColor() },
+            { id: 750303, title: 'F-42: NC & Corr. Action', route: '/nc-corrective-action', parentMenuID: 7503, permissions: ['CanReadNCAction'], children: [], color: getRandomColor() },
           ], color: getRandomColor()
         },
         {
@@ -243,7 +244,6 @@ export function getAllMenuItems(): MenuItem[] {
               id: 7503, title: 'Improvement & Actions', route: '', parentMenuID: 75, permissions: [], children: [
                 { id: 750301, title: 'F-47: Cust. Feedback', route: '/customer-feedback', parentMenuID: 7503, permissions: ['CanReadCustomerFeedback'], children: [], color: getRandomColor() },
                 { id: 750302, title: 'F-48: Feedback Analys.', route: '/feedback-analysis', parentMenuID: 7503, permissions: ['CanReadFeedbackAnalysis'], children: [], color: getRandomColor() },
-                { id: 750303, title: 'F-42: NC & Corr. Action', route: '/nc-corrective-action', parentMenuID: 7503, permissions: ['CanReadNCAction'], children: [], color: getRandomColor() },
               ], color: getRandomColor()
             },
             {

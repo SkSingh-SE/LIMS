@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { PurchaseMaterialVerification, PurchaseMaterialVerificationListResponse, PurchaseMaterialVerificationResponse } from '../models/purchaseMaterialVerificationModel';
+import { PurchaseMaterialVerification, PurchaseMaterialVerificationListResponse, PurchaseMaterialVerificationPrintDto, PurchaseMaterialVerificationResponse } from '../models/purchaseMaterialVerificationModel';
 
 @Injectable({
     providedIn: 'root',
@@ -40,5 +40,10 @@ export class PurchaseMaterialVerificationService {
                 pageSize: pageSize
             }
         });
+    }
+    getPrintList(): Observable<PurchaseMaterialVerificationPrintDto[]> {
+        return this.http.get<PurchaseMaterialVerificationPrintDto[]>(
+            `${this.apiUrl}/print-list`
+        );
     }
 }

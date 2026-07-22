@@ -44,11 +44,19 @@
     <ng-container body>
 
       <table class="table table-bordered preview-table">
-
+        <colgroup>
+          <col style="width:5%">
+          <col style="width:9%">
+          <col style="width:20%">
+          <col style="width:20%">
+          <col style="width:20%">
+          <col style="width:9%">
+          <col style="width:12%">
+        </colgroup>
         <thead>
           <tr>
 
-            <th style="width:50px">SN</th>
+            <th>SN</th>
             <th>Date / Month & Year</th>
             <th>Non-Conformance Detail</th>
             <th>Root Cause Analysis</th>
@@ -66,14 +74,14 @@
               {{ item.ncDate | date:'dd.MM.yyyy' }}
             </td>
 
-            <td [innerHTML]="item.ncDescription"></td>
+            <td [innerHTML]="item.description"></td>
 
             <td [innerHTML]="item.rootCauseAnalysis"></td>
 
             <td [innerHTML]="item.correctiveAction"></td>
 
             <td class="text-center">
-              {{ item.closerDate | date:'dd.MM.yyyy' }}
+              {{ item.closureDate | date:'dd.MM.yyyy' }}
             </td>
 
             <td></td>

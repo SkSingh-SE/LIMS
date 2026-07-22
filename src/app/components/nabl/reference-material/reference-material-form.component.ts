@@ -331,6 +331,7 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
                 this.materialForm.patchValue({
                     manufacturer: res.manufacturer || '',
                     supplierId: res.supplierId || null,
+                    supplier: res.supplierName || null,
                     batchNo: res.batchNo || '',
                     initialQuantity: res.quantity || 0,
                     minimumQuantity: res.minimumQuantity || 0,
@@ -361,6 +362,7 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
             itemName: '',
             manufacturer: '',
             supplierId: null,
+            supplier: null,
             batchNo: '',
             initialQuantity: null,
             minimumQuantity: null,
@@ -496,6 +498,7 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
             unit: formValue.unitOfMeasure,
             storageLocation: formValue.storageLocation || null,
             remarks: formValue.remarks || null,
+            supplier: formValue.supplier || null,
             date: new Date()
 
         };

@@ -12,6 +12,7 @@ import { ToastService } from '../../../services/toast.service';
     templateUrl: './reference-material-list.component.html'
 })
 export class ReferenceMaterialListComponent implements OnInit {
+        printList = '/reference-material/previewlist';
     items: ReferenceMaterial[] = [];
     totalItems = 0;
     searchTerm = '';

@@ -1,20 +1,20 @@
 import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { ComplaintService } from '../../../../services/complaint.service';
-import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
-import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
-import { PrintFrameComponent } from '../../print-frame/print-frame.component';
+import { ApprovedSupplierService } from '../../../services/approved-supplier.service';
+import { NablPrintFooterComponent } from '../nabl-print-footer/nabl-print-footer.component';
+import { NablPrintHeaderComponent } from '../nabl-print-header/nabl-print-header.component';
+import { PrintFrameComponent } from '../print-frame/print-frame.component';
 
 @Component({
     selector: 'app-complaint-register-preview-list',
     standalone: true,
     imports: [CommonModule, RouterModule, NablPrintHeaderComponent, NablPrintFooterComponent, PrintFrameComponent],
-    templateUrl: './complaint-preview-list.component.html',
-    styleUrl: './complaint-preview-list.component.css'
+    templateUrl: './approved-supplier-preview-list.component.html',
+    styleUrl: './approved-supplier-preview-list.component.css'
 })
 
-export class NonComplaintPreviewListComponent implements OnInit {
+export class ApprovedsupplierPreviewListComponent implements OnInit {
     data: any = null;
 
 
@@ -25,7 +25,7 @@ export class NonComplaintPreviewListComponent implements OnInit {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private service: ComplaintService,
+        private service: ApprovedSupplierService,
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -107,5 +107,5 @@ export class NonComplaintPreviewListComponent implements OnInit {
         document.head.removeChild(styleEl);
     }
 
-    goBack() { this.router.navigate(['/complaint-register']); }
+    goBack() { this.router.navigate(['/approved-supplier']); }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,16 +10,20 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
+import { DepartmentService } from '../../../../services/department.service';
+import { SearchableDropdownComponent } from '../../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { QualityControlPlanService } from '../../../../services/quality-control-plan.service';
+import { ToastService } from '../../../../services/toast.service';
 
 @Component({
     selector: 'app-nc-corrective-action-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './nc-corrective-action-form.component.html',
     styleUrl: './nc-corrective-action-form.component.css'
 })
 export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     ncForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -46,20 +50,30 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
             ['clean']
         ]
     };
+    today = new Date().toISOString().split('T')[0];
+    timeRequirements = [
+        'Immediate',
+        'Within 7 Days',
+        'Within 15 Days',
+        'Within 30 Days'];
+
 
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private service: NcCorrectiveActionService
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
+        private departmentService: DepartmentService,
+        private qcControlPlanservice: QualityControlPlanService,
+        private toastService: ToastService,
         private nablHeaderService: NablHeaderService) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('NcCorrectiveAction').subscribe({
             next: (defaults) => {
                 this.ncForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
 
@@ -75,32 +89,62 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
                 this.formTitle = this.isViewMode ? 'View NC Report' : 'Edit NC Report';
                 this.loadRecord();
             }
+            if (id == null && mode == 'create') {
+                this.service.getNextNCNo().subscribe({
+                    next: (res) => {
+                        this.ncForm.patchValue({
+                            ncNo: res.ncNo
+                        })
+                    },
+                    error: () => { }
+                });
+            }
         });
     }
 
     private initForm() {
         this.ncForm = this.fb.group({
             formatNo: ['F-42'],
-            docNo: [''],
+            docNo: ['F-42'],
             issueNo: ['03'],
-            issueDate: ['', Validators.required],
+            issueDate: [],
             revNo: ['00'],
-            revDate: ['--', Validators.required],
+            revDate: [],
 
-            date: ['', Validators.required],
+            date: [this.today, Validators.required],
             ncNo: ['', Validators.required],
-            clauseNo: [''],
-            section: [''],
-            activityAssessed: [''],
-            auditor: [''],
-            auditee: [''],
-            ncObserved: ['', Validators.required],
+            clauseNo: ['7.4.2', Validators.required],
+            auditNo: ['', Validators.required],
+            auditor: ['', Validators.required],
+            auditee: ['', Validators.required],
+            departmentName: [''],
+            timeRequirement: ['Immediate'],
+            departmentID: ['', Validators.required],
+            verifiedDate: [null],
+            correctiveActionDate: [null],
+            implementedDate: [null],
+            signOfAuditorID: [null],
+            signOfAuditorName: [null],
+            observedByID: [null],
+            observedByName: [null],
+            signatureOfQMID: [null],
+            signatureOfQMName: [null],
+            proposedById: [null],
+            proposedByName: [null],
+            implementedById: [null],
+            implementedBy: [null],
+            verifiedById: [null],
+            verifiedBy: [null],
+            activityAssessed: [null, Validators.required],
+            ncObserved: [''],
             correctiveActionProposed: [''],
             timeRequired: [''],
             preparedBy: [''],
-            reviewedBy: [''],
-            proposedBy: [''],
-            approvedBy: [''],
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
             correctiveActionTaken: [''],
             preventiveAction: [''],
             effectivenessOfAction: ['']
@@ -112,12 +156,21 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
         this.ncForm.get('issueNo')?.disable();
         this.ncForm.get('revNo')?.disable();
         this.ncForm.get('formatNo')?.disable();
+        this.ncForm.get('date')?.disable();
+        this.ncForm.get('ncNo')?.disable();
     }
 
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
                 this.ncForm.patchValue(data);
+                this.ncForm.patchValue({
+                    date: NablFormsHelper.formatDateForInput(data.date),
+                    verifiedDate: NablFormsHelper.formatDateForInput(data.verifiedDate),
+                    correctiveActionDate: NablFormsHelper.formatDateForInput(data.correctiveActionDate),
+                    implementedDate: NablFormsHelper.formatDateForInput(data.implementedDate),
+
+                })
                 // Lock form if not in editable status
                 const status = (data as any).status;
                 if (status && status !== 'Draft' && status !== 'Rejected') {
@@ -145,34 +198,82 @@ export class NcCorrectiveActionFormComponent implements CanComponentDeactivate, 
         });
     }
 
+    getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.departmentService.getDepartmentDropdown(term, page, pageSize);
+    };
+
+    onDepartmentSelected(item: any) {
+        if (!item) { this.ncForm.patchValue({ departmentID: null }); return; }
+        this.ncForm.patchValue({ departmentID: item.id, departmentName: item.name });
+    }
+
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+    }
+
+    onEmployeeSelected(
+        item: any,
+        idControl: string,
+        nameControl: string
+    ): void {
+
+        this.ncForm.patchValue({
+            [idControl]: item ? item.id : null,
+            [nameControl]: item ? item.name : null
+        });
+    }
     toggleSection(section: string) {
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.ncForm.valid) {
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            } else {
-                this.service.create(this.ncForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            }
+
+    onSubmit(): void {
+        if (this.ncForm.invalid) {
+            this.ncForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.ncForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        formData.implementedDate = formData.implementedDate ? formData.implementedDate : null;
+        formData.correctiveActionDate = formData.correctiveActionDate ? formData.correctiveActionDate : null;
+        formData.verifiedDate = formData.verifiedDate ? formData.verifiedDate : null;
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/nc-corrective-action']);
+                    this.toastService.show('nc-corrective action updated successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
+            });
+        } else {
+            this.service.create(formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/nc-corrective-action']);
+                    this.toastService.show('nc-corrective action created successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
+            });
         }
     }
-
     onCancel() {
         this.router.navigate(['/nc-corrective-action']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.ncForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.ncForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.ncForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.ncForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

@@ -11,17 +11,24 @@ import { UnsavedChangesService } from '../../../../services/unsaved-changes.serv
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
 import { ToastService } from '../../../../services/toast.service';
-import { Toast } from 'bootstrap';
+import { DepartmentService } from '../../../../services/department.service';
+import { SearchableDropdownComponent } from '../../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { QualityControlPlanService } from '../../../../services/quality-control-plan.service';
+import { NcCorrectiveActionService } from '../../../../services/nc-corrective-action.service';
 @Component({
     selector: 'app-non-conforming-work-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, SearchableDropdownComponent],
     templateUrl: './non-conforming-work-form.component.html',
     styleUrl: './non-conforming-work-form.component.css'
 })
 export class NonConformingWorkFormComponent implements CanComponentDeactivate, OnInit {
     saved = false;
     ncForm!: FormGroup;
+    closureForm!: FormGroup;
+    verificationForm!: FormGroup;
+    correctiveActionForm!: FormGroup;
+    investigationForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
     recordId: number = 0;
@@ -42,6 +49,89 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
             ['clean']
         ]
     };
+
+    activeFormKey = 1;
+    tabStatus = {
+        general: false,
+        investigation: false,
+        correctiveAction: false,
+        verification: false,
+        closure: false
+    };
+    activeTab = 1;
+    tabs = [
+
+        {
+            id: 1,
+            title: 'General',
+            icon: 'bi-card-text',
+            status: 'active'
+        },
+        {
+            id: 2,
+            title: 'Investigation',
+            icon: 'bi-search',
+            status: 'pending'
+        },
+        {
+            id: 3,
+            title: 'Corrective Action',
+            icon: 'bi-tools',
+            status: 'pending'
+        },
+        {
+            id: 4,
+            title: 'Verification',
+            icon: 'bi-check-circle',
+            status: 'pending'
+        },
+        {
+            id: 5,
+            title: 'Closure',
+            icon: 'bi-lock',
+            status: 'pending'
+        }
+
+    ];
+
+    categories = [
+        'QC Failure',
+        'Equipment Failure',
+        'Customer Complaint',
+        'Internal Audit',
+        'PT Failure',
+        'Method Failure',
+        'Environmental Failure',
+        'Human Error',
+        'Sample Mix-up',
+        'Document Issue',
+        'Ohter'
+    ]
+    priorities = [
+        'Minor',
+        'Major',
+        'Critical',
+    ]
+    sourcees = [
+        'Internal Audit',
+        'External Assessment(NABL)',
+        'Management Review',
+        'Customer Complaint',
+        'PT / ILC',
+        'Quality Control',
+        'Equipment Breakdown',
+        'Calibration',
+        'Environmental Monitoring',
+        'Document Review',
+        'Staff Competency',
+        'Training',
+        'Test Report Review',
+        'Method Validation / Verification',
+        'Internal Observation',
+        'Risk Assessment',
+        'Supplier Evaluation',
+        'Sample Handling'
+    ]
     today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
@@ -50,7 +140,10 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         private service: NonConformingWorkService
         , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService,
-        private toastService: ToastService
+        private toastService: ToastService,
+        private departmentService: DepartmentService,
+        private ncCorrectiveActionService: NcCorrectiveActionService,
+        private qcControlPlanservice: QualityControlPlanService,
     ) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('NonConformingWork').subscribe({
@@ -73,106 +166,586 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
                 this.formTitle = this.isViewMode ? 'View NC Record' : 'Edit NC Record';
                 this.loadRecord();
             }
+            if (id == null && mode == 'create') {
+                this.ncCorrectiveActionService.getNextNCNo().subscribe({
+                    next: (res) => {
+                        this.ncForm.patchValue({
+                            ncNo: res.ncNo
+                        })
+                    },
+                    error: () => { }
+                });
+                this.service.getActionNo().subscribe({
+                    next: (res) => {
+                        this.correctiveActionForm.patchValue({
+                            actionNo: res.actionNo
+                        })
+                    },
+                    error: () => { }
+                })
+            }
         });
     }
 
     private initForm() {
         this.ncForm = this.fb.group({
             formatNo: ['F-41'],
-            docNo: ['F-41'],
+            documentNo: ['F-41'],
             issueNo: ['03'],
             issueDate: [null],
             date: [this.today, Validators.required],
             revNo: ['00'],
             revDate: [null],
 
+            ncNo: ['', Validators.required],
             ncDate: [this.today, Validators.required],
-            ncDescription: ['', Validators.required],
-            rootCauseAnalysis: [''],
+
+            departmentName: [''],
+            reportedByEmployeeName: [''],
+            departmentId: [null, Validators.required],
+            reportedByEmployeeId: [null, Validators.required],
+
+            source: ['Internal Audit', Validators.required],
+            category: ['QC Failure', Validators.required],
+            priority: ['Major', Validators.required],
+
+            referenceModule: [null],
+            referenceId: [null],
+            referenceNo: [''],
+
+            customerAffected: [false],
+
+            description: ['', Validators.required],
+            immediateAction: [''],
+            problemDescription: [''],
+
+            // Workflow
+            status: ['Draft'],
+            currentStep: [1],
+        });
+        this.investigationForm = this.fb.group({
+            assignedToEmployeeId: [null],
+            assignedToEmployeeName: [null],
+            investigationDate: [null],
+            investigationMethod: [''],
+            rootCause: [''],
+            investigationSummary: [''],
+            investigationDetails: [''],
+            recommendedAction: ['']
+        });
+        this.correctiveActionForm = this.fb.group({
+
+            actionNo: [''],
             correctiveAction: [''],
-            closerDate: [null],
-            preparedBy: [''],
-            reviewedBy: [null],
-            approvedBy: [null],
-            reviewedDate: [''],
-            approvedDate: [''],
-            preparedDate: [this.today],
+            responsiblePersonId: [null],
+            responsiblePersonName: [null],
+            targetDate: [null],
+            completionDate: [null],
+            resourcesRequired: [''],
+            preventiveAction: ['']
+        });
+        this.verificationForm = this.fb.group({
+            verificationDate: [this.today],
+            verifiedByEmployeeId: [null],
+            verifiedByEmployeeName: [null],
+            verificationMethod: [''],
+            observation: [''],
+            result: ['Effective'],
+            remarks: ['']
+        });
+
+        this.closureForm = this.fb.group({
+            closureDate: [this.today],
+            closedByEmployeeId: [null],
+            closedByEmployeeName: [null],
+            finalRemarks: [''],
+            status: ['Closed']
         });
 
         // System-managed fields — always readonly
-        this.ncForm.get('docNo')?.disable();
+        this.ncForm.get('documentNo')?.disable();
         this.ncForm.get('issueNo')?.disable();
         this.ncForm.get('revNo')?.disable();
         this.ncForm.get('formatNo')?.disable();
         this.ncForm.get('date')?.disable();
     }
+ 
 
-    private loadRecord() {
-        this.service.getById(this.recordId).subscribe(data => {
-            if (data) {
+    private loadRecord(): void {
 
-                this.ncForm.patchValue(data);
-                this.ncForm.patchValue({
-                    date: NablFormsHelper.formatDateForInput(data.date),
-                    ncDate: NablFormsHelper.formatDateForInput(data.ncDate),
-                    closerDate: NablFormsHelper.formatDateForInput(data.closerDate)
-                });
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.ncForm.disable();
-                    this.isViewMode = true;
-                } else if (this.isViewMode) {
-                    this.ncForm.disable();
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.ncForm.get('docNo')?.disable();
-                this.ncForm.get('issueNo')?.disable();
-                this.ncForm.get('revNo')?.disable();
-                this.ncForm.get('formatNo')?.disable();
-            }
+    this.service.getById(this.recordId).subscribe((data: any) => {
+
+        if (!data) return;
+
+        // ===========================
+        // General Form
+        // ===========================
+
+        this.ncForm.patchValue({
+            ...data,
+            date: NablFormsHelper.formatDateForInput(data.date),
+            ncDate: NablFormsHelper.formatDateForInput(data.ncDate),
+            issueDate: NablFormsHelper.formatDateForInput(data.issueDate),
+            revDate: NablFormsHelper.formatDateForInput(data.revDate),
+            preparedDate: NablFormsHelper.formatDateForInput(data.preparedDate),
+            reviewedDate: NablFormsHelper.formatDateForInput(data.reviewedDate),
+            approvedDate: NablFormsHelper.formatDateForInput(data.approvedDate)
         });
-    }
 
-    toggleSection(section: string) {
-        this.openSections[section] = !this.openSections[section];
-    }
+        // ===========================
+        // Investigation
+        // ===========================
 
-    onSubmit(): void {
-        if (this.ncForm.invalid) {
-            this.ncForm.markAllAsTouched();
+        if (data.investigation) {
+
+            this.investigationForm.patchValue({
+
+                assignedToEmployeeId: data.investigation.assignedToEmployeeId,
+                assignedToEmployeeName: data.investigation.assignedToEmployeeName,
+
+                investigationDate: NablFormsHelper.formatDateForInput(
+                    data.investigation.investigationDate
+                ),
+
+                investigationMethod: data.investigation.investigationMethod,
+                rootCause: data.investigation.rootCause,
+                contributingFactors: data.investigation.contributingFactors,
+                investigationDetails: data.investigation.investigationDetails,
+                recommendedAction: data.investigation.recommendedAction
+            });
+        }
+
+        // ===========================
+        // Corrective Action
+        // ===========================
+
+        if (data.correctiveAction) {
+
+            this.correctiveActionForm.patchValue({
+
+                actionNo: data.correctiveAction.actionNo,
+                correctiveAction: data.correctiveAction.correctiveAction,
+
+                responsiblePersonId: data.correctiveAction.responsiblePersonId,
+                responsiblePersonName: data.correctiveAction.responsiblePersonName,
+
+                targetDate: NablFormsHelper.formatDateForInput(
+                    data.correctiveAction.targetDate
+                ),
+
+                completionDate: NablFormsHelper.formatDateForInput(
+                    data.correctiveAction.completionDate
+                ),
+
+                resourcesRequired: data.correctiveAction.resourcesRequired,
+                preventiveAction: data.correctiveAction.preventiveAction
+            });
+
+        }
+        else {
+
+            this.service.getActionNo().subscribe({
+                next: (res: any) => {
+
+                    this.correctiveActionForm.patchValue({
+                        actionNo: res.actionNo
+                    });
+
+                }
+            });
+        }
+
+        // ===========================
+        // Verification
+        // ===========================
+
+        if (data.verification) {
+
+            this.verificationForm.patchValue({
+
+                verificationDate: NablFormsHelper.formatDateForInput(
+                    data.verification.verificationDate
+                ),
+
+                verifiedByEmployeeId: data.verification.verifiedByEmployeeId,
+                verifiedByEmployeeName: data.verification.verifiedByEmployeeName,
+
+                verificationMethod: data.verification.verificationMethod,
+                observation: data.verification.observation,
+                result: data.verification.result,
+                remarks: data.verification.remarks
+            });
+        }
+
+        // ===========================
+        // Closure
+        // ===========================
+
+        if (data.closure) {
+
+            this.closureForm.patchValue({
+
+                closureDate: NablFormsHelper.formatDateForInput(
+                    data.closure.closureDate
+                ),
+
+                closedByEmployeeId: data.closure.closedByEmployeeId,
+                closedByEmployeeName: data.closure.closedByEmployeeName,
+
+                finalRemarks: data.closure.finalRemarks,
+                status: data.closure.status
+            });
+        }
+
+        // ===========================
+        // Tab Status
+        // ===========================
+
+        this.tabs.forEach(t => t.status = 'pending');
+
+        for (let i = 1; i <= data.currentStep; i++) {
+
+            if (this.tabs[i - 1]) {
+                this.tabs[i - 1].status = 'completed';
+            }
+        }
+
+        if (data.currentStep < this.tabs.length) {
+            this.tabs[data.currentStep].status = 'active';
+        }
+
+        this.activeFormKey = Math.min(data.currentStep + 1, this.tabs.length);
+
+        // ===========================
+        // View Mode Only
+        // ===========================
+
+        if (this.isViewMode) {
+
+            this.ncForm.disable();
+            this.investigationForm.disable();
+            this.correctiveActionForm.disable();
+            this.verificationForm.disable();
+            this.closureForm.disable();
+        }
+        else {
+
+            this.ncForm.enable();
+            this.investigationForm.enable();
+            this.correctiveActionForm.enable();
+            this.verificationForm.enable();
+            this.closureForm.enable();
+
+            // Header fields always readonly
+            this.ncForm.get('documentNo')?.disable();
+            this.ncForm.get('date')?.disable();
+            this.ncForm.get('issueNo')?.disable();
+            this.ncForm.get('revNo')?.disable();
+            this.ncForm.get('formatNo')?.disable();
+        }
+    });
+
+    this.selectTab(1);
+}
+    selectTab(tabId: number): void {
+
+        const tab = this.tabs.find(x => x.id === tabId);
+
+        if (!tab) {
             return;
         }
 
-        const formData = this.ncForm.getRawValue();
-        formData.preparedDate = this.today;
-        formData.approvedDate = formData.approvedBy ? this.today : null;
-        formData.reviewedDate = formData.reviewedBy ? this.today : null;
-        if (formData.closerDate == "") {
-            formData.closerDate = null;
+        if (tab.status === 'pending' || tab.status === 'locked') {
+
+            this.toastService.show(
+                'Please complete previous section first.',
+                'warning'
+            );
+
+            return;
         }
 
-        if (this.isEditMode) {
-            this.service.update(this.recordId, formData).subscribe({
-                next: () => {
-                    this.saved = true;
-                    this.router.navigate(['/non-conforming-work']);
-                    this.toastService.show('non-conforming-work updated successfully', 'success')
-                },
-                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
-            });
-        } else {
-            this.service.create(formData).subscribe({
-                next: () => {
-                    this.saved = true;
-                    this.router.navigate(['/non-conforming-work']);
-                    this.toastService.show('non-conforming-work created successfully', 'success')
-                },
-                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
-            });
-        }
+        this.activeFormKey = tab.id;
+    }
+    getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.departmentService.getDepartmentDropdown(term, page, pageSize);
+    };
+
+    onDepartmentSelected(item: any) {
+        if (!item) { this.ncForm.patchValue({ departmentId: null }); return; }
+        this.ncForm.patchValue({ departmentId: item.id, departmentName: item.name });
     }
 
+
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+    }
+
+
+
+    onEmployeeSelected(
+        item: any,
+        form: FormGroup,
+        idControl: string,
+        nameControl: string
+    ): void {
+
+        form.patchValue({
+
+            [idControl]: item?.id ?? null,
+
+            [nameControl]: item?.name ?? null
+
+        });
+
+    }
+
+    currentTab(): void {
+
+        const current = this.tabs[this.activeFormKey - 1];
+
+        current.status = 'completed';
+
+        if (this.activeFormKey < this.tabs.length) {
+
+            this.tabs[this.activeFormKey].status = 'active';
+
+            this.activeFormKey++;
+        }
+    }
+    markTabCompleted(tabId: number): void {
+
+        const currentTab = this.tabs.find(x => x.id === tabId);
+
+        if (!currentTab) return;
+
+        // Current completed
+        currentTab.status = 'completed';
+
+        // Next active
+        const nextTab = this.tabs.find(x => x.id === tabId + 1);
+
+        if (nextTab) {
+            nextTab.status = 'locked';
+        }
+
+        // Current screen bhi next ho jaye
+        if (nextTab) {
+            this.activeFormKey = nextTab.id;
+        }
+
+    }
+
+    changeTab(tab: any): void {
+
+        if (tab.status === 'pending') {
+
+            this.toastService.show(
+                'Please complete previous section first.',
+                'warning'
+            );
+
+            return;
+        }
+
+        this.activeFormKey = tab.id;
+
+    }
+    toggleSection(section: string) {
+        this.openSections[section] = !this.openSections[section];
+    }
+    onSubmit(): void {
+
+        switch (this.activeFormKey) {
+
+            case 1:
+                this.saveGeneral();
+                break;
+
+            case 2:
+                this.saveInvestigation();
+                break;
+
+            case 3:
+                this.saveCorrectiveAction();
+                break;
+
+            case 4:
+                this.saveVerification();
+                break;
+
+            case 5:
+                this.saveClosure();
+                break;
+        }
+
+    }
+    saveGeneral(): void {
+        this.saveRecord(this.ncForm, 1);
+    }
+
+
+    saveInvestigation(): void {
+        this.saveRecord(this.investigationForm, 2);
+
+    }
+
+    saveCorrectiveAction(): void {
+        this.saveRecord(this.correctiveActionForm, 3);
+
+    }
+
+    saveVerification(): void {
+        this.saveRecord(this.verificationForm, 4);
+    }
+    saveClosure(): void {
+
+        this.saveRecord(this.closureForm, 5);
+    }
+
+    private saveRecord(form: FormGroup, step: number): void {
+
+        if (form.invalid) {
+            form.markAllAsTouched();
+            return;
+        }
+
+        let payload: any;
+
+        switch (step) {
+
+            case 1:
+
+                payload = {
+                    ...this.ncForm.getRawValue(),
+                    id: this.recordId,
+                    requestStep: 1,
+                    currentStep: 1
+                };
+
+                break;
+
+            case 2:
+
+                payload = {
+                    id: this.recordId,
+                    requestStep: 2,
+                    investigation: form.getRawValue()
+                };
+
+                break;
+
+            case 3:
+
+                payload = {
+                    id: this.recordId,
+                    requestStep: 3,
+                    correctiveAction: form.getRawValue()
+                };
+
+                break;
+
+            case 4:
+
+                payload = {
+                    id: this.recordId,
+                    requestStep: 4,
+                    verification: form.getRawValue()
+                };
+
+                break;
+
+            case 5:
+
+                payload = {
+                    id: this.recordId,
+                    requestStep: 5,
+                    closure: form.getRawValue()
+                };
+
+                break;
+        }
+
+        console.log(payload); // Check payload
+
+        if (this.isEditMode) {
+
+            this.service.update(this.recordId, payload)
+                .subscribe({
+
+                    next: () => {
+
+                        this.markTabCompleted(step);
+                        this.showSuccessMessage(step);
+
+                    }
+
+                });
+
+        }
+        else {
+
+            this.service.create(payload)
+                .subscribe({
+
+                    next: (res: any) => {
+
+                        this.recordId = res.id;
+                        this.isEditMode = true;
+
+                        this.markTabCompleted(step);
+                        this.showSuccessMessage(step);
+
+                    }
+
+                });
+
+        }
+
+    }
+    private showSuccessMessage(step: number): void {
+
+        switch (step) {
+
+            case 1:
+                this.toastService.show(
+                    'General information saved successfully',
+                    'success'
+                );
+                break;
+
+            case 2:
+                this.toastService.show(
+                    'Investigation saved successfully',
+                    'success'
+                );
+                break;
+
+            case 3:
+                this.toastService.show(
+                    'Corrective Action saved successfully',
+                    'success'
+                );
+                break;
+
+            case 4:
+                this.toastService.show(
+                    'Verification saved successfully',
+                    'success'
+                );
+                break;
+
+            case 5:
+                this.toastService.show(
+                    'Record completed successfully',
+                    'success'
+                );
+
+                this.router.navigate(['/non-conforming-work']);
+                break;
+        }
+
+    }
 
     onCancel() {
         this.router.navigate(['/non-conforming-work']);

@@ -68,3 +68,22 @@ export interface PurchaseMaterialVerificationListResponse {
     pageSize: number;
     success: boolean;
 }
+
+
+export interface PurchaseMaterialVerificationPrintDto {
+    date: string;
+    poNo: string;
+    supplierName: string;
+    materialDetails: PurchaseMaterialVerificationItemDto[];
+}
+
+export interface PurchaseMaterialVerificationItemDto {
+    materialName: string;
+    orderedQty: number;
+    receviceQty: number;
+    approvedQty: number;
+    rejectedQty: number;
+    verificationDetails: string;
+    inspectionQtyStatus: string;
+    verificationDone: string;
+}

@@ -37,7 +37,7 @@ export class NonConformingWorkPreviewListComponent implements OnInit {
 
     fetchData() {
 
-        this.service.getAll({
+        this.service.getPrintAll({
             PageNumber: 1,
             PageSize: 100,
             searchTerm: '',

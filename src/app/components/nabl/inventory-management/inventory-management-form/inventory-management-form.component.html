@@ -92,7 +92,8 @@
                         <!-- Supplier -->
                         <div class="col-md-6 col-md-3">
                             <label class="form-label">Supplier Name</label>
-                            <select class="form-select form-select-sm" formControlName="supplierId">
+                            <select class="form-select form-select-sm" formControlName="supplierId"
+                                (change)="onSupplierChange($event)">
                                 <option value="" selected>Select Supplier</option>
                                 <option *ngFor="let supplier of supplierList" [ngValue]="supplier.id || supplier.Id">
                                     {{ supplier.name || supplier.Name }}

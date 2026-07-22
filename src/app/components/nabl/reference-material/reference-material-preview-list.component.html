@@ -8,7 +8,7 @@
     <div class="toolbar-center">
         <span class="doc-title-label">
             <i class="bi bi-file-text me-1"></i>
-            Complaint Register Preview
+            Master List of Reference Material (CRM) Preview
         </span>
     </div>
     <div class="toolbar-right">
@@ -38,66 +38,56 @@
 <div class="nabl-preview-page">
     <app-print-frame *ngIf="data" [orientation]="orientation">
         <ng-container header>
-            <app-nabl-print-header [formatNo]="'F-40'" [mainTitle]="'COMPLAINT REGISTER'"
-                [docNo]="'DMSPL / Level-04 / Format / F-40'" [issueNo]="data.issueNo" [issueDate]="data.date"
+            <app-nabl-print-header [formatNo]="'F-17'" [mainTitle]="'MASTER LIST OF REFERENCE MATERIAL (CRM)'"
+                [docNo]="'DMSPL / Level-04 / Format / F-17'" [issueNo]="data.issueNo" [issueDate]="data.date"
                 [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
         </ng-container>
 
         <ng-container body>
 
-            <table class="preview-table">
+            <table class="table table-bordered preview-table">
                 <colgroup>
-                    <col style="width:3%"> <!-- SN -->
-                    <col style="width:9%"> <!-- Month & Year -->
-                    <col style="width:7%"> <!-- Complaint No -->
-                    <col style="width:9%"> <!-- Date Of Complaint -->
-                    <col style="width:9%"> <!-- Name Of Complainant -->
-                    <col style="width:10%"> <!-- Details Of Complaint -->
-                    <col style="width:10%"> <!-- Outcome Of Investigation -->
-                    <col style="width:11%"> <!-- Validation Of Complaint -->
-                    <col style="width:10%"> <!-- Corrective Action -->
-                    <col style="width:10%"> <!-- Reference Date -->
-                    <col style="width:8%"> <!-- Signature -->
+                    <col style="width:10%">
+                    <col style="width:9%">
+                    <col style="width:11%">
+                    <col style="width:15%">
+                    <col style="width:9%">
+                    <col style="width:9%">
+                    <col style="width:8%">
+                    <col style="width:11%">
                 </colgroup>
-
                 <thead>
                     <tr>
-                        <th>SN</th>
-                        <th>Month & Year</th>
-                        <th>Complaint No.</th>
-                        <th>Date Of Complaint</th>
-                        <th>Name Of Complainant</th>
-                        <th>Details Of Complaint</th>
-                        <th>Outcome Of Investigation</th>
-                        <th>Validation Of Complaint</th>
-                        <th>Corrective Actions Taken</th>
-                        <th>Reference Date<br>(Customer Response)</th>
-                        <th>Signature Of TD/QM</th>
+
+
+                        <th>Details of CRM/RM</th>
+                        <th>Specification</th>
+                        <th>Date of Manufacturing of CRM/RM</th>
+                        <th>CRM Procured from / Received from</th>
+                        <th>Quantity/Size Received</th>
+                        <th>Certificate No</th>
+                        <th>Validity Date</th>
+                        <th>Traceability</th>
                     </tr>
                 </thead>
 
                 <tbody>
 
                     <tr *ngFor="let item of data; let i=index">
-                        <td class="text-center">{{ i + 1 }}</td>
+
+                        <td>{{item.rmCode}}</td>
+                        <td>{{item.rmName}}</td>
                         <td class="text-center">
-                            {{ item.monthYear | date:'MMMM, yyyy'}}
+                            {{ item.date | date:'dd.MM.yyyy' }}
                         </td>
-
-                        <td>{{item.complaintNo}}</td>
-                        <td class="text-center">{{item.complaintDate | date:'dd.MM.yyyy'}}</td>
-                        <td>{{item.complainantName}}</td>
-
-                        <td [innerHTML]="item.complaintDescription"></td>
-
-                        <td [innerHTML]="item.validationOfComplaint"></td>
-                        <td [innerHTML]="item.outcomeOfInvestigation"></td>
-                        <td [innerHTML]="item.correctiveAction"></td>
-                        <td class="text-center">{{item.referenceNoDate | date:'dd.MM.yyyy'}}</td>
-                        <td></td>
-
+                        <td>{{item.supplier}}</td>
+                        <td>{{item.initialQuantity}}</td>
+                        <td>{{item.certificateNo}}</td>
+                        <td class="text-center">
+                            {{ item.validityDate | date:'dd.MM.yyyy' }}
+                        </td>
+                        <td>{{item.traceability}}</td>
                     </tr>
-
                 </tbody>
 
             </table>

@@ -10,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
     templateUrl: './approved-supplier-list.component.html'
 })
 export class ApprovedSupplierListComponent implements OnInit {
+    printList = '/approved-supplier/previewlist';
 
     columns: RegisterColumn[] = [
         { key: 'supplierName', type: 'string', label: 'List of Item', filter: true },
@@ -50,7 +51,7 @@ export class ApprovedSupplierListComponent implements OnInit {
                         ...item,
                         isPresentStatus: (item.isPresentStatus === true || item.isPresentStatus === 'true') ? 'Enlisted' : 'Delisted',
                         productApproved: (item.productApproved === true || item.productApproved === 'true') ? 'Yes' : 'No',
-                        enlistmentDate: item.enlistmentDate? item.enlistmentDate.split('T')[0]:''
+                        enlistmentDate: item.enlistmentDate ? item.enlistmentDate.split('T')[0] : ''
                     };
                 });
 

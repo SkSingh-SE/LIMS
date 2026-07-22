@@ -93,7 +93,7 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
             outcomeOfInvestigation: [''],
             correctiveAction: [''],
             referenceNoDate: ['', Validators.required],
-            signatureQM: [''],
+            signatureQM: [null],
             preparedBy: [''],
             reviewedBy: [null],
             approvedBy: [null],
@@ -107,6 +107,7 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
         this.complaintForm.get('issueNo')?.disable();
         this.complaintForm.get('revNo')?.disable();
         this.complaintForm.get('formatNo')?.disable();
+        this.complaintForm.get('date')?.disable();
     }
 
     private loadRecord() {
@@ -162,7 +163,7 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
                 next: () => {
                     this.saved = true;
                     this.router.navigate(['/complaint-register']);
-                    this.toastService.show('complaint-register updated successfully', 'success')
+                    this.toastService.show('complaint register updated successfully', 'success')
                 },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
             });
@@ -171,7 +172,7 @@ export class ComplaintFormComponent implements CanComponentDeactivate, OnInit {
                 next: () => {
                     this.saved = true;
                     this.router.navigate(['/complaint-register']);
-                    this.toastService.show('complaint-register created successfully', 'success')
+                    this.toastService.show('complaint register created successfully', 'success')
                 },
                 error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
             });

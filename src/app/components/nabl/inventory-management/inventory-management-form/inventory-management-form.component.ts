@@ -49,6 +49,7 @@ export class InventoryManagementFormComponent implements CanComponentDeactivate,
             itemDescription: [''],
             departmentID: [null],
             supplierId: [''],
+            supplierName: [''],
             manufacturer: [''],
             batchNo: [''],
             unit: ['', Validators.required],
@@ -99,6 +100,30 @@ export class InventoryManagementFormComponent implements CanComponentDeactivate,
         this.bsModal = new Modal(this.modalElement.nativeElement);
         this.bsModal.show();
     }
+    // Maan lete hain aapka formGroup ka naam 'myForm' hai
+    onSupplierChange(event: any) {
+        // 1. Select ki gayi ID get karein
+        const selectedId = this.inventoryForm.get('supplierId')?.value;
+
+        // 2. supplierList me se us ID ka object dhoondein
+        const selectedSupplier = this.supplierList.find(
+            supplier => (supplier.id || supplier.Id) === selectedId
+        );
+
+        // 3. Agar supplier mil jata hai, to uska naam form me store karein
+        if (selectedSupplier) {
+            const name = selectedSupplier.name || selectedSupplier.Name;
+            this.inventoryForm.patchValue({
+                supplierName: name
+            });
+        } else {
+            // Agar 'Select Supplier' choose kiya hai to naam khali kar dein
+            this.inventoryForm.patchValue({
+                supplierName: ''
+            });
+        }
+    }
+
     onSubmit(): void {
         this.submitted = true;
         FormValidationHelper.markAllTouched(this.inventoryForm);

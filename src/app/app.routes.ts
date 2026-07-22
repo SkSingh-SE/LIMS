@@ -396,6 +396,8 @@ export const routes: Routes = [
             { path: 'reference-material/edit/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-form.component').then(m => m.ReferenceMaterialFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'reference-material/details/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-form.component').then(m => m.ReferenceMaterialFormComponent) },
             { path: 'reference-material/preview/:id', loadComponent: () => import('./components/nabl/reference-material/reference-material-preview.component').then(m => m.ReferenceMaterialPreviewComponent) },
+            { path: 'reference-material/previewlist', loadComponent: () => import('./components/nabl/reference-material/reference-material-preview-list.component').then(m => m.ReferenceMaterialPreviewListComponent) },
+
             // Reference Material Consumption Routes (F-18)
             { path: 'reference-material-consumption', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-list.component').then(m => m.CrmConsumptionListComponent) },
             { path: 'reference-material-consumption/create', loadComponent: () => import('./components/nabl/crm-consumption/crm-consumption-form.component').then(m => m.CrmConsumptionFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -414,6 +416,8 @@ export const routes: Routes = [
             { path: 'approved-supplier/edit/:id', loadComponent: () => import('./components/nabl/approved-supplier-form/approved-supplier-form.component').then(m => m.ApprovedSupplierFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'approved-supplier/details/:id', loadComponent: () => import('./components/nabl/approved-supplier-form/approved-supplier-form.component').then(m => m.ApprovedSupplierFormComponent) },
             { path: 'approved-supplier/preview/:id', loadComponent: () => import('./components/nabl/approved-supplier-preview/approved-supplier-preview.component').then(m => m.ApprovedSupplierPreviewComponent) },
+            { path: 'approved-supplier/previewlist', loadComponent: () => import('./components/nabl/approved-supplier-preview-list/approved-supplier-preview-list.component').then(m => m.ApprovedsupplierPreviewListComponent) },
+
             // Purchase Indent / Request Routes (F-21)
             { path: 'purchase-indent', loadComponent: () => import('./components/nabl/purchase-indent-list/purchase-indent-list.component').then(m => m.PurchaseIndentListComponent) },
             { path: 'purchase-indent/create', loadComponent: () => import('./components/nabl/purchase-indent-form/purchase-indent-form.component').then(m => m.PurchaseIndentFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -444,6 +448,8 @@ export const routes: Routes = [
             { path: 'purchase-material-verification/edit/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-form/purchase-material-verification-form.component').then(m => m.PurchaseMaterialVerificationFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'purchase-material-verification/details/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-form/purchase-material-verification-form.component').then(m => m.PurchaseMaterialVerificationFormComponent) },
             { path: 'purchase-material-verification/preview/:id', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-preview/purchase-material-verification-preview.component').then(m => m.PurchaseMaterialVerificationPreviewComponent) },
+            { path: 'purchase-material-verification/previewlist', loadComponent: () => import('./components/nabl/purchase-material-verification/purchase-material-verification-preview-list/purchase-material-verification-preview-list.component').then(m => m.PurchaseMaterialVerificationPreviewListComponent) },
+
             // Supplier Evaluation Record (F-26)
             { path: 'supplier-evaluation', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-list/supplier-evaluation-record-list.component').then(m => m.SupplierEvaluationRecordListComponent) },
             { path: 'supplier-evaluation/create', loadComponent: () => import('./components/nabl/supplier-evaluation-record/supplier-evaluation-record-form/supplier-evaluation-record-form.component').then(m => m.SupplierEvaluationRecordFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -492,7 +498,7 @@ export const routes: Routes = [
             { path: 'complaint-register/edit/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-form/complaint-form.component').then(m => m.ComplaintFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'complaint-register/details/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-form/complaint-form.component').then(m => m.ComplaintFormComponent) },
             { path: 'complaint-register/preview/:id', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-preview/complaint-preview.component').then(m => m.ComplaintPreviewComponent) },
-            { path: 'complaint-register/previewlist', loadComponent: () =>   import('./components/nabl/complaint-register-nabl/complaint-preview-list/complaint-preview-list.component').then(m => m.NonComplaintPreviewListComponent)},
+            { path: 'complaint-register/previewlist', loadComponent: () => import('./components/nabl/complaint-register-nabl/complaint-preview-list/complaint-preview-list.component').then(m => m.NonComplaintPreviewListComponent) },
 
             // F-41: Non-Conforming Work Records
             { path: 'non-conforming-work', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-list/non-conforming-work-list.component').then(m => m.NonConformingWorkListComponent) },
@@ -500,7 +506,7 @@ export const routes: Routes = [
             { path: 'non-conforming-work/edit/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-form/non-conforming-work-form.component').then(m => m.NonConformingWorkFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'non-conforming-work/details/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-form/non-conforming-work-form.component').then(m => m.NonConformingWorkFormComponent) },
             { path: 'non-conforming-work/preview/:id', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-preview/non-conforming-work-preview.component').then(m => m.NonConformingWorkPreviewComponent) },
-            { path: 'non-conforming-work/previewlist', loadComponent: () =>   import('./components/nabl/non-conforming-work-nabl/non-conforming-work-preview-list/non-conforming-work-preview-list.component').then(m => m.NonConformingWorkPreviewListComponent)},
+            { path: 'non-conforming-work/previewlist', loadComponent: () => import('./components/nabl/non-conforming-work-nabl/non-conforming-work-preview-list/non-conforming-work-preview-list.component').then(m => m.NonConformingWorkPreviewListComponent) },
 
             // F-42: NC & Corrective Action Report
             { path: 'nc-corrective-action', loadComponent: () => import('./components/nabl/nc-corrective-action-nabl/nc-corrective-action-list/nc-corrective-action-list.component').then(m => m.NcCorrectiveActionListComponent) },

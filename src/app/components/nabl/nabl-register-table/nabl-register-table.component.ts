@@ -19,7 +19,7 @@ export interface RegisterColumn {
 @Component({
     selector: 'app-nabl-register-table',
 
-    imports: [ CommonModule, FormsModule, RouterModule, TruncatePipe, NablRevisionDialogComponent, PaginationComponent ],
+    imports: [CommonModule, FormsModule, RouterModule, TruncatePipe, NablRevisionDialogComponent, PaginationComponent],
     templateUrl: './nabl-register-table.component.html',
     styleUrl: './nabl-register-table.component.css'
 })
@@ -30,15 +30,18 @@ export class NablRegisterTableComponent {
     // --- Card Header Inputs ---
     @Input() title: string = '';
     @Input() addButtonLabel: string = 'Add New';
+    @Input() addPrintLabel: string = 'Print List';
     @Input() addRoute: string = '';
+    @Input() printList: string = '';
     @Input() showCardWrapper: boolean = true;
-
+    @Input() disableEditForDelisted: boolean = false;
     // --- Table Data Inputs ---
     @Input() columns: RegisterColumn[] = [];
     @Input() data: any[] = [];
     @Input() totalItems: number = 0;
     @Input() isLoading: boolean = false;
     @Input() showSerialNumber: boolean = true;
+    @Input() showDelete: boolean = true;
 
     // --- Action Inputs ---
     @Input() showActions: boolean = true;
@@ -81,7 +84,7 @@ export class NablRegisterTableComponent {
     constructor(
         private workflowService: NablWorkflowService,
         private toastService: ToastService
-    ) {}
+    ) { }
 
     // --- Serial Number helper ---
     getSerialNumber(index: number): number {
@@ -137,13 +140,13 @@ export class NablRegisterTableComponent {
 
                 // Clamp to viewport so the popup doesn't overflow
                 requestAnimationFrame(() => {
-                  const modalRect = modal.getBoundingClientRect();
-                  if (modalRect.right > window.innerWidth) {
-                    modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-                  }
-                  if (modalRect.bottom > window.innerHeight) {
-                    modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-                  }
+                    const modalRect = modal.getBoundingClientRect();
+                    if (modalRect.right > window.innerWidth) {
+                        modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+                    }
+                    if (modalRect.bottom > window.innerHeight) {
+                        modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+                    }
                 });
             }
         }
@@ -305,7 +308,11 @@ export class NablRegisterTableComponent {
             error: (err) => this.toastService.show(err.error?.message || 'Revision failed', 'error')
         });
     }
+    isEditDisabled(row: any): boolean {
+        const status = (row.presentStatus || row.PresentStatus || '').toString().trim().toLowerCase();
 
+        return this.disableEditForDelisted && status === 'delisted';
+    }
     onRevisionCancel(): void {
         this.showRevisionDialog = false;
     }

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MethodVerificationNablService } from '../../../../services/method-verification-nabl.service';
 import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
 import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
 import { NablSignatureBlockComponent } from '../../nabl-signature-block/nabl-signature-block.component';
 import { PrintFrameComponent } from '../../print-frame/print-frame.component';
+import { MethodVerificationNabl } from '../../../../models/methodVerificationNablModel';
 
 @Component({
     selector: 'app-method-verification-nabl-preview',
@@ -16,8 +17,7 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 })
 export class MethodVerificationNablPreviewComponent implements OnInit {
     recordId: number = 0;
-    data: any = null;
-
+    data = signal<MethodVerificationNabl | null>(null);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -26,7 +26,7 @@ export class MethodVerificationNablPreviewComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private service: MethodVerificationNablService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
     ) { }
 
     ngOnInit() {
@@ -41,7 +41,7 @@ export class MethodVerificationNablPreviewComponent implements OnInit {
     fetchData() {
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
-                this.data = resp;
+                this.data.set(resp);
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => console.error('Error fetching preview data:', err)

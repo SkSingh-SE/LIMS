@@ -67,7 +67,7 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
     private initForm() {
         this.auditorForm = this.fb.group({
             formatNo: ['F-49'],
-            docNo: [''],
+            docNo: ['F-49'],
             issueNo: ['03'],
             issueDate: ['', Validators.required],
             revNo: ['00'],

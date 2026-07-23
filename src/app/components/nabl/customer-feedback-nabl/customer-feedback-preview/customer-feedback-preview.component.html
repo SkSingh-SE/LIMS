@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,79 +46,211 @@
 
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'CUSTOMER FEEDBACK FORM'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'CUSTOMER FEEDBACK FORM'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revDate]="data.date" [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
 
-      <!-- Customer Information -->
+      <!-- I. INTRODUCTION / NOTE -->
       <div class="doc-section mb-3">
-        <div class="sec-title">CUSTOMER INFORMATION</div>
+        <div class="sec-body" [innerHTML]="data.note">
+        </div>
+      </div>
+
+      <!-- II. CUSTOMER INFORMATION -->
+      <div class="doc-section mb-3">
         <table class="table table-bordered inner-table">
           <tbody>
+
             <tr>
-              <td class="lbl" style="width: 25%">Customer Name</td>
-              <td style="width: 25%">{{ data.customerName }}</td>
-              <td class="lbl" style="width: 25%">Date</td>
-              <td style="width: 25%">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width:25%">
+                Name of Company
+              </td>
+
+              <td style="width:25%">
+                {{data.companyName}}
+              </td>
+
+              <td class="lbl" style="width:25%">
+                Address
+              </td>
+
+              <td style="width:25%">
+                {{data.companyAddress}}
+              </td>
             </tr>
+
             <tr>
-              <td class="lbl">Contact Person</td>
-              <td colspan="3">{{ data.contactPerson }}</td>
+              <td class="lbl">
+                Contact Person
+              </td>
+
+              <td>
+                {{data.contactPerson}}
+              </td>
+
+              <td class="lbl">
+                Designation
+              </td>
+
+              <td>
+                {{data.designation}}
+              </td>
             </tr>
+
+            <tr>
+              <td class="lbl">
+                Email ID
+              </td>
+
+              <td>
+                {{data.email}}
+              </td>
+
+              <td class="lbl">
+                Mobile No.
+              </td>
+
+              <td>
+                {{data.mobileNo}}
+              </td>
+            </tr>
+
           </tbody>
         </table>
       </div>
 
-      <!-- Performance Ratings -->
+      <!-- III. SATISFACTION LEVEL -->
+      <span>Please Indicate Your satisfaction level(Please ✔)</span>
       <div class="doc-section mb-3">
-        <div class="sec-title">PERFORMANCE RATINGS (Scale: 1-Poor to 5-Excellent)</div>
-        <table class="table table-bordered inner-table text-center align-middle">
+
+
+
+        <table class="table table-bordered inner-table text-center">
+
           <thead>
+
             <tr class="tbl-head">
-              <th style="width: 60px">Sr. No.</th>
-              <th class="text-start">Performance Parameters</th>
-              <th style="width: 100px">Rating</th>
+
+              <th rowspan="2" style="width:60px">
+                Sr.
+              </th>
+
+              <th rowspan="2" class="text-start">
+                Service Aspect
+              </th>
+
+              <th colspan="5">
+                Rating
+              </th>
+
             </tr>
+
+            <tr class="tbl-head">
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+            </tr>
+
           </thead>
+
           <tbody>
-            <tr *ngFor="let r of data.ratings; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td class="text-start">{{ r.parameter }}</td>
-              <td><strong>{{ r.rating }}</strong></td>
+
+            <tr *ngFor="let r of data.ratings; let i=index">
+
+              <td>
+                {{i+1}}
+              </td>
+
+              <td class="text-start">
+                {{r.parameter}}
+              </td>
+              <td>{{r.rating==1 ? '✔' : ''}}</td>
+              <td>{{r.rating==2 ? '✔' : ''}}</td>
+              <td>{{r.rating==3 ? '✔' : ''}}</td>
+              <td>{{r.rating==4 ? '✔' : ''}}</td>
+              <td>{{r.rating==5 ? '✔' : ''}}</td>
+
             </tr>
+
           </tbody>
+
         </table>
+
       </div>
 
-      <!-- Comments -->
+      <!-- IV. SUGGESTIONS -->
       <div class="doc-section mb-3">
-        <div class="sec-title">COMMENTS (IF ANY)</div>
-        <div class="sec-body" [innerHTML]="data.comments"></div>
+
+        <div class="fw-bold">
+          Your Suggestions / Observatios:
+        </div>
+
+        <div  [innerHTML]="data.suggestions || '&nbsp;'">
+        </div>
+
       </div>
 
-      <!-- Suggestions for Improvement -->
+      <!-- V. NEW TEST REQUIREMENT -->
       <div class="doc-section mb-3">
-        <div class="sec-title">SUGGESTIONS FOR IMPROVEMENT</div>
-        <div class="sec-body" [innerHTML]="data.suggestions"></div>
+
+        <div class="fw-bold">
+          Any New Test Requirement:
+        </div>
+
+
+        <div [innerHTML]="data.commentsSuggestions || '&nbsp;'">
+        </div>
+
       </div>
 
-    </ng-container>
+      <!-- VI. SIGNATURE -->
+      <div class="doc-section mb-3">
 
-    <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Customer/Representative'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+        <table class="table table-bordered inner-table">
+
+          <tbody>
+
+            <tr>
+
+              <td style="width:70%">
+                <b>Reported By :</b>
+                {{data.reportedBy}}
+              </td>
+
+              <td style="width:30%">
+                <b>Date :</b>
+                {{data.feedbackDate | date:'dd-MM-yyyy'}}
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      <!-- FOOTER -->
+
+      <div class="mt-3">
+
+        <b>N.B. :</b>
+
+        Please fill up this form &amp; return back hard copy / soft copy to us.
+
+      </div>
+
+      <div class="mt-2">
+
+        <b>Mail ID :</b>
+        accounts&#64;divinelaboratory.com
+      </div>
+
     </ng-container>
   </app-print-frame>
 

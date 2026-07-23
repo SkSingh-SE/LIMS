@@ -1,0 +1,196 @@
+/*====================================================
+    PRINT TABLE
+=====================================================*/
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 11px;
+    height: 45px;
+}
+
+.preview-table th,
+.preview-table td {
+    border: 1px solid #000;
+    padding: 5px;
+    vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.preview-table th {
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.preview-table td {
+    padding: 4px 5px;
+    vertical-align: top;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.preview-table tbody tr {
+    height: auto;
+}
+
+/* SN */
+.preview-table th:nth-child(1),
+.preview-table td:nth-child(1) {
+    text-align: center;
+}
+
+/* Date */
+.preview-table th:nth-child(2),
+.preview-table td:nth-child(2) {
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* NC Detail */
+.preview-table th:nth-child(3),
+.preview-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* Root Cause */
+.preview-table th:nth-child(4),
+.preview-table td:nth-child(4) {
+    text-align: left;
+}
+
+/* Corrective Action */
+.preview-table th:nth-child(5),
+.preview-table td:nth-child(5) {
+    text-align: left;
+}
+
+/* NC Closure */
+.preview-table th:nth-child(6),
+.preview-table td:nth-child(6) {
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Signature */
+.preview-table th:nth-child(7),
+.preview-table td:nth-child(7) {
+    text-align: center;
+}
+
+/*====================================================
+    TOOLBAR
+=====================================================*/
+
+.preview-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+}
+
+.toolbar-left,
+.toolbar-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toolbar-right {
+    justify-content: flex-end;
+}
+
+.toolbar-center {
+    flex: 2;
+    text-align: center;
+}
+
+.doc-title-label {
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .85rem;
+    border: 1px solid transparent;
+}
+
+.toolbar-btn.btn-outline-dark {
+    background: #fff;
+    border-color: #555;
+}
+
+.toolbar-btn.btn-primary-red {
+    background: #DA261C;
+    color: #fff;
+    border-color: #DA261C;
+}
+
+/*====================================================
+    ORIENTATION
+=====================================================*/
+
+.orientation-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.orient-btn {
+    border: none;
+    background: #f5f5f5;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.orient-btn.active {
+    background: #DA261C;
+    color: #fff;
+}
+
+/*====================================================
+    FOOTER GAP
+=====================================================*/
+
+.footer-gap {
+    height: 20px;
+}
+
+/*====================================================
+    PRINT
+=====================================================*/
+
+@media print {
+
+    .no-print {
+        display: none !important;
+    }
+
+    .preview-table {
+        width: 100%;
+        table-layout: auto;
+        font-size: 10px;
+    }
+
+    .preview-table th,
+    .preview-table td {
+        padding: 4px;
+    }
+
+}

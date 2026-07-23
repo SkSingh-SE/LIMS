@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="jobDescForm" (ngSubmit)="onSubmit()" [class.job-desc-form-disabled]="isViewMode">
+      <form [formGroup]="jobDescForm" (ngSubmit)="onSubmit()">
 
 
         <!-- Section I: Header Information -->
@@ -22,7 +22,8 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-3">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-3">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -39,28 +40,37 @@
                 <label class="form-label">Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
+            
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
-                  [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="jobDescForm.get('designationId')?.value"></app-searchable-dropdown>
-                <span
-                  *ngIf="jobDescForm.get('designationId')?.invalid && jobDescForm.get('designationId')?.touched"
-                  class="text-danger text-sm small">Designation is required.</span>
+                  [required]="true" [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                  [isDisabled]="isViewMode" [selectedItem]="jobDescForm.get('designationId')?.value">
+                </app-searchable-dropdown>
+
+                <span *ngIf="jobDescForm.get('designationId')?.invalid && jobDescForm.get('designationId')?.touched"
+                  class="text-danger text-sm small">
+                  Designation is required.
+                </span>
               </div>
+
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Department'" [labelName]="'Department'"
-                  [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="jobDescForm.get('departmentId')?.value"></app-searchable-dropdown>
-                <span
-                  *ngIf="jobDescForm.get('departmentId')?.invalid && jobDescForm.get('departmentId')?.touched"
-                  class="text-danger text-sm small">Department is required.</span>
+                  [required]="true" [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
+                  [isDisabled]="isViewMode" [selectedItem]="jobDescForm.get('departmentId')?.value">
+                </app-searchable-dropdown>
+
+                <span *ngIf="jobDescForm.get('departmentId')?.invalid && jobDescForm.get('departmentId')?.touched"
+                  class="text-danger text-sm small">
+                  Department is required.
+                </span>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Reporting To <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="reportingTo"
                   placeholder="Immediate Superior" />
+                <app-field-error [control]="jobDescForm.get('reportingTo')" label="Reporting To"
+                  [submitted]="isSubmitting" />
+
               </div>
               <div class="col-md-3">
                 <label class="form-label">Doc No <span class="text-danger">*</span></label>
@@ -185,8 +195,8 @@
             <span class="fw-bold ms-2">V. Quality Management System (QMS) Responsibilities</span>
           </div>
           <div *ngIf="openSections['qms']" class="section-body">
-            <quill-editor class="w-100" formControlName="qmsResponsibilities" [modules]="quillModules" [readOnly]="isViewMode"
-              placeholder="List down QMS related responsibilities..."></quill-editor>
+            <quill-editor class="w-100" formControlName="qmsResponsibilities" [modules]="quillModules"
+              [readOnly]="isViewMode" placeholder="List down QMS related responsibilities..."></quill-editor>
           </div>
         </div>
 
@@ -197,12 +207,20 @@
             <span class="fw-bold ms-2">VI. Confidentiality & Impartiality Commitment</span>
           </div>
           <div *ngIf="openSections['confidentiality']" class="section-body">
-            <quill-editor class="w-100" formControlName="confidentialityClause" [modules]="quillModules" [readOnly]="isViewMode"></quill-editor>
+            <quill-editor class="w-100" formControlName="confidentialityClause" [modules]="quillModules"
+              [readOnly]="isViewMode"></quill-editor>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" formControlName="employeeAccepted"
+                id="employeeAccepted" />
+              <label class="form-check-label form-label" for="employeeAccepted">
+                I have read and understood my job description
+              </label>
+            </div>
           </div>
         </div>
 
         <!-- Section VII: Approval & Acceptance -->
-        <div class="accordion-section mb-3">
+        <!-- <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('approval')">
             <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">VII. Approval & Acceptance</span>
@@ -211,13 +229,12 @@
             <div class="row gy-2">
               <div class="col-md-4">
                 <label class="form-label">Prepared By (Quality Manager)</label>
-                <input type="text" class="form-control" formControlName="preparedByName"
+                <input type="text" class="form-control" formControlName="preparedBy"
                   placeholder="Name of Quality Manager" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">Approved By (Director)</label>
-                <input type="text" class="form-control" formControlName="approvedByName"
-                  placeholder="Name of Director" />
+                <input type="text" class="form-control" formControlName="approvedBy" placeholder="Name of Director" />
               </div>
               <div class="col-md-4 d-flex align-items-end">
                 <div class="form-check">
@@ -230,15 +247,15 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
 
-        
+
         <app-nabl-signature-section [parentForm]="jobDescForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="jobDescForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

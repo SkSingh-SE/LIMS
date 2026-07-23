@@ -15,27 +15,27 @@ export interface CrmConsumptionRecord {
 
   // Reference Material Details
   referenceMaterialId: number;
-  materialName: string;
-  materialCode: string;
+  rmName: string;
+  type: string;
+  rmCode: string;
+  materialClassification: string;
+  certificateNo: string;
+  validityDate: string | Date;
   batchNo: string;
   currentStock: number;
   unitOfMeasure: string;
 
   // Consumption Tracking
-  openingStock: number;
-  received: number;
-  consumed: number;
-  wastage: number;
-  closingStock: number;
+  openingQuantity: number;
+  totalConsumed: number;
+  remainingQuantity: number;
+  availableQuantity: number;
 
   // Daily Consumption Records
   dailyConsumption: CrmDailyConsumption[];
 
   // Usage Details
-  purposeOfUse: string;
-  testMethods: string[];
-  departments: string[];
-
+  notes: string;
   // Summary
   totalConsumption: number;
   averageDailyConsumption: number;
@@ -55,13 +55,11 @@ export interface CrmConsumptionRecord {
 }
 
 export interface CrmDailyConsumption {
-  date: Date | string;
-  openingBalance: number;
-  quantityConsumed: number;
-  quantityWasted: number;
-  closingBalance: number;
+  consumptionDate: Date | string;
   purpose: string;
-  testMethod?: string;
+  quantityConsumed: number;
+  equipmentOrTest: string;
+  usedBy: string;
   performedBy: string;
   remarks?: string;
 }

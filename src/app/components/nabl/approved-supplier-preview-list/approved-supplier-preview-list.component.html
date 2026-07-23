@@ -1,0 +1,103 @@
+<div class="preview-toolbar no-print">
+    <div class="toolbar-left">
+        <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back</span>
+        </button>
+    </div>
+    <div class="toolbar-center">
+        <span class="doc-title-label">
+            <i class="bi bi-file-text me-1"></i>
+            Approved List of Suppliers Preview
+        </span>
+    </div>
+    <div class="toolbar-right">
+        <div class="orientation-toggle" title="Page orientation">
+            <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+                <i class="bi bi-file-earmark"></i>
+                <span>Portrait</span>
+            </button>
+            <button class="orient-btn" [class.active]="orientation === 'landscape'"
+                (click)="setOrientation('landscape')">
+                <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+                <span>Landscape</span>
+            </button>
+        </div>
+        <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual"
+            title="Auto-detect">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Auto</span>
+        </button>
+        <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+            <i class="bi bi-printer-fill"></i>
+            <span>Print</span>
+        </button>
+    </div>
+</div>
+
+<div class="nabl-preview-page">
+    <app-print-frame *ngIf="data" [orientation]="orientation">
+        <ng-container header>
+            <app-nabl-print-header [formatNo]="'F-41'" [mainTitle]="'APPROVED LIST  OF SUPPLIERS'"
+                [docNo]="'DMSPL / Level-04 / Format / F-41'" [issueNo]="data.issueNo" [issueDate]="data.date"
+                [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
+        </ng-container>
+
+        <ng-container body>
+
+            <table class="table table-bordered preview-table">
+                <colgroup>
+                    <col style="width:4%">
+                    <col style="width:9%">
+                    <col style="width:11%">
+                    <col style="width:10%">
+                    <col style="width:10%">
+                    <col style="width:9%">
+                    <col style="width:15%">
+                    <col style="width:11%">
+                    <col style="width:9%">
+                </colgroup>
+                <thead>
+                    <tr>
+
+                        <th>SN</th>
+                        <th>List Of Item</th>
+                        <th>Supplier Name</th>
+                        <th>Service Provider Name</th>
+                        <th>Products/Service Approved</th>
+                        <th>Contact Person</th>
+                        <th>Contact Details(Mobile No./Mail Id)</th>
+                        <th> Present Status (Enlisted / Delisted)</th>
+                        <th>Date Of Enlistment</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr *ngFor="let item of data; let i=index">
+                        <td class="text-center">{{ i + 1 }}</td>
+                        <td>{{item.itemsApproved}}</td>
+                        <td>{{item.supplierName}}</td>
+                        <td>{{item.serviceProviderName}}</td>
+                        <td class="text-center">{{item.productApproved}}</td>
+                        <td>{{item.contactPerson}}</td>
+                        <td>{{item.mobileNo}} / {{item.email}}</td>
+                        <td class="text-center">{{ item.isPresentStatus ? 'Enlisted' : 'Delisted' }}</td>
+
+                        <td class="text-center">
+                            {{ item.enlistmentDate | date:'dd.MM.yyyy' }}
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </ng-container>
+        <div class="footer-gap"></div>
+        <ng-container footer>
+            <app-nabl-print-footer [preparedByName]="''" [issuedByName]="''" [reviewedApprovedByName]="''">
+            </app-nabl-print-footer>
+        </ng-container>
+    </app-print-frame>
+</div>

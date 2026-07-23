@@ -15,7 +15,7 @@ import { NablPrintFooterComponent } from '../nabl-print-footer/nabl-print-footer
     styleUrl: './crm-consumption-preview.component.css'
 })
 export class CrmConsumptionPreviewComponent implements OnInit {
-    record = signal<CrmConsumptionRecord | null>(null);
+    record = signal<any | null>(null);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -36,11 +36,53 @@ export class CrmConsumptionPreviewComponent implements OnInit {
 
     loadRecord(id: number): void {
         this.service.getById(id).subscribe({
-            next: (data) => {
-                this.record.set(data);
+            next: (data: any) => {
+                if (!data) return;
+
+                const crm = data.crmDetails || {};
+                const header = data.consumptionHeader || {};
+                const logs = data.logs || [];
+
+                const previewRecord = {
+                    // material details
+                    rmCode: crm.rmCode,
+                    rmName: crm.rmName,
+                    type: crm.type,
+                    materialClassification: crm.materialClassification,
+                    batchNo: crm.batchNo,
+                    certificateNo: crm.certificateNo,
+                    validityDate: crm.validityDate,
+                    quantity: crm.quantity,
+                    date: crm.date,
+                    // remarks/header
+                    remarks: header.remarks || header.notes || '',
+                    preparedBy: crm?.preparedBy || null,
+                    reviewedBy: crm?.reviewedBy || null,
+                    approvedBy: crm?.approvedBy || null,
+
+                    // logs
+                    dailyConsumption: logs.map((x: any) => ({
+                        id: x.id,
+                        consumptionDate: x.consumptionDate,
+                        quantityConsumed: x.quantityConsumed,
+                        balanceQty: x.balanceQty,
+                        purpose: x.purpose,
+                        equipmentOrTest: x.equipmentOrTest,
+                        usedBy: x.usedBy,
+                        remarks: x.remarks
+                    })),
+
+                    // summary
+                    openingQuantity: header.openingQuantity ?? crm.quantity ?? 0,
+                    totalConsumed: header.totalConsumed ?? logs.reduce((sum: number, x: any) => sum + Number(x.quantityConsumed || 0), 0),
+                    remainingQuantity: header.remainingQuantity ?? (logs.length ? logs[logs.length - 1].balanceQty : crm.quantity)
+                };
+
+                this.record.set(previewRecord);
+
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
-            error: () => {}
+            error: () => { }
         });
     }
 

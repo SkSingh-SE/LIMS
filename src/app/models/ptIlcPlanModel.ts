@@ -1,13 +1,12 @@
-export interface PtIlcPlanEntry {
-    srNo: number;
+export interface PTILCYear {
+    ptActivity: string;
+    status: string;
+    remarks: string;
+}
+export interface PTILCActivity {
     accreditedDiscipline: string;
     groupSubgroup: string;
-    ptActivityYear1: string;
-    ptActivityYear2: string;
-    statusYear1: string;
-    statusYear2: string;
-    remarksYear1: string;
-    remarksYear2: string;
+    years: PTILCYear[];
 }
 
 export interface PtIlcPlan {
@@ -16,6 +15,8 @@ export interface PtIlcPlan {
     issueNo: string;
     revNo: string;
     date: string;
+    periodStartDate: string;
+    periodEndDate: string;
     documentNo: string;
 
     // Header Info
@@ -25,13 +26,15 @@ export interface PtIlcPlan {
     periodOfParticipation: string;
 
     // PT/ILC Entries
-    entries: PtIlcPlanEntry[];
+    activities: PTILCActivity[];
 
     // Notes
-    notes: string;
+    note: string;
 
     // Signatories
     preparedBy: string;
+    approvedBy: string;
+    reviewedBy: string;
     issuedBy: string;
     reviewedApprovedBy: string;
     status: string;

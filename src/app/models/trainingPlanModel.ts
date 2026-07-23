@@ -1,18 +1,4 @@
 // F-8: Training Plan
-export interface TrainingCourse {
-  id?: number;
-  courseCode: string;
-  courseName: string;
-  provider?: string;
-  duration: number; // in days
-  targetAudience?: string;
-  objectives?: string;
-  tentativeMonth?: string;
-  agency?: 'Internal' | 'External';
-  remarks?: string;
-  isActive?: boolean;
-}
-
 export interface TrainingPlan {
   id?: number;
   formatNo: string; // F-8
@@ -22,9 +8,8 @@ export interface TrainingPlan {
   date: Date | string;
   issueDate: Date | string;
   revDate?: Date | string;
-  planDate: Date | string;
+  PlannedDate: Date | string;
   planningYear: number;
-  courses: TrainingCourse[];
   totalBudget?: number;
   approvalStatus: 'Draft' | 'Pending' | 'Approved' | 'Rejected';
   createdBy?: string;
@@ -32,6 +17,19 @@ export interface TrainingPlan {
   modifiedBy?: string;
   modifiedOn?: Date | string;
   isActive?: boolean;
+  preparedBy?: string;
+  approvedBy?: string;
+  preparedDate?: Date | string;
+  approvedDate?: Date | string;
+  reviewedBy?: string;
+  reviewedDate?: Date | string;
+  trainingTopic: string;
+  provider?: string;
+  duration: string; // in days
+  targetAudience?: string;
+  planMonth?: string;
+  agency?: 'Internal' | 'External';
+  completionRemarks?: string;
 }
 
 export interface TrainingPlanResponse {

@@ -4,6 +4,7 @@ export interface MeasurementUncertainty {
     issueNo: string;
     revNo: string;
     date: string;
+    effectiveDate: string;
     documentNo: string;
 
     // Header Info

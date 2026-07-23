@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="qcpForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="qcpForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -72,6 +72,17 @@
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">
+                  Plan No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="planNo" placeholder="planNo" readonly />
+                <div *ngIf="qcpForm.get('planNo')?.touched && qcpForm.get('planNo')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  plan no is required.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
                   Plan Year
                   <span class="text-danger">*</span>
                 </label>
@@ -79,27 +90,95 @@
                   <option [ngValue]="null">Select Year</option>
                   <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
                 </select>
+                <div *ngIf="qcpForm.get('planYear')?.touched && qcpForm.get('planYear')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  plan year is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Discipline
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="discipline" placeholder="Chemical/Mechanical" />
+                <input type="text" class="form-control" formControlName="discipline"
+                  placeholder="Chemical/Mechanical" />
+                <div *ngIf="qcpForm.get('discipline')?.touched && qcpForm.get('discipline')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  discipline is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Group / Subgroups
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="materialProductGroup" placeholder="Metals & Alloys" />
+                <input type="text" class="form-control" formControlName="materialProductGroup"
+                  placeholder="Metals & Alloys" />
+                <div
+                  *ngIf="qcpForm.get('materialProductGroup')?.touched && qcpForm.get('materialProductGroup')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  group / subgroups is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Lab In-charge
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="labIncharge" />
+                <input type="text" class="form-control" formControlName="labIncharge" placeholder="lab in-charge" />
+                <div *ngIf="qcpForm.get('labIncharge')?.touched && qcpForm.get('labIncharge')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  lab in-charge is required.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Effective From
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="effectiveFrom" placeholder="effective from"
+                  (change)="onPeriodStartChange()" />
+                <div *ngIf="qcpForm.get('effectiveFrom')?.touched && qcpForm.get('effectiveFrom')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  effective from date is required.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Effective To
+                  <span class="text-danger">*</span>
+                </label>
+                <!-- <input type="date" class="form-control" formControlName="effectiveTo" placeholder="effective to" /> -->
+                <input type="date" class="form-control" formControlName="effectiveTo"
+                  [min]="qcpForm.get('effectiveFrom')?.value" [disabled]="!qcpForm.get('effectiveFrom')?.value"
+                  (change)="clearActivityDates()" />
+
+                <div *ngIf="qcpForm.get('effectiveTo')?.touched && qcpForm.get('effectiveTo')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  effective to date is required.
+                </div>
+
+                <div
+                  *ngIf="qcpForm.get('effectiveTo')?.touched && qcpForm.get('effectiveTo')?.hasError('endDateInvalid')"
+                  class="text-danger text-sm mt-1">
+                  effective to date must be after start date.
+                </div>
+
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Retention Period
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select form-select-sm" formControlName="retentionPeriod">
+                  <option value="">Select Retention Period</option>
+                  <option *ngFor="let item of retentionPeriods" [value]="item">{{item}}</option>
+                </select>
+                <div
+                  *ngIf="qcpForm.get('retentionPeriod')?.touched && qcpForm.get('retentionPeriod')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  retention period is required.
+                </div>
               </div>
             </div>
           </div>
@@ -107,17 +186,14 @@
 
         <!-- Section III: Quality Assurance / Control Activities -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('activities')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('activities')">
             <div>
               <i class="bi" [ngClass]="openSections['activities'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">III. Quality Assurance / Control Activities</span>
             </div>
-            <button
-              *ngIf="!isViewMode"
-              type="button"
-              class="btn btn-sm btn-light py-0 me-3"
-              (click)="addActivity(); $event.stopPropagation()"
-            >
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-light py-0 me-3"
+              (click)="addActivity(); $event.stopPropagation()">
               <i class="bi bi-plus-lg me-1"></i>
               Add Activity
             </button>
@@ -128,27 +204,35 @@
                 <thead class="bg-light">
                   <tr>
                     <th class="ps-3 py-2 fw-bold text-muted" style="width: 50px">S.N.</th>
-                    <th class="py-2 fw-bold text-muted" style="width: 250px">QA / QC Activity Name</th>
-                    <th class="py-2 fw-bold text-muted" style="width: 150px">Frequency</th>
-                    <th class="py-2 fw-bold text-muted" style="width: 150px">Target / Criteria</th>
-                    <th class="py-2 fw-bold text-muted" style="width: 140px">Planned Date</th>
-                    <th class="py-2 fw-bold text-muted" style="width: 140px">Actual Date</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 200px">QA / QC Activity Name</th>
+                    <!-- <th class="py-2 fw-bold text-muted" style="width: 150px">Frequency</th> -->
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Department</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Test Method</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Reference Type</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Reference Name</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Frequency Type</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 150px">Effective From</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Responsible Employee</th>
+                    <th class="py-2 fw-bold text-muted" style="width: 180px">Acceptance Criteria</th>
                     <th class="py-2 fw-bold text-muted" style="width: 120px">Result Status</th>
-                    <th class="py-2 fw-bold text-muted">Remarks</th>
-                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px"></th>
+                    <th class="py-2 fw-bold text-muted" style="width: 160px">Remarks</th>
+                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px">Action</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="activities">
                   <tr *ngFor="let activity of activities.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3 text-center">{{ i + 1 }}</td>
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+
                     <td>
-                      <select class="form-select form-select-sm" formControlName="activityName">
+                      <select class="form-select form-select-sm" formControlName="activityName"
+                        (change)="checkDuplicateActivity(i)">
                         <option value="">Select Activity</option>
                         <option value="Use of Reference Material (CRM)">Use of Reference Material (CRM)</option>
                         <option value="Use of alternative instrumentation">Use of alternative instrumentation</option>
                         <option value="Functional check(s) of Equipment">Functional check(s) of Equipment</option>
                         <option value="Use of check or working standards">Use of check or working standards</option>
-                        <option value="Intermediate checks on measuring equipment">Intermediate checks on equipment</option>
+                        <option value="Intermediate checks on measuring equipment">Intermediate checks on equipment
+                        </option>
                         <option value="Replicate Testing">Replicate Testing</option>
                         <option value="Retesting of Retained Sample">Retesting of Retained Sample</option>
                         <option value="Correlation of results">Correlation of results for diff characteristics</option>
@@ -157,21 +241,132 @@
                         <option value="Testing of Blind sample">Testing of Blind sample</option>
                         <option value="Other">Other (Specify in Remarks)</option>
                       </select>
+                      <small class="text-danger"
+                        *ngIf="activity.get('activityName')?.invalid && (activity.get('activityName')?.touched)">
+                        qa / qc activity is required.
+                      </small>
+                      <small class="text-danger" *ngIf="activity.get('activityName')?.hasError('duplicate')">
+                        this qa / qc activity is already selected.
+                      </small>
                     </td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="plannedFrequency" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="targetCriteria" /></td>
-                    <td><input type="date" class="form-control form-control-sm" formControlName="plannedDate" /></td>
-                    <td><input type="date" class="form-control form-control-sm" formControlName="actualDate" /></td>
+                    <td> <app-searchable-dropdown [hideLabel]="true" [placeholder]="'Search Department'"
+                        [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event,i)"
+                        [selectedItem]="activity.get('departmentID')?.value" [isDisabled]="isViewMode">
+                      </app-searchable-dropdown>
+                      <small class="text-danger"
+                        *ngIf="activity.get('departmentID')?.invalid && (activity.get('departmentID')?.touched)">
+                        department is required.
+                      </small>
+                    </td>
+                    <td><app-searchable-dropdown [hideLabel]="true" [placeholder]="'Select Test Methods'"
+                        [isDisabled]="isViewMode" [fetchDataFn]="fetchTestMethods"
+                        [selectedItem]="activity.get('testMethodId')?.value" [isDisabled]="isViewMode"
+                        (itemSelected)="onTestMethodSelected($event,i)">
+                      </app-searchable-dropdown>
+                      <small class="text-danger"
+                        *ngIf="activity.get('testMethodId')?.invalid && (activity.get('testMethodId')?.touched)">
+                        test method is required.
+                      </small>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="referenceType"
+                        (change)="onReferenceTypeChange(i)">
+                        <option value="">Select Reference Type</option>
+                        <option *ngFor="let item of referenceTypes" [value]="item">{{item}}</option>
+                      </select>
+                      <small class="text-danger"
+                        *ngIf="activity.get('referenceType')?.invalid && (activity.get('referenceType')?.touched)">
+                        reference type is required.
+                      </small>
+                    </td>
+                    <td>
+                      <select
+                        *ngIf="activity.get('referenceType')?.value === 'CRM' || activity.get('referenceType')?.value === 'Equipment'"
+                        class="form-select form-select-sm" formControlName="referenceId"
+                        (change)="onReferenceSelected(i)">
+                        <option [ngValue]="null">
+                          Select {{ activity.get('referenceType')?.value }}
+                        </option>
+                        <option *ngFor="let item of activity.get('referenceOptions')?.value" [ngValue]="item.id">
+                          {{ item.name }}
+                        </option>
+                      </select>
+                      <small class="text-danger"
+                        *ngIf="activity.get('referenceId')?.invalid && (activity.get('referenceId')?.touched)">
+                        reference name is required.
+                      </small>
+                      <input
+                        *ngIf="activity.get('referenceType')?.value !== 'CRM' && activity.get('referenceType')?.value !== 'Equipment'"
+                        type="text" class="form-control form-control-sm" formControlName="referenceName"
+                        placeholder="Enter Reference Name">
+                      <small class="text-danger"
+                        *ngIf="activity.get('referenceName')?.invalid && (activity.get('referenceName')?.touched)">
+                        reference name is required.
+                      </small>
+                    </td>
+                    <td> <select class="form-select form-select-sm" formControlName="frequencyType"
+                        (change)="validateActivityDate(i)">
+                        <option value="">Select Frequency Types</option>
+                        <option *ngFor="let item of frequencyTypes" [value]="item">{{item}}</option>
+                      </select>
+                      <small class="text-danger"
+                        *ngIf="activity.get('frequencyType')?.invalid && (activity.get('frequencyType')?.touched)">
+                        frequency type is required.
+                      </small>
+                    </td>
+                    <td><input type="date" class="form-control form-control-sm" formControlName="effectiveFrom"
+                        (change)="validateActivityDate(i)">
+                      <small class="text-danger"
+                        *ngIf="activity.get('effectiveFrom')?.invalid && (activity.get('effectiveFrom')?.touched)">
+                        frequency name is required.
+                      </small>
+                    </td>
+                    <!-- <input *ngIf="activity.get('frequencyType')?.value === 'Weekly'" type="week"
+                        class="form-control form-control-sm" formControlName="frequencyName">
+
+                      <input *ngIf="activity.get('frequencyType')?.value === 'Monthly'" type="month"
+                        class="form-control form-control-sm" formControlName="frequencyName">
+
+                      <input *ngIf="activity.get('frequencyType')?.value === 'Yearly'" type="number"
+                        class="form-control form-control-sm" formControlName="frequencyName" placeholder="YYYY"
+                        min="2000" max="2100">
+
+                      <input *ngIf="activity.get('frequencyType')?.value === 'Quarterly'" type="text"
+                        class="form-control form-control-sm" formControlName="frequencyName" placeholder="Ex: Q1-2026">
+
+                      <input *ngIf="activity.get('frequencyType')?.value === 'Half-Yearly'" type="text"
+                        class="form-control form-control-sm" formControlName="frequencyName" placeholder="Ex: H1-2026">
+                      <input *ngIf="activity.get('frequencyType')?.value === ''" type="text"
+                        class="form-control form-control-sm" formControlName="frequencyName"
+                        placeholder="Enter Frequency"> -->
+                    <td> <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'"
+                        [labelName]="'Person Name'" [fetchDataFn]="getEmployees"
+                        (itemSelected)="onEmployeeSelected($event,i)" [hideLabel]="true" [required]="true"
+                        [isDisabled]="isViewMode" [selectedItem]="activity.get('employeeId')?.value">
+                      </app-searchable-dropdown>
+                      <small class="text-danger"
+                        *ngIf="activity.get('employeeId')?.invalid && (activity.get('employeeId')?.touched)">
+                        employee is required.
+                      </small>
+                    </td>
+
+                    <td><input type="text" class="form-control form-control-sm" formControlName="acceptanceCriteria"
+                        placeholder="acceptance criteria" />
+                      <small class="text-danger"
+                        *ngIf="activity.get('acceptanceCriteria')?.invalid && (activity.get('acceptanceCriteria')?.touched)">
+                        acceptance criteria is required.
+                      </small>
+                    </td>
                     <td>
                       <select class="form-select form-select-sm" formControlName="resultStatus">
-                        <option value="Pending">Pending</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Not Satisfactory">Not Satisfactory</option>
+                        <option *ngFor="let item of statusList" [value]="item">{{item}}</option>
                       </select>
                     </td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="remarks" /></td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="remarks"
+                        placeholder="remarks" /></td>
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removeActivity(i)" [disabled]="activities.length === 1">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeActivity(i)"
+                        [disabled]="activities.length === 1">
                         <i class="bi bi-trash3"></i>
                       </button>
                     </td>
@@ -187,7 +382,7 @@
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="qcpForm.invalid || false">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

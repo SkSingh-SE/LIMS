@@ -3,7 +3,8 @@
     <!-- Main Header -->
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
-      <button type="button" class="btn btn-outline-light btn-sm me-3" routerLink="/employee/equipment-authorization/list">
+      <button type="button" class="btn btn-outline-light btn-sm me-3"
+        routerLink="/employee/equipment-authorization/list">
         <i class="bi bi-arrow-left"></i> Back to List
       </button>
     </div>
@@ -15,36 +16,38 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('details')">
             <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">I. Personnel Details</span>
+            <span class="fw-bold ms-2">I. Person Details</span>
           </div>
           <div *ngIf="openSections['details']" class="section-body">
             <div class="row g-3">
               <!-- Form Number -->
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="formatNo"
+                <!-- <select class="form-select" formControlName="formatNo"
                   [ngClass]="{'is-invalid': authForm.get('formatNo')?.invalid && authForm.get('formatNo')?.touched}">
                   <option value="" disabled>Select Form</option>
                   <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
-                </select>
+                </select> -->
+                <input type="text" class="form-control" formControlName="formatNo" placeholder="" readonly />
               </div>
 
               <!-- Document No -->
               <div class="col-md-3">
                 <label class="form-label">Document No</label>
-                <input type="text" class="form-control" formControlName="documentNo" placeholder="Auto-generated" />
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="Auto-generated"
+                  readonly />
               </div>
 
               <!-- Issue No -->
               <div class="col-md-3">
                 <label class="form-label">Issue No</label>
-                <input type="text" class="form-control" formControlName="issueNo" />
+                <input type="text" class="form-control" formControlName="issueNo" readonly />
               </div>
 
               <!-- Rev No -->
               <div class="col-md-3">
                 <label class="form-label">Rev No</label>
-                <input type="text" class="form-control" formControlName="revNo" />
+                <input type="text" class="form-control" formControlName="revNo" readonly />
               </div>
 
               <!-- Date -->
@@ -52,45 +55,46 @@
                 <label class="form-label">Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="date"
                   [ngClass]="{'is-invalid': authForm.get('date')?.invalid && authForm.get('date')?.touched}" />
-                <div *ngIf="authForm.get('date')?.invalid && authForm.get('date')?.touched" class="text-danger text-sm mt-1">
+                <div *ngIf="authForm.get('date')?.invalid && authForm.get('date')?.touched"
+                  class="text-danger text-sm mt-1">
                   Date is required
                 </div>
               </div>
 
               <!-- Department Dropdown -->
               <div class="col-md-3">
-                <app-searchable-dropdown
-                  class="w-100"
-                  [placeholder]="'Search Department'"
-                  [labelName]="'Department'"
-                  [fetchDataFn]="getDepartments"
-                  (itemSelected)="onDepartmentSelected($event)"
-                  [hideLabel]="false"
-                  [required]="true"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="authForm.get('departmentId')?.value"
-                ></app-searchable-dropdown>
-                <div *ngIf="authForm.get('departmentId')?.invalid && authForm.get('departmentId')?.touched" class="text-danger text-sm mt-1">
-                  Department is required
+                <app-searchable-dropdown class="w-100" [placeholder]="'Search Department'" [labelName]="'Department'"
+                  [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)" [hideLabel]="false"
+                  [required]="true" [isDisabled]="isViewMode"
+                  [selectedItem]="authForm.get('departmentId')?.value"></app-searchable-dropdown>
+                <div *ngIf="authForm.get('departmentId')?.invalid && authForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department is required
                 </div>
               </div>
 
               <!-- Employee Dropdown -->
-              <div class="col-md-3">
-                <app-searchable-dropdown
-                  class="w-100"
-                  [placeholder]="'Search Employee'"
-                  [labelName]="'Personnel Name'"
-                  [fetchDataFn]="getEmployees"
-                  (itemSelected)="onEmployeeSelected($event)"
-                  [hideLabel]="false"
-                  [required]="true"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="authForm.get('employeeId')?.value"
-                ></app-searchable-dropdown>
-                <div *ngIf="authForm.get('employeeId')?.invalid && authForm.get('employeeId')?.touched" class="text-danger text-sm mt-1">
+              <!-- <div class="col-md-3">
+                <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'" [labelName]="'Personnel Name'"
+                  [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)" [hideLabel]="false"
+                  [required]="true" [isDisabled]="isViewMode"
+                  [selectedItem]="authForm.get('employeeId')?.value"></app-searchable-dropdown>
+                <div *ngIf="authForm.get('employeeId')?.invalid && authForm.get('employeeId')?.touched"
+                  class="text-danger text-sm mt-1">
                   Employee is required
                 </div>
+              </div> -->
+              <div class="col-md-3">
+                <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'" [labelName]="'Person Name'"
+                  [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)" [hideLabel]="false"
+                  [required]="true" [isDisabled]="isViewMode" [selectedItem]="authForm.get('employeeId')?.value"
+                  [reloadKey]="ReloadKey">
+                </app-searchable-dropdown>
+
+                <div *ngIf="authForm.get('employeeId')?.invalid && authForm.get('employeeId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  person is required
+                </div> 
               </div>
 
               <!-- UID removed as per requirement -->
@@ -99,57 +103,65 @@
         </div>
 
         <!-- Section II: Equipment & Authorization -->
-        <div class="accordion-section mb-3">
+        <div class="accordion-section">
           <div class="section-header" (click)="toggleSection('equipment')">
             <i class="bi" [ngClass]="openSections['equipment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">II. Equipment & Authorization</span>
           </div>
           <div *ngIf="openSections['equipment']" class="section-body">
-            <div class="row g-3">
+            <div class="row">
               <!-- Equipment -->
-              <div class="col-md-12">
-                <label class="form-label fw-bold">Equipment List <span class="text-danger">*</span></label>
-                <quill-editor formControlName="equipment" [modules]="quillModules" [readOnly]="isViewMode"
-                  placeholder="List down authorized equipment with details..."></quill-editor>
-                <div *ngIf="authForm.get('equipment')?.invalid && authForm.get('equipment')?.touched" class="text-danger text-sm mt-1">
-                  Equipment list is required
-                </div>
-              </div>
+              <div class="col-md-4 flex-grow-1">
+                <app-multi-select-dropdown [labelName]="'Equipment List'" [placeholder]="'Select Equipment'"
+                  [required]="true" [isDisabled]="isViewMode" [fetchDataFn]="fetchEquipmentList"
+                  [selectedValues]="this.authForm.get('equipmentIds')?.value"
+                  (itemsSelected)="onEquipmentSelected($event)">
+                </app-multi-select-dropdown>
 
+                <!-- Validation error tab dikhega jab list khali hogi -->
+                <span *ngIf="employeeEquipmentAuth.touched && employeeEquipmentAuth.invalid"
+                  class="text-danger text-sm">
+                  equipment list is required
+                </span>
+
+              </div>
               <!-- Test Method Authorization -->
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Test Method Authorization <span class="text-danger">*</span></label>
-                <textarea class="form-control" formControlName="testMethodAuthorization" rows="3"
-                  placeholder="Enter authorized test methods (e.g., IS 1608, ASTM E8, ASTM E92...)"
-                  [ngClass]="{'is-invalid': authForm.get('testMethodAuthorization')?.invalid && authForm.get('testMethodAuthorization')?.touched}">
-                </textarea>
-                <div *ngIf="authForm.get('testMethodAuthorization')?.invalid && authForm.get('testMethodAuthorization')?.touched" class="text-danger text-sm mt-1">
-                  Test method authorization is required
-                </div>
+              <div class="col-md-4">
+                <app-multi-select-dropdown [labelName]="'Test Method Authorization'"
+                  [placeholder]="'Select Test Methods'" [required]="true" [isDisabled]="isViewMode"
+                  [fetchDataFn]="fetchTestMethods" [selectedValues]="this.authForm.get('testMethodIds')?.value"
+                  (itemsSelected)="onTestMethodSelected($event)">
+                </app-multi-select-dropdown>
+                <span *ngIf="testMethodAuth.touched && testMethodAuth.invalid" class="text-danger text-sm">
+                  test methods list is required
+                </span>
               </div>
 
               <!-- Test Authorization -->
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Test Authorization <span class="text-danger">*</span></label>
-                <textarea class="form-control" formControlName="testAuthorization" rows="3"
-                  placeholder="Enter authorized tests (e.g., Tensile Test, Hardness Test, Impact Test...)"
-                  [ngClass]="{'is-invalid': authForm.get('testAuthorization')?.invalid && authForm.get('testAuthorization')?.touched}">
-                </textarea>
-                <div *ngIf="authForm.get('testAuthorization')?.invalid && authForm.get('testAuthorization')?.touched" class="text-danger text-sm mt-1">
-                  Test authorization is required
-                </div>
+              <div class="col-md-4" style="position: relative;">
+
+                <app-multi-select-dropdown [labelName]="'Lab Test Authorization'" [placeholder]="'Select Lab Tests'"
+                  [required]="true" [isDisabled]="isViewMode" [fetchDataFn]="fetchLabTests"
+                  [selectedValues]="this.authForm.get('labTestIds')?.value" (itemsSelected)="onLabTestsSelected($event)"
+                  [reloadKey]="ReloadKey">
+                </app-multi-select-dropdown>
+                <span *ngIf="labTestAuth.touched && labTestAuth.invalid" class="text-danger text-sm">
+                  lab tests list is required
+                </span>
               </div>
+              <div style="height: 100px;"></div>
             </div>
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="authForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-          <button type="button" class="btn btn-cancel" routerLink="/employee/equipment-authorization/list">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="authForm.invalid || isSubmitting">
+          <button type="button" class="btn btn-cancel"
+            routerLink="/employee/equipment-authorization/list">Cancel</button>
+          <button type="submit" class="btn btn-save">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
             <i *ngIf="!isSubmitting" class="bi bi-save me-1"></i>
             {{ isEditMode ? 'Update' : 'Save' }} Authorization

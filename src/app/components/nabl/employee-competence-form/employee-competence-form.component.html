@@ -17,22 +17,38 @@
           <div class="col-md-4">
             <label class="form-label fw-bold small text-muted">Employee Name <span class="text-danger">*</span></label>
             <input type="text" class="form-control form-control-sm" formControlName="employeeName"
-              [ngClass]="{'is-invalid': reportForm.get('employeeName')?.invalid && reportForm.get('employeeName')?.touched}">
+              [ngClass]="{'is-invalid': reportForm.get('employeeName')?.invalid && reportForm.get('employeeName')?.touched}" placeholder="employee name">
+               <div *ngIf="reportForm.get('employeeName')?.touched && reportForm.get('employeeName')?.invalid"
+              class="text-danger text-sm mt-1">
+              employee name is required.
+            </div>
           </div>
           <div class="col-md-4">
             <label class="form-label fw-bold small text-muted">Designation <span class="text-danger">*</span></label>
             <input type="text" class="form-control form-control-sm" formControlName="designationName"
-              [ngClass]="{'is-invalid': reportForm.get('designationName')?.invalid && reportForm.get('designationName')?.touched}">
+              [ngClass]="{'is-invalid': reportForm.get('designationName')?.invalid && reportForm.get('designationName')?.touched}" placeholder="designation name">
+               <div *ngIf="reportForm.get('designationName')?.touched && reportForm.get('designationName')?.invalid"
+              class="text-danger text-sm mt-1">
+              designation name is required.
+            </div>
           </div>
           <div class="col-md-2">
             <label class="form-label fw-bold small text-muted">Evaluation From <span class="text-danger">*</span></label>
             <input type="date" class="form-control form-control-sm" formControlName="evaluationPeriodFrom"
               [ngClass]="{'is-invalid': reportForm.get('evaluationPeriodFrom')?.invalid && reportForm.get('evaluationPeriodFrom')?.touched}">
+               <div *ngIf="reportForm.get('evaluationPeriodFrom')?.touched && reportForm.get('evaluationPeriodFrom')?.invalid"
+              class="text-danger text-sm mt-1">
+              evaluation period from is required.
+            </div>
           </div>
           <div class="col-md-2">
             <label class="form-label fw-bold small text-muted">Evaluation To <span class="text-danger">*</span></label>
             <input type="date" class="form-control form-control-sm" formControlName="evaluationPeriodTo"
               [ngClass]="{'is-invalid': reportForm.get('evaluationPeriodTo')?.invalid && reportForm.get('evaluationPeriodTo')?.touched}">
+               <div *ngIf="reportForm.get('evaluationPeriodTo')?.touched && reportForm.get('evaluationPeriodTo')?.invalid"
+              class="text-danger text-sm mt-1">
+              evaluation period to is required.
+            </div>
           </div>
         </div>
 
@@ -92,13 +108,21 @@
           <div class="col-md-6 mt-3">
             <label class="form-label fw-bold small text-muted">Evaluation Done By <span class="text-danger">*</span></label>
             <input type="text" class="form-control form-control-sm" formControlName="evaluationDoneBy"
-              [ngClass]="{'is-invalid': reportForm.get('evaluationDoneBy')?.invalid && reportForm.get('evaluationDoneBy')?.touched}">
+              [ngClass]="{'is-invalid': reportForm.get('evaluationDoneBy')?.invalid && reportForm.get('evaluationDoneBy')?.touched}" placeholder="evaluation done by">
+               <div *ngIf="reportForm.get('evaluationDoneBy')?.touched && reportForm.get('evaluationDoneBy')?.invalid"
+              class="text-danger text-sm mt-1">
+              evaluation done by is required.
+            </div>
           </div>
           
           <div class="col-md-6 mt-3">
             <label class="form-label fw-bold small text-muted">Evaluation Date <span class="text-danger">*</span></label>
             <input type="date" class="form-control form-control-sm" formControlName="evaluationDate"
               [ngClass]="{'is-invalid': reportForm.get('evaluationDate')?.invalid && reportForm.get('evaluationDate')?.touched}">
+               <div *ngIf="reportForm.get('evaluationDate')?.touched && reportForm.get('evaluationDate')?.invalid"
+              class="text-danger text-sm mt-1">
+              evaluation date is required.
+            </div>
           </div>
         </div>
 

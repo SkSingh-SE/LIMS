@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="planForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="planForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -70,137 +70,225 @@
           </div>
           <div *ngIf="openSections['labInfo']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-4">
+              <div class="col-md-2">
                 <label class="form-label">
                   Laboratory ID (CAB ID)
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="laboratoryId" placeholder="T-0287" />
+                <input type="text" class="form-control" formControlName="laboratoryId" placeholder="laboratory id" />
+                <div
+                  *ngIf="planForm.get('laboratoryId')?.touched && planForm.get('laboratoryId')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  laboratory Id is required.
+                </div>
               </div>
-              <div class="col-md-8">
+              <div class="col-md-3">
                 <label class="form-label">
                   Laboratory Name
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="laboratoryName" />
+                <input type="text" class="form-control" formControlName="laboratoryName"
+                  placeholder="laboratory name" />
+                <div
+                  *ngIf="planForm.get('laboratoryName')?.touched && planForm.get('laboratoryName')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  laboratory Name is required.
+                </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-2">
                 <label class="form-label">
                   Field of Accreditation
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="fieldOfAccreditation" placeholder="TESTING" />
+                <input type="text" class="form-control" formControlName="fieldOfAccreditation"
+                  placeholder="field of accreditation" />
+                <div
+                  *ngIf="planForm.get('fieldOfAccreditation')?.touched && planForm.get('fieldOfAccreditation')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  field Of Accreditation is required.
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Period of Participation
-                  <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  formControlName="periodOfParticipation"
-                  placeholder="1st Apr-2025 to 31st Mar-2027"
-                />
+              <div class="col-md-2">
+                <label class="form-label">Period Start Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="periodStartDate"
+                  (change)="onPeriodStartChange()" />
+
+                <div
+                  *ngIf="planForm.get('periodStartDate')?.touched && planForm.get('periodStartDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                 period start date is required.
+                </div>
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label">Period End Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="periodEndDate"
+                  [min]="planForm.get('periodStartDate')?.value" [disabled]="!planForm.get('periodStartDate')?.value" />
+
+                <div
+                  *ngIf="planForm.get('periodEndDate')?.touched && planForm.get('periodEndDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                 period end date is required.
+                </div>
+
+                <div
+                  *ngIf="planForm.get('periodEndDate')?.touched && planForm.get('periodEndDate')?.hasError('endDateInvalid')"
+                  class="text-danger text-sm mt-1">
+                  end date must be after start date.
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Section III: Proficiency Testing / ILC Activities -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('entries')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('entries')">
             <div>
               <i class="bi" [ngClass]="openSections['entries'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
               <span class="fw-bold ms-2">III. Proficiency Testing / ILC Activities</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-light py-0 me-3" (click)="addEntry(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i>
-              Add Entry
-            </button>
+
           </div>
-          <div *ngIf="openSections['entries']" class="section-body p-0">
-            <div class="table-responsive m-0">
-              <table class="table table-bordered mb-0 small">
-                <thead class="bg-light">
-                  <tr>
-                    <th class="ps-3 py-2 fw-bold text-muted" style="width: 50px">Sr.</th>
-                    <th class="py-2 fw-bold text-muted">Discipline</th>
-                    <th class="py-2 fw-bold text-muted">Group/Subgroup</th>
-                    <th class="py-2 fw-bold text-muted">PT Activity (1st Year)</th>
-                    <th class="py-2 fw-bold text-muted">PT Activity (2nd Year)</th>
-                    <th class="py-2 fw-bold text-muted">Status (1st Year)</th>
-                    <th class="py-2 fw-bold text-muted">Status (2nd Year)</th>
-                    <th class="py-2 fw-bold text-muted">Remarks (1st Year)</th>
-                    <th class="py-2 fw-bold text-muted">Remarks (2nd Year)</th>
-                    <th *ngIf="!isViewMode" class="py-2 fw-bold text-muted text-center" style="width: 50px"></th>
-                  </tr>
-                </thead>
-                <tbody formArrayName="entries">
-                  <tr *ngFor="let entry of entries.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3 text-center">{{ i + 1 }}</td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="accreditedDiscipline" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="groupSubgroup" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="ptActivityYear1" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="ptActivityYear2" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="statusYear1" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="statusYear2" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="remarksYear1" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="remarksYear2" /></td>
-                    <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removeEntry(i)" [disabled]="entries.length === 1">
-                        <i class="bi bi-trash3"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+          <div *ngIf="openSections['entries']" class="section-body p-2" formArrayName="activities">
+
+            <div class="border rounded mb-3" *ngFor="let activity of activities.controls; let i = index"
+              [formGroupName]="i">
+
+              <div class="d-flex justify-content-between align-items-center bg-light px-3 py-2 border-bottom">
+                <span class="fw-bold">LIC Activity No. {{ i + 1 }}</span>
+                <div *ngIf="!isViewMode" class="d-flex gap-2 align-items-center">
+
+                  <button type="button" class="btn btn-sm btn-add" (click)="addActivity()">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Add Activity
+                  </button>
+
+                  <button type="button" class="btn btn-sm text-danger" (click)="removeActivity(i)"
+                    [disabled]="activities.length === 1">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+
+                </div>
+              </div>
+
+              <div class="p-3">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Accredited Discipline <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="accreditedDiscipline"
+                      placeholder="Enter Discipline" />
+                    <div
+                      *ngIf="activity.get('accreditedDiscipline')?.touched && activity.get('accreditedDiscipline')?.hasError('required')"
+                      class="text-danger text-sm mt-1">
+                      accredited discipline is required.
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Group(s) / Subgroup Under Discipline <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="groupSubgroup"
+                      placeholder="Enter Group/Subgroup" />
+                    <div
+                      *ngIf="activity.get('groupSubgroup')?.touched && activity.get('groupSubgroup')?.hasError('required')"
+                      class="text-danger text-sm mt-1">
+                      group/subgroup is required.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fw-bold small">Proficiency Testing/ILC Activities Plan (Year wise)</span>
+
+                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addYear(i)">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Add Year
+                  </button>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-bordered table-sm align-middle mb-0">
+                    <thead class="bg-light">
+                      <tr>
+                        <th class="text-center" style="width:60px">Sr.</th>
+                        <th>PT Activity</th>
+                        <th style="width:220px">Status</th>
+                        <th>Remarks</th>
+                        <th *ngIf="!isViewMode" class="text-center" style="width:60px">Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody formArrayName="years">
+                      <tr *ngFor="let year of years(i).controls; let y = index" [formGroupName]="y">
+                        <td class="text-center fw-bold">{{ y + 1 }}</td>
+
+                        <td>
+                          <input type="text" class="form-control form-control-sm" formControlName="ptActivity"
+                            placeholder="Enter PT / ILC Activity" />
+                          <div *ngIf="year.get('ptActivity')?.touched && year.get('ptActivity')?.hasError('required')"
+                            class="text-danger text-sm mt-1">
+                            pt activity required.
+                          </div>
+                        </td>
+
+                        <td>
+                          <select class="form-select form-select-sm" formControlName="status">
+                            <option value="">Select Status</option>
+                            <option value="Participated in PT">Participated in PT</option>
+                            <option value="Will Participate">Will Participate</option>
+                            <option value="Will Initiate">Will Initiate</option>
+                            <option value="Participated">Participated</option>
+                            <option value="Initiated ILC">Initiated ILC</option>
+                          </select>
+                          <div *ngIf="year.get('status')?.touched && year.get('status')?.hasError('required')"
+                            class="text-danger text-sm mt-1">
+                            status is required.
+                          </div>
+                        </td>
+
+                        <td>
+                          <input type="text" class="form-control form-control-sm" formControlName="remarks"
+                            placeholder="Enter Remarks" />
+                        </td>
+
+                        <td *ngIf="!isViewMode" class="text-center">
+                          <button type="button" class="btn btn-sm text-danger" (click)="removeYear(i, y)"
+                            [disabled]="years(i).length === 1">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+
+                  </table>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
-
         <!-- Section IV: Approval & Acceptance -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('approval')">
-            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Approval & Acceptance</span>
+          <div class="section-header" (click)="toggleSection('note')">
+            <i class="bi" [ngClass]="openSections['note'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Note</span>
           </div>
-          <div *ngIf="openSections['approval']" class="section-body">
-            <div class="row g-3 mb-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Prepared By
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="General Manager" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Issued By</label>
-                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Quality Manager" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed & Approved By</label>
-                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Managing Director" />
-              </div>
-            </div>
+          <div *ngIf="openSections['note']" class="section-body">
             <div class="row">
-              <div class="col-12">
+              <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-bold">Notes</label>
-                <quill-editor
-                  formControlName="notes"
-                  [modules]="quillModules"
-                  [readOnly]="isViewMode"
-                  placeholder="Enter any additional notes..."
-                ></quill-editor>
+                <quill-editor formControlName="note" [modules]="quillModules" [readOnly]="isViewMode"
+                  placeholder="Enter any additional notes..."></quill-editor>
               </div>
             </div>
           </div>
         </div>
+        <app-nabl-signature-section [parentForm]="planForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="planForm.invalid || false">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,112 +36,142 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'RETESTING OF RETAINED SAMPLES'"
-        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.date"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'RETESTING OF RETAINED SAMPLES'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Basic Information -->
       <div class="doc-section mb-3">
-        <div class="sec-title">I. Basic Information</div>
-        <table class="table table-bordered inner-table">
+        <table class="table inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Document No.</td>
-              <td class="fw-bold" style="width: 25%">{{ data.documentNo }}</td>
-              <td class="lbl" style="width: 25%">Date</td>
-              <td style="width: 25%">{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width: 25%">QC Plan No.</td>
+              <td style="width: 25%">{{ data.planNo }}</td>
+              <td class="lbl" style="width: 25%">Department </td>
+              <td style="width: 25%">{{ data.departmentName }}</td>
             </tr>
             <tr>
-              <td class="lbl">Discipline</td>
-              <td colspan="3">{{ data.discipline }}</td>
+              <td class="lbl" style="width: 25%">Test Method</td>
+              <td style="width: 25%">{{ data.testMethodName }}</td>
+              <td class="lbl" style="width: 25%">Reference Name</td>
+              <td style="width: 25%">{{data.referenceType}}/{{data.referenceName}}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Responsible Employee</td>
+              <td style="width: 25%">{{ data.responsibleEmployee}}</td>
+              <td class="lbl" style="width: 25%">Acceptance Criteria </td>
+              <td style="width: 25%">{{ data.acceptanceCriteria }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Sample Information -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">II. Sample Information</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%">Sample Name</td>
-              <td style="width: 25%">{{ data.sampleName }}</td>
-              <td class="lbl" style="width: 25%">Original Sample ID / TRN</td>
-              <td class="fw-bold" style="width: 25%">{{ data.originalSampleId }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Group / Subgroup</td>
-              <td colspan="3">{{ data.groupSubgroup }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Date of Original Testing</td>
-              <td>{{ data.dateOfOriginalTesting | date: "dd.MM.yyyy" }}</td>
-              <td class="lbl">Date of Retesting</td>
-              <td>{{ data.dateOfRetesting | date: "dd.MM.yyyy" }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <div class="doc-section">
+        <table class="table table-bordered print-table">
 
-      <!-- Retesting Details -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">III. Retesting Parameters & Results</div>
-        <table class="table table-bordered inner-table align-middle small">
           <thead>
-            <tr class="tbl-head text-center">
-              <th style="width: 50px" rowspan="2">S.N.</th>
-              <th rowspan="2">Parameter Tested</th>
-              <th colspan="2">Result of Testing</th>
-              <th rowspan="2">Acceptable Limits</th>
-              <th rowspan="2">Deviation (T1 - T2)</th>
-              <th rowspan="2">Status</th>
+            <tr class="header-main">
+              <th rowspan="2">QC Month</th>
+              <th rowspan="2">Sample Id</th>
+
+              <th colspan="3">Retesting of Retained Sample</th>
+
+              <th colspan="3">Previous Test Result</th>
+
+              <th rowspan="2">Difference</th>
+              <th rowspan="2">Acceptable<br>Limit</th>
+              <th rowspan="2">Results<br>OK/Not OK</th>
+              <th rowspan="2">Signature<br>QM</th>
             </tr>
-            <tr class="tbl-head text-center">
-              <th>Original (T1)</th>
-              <th>Retesting (T2)</th>
+
+            <tr class="header-sub">
+              <th>Date of testing</th>
+              <th>Test Result</th>
+              <th>Tested By</th>
+
+              <th>Date of Testing</th>
+              <th>Test Result</th>
+              <th>Tested By</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let param of data.parameters; let i = index" class="text-center">
-              <td>{{ i + 1 }}</td>
-              <td class="text-start">{{ param.parameterTested }}</td>
-              <td>{{ param.originalResult }}</td>
-              <td>{{ param.retestResult }}</td>
-              <td>{{ param.acceptableLimits }}</td>
-              <td>{{ param.deviation }}</td>
-              <td>
-                <span [class.text-danger]="param.status !== 'Satisfactory'" class="fw-bold">
-                  {{ param.status }}
-                </span>
-              </td>
-            </tr>
+
+            <ng-container *ngFor="let group of groupedRetestingLogs">
+
+              <tr *ngFor="let log of group.logs">
+
+                <td>
+                  {{ log.qcMonth }}
+                </td>
+
+                <td>
+                  {{ group.sampleId }}
+                </td>
+
+                <td>
+                  {{ log.dateOfRetesting | date:'dd.MM.yyyy' }}
+                </td>
+
+                <td>
+                  {{ log.retestPrefix }}-{{ log.retestValue }}
+                </td>
+
+                <td>
+                  {{ log.testedByName }}
+                </td>
+
+                <td>
+                  {{ group.previousTestDate | date:'dd.MM.yyyy' }}
+                </td>
+
+                <td>
+                  {{ log.previousPrefix }}-{{ log.previousValue }}
+                </td>
+
+                <td>
+                  {{ group.previousTestedBy }}
+                </td>
+
+                <td>
+                  {{ log.difference }}
+                </td>
+
+                <td>
+                  {{ log.acceptableLimit }}
+                </td>
+
+                <td>
+
+                  <span [ngClass]="{
+                            'ok':log.resultStatus=='OK',
+                            'notok':log.resultStatus!='OK'
+                        }">
+
+                    {{ log.resultStatus }}
+
+                  </span>
+
+                </td>
+
+                <td class="signature-cell"></td>
+
+              </tr>
+
+            </ng-container>
+
           </tbody>
+
         </table>
+
       </div>
 
-      <!-- Remarks -->
-      <div class="doc-section mb-3" *ngIf="data.remarks">
-        <div class="sec-title">IV. Remarks / Note</div>
-        <div class="sec-body">
-          {{ data.remarks }}
-          <br />
-          <span class="text-muted fst-italic mt-2 d-block">
-            If result is not satisfactory, raise non-conforming work and take corrective action.
-          </span>
-        </div>
-      </div>
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer [preparedByName]="data.analyst" [reviewedApprovedByName]="data.authorizedSignatory"></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

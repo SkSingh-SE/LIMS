@@ -109,11 +109,11 @@
             <tr>
               <td class="lbl">Signature Trainee</td>
               <td class="text-center" style="height: 50px; vertical-align: middle;">
-                <img src="/assets/images/signature_placeholder_md.png" style="max-height: 40px; opacity: 0.2;">
+                <!-- <img src="/assets/images/signature_placeholder_md.png" style="max-height: 40px; opacity: 0.2;"> -->
               </td>
               <td class="lbl">Signature Trainer</td>
               <td class="text-center" style="height: 50px; vertical-align: middle;">
-                <img src="/assets/images/signature_placeholder_qm.png" style="max-height: 40px; opacity: 0.2;">
+                <!-- <img src="/assets/images/signature_placeholder_qm.png" style="max-height: 40px; opacity: 0.2;"> -->
               </td>
             </tr>
           </tbody>
@@ -169,11 +169,11 @@
             <tr>
               <td colspan="2" class="lbl">Signature of Trainer:</td>
               <td colspan="1" class="text-center position-relative" style="height: 60px;">
-                <img src="/assets/images/signature_placeholder_qm.png" style="max-height: 45px; position: absolute; left: 0; bottom: 5px; opacity: 0.2;">
+                <!-- <img src="/assets/images/signature_placeholder_qm.png" style="max-height: 45px; position: absolute; left: 0; bottom: 5px; opacity: 0.2;"> -->
               </td>
               <td colspan="1" class="lbl">Signature of Trainee:</td>
               <td colspan="1" class="text-center position-relative">
-                <img src="/assets/images/signature_placeholder_md.png" style="max-height: 45px; position: absolute; left: 10px; bottom: 5px; opacity: 0.2;">
+                <!-- <img src="/assets/images/signature_placeholder_md.png" style="max-height: 45px; position: absolute; left: 10px; bottom: 5px; opacity: 0.2;"> -->
               </td>
             </tr>
           </tbody>
@@ -183,9 +183,9 @@
 
     <ng-container footer>
       <app-nabl-print-footer
-          [preparedByName]="'General Manager'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="'Managing Director'">
+          [preparedByName]="record.preparedBy || ''"
+          [issuedByName]="record.reviewedBy || ''"
+          [reviewedApprovedByName]="record.approvedBy || ''">
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>

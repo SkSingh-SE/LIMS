@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -22,7 +22,7 @@ import { NablHeaderService } from '../../../services/nabl-header.service';
     providers: [DatePipe]
 })
 export class InductionTrainingFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     trainingForm!: FormGroup;
     recordId: number = 0;
@@ -34,6 +34,7 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
     openSections: { [key: string]: boolean } = {
         employee: true,
         training: true,
+        header: true,
         evaluation: true
     };
 
@@ -44,7 +45,7 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
             ['clean']
         ]
     };
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private trainingService: InductionTrainingService,
@@ -52,7 +53,7 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
         private route: ActivatedRoute,
         private toastService: ToastService,
         private datePipe: DatePipe
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
@@ -61,19 +62,35 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
             next: (defaults) => {
                 this.trainingForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
-        this.route.url.subscribe(url => {
-            const path = url[0]?.path;
-            if (path === 'details') {
-                this.isViewMode = true;
-                this.formTitle = 'View Induction Training Record';
-                this.trainingForm.disable();
-            } else if (path === 'edit') {
-                this.isEditMode = true;
-                this.formTitle = 'Edit Induction Training Record';
-            }
-        });
+
+        // this.route.url.subscribe(url => {
+        //     const path = url[0]?.path;
+        //     if (path === 'details') {
+        //         this.isViewMode = true;
+        //         this.formTitle = 'View Induction Training Record';
+        //         this.trainingForm.disable();
+        //     } else if (path === 'edit') {
+        //         this.isEditMode = true;
+        //         this.formTitle = 'Edit Induction Training Record';
+        //     }
+        // });
+
+        const state = history.state as { mode?: string };
+        if(state && state.mode === 'view') {
+            this.isViewMode = true;
+            this.formTitle = 'View Induction Training Record';
+            this.trainingForm.disable();
+        } else if(state && state.mode === 'edit') {
+            this.isEditMode = true;
+            this.formTitle = 'Edit Induction Training Record';
+            this.isViewMode = false;
+        }
+        else{
+            this.isEditMode = false;
+            this.isViewMode = false;
+        }
 
         this.route.params.subscribe(params => {
             this.recordId = +params['id'];
@@ -117,8 +134,11 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
 
             trainerComments: [''],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            preparedDate: [this.today],
+            reviewedDate: [''],
+            approvedDate: ['']
         });
 
         // System-managed fields — always readonly
@@ -139,16 +159,16 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
 
 
                     this.trainingForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.trainingForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.trainingForm.get('issueNo')?.disable();
-                this.trainingForm.get('revNo')?.disable();
-                this.trainingForm.get('formatNo')?.disable();
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.trainingForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                    this.trainingForm.get('issueNo')?.disable();
+                    this.trainingForm.get('revNo')?.disable();
+                    this.trainingForm.get('formatNo')?.disable();
                 } else {
                     this.toastService.show('Record not found', 'error');
                     this.router.navigate(['/induction-training']);
@@ -178,18 +198,20 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
 
         const formData = this.trainingForm.getRawValue();
         this.isSubmitting = true;
-
+        formData.preparedDate = this.today; // Set prepared date on submit
+        if (formData.reviewedDate == "" || !formData.reviewedDate) {
+            formData.reviewedDate = null;
+        }
+        if (formData.approvedDate == "" || !formData.approvedDate) {
+            formData.approvedDate = null;
+        }
         if (this.isEditMode) {
             this.trainingService.update(this.recordId, formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
-                    if (res.success) {
-                        this.toastService.show(res.message, 'success');
-                        this.router.navigate(['/induction-training']);
-                    } else {
-                        this.toastService.show(res.message, 'error');
-                    }
+                    this.isSubmitting = false;
+                    this.saved = true;
+                    this.toastService.show('Induction Training record updated successfully', 'success');
+                    this.router.navigate(['/induction-training']);
                 },
                 error: (err) => {
                     this.isSubmitting = false;
@@ -200,14 +222,10 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
         } else {
             this.trainingService.create(formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
-                    if (res.success) {
-                        this.toastService.show(res.message, 'success');
-                        this.router.navigate(['/induction-training']);
-                    } else {
-                        this.toastService.show(res.message, 'error');
-                    }
+                    this.isSubmitting = false;
+                    this.saved = true;
+                    this.toastService.show('Induction Training record created successfully', 'success');
+                    this.router.navigate(['/induction-training']);
                 },
                 error: (err) => {
                     this.isSubmitting = false;
@@ -218,16 +236,16 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
         }
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.trainingForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.trainingForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.trainingForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.trainingForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

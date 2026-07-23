@@ -10,7 +10,7 @@ import { PaginationComponent } from '../../../utility/components/pagination/pagi
 @Component({
     selector: 'app-employee-competence-list',
 
-    imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+    imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
     templateUrl: './employee-competence-list.component.html',
     styleUrl: './employee-competence-list.component.css'
 })
@@ -205,12 +205,8 @@ export class EmployeeCompetenceListComponent implements OnInit {
         if (confirm('Are you sure you want to delete this competence report?')) {
             this.competenceService.delete(id).subscribe({
                 next: (res) => {
-                    if (res.success) {
-                        this.toastService.show('Report deleted successfully', 'success');
-                        this.fetchData();
-                    } else {
-                        this.toastService.show(res.message || 'Error deleting report', 'error');
-                    }
+                    this.toastService.show('EmployeeCompetence Report deleted successfully', 'success');
+                    this.fetchData();
                 },
                 error: (err) => {
                     console.error(err);

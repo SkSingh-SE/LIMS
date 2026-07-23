@@ -15,14 +15,11 @@
     </div>
 
     <div class="card-body p-4">
-      <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="attendanceForm.disabled">
+      <form [formGroup]="attendanceForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-4">
-          <div
-            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
-            (click)="toggleSection('header')"
-            style="cursor: pointer"
-          >
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer">
             <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">I. Document Control Information</span>
           </div>
@@ -33,7 +30,8 @@
                   Form Number
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-9" />
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-9" readonly />
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -43,7 +41,8 @@
                   Issue No
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto" />
+                <input type="text" class="form-control bg-light" formControlName="issueNo" readonly
+                  placeholder="Auto" />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark small">
@@ -65,48 +64,61 @@
 
         <!-- Section II: Training Details -->
         <div class="accordion-section mb-4">
-          <div
-            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
-            (click)="toggleSection('details')"
-            style="cursor: pointer"
-          >
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('details')" style="cursor: pointer">
             <i class="bi" [ngClass]="openSections['details'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">II. Training Program Identification</span>
           </div>
           <div *ngIf="openSections['details']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
-              <div class="col-md-12">
-                <label class="form-label fw-semibold text-dark small">
-                  Training Program Title
-                  <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  class="form-control shadow-sm"
-                  formControlName="trainingProgramTitle"
-                  placeholder="e.g. Requirement of National / International Standards"
-                />
+
+              <div class="col-auto col-md-4 col-lg-3">
+                <app-searchable-dropdown [smallInput]="true" [placeholder]="'Search Training Plan'"
+                  [labelName]="'Training Plan'" [fetchDataFn]="getTraningPlan" [required]="true"
+                  (itemSelected)="onTraningPlanSelect($event)" [isDisabled]="isViewMode"
+                  [selectedItem]="attendanceForm.get('trainingPlanId')?.value"></app-searchable-dropdown>
+                <div
+                  *ngIf="attendanceForm.get('trainingPlanId')?.touched && attendanceForm.get('trainingPlanId')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  training plan is required.
+                </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark small">
                   Training Venue
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control shadow-sm" formControlName="trainingVenue" placeholder="e.g. DMSPL" />
+                <input type="text" class="form-control shadow-sm" formControlName="venueMode"
+                  placeholder="e.g. DMSPL" />
+                <div *ngIf="attendanceForm.get('venueMode')?.touched && attendanceForm.get('venueMode')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  training venue is required.
+                </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark small">
                   Faculty Name
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control shadow-sm" formControlName="facultyName" placeholder="Enter Faculty Name" />
+                <input type="text" class="form-control shadow-sm" formControlName="trainerName"
+                  placeholder="Enter Faculty Name" />
+                <div *ngIf="attendanceForm.get('trainerName')?.touched && attendanceForm.get('trainerName')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  trainer name is required.
+                </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark small">
                   Date & Time
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control shadow-sm" formControlName="dateTime" placeholder="e.g. 03/09/25 & 4:00 pm" />
+                <input type="datetime-local" class="form-control shadow-sm" formControlName="trainingDatetime"
+                  placeholder="e.g. 03/09/25 & 4:00 pm" />
+                <div
+                  *ngIf="attendanceForm.get('trainingDatetime')?.touched && attendanceForm.get('trainingDatetime')?.invalid"
+                  class="text-danger text-sm mt-1">
+                  training datetime is required.
+                </div>
               </div>
             </div>
           </div>
@@ -114,11 +126,8 @@
 
         <!-- Section III: Participants -->
         <div class="accordion-section mb-4">
-          <div
-            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
-            (click)="toggleSection('participants')"
-            style="cursor: pointer"
-          >
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('participants')" style="cursor: pointer">
             <i class="bi" [ngClass]="openSections['participants'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">III. Attendance & Participant Feedback</span>
           </div>
@@ -136,27 +145,66 @@
                       Participant's Feedback
                       <span class="text-danger">*</span>
                     </th>
+                    <th width="300">
+                      Participant's Signature
+                      <span class="text-danger"></span>
+                    </th>
                     <th width="80" *ngIf="!isViewMode">Action</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="participants">
-                  <tr *ngFor="let p of participants.controls; let i = index" [formGroupName]="i">
+                  <tr *ngFor="let p of participants.controls; let i = index;  trackBy: trackByIndex"
+                    [formGroupName]="i">
                     <td class="text-center fw-bold text-secondary">{{ p.get("slNo")?.value }}</td>
                     <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="participantName" placeholder="Enter name" />
+                      <input type="text" class="form-control form-control-sm" formControlName="participantName"
+                        placeholder="Enter name" />
                     </td>
                     <td>
                       <select class="form-select form-select-sm" formControlName="feedback">
                         <option *ngFor="let f of feedbacks" [value]="f">{{ f }}</option>
                       </select>
                     </td>
+
+                    <div class="signature-upload-box" [class.has-file]="p.get('signaturePreview')?.value"
+                      [class.file-error]="fileErrors['signature']">
+
+                      <!-- Hidden File Input -->
+                      <input type="file" accept="image/png,image/jpeg,image/jpg" formControlName="signature"
+                        (change)="onSignatureChange($event, i)" #fileInput />
+
+                      <!-- Upload Placeholder -->
+                      <div class="upload-placeholder" *ngIf="!p.get('signaturePreview')?.value"
+                        (click)="fileInput.click()">
+
+                        <i class="bi bi-cloud-upload"></i>
+
+                        <span>Click to upload signature</span>
+
+                      </div>
+
+                      <!-- Image Preview -->
+                      <div class="image-preview" *ngIf="p.get('signaturePreview')?.value">
+
+                        <img [src]="p.get('signaturePreview')?.value" alt="Signature" />
+
+                        <button type="button" class="remove-btn" (click)="clearSignature(i)" *ngIf="!isViewMode">
+
+                          <i class="bi bi-x"></i>
+
+                        </button>
+
+                      </div>
+
+                    </div>
+
+
+
+
+
                     <td class="text-center" *ngIf="!isViewMode">
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-remove border-0"
-                        (click)="removeParticipant(i)"
-                        [disabled]="participants.length === 1"
-                      >
+                      <button type="button" class="btn btn-sm btn-remove border-0" (click)="removeParticipant(p,$event)"
+                        [disabled]="participants.length === 1">
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -175,45 +223,28 @@
 
         <!-- Section IV: Remarks & Approval -->
         <div class="accordion-section mb-4">
-          <div
-            class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
-            (click)="toggleSection('approval')"
-            style="cursor: pointer"
-          >
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('approval')" style="cursor: pointer">
             <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">IV. Remarks & Signatories</span>
+            <span class="fw-bold ms-2 ">IV. Remarks</span>
           </div>
           <div *ngIf="openSections['approval']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
               <div class="col-12 d-flex flex-column mb-3">
                 <label class="form-label fw-semibold text-dark small">General Remarks / Session Highlights</label>
-                <quill-editor
-                  formControlName="remarks"
-                  [modules]="quillModules"
-                  placeholder="Enter session remarks..."
-                  [readOnly]="isViewMode"
-                ></quill-editor>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Prepared By (GM)</label>
-                <input type="text" class="form-control shadow-sm" formControlName="preparedBy" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Issued By (QM)</label>
-                <input type="text" class="form-control shadow-sm" formControlName="issuedBy" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Reviewed & Approved By (MD)</label>
-                <input type="text" class="form-control shadow-sm" formControlName="reviewedApprovedBy" />
+                <quill-editor formControlName="genearalRemarks" [modules]="quillModules"
+                  placeholder="Enter session remarks..." [readOnly]="isViewMode"></quill-editor>
               </div>
             </div>
           </div>
         </div>
+        <app-nabl-signature-section [parentForm]="attendanceForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm" [disabled]="attendanceForm.invalid">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
             <i class="bi bi-check2-circle me-1"></i>
             {{ isEditMode ? "Update" : "Save" }} Record
           </button>

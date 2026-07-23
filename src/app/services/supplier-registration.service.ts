@@ -10,7 +10,7 @@ import { SupplierRegistration, SupplierRegistrationListResponse, SupplierRegistr
 export class SupplierRegistrationService {
     private apiUrl = environment.apiUrl + '/Nabl/SupplierRegistration';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<SupplierRegistrationListResponse> {
         return this.http.post<SupplierRegistrationListResponse>(this.apiUrl + '/list', params || {});
@@ -32,4 +32,7 @@ export class SupplierRegistrationService {
     delete(id: number): Observable<SupplierRegistrationResponse> {
         return this.http.delete<SupplierRegistrationResponse>(`${this.apiUrl}/delete/${id}`);
     }
+    getNextRegisterNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-register-no`);
+    }   
 }

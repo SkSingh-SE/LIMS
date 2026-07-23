@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -54,6 +54,7 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
     ]
   };
 
+  today = new Date().toISOString().split('T')[0];
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -61,17 +62,17 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
     private competenceRequirementService: CompetenceRequirementService,
     private designationService: DesignationService,
     private toastService: ToastService
-  , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) { }
+    , private unsavedChangesService: UnsavedChangesService,
+    private nablHeaderService: NablHeaderService) { }
 
   ngOnInit(): void {
     this.initForm();
-        this.nablHeaderService.getFormDefaults('CompetenceRequirement').subscribe({
-            next: (defaults) => {
-                this.requirementForm.patchValue({ formatNo: defaults.formCode });
-            },
-            error: () => {}
-        });
+    this.nablHeaderService.getFormDefaults('CompetenceRequirement').subscribe({
+      next: (defaults) => {
+        this.requirementForm.patchValue({ formatNo: defaults.formCode });
+      },
+      error: () => { }
+    });
 
     this.route.paramMap.subscribe(params => {
       this.requirementId = Number(params.get('id'));
@@ -98,7 +99,7 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
       formatNo: ['F-4'],
       issueNo: ['01'],
       revNo: ['00'],
-      date: [new Date().toISOString().split('T')[0], Validators.required],
+      date: [this.today, Validators.required],
       isExternal: [false],
       positionId: [null],
       positionName: [''],
@@ -106,48 +107,67 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
       minimumEducation: ['', Validators.required],
       minimumExperience: ['', Validators.required],
       preparedBy: [''],
-      reviewedBy: [''],
-      approvedBy: ['']
+      reviewedBy: [null],
+      approvedBy: [null],
+      approvedDate: [''],
+      preparedDate: [this.today],
+      reviewedDate: ['']
     });
 
-        // System-managed fields — always readonly
-        this.requirementForm.get('issueNo')?.disable();
-        this.requirementForm.get('revNo')?.disable();
-        this.requirementForm.get('formatNo')?.disable();
+    // System-managed fields — always readonly
+    this.requirementForm.get('issueNo')?.disable();
+    this.requirementForm.get('revNo')?.disable();
+    this.requirementForm.get('formatNo')?.disable();
 
     // Handle conditional validation based on isExternal
-    this.requirementForm.get('isExternal')?.valueChanges.subscribe(isExternal => {
-      if (isExternal) {
-        this.requirementForm.get('positionId')?.clearValidators();
-        this.requirementForm.get('relatedActivity')?.setValidators([Validators.required]);
-      } else {
-        this.requirementForm.get('positionId')?.setValidators([Validators.required]);
-        this.requirementForm.get('relatedActivity')?.clearValidators();
-      }
-      this.requirementForm.get('positionId')?.updateValueAndValidity();
-      this.requirementForm.get('relatedActivity')?.updateValueAndValidity();
-    });
+    // this.requirementForm.get('isExternal')?.valueChanges.subscribe(isExternal => {
+    //   if (isExternal) {
+    //     this.requirementForm.get('positionId')?.clearValidators();
+    //     this.requirementForm.get('relatedActivity')?.setValidators([Validators.required]);
+    //   } else {
+    //     this.requirementForm.get('positionId')?.setValidators([Validators.required]);
+    //     this.requirementForm.get('relatedActivity')?.clearValidators();
+    //   }
+    //   this.requirementForm.get('positionId')?.updateValueAndValidity();
+    //   this.requirementForm.get('relatedActivity')?.updateValueAndValidity();
+    // });
+    this.requirementForm.get('isExternal')?.valueChanges.subscribe(isExternal => { this.applyExternalValidation(isExternal) });
+    this.applyExternalValidation(this.requirementForm.get('isExternal')?.value);
   }
 
+  applyExternalValidation(isExternal: boolean) {
+    if (isExternal) {
+      this.requirementForm.get('positionId')?.clearValidators();
+      this.requirementForm.get('relatedActivity')?.setValidators([Validators.required]);
+    } else {
+      this.requirementForm.get('positionId')?.setValidators([Validators.required]);
+      this.requirementForm.get('relatedActivity')?.clearValidators();
+    }
+
+    this.requirementForm.get('positionId')?.updateValueAndValidity();
+    this.requirementForm.get('relatedActivity')?.updateValueAndValidity();
+  }
   loadData(): void {
     this.competenceRequirementService.getById(this.requirementId).subscribe({
       next: (data) => {
         if (data) {
           const formValues = { ...data };
 
+          formValues.date = NablFormsHelper.formatDateForInput((data as any)?.date || '');
           this.requirementForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.requirementForm.disable();
-                    this.isViewMode = true;
-                } else if (this.isViewMode) {
-                    this.requirementForm.disable();
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.requirementForm.get('issueNo')?.disable();
-                this.requirementForm.get('revNo')?.disable();
-                this.requirementForm.get('formatNo')?.disable();
+
+          // Lock form if not in editable status
+          const status = (data as any).status;
+          if (status && status !== 'Draft' && status !== 'Rejected') {
+            this.requirementForm.disable();
+            this.isViewMode = true;
+          } else if (this.isViewMode) {
+            this.requirementForm.disable();
+          }
+          // Re-disable system fields (in case form was enabled for Draft/Rejected)
+          this.requirementForm.get('issueNo')?.disable();
+          this.requirementForm.get('revNo')?.disable();
+          this.requirementForm.get('formatNo')?.disable();
         }
       },
       error: (error) => {
@@ -180,7 +200,13 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
   onSubmit(): void {
     if (this.requirementForm.valid) {
       const formData = this.requirementForm.getRawValue();
-
+      formData.preparedDate = this.today;
+      if (formData.approvedDate == "" || !formData.approvedDate) {
+        formData.approvedDate = null;
+      }
+      if (formData.reviewedDate == "" || !formData.reviewedDate) {
+        formData.reviewedDate = null;
+      }
       this.isSubmitting = true;
       if (this.isEditMode) {
         formData.id = this.requirementId;
@@ -188,7 +214,7 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
           next: (response) => {
             this.isSubmitting = false;
             this.saved = true;
-            this.toastService.show(response.message || 'Updated successfully', 'success');
+            this.toastService.show('Competence requirement updated successfully', 'success');
             this.router.navigate(['/competence-requirement']);
           },
           error: (error) => {
@@ -202,7 +228,7 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
           next: (response) => {
             this.isSubmitting = false;
             this.saved = true;
-            this.toastService.show(response.message || 'Created successfully', 'success');
+            this.toastService.show('Competence requirement created successfully', 'success');
             this.router.navigate(['/competence-requirement']);
           },
           error: (error) => {

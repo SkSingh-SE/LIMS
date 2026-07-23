@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TrainingAttendanceService } from '../../../services/training-attendance.service';
 import { TrainingAttendance } from '../../../models/trainingAttendanceModel';
 import { NablRegisterTableComponent, RegisterColumn } from '../../nabl/nabl-register-table/nabl-register-table.component';
-
+import { ToastService } from '../../../services/toast.service';
 @Component({
     selector: 'app-training-attendance-list',
 
@@ -15,15 +15,17 @@ export class TrainingAttendanceListComponent implements OnInit {
     records = signal<TrainingAttendance[]>([]);
     searchTerm = '';
     columns: RegisterColumn[] = [
-        { key: 'formatNo', label: 'Format No', type: 'string' },
-        { key: 'trainingProgramTitle', label: 'Program Title', type: 'string' },
-        { key: 'facultyName', label: 'Faculty', type: 'string' },
-        { key: 'dateTime', label: 'Date & Time', type: 'string' }
+        { key: 'formCode', label: 'Format No', type: 'string' },
+        { key: 'trainingTopic', label: 'Program Title', type: 'string' },
+        { key: 'trainerName', label: 'Faculty', type: 'string' },
+        { key: 'trainingDatetime', label: 'Date & Time', type: 'string' }
     ];
 
     totalItems = 0;
 
-    constructor(private service: TrainingAttendanceService) { }
+    constructor(private service: TrainingAttendanceService,
+        private toastService: ToastService
+    ) { }
 
     ngOnInit(): void {
         this.loadRecords();
@@ -50,7 +52,15 @@ export class TrainingAttendanceListComponent implements OnInit {
 
     onDelete(id: number): void {
         if (confirm('Are you sure you want to delete this record?')) {
-            this.service.delete(id).subscribe(() => this.loadRecords());
+            this.service.delete(id).subscribe({
+                next: () => {
+                  this.toastService.show('Training attendance record deleted successfully', 'success');
+                    this.loadRecords({ pageNumber: 1, pageSize: 10 });
+                },
+                error: () => {
+                  this.toastService.show('Failed to delete training attendance record', 'error');
+                }
+            });
         }
     }
 }

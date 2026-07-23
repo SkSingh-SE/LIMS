@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ResponsibilityAuthorityService } from '../../../services/responsibility-authority.service';
@@ -16,7 +16,7 @@ import { PrintFrameComponent } from '../print-frame/print-frame.component';
 })
 export class ResponsibilityAuthorityPreviewComponent implements OnInit {
   matrix: ResponsibilityAuthorityMatrix | null = null;
-
+  record = signal<ResponsibilityAuthorityMatrix | null>(null);
   orientation: 'portrait' | 'landscape' = 'portrait';
   orientationManual = false;
 
@@ -34,6 +34,8 @@ export class ResponsibilityAuthorityPreviewComponent implements OnInit {
         next: (data) => {
           if (data) {
             this.matrix = data;
+            this.record.set(data); 
+            
           } else {
             this.toastService.show('RA Matrix not found', 'error');
             this.router.navigate(['/responsibility-authority']);

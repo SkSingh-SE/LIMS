@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="ncForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -33,7 +33,7 @@
                   Document No.
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="docNo" />
+                <input type="text" class="form-control" formControlName="documentNo" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -59,86 +59,815 @@
             </div>
           </div>
         </div>
+        <!-- ========================= -->
+        <!-- Step Wizard -->
+        <!-- ========================= -->
+        <div class="workflow-tabs">
 
-        <!-- Section II: NC Detail -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('basicInfo')">
-            <i class="bi" [ngClass]="openSections['basicInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Non-Conformance Information</span>
+          <div *ngFor="let tab of tabs" class="workflow-tab" [ngClass]="{
+            'active': activeFormKey === tab.id,
+            'completed': tab.status === 'completed',
+            'locked': tab.status === 'locked'
+        }" (click)="selectTab(tab.id)">
+
+            <i class="bi" [ngClass]="{
+                'bi-info-circle': tab.id==1,
+                'bi-search': tab.id==2,
+                'bi-tools': tab.id==3,
+                'bi-check2-circle': tab.id==4,
+                'bi-lock': tab.id==5 && tab.status=='locked',
+                'bi-folder-check': tab.id==5 && tab.status!='locked'
+            }">
+            </i>
+
+            <span>{{tab.title}}</span>
+
           </div>
-          <div *ngIf="openSections['basicInfo']" class="section-body">
-            <div class="row gy-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Date / Month & Year
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="dateMonthYear" />
+
+        </div>
+
+        <div *ngIf="activeFormKey==1">
+
+          <div *ngIf="activeFormKey==1">
+
+            <div class="accordion-section mb-3">
+
+              <div class="section-header">
+                <span class="fw-bold">
+                  II. General Information
+                </span>
               </div>
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Non-Conformance Detail
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor
-                  formControlName="ncDetail"
-                  [modules]="quillModules"
-                  placeholder="Describe the non-conformance..."
-                ></quill-editor>
+
+              <div class="section-body">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header bg-light fw-semibold">
+                    Basic Information
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">
+                          NC Number
+                          <span class="text-danger">*</span>
+                        </label>
+
+                        <input class="form-control" formControlName="ncNo" placeholder="Auto Generated" readonly>
+
+                      </div>
+
+                      <div class="col-md-3">
+
+                        <label class="form-label">
+
+                          NC Date
+
+                          <span class="text-danger">*</span>
+
+                        </label>
+
+                        <input type="date" class="form-control" formControlName="ncDate">
+
+                      </div>
+
+                      <div class="col-md-3">
+
+                        <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                          [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                          (itemSelected)="onDepartmentSelected($event)"
+                          [selectedItem]="ncForm.get('departmentId')?.value" [isDisabled]="isViewMode">
+                        </app-searchable-dropdown>
+                        <div *ngIf="ncForm.get('departmentId')?.invalid && ncForm.get('departmentId')?.touched"
+                          class="text-danger text-sm mt-1">
+                          department id is required
+                        </div>
+
+                      </div>
+
+                      <div class="col-md-3">
+                        <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Reported By'"
+                          (itemSelected)="onEmployeeSelected($event, ncForm,'reportedByEmployeeId','reportedByEmployeeName')"
+                          [selectedItem]="ncForm.get('reportedByEmployeeId')?.value">
+                        </app-searchable-dropdown>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div class="card shadow-sm mb-4">
+
+                  <div class="card-header bg-light fw-semibold">
+
+                    Classification
+
+                  </div>
+
+                  <div class="card-body">
+
+                    <div class="row g-3">
+
+                      <div class="col-md-3">
+
+                        <label class="form-label">
+
+                          Source
+
+                        </label>
+
+                        <select class="form-select" formControlName="source">
+                          <option *ngFor="let source of sourcees" [value]="source">{{source}}</option>
+                        </select>
+
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">
+                          Category
+                        </label>
+                        <select class="form-select form-select-sm" formControlName="category">
+                          <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-3">
+
+                        <label class="form-label">
+
+                          Priority
+
+                        </label>
+
+                        <select class="form-select" formControlName="priority">
+                          <option *ngFor="let priority of priorities" [value]="priority">{{priority}}</option>
+                        </select>
+
+                      </div>
+
+                      <div class="col-md-3">
+
+                        <label class="form-label d-block">
+
+                          Customer Affected
+
+                        </label>
+
+                        <div class="form-check form-check-inline">
+
+                          <input class="form-check-input" type="radio" [value]="true"
+                            formControlName="customerAffected">
+
+                          <label class="form-check-label">
+                            Yes
+                          </label>
+
+                        </div>
+
+                        <div class="form-check form-check-inline">
+
+                          <input class="form-check-input" type="radio" [value]="false"
+                            formControlName="customerAffected">
+                          <label class="form-check-label">No</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <label class="form-label">Reference Module</label>
+                        <input class="form-control" formControlName="referenceModule">
+                      </div>
+
+                      <div class="col-md-3">
+                        <label class="form-label">
+                          Reference Number
+                        </label>
+                        <input class="form-control" formControlName="referenceNo">
+
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div class="card shadow-sm mb-4">
+
+                  <div class="card-header bg-light fw-semibold">
+                    Non-Conformity Details
+                  </div>
+
+                  <div class="card-body">
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="description" [modules]="quillModules"
+                        placeholder="Describe the non-conformity observed...">
+                      </quill-editor>
+                    </div>
+
+                    <div *ngIf="ncForm.get('description')?.touched &&
+                   ncForm.get('description')?.hasError('required')" class="text-danger mt-2">
+
+                      non-conformity details is required.
+
+                    </div>
+
+                  </div>
+
+                </div>
+                <div class="card shadow-sm mb-4">
+
+                  <div class="card-header bg-light fw-semibold">
+                    Immediate Action Taken
+                  </div>
+
+                  <div class="card-body">
+                    <div class="col-12 d-flex flex-column">
+
+                      <quill-editor formControlName="immediateAction" [modules]="quillModules"
+                        placeholder="Enter immediate action taken...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+                <div class="card shadow-sm">
+
+                  <div class="card-header bg-light fw-semibold">
+                    Problem Description
+                  </div>
+
+                  <div class="card-body">
+                    <div class="col-12 d-flex flex-column">
+
+                      <quill-editor formControlName="problemDescription" [modules]="quillModules"
+                        placeholder="Describe the problem description...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
               </div>
+
             </div>
+
+          </div>
+
+        </div>
+
+        <div *ngIf="activeFormKey==2" [formGroup]="investigationForm">
+
+          <!-- ========================= TAB 2 : INVESTIGATION ========================= -->
+
+          <div class="tab-content-wrapper">
+
+            <div class="card shadow-sm border-0">
+
+              <div class="card-header bg-light">
+                <h6 class="mb-0 fw-bold">
+                  Root Cause Investigation
+                </h6>
+              </div>
+
+              <div class="card-body">
+
+                <!-- Row 1 -->
+                <div class="row g-3">
+
+                  <div class="col-md-6">
+
+                    <label class="form-label">
+                      Assigned To
+                    </label>
+                    <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
+                      (itemSelected)="onEmployeeSelected($event, investigationForm,'assignedToEmployeeId','assignedToEmployeeName')"
+                      [selectedItem]="investigationForm.get('assignedToEmployeeId')?.value">
+                    </app-searchable-dropdown>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">
+                      Investigation Date
+                    </label>
+
+                    <input type="date" class="form-control" formControlName="investigationDate">
+                  </div>
+
+                </div>
+
+                <!-- Investigation Method -->
+
+                <div class="row mt-4">
+
+                  <div class="col-md-12">
+
+                    <label class="form-label d-block mb-3">
+                      Investigation Method
+                    </label>
+
+                    <div class="d-flex flex-wrap gap-4">
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" value="5 Why" formControlName="investigationMethod"
+                          id="why5">
+
+                        <label class="form-check-label" for="why5">
+                          5 Why
+                        </label>
+                      </div>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" value="Fishbone"
+                          formControlName="investigationMethod" id="fishbone">
+
+                        <label class="form-check-label" for="fishbone">
+                          Fishbone
+                        </label>
+                      </div>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" value="Brainstorming"
+                          formControlName="investigationMethod" id="brainstorm">
+
+                        <label class="form-check-label" for="brainstorm">
+                          Brainstorming
+                        </label>
+                      </div>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" value="Other" formControlName="investigationMethod"
+                          id="other">
+
+                        <label class="form-check-label" for="other">
+                          Other
+                        </label>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+                <!-- Investigation Summary -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Investigation Summary
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="investigationDetails" [modules]="quillModules"
+                        placeholder="Enter investigation summary...">
+                      </quill-editor>
+                    </div>
+                  </div>
+
+                </div>
+                <!-- Root Cause -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Root Cause
+                    </label>
+
+                    <div class="col-12 d-flex flex-column">
+
+                      <quill-editor formControlName="rootCause" [modules]="quillModules"
+                        placeholder="Enter root cause analysis...">
+                      </quill-editor>
+                    </div>
+                  </div>
+
+                </div>
+
+
+
+              </div>
+
+            </div>
+
           </div>
         </div>
 
-        <!-- Section III: Analysis -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('analysis')">
-            <i class="bi" [ngClass]="openSections['analysis'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Root Cause Analysis</span>
-          </div>
-          <div *ngIf="openSections['analysis']" class="section-body">
-            <div class="col-12">
-              <quill-editor
-                formControlName="rootCauseAnalysis"
-                [modules]="quillModules"
-                placeholder="Analyze the root cause..."
-              ></quill-editor>
+        <div *ngIf="activeFormKey==3" [formGroup]="correctiveActionForm">
+
+          <!-- ================= TAB 3 : CORRECTIVE ACTION ================= -->
+
+          <div class="tab-content-wrapper">
+
+            <div class="card shadow-sm border-0">
+
+              <div class="card-header bg-light">
+                <h6 class="mb-0 fw-bold">
+                  Corrective Action Report
+                </h6>
+              </div>
+
+              <div class="card-body">
+
+                <!-- Action No -->
+
+                <div class="row g-3">
+
+                  <div class="col-md-3">
+
+                    <label class="form-label">
+                      Action No
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="actionNo" readonly>
+
+                  </div>
+
+
+                  <!-- Responsible Person / Target Date / Completion Date -->
+
+                  <div class="col-md-3">
+
+                    <label class="form-label">
+                      Responsible Person
+                    </label>
+                    <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
+                      (itemSelected)="onEmployeeSelected($event, correctiveActionForm,'responsiblePersonId','responsiblePersonName')"
+                      [selectedItem]="correctiveActionForm.get('responsiblePersonId')?.value">
+                    </app-searchable-dropdown>
+                  </div>
+
+                  <div class="col-md-3">
+
+                    <label class="form-label">
+                      Target Date
+                    </label>
+
+                    <input type="date" class="form-control" formControlName="targetDate">
+
+                  </div>
+
+                  <div class="col-md-3">
+
+                    <label class="form-label">
+                      Completion Date
+                    </label>
+
+                    <input type="date" class="form-control" formControlName="completionDate">
+
+                  </div>
+                </div>
+
+
+                <!-- Corrective Action -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Corrective Action
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="correctiveAction" [modules]="quillModules"
+                        placeholder="Enter corrective action...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Resources Required -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Resources Required
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+
+                      <quill-editor formControlName="resourcesRequired" [modules]="quillModules"
+                        placeholder="Enter resources required...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Preventive Action -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Preventive Action
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="preventiveAction" [modules]="quillModules"
+                        placeholder="Enter preventive action...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
+
+          </div>
+
+        </div>
+
+        <div *ngIf="activeFormKey==4" [formGroup]="verificationForm">
+
+          <!-- ================= TAB 4 : VERIFICATION ================= -->
+
+          <div class="tab-content-wrapper">
+
+            <div class="card shadow-sm border-0">
+
+              <div class="card-header bg-light">
+                <h6 class="mb-0 fw-bold">
+                  Effectiveness Verification
+                </h6>
+              </div>
+
+              <div class="card-body">
+
+                <!-- Verification Date & Verified By -->
+
+                <div class="row g-3">
+
+                  <div class="col-md-6">
+
+                    <label class="form-label">
+                      Verification Date
+                    </label>
+
+                    <input type="date" class="form-control" formControlName="verificationDate">
+
+                  </div>
+
+                  <div class="col-md-6">
+
+                    <label class="form-label">
+                      Verified By
+                    </label>
+                    <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
+                      (itemSelected)="onEmployeeSelected($event, verificationForm,'verifiedByEmployeeId','verifiedByEmployeeName')"
+                      [selectedItem]="verificationForm.get('verifiedByEmployeeId')?.value">
+                    </app-searchable-dropdown>
+
+                  </div>
+
+                </div>
+
+                <!-- Verification Method -->
+
+                <div class="row mt-4">
+
+                  <div class="col-md-12">
+
+                    <label class="form-label">
+                      Verification Method
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="verificationMethod"
+                      placeholder="Enter verification method">
+
+                  </div>
+
+                </div>
+
+                <!-- Observation -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Observation
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="observation" [modules]="quillModules"
+                        placeholder="Enter observation...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Result -->
+
+                <div class="row mt-4">
+
+                  <div class="col-md-12">
+
+                    <label class="form-label d-block">
+                      Result
+                    </label>
+
+                    <div class="d-flex gap-4">
+
+                      <div class="form-check">
+
+                        <input class="form-check-input" type="radio" value="Effective" id="effective"
+                          formControlName="result">
+
+                        <label class="form-check-label" for="effective">
+
+                          Effective
+
+                        </label>
+
+                      </div>
+
+                      <div class="form-check">
+
+                        <input class="form-check-input" type="radio" value="Not Effective" id="notEffective"
+                          formControlName="result">
+
+                        <label class="form-check-label" for="notEffective">
+
+                          Not Effective
+
+                        </label>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Remarks -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Remarks
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+                      <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Enter remarks...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
         </div>
 
-        <!-- Section IV: Action & Closure -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('action')">
-            <i class="bi" [ngClass]="openSections['action'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Corrective Action & Closure</span>
-          </div>
-          <div *ngIf="openSections['action']" class="section-body">
-            <div class="row gy-3">
-              <div class="col-12">
-                <label class="form-label fw-bold">Corrective Action Taken</label>
-                <quill-editor formControlName="correctiveAction" [modules]="quillModules"></quill-editor>
+        <div *ngIf="activeFormKey==5" [formGroup]="closureForm">
+          <!-- ================= TAB 5 : CLOSURE ================= -->
+
+          <div class="tab-content-wrapper">
+
+            <div class="card shadow-sm border-0">
+
+              <div class="card-header bg-light">
+                <h6 class="mb-0 fw-bold">
+                  Closure
+                </h6>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">NC Closer Date</label>
-                <input type="date" class="form-control" formControlName="closerDate" />
+
+              <div class="card-body">
+
+                <!-- Closure Information -->
+
+                <div class="row g-3">
+
+                  <div class="col-md-6">
+
+                    <label class="form-label">
+                      Closure Date
+                    </label>
+
+                    <input type="date" class="form-control" formControlName="closureDate">
+
+                  </div>
+
+                  <div class="col-md-6">
+
+                    <label class="form-label">
+                      Closed By
+                    </label>
+                    <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
+                      (itemSelected)="onEmployeeSelected($event, closureForm,'closedByEmployeeId','closedByEmployeeName')"
+                      [selectedItem]="closureForm.get('closedByEmployeeId')?.value">
+                    </app-searchable-dropdown>
+
+                  </div>
+
+                </div>
+
+                <!-- Final Remarks -->
+
+                <div class="row mt-4">
+
+                  <div class="col-12">
+
+                    <label class="form-label">
+                      Final Remarks
+                    </label>
+                    <div class="col-12 d-flex flex-column">
+
+                      <quill-editor formControlName="finalRemarks" [modules]="quillModules"
+                        placeholder="Enter final remarks...">
+                      </quill-editor>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <!-- Status -->
+
+                <div class="row mt-4">
+
+                  <div class="col-md-12">
+
+                    <label class="form-label d-block">
+                      Status
+                    </label>
+
+                    <div class="d-flex flex-wrap gap-4">
+
+                      <div class="form-check">
+
+                        <input class="form-check-input" type="radio" value="Closed" id="statusClosed"
+                          formControlName="status">
+
+                        <label class="form-check-label" for="statusClosed">
+
+                          Closed
+
+                        </label>
+
+                      </div>
+
+                      <div class="form-check">
+
+                        <input class="form-check-input" type="radio" value="Reopened" id="statusReopened"
+                          formControlName="status">
+
+                        <label class="form-check-label" for="statusReopened">
+
+                          Reopened
+
+                        </label>
+
+                      </div>
+
+                      <div class="form-check">
+
+                        <input class="form-check-input" type="radio" value="Pending" id="statusPending"
+                          formControlName="status">
+
+                        <label class="form-check-label" for="statusPending">
+
+                          Pending
+
+                        </label>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Signature Of TD/QM</label>
-                <input type="text" class="form-control" formControlName="signatureTDQM" />
-              </div>
+
             </div>
+
           </div>
+
         </div>
 
-        
-        <app-nabl-signature-section [parentForm]="ncForm"></app-nabl-signature-section>
+
+        <!-- <app-nabl-signature-section [parentForm]="ncForm"></app-nabl-signature-section> -->
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="ncForm.invalid">
-            {{ isEditMode ? "Update Record" : "Save Record" }}
+          <button type="submit" class="btn btn-save">
+            {{ isEditMode ? "Save Record" : "Save Record" }}
           </button>
         </div>
       </form>

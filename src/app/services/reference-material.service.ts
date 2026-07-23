@@ -10,7 +10,7 @@ import { ReferenceMaterial, ReferenceMaterialListResponse, ReferenceMaterialResp
 export class ReferenceMaterialService {
     private apiUrl = environment.apiUrl + '/Nabl/ReferenceMaterial';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<ReferenceMaterialListResponse> {
         return this.http.post<ReferenceMaterialListResponse>(this.apiUrl + '/list', params || {});
@@ -40,4 +40,15 @@ export class ReferenceMaterialService {
     getExpiringItems(): Observable<ReferenceMaterialListResponse> {
         return this.http.post<ReferenceMaterialListResponse>(this.apiUrl + '/list', { expiringSoon: true });
     }
+    getNextMaterilNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-material-no`);
+    }
+    getMaterialData(type: string) {
+        return this.http.get<any[]>(`${this.apiUrl}/material-dropdown/${type}`);
+    }
+    getItemData(itemCode: string, itemName: string) {
+        // Injects both variables directly into the template literal string
+        return this.http.get<any>(`${this.apiUrl}/inventory-details/${itemCode}/${itemName}`);
+    }
+
 }

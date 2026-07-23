@@ -91,7 +91,7 @@
       </div>
 
       <!-- Acceptance / Approval -->
-      <div class="doc-section mb-3">
+      <!-- <div class="doc-section mb-3">
         <div class="sec-title">ACCEPTANCE / APPROVAL</div>
         <table class="table table-bordered inner-table">
           <tbody>
@@ -103,12 +103,16 @@
             </tr>
           </tbody>
         </table>
-      </div>
+      </div> -->
 
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer></app-nabl-print-footer>
+      <app-nabl-print-footer
+          [preparedByName]="requirement.preparedBy"
+          [issuedByName]="requirement.reviewedBy"
+          [reviewedApprovedByName]="requirement.approvedBy">
+      </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

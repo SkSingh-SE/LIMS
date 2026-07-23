@@ -4,7 +4,9 @@ export interface AttendanceParticipant {
     slNo: number;
     participantName: string;
     feedback: 'Good' | 'Satisfactory' | 'Not Good';
-    signature?: string; // Base64 or path
+    uploadReferenceID?: number; // ID returned from file upload API
+    filePath?: string; // Path returned from file upload API
+    fileName?: string; // Original file name
 }
 
 export interface TrainingAttendance {
@@ -15,20 +17,22 @@ export interface TrainingAttendance {
     date: Date | string;
 
     // Specific fields
-    trainingProgramTitle: string;
-    trainingVenue: string;
-    facultyName: string;
-    dateTime: string; // e.g., "03/09/25 & 4:00 pm"
+    trainingPlanName: string;
+    trainingPlanId: number;
+    venueMode: string;
+    trainerName: string;
+    trainingDatetime: string; // e.g., "03/09/25 & 4:00 pm"
 
     participants: AttendanceParticipant[];
-    remarks?: string;
+    genearalRemarks?: string;
     facultySignature?: string;
 
     // Approval
     preparedBy?: string;
     issuedBy?: string;
     reviewedApprovedBy?: string;
-
+    approvedBy?: string;
+    reviewedBy?: string;
     createdBy?: string;
     createdOn?: Date | string;
     modifiedBy?: string;

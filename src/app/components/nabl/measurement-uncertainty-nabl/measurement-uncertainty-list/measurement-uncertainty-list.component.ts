@@ -12,12 +12,12 @@ import { ToastService } from '../../../../services/toast.service';
 })
 export class MeasurementUncertaintyListComponent implements OnInit {
     columns: RegisterColumn[] = [
-        { key: 'documentNo', type: 'string', label: 'Document No', filter: true },
+        { key: 'muCode', type: 'string', label: 'Document No', filter: true },
         { key: 'testParameter', type: 'string', label: 'Test Parameter', filter: true },
-        { key: 'testMethod', type: 'string', label: 'Test Method', filter: true },
+        { key: 'testMethodName', type: 'string', label: 'Test Method', filter: true },
         { key: 'expandedUncertainty', type: 'string', label: 'Expanded Uncertainty', filter: true },
         { key: 'date', type: 'date', label: 'Date', filter: true },
-        { key: 'status', type: 'string', label: 'Status', filter: true }
+        // { key: 'status', type: 'string', label: 'Status', filter: true }
     ];
 
     listData: any[] = [];

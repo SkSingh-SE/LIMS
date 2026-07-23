@@ -13,7 +13,7 @@ export interface MeetingAgenda {
     meetingTime: string;
     venue: string;
     chairperson: string;
-    attendees: Attendee[];
+    participants: Attendee[];
     agendaItems: AgendaItem[];
 
     // Header standard fields
@@ -21,6 +21,7 @@ export interface MeetingAgenda {
     docNo: string;
     issueNo: string | number;
     issueDate: string | Date;
+    date: string | Date;
     revNo: string | number;
     revDate: string | Date;
 }

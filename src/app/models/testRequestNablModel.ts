@@ -1,17 +1,17 @@
 export interface TestRequestNabl {
     id: number;
-    formatNo: string;
+    formCode: string;
     issueNo: string;
     revNo: string;
-    date: string;
+    date: Date | string;
     documentNo: string; // Case No / TRN
 
     // Customer Info
     customerName: string;
     address: string;
     contactPerson: string;
-    mobileNo: string;
-    email: string;
+    contactPhone: string;
+    contactEmail: string;
     gstNo: string;
 
     // Sample Details (Simplified for NABL audit)
@@ -19,12 +19,14 @@ export interface TestRequestNabl {
         sampleNo: string;
         description: string;
         quantity: number;
-        condition: string;
+        testToPerform: string;
         metalClassification?: string;
+        materialSpecification?: string;
     }[];
 
     // Request Details
     urgent: boolean;
+    confirmityRequired: boolean;
     returnSample: boolean;
     holdTesting: boolean;
     poNumber?: string;
@@ -33,7 +35,7 @@ export interface TestRequestNabl {
     billRequired: boolean;
     advancePIRequired: boolean;
     dispatchModes: string[];
-
+    note: string;
     // Receipt Notes
     remarks: string;
 

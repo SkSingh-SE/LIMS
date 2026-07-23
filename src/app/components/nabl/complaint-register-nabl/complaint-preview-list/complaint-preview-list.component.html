@@ -1,0 +1,112 @@
+<div class="preview-toolbar no-print">
+    <div class="toolbar-left">
+        <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back</span>
+        </button>
+    </div>
+    <div class="toolbar-center">
+        <span class="doc-title-label">
+            <i class="bi bi-file-text me-1"></i>
+            Complaint Register Preview
+        </span>
+    </div>
+    <div class="toolbar-right">
+        <div class="orientation-toggle" title="Page orientation">
+            <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+                <i class="bi bi-file-earmark"></i>
+                <span>Portrait</span>
+            </button>
+            <button class="orient-btn" [class.active]="orientation === 'landscape'"
+                (click)="setOrientation('landscape')">
+                <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+                <span>Landscape</span>
+            </button>
+        </div>
+        <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual"
+            title="Auto-detect">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Auto</span>
+        </button>
+        <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+            <i class="bi bi-printer-fill"></i>
+            <span>Print</span>
+        </button>
+    </div>
+</div>
+
+<div class="nabl-preview-page">
+    <app-print-frame *ngIf="data" [orientation]="orientation">
+        <ng-container header>
+            <app-nabl-print-header [formatNo]="'F-40'" [mainTitle]="'COMPLAINT REGISTER'"
+                [docNo]="'DMSPL / Level-04 / Format / F-40'" [issueNo]="data.issueNo" [issueDate]="data.date"
+                [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
+        </ng-container>
+
+        <ng-container body>
+
+            <table class="preview-table">
+                <colgroup>
+                    <col style="width:3%"> <!-- SN -->
+                    <col style="width:9%"> <!-- Month & Year -->
+                    <col style="width:7%"> <!-- Complaint No -->
+                    <col style="width:9%"> <!-- Date Of Complaint -->
+                    <col style="width:9%"> <!-- Name Of Complainant -->
+                    <col style="width:10%"> <!-- Details Of Complaint -->
+                    <col style="width:10%"> <!-- Outcome Of Investigation -->
+                    <col style="width:11%"> <!-- Validation Of Complaint -->
+                    <col style="width:10%"> <!-- Corrective Action -->
+                    <col style="width:10%"> <!-- Reference Date -->
+                    <col style="width:8%"> <!-- Signature -->
+                </colgroup>
+
+                <thead>
+                    <tr>
+                        <th>SN</th>
+                        <th>Month & Year</th>
+                        <th>Complaint No.</th>
+                        <th>Date Of Complaint</th>
+                        <th>Name Of Complainant</th>
+                        <th>Details Of Complaint</th>
+                        <th>Outcome Of Investigation</th>
+                        <th>Validation Of Complaint</th>
+                        <th>Corrective Actions Taken</th>
+                        <th>Reference Date<br>(Customer Response)</th>
+                        <th>Signature Of TD/QM</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr *ngFor="let item of data; let i=index">
+                        <td class="text-center">{{ i + 1 }}</td>
+                        <td class="text-center">
+                            {{ item.monthYear | date:'MMMM, yyyy'}}
+                        </td>
+
+                        <td>{{item.complaintNo}}</td>
+                        <td class="text-center">{{item.complaintDate | date:'dd.MM.yyyy'}}</td>
+                        <td>{{item.complainantName}}</td>
+
+                        <td [innerHTML]="item.complaintDescription"></td>
+
+                        <td [innerHTML]="item.validationOfComplaint"></td>
+                        <td [innerHTML]="item.outcomeOfInvestigation"></td>
+                        <td [innerHTML]="item.correctiveAction"></td>
+                        <td class="text-center">{{item.referenceNoDate | date:'dd.MM.yyyy'}}</td>
+                        <td></td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </ng-container>
+        <div class="footer-gap"></div>
+        <ng-container footer>
+            <app-nabl-print-footer [preparedByName]="''" [issuedByName]="''" [reviewedApprovedByName]="''">
+            </app-nabl-print-footer>
+        </ng-container>
+    </app-print-frame>
+</div>

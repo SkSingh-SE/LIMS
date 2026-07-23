@@ -6,6 +6,7 @@ import { TrainingAttendance } from '../../../models/trainingAttendanceModel';
 import { PrintFrameComponent } from '../../nabl/print-frame/print-frame.component';
 import { NablPrintHeaderComponent } from '../../nabl/nabl-print-header/nabl-print-header.component';
 import { NablPrintFooterComponent } from '../../nabl/nabl-print-footer/nabl-print-footer.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-training-attendance-preview',
@@ -15,7 +16,7 @@ import { NablPrintFooterComponent } from '../../nabl/nabl-print-footer/nabl-prin
 })
 export class TrainingAttendancePreviewComponent implements OnInit {
     record = signal<TrainingAttendance | null>(null);
-
+    baseUrl = environment.baseUrl;
     constructor(
         private service: TrainingAttendanceService,
         private route: ActivatedRoute,
@@ -32,6 +33,9 @@ export class TrainingAttendancePreviewComponent implements OnInit {
     loadRecord(id: number): void {
         this.service.getById(id).subscribe({
             next: (data) => {
+                data?.participants.forEach(p => {
+                    p.filePath = p.filePath ? this.baseUrl + p.filePath : '';
+                });
                 this.record.set(data);
             },
             error: () => {}

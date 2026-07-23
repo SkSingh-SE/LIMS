@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="requestForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -27,16 +27,20 @@
                 </datalist>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Document No. <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="documentNo" placeholder="DMSPL/..." />
-              </div>
-              <div class="col-md-2">
                 <label class="form-label">Issue No.</label>
                 <input type="text" class="form-control bg-light" formControlName="issueNo" readonly />
               </div>
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label class="form-label">Rev No.</label>
                 <input type="text" class="form-control bg-light" formControlName="revNo" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Document No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" placeholder="DMSPL/..." />
               </div>
             </div>
           </div>
@@ -50,25 +54,57 @@
           </div>
           <div *ngIf="openSections['methodInfo']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
+                <label class="form-label">Test Method Code <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="testMethodCode" (change)="onChangeTestMethodCode($event)">
+                  <option value="" disabled selected>Select Method</option>
+                  <option *ngFor="let method of testMethodList" [value]="method.name">{{ method.name }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
                 <label class="form-label">Test Method Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="testMethodName" />
+                <input type="text" class="form-control" formControlName="testMethodName" placeholder="test method name"
+                  readonly />
+                <div *ngIf="requestForm.get('testMethodName')?.invalid && requestForm.get('testMethodName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  testMethod name is required.
+                </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">Reference Standard <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="referenceStandard" />
+                <input type="text" class="form-control" formControlName="referenceStandard"
+                  placeholder="reference standard" readonly />
+                <div
+                  *ngIf="requestForm.get('referenceStandard')?.invalid && requestForm.get('referenceStandard')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reference standard is required.
+                </div>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Equipment Used <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="equipmentUsed" />
+                <label class="form-label">Rev/Issue <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="revIssue" placeholder="revision/issue"
+                  readonly />
+                <div *ngIf="requestForm.get('revIssue')?.invalid && requestForm.get('revIssue')?.touched"
+                  class="text-danger text-sm mt-1">
+                  rev issue is required.
+                </div>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Matrix / Material <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="matrix" />
+                <label class="form-label fw-semibold text-dark small">Verification Date <span
+                    class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="verificationDate">
+                <div
+                  *ngIf="requestForm.get('verificationDate')?.invalid && requestForm.get('verificationDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  verification date is required. </div>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Testing Range <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="range" />
+                <label class="form-label">Verification By <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="verifiedBy" placeholder="verification by" />
+                <div *ngIf="requestForm.get('verifiedBy')?.invalid && requestForm.get('verifiedBy')?.touched"
+                  class="text-danger text-sm mt-1">
+                  verification by is required.
+                </div>
               </div>
             </div>
           </div>
@@ -76,13 +112,15 @@
 
         <!-- Section III: Performance Parameters (Verification Criteria) -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('performance')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('performance')">
             <div>
               <i class="bi" [ngClass]="openSections['performance'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="fw-bold ms-2">III. Performance Parameters (Verification Criteria)</span>
+              <span class="fw-bold ms-2">III. CRM/Reference Material</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addPerformanceParameter(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i> Add Parameter
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2"
+              (click)="addCRMParameter(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add CRM Sample
             </button>
           </div>
           <div *ngIf="openSections['performance']" class="section-body p-0">
@@ -90,28 +128,70 @@
               <table class="table table-hover align-middle m-0">
                 <thead class="bg-light">
                   <tr>
-                    <th class="ps-3 py-2 small fw-bold text-muted">Parameter</th>
-                    <th class="py-2 small fw-bold text-muted">Acceptance Criteria</th>
-                    <th class="py-2 small fw-bold text-muted">Observed Value</th>
-                    <th class="py-2 small fw-bold text-muted" style="width: 120px">Result</th>
-                    <th class="py-2 small fw-bold text-muted">Remarks</th>
+                    <th style="width:60px">Sr.</th>
+                    <th>CRM Sample ID</th>
+                    <th>Certificate No.</th>
+                    <th>Reference Value</th>
+                    <th>Unit</th>
+                    <th>Measurement Uncertainty</th>
                     <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
                   </tr>
                 </thead>
-                <tbody formArrayName="performanceParameters">
-                  <tr *ngFor="let p of performanceParameters.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3"><input type="text" class="form-control form-control-sm" formControlName="parameter" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="acceptanceCriteria" /></td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="observedValue" /></td>
+                <tbody formArrayName="crmParameters">
+                  <tr *ngFor="let p of crmParameters.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
                     <td>
-                      <select class="form-select form-select-sm" formControlName="result">
-                        <option value="Pass">Pass</option>
-                        <option value="Fail">Fail</option>
-                      </select>
+                      <input type="text" class="form-control form-control-sm" formControlName="crmSampleId" readonly />
                     </td>
-                    <td><input type="text" class="form-control form-control-sm" formControlName="remarks" /></td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="certificateNo" [ngClass]="{
+      'is-invalid': p.get('certificateNo')?.touched && p.get('certificateNo')?.invalid
+    }" />
+
+                      <div class="invalid-feedback d-block"
+                        *ngIf="p.get('certificateNo')?.touched && p.get('certificateNo')?.hasError('required')">
+                        Certificate No is required.
+                      </div>
+                    </td>
+
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="referenceValue"
+                        [ngClass]="{
+      'is-invalid': p.get('referenceValue')?.touched && p.get('referenceValue')?.invalid
+    }" />
+
+                      <div class="invalid-feedback d-block"
+                        *ngIf="p.get('referenceValue')?.touched && p.get('referenceValue')?.hasError('required')">
+                        Reference Value is required.
+                      </div>
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="unit" [ngClass]="{
+      'is-invalid': p.get('unit')?.touched && p.get('unit')?.invalid
+    }" />
+
+                      <div class="invalid-feedback d-block"
+                        *ngIf="p.get('unit')?.touched && p.get('unit')?.hasError('required')">
+                        Unit is required.
+                      </div>
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="measurementUncertainty"
+                        [ngClass]="{
+      'is-invalid': p.get('measurementUncertainty')?.touched && p.get('measurementUncertainty')?.invalid
+    }" />
+
+                      <div class="invalid-feedback d-block"
+                        *ngIf="p.get('measurementUncertainty')?.touched && p.get('measurementUncertainty')?.hasError('required')">
+                        Measurement Uncertainty is required.
+                      </div>
+                    </td>
+
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removePerformanceParameter(i)" [disabled]="performanceParameters.length === 1">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeCRMParameter(i)"
+                        [disabled]="crmParameters.length === 1">
                         <i class="bi bi-trash3"></i>
                       </button>
                     </td>
@@ -122,45 +202,201 @@
           </div>
         </div>
 
-        <!-- Section IV: Raw Data / Test Results (Replicates) -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('rawData')">
-            <div>
-              <i class="bi" [ngClass]="openSections['rawData'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="fw-bold ms-2">IV. Raw Data / Test Results (Replicates)</span>
-            </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addRawDataRow(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i> Add Row
-            </button>
+          <div class="section-header" (click)="toggleSection('equipmentInfo')">
+            <i class="bi" [ngClass]="openSections['equipmentInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Equipment Information</span>
           </div>
-          <div *ngIf="openSections['rawData']" class="section-body p-0">
+          <div *ngIf="openSections['equipmentInfo']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Equipment Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentName" placeholder="equipment name" />
+                <div *ngIf="requestForm.get('equipmentName')?.invalid && requestForm.get('equipmentName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  equipment name is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Equipment Id <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="equipmentId" placeholder="equipment id" />
+                <div *ngIf="requestForm.get('equipmentId')?.invalid && requestForm.get('equipmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  equipment id is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Calibration Due Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="calibrationDueDate"
+                  placeholder="calibration due date" />
+                <div
+                  *ngIf="requestForm.get('calibrationDueDate')?.invalid && requestForm.get('calibrationDueDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  calibration due date is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Temperature (°C) <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control bg-light" formControlName="temperature"
+                  placeholder="temperature">
+                <div *ngIf="requestForm.get('temperature')?.invalid && requestForm.get('temperature')?.touched"
+                  class="text-danger text-sm mt-1">
+                  temperature is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Humidity (%RH) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="humidity" placeholder="humidity" />
+                <div *ngIf="requestForm.get('humidity')?.invalid && requestForm.get('humidity')?.touched"
+                  class="text-danger text-sm mt-1">
+                  humidity is required.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('acceptanceCriteria')">
+            <div>
+              <i class="bi" [ngClass]="openSections['acceptanceCriteria'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">V. Acceptance Criteria</span>
+            </div>
+          </div>
+
+          <div *ngIf="openSections['acceptanceCriteria']" class="section-body p-0">
             <div class="table-responsive">
-              <table class="table table-hover align-middle m-0 text-center">
+              <table class="table table-bordered align-middle m-0">
                 <thead class="bg-light">
                   <tr>
-                    <th class="ps-3 py-2 small fw-bold text-muted text-start" style="width: 150px">Sample/CRM ID</th>
-                    <th class="py-2 small fw-bold text-muted">R1</th>
-                    <th class="py-2 small fw-bold text-muted">R2</th>
-                    <th class="py-2 small fw-bold text-muted">R3</th>
-                    <th class="py-2 small fw-bold text-muted">Mean</th>
-                    <th class="py-2 small fw-bold text-muted">SD</th>
-                    <th class="py-2 small fw-bold text-muted">RSD %</th>
-                    <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
+                    <th>Criteria</th>
+                    <th style="width: 250px;">Limit</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="rawData">
-                  <tr *ngFor="let r of rawData.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3 text-start"><input type="text" class="form-control form-control-sm" formControlName="sampleId" /></td>
-                    <td><input type="number" class="form-control form-control-sm text-center" formControlName="reading1" /></td>
-                    <td><input type="number" class="form-control form-control-sm text-center" formControlName="reading2" /></td>
-                    <td><input type="number" class="form-control form-control-sm text-center" formControlName="reading3" /></td>
-                    <td class="fw-bold">{{ r.get('mean')?.value }}</td>
-                    <td>{{ r.get('sd')?.value }}</td>
-                    <td class="fw-bold" [class.text-danger]="r.get('rsd')?.value > 2">{{ r.get('rsd')?.value }}%</td>
-                    <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removeRawDataRow(i)" [disabled]="rawData.length === 1">
-                        <i class="bi bi-trash3"></i>
-                      </button>
+
+                <tbody>
+                  <tr>
+                    <td>Recovery Minimum (%)</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="recoveryMin"
+                        (input)="onAcceptanceCriteriaChange()" />
+                      <div *ngIf="requestForm.get('recoveryMin')?.invalid && requestForm.get('recoveryMin')?.touched"
+                        class="text-danger text-sm mt-1">
+                        recovery min is required.
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Recovery Maximum (%)</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="recoveryMax"
+                        (input)="onAcceptanceCriteriaChange()" />
+                      <div *ngIf="requestForm.get('recoveryMax')?.invalid && requestForm.get('recoveryMax')?.touched"
+                        class="text-danger text-sm mt-1">
+                        recovery max is required.
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Maximum RSD (%)</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="rsdMax"
+                        (input)="onAcceptanceCriteriaChange()" />
+                      <div *ngIf="requestForm.get('rsdMax')?.invalid && requestForm.get('rsdMax')?.touched"
+                        class="text-danger text-sm mt-1">
+                        rsd max is required.
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Maximum Bias Allowed</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="biasMax"
+                        (input)="onAcceptanceCriteriaChange()" />
+                      <div *ngIf="requestForm.get('biasMax')?.invalid && requestForm.get('biasMax')?.touched"
+                        class="text-danger text-sm mt-1">
+                        bias max is required.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('verificationData')">
+            <i class="bi" [ngClass]="openSections['verificationData'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">VI. Verification Data</span>
+          </div>
+          <div *ngIf="openSections['verificationData']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th style="width:60px">Sr.</th>
+                    <th>CRM Sample ID</th>
+                    <th>Ref Value</th>
+                    <th>Unit</th>
+                    <th>Observation Value</th>
+                    <th>Difference</th>
+                    <th>Recovery %</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="verificationData">
+                  <tr *ngFor="let v of verificationData.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="crmSampleId" readonly />
+                    </td>
+
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="referenceValue"
+                        readonly />
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="unit" readonly />
+                    </td>
+
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="observationValue"
+                        (input)="calculateVerificationRow(i)" [ngClass]="{
+      'is-invalid':
+      v.get('observationValue')?.touched &&
+      v.get('observationValue')?.invalid
+    }" />
+
+                      <div class="invalid-feedback d-block" *ngIf="
+      v.get('observationValue')?.touched &&
+      v.get('observationValue')?.hasError('required')
+    ">
+                        Observation Value is required.
+                      </div>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="difference" readonly />
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="recovery" readonly />
+                    </td>
+
+                    <td>
+                      <span class="badge" [ngClass]="{
+          'bg-success': v.get('status')?.value === 'PASS',
+          'bg-danger': v.get('status')?.value === 'FAIL',
+          'bg-secondary': !v.get('status')?.value
+        }">
+                        {{ v.get('status')?.value || 'Pending' }}
+                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -173,12 +409,63 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('conclusion')">
             <i class="bi" [ngClass]="openSections['conclusion'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">V. Final Conclusion</span>
+            <span class="fw-bold ms-2">VII. Final Conclusion</span>
           </div>
-          <div *ngIf="openSections['conclusion']" class="section-body">
+          <div *ngIf="openSections['conclusion']" class="section-body col-12 d-flex flex-column">
+            <label class="form-label fw-semibold">
+              Conclusion<span class="text-danger">*</span>
+            </label>
             <quill-editor formControlName="conclusion" [modules]="quillModules" [readOnly]="isViewMode"
               placeholder="State if method is verified and fit for purpose..."></quill-editor>
+            <div *ngIf="requestForm.get('conclusion')?.invalid && requestForm.get('conclusion')?.touched"
+              class="text-danger text-sm mt-1">
+              conclusion is required.
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">
+                Verification Status <span class="text-danger">*</span>
+              </label>
+
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="verified" value="Verified"
+                    formControlName="verificationStatus" />
+
+                  <label class="form-check-label" for="verified">
+                    Verified
+                  </label>
+                </div>
+
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="notVerified" value="Not Verified"
+                    formControlName="verificationStatus" />
+
+                  <label class="form-check-label" for="notVerified">
+                    Not Verified
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 mt-2" *ngIf="requestForm.get('verificationStatus')?.value === 'Not Verified'">
+
+              <label class="form-label fw-semibold">
+                Reason if Method is Not Verified
+                <span class="text-danger">*</span>
+              </label>
+
+              <textarea formControlName="reasonNotVerified" rows="3" class="form-control form-control-sm"
+                placeholder="State reason for not verifying this method" [ngClass]="{'is-invalid':requestForm.get('reasonNotVerified')?.touched &&
+              requestForm.get('reasonNotVerified')?.invalid}">
+              </textarea>
+
+              <div
+                *ngIf="requestForm.get('reasonNotVerified')?.touched && requestForm.get('reasonNotVerified')?.invalid"
+                class="invalid-feedback d-block">
+                Reason is required when method is not verified.</div>
+            </div>
           </div>
+
         </div>
 
         <app-nabl-signature-section [parentForm]="requestForm"></app-nabl-signature-section>
@@ -186,7 +473,7 @@
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="requestForm.invalid || false">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

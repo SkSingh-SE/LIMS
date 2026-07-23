@@ -2,20 +2,20 @@ export interface Complaint {
     id: number;
     monthYear: string;
     complaintNo: string;
-    dateOfComplaint: string;
+    complaintDate: string;
     complainantName: string;
-    detailsOfComplaint: string;
+    complaintDescription: string;
     validationOfComplaint: string;
     outcomeOfInvestigation: string;
-    correctiveActionsTaken: string;
-    referenceNoDate: string;
+    correctiveAction: string;
+    referenceNoDate: string | Date;
     signatureQM?: string;
 
     // Header standard fields
     formatNo: string;
     docNo: string;
     issueNo: string | number;
-    issueDate: string | Date;
+    date: string | Date;
     revNo: string | number;
     revDate: string | Date;
 }

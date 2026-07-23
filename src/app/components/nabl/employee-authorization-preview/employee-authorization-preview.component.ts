@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef,signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EmployeeAuthorizationService } from '../../../services/employee-authorization.service';
@@ -17,6 +17,8 @@ import { EmployeeAuthorization } from '../../../models/employeeAuthorizationMode
 export class EmployeeAuthorizationPreviewComponent implements OnInit {
     authorizations: EmployeeAuthorization[] = [];
     orientation: 'portrait' | 'landscape' = 'landscape';
+    record = signal<EmployeeAuthorization| null>(null);
+    employeeauthorization: EmployeeAuthorization | null = null;
     orientationManual = false;
     private orientationDetected = false;
 
@@ -27,8 +29,23 @@ export class EmployeeAuthorizationPreviewComponent implements OnInit {
         private cdr: ChangeDetectorRef
     ) { }
 
+    
     ngOnInit(): void {
-        this.loadAuthorizations();
+        const idParam = this.route.snapshot.paramMap.get('id');
+        if (idParam) {
+            this.authService.getById(Number(idParam)).subscribe({
+                next: (data) => {
+                    if (data) {
+                        
+                        this.employeeauthorization = data;
+                    }
+                  
+                },
+                error: (err) => {
+                    console.error('Error loading employee authorization:', err);
+                }
+            });
+        }
     }
 
     loadAuthorizations(): void {

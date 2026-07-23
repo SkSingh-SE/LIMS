@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="minutesForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="minutesForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -70,142 +70,291 @@
             <div class="row gy-3">
               <div class="col-md-4">
                 <label class="form-label">
-                  Date of Meeting
+                  Meeting No
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="meetingDate" />
+                <select class="form-select" formControlName="meetingNo" (change)="onChangeMeetingNo($event)">
+                  <option value="" disabled selected>Select Meeting No</option>
+                  <option *ngFor="let method of meetingList" [value]="method.name">{{ method.name }}</option>
+                </select>
+                <div *ngIf="minutesForm.get('meetingNo')?.touched && minutesForm.get('meetingNo')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  meeting no is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Meeting Date
+                </label>
+                <input type="date" class="form-control" formControlName="meetingDate" readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Meeting Type
+                </label>
+                <input type="text" class="form-control" formControlName="meetingType" placeholder="meeting type"
+                  readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Meeting Time
+                </label>
+                <input type="text" class="form-control" formControlName="meetingTime" placeholder="meeting time"
+                  readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Meeting Venue
+                </label>
+                <input type="text" class="form-control" formControlName="meetingVenue" placeholder="meeting venue"
+                  readonly />
               </div>
               <div class="col-md-4">
                 <label class="form-label">
                   Chairperson
-                  <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="chairperson" />
+                <input type="text" class="form-control" formControlName="chairpersonName" placeholder="chairperson"
+                  readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Review Period
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="reviewPeriod" placeholder="e.g. Jan-June 2024" />
-              </div>
+
             </div>
           </div>
         </div>
-
-        <!-- Section III: Discussions & Decisions -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('discussions')">
-            <i class="bi" [ngClass]="openSections['discussions'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Discussions & Decisions</span>
+          <div class="section-header" (click)="toggleSection('participants')">
+            <i class="bi" [ngClass]="openSections['participants'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Participants</span>
           </div>
-          <div *ngIf="openSections['discussions']" class="section-body">
-            <div formArrayName="discussions">
-              <div
-                *ngFor="let disc of discussions.controls; let i = index"
-                [formGroupName]="i"
-                class="border p-3 mb-3 rounded bg-light position-relative"
-              >
-                <button
-                  *ngIf="!isViewMode && discussions.length > 1"
-                  type="button"
-                  class="btn btn-remove btn-sm position-absolute top-0 end-0 m-2"
-                  (click)="removeDiscussion(i)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-                <div class="row gy-3">
-                  <div class="col-12">
-                    <label class="form-label">
-                      Agenda Item
-                      <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" class="form-control" formControlName="agendaItem" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold">
-                      Discussion
-                      <span class="text-danger">*</span>
-                    </label>
-                    <quill-editor formControlName="discussion" [modules]="quillModules"></quill-editor>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold">
-                      Decision / Recommendation
-                      <span class="text-danger">*</span>
-                    </label>
-                    <quill-editor formControlName="decision" [modules]="quillModules"></quill-editor>
-                  </div>
-                </div>
-              </div>
+          <div *ngIf="openSections['participants']" class="section-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Employee Name</th>
+                    <th>Designation</th>
+                    <th>Department</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="participantItems">
+                  <tr *ngFor="let param of participantItems.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="name"
+                        placeholder="employee name" [ngClass]="{
+      'is-invalid': param.get('name')?.touched && param.get('name')?.invalid
+    }" readonly />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="designation"
+                        placeholder="designation" [ngClass]="{
+      'is-invalid': param.get('designation')?.touched && param.get('designation')?.invalid
+    }" readonly />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="department"
+                        placeholder="department" [ngClass]="{
+      'is-invalid': param.get('department')?.touched && param.get('department')?.invalid
+    }" readonly />
+                    </td>
+
+
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm" (click)="addDiscussion()">
-              <i class="bi bi-plus"></i>
-              Add Discussion
-            </button>
+          </div>
+
+        </div>
+
+        <!-- Section IV: Agenda Items -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('agendaItems')">
+            <i class="bi" [ngClass]="openSections['agendaItems'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Agenda Items</span>
+          </div>
+          <div *ngIf="openSections['agendaItems']" class="section-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Agenda Item</th>
+                    <th>Discussion</th>
+                    <th>Decision Taken</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="agendalist">
+                  <tr *ngFor="let param of agendalist.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="agendaItem"
+                        placeholder="agenda item" [ngClass]="{
+      'is-invalid': param.get('agendaItem')?.touched && param.get('agendaItem')?.invalid
+    }" readonly />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="discussion"
+                        [readonly]="isViewMode" placeholder="discussion" [ngClass]="{
+      'is-invalid': param.get('discussion')?.touched && param.get('discussion')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('discussion')?.invalid && (param.get('discussion')?.touched)">
+                        presenter is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="decisiontaken"
+                        [readonly]="isViewMode" placeholder="decision taken" [ngClass]="{
+      'is-invalid': param.get('decisiontaken')?.touched && param.get('decisiontaken')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('decisiontaken')?.invalid && (param.get('decisiontaken')?.touched)">
+                        decision taken is required.
+                      </small>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- Section IV: Action Items -->
+
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('actionItems')">
             <i class="bi" [ngClass]="openSections['actionItems'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Action Items</span>
+            <span class="fw-bold ms-2">III. Action Plan</span>
           </div>
           <div *ngIf="openSections['actionItems']" class="section-body">
-            <div formArrayName="actionItems">
-              <div
-                *ngFor="let action of actionItems.controls; let i = index"
-                [formGroupName]="i"
-                class="row gy-3 mb-3 align-items-end border-bottom pb-3"
-              >
-                <div class="col-md-6">
-                  <label class="form-label" *ngIf="i === 0">
-                    Action Point
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="action" />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label" *ngIf="i === 0">
-                    Responsibility
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="responsibility" />
-                </div>
-                <div class="col-md-2">
-                  <label class="form-label" *ngIf="i === 0">
-                    Target Date
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="date" class="form-control" formControlName="targetDate" />
-                </div>
-                <div class="col-md-1">
-                  <button
-                    *ngIf="!isViewMode && actionItems.length > 1"
-                    type="button"
-                    class="btn btn-remove btn-sm mb-1"
-                    (click)="removeActionItem(i)"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Action Required</th>
+                    <th>Responsible Person</th>
+                    <th>Target Date</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="actionItems">
+                  <tr *ngFor="let param of actionItems.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="action"
+                        [readonly]="isViewMode" placeholder="action required" [ngClass]="{
+      'is-invalid': param.get('action')?.touched && param.get('action')?.invalid
+    }" />
+                      <small class="text-danger" *ngIf="param.get('action')?.invalid && (param.get('action')?.touched)">
+                        action is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="responsibility"
+                        [readonly]="isViewMode" placeholder="responsible person" [ngClass]="{
+      'is-invalid': param.get('responsibility')?.touched && param.get('responsibility')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('responsibility')?.invalid && (param.get('responsibility')?.touched)">
+                        responsibility is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="date" class="form-control form-control-sm" formControlName="targetDate"
+                        [readonly]="isViewMode" placeholder="targetDate" [ngClass]="{
+      'is-invalid': param.get('targetDate')?.touched && param.get('targetDate')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('targetDate')?.invalid && (param.get('targetDate')?.touched)">
+                        target date is required.
+                      </small>
+                    </td>
+                    <td>
+                      <select class="form-select" formControlName="priority" [ngClass]="{
+      'is-invalid': param.get('attendance')?.touched && param.get('priority')?.invalid
+    }">
+                        <option value="">Select Attendance</option>
+                        <option *ngFor="let priority of prioritys" [value]="priority">{{priority}}</option>
+                      </select>
+                      <small class="text-danger"
+                        *ngIf="param.get('priority')?.invalid && (param.get('priority')?.touched)">
+                        attendance is required.
+                      </small>
+                    </td>
+                    <td>
+                      <select class="form-select" formControlName="status" [ngClass]="{
+      'is-invalid': param.get('status')?.touched && param.get('status')?.invalid
+    }">
+                        <option value="">Select status</option>
+                        <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
+                      </select>
+                      <small class="text-danger" *ngIf="param.get('status')?.invalid && (param.get('status')?.touched)">
+                        status is required.
+                      </small>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm mb-1" (click)="removeActionItem(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm" (click)="addActionItem()">
+          </div>
+          <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="addActionItem()">
               <i class="bi bi-plus"></i>
-              Add Action Item
+              Add Action Plan
             </button>
           </div>
         </div>
+        <div class="accordion-section">
 
-        
+          <div class="section-header" (click)="toggleSection('conclusion')">
+            <i class="bi" [ngClass]="openSections['conclusion'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+
+            <span class="fw-bold ms-2">
+              VIII. Final Conclusion
+            </span>
+
+          </div>
+
+          <div *ngIf="openSections['conclusion']" class="section-body">
+
+            <div class="row gy-3">
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label">
+                  Overall Conclusion <span class="text-danger">*</span>
+                </label>
+
+                <quill-editor formControlName="overallConclusion" [modules]="quillModules"></quill-editor>
+
+                <!-- <textarea class="form-control" rows="3" cols="20" formControlName="overallConclusion"
+                  placeholder="overall conclusion"></textarea> -->
+                <div
+                  *ngIf="minutesForm.get('overallConclusion')?.touched && minutesForm.get('overallConclusion')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  overall conclusion is required.
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
         <app-nabl-signature-section [parentForm]="minutesForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="minutesForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Minutes" : "Save Minutes" }}
           </button>
         </div>

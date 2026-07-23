@@ -12,11 +12,12 @@ import { ToastService } from '../../../../services/toast.service';
 })
 export class QualityControlPlanListComponent implements OnInit {
     columns: RegisterColumn[] = [
-        { key: 'documentNo', type: 'string', label: 'Document No', filter: true },
+        { key: 'planNo', type: 'string', label: 'Plan No', filter: true },
         { key: 'planYear', type: 'string', label: 'Plan Year', filter: true },
-        { key: 'discipline', type: 'string', label: 'Discipline', filter: true },
-        { key: 'date', type: 'date', label: 'Date', filter: true },
-        { key: 'status', type: 'string', label: 'Status', filter: true }
+        { key: 'retentionPeriod', type: 'string', label: 'Retention Period', filter: true },
+        { key: 'effectiveFrom', type: 'date', label: 'Effective From', filter: true },
+        { key: 'effectiveTo', type: 'date', label: 'Effective To', filter: true },
+        // { key: 'status', type: 'string', label: 'Status', filter: true }
     ];
 
     listData: any[] = [];

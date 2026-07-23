@@ -1,9 +1,26 @@
 export interface TestMethodEntry {
     srNo: number;
-    specificationCode: string; // or Document Identification
-    details: string; // or Title
+    methodCode: string;
+    methodName: string;
+    referenceStandard: string;
+    specificationCode: string;
+    revisionNo: string;
+    effectiveDate: string | Date;
+    status: string;
+    isVerified: number;
+    isValidated: number;
+
     requirement?: string;
     latestIssueRev?: string;
+    monthYear?: string;
+}
+export interface OriginDocEntry {
+    docId: string;
+    description: string;
+    docSource: string;
+    docType: string;
+    issue: string; 
+    status: string;
     monthYear?: string;
 }
 
@@ -15,13 +32,15 @@ export interface TestMethodNabl {
     date: string;
     documentNo: string;
     listType: 'Test Method' | 'External Document';
-    title: string; // e.g., "LIST OF TEST METHOD (CHEMICAL ANALYSIS)"
+    testMethodTitle: string; // e.g., "LIST OF TEST METHOD (CHEMICAL ANALYSIS)"
 
-    entries: TestMethodEntry[];
+    testMethod: TestMethodEntry[];
+    docEntries: OriginDocEntry[];
 
     preparedBy: string;
     issuedBy: string;
     reviewedBy: string;
+    approvedBy: string;
 
     status: string;
     createdOn?: string;

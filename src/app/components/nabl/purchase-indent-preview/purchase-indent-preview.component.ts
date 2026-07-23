@@ -18,10 +18,10 @@ export class PurchaseIndentPreviewComponent implements OnInit {
     recordId: number = 0;
     record = signal<PurchaseIndent | null>(null);
 
-    totalEstimatedCost = computed(() => {
-        const items = this.record()?.items || [];
-        return items.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
-    });
+    // totalEstimatedCost = computed(() => {
+    //     const items = this.record()?.items || [];
+    //     return items.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
+    // });
 
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -20,7 +20,7 @@ import { NablHeaderService } from '../../../services/nabl-header.service';
     providers: [DatePipe]
 })
 export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     reportForm!: FormGroup;
     reportId: number = 0;
@@ -30,7 +30,7 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
 
     ratingOptions = ['Excellent', 'Very Good', 'Good', 'Average', 'Poor'];
     overallRatingOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private competenceService: EmployeeCompetenceService,
@@ -38,7 +38,7 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
         private route: ActivatedRoute,
         private toastService: ToastService,
         private datePipe: DatePipe
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
@@ -47,7 +47,7 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
             next: (defaults) => {
                 this.reportForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
         this.route.url.subscribe(url => {
             const path = url[url.length - 2]?.path; // check edit/details
@@ -85,8 +85,11 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
             evaluationDoneBy: ['', [Validators.required]],
             evaluationDate: ['', [Validators.required]],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            preparedDate: [this.today],
+            reviewedDate: [''],
+            approvedDate: ['']
         });
     }
 
@@ -123,12 +126,12 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
                     if (data.evaluationDate) formValues.evaluationDate = this.formatDate(data.evaluationDate);
 
                     this.reportForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.reportForm.disable();
-                    this.isViewMode = true;
-                }
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.reportForm.disable();
+                        this.isViewMode = true;
+                    }
                 } else {
                     this.toastService.show('Report not found', 'error');
                     this.router.navigate(['/employee/competence']);
@@ -159,18 +162,20 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
 
         const formData = this.reportForm.getRawValue();
         this.isSubmitting = true;
-
+        formData.preparedDate = this.today;
+        if (formData.approvedDate == "" || !formData.approvedDate) {
+            formData.approvedDate = null;
+        }
+        if (formData.reviewedDate == "" || !formData.reviewedDate) {
+            formData.reviewedDate = null;
+        }
         if (this.isEditMode) {
             this.competenceService.update(this.reportId, formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
-                    if (res.success) {
-                        this.toastService.show(res.message, 'success');
-                        this.router.navigate(['/employee/competence']);
-                    } else {
-                        this.toastService.show(res.message, 'error');
-                    }
+                    this.isSubmitting = false;
+                    this.saved = true;
+                    this.toastService.show('EmployeeCompetence  Report updated successfully', 'success');
+                    this.router.navigate(['/employee/competence']);
                 },
                 error: (err) => {
                     this.isSubmitting = false;
@@ -181,14 +186,12 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
         } else {
             this.competenceService.create(formData).subscribe({
                 next: (res) => {
-                  this.isSubmitting = false;
-                  this.saved = true;
-                    if (res.success) {
-                        this.toastService.show(res.message, 'success');
-                        this.router.navigate(['/employee/competence']);
-                    } else {
-                        this.toastService.show(res.message, 'error');
-                    }
+                    this.isSubmitting = false;
+                    this.saved = true;
+
+                    this.toastService.show('EmployeeCompetence Report created successfully', 'success');
+                    this.router.navigate(['/employee/competence']);
+
                 },
                 error: (err) => {
                     this.isSubmitting = false;
@@ -199,16 +202,16 @@ export class EmployeeCompetenceFormComponent implements CanComponentDeactivate, 
         }
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.reportForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.reportForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.reportForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.reportForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -12,16 +12,16 @@ import { ToastService } from '../../../../services/toast.service';
 import { EmployeeSkill } from '../../../../models/skillMatrixModel';
 import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
-
+import { NablSignatureSectionComponent } from '../../../nabl/nabl-signature-section/nabl-signature-section.component';
 @Component({
     selector: 'app-skill-matrix-form',
 
-    imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent],
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent, NablSignatureSectionComponent],
     templateUrl: './skill-matrix-form.component.html',
     styleUrl: './skill-matrix-form.component.css'
 })
 export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     matrixForm!: FormGroup;
     matrixId: number = 0;
     isEditMode: boolean = false;
@@ -36,6 +36,7 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         skills: true,
         footer: true
     };
+    today = new Date().toISOString().split('T')[0];
 
     constructor(
         private fb: FormBuilder,
@@ -45,7 +46,7 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService) { }
+        , private unsavedChangesService: UnsavedChangesService) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -123,20 +124,26 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
     initForm() {
         this.matrixForm = this.fb.group({
             id: [0],
-            formatNo: ['F-6', Validators.required],
-            designationId: [null, Validators.required],
+            formatNo: ['F-6'],
+            designationId: ['',Validators.required],
             designationName: [''],
-            issueNo: ['', Validators.required],
-            date: ['', Validators.required],
-            revNo: ['', Validators.required],
+            issueNo: ['01', Validators.required],
+            date: [this.today, Validators.required],
+            revNo: ['00', Validators.required],
             title: ['', Validators.required],
             decision: [''],
             skills: this.fb.array([], Validators.required),
             employeeSkills: this.fb.array([]),
             preparedBy: [''],
             issuedBy: [''],
-            reviewedApprovedBy: ['']
+            reviewedApprovedBy: [''],
+            reviewedBy:[''],
+            approvedBy:['']
         });
+        this.matrixForm.get('formatNo')?.disable();
+        this.matrixForm.get('issueNo')?.disable();
+        this.matrixForm.get('revNo')?.disable();
+        this.matrixForm.get('date')?.disable();
     }
 
     get skills(): FormArray {
@@ -194,9 +201,9 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
                 formData.id = this.matrixId;
                 this.skillMatrixService.update(formData).subscribe({
                     next: (response) => {
-                      this.saved = true;
+                        this.saved = true;
                         this.toastService.show('Skill matrix updated successfully', 'success');
-                        this.router.navigate(['/skill-matrix/preview', this.matrixId]);
+                        this.router.navigate(['/skill-matrix']);
                     },
                     error: (error: any) => {
                         this.toastService.show('Error updating skill matrix', 'error');
@@ -205,9 +212,9 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
             } else {
                 this.skillMatrixService.create(formData).subscribe({
                     next: (response) => {
-                      this.saved = true;
+                        this.saved = true;
                         this.toastService.show('Skill matrix created successfully', 'success');
-                        this.router.navigate(['/skill-matrix/preview', response.id]);
+                        this.router.navigate(['/skill-matrix']);
                     },
                     error: (error: any) => {
                         this.toastService.show('Error creating skill matrix', 'error');
@@ -221,16 +228,16 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         this.router.navigate(['/skill-matrix']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.matrixForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.matrixForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.matrixForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.matrixForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

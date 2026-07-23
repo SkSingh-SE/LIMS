@@ -33,3 +33,407 @@
 .ql-editor {
   min-height: 120px !important;
 }
+
+.stepper-wrapper {
+
+  margin-top: 20px;
+  margin-bottom: 25px;
+
+}
+
+.stepper {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+}
+
+.step-item {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  cursor: pointer;
+
+  width: 150px;
+
+  position: relative;
+
+}
+
+.step-circle {
+
+  width: 48px;
+
+  height: 48px;
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-weight: 600;
+
+  border: 2px solid #ced4da;
+
+  background: #ffffff;
+
+  transition: .3s;
+
+}
+
+.step-circle.pending {
+
+  color: #6c757d;
+
+  background: #ffffff;
+
+}
+
+.step-circle.active {
+
+  background: #dc3545;
+
+  color: white;
+
+  border-color: #dc3545;
+
+  transform: scale(1.05);
+
+}
+
+.step-circle.completed {
+
+  background: #198754;
+
+  color: white;
+
+  border-color: #198754;
+
+}
+
+.step-title {
+
+  margin-top: 10px;
+
+  text-align: center;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #dcdcdc;
+  margin: 0 12px;
+  transition: .3s;
+}
+
+.step-line.completed {
+  background: #28a745;
+}
+
+.step-line.active {
+  background: #dc3545;
+}
+
+@media(max-width:991px) {
+
+  .stepper {
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+  }
+
+  .step-line {
+
+    display: none;
+
+  }
+
+  .step-item {
+
+    width: 30%;
+
+  }
+
+}
+
+::ng-deep .ql-editor {
+  min-height: 140px;
+}
+
+::ng-deep .ql-container {
+  font-size: 14px;
+}
+
+::ng-deep .ql-editor {
+  min-height: 120px;
+}
+
+.tab-content-wrapper {
+
+  margin-top: 20px;
+
+  .card {
+
+    border-radius: 8px;
+
+  }
+
+  .card-header {
+
+    background: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+
+  }
+
+  .form-label {
+
+    font-weight: 600;
+    margin-bottom: 6px;
+
+  }
+
+}
+
+::ng-deep .ql-editor {
+
+  min-height: 150px;
+
+}
+
+.form-check {
+
+  margin-right: 10px;
+
+}
+
+/* ===========================
+   Common Card Design
+=========================== */
+
+.tab-content-wrapper {
+  margin-top: 20px;
+}
+
+.tab-content-wrapper .card {
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tab-content-wrapper .card-header {
+  background: #f8f9fa;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 18px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tab-content-wrapper .card-body {
+  padding: 20px;
+}
+
+/* ===========================
+   Labels
+=========================== */
+
+.form-label {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #212529;
+}
+
+/* ===========================
+   Inputs
+=========================== */
+
+.form-control,
+.ng-select .ng-select-container {
+  min-height: 38px;
+  font-size: 13px;
+}
+
+/* ===========================
+   Radio Buttons
+=========================== */
+
+.form-check {
+  margin-right: 30px;
+}
+
+.form-check-label {
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* ===========================
+   Quill Editor
+=========================== */
+
+::ng-deep quill-editor {
+  display: block;
+}
+
+::ng-deep .ql-toolbar {
+  border-radius: 4px 4px 0 0;
+}
+
+::ng-deep .ql-container {
+  border-radius: 0 0 4px 4px;
+}
+
+::ng-deep .ql-editor {
+  min-height: 150px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* ===========================
+   Card Spacing
+=========================== */
+
+.card+.card {
+  margin-top: 20px;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+
+@media (max-width:768px) {
+
+  .card-body {
+    padding: 15px;
+  }
+
+  .form-check {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+}
+
+.form-check {
+  margin-right: 25px;
+}
+
+.form-check-input {
+  cursor: pointer;
+}
+
+.form-check-label {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+::ng-deep .ql-editor {
+  min-height: 140px;
+}
+
+.workflow-tabs {
+
+    display: flex;
+
+    border-bottom: 1px solid #dee2e6;
+
+    background: #fff;
+
+    margin-bottom: 20px;
+
+}
+
+.workflow-tab {
+
+    flex: 1;
+
+    text-align: center;
+
+    padding: 14px 20px;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+    border-top: 3px solid transparent;
+
+    border-bottom: 3px solid transparent;
+
+    color: #6c757d;
+
+    font-weight: 500;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+.workflow-tab i{
+
+    font-size:18px;
+
+}
+
+.workflow-tab:hover{
+
+    background:#f8f9fa;
+
+    color:#dc3545;
+
+}
+
+.workflow-tab.active{
+
+    color:#dc3545;
+
+    font-weight:600;
+
+    border-top:3px solid #dc3545;
+
+    border-bottom:3px solid #dc3545;
+
+    background:#fff;
+
+}
+
+.workflow-tab.completed{
+
+    color:#6c757d;
+
+}
+
+.workflow-tab.completed:hover{
+
+    color:#dc3545;
+
+}
+
+.workflow-tab.locked{
+
+    color:#adb5bd;
+
+    cursor:not-allowed;
+
+}

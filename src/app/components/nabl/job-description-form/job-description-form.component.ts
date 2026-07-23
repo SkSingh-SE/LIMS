@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -14,18 +14,19 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
-
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 
 @Component({
     selector: 'app-job-description-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, QuillModule, NablSignatureSectionComponent, FormFieldErrorComponent],
     templateUrl: './job-description-form.component.html',
     styleUrl: './job-description-form.component.css'
 })
 
 export class JobDescriptionFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     jobDescForm!: FormGroup;
     isEditMode: boolean = false;
@@ -63,7 +64,7 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         ]
     };
 
-
+    today = new Date().toISOString().split('T')[0];
 
     constructor(
         private fb: FormBuilder,
@@ -73,7 +74,7 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         private designationService: DesignationService,
         private departmentService: DepartmentService,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
@@ -82,7 +83,7 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
             next: (defaults) => {
                 this.jobDescForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
 
         this.route.paramMap.subscribe(params => {
@@ -108,13 +109,13 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
     }
 
     initForm(): void {
-        const today = new Date().toISOString().split('T')[0];
+
         this.jobDescForm = this.fb.group({
             id: [0],
             formatNo: ['F-3'],
             issueNo: ['01'],
             revNo: ['00'],
-            date: [today, Validators.required],
+            date: [this.today, Validators.required],
             documentNo: ['F-3'],
             designationId: [null, Validators.required],
             designationName: [''],
@@ -143,8 +144,12 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
             confidentialityClause: [this.jobDescriptionService.getDefaultConfidentialityClause()],
 
             // Section VII
-            preparedByName: [''],
-            approvedByName: [''],
+            preparedBy: [''],
+            approvedBy: [null],
+            reviewedBy: [null],
+            approvedDate: [''],
+            preparedDate: [this.today],
+            reviewedDate: [''],
             employeeAccepted: [false]
         });
 
@@ -162,21 +167,21 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
                     const formValues = { ...data };
 
                     // Set current date for standardization
-                    formValues.date = new Date().toISOString().split('T')[0];
+                    formValues.date = NablFormsHelper.formatDateForInput((data as any)?.date || '');
 
 
                     this.jobDescForm.patchValue(formValues);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.jobDescForm.disable();
-                    this.isViewMode = true;
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.jobDescForm.get('documentNo')?.disable();
-                this.jobDescForm.get('issueNo')?.disable();
-                this.jobDescForm.get('revNo')?.disable();
-                this.jobDescForm.get('formatNo')?.disable();
+                    // Lock form if not in editable status
+                    const status = (data as any).status;
+                    if (status && status !== 'Draft' && status !== 'Rejected') {
+                        this.jobDescForm.disable();
+                        this.isViewMode = true;
+                    }
+                    // Re-disable system fields (in case form was enabled for Draft/Rejected)
+                    this.jobDescForm.get('documentNo')?.disable();
+                    this.jobDescForm.get('issueNo')?.disable();
+                    this.jobDescForm.get('revNo')?.disable();
+                    this.jobDescForm.get('formatNo')?.disable();
                 }
             },
             error: (error) => {
@@ -196,6 +201,9 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         return this.departmentService.getDepartmentDropdown(term, page, pageSize);
     };
 
+    isFieldInvalid(path: string): boolean {
+        return FormValidationHelper.isFieldInvalid(this.jobDescForm, path, this.isSubmitting);
+    }
     onDesignationSelected(item: any): void {
         if (!item) {
             this.jobDescForm.patchValue({ designationId: null, designationName: '' });
@@ -226,14 +234,20 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         if (this.jobDescForm.valid) {
             const formData = this.jobDescForm.getRawValue();
             this.isSubmitting = true;
-
+            formData.preparedDate = this.today;
+            if (formData.approvedDate == "" || !formData.approvedDate) {
+                formData.approvedDate = null;
+            }
+            if (formData.reviewedDate == "" || !formData.reviewedDate) {
+                formData.reviewedDate = null;
+            }
             if (this.isEditMode) {
                 formData.id = this.jobDescId;
                 this.jobDescriptionService.update(formData).subscribe({
                     next: (response) => {
-                      this.isSubmitting = false;
-                      this.saved = true;
-                        this.toastService.show(response.message || 'Job Description updated successfully', 'success');
+                        this.isSubmitting = false;
+                        this.saved = true;
+                        this.toastService.show('Job Description updated successfully', 'success');
                         this.router.navigate(['/job-description']);
                     },
                     error: (error) => {
@@ -245,9 +259,9 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
             } else {
                 this.jobDescriptionService.create(formData).subscribe({
                     next: (response) => {
-                      this.isSubmitting = false;
-                      this.saved = true;
-                        this.toastService.show(response.message || 'Job Description created successfully', 'success');
+                        this.isSubmitting = false;
+                        this.saved = true;
+                        this.toastService.show('Job Description created successfully', 'success');
                         this.router.navigate(['/job-description']);
                     },
                     error: (error) => {
@@ -267,16 +281,16 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         this.router.navigate(['/job-description']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.jobDescForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.jobDescForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.jobDescForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.jobDescForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

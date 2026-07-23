@@ -1,0 +1,197 @@
+<div id="inventoryModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+    data-bs-keyboard="false" aria-labelledby="inventoryModalLabel">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header card-form-header text-white">
+                <label class="modal-title fw-medium">
+                    {{ formTitle }}
+                </label>
+
+                <button type="button" class="btn-close btn-close-white" (click)="closeModal()">
+                </button>
+            </div>
+
+            <form [formGroup]="inventoryForm" (ngSubmit)="onSubmit()">
+
+                <div class="modal-body">
+                    <div class="row">
+
+                        <!-- Item Code -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Item Code <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="text" class="form-control" formControlName="itemCode"
+                                placeholder="Enter Item Code">
+                            <div *ngIf="inventoryForm.get('itemCode')?.invalid && inventoryForm.get('itemCode')?.touched"
+                                class="text-danger text-sm mt-1">
+                                item code is required
+                            </div>
+                        </div>
+
+                        <!-- Item Category -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Item Category <span class="text-danger">*</span>
+                            </label>
+
+                            <select class="form-select" formControlName="itemCategory">
+                                <option value="">Select Category</option>
+                                <option value="CRM (Certified Reference Material)">CRM (Certified Reference Material)
+                                </option>
+                                <option value="Reference Material">Reference Material</option>
+                                <option value="Working Standard">Working Standard</option>
+                                <option value="Check Standard">Check Standard</option>
+                                <option value="Secondary Reference Material">Secondary Reference Material</option>
+                                <option value="Internal Reference Material">Internal Reference Material</option>
+                                <option value="Control Sample">Control Sample</option>
+                                <option value="Calibration Standard">Calibration Standard</option>
+                                <option value="Verification Standard">Verification Standard</option>
+                                <option value="Validation Standard">Validation Standard</option>
+                                <option value="PT Sample">PT Sample</option>
+                                <option value="Standard Solution">Standard Solution</option>
+                                <option value="Stock Solution">Stock Solution</option>
+                                <option value="Working Solution">Working Solution</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <div *ngIf="inventoryForm.get('itemCategory')?.invalid && inventoryForm.get('itemCategory')?.touched"
+                                class="text-danger text-sm mt-1">
+                                item category is required
+                            </div>
+                        </div>
+
+                        <!-- Item Name -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Item Name <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="text" class="form-control" formControlName="itemName"
+                                placeholder="Enter Item Name">
+                            <div *ngIf="inventoryForm.get('itemName')?.invalid && inventoryForm.get('itemName')?.touched"
+                                class="text-danger text-sm mt-1">
+                                item name is required
+                            </div>
+                        </div>
+
+                        <!-- Department -->
+                        <div class="col-md-6 mb-3">
+                            <app-searchable-dropdown [placeholder]="'Search Department'" [labelName]="'Department'"
+                                [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
+                                [selectedItem]="inventoryForm.get('departmentID')?.value" [isDisabled]="isViewMode">
+                            </app-searchable-dropdown>
+                            <div *ngIf="inventoryForm.get('departmentID')?.invalid && inventoryForm.get('departmentID')?.touched"
+                                class="text-danger text-sm mt-1">
+                                department id is required
+                            </div>
+                        </div>
+
+                        <!-- Supplier -->
+                        <div class="col-md-6 col-md-3">
+                            <label class="form-label">Supplier Name</label>
+                            <select class="form-select form-select-sm" formControlName="supplierId"
+                                (change)="onSupplierChange($event)">
+                                <option value="" selected>Select Supplier</option>
+                                <option *ngFor="let supplier of supplierList" [ngValue]="supplier.id || supplier.Id">
+                                    {{ supplier.name || supplier.Name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Manufacturer -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Manufacturer</label>
+
+                            <input type="text" class="form-control" formControlName="manufacturer"
+                                placeholder="Enter Manufacturer">
+                        </div>
+
+                        <!-- Batch No -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Batch No</label>
+
+                            <input type="text" class="form-control" formControlName="batchNo"
+                                placeholder="Enter Batch No">
+                        </div>
+
+                        <!-- Unit -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Unit <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="text" class="form-control" formControlName="unit" placeholder="Kg, Ltr, Nos">
+                            <div *ngIf="inventoryForm.get('unit')?.invalid && inventoryForm.get('unit')?.touched"
+                                class="text-danger text-sm mt-1">
+                                unit is required
+                            </div>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                Quantity <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="number" class="form-control" formControlName="quantity">
+                            <div *ngIf="inventoryForm.get('quantity')?.invalid && inventoryForm.get('quantity')?.touched"
+                                class="text-danger text-sm mt-1">
+                                quantity is required
+                            </div>
+                        </div>
+
+                        <!-- Minimum Quantity -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                Minimum Quantity
+                            </label>
+
+                            <input type="number" class="form-control" formControlName="minimumQuantity">
+                        </div>
+
+                        <!-- Storage Location -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Storage Location</label>
+
+                            <input type="text" class="form-control" formControlName="storageLocation"
+                                placeholder="Enter Storage Location">
+                        </div>
+
+                        <!-- Item Description -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Item Description</label>
+
+                            <textarea class="form-control" rows="3" formControlName="itemDescription"
+                                placeholder="Enter Item Description">
+              </textarea>
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Remarks</label>
+
+                            <textarea class="form-control" rows="3" formControlName="remarks"
+                                placeholder="Enter Remarks">
+              </textarea>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div *ngIf="!isViewMode" class="modal-footer">
+                    <button type="button" class="btn btn-cancel" (click)="closeModal()">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="btn btn-save">
+                        {{ isEditMode ? 'Update' : 'Save' }}
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>

@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,103 +46,98 @@
 
   <app-print-frame *ngIf="record()" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="record()?.formatNo || 'F-18'"
-          [mainTitle]="'CRM CONSUMPTION RECORD'"
-          [docNo]="'DMSPL / Level-04 / Format / F-18'"
-          [issueNo]="record()?.issueNo || '01'"
-          [revNo]="record()?.revNo || '00'"
-          [issueDate]="record()?.date || ''">
+      <app-nabl-print-header [formatNo]="record()?.formatNo || 'F-18'" [mainTitle]="'CRM CONSUMPTION RECORD'"
+        [docNo]="'DMSPL / Level-04 / Format / F-18'" [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''"   [revDate]="record()?.date || ''">
       </app-nabl-print-header>
+       
     </ng-container>
 
     <ng-container body>
 
       <!-- Material Details -->
       <div class="doc-section mb-3">
-        <div class="sec-title">MATERIAL DETAILS</div>
+        <div class="sec-title">II.  Material Identification & Check Period</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Material Name</td>
-              <td colspan="3">{{ record()?.materialName }}</td>
+              <td class="lbl">Material Code</td>
+              <td>{{ record()?.rmCode }}</td>
+              <td class="lbl">Material Name</td>
+              <td>{{ record()?.rmName }}</td>
             </tr>
             <tr>
-              <td class="lbl" style="width: 25%">Material Code</td>
-              <td style="width: 25%">{{ record()?.materialCode }}</td>
-              <td class="lbl" style="width: 25%">Batch No.</td>
-              <td style="width: 25%">{{ record()?.batchNo }}</td>
+
             </tr>
             <tr>
-              <td class="lbl">Purpose of Use</td>
-              <td colspan="3">{{ record()?.purposeOfUse }}</td>
+              <td class="lbl">Material Type</td>
+              <td>{{ record()?.type }}</td>
+              <td class="lbl">Material Classification</td>
+              <td>{{ record()?.materialClassification }}</td>
             </tr>
             <tr>
-              <td class="lbl">Period</td>
-              <td>{{ getMonthName(record()?.consumptionMonth || 1) }} {{ record()?.consumptionYear }}</td>
-              <td class="lbl">Document No.</td>
-              <td>{{ record()?.documentNo }}</td>
+              <td class="lbl">Batch No.</td>
+              <td>{{ record()?.batchNo }}</td>
+              <td class="lbl">Certificate No.</td>
+              <td>{{ record()?.certificateNo }}</td>
             </tr>
             <tr>
-              <td class="lbl">Unit of Measure</td>
-              <td colspan="3">{{ record()?.unitOfMeasure }}</td>
+              <td class="lbl">Validity Date</td>
+              <td>{{ record()?.validityDate | date:'dd-MM-yyyy' }}</td>
+              <td class="lbl">Quantity</td>
+              <td>{{ record()?.quantity }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Stock Summary -->
+
+      <!-- Daily Consumption Table -->
       <div class="doc-section mb-3">
-        <div class="sec-title">STOCK SUMMARY</div>
-        <table class="table table-bordered inner-table">
+        <div class="sec-title">III. Daily CRM Consumption Log</div>
+        <table class="table table-bordered inner-table text-center">
           <thead>
             <tr class="tbl-head">
-              <th>Opening Stock</th>
-              <th>Received</th>
-              <th>Consumed</th>
-              <th>Wastage</th>
-              <th>Closing Stock</th>
+              <th style="width: 80px;">SN</th>
+              <th style="width: 120px;">Date</th>
+              <th style="width: 120px;">Consumed Qty</th>
+              <!-- <th style="width: 120px;">Balance Qty</th> -->
+              <th style="width: 150px;">Purpose</th>
+              <th style="width: 150px;">Equipment/Test</th>
+              <th style="width: 150px;">Used By</th>
+              <th style="width: 180px;">Remarks</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>{{ record()?.openingStock }}</td>
-              <td>{{ record()?.received }}</td>
-              <td>{{ record()?.consumed }}</td>
-              <td>{{ record()?.wastage }}</td>
-              <td>{{ record()?.closingStock }}</td>
+            <tr *ngFor="let log of record()?.dailyConsumption; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="text-center">{{ log.consumptionDate | date:'dd-MMM-yyyy' }}</td>
+              <td class="text-center">{{ log.quantityConsumed }}</td>
+              <!-- <td class="text-center">{{ log.balanceQty }}</td> -->
+              <td>{{ log.purpose }}</td>
+              <td>{{ log.equipmentOrTest }}</td>
+              <td>{{ log.usedBy }}</td>
+              <td>{{ log.remarks }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <!-- General Remarks -->
       <div class="doc-section mb-3">
-        <div class="sec-title">GENERAL REMARKS</div>
-        <div class="sec-body" [innerHTML]="record()?.remarks"></div>
-        <div *ngIf="!record()?.remarks" class="sec-body fst-italic">No remarks recorded.</div>
-      </div>
-
-      <!-- Daily Consumption Table -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">DAILY CONSUMPTION LOG</div>
-        <table class="table table-bordered inner-table text-center">
+        <div class="sec-title">IV. Month-end Inventory Summary</div>
+        <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
-              <th style="width: 40px;">Date</th>
-              <th style="width: 80px;">Consumed</th>
-              <th style="width: 80px;">Wastage</th>
-              <th>Purpose / Remarks</th>
-              <th style="width: 120px;">Analysis By</th>
+              <th>Opening Quantity</th>
+              <th>Total Consumed</th>
+              <th>Remaining Quantity</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of record()?.dailyConsumption">
-              <td>{{ row.date | date: 'dd/MM' }}</td>
-              <td>{{ row.quantityConsumed }}</td>
-              <td>{{ row.quantityWasted || '-' }}</td>
-              <td class="text-start ps-2">{{ row.purpose }}</td>
-              <td>{{ row.performedBy }}</td>
+            <tr>
+              <td>{{ record()?.openingQuantity }}</td>
+              <td>{{ record()?.totalConsumed }}</td>
+              <td>{{ record()?.remainingQuantity }}</td>
             </tr>
           </tbody>
         </table>
@@ -154,11 +146,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-          [preparedByName]="record()?.recordedBy || 'Technician'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="record()?.verifiedBy || 'Director'">
-      </app-nabl-print-footer>
+     <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

@@ -10,7 +10,7 @@ import { MeetingMinutes } from '../models/meeting-minutes';
 export class MeetingMinutesService {
     private apiUrl = environment.apiUrl + '/Nabl/MeetingMinutes';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,17 @@ export class MeetingMinutesService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getLoadMeetingList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/all-meeting-list`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
+    meetingDetails(meetingNo: string) {
+        return this.http.get<any>(`${this.apiUrl}/meeting-details/${meetingNo}`);
     }
 }

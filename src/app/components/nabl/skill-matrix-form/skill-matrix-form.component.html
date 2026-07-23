@@ -4,7 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i> Back to Lists
       </button>
     </div>
 
@@ -22,12 +22,14 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="formatNo" [disabled]="isViewMode">
+                <select class="form-select" formControlName="formatNo"> 
                   <option value="" disabled>Select Form</option>
                   <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
                 </select>
+                <!-- <input type="text" class="form-control mt-1" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-6"> -->
                 <span *ngIf="matrixForm.get('formatNo')?.invalid && matrixForm.get('formatNo')?.touched" class="text-danger text-sm">Form is required.</span>
               </div>
+              {{1}}
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
                   [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
@@ -46,7 +48,7 @@
               <div class="col-md-2">
                 <label class="form-label">Rev No <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" [disabled]="isViewMode" />
-              </div>
+          </div>{{1}}
               <div class="col-md-12">
                 <label class="form-label">Decision <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="decision" placeholder="e.g. Approved" [disabled]="isViewMode" />

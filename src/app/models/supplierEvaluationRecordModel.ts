@@ -21,23 +21,45 @@ export interface SupplierEvaluationRecord {
     materialsSupplied: string;
     evaluatingPeriodFrom: Date | string;
     evaluatingPeriodTo: Date | string;
+    evaluationDate: Date | string;
 
     // Evaluation
     criteria: SupplierEvaluationCriteria[];
     totalScore: number;
     maxPossibleScore: number;
     percentageScore: number;
-
+    purchaseOrders?: PurchaseOrderSummary[];
+    incomingPlan?: IncomingInspectionSummary[];
     // Conclusion
     recommendation: 'Approved' | 'Conditionally Approved' | 'Rejected';
     generalRemarks: string;
 
     evaluatedBy: string;
+    preparedBy: string;
+    reviewedBy: string;
     approvedBy: string;
 
     isActive?: boolean;
+    toContinued?: boolean;
+    toRemoved?: boolean;
+    acceptableLimitMin?: number;
+}
+export interface PurchaseOrderSummary {
+    poNo?: string;
+    poDate?: string | Date;
+    referenceIndentNo?: string;
+    deliveryDate?: string | Date;
+    supplierName?: string;
 }
 
+export interface IncomingInspectionSummary {
+    purchaseOrderNo?: string;
+    inspectionPlanNoName?: string;
+    inspectionResult?: string;
+    finalStatus?: string;
+    supplierName?: string;
+    date: string | Date;
+}
 export interface SupplierEvaluationRecordResponse {
     status: number;
     message: string;

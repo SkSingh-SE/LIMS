@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="matrixForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="matrixForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -22,16 +22,16 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="formatNo" [disabled]="isViewMode">
+                <select class="form-select" formControlName="formatNo">
                   <option value="" disabled>Select Form</option>
                   <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
                 </select>
-                <span *ngIf="matrixForm.get('formatNo')?.invalid && matrixForm.get('formatNo')?.touched" class="text-danger text-sm">Form is required.</span>
+                <!-- <span *ngIf="matrixForm.get('formatNo')?.invalid && matrixForm.get('formatNo')?.touched" class="text-danger text-sm">Form is required.</span> -->
               </div>
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
                   [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
-                  [isDisabled]="isViewMode"
+                  [isDisabled]="isViewMode" [required]="true"
                   [selectedItem]="matrixForm.get('designationId')?.value"></app-searchable-dropdown>
                 <span *ngIf="matrixForm.get('designationId')?.invalid && matrixForm.get('designationId')?.touched" class="text-danger text-sm">Designation is required.</span>
               </div>
@@ -124,35 +124,12 @@
           </div>
         </div>
 
-        <!-- Section III: Approval & Acceptance -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('footer')">
-            <i class="bi" [ngClass]="openSections['footer'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Approval & Acceptance</span>
-          </div>
-          <div *ngIf="openSections['footer']" class="section-body">
-            <p class="text-muted mb-3">Official approval signatures and authorization.</p>
-            <div class="row gy-3">
-              <div class="col-md-4">
-                <label class="form-label">Prepared By (HR Manager)</label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" [disabled]="isViewMode" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Issued By (Quality Manager)</label>
-                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" [disabled]="isViewMode" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed & Approved By (Managing Director)</label>
-                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" [disabled]="isViewMode" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+       
+        <app-nabl-signature-section [parentForm]="matrixForm"></app-nabl-signature-section>
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="matrixForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

@@ -64,4 +64,16 @@ export class TestMethodSpecificationService {
       return this.http.get<any>(`${this.apiUrl}/versions/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
+    validateImport(items: any[]): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/validate-import`, { items });
+    }
+
+    bulkImport(items: any[]): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/bulk-import`, { items });
+    }
+
+    getStandardOrganizations(): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/standard-organizations`);
+    }
+
 }

@@ -1,0 +1,563 @@
+<div class="container-fluid mt-3 mb-4">
+  <div class="card border-0 shadow-sm rounded-3">
+    <!-- Top Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
+      <label class="text-md fw-medium ms-3">
+        {{ isViewMode ? 'View Product Master Details' : (isEditMode ? 'Edit Product Master' : 'Create Product Master') }}
+      </label>
+      <a routerLink="/product-master" class="btn btn-outline-light btn-sm cursor-pointer">
+        <i class="bi bi-arrow-left me-1"></i> Back to List
+      </a>
+    </div>
+
+    <div class="card-body p-3 bg-light">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+        <!-- SECTION 1: Product Information -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('sec1')">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi" [ngClass]="openSections['sec1'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold">Product Information</span>
+            </div>
+          </div>
+
+          <div class="section-body" *ngIf="openSections['sec1']">
+            <div class="row g-3">
+              <!-- Left Side Inputs -->
+              <div class="col-lg-8">
+                <div class="row g-2 compact-grid mb-2">
+                  <!-- Product Size -->
+                  <div class="col-md-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label mb-0">
+                        Product Size <span class="text-danger" *ngIf="form.get('isSizeApplicable')?.value">*</span>
+                      </label>
+                      <a href="/product-size-master" target="_blank" class="btn btn-link p-0 text-xxs fw-semibold text-decoration-none" style="color:var(--primary-color);font-size:0.65rem;white-space:nowrap" *ngIf="!isViewMode" title="Manage Product Sizes">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                      </a>
+                      <div class="form-check form-check-inline m-0 p-0 d-flex align-items-center" (click)="$event.stopPropagation()">
+                        <input class="form-check-input" type="checkbox" id="noSizeCheck"
+                               [checked]="!form.get('isSizeApplicable')?.value"
+                               (change)="onNoSizeChange($any($event.target).checked)"
+                               [disabled]="isViewMode">
+                        <label class="form-check-label text-muted small cursor-pointer ms-1" for="noSizeCheck" title="Toggle size applicability">
+                          No Size <i class="bi bi-info-circle text-secondary"></i>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <div class="flex-grow-1">
+                        <app-searchable-dropdown
+                          [fetchDataFn]="getSizeDropdown"
+                          [selectedItem]="slectedProductSize"
+                          (itemSelected)="onProductSizeSelected($event)"
+                          placeholder="Select Size (ProductSizeMaster)"
+                          [smallInput]="true"
+                          [hideLabel]="true"
+                          [isDisabled]="!form.get('isSizeApplicable')?.value || isViewMode">
+                        </app-searchable-dropdown>
+                      </div>
+                    </div>
+                    <div *ngIf="form.get('productSizeMasterID')?.touched && form.get('productSizeMasterID')?.invalid">
+                      <span *ngIf="form.get('productSizeMasterID')?.hasError('required')" class="text-danger text-sm">Size is required.</span>
+                    </div>
+                  </div>
+
+                  <!-- Product Name -->
+                  <div class="col-md-3">
+                    <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="productName" placeholder="e.g. TMT Bar"
+                           [ngClass]="{ 'is-invalid': form.get('productName')?.touched && form.get('productName')?.invalid }" />
+                    <div *ngIf="form.get('productName')?.touched && form.get('productName')?.invalid">
+                      <span *ngIf="form.get('productName')?.hasError('required')" class="text-danger text-sm">Product Name is required.</span>
+                    </div>
+                  </div>
+
+                  <!-- Prefix -->
+                  <div class="col-md-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label mb-0">Prefix <span class="text-danger">*</span></label>
+                      <span class="btn btn-sm btn-outline-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;line-height:1.4;cursor:pointer" (click)="openCustomPrefixModal()" *ngIf="!isViewMode" title="Add Custom Prefix">
+                        Add Prefixes
+                      </span>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <select class="form-select form-select-sm flex-grow-1" formControlName="gradePrefix">
+                        <option *ngFor="let opt of prefixOptions" [value]="opt">{{ opt }}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Grade -->
+                  <div class="col-md-3">
+                    <label class="form-label">Grade</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="gradeValue" placeholder="e.g. Fe500" />
+                  </div>
+                </div>
+
+                <!-- Display Title -->
+                <div class="compact-grid mb-2">
+                  <label class="form-label">Display Title (Auto Generated / Editable)</label>
+                  <input type="text" class="form-control form-control-sm bg-light" formControlName="displayTitle" placeholder="e.g. 16 mm TMT Bar Grade Fe500" />
+                  <span class="text-muted text-xxs d-block mt-1">
+                    Placeholder <span class="text-danger">&lt;Size&gt;</span> will resolve at runtime.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Right Side Metal Classification MultiSelect Dropdown -->
+              <div class="col-lg-4">
+                <div class="metal-box h-100 d-flex flex-column p-2 border rounded-3 bg-white">
+                  <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                    <span class="metal-box-title">Applicable Metal Classification</span>
+                  </div>
+
+                  <div class="flex-grow-1">
+                    <app-multi-select-dropdown
+                      [fetchDataFn]="getMetalDropdown"
+                      [selectedValues]="form.get('metalClassificationIDs')?.value"
+                      (itemsSelected)="onMetalItemsSelected($event)"
+                      placeholder="Select Metal Classifications"
+                      [smallInput]="true"
+                      [hideLabel]="true"
+                      [isDisabled]="isViewMode">
+                    </app-multi-select-dropdown>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Product Specification Versioning -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('sec2')">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi" [ngClass]="openSections['sec2'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold">Product Specification Versioning</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-theme py-0 px-2 text-xs" (click)="addVersion(); $event.stopPropagation()" *ngIf="!isViewMode">
+                + Add Version
+              </button>
+            </div>
+          </div>
+
+          <div class="section-body" *ngIf="openSections['sec2']">
+            <div class="row g-0 border rounded-3 overflow-hidden bg-white">
+              <!-- Version Left Sidebar Tabs -->
+              <div class="col-md-2 bg-light border-end p-2 d-flex flex-column gap-1">
+                <div *ngFor="let vGroup of versions.controls; let vIdx = index"
+                     class="version-tab-item cursor-pointer d-flex justify-content-between align-items-center"
+                     [ngClass]="{ active: activeVersionIndex === vIdx }"
+                     (click)="selectVersion(vIdx)">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="version-title text-xs">Version {{ vGroup.get('versionNumber')?.value || (vIdx + 1) }}</span>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1">
+                    <div class="form-check form-switch m-0 p-0 d-flex align-items-center" (click)="$event.stopPropagation()">
+                      <input class="form-check-input ms-0 cursor-pointer" type="checkbox"
+                             [id]="'ver_active_' + vIdx"
+                             [checked]="vGroup.get('isActiveVersion')?.value"
+                             (change)="toggleVersionActive(vIdx, $event)"
+                             [disabled]="isViewMode"
+                             title="Toggle Active Version Status">
+                    </div>
+                    <button type="button" class="btn btn-link text-danger p-0 text-xs ms-1" (click)="removeVersion(vIdx); $event.stopPropagation()" *ngIf="versions.length > 1 && !isViewMode" title="Remove Version">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-xs btn-outline-theme w-100 mt-1" (click)="addVersion()" *ngIf="!isViewMode">
+                  + Add Version
+                </button>
+              </div>
+
+              <!-- Main Version Details Panel -->
+              <div class="col-md-10 p-3" *ngIf="currentVersionGroup">
+                <div [formGroup]="currentVersionGroup" class="row g-2 compact-grid mb-3">
+                  <div class="col-md-3">
+                    <label class="form-label">Product Spec Name (Auto Fill)</label>
+                    <input type="text" class="form-control form-control-sm bg-light" readonly
+                      [value]="generateProductSpecName(activeVersionIndex)" />
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label mb-0">Std Org <span class="text-danger">*</span></label>
+                      <a href="/standard-organization" target="_blank" class="btn btn-link p-0 text-xxs fw-semibold text-decoration-none" style="color:var(--primary-color);font-size:0.65rem;white-space:nowrap" *ngIf="!isViewMode" title="Manage Standard Organizations">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                      </a>
+                    </div>
+                    <app-searchable-dropdown
+                      [fetchDataFn]="getStdOrgDropdown"
+                      [selectedItem]="selectedStdOrgMap[activeVersionIndex]"
+                      (itemSelected)="onStdOrgSelected($event, activeVersionIndex)"
+                      placeholder="Select Standard Organization"
+                      [smallInput]="true"
+                      [hideLabel]="true"
+                      [isDisabled]="isViewMode">
+                    </app-searchable-dropdown>
+                    <div *ngIf="currentVersionGroup.get('standardOrganizationID')?.touched && currentVersionGroup.get('standardOrganizationID')?.invalid">
+                      <span *ngIf="currentVersionGroup.get('standardOrganizationID')?.hasError('required')" class="text-danger text-sm">Standard Organization is required.</span>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Product Spec Std No <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="specStdNo" placeholder="e.g. ASTM A615"
+                           [ngClass]="{ 'is-invalid': currentVersionGroup.get('specStdNo')?.touched && currentVersionGroup.get('specStdNo')?.invalid }" />
+                    <div *ngIf="currentVersionGroup.get('specStdNo')?.touched && currentVersionGroup.get('specStdNo')?.invalid">
+                      <span *ngIf="currentVersionGroup.get('specStdNo')?.hasError('required')" class="text-danger text-sm">Spec Std No is required.</span>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Part / Section</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="partSection" placeholder="e.g. Part 1" />
+                  </div>
+
+                  <!-- Year Dropdown -->
+                  <div class="col-md-2">
+                    <label class="form-label">Year <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm" formControlName="year"
+                            [ngClass]="{ 'is-invalid': currentVersionGroup.get('year')?.touched && currentVersionGroup.get('year')?.invalid }">
+                      <option *ngFor="let y of yearsList" [value]="y.toString()">{{ y }}</option>
+                    </select>
+                    <div *ngIf="currentVersionGroup.get('year')?.touched && currentVersionGroup.get('year')?.invalid">
+                      <span *ngIf="currentVersionGroup.get('year')?.hasError('required')" class="text-danger text-sm">Year is required.</span>
+                    </div>
+                  </div>
+
+                  <!-- Version (Editable String) -->
+                  <div class="col-md-2">
+                    <label class="form-label">Version <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="versionNumber" placeholder="e.g. 1.0, V1"
+                           [ngClass]="{ 'is-invalid': currentVersionGroup.get('versionNumber')?.touched && currentVersionGroup.get('versionNumber')?.invalid }" />
+                    <div *ngIf="currentVersionGroup.get('versionNumber')?.touched && currentVersionGroup.get('versionNumber')?.invalid">
+                      <span *ngIf="currentVersionGroup.get('versionNumber')?.hasError('required')" class="text-danger text-sm">Version is required.</span>
+                    </div>
+                  </div>
+
+                  <div class="col-md-5">
+                    <label class="form-label">Product Specification Caption (Auto Fill / Editable)</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="productCaption" placeholder="e.g. ASTM A615 Part 1 V1.0" />
+                  </div>
+
+                  <!-- Specification File with Truncated File Name -->
+                  <div class="col-md-3">
+                    <label class="form-label">Specification File (PDF)</label>
+                    <div class="input-group">
+                      <span class="form-control form-control-sm bg-light text-truncate" [title]="getFileName(currentVersionGroup.get('specificationFilePath')?.value)">
+                        {{ getFileName(currentVersionGroup.get('specificationFilePath')?.value) || 'No file uploaded' }}
+                      </span>
+                      <input type="file" #fileInput class="d-none" (change)="onFileUpload($event)" accept=".pdf" />
+                      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="fileInput.click()" *ngIf="!isViewMode">
+                        <i class="bi bi-upload me-1"></i> Upload
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12">
+                    <label class="form-label">Specification Title</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="title" placeholder="e.g. High Strength Deformed Bars" />
+                  </div>
+                </div>
+
+                <!-- GRADE CONFIGURATION INSIDE VERSION PANEL -->
+                <div class="border-top pt-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0" style="color: var(--primary-color); font-size: 0.85rem;">
+                      <i class="bi bi-diagram-3 me-1"></i> Grade Configuration (Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }})
+                    </h6>
+                  </div>
+
+                  <!-- Add Grade Row -->
+                  <div class="d-flex gap-2 align-items-center mb-3" *ngIf="!isViewMode">
+                    <div style="min-width: 300px;">
+                      <app-searchable-dropdown
+                        [fetchDataFn]="getGradeDropdown"
+                        [selectedItem]="selectedGradeForVersion[activeVersionIndex]"
+                        (itemSelected)="onGradeSelected(activeVersionIndex, $event)"
+                        placeholder="Search Grade (Fe415, Fe500...)"
+                        [smallInput]="true"
+                        [hideLabel]="true">
+                      </app-searchable-dropdown>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-theme py-1 px-3" (click)="onGradeAdded(activeVersionIndex)">
+                      <i class="bi bi-plus-circle me-1"></i> Add Grade
+                    </button>
+                  </div>
+
+                  <!-- Grade Tabs Bar -->
+                  <div class="d-flex align-items-center gap-2 mb-3 overflow-auto pb-1 flex-wrap" *ngIf="versionGradeMap[activeVersionIndex]?.length">
+                    <button type="button" class="grade-pill"
+                            *ngFor="let g of versionGradeMap[activeVersionIndex]; let gIdx = index"
+                            [ngClass]="{ active: activeGradeTabMap[activeVersionIndex] === gIdx }"
+                            (click)="selectGradeTab(activeVersionIndex, gIdx)">
+                      {{ g.gradeName }}
+                      <span class="ms-1 text-danger cursor-pointer" (click)="removeGrade(activeVersionIndex, gIdx, $event)" *ngIf="!isViewMode" title="Remove Grade">×</span>
+                    </button>
+                  </div>
+
+                  <!-- Active Grade Content Split Panel -->
+                  <div *ngIf="currentActiveGrade as grade; else noGradesAdded">
+                    <div class="row g-3">
+                      <!-- Left Column: Condition Details (AGENTS.md fieldset border-left style) -->
+                      <div class="col-lg-5">
+                        <div class="condition-box h-100">
+                          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                            <span class="fw-bold text-xs" style="color: var(--primary-color);">Conditions for {{ grade.gradeName }}</span>
+                            <span class="text-muted text-xxs">{{ grade.specHeaderName }}</span>
+                          </div>
+
+                          <!-- Default No Condition State -->
+                          <div *ngIf="!grade.conditions.length" class="alert alert-secondary py-2 px-3 text-xs mb-3">
+                            <i class="bi bi-info-circle me-1"></i> No condition applied. Showing all default parameters for <strong>{{ grade.gradeName }}</strong>.
+                          </div>
+
+                          <!-- List of Added Condition Cards -->
+                          <div *ngFor="let cond of grade.conditions; let cIdx = index"
+                               class="condition-card mb-2 p-2 cursor-pointer"
+                               [ngClass]="{ active: grade.activeConditionIdx === cIdx }"
+                               (click)="selectConditionCard(activeVersionIndex, activeGradeTabMap[activeVersionIndex], cIdx)">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                              <span class="fw-bold text-xs" style="color: var(--primary-color);">Condition {{ cIdx + 1 }}</span>
+                              <button type="button" class="btn btn-link text-danger p-0 text-xs" (click)="removeCondition(activeVersionIndex, activeGradeTabMap[activeVersionIndex], cIdx); $event.stopPropagation()" *ngIf="!isViewMode">
+                                <i class="bi bi-trash"></i> Remove
+                              </button>
+                            </div>
+
+                            <div class="compact-grid">
+                              <!-- Delivery Condition (PC1) -->
+                              <div class="mb-2" *ngIf="grade.availablePC1.length">
+                                <label class="form-label">Delivery Condition (PC 1)</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID1" [ngModelOptions]="{standalone: true}">
+                                  <option [ngValue]="null">-- Select Delivery Condition --</option>
+                                  <option *ngFor="let opt of grade.availablePC1" [ngValue]="opt.id">{{ opt.name }}</option>
+                                </select>
+                              </div>
+
+                              <!-- Surface Finish (PC2) -->
+                              <div class="mb-2" *ngIf="grade.availablePC2.length">
+                                <label class="form-label">Surface Finish (PC 2)</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID2" [ngModelOptions]="{standalone: true}">
+                                  <option [ngValue]="null">-- Select Surface Finish --</option>
+                                  <option *ngFor="let opt of grade.availablePC2" [ngValue]="opt.id">{{ opt.name }}</option>
+                                </select>
+                              </div>
+
+                              <!-- Heat Treatment -->
+                              <div class="mb-2" *ngIf="grade.availableHeatTreatments.length">
+                                <label class="form-label">Heat Treatment</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.heatTreatmentID" [ngModelOptions]="{standalone: true}">
+                                  <option [ngValue]="null">-- Select Heat Treatment --</option>
+                                  <option *ngFor="let opt of grade.availableHeatTreatments" [ngValue]="opt.id">{{ opt.name }}</option>
+                                </select>
+                              </div>
+
+                              <!-- Product Size (if grade has size-based lines) -->
+                              <div class="mb-2" *ngIf="grade.availableProductSizes.length">
+                                <label class="form-label">Product Size</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productSizeMasterID" [ngModelOptions]="{standalone: true}">
+                                  <option [ngValue]="null">-- Select Product Size --</option>
+                                  <option *ngFor="let opt of grade.availableProductSizes" [ngValue]="opt.id">{{ opt.name }}</option>
+                                </select>
+                              </div>
+
+                              <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="d-flex align-items-center gap-1">
+                                  <label class="form-label mb-0 me-1">Priority:</label>
+                                  <input type="number" class="form-control form-control-sm w-auto" style="width: 70px !important;" [(ngModel)]="cond.priority" [ngModelOptions]="{standalone: true}" min="1" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Add Condition Button -->
+                          <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-theme btn-sm w-100" (click)="addCondition(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="!isViewMode">
+                              <i class="bi bi-plus-circle me-1"></i> Add Condition
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearConditionSelection(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="grade.activeConditionIdx !== null">
+                              Clear Filter
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Right Column: Applicable Parameters -->
+                      <div class="col-lg-7">
+                        <div class="card border h-100 shadow-none">
+                          <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-xs">Applicable Parameters for {{ grade.gradeName }}</span>
+                            <span class="badge bg-info text-dark text-xxs" *ngIf="grade.activeConditionIdx !== null">Condition {{ grade.activeConditionIdx + 1 }} Filter Active</span>
+                          </div>
+
+                          <div class="card-body p-2 d-flex flex-column">
+                            <!-- Summary Badges -->
+                            <div class="d-flex gap-2 mb-2 flex-wrap">
+                              <span class="param-summary-box blue">Chemical: {{ getFilteredChemicalParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]).length }}</span>
+                              <span class="param-summary-box green">General: {{ getFilteredGeneralParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]).length }}</span>
+                              <span class="param-summary-box pink">Lab Test: {{ grade.laboratoryTests.length }}</span>
+                              <span class="param-summary-box purple">Test Method: {{ grade.testMethods.length }}</span>
+                            </div>
+
+                            <!-- Category Tab Bar -->
+                            <div class="nav nav-tabs mb-2">
+                              <button type="button" class="nav-link py-1 px-3 text-xs fw-bold" [ngClass]="{active: grade.activeParamTab === 'chemical'}" (click)="grade.activeParamTab = 'chemical'">Chemical</button>
+                              <button type="button" class="nav-link py-1 px-3 text-xs fw-bold" [ngClass]="{active: grade.activeParamTab === 'general'}" (click)="grade.activeParamTab = 'general'">General</button>
+                              <button type="button" class="nav-link py-1 px-3 text-xs fw-bold" [ngClass]="{active: grade.activeParamTab === 'labtest'}" (click)="grade.activeParamTab = 'labtest'">Laboratory Test</button>
+                              <button type="button" class="nav-link py-1 px-3 text-xs fw-bold" [ngClass]="{active: grade.activeParamTab === 'testmethod'}" (click)="grade.activeParamTab = 'testmethod'">Test Method</button>
+                            </div>
+
+                            <!-- Chemical Category Table -->
+                            <div class="table-responsive flex-grow-1" *ngIf="grade.activeParamTab === 'chemical'">
+                              <table class="spec-table border" *ngIf="getFilteredChemicalParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]).length > 0; else noParams">
+                                <thead>
+                                  <tr>
+                                    <th class="spec-th">#</th>
+                                    <th class="spec-th">Parameter</th>
+                                    <th class="spec-th">Unit</th>
+                                    <th class="spec-th">Min</th>
+                                    <th class="spec-th">Max</th>
+                                    <th class="spec-th">Text / Criteria</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr class="spec-row" *ngFor="let p of getFilteredChemicalParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]); let pIdx = index">
+                                    <td>{{ pIdx + 1 }}</td>
+                                    <td class="fw-semibold">{{ p.parameterName }}</td>
+                                    <td>{{ p.parameterUnitName || '-' }}</td>
+                                    <td>{{ p.minValue != null ? p.minValue : '-' }}</td>
+                                    <td>{{ p.maxValue != null ? p.maxValue : '-' }}</td>
+                                    <td>{{ p.textValue || '-' }}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <!-- General Category Table -->
+                            <div class="table-responsive flex-grow-1" *ngIf="grade.activeParamTab === 'general'">
+                              <table class="spec-table border" *ngIf="getFilteredGeneralParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]).length > 0; else noParams">
+                                <thead>
+                                  <tr>
+                                    <th class="spec-th">#</th>
+                                    <th class="spec-th">Parameter</th>
+                                    <th class="spec-th">Unit</th>
+                                    <th class="spec-th">Min</th>
+                                    <th class="spec-th">Max</th>
+                                    <th class="spec-th">Text / Criteria</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr class="spec-row" *ngFor="let p of getFilteredGeneralParams(activeVersionIndex, activeGradeTabMap[activeVersionIndex]); let pIdx = index">
+                                    <td>{{ pIdx + 1 }}</td>
+                                    <td class="fw-semibold">{{ p.parameterName }}</td>
+                                    <td>{{ p.parameterUnitName || '-' }}</td>
+                                    <td>{{ p.minValue != null ? p.minValue : '-' }}</td>
+                                    <td>{{ p.maxValue != null ? p.maxValue : '-' }}</td>
+                                    <td>{{ p.textValue || '-' }}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <!-- Laboratory Test Table -->
+                            <div class="table-responsive flex-grow-1" *ngIf="grade.activeParamTab === 'labtest'">
+                              <table class="spec-table border" *ngIf="grade.laboratoryTests.length > 0; else noParams">
+                                <thead>
+                                  <tr>
+                                    <th class="spec-th">#</th>
+                                    <th class="spec-th">Laboratory Test</th>
+                                    <th class="spec-th">Parameters Count</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr class="spec-row" *ngFor="let lt of grade.laboratoryTests; let ltIdx = index">
+                                    <td>{{ ltIdx + 1 }}</td>
+                                    <td class="fw-semibold">{{ lt.laboratoryTestName }}</td>
+                                    <td><span class="badge bg-secondary">{{ lt.parameterCount }}</span></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <!-- Test Method Table -->
+                            <div class="table-responsive flex-grow-1" *ngIf="grade.activeParamTab === 'testmethod'">
+                              <table class="spec-table border" *ngIf="grade.testMethods.length > 0; else noParams">
+                                <thead>
+                                  <tr>
+                                    <th class="spec-th">#</th>
+                                    <th class="spec-th">Test Method</th>
+                                    <th class="spec-th">Specimens Required</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr class="spec-row" *ngFor="let tm of grade.testMethods; let tmIdx = index">
+                                    <td>{{ tmIdx + 1 }}</td>
+                                    <td class="fw-semibold">{{ tm.testMethodName }}</td>
+                                    <td>{{ tm.numberOfTestSpecimen != null ? tm.numberOfTestSpecimen : '-' }}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <ng-template #noParams>
+                              <div class="text-center py-4 text-muted small border rounded bg-light">
+                                No records found for {{ grade.activeParamTab }} category.
+                              </div>
+                            </ng-template>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ng-template #noGradesAdded>
+                    <div class="text-center py-4 text-muted small border rounded bg-white mt-2">
+                      <i class="bi bi-box-seam fs-3 d-block mb-1 text-secondary"></i>
+                      No grades added to Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }}. Use the grade dropdown above to search and add grades.
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Footer Actions -->
+        <div class="sticky-bottom bg-white p-3 border-top d-flex justify-content-end align-items-center gap-2 mt-3 shadow-sm rounded-bottom-3" *ngIf="!isViewMode">
+          <a [routerLink]="['/product-master']" class="btn btn-cancel">Cancel</a>
+          <button type="submit" class="btn btn-save">
+            <i class="bi bi-check-lg me-1"></i> Save & Publish
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Custom Prefix -->
+<div class="modal d-block bg-dark bg-opacity-50" *ngIf="showCustomPrefixModal">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title fw-bold">Add Custom Prefix</h6>
+        <button type="button" class="btn-close" (click)="showCustomPrefixModal = false"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Prefix Option Name *</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="newCustomPrefix" [ngModelOptions]="{standalone: true}" placeholder="e.g. Schedule" />
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showCustomPrefixModal = false">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="saveCustomPrefix()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { parseTestMethodSpecImport, ParsedTestMethodSpecRow } from '../test-method-spec-import.helper';
 
 @Component({
   selector: 'app-test-method-specification-list',
@@ -14,6 +15,18 @@ import { PaginationComponent } from '../../../utility/components/pagination/pagi
 })
 export class TestMethodSpecificationListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
+
+  // Import-related state
+  importBuilding = false;
+  importPreviewVisible = false;
+  importPreviewRows: ParsedTestMethodSpecRow[] = [];
+  importing = false;
+
+  get importOkCount(): number { return this.importPreviewRows.filter(r => r.status === 'ok').length; }
+  get importWarnCount(): number { return this.importPreviewRows.filter(r => r.status === 'warning').length; }
+  get importErrorCount(): number { return this.importPreviewRows.filter(r => r.status === 'error').length; }
+  get importHasImportable(): boolean { return this.importPreviewRows.some(r => r.status !== 'error'); }
+  get importPdfCount(): number { return this.importPreviewRows.filter(r => r.pdfFound).length; }
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
@@ -87,6 +100,102 @@ export class TestMethodSpecificationListComponent implements OnInit {
 
     });
 
+  }
+
+  // ── Import: Parse + Validate + Commit ──────────────────────────────────────
+  onImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const rows = await parseTestMethodSpecImport(reader.result as ArrayBuffer);
+        if (!rows.length) { this.toastService.show('No data rows found in the Published Standards sheet.', 'warning'); return; }
+
+        // Validate against backend: check orgs and duplicates
+        this.importBuilding = true;
+        this.testMethodService.validateImport(rows.map(r => ({
+          rowNumber: r.rowNumber,
+          standardOrganization: r.standardOrganization,
+          testMethodStandard: r.testMethodStandard,
+          part: r.part,
+          officialTitle: r.officialTitle,
+          version: r.version,
+          year: r.year,
+        }))).subscribe({
+          next: (validationResults: any[]) => {
+            // Merge backend validation into parsed rows
+            validationResults.forEach(vr => {
+              const row = rows.find(r => r.rowNumber === vr.rowNumber);
+              if (row) {
+                row.standardOrganizationID = vr.standardOrganizationID;
+                row.exists = vr.exists;
+                row.existingSpecId = vr.existingSpecId;
+                row.pdfFileName = vr.pdfFileName;
+                row.pdfFound = vr.pdfFound;
+                if (vr.status === 'error' && vr.messages?.length) {
+                  row.status = 'error';
+                  vr.messages.forEach((m: string) => {
+                    if (!row.messages.includes(m)) row.messages.push(m);
+                  });
+                }
+              }
+            });
+            this.importPreviewRows = rows;
+            this.importPreviewVisible = true;
+            this.importBuilding = false;
+          },
+          error: () => {
+            this.importBuilding = false;
+            this.toastService.show('Failed to validate import data.', 'error');
+          }
+        });
+      } catch (e: any) {
+        this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
+      } finally {
+        input.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  cancelImport(): void {
+    this.importPreviewVisible = false;
+    this.importPreviewRows = [];
+  }
+
+  commitImport(): void {
+    const rows = this.importPreviewRows.filter(r => r.status !== 'error');
+    if (!rows.length) { this.toastService.show('No importable rows.', 'warning'); return; }
+
+    this.importing = true;
+    this.testMethodService.bulkImport(rows.map(r => ({
+      rowNumber: r.rowNumber,
+      standardOrganization: r.standardOrganization,
+      testMethodStandard: r.testMethodStandard,
+      part: r.part,
+      officialTitle: r.officialTitle,
+      version: r.version,
+      year: r.year,
+    }))).subscribe({
+      next: (result: any) => {
+        this.importing = false;
+        let msg = `${result.imported} specification(s) imported successfully.`;
+        if (result.skipped > 0) msg += ` ${result.skipped} skipped.`;
+        if (result.errors?.length) {
+          const sampleErrors = result.errors.slice(0, 3).join('; ');
+          msg += ` Errors: ${sampleErrors}${result.errors.length > 3 ? '...' : ''}`;
+        }
+        this.toastService.show(msg, result.imported > 0 ? 'success' : 'warning');
+        this.cancelImport();
+        this.fetchData();
+      },
+      error: (err) => {
+        this.importing = false;
+        this.toastService.show(err?.error?.message || 'Bulk import failed.', 'error');
+      }
+    });
   }
 
   applySorting(column: string) {

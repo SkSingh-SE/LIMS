@@ -371,8 +371,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           this.permissionService.setAdmin(isAdmin);
 
           // 2. Filter hardcoded menu by API response
-
-          const filtered = this.filterMenusByApi(res || []);
+          const filtered = (isAdmin || !res || res.length === 0) ? getAllMenuItems() : this.filterMenusByApi(res || []);
 
           const afterPermFilter = this.applyPermissionFilter(filtered);
           this.menuItems = afterPermFilter;

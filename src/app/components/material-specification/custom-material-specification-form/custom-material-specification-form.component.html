@@ -1356,6 +1356,9 @@
                     <div class="alert alert-light border small mb-2" *ngIf="!getSpecificationLinesByTab(gi, 'chemical').length">
                       Add parameters in the <strong>Chemical</strong> tab first.
                     </div>
+                    <div class="alert alert-danger small py-1 mb-2" *ngIf="getSpecificationLinesByTab(gi, 'chemical').errors?.['duplicateTestMethod']">
+                      <i class="bi bi-exclamation-triangle me-1"></i> Duplicate Test Method Specification found. Each method can be assigned only once across all rows.
+                    </div>
                     <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'chemical').length" style="max-height: calc(100vh - 200px)">
                       <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
                         <thead>
@@ -1371,7 +1374,8 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index" [formGroupName]="i">
+                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'chemical').controls; let i = index" [formGroupName]="i"
+                            [ngClass]="{'table-danger': isDuplicateTestMethodRow(gi, 'chemical', i)}">
                             <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                             <td class="fw-medium small">{{ group.get('parameterName')?.value || '—' }}</td>
                             <td class="wide-input">
@@ -1399,6 +1403,9 @@
                     <div class="alert alert-light border small mb-2" *ngIf="!getSpecificationLinesByTab(gi, 'mechanical').length">
                       Add parameters in the <strong>General</strong> tab first.
                     </div>
+                    <div class="alert alert-danger small py-1 mb-2" *ngIf="getSpecificationLinesByTab(gi, 'mechanical').errors?.['duplicateTestMethod']">
+                      <i class="bi bi-exclamation-triangle me-1"></i> Duplicate Test Method Specification found. Each method can be assigned only once across all rows.
+                    </div>
                     <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'mechanical').length" style="max-height: calc(100vh - 200px)">
                       <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
                         <thead>
@@ -1414,7 +1421,8 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index" [formGroupName]="i">
+                          <tr class="spec-row" *ngFor="let group of getSpecificationLinesByTab(gi, 'mechanical').controls; let i = index" [formGroupName]="i"
+                            [ngClass]="{'table-danger': isDuplicateTestMethodRow(gi, 'mechanical', i)}">
                             <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                             <td class="fw-medium small">{{ group.get('parameterName')?.value || '—' }}</td>
                             <td class="wide-input">

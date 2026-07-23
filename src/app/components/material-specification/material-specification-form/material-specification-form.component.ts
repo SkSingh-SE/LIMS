@@ -7,6 +7,8 @@ import {
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -347,7 +349,34 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     return (chemCount + mechCount) > 0 ? null : { noSpecLine: true };
   }
 
+  /** Validator: test method specification IDs must be unique across all rows in a tab */
+  private uniqueTestMethodValidator: ValidatorFn = (array: AbstractControl): ValidationErrors | null => {
+    const formArray = array as FormArray;
+    const seen = new Map<number, number>();
+    const duplicateRows = new Set<number>();
+    formArray.controls.forEach((group, rowIdx) => {
+      const tmArray = (group as FormGroup).get('testMethodMapping') as FormArray;
+      if (!tmArray) return;
+      tmArray.controls.forEach((tmGroup) => {
+        const id = (tmGroup as FormGroup).get('testMethodSpecificationID')?.value;
+        if (id != null && id !== '' && id !== 0) {
+          if (seen.has(id)) {
+            duplicateRows.add(rowIdx);
+            duplicateRows.add(seen.get(id)!);
+          } else {
+            seen.set(id, rowIdx);
+          }
+        }
+      });
+    });
+    return duplicateRows.size > 0 ? { duplicateTestMethod: [...duplicateRows] } : null;
+  };
+
   addGrade(seedFromHeader: boolean = true) {
+    const chemArray = this.fb.array([]);
+    const mechArray = this.fb.array([]);
+    chemArray.setValidators(this.uniqueTestMethodValidator);
+    mechArray.setValidators(this.uniqueTestMethodValidator);
     const gradeGroup = this.fb.group({
       id: [0],
       specificationHeaderID: [this.MaterialSpecificationForm.get('id')?.value || 0],
@@ -357,8 +386,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       metalClassificationID: [null],
       identifierValuesJson: [''],
       specificationLines: this.fb.group({
-        chemical: this.fb.array([]),
-        mechanical: this.fb.array([]),
+        chemical: chemArray,
+        mechanical: mechArray,
         other: this.fb.array([]),
       }),
     }, { validators: this.atLeastOneSpecLineValidator });
@@ -484,6 +513,13 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   }
   removeTestMethodMappingRow(line: AbstractControl, i: number): void {
     this.testMethodMappingArray(line).removeAt(i);
+  }
+
+  /** Returns true if the given row (in a chemical/mechanical FormArray) has a duplicate test method. */
+  isDuplicateTestMethodRow(gradeIndex: number, tab: 'chemical' | 'mechanical', rowIndex: number): boolean {
+    const array = this.getSpecificationLinesByTab(gradeIndex, tab);
+    if (!array.errors?.['duplicateTestMethod']) return false;
+    return (array.errors['duplicateTestMethod'] as number[]).includes(rowIndex);
   }
 
   // ── MS-D: custom equation editor ────────────────────────────────────────────

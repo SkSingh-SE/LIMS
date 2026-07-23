@@ -2220,8 +2220,14 @@ label .text-danger {
 
 /* Inline checks — even spacing */
 .form-check-inline {
+  display: inline-flex;
+  align-items: center;
   margin-right: 1rem;
   margin-bottom: 0;
+}
+.form-check-inline .form-check-input {
+  margin-top: 0 !important;
+  float: none !important;
 }
 
 /* ════════════════════════════════════════════════════════════════

@@ -1,0 +1,274 @@
+/* Sticky bottom action bar */
+.sticky-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: 1020;
+}
+
+/* Accordion Section & Headers (Material Specification Style) */
+:host .accordion-section {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+:host .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: linear-gradient(90deg, #fafbfc 0%, #fff 100%);
+  border-left: 3px solid var(--primary-color);
+  border-bottom: 1px solid #edf2f7;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: #1e293b;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+:host .section-header:hover {
+  background: linear-gradient(90deg, #f3f4f6 0%, #fff 100%);
+}
+
+:host .section-header .bi {
+  font-size: 0.8rem;
+}
+
+:host .section-body {
+  padding: 0.6rem 0.75rem;
+}
+
+/* Theme Button Utilities */
+.btn-theme {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.btn-theme:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-theme {
+  background-color: transparent !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600;
+}
+
+.btn-outline-theme:hover {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #ffffff !important;
+}
+
+/* Grid & Inputs Density */
+:host .compact-grid .form-label {
+  font-size: 0.75rem;
+  margin-bottom: 0.2rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+:host .compact-grid .form-control,
+:host .compact-grid .form-select {
+  min-height: 30px;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+  border-color: #cbd5e1;
+  border-radius: 5px;
+}
+
+:host .compact-grid .form-control:focus,
+:host .compact-grid .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
+}
+
+/* Checkbox Pill / Box Strip */
+:host .metal-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+/* Version Sidebar Tabs */
+.version-tab-item {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  transition: all 0.15s ease;
+  margin-bottom: 0.2rem;
+}
+
+.version-tab-item:hover {
+  border-color: var(--primary-color);
+}
+
+.version-tab-item.active {
+  border-color: var(--primary-color);
+  border-left: 3px solid var(--primary-color);
+  background: #fff5f5;
+}
+
+.version-tab-item.active .version-title {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+/* Condition Form & Box Styling (AGENTS.md fieldset rule) */
+.condition-box {
+  background: #fafbfc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 0.65rem;
+}
+
+.condition-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.condition-card:hover {
+  border-color: #cbd5e1;
+}
+
+.condition-card.active {
+  border-color: var(--primary-color);
+  border-left: 3px solid var(--primary-color);
+  background: #fff5f5;
+}
+
+/* Grade Pills Bar */
+.grade-pill {
+  padding: 0.25rem 0.85rem;
+  border-radius: 5px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grade-pill:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.grade-pill.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(218, 38, 28, 0.2);
+}
+
+/* Parameter Light Summary Badges */
+.param-summary-box {
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.param-summary-box.blue {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.param-summary-box.green {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.param-summary-box.pink {
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
+  color: #be185d;
+}
+
+.param-summary-box.purple {
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  color: #6b21a8;
+}
+
+/* Spec Table Styling */
+.spec-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.76rem;
+  width: 100%;
+}
+
+.spec-th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 8px 10px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.spec-row:hover {
+  background-color: #f8fafc;
+}
+
+.spec-row td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+/* Action Buttons */
+.btn-save {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+}
+
+.btn-save:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+
+.btn-cancel {
+  background: #64748b;
+  border-color: #64748b;
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+}
+
+.btn-cancel:hover {
+  background: #475569;
+  color: #fff;
+}
+
+/* Custom Switch Accent Color */
+.form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}

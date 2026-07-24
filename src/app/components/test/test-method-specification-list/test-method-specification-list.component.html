@@ -2,14 +2,23 @@
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Test Method Specification List</label>
-      <div>
-        <!-- Import Excel Button — only visible with permission -->
-        <button *hasPermission="'CanImportTestMethodSpecification'" class="btn btn-outline-light btn-sm me-3" (click)="fileInput.click()" [disabled]="importBuilding">
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Download Template Button -->
+        <button class="btn btn-outline-light btn-sm" (click)="downloadTemplate()" title="Download Excel template for import">
+          <i class="bi bi-file-earmark-arrow-down"></i>
+          Template
+        </button>
+        <!-- Import Excel Button -->
+        <button *hasPermission="'CanImportTestMethodSpecification'" class="btn btn-outline-light btn-sm" (click)="fileInput.click()" [disabled]="importBuilding">
           <i class="bi bi-upload"></i>
           {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
         </button>
         <input #fileInput type="file" accept=".xlsx,.xls" class="d-none" (change)="onImportFileSelected($event)" />
-        <a routerLink="/test-specification/create" class="btn btn-outline-light btn-sm me-2">
+
+        <!-- Add Test Method Button -->
+        <a *hasPermission="'CanCreateTestMethodSpecification'" routerLink="/test-specification/create" class="btn btn-outline-light btn-sm">
+          
           <i class="bi bi-plus-lg"></i>
           Add Test Method Specification
         </a>
@@ -64,14 +73,13 @@
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-3">
                   <!-- Flex for spacing -->
-                  <a [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
+                  <a *hasPermission="'CanViewTestMethodSpecification'" [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
-                  <a [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                  <a *hasPermission="'CanEditTestMethodSpecification'" [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
                     <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
                   </a>
-
-                  <a class="icon-link" title="Delete" (click)="deleteFn(supplier.id)">
+                  <a *hasPermission="'CanDeleteTestMethodSpecification'" class="icon-link" title="Delete" (click)="deleteFn(supplier.id)">
                     <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
                 </div>

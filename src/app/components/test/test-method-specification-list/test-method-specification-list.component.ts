@@ -7,6 +7,7 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 import { parseTestMethodSpecImport, ParsedTestMethodSpecRow } from '../test-method-spec-import.helper';
+import * as ExcelJS from 'exceljs';
 
 @Component({
   selector: 'app-test-method-specification-list',
@@ -146,6 +147,70 @@ export class TestMethodSpecificationListComponent implements OnInit {
 
     });
 
+  }
+
+  // ── Download Template ──────────────────────────────────────────────────────
+  async downloadTemplate(): Promise<void> {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Published Standards');
+
+    // Define columns
+    ws.columns = [
+      { header: 'Standard Organization', key: 'org', width: 28 },
+      { header: 'Test Method Standard', key: 'std', width: 30 },
+      { header: 'Part / Sec', key: 'part', width: 16 },
+      { header: 'Official Standard Title', key: 'title', width: 50 },
+      { header: 'Version', key: 'version', width: 12 },
+      { header: 'Year', key: 'year', width: 10 },
+      { header: 'File in Updated Std List', key: 'pdf', width: 28 },
+    ];
+
+    // Header styling
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDA261C' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 22;
+
+    // Example data row (row 2)
+    ws.addRow({
+      org: 'IS',
+      std: '2062',
+      part: 'Part 1',
+      title: 'Hot Rolled Medium and High Tensile Structural Steel',
+      version: 'E250A',
+      year: '2021',
+      pdf: 'IS-2062-Part-1-E250A.pdf',
+    });
+
+    // Hint row (row 3) — light yellow, italic, explanatory
+    const hintRow = ws.addRow({});
+    hintRow.getCell(1).value = '→ Replace example data above. Leave "File in Updated Std List" blank if no PDF.';
+    hintRow.font = { italic: true, color: { argb: 'FF666666' }, size: 9 };
+    hintRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
+    ws.mergeCells(`A${hintRow.number}:G${hintRow.number}`);
+
+    // Bold headers row again as row 4 (repeated for clarity after hint)
+    const headerRepeat = ws.addRow(headerRow.values as any);
+    headerRepeat.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    headerRepeat.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDA261C' } };
+    headerRepeat.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRepeat.height = 22;
+
+    // Freeze top row
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Generate and download
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'TestMethodSpec_Import_Template.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 
   // ── Import: Parse + Validate + Commit ──────────────────────────────────────

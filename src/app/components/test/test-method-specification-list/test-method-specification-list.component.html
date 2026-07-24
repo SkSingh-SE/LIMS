@@ -3,8 +3,8 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Test Method Specification List</label>
       <div>
-        <!-- Import Excel Button -->
-        <button class="btn btn-outline-light btn-sm me-3" (click)="fileInput.click()" [disabled]="importBuilding">
+        <!-- Import Excel Button — only visible with permission -->
+        <button *hasPermission="'CanImportTestMethodSpecification'" class="btn btn-outline-light btn-sm me-3" (click)="fileInput.click()" [disabled]="importBuilding">
           <i class="bi bi-upload"></i>
           {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
         </button>

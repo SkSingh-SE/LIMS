@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
@@ -9,7 +10,7 @@ import { parseTestMethodSpecImport, ParsedTestMethodSpecRow } from '../test-meth
 
 @Component({
   selector: 'app-test-method-specification-list',
-  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, HasPermissionDirective, PaginationComponent ],
   templateUrl: './test-method-specification-list.component.html',
   styleUrl: './test-method-specification-list.component.css'
 })

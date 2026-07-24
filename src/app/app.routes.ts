@@ -143,6 +143,7 @@ import { TechnicalRawDataFormComponent } from './components/nabl/technical-raw-d
 import { TechnicalRawDataPreviewComponent } from './components/nabl/technical-raw-data-nabl/technical-raw-data-preview/technical-raw-data-preview.component';
 import { InventoryManagementListComponent } from './components/nabl/inventory-management/inventory-management-list/inventory-management-list.component';
 import { InventoryManagementFormComponent } from './components/nabl/inventory-management/inventory-management-form/inventory-management-form.component';
+import { EquipmentPrintListComponent } from './components/equipment/equipment-print/equipment-print-list.component';
 // Removed direct imports for lazy loading
 
 
@@ -356,6 +357,7 @@ export const routes: Routes = [
             { path: 'equipment/create', component: EquipmentFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'equipment/edit/:id', component: EquipmentFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'equipment/details/:id', component: EquipmentFormComponent },
+            { path: 'equipment/print', component: EquipmentPrintListComponent },
             { path: 'invoice-case-config', component: InvoiceCaseConfigurationsComponent },
             { path: 'master/price-dimension-type', loadComponent: () => import('./components/test/price-dimension-type/price-dimension-type.component').then(m => m.PriceDimensionTypeComponent) },
             { path: 'invoice-case', component: InvoiceCaseListComponent },

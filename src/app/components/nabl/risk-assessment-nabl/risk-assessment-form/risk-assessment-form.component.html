@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="riskForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="riskForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -64,75 +64,311 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('riskDetails')">
             <i class="bi" [ngClass]="openSections['riskDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Risk & Opportunity Assessment Details</span>
+            <span class="fw-bold ms-2">II. Risk & Opportunity Details</span>
           </div>
           <div *ngIf="openSections['riskDetails']" class="section-body">
             <div class="row gy-3">
               <div class="col-md-4">
                 <label class="form-label">
-                  Date
+                  Risk No
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="date" />
+                <input type="text" class="form-control" formControlName="riskNo" />
               </div>
-              <div class="col-md-8">
+              <div class="col-md-4">
                 <label class="form-label">
-                  Activity / Process
+                  Risk Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="activityProcess" />
-              </div>
+                <input type="date" class="form-control" formControlName="riskDate" />
+                <div *ngIf="riskForm.get('riskDate')?.invalid && riskForm.get('riskDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  risk date is required
+                </div>
 
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Risk Identified
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Type
                   <span class="text-danger">*</span>
                 </label>
-                <quill-editor formControlName="riskIdentified" [modules]="quillModules"></quill-editor>
+                <select class="form-select" formControlName="type">
+                  <option *ngFor="let type of types" [value]="type">{{type}}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                  [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="riskForm.get('departmentId')?.value"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div *ngIf="riskForm.get('departmentId')?.invalid && riskForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department is required
+                </div>
+
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Category
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="category">
+                  <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+                </select>
               </div>
 
-              <div class="col-12">
+              <div class="col-md-4">
+                <app-searchable-dropdown [fetchDataFn]="getEmployees" [placeholder]="'Search Employee'"
+                  [required]="true" [labelName]="'Identified By'" (itemSelected)="onEmployeeSelected($event)"
+                  [selectedItem]="riskForm.get('identifiedById')?.value">
+                </app-searchable-dropdown>
+                <div *ngIf="riskForm.get('identifiedById')?.invalid && riskForm.get('identifiedById')?.touched"
+                  class="text-danger text-sm mt-1">
+                  identified By is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Risk Owner
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="riskOwner" />
+                <div *ngIf="riskForm.get('riskOwner')?.invalid && riskForm.get('riskOwner')?.touched"
+                  class="text-danger text-sm mt-1">
+                  risk owner is required
+                </div>
+
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Risk / Opportunity Title
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="title" />
+                <div *ngIf="riskForm.get('title')?.invalid && riskForm.get('title')?.touched"
+                  class="text-danger text-sm mt-1">
+                  risk / opportunity title is required
+                </div>
+              </div>
+            </div>
+            <br />
+            <br />
+
+            <div class="row gy-3">
+              <div class="col-4 d-flex flex-column">
                 <label class="form-label fw-bold">
-                  Opportunity Identification
+                  Risk / Opportunity Descrption
                   <span class="text-danger">*</span>
                 </label>
                 <quill-editor formControlName="opportunity" [modules]="quillModules"></quill-editor>
+                <div *ngIf="riskForm.get('opportunity')?.invalid && riskForm.get('opportunity')?.touched"
+                  class="text-danger text-sm mt-1">
+                   risk / opportunity descrption is required
+                </div>
+
               </div>
 
-              <div class="col-12">
+              <div class="col-4 d-flex flex-column">
                 <label class="form-label fw-bold">
-                  Mitigation Plan
+                  Existing Situation
                   <span class="text-danger">*</span>
                 </label>
-                <quill-editor formControlName="mitigationPlan" [modules]="quillModules"></quill-editor>
+                <quill-editor formControlName="existingSituation" [modules]="quillModules"></quill-editor>
+                <div *ngIf="riskForm.get('existingSituation')?.invalid && riskForm.get('existingSituation')?.touched"
+                  class="text-danger text-sm mt-1">
+                  existing situation is required
+                </div>
+
               </div>
 
-              <div class="col-md-12">
-                <label class="form-label">
-                  Responsibility
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="responsibility" />
-              </div>
-
-              <div class="col-12">
+              <div class="col-4 d-flex flex-column">
                 <label class="form-label fw-bold">
-                  Effectiveness of Action Taken
+                  Potential Impact / Expected Benefit
+                </label>
+                <quill-editor formControlName="expectedBenefit" [modules]="quillModules"></quill-editor>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('assessment')">
+            <i class="bi" [ngClass]="openSections['assessment'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Risk Assessment</span>
+          </div>
+          <div *ngIf="openSections['assessment']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Likelihood</label>
+                <select class="form-select" formControlName="likelihood">
+                  <option *ngFor="let likelihood of likelihoodOptions" [value]="likelihood">{{likelihood}}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Impact</label>
+                <select class="form-select" formControlName="impact">
+                  <option *ngFor="let impact of impactOptions" [value]="impact">{{impact}}</option>
+                </select>
+                <div *ngIf="riskForm.get('impact')?.invalid && riskForm.get('impact')?.touched"
+                  class="text-danger text-sm mt-1">
+                  impact is required
+                </div>
+
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Risk Score</label>
+                <input type="number" step="0.1" class="form-control" formControlName="riskScore" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label  fw-bold">Risk Level</label>
+                <input type="text" step="0.0001" class="form-control" formControlName="riskLevel" />
+
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Risk Remarks
                   <span class="text-danger">*</span>
                 </label>
-                <quill-editor formControlName="effectiveness" [modules]="quillModules"></quill-editor>
+                <quill-editor formControlName="riskRemarks" [modules]="quillModules"></quill-editor>
               </div>
             </div>
           </div>
         </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('controls')">
+            <i class="bi" [ngClass]="openSections['controls'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Existing Controls</span>
+          </div>
+          <div *ngIf="openSections['controls']" class="section-body">
+            <div class="row g-3">
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Details Of Existing Controls
+                  <span class="text-danger">*</span>
+                </label>
+                <quill-editor formControlName="existingControls" [modules]="quillModules"></quill-editor>
+                <div *ngIf="riskForm.get('existingControls')?.invalid && riskForm.get('existingControls')?.touched"
+                  class="text-danger text-sm mt-1">
+                  existing controls is required
+                </div>
 
-        
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('actionplans')">
+            <div>
+              <i class="bi" [ngClass]="openSections['actionplans'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">V. Actopn Plan</span>
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-light py-0 me-3"
+              (click)="addActionPlans(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i>
+              Add Source
+            </button>
+          </div>
+          <div *ngIf="openSections['actionplans']" class="section-body p-0">
+            <div class="table-responsive m-0">
+              <table class="table table-bordered mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Action</th>
+                    <th>Responsible Person</th>
+                    <th>Target Date</th>
+                    <th>Completion Date</th>
+                    <th>Status</th>
+                    <th *ngIf="!isViewMode" class="py-2 small fw-bold text-muted text-center" style="width: 60px">Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="actionPlans">
+                  <tr *ngFor="let src of actionPlans.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" step="0.0001" class="form-control form-control-sm" formControlName="action"
+                        placeholder="action " />
+                      <small class="text-danger" *ngIf="src.get('action')?.invalid && (src.get('action')?.touched)">
+                        action is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" step="0.0001" class="form-control form-control-sm"
+                        formControlName="responsiblePerson" placeholder="responsible person" />
+                      <small class="text-danger"
+                        *ngIf="src.get('responsiblePerson')?.invalid && (src.get('responsiblePerson')?.touched)">
+                        responsible person is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="date" step="0.0001" class="form-control form-control-sm" formControlName="targetDate"
+                        placeholder="value" />
+                      <small class="text-danger"
+                        *ngIf="src.get('targetDate')?.invalid && (src.get('targetDate')?.touched)">
+                        target date is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="date" step="0.0001" class="form-control form-control-sm"
+                        formControlName="completionDate" />
+
+                    </td>
+                    <td>
+                      <select class="form-select" formControlName="status">
+                        <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
+                      </select>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeActionPlans(i)"
+                        [disabled]="actionPlans.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('review')">
+            <i class="bi" [ngClass]="openSections['review'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">VI. Review</span>
+          </div>
+          <div *ngIf="openSections['review']" class="section-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Effectiveness</label>
+                <select class="form-select" formControlName="effectiveness">
+                  <option *ngFor="let effectiveness of effectivenesses" [value]="effectiveness">{{effectiveness}}
+                  </option>
+                </select>
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Effectiveness Remarks
+                </label>
+                <quill-editor formControlName="effectivenessRemarks" [modules]="quillModules"></quill-editor>
+               
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Risk Remarks
+                </label>
+                <quill-editor formControlName="riskRemarks" [modules]="quillModules"></quill-editor>
+              </div>
+            </div>
+          </div>
+        </div>
         <app-nabl-signature-section [parentForm]="riskForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="riskForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Assessment" : "Save Assessment" }}
           </button>
         </div>

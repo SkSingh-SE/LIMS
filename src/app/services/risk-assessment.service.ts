@@ -10,7 +10,7 @@ import { RiskAssessment } from '../models/risk-assessment';
 export class RiskAssessmentService {
     private apiUrl = environment.apiUrl + '/Nabl/RiskAssessment';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,8 @@ export class RiskAssessmentService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getNextRiskNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-risk-no`);
     }
 }

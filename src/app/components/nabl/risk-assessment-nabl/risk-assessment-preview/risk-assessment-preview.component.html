@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,65 +36,136 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'RISK & OPPORTUNITY ASSESSMENT'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'RISK & OPPORTUNITY ASSESSMENT'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.issueDate"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <div class="doc-section mb-3">
-        <div class="sec-title">RISK & OPPORTUNITY ASSESSMENT</div>
-        <table class="table table-bordered inner-table align-middle">
-          <thead>
-            <tr class="tbl-head text-center">
-              <th style="width: 100px">Date</th>
-              <th>Activity / Process</th>
-              <th>Risk Identified</th>
-              <th>Opportunity Identification</th>
-              <th>Mitigation Plan</th>
-              <th>Responsibility</th>
-              <th>Effectiveness of Action Taken</th>
-            </tr>
-          </thead>
+        <div class="sec-title">I. RISK & OPPORTUNITY DETAILS</div>
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="text-center">{{ data.date | date: "dd.MM.yyyy" }}</td>
-              <td>{{ data.activityProcess }}</td>
-              <td>
-                <div class="ql-editor p-1" [innerHTML]="data.riskIdentified"></div>
-              </td>
-              <td>
-                <div class="ql-editor p-1" [innerHTML]="data.opportunity"></div>
-              </td>
-              <td>
-                <div class="ql-editor p-1" [innerHTML]="data.mitigationPlan"></div>
-              </td>
-              <td class="text-center">{{ data.responsibility }}</td>
-              <td>
-                <div class="ql-editor p-1" [innerHTML]="data.effectiveness"></div>
-              </td>
+              <td class="lbl" style="width: 30%">Risk No</td>
+              <td>{{ data.riskNo }}</td>
+              <td class="lbl">Risk Date</td>
+              <td>{{ data.riskDate | date: "dd.MM.yyyy" }}</td>
             </tr>
-            <!-- Empty row for filling space if needed -->
-            <tr *ngIf="!data">
-              <td colspan="7" style="height: 400px"></td>
+            <tr>
+              <td class="lbl" style="width: 20%">Type</td>
+              <td>{{ data.type }}</td>
+              <td class="lbl" style="width: 30%">Department</td>
+              <td>{{ data.departmentName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Category</td>
+              <td>{{ data.category }}</td>
+              <td class="lbl">Identified By</td>
+              <td>{{ data.identifiedByName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Risk Owner</td>
+              <td>{{ data.riskOwner }}</td>
+              <td class="lbl">Risk / Opportunity Title </td>
+              <td>{{ data.title }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Risk / Opportunity Descrption</td>
+              <td [innerHTML]="data.opportunity"></td>
+              <td class="lbl">Existing Situation</td>
+              <td [innerHTML]="data.existingSituation"></td>
+            </tr>
+            <tr>
+              <td class="lbl"> Potential Impact / Expected Benefit</td>
+              <td [innerHTML]="data.expectedBenefit" colspan="3"></td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. RISK ASSESSMENT</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Likelihood</td>
+              <td class="lbl">Impact</td>
+              <td class="lbl" style="width: 20%">Risk Score</td>
+              <td class="lbl" style="width: 30%">Risk Level</td>
+            </tr>
+            <tr>
+              <td>{{ data.likelihood }}</td>
+              <td>{{ data.impact }}</td>
+              <td>{{ data.riskScore }}</td>
+              <td>{{ data.riskLevel }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          III. EXISTING CONTROLS
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.existingControls">
+        </div>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. UNCERTAINTY BUDGET</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th style="width: 50px;">SN</th>
+              <th>Action</th>
+              <th>Responsible Person</th>
+              <th>Target Date</th>
+              <th>Completion Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let src of data.actionPlans; let i = index" class="text-center small">
+              <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+
+              <td class="text-start">{{ src.action }}</td>
+              <td>{{ src.responsiblePerson }}</td>
+              <td>{{ src.targetDate | date: "dd.MM.yyyy" }}</td>
+              <td>{{ src.completionDate | date: "dd.MM.yyyy" }}</td>
+              <td>{{ src.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          V. REVIEW
+        </div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 30%">Effectiveness</td>
+              <td colspan="3">{{ data.effectiveness }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Effectiveness Remarks</td>
+              <td [innerHTML]="data.effectivenessRemarks"></td>
+              <td class="lbl" style="width: 30%">Risk Remarks</td>
+              <td [innerHTML]="data.riskRemarks"></td>
+            </tr>
+            <tr>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'General Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy" [reviewedApprovedByName]="data.reviewedBy"
+        [issuedByName]="data.approvedBy"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

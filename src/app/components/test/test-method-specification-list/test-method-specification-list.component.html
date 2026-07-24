@@ -2,16 +2,18 @@
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Test Method Specification List</label>
-      <a routerLink="/test-specification/create" class="btn btn-outline-light btn-sm me-2">
-        <i class="bi bi-plus-lg"></i>
-        Add Test Method Specification
-      </a>
-      <!-- Import Excel Button -->
-      <button class="btn btn-outline-light btn-sm me-3" (click)="fileInput.click()" [disabled]="importBuilding">
-        <i class="bi bi-upload"></i>
-        {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
-      </button>
-      <input #fileInput type="file" accept=".xlsx,.xls" class="d-none" (change)="onImportFileSelected($event)" />
+      <div>
+        <!-- Import Excel Button -->
+        <button class="btn btn-outline-light btn-sm me-3" (click)="fileInput.click()" [disabled]="importBuilding">
+          <i class="bi bi-upload"></i>
+          {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
+        </button>
+        <input #fileInput type="file" accept=".xlsx,.xls" class="d-none" (change)="onImportFileSelected($event)" />
+        <a routerLink="/test-specification/create" class="btn btn-outline-light btn-sm me-2">
+          <i class="bi bi-plus-lg"></i>
+          Add Test Method Specification
+        </a>
+      </div>
     </div>
 
     <div class="card-body">
@@ -106,70 +108,75 @@
   </div>
 </div>
 
-<!-- Import Preview Modal -->
-<div class="modal-backdrop" *ngIf="importPreviewVisible" style="z-index: 1040;"></div>
-<div class="modal d-block" *ngIf="importPreviewVisible" style="z-index: 1050;" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header card-form-header text-white">
-        <h5 class="modal-title">Import Preview — Test Method Specifications</h5>
-        <button type="button" class="btn-close btn-close-white" (click)="cancelImport()" [disabled]="importing"></button>
+<!-- Import Preview Modal (Grade-Import style) -->
+<div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
+  <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
+    <div class="custom-modal-header">
+      <h6 class="mb-0">Import Preview — Test Method Specifications</h6>
+      <button type="button" class="btn-close" (click)="cancelImport()" [disabled]="importing"></button>
+    </div>
+    <div class="custom-modal-body">
+      <!-- Status filter buttons -->
+      <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        <span class="text-muted small fw-semibold">Filter:</span>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'" (click)="onImportFilter('all')">All ({{ importPreviewRows.length }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'ok' ? 'btn-success' : 'btn-outline-success'" (click)="onImportFilter('ok')">New ({{ importOkCount }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'warning' ? 'btn-warning text-dark' : 'btn-outline-warning'" (click)="onImportFilter('warning')">Duplicate ({{ importWarnCount }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'error' ? 'btn-danger' : 'btn-outline-danger'" (click)="onImportFilter('error')">Error ({{ importErrorCount }})</button>
+        <span class="badge bg-info text-dark ms-1">{{ importPdfCount }} PDF</span>
       </div>
-      <div class="modal-body p-3">
-        <div class="d-flex gap-3 mb-3">
-          <span class="badge bg-success fs-6">✓ {{ importOkCount }} New</span>
-          <span class="badge bg-warning text-dark fs-6">⚠ {{ importWarnCount }} Duplicate</span>
-          <span class="badge bg-danger fs-6">✗ {{ importErrorCount }} Error</span>
-          <span class="badge bg-info fs-6">📄 {{ importPdfCount }} PDF</span>
-        </div>
-        <div class="table-responsive" style="max-height: 55vh;">
-          <table class="table table-bordered table-sm align-middle mb-0">
-            <thead class="table-light" style="position: sticky; top: 0;">
-              <tr class="text-center">
-                <th style="width:50px;">#</th>
-                <th>Standard Organization</th>
-                <th>Test Method Standard</th>
-                <th>Part / Sec</th>
-                <th>Official Title</th>
-                <th>Version</th>
-                <th>Year</th>
-                <th style="width:100px;">PDF</th>
-                <th style="width:90px;">Status</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of importPreviewRows" [ngClass]="{'table-danger': row.status==='error', 'table-warning': row.status==='warning'}">
-                <td class="text-center">{{ row.rowNumber }}</td>
-                <td>{{ row.standardOrganization }}</td>
-                <td>{{ row.testMethodStandard }}</td>
-                <td>{{ row.part }}</td>
-                <td>{{ row.officialTitle }}</td>
-                <td class="text-center">{{ row.version }}</td>
-                <td class="text-center">{{ row.year }}</td>
-                <td class="text-center">
-                  <span *ngIf="row.pdfFound" class="badge bg-info" title="{{ row.pdfFileName }}">📄 Match</span>
-                  <span *ngIf="!row.pdfFound && row.status !== 'error'" class="badge bg-secondary">No PDF</span>
-                  <span *ngIf="!row.pdfFound && row.status === 'error'" class="text-muted">—</span>
-                </td>
-                <td class="text-center">
-                  <span *ngIf="row.status === 'ok'" class="badge bg-success">New</span>
-                  <span *ngIf="row.status === 'warning'" class="badge bg-warning text-dark">Exists</span>
-                  <span *ngIf="row.status === 'error'" class="badge bg-danger">Error</span>
-                </td>
-                <td class="text-small">{{ row.messages?.join('; ') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="table-responsive import-preview-table">
+        <table class="table table-sm table-bordered mb-0">
+          <thead>
+            <tr>
+              <th class="sortable-th" (click)="onImportSort('rowNumber')"># <i class="bi" [ngClass]="importSortIcon('rowNumber')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('standardOrganization')">Standard Organization <i class="bi" [ngClass]="importSortIcon('standardOrganization')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('testMethodStandard')">Test Method Standard <i class="bi" [ngClass]="importSortIcon('testMethodStandard')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('part')">Part / Sec <i class="bi" [ngClass]="importSortIcon('part')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('officialTitle')">Official Title <i class="bi" [ngClass]="importSortIcon('officialTitle')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('version')">Version <i class="bi" [ngClass]="importSortIcon('version')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('year')">Year <i class="bi" [ngClass]="importSortIcon('year')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('fileInUpdatedStdList')">File in Std List <i class="bi" [ngClass]="importSortIcon('fileInUpdatedStdList')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('pdfFound')">PDF <i class="bi" [ngClass]="importSortIcon('pdfFound')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('status')">Status <i class="bi" [ngClass]="importSortIcon('status')"></i></th>
+              <th>Messages</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of importFilteredRows"
+                [ngClass]="{ 'table-danger': row.status === 'error', 'table-warning': row.status === 'warning' }">
+              <td class="text-center">{{ row.rowNumber }}</td>
+              <td>{{ row.standardOrganization }}</td>
+              <td>{{ row.testMethodStandard }}</td>
+              <td>{{ row.part }}</td>
+              <td>{{ row.officialTitle }}</td>
+              <td class="text-center">{{ row.version }}</td>
+              <td class="text-center">{{ row.year }}</td>
+              <td class="text-start small">{{ row.fileInUpdatedStdList || '—' }}</td>
+              <td class="text-center">
+                <span *ngIf="row.pdfFound" class="badge bg-info text-dark" title="{{ row.pdfFileName || row.fileInUpdatedStdList }}">PDF</span>
+                <span *ngIf="!row.pdfFound && row.fileInUpdatedStdList" class="badge bg-warning text-dark" title="{{ row.fileInUpdatedStdList }}">No PDF</span>
+                <span *ngIf="!row.pdfFound && !row.fileInUpdatedStdList && row.status !== 'error'" class="badge bg-secondary">—</span>
+                <span *ngIf="!row.pdfFound && !row.fileInUpdatedStdList && row.status === 'error'" class="text-muted">—</span>
+              </td>
+              <td class="text-center">
+                <span class="badge"
+                  [ngClass]="{ 'bg-success': row.status === 'ok', 'bg-warning text-dark': row.status === 'warning', 'bg-danger': row.status === 'error' }">
+                  {{ row.status | uppercase }}
+                </span>
+              </td>
+              <td class="text-danger small">{{ row.messages?.join('; ') }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary btn-sm" (click)="cancelImport()" [disabled]="importing">Cancel</button>
-        <button class="btn btn-primary btn-sm" (click)="commitImport()" [disabled]="importing || !importHasImportable">
-          <i class="bi bi-download"></i>
-          {{ importing ? 'Importing...' : 'Import ' + importOkCount + ' New Record(s)' }}
-        </button>
-      </div>
+    </div>
+    <div class="custom-modal-footer">
+      <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()" [disabled]="importing">Cancel</button>
+      <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="importing || !importHasImportable">
+        <i class="bi bi-download"></i>
+        {{ importing ? 'Importing...' : 'Import ' + importOkCount + ' Record(s)' }}
+      </button>
     </div>
   </div>
 </div>

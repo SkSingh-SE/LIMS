@@ -22,11 +22,56 @@ export class TestMethodSpecificationListComponent implements OnInit {
   importPreviewRows: ParsedTestMethodSpecRow[] = [];
   importing = false;
 
+  // Import preview filter + sort
+  importStatusFilter: 'all' | 'ok' | 'warning' | 'error' = 'all';
+  importSortColumn = 'rowNumber';
+  importSortOrder: 'asc' | 'desc' = 'asc';
+
   get importOkCount(): number { return this.importPreviewRows.filter(r => r.status === 'ok').length; }
   get importWarnCount(): number { return this.importPreviewRows.filter(r => r.status === 'warning').length; }
   get importErrorCount(): number { return this.importPreviewRows.filter(r => r.status === 'error').length; }
   get importHasImportable(): boolean { return this.importPreviewRows.some(r => r.status !== 'error'); }
   get importPdfCount(): number { return this.importPreviewRows.filter(r => r.pdfFound).length; }
+
+  /** Filtered + sorted rows for the preview table */
+  get importFilteredRows(): ParsedTestMethodSpecRow[] {
+    let rows = [...this.importPreviewRows];
+
+    // Filter by status
+    if (this.importStatusFilter !== 'all') {
+      rows = rows.filter(r => r.status === this.importStatusFilter);
+    }
+
+    // Sort
+    const col = this.importSortColumn;
+    const dir = this.importSortOrder === 'asc' ? 1 : -1;
+    rows.sort((a: any, b: any) => {
+      const av = a[col] ?? '';
+      const bv = b[col] ?? '';
+      if (typeof av === 'string') return av.localeCompare(bv) * dir;
+      return (av - bv) * dir;
+    });
+
+    return rows;
+  }
+
+  onImportFilter(status: 'all' | 'ok' | 'warning' | 'error'): void {
+    this.importStatusFilter = status;
+  }
+
+  onImportSort(column: string): void {
+    if (this.importSortColumn === column) {
+      this.importSortOrder = this.importSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.importSortColumn = column;
+      this.importSortOrder = 'asc';
+    }
+  }
+
+  importSortIcon(column: string): string {
+    if (this.importSortColumn !== column) return 'bi-chevron-expand';
+    return this.importSortOrder === 'asc' ? 'bi-chevron-up' : 'bi-chevron-down';
+  }
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
@@ -113,7 +158,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
         const rows = await parseTestMethodSpecImport(reader.result as ArrayBuffer);
         if (!rows.length) { this.toastService.show('No data rows found in the Published Standards sheet.', 'warning'); return; }
 
-        // Validate against backend: check orgs and duplicates
+        // Validate against backend: check orgs, duplicates, and resolve PDF
         this.importBuilding = true;
         this.testMethodService.validateImport(rows.map(r => ({
           rowNumber: r.rowNumber,
@@ -123,6 +168,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
           officialTitle: r.officialTitle,
           version: r.version,
           year: r.year,
+          pdfFileName: r.fileInUpdatedStdList,  // column G — exact PDF filename from Excel
         }))).subscribe({
           next: (validationResults: any[]) => {
             // Merge backend validation into parsed rows
@@ -143,6 +189,9 @@ export class TestMethodSpecificationListComponent implements OnInit {
               }
             });
             this.importPreviewRows = rows;
+            this.importStatusFilter = 'all';
+            this.importSortColumn = 'rowNumber';
+            this.importSortOrder = 'asc';
             this.importPreviewVisible = true;
             this.importBuilding = false;
           },
@@ -178,6 +227,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
       officialTitle: r.officialTitle,
       version: r.version,
       year: r.year,
+      pdfFileName: r.pdfFileName || r.fileInUpdatedStdList,  // resolved PDF filename
     }))).subscribe({
       next: (result: any) => {
         this.importing = false;

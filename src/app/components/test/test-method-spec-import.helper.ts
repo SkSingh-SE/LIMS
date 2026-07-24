@@ -13,6 +13,8 @@ export interface ParsedTestMethodSpecRow {
   officialTitle: string;
   version: string;
   year: string;
+  /** Value from column G — "File in Updated Std List" — exact PDF filename from Excel */
+  fileInUpdatedStdList: string;
   status: 'ok' | 'warning' | 'error';
   messages: string[];
   // Resolved during validation
@@ -49,13 +51,14 @@ export async function parseTestMethodSpecImport(buffer: ArrayBuffer): Promise<Pa
       return v.toString().trim();
     };
 
-    // Columns: A=Standard Organization, B=Test Method Standard, C=Part / Sec, D=Official Standard Title, E=Version, F=Year
+    // Columns: A=Standard Organization, B=Test Method Standard, C=Part / Sec, D=Official Standard Title, E=Version, F=Year, G=File in Updated Std List
     const standardOrganization = getCell(1);
     const testMethodStandard = getCell(2);
     const part = getCell(3);
     const officialTitle = getCell(4);
     const version = getCell(5);
     const year = getCell(6);
+    const fileInUpdatedStdList = getCell(7);
 
     // Skip fully empty rows
     if (!standardOrganization && !testMethodStandard && !officialTitle) return;
@@ -79,6 +82,7 @@ export async function parseTestMethodSpecImport(buffer: ArrayBuffer): Promise<Pa
       officialTitle,
       version,
       year,
+      fileInUpdatedStdList,
       status,
       messages,
     });
@@ -112,16 +116,19 @@ const orgFolderMap: Record<string, string> = {
 };
 
 /**
- * Generate the expected PDF filename for a given row.
- * Mirrors backend's ConstructPdfPrefix logic.
+ * Resolve the PDF filename for a given row.
+ * Priority: 1) Excel column G value, 2) auto-generated candidate.
  */
-export function generateExpectedPdfFileName(row: ParsedTestMethodSpecRow): string {
+export function resolvePdfFileName(row: ParsedTestMethodSpecRow): string {
+  // 1) Use the exact filename from Excel column G if provided
+  if (row.fileInUpdatedStdList) return row.fileInUpdatedStdList;
+
+  // 2) Fallback: auto-generate from org + standard + version/year (backward compat)
   const orgAbbr = orgFolderMap[row.standardOrganization?.trim()] || row.standardOrganization?.trim() || '';
   let stdPart = (row.testMethodStandard || '').replace(/\//g, '-').replace(/\s+/g, '-');
   while (stdPart.includes('--')) stdPart = stdPart.replace('--', '-');
   const prefix = `${orgAbbr}-${stdPart}`;
 
-  // Same candidate logic as backend
   const candidates: string[] = [];
   if (row.version) {
     const verDigits = (row.version.match(/\d+/g) || []).join('');
@@ -131,6 +138,5 @@ export function generateExpectedPdfFileName(row: ParsedTestMethodSpecRow): strin
   if (row.year) candidates.push(`${prefix}-${row.year}.pdf`);
   candidates.push(`${prefix}.pdf`);
 
-  // Return the most specific candidate
   return candidates[0] || `${prefix}.pdf`;
 }

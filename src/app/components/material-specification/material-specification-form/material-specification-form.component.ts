@@ -66,8 +66,6 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   specimenOriantations: any[] = [];
 
   selectedStandardOrganization: any = null;
-  // NumberType from selected standard organization: 'UNS', 'SteelNumber', or 'None'
-  selectedNumberType: string = 'None';
   productConditionsData: any[] = [];
   filteredProductOptions: any[] = [];
   chemicalParametersCache: any[] = [];
@@ -424,15 +422,6 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
         this.selectedGradeIndex = Math.max(0, this.grades.length - 1);
       }
     }
-  }
-
-  /** MS-B: legacy UNS/Steel validator no longer applies (field replaced by grade identifiers). */
-  private updateUnsSteelValidation(): void {
-    this.grades.controls.forEach(grade => {
-      const ctrl = grade.get('unsSteelNumber');
-      ctrl?.clearValidators();
-      ctrl?.updateValueAndValidity();
-    });
   }
 
   removeGrade(index: number) {
@@ -981,15 +970,9 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       });
     }
 
-    // ── 6.  Fetch numberType for standard org (fire-and-forget) ──────
+    // ── 6.  Fetch standard org details (fire-and-forget) ──────
     if (this.selectedStandardOrganization == null) {
       this.selectedStandardOrganization = { id: data.standardOrganizationID, name: data.standard };
-      this.standardOrganizationService.getStandardOrganizationById(data.standardOrganizationID).subscribe({
-        next: (org) => {
-          this.selectedNumberType = org?.numberType || 'None';
-          this.updateUnsSteelValidation();
-        }
-      });
     }
   }
 
@@ -1175,9 +1158,6 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       standardOrganizationID: item.id,
     });
     this.selectedStandardOrganization = item;
-    // Set numberType from the dropdown's additionalValues
-    this.selectedNumberType = item?.additionalValues?.numberType || 'None';
-    this.updateUnsSteelValidation();
     this.generateSpecificationName();
   }
   asFormGroup(control: AbstractControl): FormGroup {

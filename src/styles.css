@@ -1264,6 +1264,18 @@ select:focus option:checked {
   color: #fff;
 }
 
+.btn-outline-theme {
+  background-color: transparent !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600;
+}
+.btn-outline-theme:hover {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #ffffff !important;
+}
+
 /* All buttons – tighter default sizing */
 .btn {
   font-size: var(--font-sm);
@@ -1690,6 +1702,22 @@ fieldset.border legend i {
   color: var(--neutral-700);
   margin-bottom: 0.15rem;
   font-family: 'Poppins', sans-serif;
+}
+
+/* ── Metal Box & Title Label ── */
+.metal-box-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.metal-box {
+  background: #ffffff;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
 }
 
 /* ── Normal controls (36px) ── */

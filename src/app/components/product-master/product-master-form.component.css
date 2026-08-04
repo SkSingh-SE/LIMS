@@ -41,33 +41,6 @@
   padding: 0.6rem 0.75rem;
 }
 
-/* Theme Button Utilities */
-.btn-theme {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  color: #ffffff !important;
-  font-weight: 600;
-}
-
-.btn-theme:hover {
-  background-color: var(--primary-hover) !important;
-  border-color: var(--primary-hover) !important;
-  color: #ffffff !important;
-}
-
-.btn-outline-theme {
-  background-color: transparent !important;
-  border-color: var(--primary-color) !important;
-  color: var(--primary-color) !important;
-  font-weight: 600;
-}
-
-.btn-outline-theme:hover {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  color: #ffffff !important;
-}
-
 /* Grid & Inputs Density */
 :host .compact-grid .form-label {
   font-size: 0.75rem;
@@ -91,13 +64,7 @@
   box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
 }
 
-/* Checkbox Pill / Box Strip */
-:host .metal-box {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-}
+
 
 /* Version Sidebar Tabs */
 .version-tab-item {

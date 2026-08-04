@@ -330,6 +330,10 @@ export class ProductMasterFormComponent implements OnInit {
     this.service.getPrefixOptions().subscribe({
       next: (opts) => {
         this.prefixOptions = opts || ['Grade', 'Class', 'Designation', 'Type', 'Series'];
+        const currentVal = this.form.get('gradePrefix')?.value;
+        if (!currentVal && this.prefixOptions.length > 0) {
+          this.form.get('gradePrefix')?.setValue(this.prefixOptions[0]);
+        }
       }
     });
   }

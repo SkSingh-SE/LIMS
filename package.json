@@ -12,7 +12,9 @@
     "test:ci": "ng test --no-watch",
     "lint": "ng lint",
     "e2e": "npx playwright test",
-    "e2e:report": "npx playwright show-report playwright-report"
+    "e2e:report": "npx playwright show-report playwright-report",
+    "deploy:staging": "powershell -ExecutionPolicy Bypass -File ./deploy-staging.ps1",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File ./deploy-production.ps1"
   },
   "private": true,
   "dependencies": {

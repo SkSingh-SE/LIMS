@@ -68,6 +68,7 @@
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
               <td>{{ item.name }}</td>
+              <td>{{ item.symbol || '-' }}</td>
               <td>{{ item.unitName }}</td>
               <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
             </tr>

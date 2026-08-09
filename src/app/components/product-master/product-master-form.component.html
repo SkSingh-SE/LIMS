@@ -180,9 +180,9 @@
               <div class="col-md-10 p-3" *ngIf="currentVersionGroup">
                 <div [formGroup]="currentVersionGroup" class="row g-2 compact-grid mb-3">
                   <div class="col-md-3">
-                    <label class="form-label">Product Spec Name (Auto Fill)</label>
+                    <label class="form-label">Product Master Name (Auto Fill)</label>
                     <input type="text" class="form-control form-control-sm bg-light" readonly
-                      [value]="generateProductSpecName(activeVersionIndex)" />
+                      [value]="generateProductMasterName(activeVersionIndex)" />
                   </div>
 
                   <div class="col-md-3">

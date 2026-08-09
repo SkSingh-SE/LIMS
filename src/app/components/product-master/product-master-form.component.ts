@@ -229,7 +229,7 @@ export class ProductMasterFormComponent implements OnInit {
     vGroup.get('versionNumber')?.valueChanges.subscribe(() => this.updateVersionAutoFields(vIdx));
   }
 
-  generateProductSpecName(vIdx: number): string {
+  generateProductMasterName(vIdx: number): string {
     const vGroup = this.versions.at(vIdx) as FormGroup;
     if (!vGroup) return '';
     const stdOrgObj = this.selectedStdOrgMap[vIdx];
@@ -270,7 +270,7 @@ export class ProductMasterFormComponent implements OnInit {
     const vGroup = this.versions.at(vIdx) as FormGroup;
     if (!vGroup) return;
 
-    const specName = this.generateProductSpecName(vIdx);
+    const specName = this.generateProductMasterName(vIdx);
     if (specName) {
       vGroup.get('title')?.setValue(specName, { emitEvent: false });
     }

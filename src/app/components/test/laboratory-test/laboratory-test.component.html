@@ -437,12 +437,12 @@
                           </ul>
                         </div>
                         <div class="col-6">
-                          <div class="fw-bold text-xxs text-secondary border-bottom mb-1">PRODUCT SPECS</div>
+                          <div class="fw-bold text-xxs text-secondary border-bottom mb-1">PRODUCT MASTERS</div>
                           <ul class="list-unstyled mb-0">
-                            <li *ngFor="let s of getProductSpecsOnly()" class="py-0.5 text-dark border-bottom border-light-subtle truncate">
+                            <li *ngFor="let s of getProductMastersOnly()" class="py-0.5 text-dark border-bottom border-light-subtle truncate">
                               {{ s.value.specName }}
                             </li>
-                            <li *ngIf="getProductSpecsOnly().length === 0" class="text-muted italic py-1">None linked.</li>
+                            <li *ngIf="getProductMastersOnly().length === 0" class="text-muted italic py-1">None linked.</li>
                           </ul>
                         </div>
                       </div>
@@ -627,12 +627,12 @@
                           </ul>
                         </div>
                         <div class="col-6">
-                          <div class="fw-bold text-xxs text-secondary border-bottom mb-1">PRODUCT SPECS</div>
+                          <div class="fw-bold text-xxs text-secondary border-bottom mb-1">PRODUCT MASTERS</div>
                           <ul class="list-unstyled mb-0">
-                            <li *ngFor="let s of getProductSpecsOnly()" class="py-0.5 text-dark border-bottom border-light-subtle truncate">
+                            <li *ngFor="let s of getProductMastersOnly()" class="py-0.5 text-dark border-bottom border-light-subtle truncate">
                               {{ s.value.specName }}
                             </li>
-                            <li *ngIf="getProductSpecsOnly().length === 0" class="text-muted italic py-1">None linked.</li>
+                            <li *ngIf="getProductMastersOnly().length === 0" class="text-muted italic py-1">None linked.</li>
                           </ul>
                         </div>
                       </div>
@@ -1095,7 +1095,7 @@
         <div *ngIf="activeTab === 'specifications'">
           <div *ngIf="getActiveConfigForm()" [formGroup]="getActiveConfigForm()!">
             <div class="row g-3">
-              <!-- Left Section: Material Specifications -->
+              <!-- Material Specifications -->
               <div class="col-md-6 border-end">
                 <div class="card border shadow-sm border-0 h-100">
                   <div class="card-header bg-light border-bottom py-2 d-flex justify-content-between align-items-center">
@@ -1151,24 +1151,24 @@
                 </div>
               </div>
 
-              <!-- Right Section: Product Specifications -->
+              <!-- Product Masters Section -->
               <div class="col-md-6">
                 <div class="card border shadow-sm border-0 h-100">
                   <div class="card-header bg-light border-bottom py-2 d-flex justify-content-between align-items-center">
                     <span class="fw-bold text-xxs text-secondary uppercase">
-                      PRODUCT SPECIFICATIONS
+                      LINKED PRODUCT MASTERS
                     </span>
-                    <a href="/product-specification" target="_blank" class="btn btn-link text-primary p-0 text-xxs fw-semibold">
+                    <a href="/product-master" target="_blank" class="btn btn-link text-primary p-0 text-xxs fw-semibold">
                       <i class="bi bi-box-arrow-up-right"></i>
                     </a>
                   </div>
                   <div class="card-body p-2">
                     <div class="d-flex justify-content-end align-items-center mb-2" *ngIf="!isViewMode">
                       <div class="d-flex align-items-center gap-1 w-100">
-                        <label class="text-xxs fw-bold text-secondary text-nowrap m-0">+ Add Product Spec:</label>
+                        <label class="text-xxs fw-bold text-secondary text-nowrap m-0">+ Add Product Master:</label>
                         <app-searchable-dropdown
-                          [placeholder]="'Select Product Spec'"
-                          [fetchDataFn]="getProductSpecs"
+                          [placeholder]="'Select Product Master'"
+                          [fetchDataFn]="getProductMasters"
                           [hideLabel]="true"
                           [smallInput]="true"
                           (itemSelected)="addSpecRow(getActiveConfigForm()!, $event, 'Product')"
@@ -1180,32 +1180,33 @@
                       <thead class="table-light">
                         <tr>
                           <th style="width: 50px" class="text-center">#</th>
-                          <th>Specification Name</th>
-                          <th style="width: 100px" class="text-center">Type</th>
+                          <th>Product Master Name</th>
+                          <th style="width: 110px" class="text-center">Type</th>
                           <th style="width: 80px" class="text-center" *ngIf="!isViewMode">Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let ctrl of getProductSpecsOnly(); let idx = index">
+                        <tr *ngFor="let ctrl of getProductMastersOnly(); let idx = index">
                           <td class="text-center fw-medium text-secondary">{{ idx + 1 }}</td>
                           <td class="fw-semibold text-dark">{{ ctrl.value.specName }}</td>
                           <td class="text-center">
-                            <span class="badge bg-info-subtle text-info border border-info px-2 text-xxs">Product</span>
+                            <span class="badge bg-info-subtle text-info border border-info px-2 text-xxs">Product Master</span>
                           </td>
                           <td class="text-center" *ngIf="!isViewMode">
-                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecRowInline(ctrl.value.id)">
+                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecRowInline(ctrl.value.productMasterID || ctrl.value.id, 'Product')">
                               <i class="bi bi-trash"></i>
                             </button>
                           </td>
                         </tr>
-                        <tr *ngIf="getProductSpecsOnly().length === 0">
-                          <td colspan="4" class="text-center py-2 text-muted text-xxs">No product specs linked.</td>
+                        <tr *ngIf="getProductMastersOnly().length === 0">
+                          <td colspan="4" class="text-center py-2 text-muted text-xxs">No product masters linked.</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
               </div>
+
             </div>
 
             <div class="d-flex justify-content-end gap-2 sticky-action-bar p-2 bg-white border-top mt-3" *ngIf="!isViewMode">

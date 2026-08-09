@@ -16,7 +16,7 @@ import { ParameterService } from '../../../services/parameter.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
-import { ProductSpecificationService } from '../../../services/product-specification.service';
+import { ProductMasterService } from '../../../services/product-master.service';
 import { InvoiceCaseConfigurationService } from '../../../services/invoice-case-configuration.service';
 import { AuthService } from '../../../services/auth.service';
 
@@ -99,7 +99,7 @@ export class LaboratoryTestComponent implements OnInit {
     private methodService: TestMethodSpecificationService,
     private equipmentService: EquipmentService,
     private materialSpecService: MaterialSpecificationService,
-    private productSpecService: ProductSpecificationService,
+    private productMasterService: ProductMasterService,
     private invoiceCaseConfigService: InvoiceCaseConfigurationService,
     public authService: AuthService
   ) {}
@@ -251,12 +251,9 @@ export class LaboratoryTestComponent implements OnInit {
     return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
   };
 
+  getProductMasters = (searchTerm: string, pageNumber: number = 0, pageSize: number = 20) => this.productMasterService.getDropdown(searchTerm, pageNumber, pageSize);
   getMaterialSpecs = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.materialSpecService.getMaterialSpecificationGradeDropdown(term, page, pageSize);
-  };
-
-  getProductSpecs = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.productSpecService.getProductSpecificationDropdown(term, page, pageSize);
   };
 
   getInvoiceCaseConfigs = (term: string, page: number, pageSize: number): Observable<any[]> => {
@@ -582,14 +579,14 @@ export class LaboratoryTestComponent implements OnInit {
   }
 
   createSpecificationGroup(s?: any): FormGroup {
-    const isProduct = !!(s?.productSpecificationID || s?.productSpecification || s?.specificationType === 'Product');
+    const isProduct = s?.specificationType === 'Product' || !!s?.productMasterID || !!s?.productSpecificationID;
     const type = isProduct ? 'Product' : 'Material';
 
-    let specDisplayName = s?.specName || '';
+    let specDisplayName = s?.specName || s?.specDisplayName || '';
 
-    if (!specDisplayName) {
-      const aliasName = s?.materialSpecification?.aliasName || s?.specificationGrade?.specificationHeader?.aliasName || '';
-      const gradeName = s?.specificationGrade?.grade || '';
+    if (!specDisplayName || specDisplayName.trim() === '') {
+      const aliasName = s?.materialSpecification?.aliasName || s?.materialSpecification?.displayTitle || s?.materialSpecification?.title || '';
+      const gradeName = s?.specificationGrade?.grade || s?.specificationGradeName || s?.gradeName || '';
 
       if (type === 'Material') {
         if (aliasName && gradeName) {
@@ -599,19 +596,19 @@ export class LaboratoryTestComponent implements OnInit {
         } else if (gradeName) {
           specDisplayName = gradeName;
         } else {
-          specDisplayName = '';
+          specDisplayName = s?.name || 'Material Specification';
         }
       } else {
-        specDisplayName = s?.productSpecification?.specificationName || '';
+        specDisplayName = s?.productMaster?.displayTitle || s?.productMaster?.productName || s?.productMasterName || s?.productSpecification?.specificationName || s?.name || 'Product Master';
       }
     }
 
     return this.fb.group({
       id: [s?.id || 0],
       specificationType: [type, Validators.required],
-      specificationHeaderID: [s?.specificationHeaderID || null],
-      specificationGradeID: [s?.specificationGradeID || null],
-      productSpecificationID: [s?.productSpecificationID || null],
+      specificationHeaderID: [type === 'Material' ? (s?.specificationHeaderID || s?.materialSpecification?.id || null) : null],
+      specificationGradeID: [type === 'Material' ? (s?.specificationGradeID || s?.specificationGrade?.id || null) : null],
+      productMasterID: [type === 'Product' ? (s?.productMasterID || s?.productSpecificationID || s?.productMaster?.id || null) : null],
       specName: [specDisplayName]
     });
   }
@@ -734,23 +731,44 @@ export class LaboratoryTestComponent implements OnInit {
     });
   }
 
-  addSpecRow(form: FormGroup, item: any, type: 'Material' | 'Product') {
-    if (!item) return;
-    const arr = form.get('specifications') as FormArray;
+  addSpecRow(formGroup: FormGroup, item: any, type: 'Material' | 'Product') {
+    if (!formGroup || !item) return;
+    const arr = formGroup.get('specifications') as FormArray;
+    if (!arr) return;
+
     const isMaterial = type === 'Material';
-    const exists = arr.value.some((s: any) =>
-      isMaterial ? s.specificationGradeID === item.id : s.productSpecificationID === item.id
-    );
-    if (exists) {
-      this.toastService.show('Specification already added.', 'warning');
+    const itemId = Number(item.id || item.Id || 0);
+
+    if (!itemId) {
+      this.toastService.show('Invalid item selected.', 'error');
       return;
     }
+
+    const exists = arr.controls.some((ctrl: any) => {
+      const s = ctrl.value;
+      if (isMaterial) {
+        return s.specificationType === 'Material' && Number(s.specificationGradeID) === itemId;
+      } else {
+        return s.specificationType === 'Product' && Number(s.productMasterID) === itemId;
+      }
+    });
+
+    if (exists) {
+      this.toastService.show(`${isMaterial ? 'Material Specification' : 'Product Master'} already added.`, 'warning');
+      return;
+    }
+
+    const displayName = item.name || item.Name || item.text || item.title || item.code || '';
+
     arr.push(this.createSpecificationGroup({
+      id: 0,
       specificationType: type,
-      specificationGradeID: isMaterial ? item.id : null,
-      productSpecificationID: isMaterial ? null : item.id,
-      specName: item.name
+      specificationHeaderID: null,
+      specificationGradeID: isMaterial ? itemId : null,
+      productMasterID: isMaterial ? null : itemId,
+      specName: displayName
     }));
+    arr.markAsDirty();
   }
 
   removeSpecRow(form: FormGroup, idx: number) {
@@ -1062,16 +1080,24 @@ export class LaboratoryTestComponent implements OnInit {
     return arr.controls.filter(ctrl => ctrl.get('specificationType')?.value === 'Material');
   }
 
-  getProductSpecsOnly(): any[] {
+  getProductMastersOnly(): any[] {
     const arr = this.getActiveSpecifications();
     return arr.controls.filter(ctrl => ctrl.get('specificationType')?.value === 'Product');
   }
 
-  removeSpecRowInline(id: number) {
+  removeSpecRowInline(id: number, type: 'Material' | 'Product' = 'Material') {
     const arr = this.getActiveSpecifications();
-    const idx = arr.controls.findIndex(ctrl => ctrl.get('id')?.value === id || (ctrl.get('specificationGradeID')?.value === id || ctrl.get('productSpecificationID')?.value === id));
+    const idx = arr.controls.findIndex(ctrl => {
+      const v = ctrl.value;
+      if (v.id && v.id === id) return true;
+      if (type === 'Product') {
+        return Number(v.productMasterID) === Number(id) || Number(v.productSpecificationID) === Number(id);
+      }
+      return Number(v.specificationGradeID) === Number(id);
+    });
     if (idx >= 0) {
       arr.removeAt(idx);
+      arr.markAsDirty();
     }
   }
 

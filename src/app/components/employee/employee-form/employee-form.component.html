@@ -38,16 +38,15 @@
                   <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
                   <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Name"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
-                  <app-field-error [control]="personalInfoForm.get('name')" label="Name" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('name')" label="Full Name" [submitted]="submitted"/>
                 </div>
 
                 <!-- Date of Birth -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
                   <input type="date" class="form-control" formControlName="dateOfBirth"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('dateOfBirth')?.touched && personalInfoForm.get('dateOfBirth')?.invalid }" />
-                  <span *ngIf="personalInfoForm.get('dateOfBirth')?.invalid && personalInfoForm.get('dateOfBirth')?.touched"
-                    class="text-danger text-sm">Date of Birth is required.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('dateOfBirth') }" />
+                  <app-field-error [control]="personalInfoForm.get('dateOfBirth')" label="Date of Birth" [submitted]="submitted"/>
                 </div>
 
                 <!-- Blood Group -->
@@ -64,11 +63,8 @@
                   <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
                   <input type="tel" class="form-control" formControlName="mobileNo" placeholder="Enter Mobile Number"
                     maxlength="12" appNumberOnly
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('mobileNo')?.touched && personalInfoForm.get('mobileNo')?.invalid">
-                    <span *ngIf="personalInfoForm.get('mobileNo')?.hasError('required')" class="text-danger text-sm">Mobile Number is required.</span>
-                    <span *ngIf="personalInfoForm.get('mobileNo')?.hasError('pattern')" class="text-danger text-sm">Must be 10-12 digits.</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('mobileNo') }" />
+                  <app-field-error [control]="personalInfoForm.get('mobileNo')" label="Mobile Number" [submitted]="submitted"/>
                 </div>
 
                 <!-- Emergency Mobile Number -->
@@ -76,46 +72,40 @@
                   <label class="form-label">Emergency Mobile No <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" formControlName="emergencyMobileNo"
                     placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('emergencyMobileNo')?.touched && personalInfoForm.get('emergencyMobileNo')?.invalid">
-                    <span *ngIf="personalInfoForm.get('emergencyMobileNo')?.hasError('required')" class="text-danger text-sm">Required.</span>
-                    <span *ngIf="personalInfoForm.get('emergencyMobileNo')?.hasError('pattern')" class="text-danger text-sm">Must be 10-12 digits.</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('emergencyMobileNo') }" />
+                  <app-field-error [control]="personalInfoForm.get('emergencyMobileNo')" label="Emergency Mobile No" [submitted]="submitted"/>
                 </div>
 
                 <!-- Email -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Email <span class="text-danger">*</span></label>
                   <input type="email" class="form-control" formControlName="emailId" placeholder="Enter Email"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('emailId')?.touched && personalInfoForm.get('emailId')?.invalid }" />
-                  <span *ngIf="personalInfoForm.get('emailId')?.invalid && personalInfoForm.get('emailId')?.touched"
-                    class="text-danger text-sm">Enter a valid email.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('emailId') }" />
+                  <app-field-error [control]="personalInfoForm.get('emailId')" label="Email" [submitted]="submitted"/>
                 </div>
 
                 <!-- Gender -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Gender <span class="text-danger">*</span></label>
                   <select class="form-select" formControlName="gender"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('gender')?.touched && personalInfoForm.get('gender')?.invalid }">
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('gender') }">
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
-                  <span *ngIf="personalInfoForm.get('gender')?.invalid && personalInfoForm.get('gender')?.touched"
-                    class="text-danger text-sm">Gender is required.</span>
+                  <app-field-error [control]="personalInfoForm.get('gender')" label="Gender" [submitted]="submitted"/>
                 </div>
 
                 <!-- Marital Status -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Marital Status <span class="text-danger">*</span></label>
                   <select class="form-select" formControlName="maritalStatus"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('maritalStatus')?.touched && personalInfoForm.get('maritalStatus')?.invalid }">
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('maritalStatus') }">
                     <option value="">Select Marital Status</option>
                     <option *ngFor="let maritalStatus of maritalStatuses" [value]="maritalStatus">{{ maritalStatus }}</option>
                   </select>
-                  <span *ngIf="personalInfoForm.get('maritalStatus')?.invalid && personalInfoForm.get('maritalStatus')?.touched"
-                    class="text-danger text-sm">Marital Status is required.</span>
+                  <app-field-error [control]="personalInfoForm.get('maritalStatus')" label="Marital Status" [submitted]="submitted"/>
                 </div>
 
                 <!-- Spouse Name (Conditional) -->
@@ -133,9 +123,8 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
                   <textarea class="form-control" formControlName="residentialAddressLine1" placeholder="Enter Address" rows="3"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('residentialAddressLine1')?.touched && personalInfoForm.get('residentialAddressLine1')?.invalid }"></textarea>
-                  <span *ngIf="personalInfoForm.get('residentialAddressLine1')?.invalid && personalInfoForm.get('residentialAddressLine1')?.touched"
-                    class="text-danger text-sm">Address is required.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('residentialAddressLine1') }"></textarea>
+                  <app-field-error [control]="personalInfoForm.get('residentialAddressLine1')" label="Address Line 1" [submitted]="submitted"/>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
@@ -148,23 +137,19 @@
                   <input type="text" class="form-control" formControlName="residentialPinCode"
                     placeholder="Enter PIN Code" maxlength="6" appNumberOnly
                     (input)="fetchAreaData('residentialPinCode', true)"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('residentialPinCode')?.touched && personalInfoForm.get('residentialPinCode')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('residentialPinCode')?.touched && personalInfoForm.get('residentialPinCode')?.invalid">
-                    <span *ngIf="personalInfoForm.get('residentialPinCode')?.hasError('required')" class="text-danger text-sm">PIN Code is required.</span>
-                    <span *ngIf="personalInfoForm.get('residentialPinCode')?.hasError('pattern')" class="text-danger text-sm">Must be exactly 6 digits.</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('residentialPinCode') }" />
+                  <app-field-error [control]="personalInfoForm.get('residentialPinCode')" label="PIN Code" [submitted]="submitted"/>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
                   <label class="form-label">Area <span class="text-danger">*</span></label>
                   <select class="form-select" formControlName="residentialAreaID"
                     (change)="fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry', true)"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('residentialAreaID')?.touched && personalInfoForm.get('residentialAreaID')?.invalid }">
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('residentialAreaID') }">
                     <option value="">Select Area</option>
                     <option *ngFor="let area of residentialAreas" [value]="area.areaId">{{ area.areaName }}</option>
                   </select>
-                  <span *ngIf="personalInfoForm.get('residentialAreaID')?.invalid && personalInfoForm.get('residentialAreaID')?.touched"
-                    class="text-danger text-sm">Area is required.</span>
+                  <app-field-error [control]="personalInfoForm.get('residentialAreaID')" label="Area" [submitted]="submitted"/>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
@@ -198,9 +183,8 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
                   <textarea class="form-control" formControlName="permanentAddressLine1" placeholder="Enter Address" rows="3"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('permanentAddressLine1')?.touched && personalInfoForm.get('permanentAddressLine1')?.invalid }"></textarea>
-                  <span *ngIf="personalInfoForm.get('permanentAddressLine1')?.invalid && personalInfoForm.get('permanentAddressLine1')?.touched"
-                    class="text-danger text-sm">Address Line 1 is required.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('permanentAddressLine1') }"></textarea>
+                  <app-field-error [control]="personalInfoForm.get('permanentAddressLine1')" label="Address Line 1" [submitted]="submitted"/>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
@@ -213,10 +197,8 @@
                   <input type="text" class="form-control" formControlName="permanentPinCode"
                     placeholder="Enter PIN Code" appNumberOnly maxlength="6"
                     (input)="fetchAreaData('permanentPinCode', false)"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('permanentPinCode')?.touched && personalInfoForm.get('permanentPinCode')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('permanentPinCode')?.touched && personalInfoForm.get('permanentPinCode')?.invalid">
-                    <span *ngIf="personalInfoForm.get('permanentPinCode')?.hasError('pattern')" class="text-danger text-sm">Must be exactly 6 digits.</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('permanentPinCode') }" />
+                  <app-field-error [control]="personalInfoForm.get('permanentPinCode')" label="PIN Code" [submitted]="submitted"/>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
@@ -271,17 +253,17 @@
                     [smallInput]="true"
                     [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
-                    [isInvalid]="submitted && !personalInfoForm.get('designationID')?.value"
+                    [isInvalid]="isFieldInvalid('designationID')"
                     [selectedItem]="personalInfoForm.get('designationID')?.value"></app-searchable-dropdown>
+                  <app-field-error [control]="personalInfoForm.get('designationID')" label="Designation" [submitted]="submitted"/>
                 </div>
 
                 <!-- Date of Joining -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Date of Joining <span class="text-danger">*</span></label>
                   <input type="date" class="form-control" formControlName="dateOfJoin"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('dateOfJoin')?.touched && personalInfoForm.get('dateOfJoin')?.invalid }" />
-                  <span *ngIf="personalInfoForm.get('dateOfJoin')?.touched && personalInfoForm.get('dateOfJoin')?.invalid"
-                    class="text-danger text-sm">Date of Joining is required.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('dateOfJoin') }" />
+                  <app-field-error [control]="personalInfoForm.get('dateOfJoin')" label="Date of Joining" [submitted]="submitted"/>
                 </div>
 
                 <!-- Department -->
@@ -291,8 +273,9 @@
                     [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
                     [smallInput]="true"
-                    [isInvalid]="submitted && !personalInfoForm.get('departmentID')?.value"
+                    [isInvalid]="isFieldInvalid('departmentID')"
                     [selectedItem]="personalInfoForm.get('departmentID')?.value"></app-searchable-dropdown>
+                  <app-field-error [control]="personalInfoForm.get('departmentID')" label="Department" [submitted]="submitted"/>
                 </div>
 
                 <!-- Reporting Manager -->
@@ -302,17 +285,17 @@
                     [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)"
                     [isDisabled]="isViewMode" [required]="true"
                     [smallInput]="true"
-                    [isInvalid]="submitted && !personalInfoForm.get('reportingManagerID')?.value"
+                    [isInvalid]="isFieldInvalid('reportingManagerID')"
                     [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"></app-searchable-dropdown>
+                  <app-field-error [control]="personalInfoForm.get('reportingManagerID')" label="Reporting Manager" [submitted]="submitted"/>
                 </div>
 
                 <!-- Relevant Experience -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Relevant Experience <span class="text-danger">*</span></label>
                   <input type="number" class="form-control" placeholder="Enter Years" formControlName="relevantExperienceYears"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('relevantExperienceYears')?.touched && personalInfoForm.get('relevantExperienceYears')?.invalid }" />
-                  <span *ngIf="personalInfoForm.get('relevantExperienceYears')?.touched && personalInfoForm.get('relevantExperienceYears')?.invalid"
-                    class="text-danger text-sm">Required.</span>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('relevantExperienceYears') }" />
+                  <app-field-error [control]="personalInfoForm.get('relevantExperienceYears')" label="Relevant Experience" [submitted]="submitted"/>
                 </div>
 
                 <!-- Qualification Summary -->
@@ -348,15 +331,12 @@
                   <div class="input-group">
                     <input [type]="showPassword() ? 'text' : 'password'" class="form-control"
                       formControlName="password" placeholder="Enter Password"
-                      [ngClass]="{ 'is-invalid': personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid }" />
+                      [ngClass]="{ 'is-invalid': isFieldInvalid('password') }" />
                     <button type="button" class="btn btn-add" (click)="showPassword.set(!showPassword())" tabindex="-1">
                       <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                   </div>
-                  <div *ngIf="personalInfoForm.get('password')?.touched && personalInfoForm.get('password')?.invalid">
-                    <span *ngIf="personalInfoForm.get('password')?.hasError('required')" class="text-danger text-sm">Password is required.</span>
-                    <span *ngIf="personalInfoForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 8 characters.</span>
-                  </div>
+                  <app-field-error [control]="personalInfoForm.get('password')" label="Password" [submitted]="submitted"/>
                 </div>
               </div>
             </fieldset>
@@ -370,12 +350,9 @@
                   <label class="form-label">PAN Number <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" formControlName="panNumber" placeholder="Enter PAN Number"
                     maxlength="16"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('panNumber')?.touched && personalInfoForm.get('panNumber')?.invalid }"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('panNumber') }"
                     [value]="personalInfoForm.get('panNumber')?.value | uppercase" />
-                  <div *ngIf="personalInfoForm.get('panNumber')?.touched && personalInfoForm.get('panNumber')?.invalid">
-                    <span *ngIf="personalInfoForm.get('panNumber')?.hasError('required')" class="text-danger text-sm">PAN Number is required.</span>
-                    <span *ngIf="personalInfoForm.get('panNumber')?.hasError('pattern')" class="text-danger text-sm">Format: XXXXX0000X</span>
-                  </div>
+                  <app-field-error [control]="personalInfoForm.get('panNumber')" label="PAN Number" [submitted]="submitted"/>
                 </div>
 
                 <!-- Bank Name -->
@@ -389,10 +366,8 @@
                   <label class="form-label">Account Number</label>
                   <input type="text" class="form-control" placeholder="Enter Account Number"
                     formControlName="accountNumber" appNumberOnly maxlength="20"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('accountNumber')?.touched && personalInfoForm.get('accountNumber')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('accountNumber')?.touched && personalInfoForm.get('accountNumber')?.invalid">
-                    <span *ngIf="personalInfoForm.get('accountNumber')?.hasError('pattern')" class="text-danger text-sm">Must contain only digits.</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('accountNumber') }" />
+                  <app-field-error [control]="personalInfoForm.get('accountNumber')" label="Account Number" [submitted]="submitted"/>
                 </div>
 
                 <!-- Account Holder Name -->
@@ -408,10 +383,8 @@
                   <input type="text" class="form-control" placeholder="Enter IFSC Code" formControlName="ifscCode"
                     maxlength="11"
                     [value]="personalInfoForm.get('ifscCode')?.value | uppercase"
-                    [ngClass]="{ 'is-invalid': personalInfoForm.get('ifscCode')?.touched && personalInfoForm.get('ifscCode')?.invalid }" />
-                  <div *ngIf="personalInfoForm.get('ifscCode')?.touched && personalInfoForm.get('ifscCode')?.invalid">
-                    <span *ngIf="personalInfoForm.get('ifscCode')?.hasError('pattern')" class="text-danger text-sm">Format: XXXX0XXXXXX</span>
-                  </div>
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('ifscCode') }" />
+                  <app-field-error [control]="personalInfoForm.get('ifscCode')" label="IFSC Code" [submitted]="submitted"/>
                 </div>
 
                 <!-- Branch Name -->
@@ -772,8 +745,7 @@
     </a>
 
     <!-- Tab 1: Basic Details Save -->
-    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm px-3" (click)="submitForm()"
-      [disabled]="submitted && personalInfoForm.invalid">
+    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm px-3" (click)="submitForm()">
       <i class="bi bi-check2-circle me-1"></i> {{ employeeId > 0 ? 'Update' : 'Save' }}
     </button>
 

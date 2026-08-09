@@ -32,12 +32,14 @@ export class MechanicalParameterComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
+    { key: 'symbol', type: 'string', label: 'Symbol', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'parameterType', type: 'string', label: 'Parameter Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
+    symbol: 'string',
     unitName: 'string',
     parameterType: 'string',
     modifiedOn: 'date',
@@ -101,10 +103,12 @@ export class MechanicalParameterComponent implements OnInit {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      symbol: ['', Validators.required],
+      symbol: [''],
       inputType: ['Decimal', Validators.required],
       decimalPrecision: [1],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
+      unitConversionFactor: [null],
       note: [''],
       elementType: ['normal'],
       parameterType: ['Mechanical', Validators.required],
@@ -463,11 +467,15 @@ export class MechanicalParameterComponent implements OnInit {
   };
 
   getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
 
   onParameterUnitSelected(item: any) {
-    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+    this.ParameterForm.patchValue({
+      parameterUnitID: item?.id ?? null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+      unitConversionFactor: item?.conversionFactor ?? null
+    });
   }
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');

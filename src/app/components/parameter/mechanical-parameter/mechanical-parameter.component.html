@@ -68,6 +68,7 @@
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
               <td>{{ item.name }}</td>
+              <td>{{ item.symbol || '-' }}</td>
               <td>{{ item.unitName }}</td>
               <td>
                 <span class="badge bg-secondary">{{ item.parameterType || 'Mechanical' }}</span>
@@ -198,7 +199,6 @@
           <div class="mb-1">
             <label for="symbol" class="form-label">
               Symbol / Code
-              <span class="text-danger">*</span>
             </label>
             <div class="d-flex align-items-center gap-1">
               <input
@@ -208,8 +208,6 @@
                 class="form-control flex-grow-1"
                 formControlName="symbol"
                 placeholder="Enter Symbol / Code"
-                required
-                [ngClass]="{ 'is-invalid': ParameterForm.get('symbol')?.touched && ParameterForm.get('symbol')?.invalid }"
                 [attr.disabled]="isViewMode ? true : null"
               />
               <app-symbol-picker
@@ -218,9 +216,6 @@
                 [targetInput]="symbolInput"
               ></app-symbol-picker>
             </div>
-            <span *ngIf="ParameterForm.get('symbol')?.invalid && ParameterForm.get('symbol')?.touched" class="text-danger text-sm">
-              Symbol / Code is required.
-            </span>
           </div>
           <!-- Input Type -->
           <div class="mb-1">

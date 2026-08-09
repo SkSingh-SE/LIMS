@@ -158,15 +158,16 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       this.toastService.show(`Please fix: ${missing.join(', ')}`, 'warning');
       return;
     }
+    const rawValues = this.userForm.getRawValue();
     // Build a whitelisted payload (exclude password, role, account status, 2FA fields)
     const payload: any = {
       employeeId: this.employeeId,
-      isLoginEnabled: this.userForm.get('isLoginEnabled')?.value, // first tab
-      allowRemoteLogin: this.userForm.get('allowRemoteLogin')?.value, // second tab
-      ipRestriction: this.userForm.get('ipRestriction')?.value || null, // second tab
+      isLoginEnabled: !!rawValues.isLoginEnabled, // first tab
+      allowRemoteLogin: !!rawValues.allowRemoteLogin, // second tab
+      ipRestriction: rawValues.ipRestriction || null, // second tab
       workingHours: this.buildWorkingHours(), // second tab
-      sessionTimeout: this.userForm.get('sessionTimeout')?.value, // third tab
-      forcePasswordChange: this.userForm.get('forcePasswordChange')?.value // third tab
+      sessionTimeout: rawValues.sessionTimeout, // third tab
+      forcePasswordChange: !!rawValues.forcePasswordChange // third tab
     };
 
     this.userService.updateUserByEmployeeId(this.employeeId, payload).subscribe({

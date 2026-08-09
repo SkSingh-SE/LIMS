@@ -74,13 +74,7 @@ export function getAllMenuItems(): MenuItem[] {
             }
           ], color: getRandomColor()
         },
-        {
-          id: 202, title: 'Product Specification', route: '', parentMenuID: 2, permissions: [], children: [
-            { id: 33, title: 'Product Specification', route: '/product-specification', parentMenuID: 202, permissions: ['CanReadProductSpecification'], children: [], color: getRandomColor() },
-            { id: 34, title: 'Custom Product Specification', route: '/custom-product-specification', parentMenuID: 202, permissions: ['CanReadCustomProductSpecification'], children: [], color: getRandomColor() },
-            { id: 340, title: 'Product Master', route: '/product-master', parentMenuID: 202, permissions: ['PRODUCT_MASTER_VIEW', 'CanReadProductMaster'], children: [], color: getRandomColor() },
-          ], color: getRandomColor()
-        }
+        { id: 340, title: 'Product Master', route: '/product-master', parentMenuID: 2, permissions: ['PRODUCT_MASTER_VIEW', 'CanReadProductMaster'], children: [], color: getRandomColor() }
       ]
     },
     {

@@ -40,8 +40,6 @@ import { MaterialSpecificationFormComponent } from './components/material-specif
 import { MaterialSpecificationListComponent } from './components/material-specification/material-specification-list/material-specification-list.component';
 import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
-import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
-import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
 import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
 import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
 import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
@@ -337,8 +335,6 @@ export const routes: Routes = [
             { path: 'custom-material-specification/create', component: CustomMaterialSpecificationFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
-            { path: 'product-specification', component: ProductSpecificationComponent },
-            { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
             { path: 'tolerance-master', component: ToleranceMasterComponent },
             { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },

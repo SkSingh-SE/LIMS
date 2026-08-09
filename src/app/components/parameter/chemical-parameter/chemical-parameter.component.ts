@@ -33,11 +33,13 @@ export class ChemicalParameterComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
+    { key: 'symbol', type: 'string', label: 'Symbol', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
+    symbol: 'string',
     unitName: 'string',
     modifiedOn: 'date',
   };
@@ -102,6 +104,8 @@ export class ChemicalParameterComponent implements OnInit {
       inputType: ['Decimal', Validators.required],
       decimalPrecision: [3],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
+      unitConversionFactor: [null],
       note: [''],
       elementType: ['normal', Validators.required],
       parameterType: ['Chemical', Validators.required],
@@ -452,11 +456,15 @@ export class ChemicalParameterComponent implements OnInit {
   };
 
   getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
 
   onParameterUnitSelected(item: any) {
-    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+    this.ParameterForm.patchValue({
+      parameterUnitID: item?.id ?? null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+      unitConversionFactor: item?.conversionFactor ?? null
+    });
   }
 
   openLinkedMaster(route: string): void {

@@ -749,7 +749,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   // Master dropdown fetchers used to build the template (bound as arrow fns for forkJoin).
   getParameterUnitDropdownFn = (term: string, page: number, pageSize: number): Observable<any[]> =>
-    this.prameterUnitService.getParameterUnitDropdown(term, page, pageSize);
+    this.prameterUnitService.getGroupedParameterUnitDropdown(term, page, pageSize);
   getSpecimenOrientationFn = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.specimenService.getSpecimenOrientationDropdown(term, page, pageSize);
   getAllLaboratoryTestFn = (term: string, page: number, pageSize: number): Observable<any[]> =>

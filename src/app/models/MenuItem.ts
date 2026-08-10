@@ -117,7 +117,6 @@ export function getAllMenuItems(): MenuItem[] {
       color: '',
       children: [
         { id: 40, title: 'Inward', route: '/sample/inward', parentMenuID: 5, permissions: ['CanReadInward'], children: [], color: getRandomColor() },
-        { id: 41, title: 'Plan', route: '/sample/plan', parentMenuID: 5, permissions: ['CanReadPlan'], children: [], color: getRandomColor() },
         { id: 42, title: 'Review', route: '/sample/review', parentMenuID: 5, permissions: ['CanReadReview'], children: [], color: getRandomColor() },
         {
           id: 500, title: 'Sample Preparation', route: '', parentMenuID: 5, permissions: [], children: [

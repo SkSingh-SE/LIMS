@@ -96,4 +96,12 @@ export class SampleInwardService {
   deleteSample(sampleDetailId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete-sample/${sampleDetailId}`);
   }
+
+  stopReport(inwardId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/stop-report/${inwardId}`, { reason });
+  }
+
+  unstopReport(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/unstop-report/${inwardId}`, {});
+  }
 }

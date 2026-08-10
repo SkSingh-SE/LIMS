@@ -29,12 +29,30 @@
         </li>
       </ul>
 
-      <!-- Right: Status Badge + Actions -->
+      <!-- Right: Status Badge + Stop Report + Actions -->
       <div class="d-flex align-items-center gap-2 px-3">
         <app-test-status-badge
           *ngIf="sampleId > 0 && currentInwardStatus"
           [status]="currentInwardStatus">
         </app-test-status-badge>
+
+        <!-- Stop Report Action -->
+        <ng-container *ngIf="sampleId > 0">
+          <span *ngIf="isReportStopped" class="badge bg-danger" [title]="'Stopped reason: ' + stopReportReason">
+            <i class="bi bi-stop-circle-fill me-1"></i> Report Stopped
+          </span>
+          <button *ngIf="!isReportStopped"
+                  type="button" class="btn btn-outline-danger btn-sm"
+                  (click)="openStopReportDialog()">
+            <i class="bi bi-stop-circle me-1"></i> Stop Report
+          </button>
+          <button *ngIf="isReportStopped"
+                  type="button" class="btn btn-outline-success btn-sm"
+                  (click)="onUnstopReport()">
+            <i class="bi bi-play-circle me-1"></i> Unstop
+          </button>
+        </ng-container>
+
         <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-outline-danger btn-sm" (click)="printJobCard()">
           <i class="bi bi-printer me-1"></i> Print Job Card
         </button>
@@ -185,226 +203,223 @@
           >
             Contacts
           </legend>
-          <!-- Contact Info Table -->
+          <!-- Contact Info Table (Note 1, 2, 3: Row 2 = Accountant 'A', Row 3+ = Sub-contacts 'C') -->
           <div class="table-responsive" formArrayName="contacts">
-            <table class="table table-compact">
+            <table class="table table-compact align-middle">
               <thead class="table-light">
                 <tr class="text-nowrap text-muted small text-center">
-                  <th class="fw-medium">Select</th>
+                  <th class="fw-medium" style="width:50px">Type</th>
                   <th class="fw-medium">Contact Person</th>
                   <th class="fw-medium">Mobile Number</th>
                   <th class="fw-medium">Email ID</th>
-                  <th class="fw-medium">Bill</th>
-                  <th class="fw-medium">Report</th>
+                  <th class="fw-medium" style="width:60px">Bill</th>
+                  <th class="fw-medium" style="width:60px">Report</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
-                  <td class="text-center">
-                    <span class="form-check d-flex align-items-center justify-content-center">
-                      <input type="checkbox" class="form-check-input mt-1" formControlName="selected" (change)="onContactSelectedChange(i)" />
-                    </span>
-                  </td>
-                  <td>
-                    {{ contact.get("name")?.value || "-" }}
-                  </td>
-                  <td>
-                    {{ contact.get("mobileNo")?.value || "-" }}
-                  </td>
-                  <td>
-                    {{ contact.get("emailId")?.value || "-" }}
-                  </td>
-                  <td class="text-center">
-                    <span class="form-check d-flex align-items-center justify-content-center">
-                      <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" (change)="onSendBillChange(i)" />
-                    </span>
-                  </td>
-                  <td class="text-center">
-                    <span class="form-check d-flex align-items-center justify-content-center">
-                      <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" (change)="onSendReportChange(i)" />
-                    </span>
-                  </td>
-                </tr>
+                <!-- ROW 2: ACCOUNTANT (Type 'A', Fixed position, Read-only Bill/Report) -->
+                <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
+                  <tr *ngIf="isAccountantContact(i)" class="table-warning bg-opacity-10">
+                    <td class="text-center">
+                      <span class="badge bg-warning text-dark fw-bold" style="font-size:0.7rem" title="Accountant">A</span>
+                    </td>
+                    <td class="fw-semibold">{{ contact.get("name")?.value || "-" }}</td>
+                    <td>{{ contact.get("mobileNo")?.value || "-" }}</td>
+                    <td>{{ contact.get("emailId")?.value || "-" }}</td>
+                    <td class="text-center">
+                      <span class="form-check d-flex align-items-center justify-content-center">
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span class="form-check d-flex align-items-center justify-content-center">
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      </span>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <!-- ROW 3+: SUB-CONTACTS (Type 'C', Read-only Bill/Report) -->
+                <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
+                  <tr *ngIf="!isAccountantContact(i)">
+                    <td class="text-center">
+                      <span class="badge bg-secondary" style="font-size:0.7rem" title="Contact">C</span>
+                    </td>
+                    <td>{{ contact.get("name")?.value || "-" }}</td>
+                    <td>{{ contact.get("mobileNo")?.value || "-" }}</td>
+                    <td>{{ contact.get("emailId")?.value || "-" }}</td>
+                    <td class="text-center">
+                      <span class="form-check d-flex align-items-center justify-content-center">
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span class="form-check d-flex align-items-center justify-content-center">
+                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      </span>
+                    </td>
+                  </tr>
+                </ng-container>
               </tbody>
             </table>
           </div>
         </fieldset>
 
         <div class="row g-3 mb-3">
-          <!-- Reporting To Card -->
+          <!-- ═════════════════ REPORTING TO SECTION ═════════════════ -->
           <div class="col-md-6">
-            <div class="card border shadow-sm h-100">
-              <div class="card-header fw-semibold bg-light">Reporting To</div>
-              <div class="card-body small">
-                <!-- Override customer selector -->
-                <div class="mb-2">
-                  <app-searchable-dropdown
-                    [fetchDataFn]="getCustomers"
-                    [selectedItem]="reportingTo.get('customerID')?.value"
-                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
-                    [labelName]="'Customer'"
-                    [hideLabel]="true"
-                    [smallInput]="true"
-                    [isDisabled]="isViewMode"
-                    (itemSelected)="onReportingToCustomerChange($event)">
-                  </app-searchable-dropdown>
-                </div>
-                <div formGroupName="reportingTo" class="mb-3">
-                  <label class="form-label">
-                    Contact Person
-                    <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('reportingTo', $event)"
-                    [ngClass]="{'is-invalid': reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)}">
-                    <option value="null">Select Contact Person</option>
-                    <ng-container *ngIf="reportingToOverrideContacts.length > 0; else primaryReportingContacts">
-                      <option *ngFor="let cPerson of reportingToOverrideContacts" [value]="cPerson.contactID">{{ cPerson.name }}</option>
-                    </ng-container>
-                    <ng-template #primaryReportingContacts>
-                      <option *ngFor="let cPerson of reportingToContactPerson" [value]="cPerson.contactID">{{ cPerson.name }}</option>
-                    </ng-template>
-                  </select>
-                  <div *ngIf="reportingTo.get('contactPersonID')?.invalid && (reportingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
-                    Contact Person is required.
-                  </div>
-                </div>
+            <fieldset class="border rounded p-3 h-100 position-relative">
+              <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center justify-content-between gap-2">
+                <span><i class="bi bi-file-earmark-text me-1"></i> Reporting To</span>
+                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger py-0 px-2 lh-sm" (click)="addReportingCustomerCard()">
+                  <i class="bi bi-plus-circle me-1"></i> Add Customer
+                </button>
+              </legend>
 
-                <!-- Show Details if Contact Person is selected -->
-                <ng-container *ngIf="reportingTo">
-                  <div class="row row-cols-1 row-cols-md-2 g-2">
-                    <div>
-                      <strong>Address:</strong>
-                      {{ reportingTo.get("address")?.value }}
+              <div formArrayName="reportingToCustomers">
+                <div *ngFor="let card of reportingToCustomerControls.controls; let rIdx = index" [formGroupName]="rIdx"
+                     class="card border shadow-sm mb-3 bg-white">
+                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark text-truncate me-2" style="max-width:320px;"
+                          [title]="card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1)))">
+                      <i class="bi bi-building me-1"></i>
+                      {{ card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1))) }}
+                      <span *ngIf="rIdx === 0" class="badge bg-primary ms-1" style="font-size:0.68rem">Primary</span>
+                    </span>
+                    <button *ngIf="rIdx > 0 && !isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0 ms-auto" (click)="removeReportingCustomerCard(rIdx)">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  </div>
+
+                  <div class="card-body p-2">
+                    <!-- Customer Search Dropdown -->
+                    <div class="mb-2">
+                      <app-searchable-dropdown
+                        [fetchDataFn]="getCustomers"
+                        [selectedItem]="card.get('customerID')?.value"
+                        [reloadKey]="card.get('customerID')?.value"
+                        [placeholder]="'Type & Search Customer...'"
+                        [hideLabel]="true"
+                        [smallInput]="true"
+                        [isDisabled]="isViewMode"
+                        (itemSelected)="onReportingCustomerSelected($event, rIdx)">
+                      </app-searchable-dropdown>
                     </div>
-                    <div>
-                      <strong>PIN Code:</strong>
-                      {{ reportingTo.get("pinCode")?.value }}
-                      <span *ngIf="reportingTo.get('pinCode')?.hasError('pattern') && reportingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
-                        PIN Code must be exactly 6 digits
-                      </span>
+
+                    <!-- Customer Summary Info -->
+                    <div class="small text-muted mb-2 border-bottom pb-1" style="font-size:0.75rem">
+                      <strong>Name:</strong> {{ card.get('customerName')?.value || customerData?.name || '-' }}<br />
+                      <strong>Address:</strong> {{ card.get('address')?.value || customerData?.address || '-' }} |
+                      <strong>GST:</strong> {{ card.get('gstNo')?.value || customerData?.gstNo || '-' }}
                     </div>
-                    <div>
-                      <strong>Area:</strong>
-                      {{ reportingTo.get("area")?.value }}
-                    </div>
-                    <div>
-                      <strong>City:</strong>
-                      {{ reportingTo.get("city")?.value }}
-                    </div>
-                    <div>
-                      <strong>State:</strong>
-                      {{ reportingTo.get("state")?.value }}
-                    </div>
-                    <div>
-                      <strong>Country:</strong>
-                      {{ reportingTo.get("country")?.value }}
-                    </div>
-                    <div>
-                      <strong>Mobile No:</strong>
-                      {{ reportingTo.get("mobileNo")?.value || "-" }}
-                      <span *ngIf="reportingTo.get('mobileNo')?.hasError('pattern') && reportingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
-                        Contact number must be 10-13 digits
-                      </span>
-                    </div>
-                    <div>
-                      <strong>Email ID:</strong>
-                      {{ reportingTo.get("emailId")?.value || "-" }}
-                      <span *ngIf="reportingTo.get('emailId')?.hasError('email') && reportingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
-                        Enter a valid email address
-                      </span>
+
+                    <!-- Multi-Contact Checkbox Grid -->
+                    <div class="contacts-selection-box">
+                      <label class="form-label-sm fw-semibold text-danger mb-1" style="font-size:0.75rem">
+                        Select Contacts for Report Delivery: <span class="text-danger">*</span>
+                      </label>
+                      <div class="d-flex flex-column gap-1 overflow-auto" style="max-height: 140px;">
+                        <div *ngFor="let contact of getCustomerContactsList('reporting', rIdx)" class="form-check small mb-0">
+                          <input
+                            type="checkbox"
+                            class="form-check-input"
+                            [id]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)"
+                            [checked]="isContactSelected('reporting', rIdx, contact.contactID || contact.id)"
+                            [disabled]="isViewMode"
+                            (change)="onContactToggle('reporting', rIdx, contact.contactID || contact.id, $event)"
+                          />
+                          <label class="form-check-label text-dark" style="font-size:0.75rem" [for]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)">
+                            <strong>{{ contact.name }}</strong> ({{ contact.designation || 'Contact' }})
+                            <span class="text-muted ms-1">— 📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1" style="font-size:0.72rem">
+                        <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
+                      </div>
                     </div>
                   </div>
-                </ng-container>
+                </div>
               </div>
-            </div>
+            </fieldset>
           </div>
 
-          <!-- Billing To Card -->
+          <!-- ═════════════════ BILLING TO SECTION ═════════════════ -->
           <div class="col-md-6">
-            <div class="card border shadow-sm h-100">
-              <div class="card-header fw-semibold bg-light d-flex justify-content-between align-items-center">Billing To</div>
-              <div class="card-body small">
-                <!-- Override customer selector -->
-                <div class="mb-2">
-                  <app-searchable-dropdown
-                    [fetchDataFn]="getCustomers"
-                    [selectedItem]="billingTo.get('customerID')?.value"
-                    [placeholder]="'Customer (default: ' + (customerData?.name || 'primary') + ')'"
-                    [labelName]="'Customer'"
-                    [hideLabel]="true"
-                    [smallInput]="true"
-                    [isDisabled]="isViewMode"
-                    (itemSelected)="onBillingToCustomerChange($event)">
-                  </app-searchable-dropdown>
-                </div>
-                <div formGroupName="billingTo" class="mb-3">
-                  <label class="form-label">
-                    Contact Person
-                    <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" formControlName="contactPersonID" (change)="onAddressContactPersonChange('billingTo', $event)"
-                    [ngClass]="{'is-invalid': billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)}">
-                    <option value="null">Select Contact Person</option>
-                    <ng-container *ngIf="billingToOverrideContacts.length > 0; else primaryBillingContacts">
-                      <option *ngFor="let contactPerson of billingToOverrideContacts" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
-                    </ng-container>
-                    <ng-template #primaryBillingContacts>
-                      <option *ngFor="let contactPerson of billingToContactPerson" [value]="contactPerson.contactID">{{ contactPerson.name }}</option>
-                    </ng-template>
-                  </select>
-                  <div *ngIf="billingTo.get('contactPersonID')?.invalid && (billingTo.get('contactPersonID')?.touched || submitted)" class="text-danger text-sm mt-1">
-                    Contact Person is required.
-                  </div>
-                </div>
+            <fieldset class="border rounded p-3 h-100 position-relative">
+              <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center justify-content-between gap-2">
+                <span><i class="bi bi-receipt me-1"></i> Billing To</span>
+                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger py-0 px-2 lh-sm" (click)="addBillingCustomerCard()">
+                  <i class="bi bi-plus-circle me-1"></i> Add Customer
+                </button>
+              </legend>
 
-                <!-- Show Details if Contact Person is selected -->
-                <ng-container *ngIf="billingTo">
-                  <div class="row row-cols-1 row-cols-md-2 g-2">
-                    <div>
-                      <strong>Address:</strong>
-                      {{ billingTo.get("address")?.value }}
+              <div formArrayName="billingToCustomers">
+                <div *ngFor="let card of billingToCustomerControls.controls; let bIdx = index" [formGroupName]="bIdx"
+                     class="card border shadow-sm mb-3 bg-white">
+                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark text-truncate me-2" style="max-width:320px;"
+                          [title]="card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1)))">
+                      <i class="bi bi-building me-1"></i>
+                      {{ card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1))) }}
+                      <span *ngIf="bIdx === 0" class="badge bg-primary ms-1" style="font-size:0.68rem">Primary</span>
+                    </span>
+                    <button *ngIf="bIdx > 0 && !isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0 ms-auto" (click)="removeBillingCustomerCard(bIdx)">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  </div>
+
+                  <div class="card-body p-2">
+                    <!-- Customer Search Dropdown -->
+                    <div class="mb-2">
+                      <app-searchable-dropdown
+                        [fetchDataFn]="getCustomers"
+                        [selectedItem]="card.get('customerID')?.value"
+                        [reloadKey]="card.get('customerID')?.value"
+                        [placeholder]="'Type & Search Customer...'"
+                        [hideLabel]="true"
+                        [smallInput]="true"
+                        [isDisabled]="isViewMode"
+                        (itemSelected)="onBillingCustomerSelected($event, bIdx)">
+                      </app-searchable-dropdown>
                     </div>
-                    <div>
-                      <strong>PIN Code:</strong>
-                      {{ billingTo.get("pinCode")?.value }}
-                      <span *ngIf="billingTo.get('pinCode')?.hasError('pattern') && billingTo.get('pinCode')?.touched" class="text-danger text-sm d-block">
-                        PIN Code must be exactly 6 digits
-                      </span>
+
+                    <!-- Customer Summary Info -->
+                    <div class="small text-muted mb-2 border-bottom pb-1" style="font-size:0.75rem">
+                      <strong>Name:</strong> {{ card.get('customerName')?.value || customerData?.name || '-' }}<br />
+                      <strong>Address:</strong> {{ card.get('address')?.value || customerData?.address || '-' }} |
+                      <strong>GST:</strong> {{ card.get('gstNo')?.value || customerData?.gstNo || '-' }}
                     </div>
-                    <div>
-                      <strong>Area:</strong>
-                      {{ billingTo.get("area")?.value }}
-                    </div>
-                    <div>
-                      <strong>City:</strong>
-                      {{ billingTo.get("city")?.value }}
-                    </div>
-                    <div>
-                      <strong>State:</strong>
-                      {{ billingTo.get("state")?.value }}
-                    </div>
-                    <div>
-                      <strong>Country:</strong>
-                      {{ billingTo.get("country")?.value }}
-                    </div>
-                    <div>
-                      <strong>Mobile No:</strong>
-                      {{ billingTo.get("mobileNo")?.value || "-" }}
-                      <span *ngIf="billingTo.get('mobileNo')?.hasError('pattern') && billingTo.get('mobileNo')?.touched" class="text-danger text-sm d-block">
-                        Contact number must be 10-13 digits
-                      </span>
-                    </div>
-                    <div>
-                      <strong>Email ID:</strong>
-                      {{ billingTo.get("emailId")?.value || "-" }}
-                      <span *ngIf="billingTo.get('emailId')?.hasError('email') && billingTo.get('emailId')?.touched" class="text-danger text-sm d-block">
-                        Enter a valid email address
-                      </span>
+
+                    <!-- Multi-Contact Checkbox Grid -->
+                    <div class="contacts-selection-box">
+                      <label class="form-label-sm fw-semibold text-danger mb-1" style="font-size:0.75rem">
+                        Select Contacts for Bill Delivery: <span class="text-danger">*</span>
+                      </label>
+                      <div class="d-flex flex-column gap-1 overflow-auto" style="max-height: 140px;">
+                        <div *ngFor="let contact of getCustomerContactsList('billing', bIdx)" class="form-check small mb-0">
+                          <input
+                            type="checkbox"
+                            class="form-check-input"
+                            [id]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)"
+                            [checked]="isContactSelected('billing', bIdx, contact.contactID || contact.id)"
+                            [disabled]="isViewMode"
+                            (change)="onContactToggle('billing', bIdx, contact.contactID || contact.id, $event)"
+                          />
+                          <label class="form-check-label text-dark" style="font-size:0.75rem" [for]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)">
+                            <strong>{{ contact.name }}</strong> ({{ contact.designation || 'Contact' }})
+                            <span class="text-muted ms-1">— 📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1" style="font-size:0.72rem">
+                        <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
+                      </div>
                     </div>
                   </div>
-                </ng-container>
+                </div>
               </div>
-            </div>
+            </fieldset>
           </div>
         </div>
 
@@ -415,8 +430,18 @@
           >
             Document
           </legend>
-          <div class="col-6, col-md-3">
-            <label class="form-label">Upload Company Letter or Request Letter</label>
+
+          <div *ngIf="requiresSupportingDoc && !sampleInwardForm.get('requestFileName')?.value"
+               class="alert alert-warning py-1 px-2 mb-2 small">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <strong>Document Required:</strong> Reporting To or Billing To customer differs from main customer — supporting request letter is mandatory.
+          </div>
+
+          <div class="col-6, col-md-4">
+            <label class="form-label">
+              Upload Company Letter or Request Letter
+              <span *ngIf="requiresSupportingDoc" class="text-danger">*</span>
+            </label>
             <div class="">
               <ng-container *ngIf="sampleInwardForm.get('requestFilePath')?.value; else uploadField">
                 <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
@@ -476,31 +501,18 @@
           <div class="table-responsive">
             <table class="table table-compact w-100" style="table-layout: auto;">
               <colgroup>
-                <col style="width:105px" />   <!-- Auto-Generated -->
+                <col style="width:120px" />   <!-- Auto-Generated -->
                 <col />                        <!-- Sample Identification — flexible -->
-                <col />                        <!-- Metal Classification — flexible -->
-                <col />                        <!-- Product Condition — flexible -->
-                <col style="width:72px" />     <!-- Thickness -->
-                <col style="width:72px" />     <!-- Diameter -->
-                <col style="width:72px" />     <!-- Width -->
-                <col style="width:72px" />     <!-- Length -->
-                <col style="width:88px" />     <!-- Qty -->
-                <col style="width:110px" />    <!-- Image -->
-                <col style="width:44px" />     <!-- Action -->
+                <col style="width:240px" />    <!-- Chemical Sample Category -->
+                <col style="width:70px" />     <!-- Qty -->
+                <col style="width:130px" />    <!-- Image -->
+                <col style="width:50px" />     <!-- Action -->
               </colgroup>
               <thead class="table-light">
                 <tr class="text-muted small">
                   <th class="fw-medium text-center text-nowrap">Auto-Generated</th>
                   <th class="fw-medium text-center text-nowrap">Sample Identification</th>
-                  <th class="fw-medium text-center text-nowrap">Metal Classification</th>
-                  <th class="fw-medium text-center text-nowrap">Product Condition</th>
                   <th class="fw-medium text-center text-nowrap">Chemical Sample Category</th>
-                  <!-- <th class="fw-medium text-center">Specimen Orientation</th> -->
-                  <!-- <th class="fw-medium text-center">Product Form</th> -->
-                  <th class="fw-medium text-center" style="white-space:normal">Thickness (mm)</th>
-                  <th class="fw-medium text-center" style="white-space:normal">Diameter (mm)</th>
-                  <th class="fw-medium text-center" style="white-space:normal">Width (mm)</th>
-                  <th class="fw-medium text-center" style="white-space:normal">Length (mm)</th>
                   <th class="fw-medium text-center text-nowrap">Qty</th>
                   <th class="fw-medium text-center text-nowrap">Image</th>
                   <th class="fw-medium text-center">Action</th>
@@ -521,29 +533,6 @@
                   <td>
                     <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details"
                       [ngClass]="{'is-invalid': sample.get('details')?.invalid && (sample.get('details')?.touched || submitted)}" />
-
-                  </td>
-                  <td>
-                    <app-searchable-dropdown
-                      [placeholder]="'Type & Search Metal Classification'"
-                      [hideLabel]="true"
-                      [smallInput]="true"
-                      [fetchDataFn]="getMetalClassification"
-                      (itemSelected)="onMetalClassificationSelected($event,i)"
-                      [selectedItem]="sample.get('metalClassificationID')?.value"
-                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
-                    ></app-searchable-dropdown>
-                  </td>
-                  <td>
-                    <app-searchable-dropdown
-                      [placeholder]="'Type & Search Product Condition'"
-                      [hideLabel]="true"
-                      [smallInput]="true"
-                      [fetchDataFn]="getProductConditions"
-                      (itemSelected)="onProductConditionSelected($event,i)"
-                      [selectedItem]="sample.get('productConditionID')?.value"
-                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
-                    ></app-searchable-dropdown>
                   </td>
                   <td>
                     <app-searchable-dropdown
@@ -556,32 +545,6 @@
                       [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
                     ></app-searchable-dropdown>
                   </td>
-                  <!-- <td>
-                    <app-searchable-dropdown
-                      [placeholder]="'Type & Search Specimen Orientation'"
-                      [hideLabel]="true"
-                      [smallInput]="true"
-                      [fetchDataFn]="getSpecimenOrientationDrop(i)"
-                      (itemSelected)="onSpecimenOrientationSelected($event,i)"
-                      [selectedItem]="sample.get('specimenOrientationID')?.value"
-                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
-                    ></app-searchable-dropdown>
-                  </td>
-                  <td>
-                    <app-searchable-dropdown
-                      [placeholder]="'Product Form'"
-                      [hideLabel]="true"
-                      [smallInput]="true"
-                      [fetchDataFn]="getProductFormDrop"
-                      (itemSelected)="onProductFormSelected($event,i)"
-                      [selectedItem]="sample.get('productFormID')?.value"
-                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
-                    ></app-searchable-dropdown>
-                  </td> -->
-                  <td><input class="form-control form-control-sm" type="number" formControlName="thickness" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="diameter" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="width" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
-                  <td><input class="form-control form-control-sm" type="number" formControlName="length" placeholder="mm" step="0.01" min="0" style="width:100%;min-width:0" /></td>
                   <td>
                     <div class="d-flex align-items-center gap-1">
                       <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:48px;min-width:0"
@@ -1018,6 +981,33 @@
       <div class="jc-sign-block">
         <div class="jc-sign-line"></div>
         <div>Customer Signature</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stop Report Confirmation Dialog -->
+<div *ngIf="showStopReportDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1055">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content shadow">
+      <div class="modal-header py-2 bg-danger text-white">
+        <h6 class="modal-title mb-0"><i class="bi bi-stop-circle me-1"></i> Stop Report Generation</h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" (click)="showStopReportDialog = false"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="small text-muted mb-2">Provide a reason for stopping report generation (required):</p>
+        <textarea class="form-control form-control-sm" rows="3"
+                  [(ngModel)]="stopReportReasonInput"
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="Enter reason for stopping report..."></textarea>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-sm btn-secondary" (click)="showStopReportDialog = false">Close</button>
+        <button type="button" class="btn btn-sm btn-danger"
+                [disabled]="!stopReportReasonInput.trim()"
+                (click)="confirmStopReport()">
+          <i class="bi bi-stop-circle me-1"></i> Confirm Stop
+        </button>
       </div>
     </div>
   </div>

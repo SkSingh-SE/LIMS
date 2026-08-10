@@ -16,8 +16,8 @@ import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
-import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 @Component({
   selector: 'app-review-of-request-form',

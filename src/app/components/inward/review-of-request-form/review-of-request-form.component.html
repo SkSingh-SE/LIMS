@@ -1,113 +1,53 @@
 <div class="review-page">
-  <!-- Page Header -->
-  <div class="review-header">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <div>
-        <h5 class="mb-1 fw-bold">
-          <i class="bi bi-clipboard-check me-2 text-muted"></i>
-          Review of Request
-          <span class="text-muted fw-normal ms-2" *ngIf="plan?.caseNo">{{ plan.caseNo }}</span>
-        </h5>
-        <div class="text-muted small" *ngIf="plan?.customerName">{{ plan.customerName }}</div>
-      </div>
-      <app-test-status-badge [status]="reviewStatus"></app-test-status-badge>
-    </div>
-  </div>
+  <!-- Page Header & Sub-Tabs -->
+  <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom flex-wrap gap-2">
+    <ul class="nav nav-tabs border-0 flex-grow-1" id="reviewSubTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link fw-semibold px-3 py-1.5"
+          [class.active]="activeSubTab === 'plan'"
+          (click)="setSubTab('plan')"
+          type="button"
+        >
+          <i class="bi bi-journal-text me-1.5 text-primary"></i> 1. Plan Review & Update
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link fw-semibold px-3 py-1.5"
+          [class.active]="activeSubTab === 'prep'"
+          (click)="setSubTab('prep')"
+          type="button"
+        >
+          <i class="bi bi-scissors me-1.5 text-warning"></i> 2. Sample Preparation & Cutting Plan
+        </button>
+      </li>
+    </ul>
 
-  <!-- Customer & Case Info -->
-  <div class="row g-3 mb-3">
-    <!-- Customer Info -->
-    <div class="col-md-6">
-      <div class="review-section">
-        <div class="review-section-title">
-          <i class="bi bi-person me-2"></i>Customer Information
-        </div>
-        <div class="row g-2 p-3">
-          <div class="col-12">
-            <div class="review-field">
-              <label class="review-label">Customer</label>
-              <div class="review-value">{{ plan?.customerName || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Contact Person</label>
-              <div class="review-value">{{ plan?.customerContact || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-12">
-            <div class="review-field">
-              <label class="review-label">Address</label>
-              <div class="review-value">{{ plan?.customerAddress || '-' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button
+        class="btn-lims btn-lims-print btn-sm"
+        (click)="printInwardChallan()"
+        title="Print Formal Sample Inward Receipt Challan PDF"
+      >
+        <i class="bi bi-printer me-1.5"></i> Print Inward Challan
+      </button>
 
-    <!-- Case Info -->
-    <div class="col-md-6">
-      <div class="review-section">
-        <div class="review-section-title">
-          <i class="bi bi-folder me-2"></i>Case Information
-        </div>
-        <div class="row g-2 p-3">
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Case No</label>
-              <div class="review-value">{{ plan?.caseNo || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Receipt Note</label>
-              <div class="review-value">{{ plan?.sampleReceiptNote || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Urgent</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.urgent ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.urgent ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Return Sample</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.returnSample ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.returnSample ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Not Destroyed</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.notDestroyed ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.notDestroyed ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Conformity</label>
-              <div class="review-value">{{ plan?.statementOfConformity || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Decision Rule</label>
-              <div class="review-value">{{ plan?.decisionRule || '-' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button
+        *ngIf="!isEmbeddedReadOnly"
+        class="btn-lims btn-lims-save btn-sm"
+        (click)="verifyAndLockReview()"
+      >
+        <i class="bi bi-check-circle me-1.5"></i> Approve & Finalize Review
+      </button>
+
+      <button
+        *ngIf="isEmbeddedReadOnly"
+        class="btn-lims btn-lims-cancel btn-sm"
+        (click)="openReplanModal()"
+      >
+        <i class="bi bi-arrow-counterclockwise me-1.5"></i> Request Re-Plan
+      </button>
     </div>
   </div>
 

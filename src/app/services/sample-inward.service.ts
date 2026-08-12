@@ -104,4 +104,25 @@ export class SampleInwardService {
   unstopReport(inwardId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/unstop-report/${inwardId}`, {});
   }
+
+  verifyAndLockReview(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify-and-lock-review/${inwardId}`, {});
+  }
+
+  requestInwardReplan(inwardId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/request-replan`, { inwardId, reason });
+  }
+
+  approveInwardReplan(replanRequestId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/approve-replan`, { replanRequestId, remarks: remarks || '' });
+  }
+
+  downloadInwardChallanPdf(inwardId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${inwardId}/print-challan`, {
+      responseType: 'blob'
+    });
+  }
 }
+
+
+

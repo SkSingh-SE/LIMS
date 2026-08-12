@@ -17,13 +17,23 @@ import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 @Component({
   selector: 'app-review-of-request-form',
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent, SearchableDropdownComponent]
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    TestStatusBadgeComponent,
+    SearchableDropdownComponent,
+    PlanFormComponent,
+    CuttingMachiningPlanTabComponent
+  ]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
@@ -32,7 +42,13 @@ export class ReviewOfRequestFormComponent implements OnInit {
   @Input() embeddedInwardId: number = 0;
   @Input() isEmbeddedMode: boolean = false;
   @Input() isEmbeddedReadOnly: boolean = false;
+
+  activeSubTab: 'plan' | 'prep' = 'plan';
+  showReplanModal: boolean = false;
+  replanReason: string = '';
+
   plan: any = null;
+
   baseUrl = environment.baseUrl;
   reviewRemark: string = '';
   submitAttempted = false;
@@ -441,4 +457,67 @@ export class ReviewOfRequestFormComponent implements OnInit {
         return 'bg-secondary';
     }
   }
+
+  setSubTab(tab: 'plan' | 'prep'): void {
+    this.activeSubTab = tab;
+  }
+
+  verifyAndLockReview(): void {
+    if (!this.inwardId) return;
+    this.inwardService.verifyAndLockReview(this.inwardId).subscribe({
+      next: (res) => {
+        this.toast.show(res.message || 'Review of Request verified and locked successfully!', 'success');
+        this.isEmbeddedReadOnly = true;
+        this.reviewStatus = SampleStatus.REQUEST_APPROVED;
+        this.fetchSampleInwardDetails(this.inwardId);
+      },
+      error: () => {
+        this.toast.show('Failed to verify and lock Review of Request.', 'error');
+      }
+    });
+  }
+
+  openReplanModal(): void {
+    this.replanReason = '';
+    this.showReplanModal = true;
+  }
+
+  closeReplanModal(): void {
+    this.showReplanModal = false;
+    this.replanReason = '';
+  }
+
+  submitReplanRequest(): void {
+    if (!this.replanReason.trim()) {
+      this.toast.show('Please enter a valid reason for requesting a re-plan.', 'error');
+      return;
+    }
+    this.inwardService.requestInwardReplan(this.inwardId, this.replanReason.trim()).subscribe({
+
+      next: (res) => {
+        this.toast.show(res.message || 'Re-Plan request submitted successfully!', 'success');
+        this.closeReplanModal();
+        this.fetchSampleInwardDetails(this.inwardId);
+      },
+      error: () => {
+        this.toast.show('Failed to submit re-plan request.', 'error');
+      }
+    });
+  }
+
+  printInwardChallan(): void {
+    if (!this.inwardId) return;
+    this.inwardService.downloadInwardChallanPdf(this.inwardId).subscribe({
+      next: (blob: Blob) => {
+        const fileURL = URL.createObjectURL(blob);
+        window.open(fileURL, '_blank');
+        this.toast.show('Inward Receipt Challan generated successfully!', 'success');
+      },
+      error: () => {
+        this.toast.show('Failed to generate Inward Receipt Challan PDF.', 'error');
+      }
+    });
+  }
 }
+
+

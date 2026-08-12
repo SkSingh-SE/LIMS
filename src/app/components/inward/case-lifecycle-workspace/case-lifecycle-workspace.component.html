@@ -88,41 +88,18 @@
     <!-- ═══════════════════════════ TAB CONTENT ═══════════════════════════ -->
     <div class="workspace-tab-content">
 
-      <!-- Tab 1: Customer & Company Info (embedded SampleInwardForm Tab 1) -->
+      <!-- Tab 1: Inward (Sample Inward Register) -->
       <div *ngIf="activeTabId === 'inward'" class="tab-pane-body">
         <div *ngIf="inwardId > 0">
           <app-sample-inward-form
             [embeddedInwardId]="inwardId"
             [isEmbeddedMode]="true"
-            [embeddedActiveTab]="'info'"
             [isEmbeddedReadOnly]="isTabReadOnly('inward')">
           </app-sample-inward-form>
         </div>
       </div>
 
-      <!-- Tab 2: Sample Details (embedded SampleInwardForm Tab 2) -->
-      <div *ngIf="activeTabId === 'samples'" class="tab-pane-body">
-        <div *ngIf="inwardId > 0">
-          <app-sample-inward-form
-            [embeddedInwardId]="inwardId"
-            [isEmbeddedMode]="true"
-            [embeddedActiveTab]="'sample'"
-            [isEmbeddedReadOnly]="isTabReadOnly('samples')">
-          </app-sample-inward-form>
-        </div>
-      </div>
-
-      <!-- Tab 3: Plan -->
-      <div *ngIf="activeTabId === 'plan'" class="tab-pane-body">
-        <div *ngIf="inwardId > 0">
-          <app-plan-form
-            [inwardID]="inwardId"
-            [mode]="isTabReadOnly('plan') ? 'review' : 'plan'">
-          </app-plan-form>
-        </div>
-      </div>
-
-      <!-- Tab 4: Review of Request -->
+      <!-- Tab 2: Review of Request & Plan Review -->
       <div *ngIf="activeTabId === 'review'" class="tab-pane-body">
         <div *ngIf="inwardId > 0">
           <app-review-of-request-form
@@ -133,96 +110,78 @@
         </div>
       </div>
 
-      <!-- Tab 5: Cutting & Machining Plan -->
-      <div *ngIf="activeTabId === 'cutting'" class="tab-pane-body">
-        <div *ngIf="inwardId > 0">
-          <app-cutting-machining-plan-tab
-            [inwardId]="inwardId"
-            [isReadOnly]="isTabReadOnly('cutting')">
-          </app-cutting-machining-plan-tab>
+      <!-- Tab 3: Testing (Test Execution & Verification) -->
+      <div *ngIf="activeTabId === 'testing'" class="tab-pane-body">
+        <div class="card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <h6 class="fw-semibold text-primary mb-0">
+              <i class="bi bi-flask me-2"></i> Testing & Verification Stage
+            </h6>
+            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+          </div>
+          <div class="alert alert-info py-2 fs-7 mb-3">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            This stage includes parameter-wise result recording, formula evaluation, raw data attachments, and technical verification.
+          </div>
+          <div *ngIf="isTabReadOnly('testing')" class="alert alert-warning py-1.5 fs-7 mb-0">
+            <i class="bi bi-lock-fill me-1"></i> Testing completed for this case. Verification sign-off locked.
+          </div>
         </div>
       </div>
 
-      <!-- Tab 6: Case Details (Summary) -->
-      <div *ngIf="activeTabId === 'case'" class="tab-pane-body">
-        <div class="case-summary-grid" *ngIf="caseInfo">
-          <div class="case-info-section">
-            <div class="case-section-title">
-              <i class="bi bi-folder2-open me-2"></i> Case Information
-            </div>
-            <div class="row g-2 p-3">
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Case No</label>
-                <div class="case-info-value">{{ caseInfo.caseNo || '-' }}</div>
-              </div>
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Collection Date</label>
-                <div class="case-info-value">{{ caseInfo.collectionDate | date:'dd/MM/yyyy' }}</div>
-              </div>
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Status</label>
-                <div>
-                  <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
-                </div>
-              </div>
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Urgent</label>
-                <div>
-                  <span class="badge" [ngClass]="caseInfo.urgent ? 'bg-danger' : 'bg-secondary'">
-                    {{ caseInfo.urgent ? 'Yes' : 'No' }}
-                  </span>
-                </div>
-              </div>
-              <div class="col-md-6 col-12">
-                <label class="form-label-sm">Receipt Note</label>
-                <div class="case-info-value">{{ caseInfo.sampleReceiptNote || '-' }}</div>
-              </div>
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Return Sample</label>
-                <div class="case-info-value">{{ caseInfo.returnSample ? 'Yes' : 'No' }}</div>
-              </div>
-              <div class="col-md-3 col-6">
-                <label class="form-label-sm">Bill Required</label>
-                <div class="case-info-value">{{ caseInfo.billRequired ? 'Yes' : 'No' }}</div>
-              </div>
-            </div>
+      <!-- Tab 4: Reporting & Dispatch -->
+      <div *ngIf="activeTabId === 'reporting'" class="tab-pane-body">
+        <div class="card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <h6 class="fw-semibold text-primary mb-0">
+              <i class="bi bi-file-earmark-text me-2"></i> Report Generation & Dispatch Stage
+            </h6>
+            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
           </div>
-
-          <div class="case-info-section mt-3" *ngIf="caseInfo.sampleDetails?.length">
-            <div class="case-section-title">
-              <i class="bi bi-box-seam me-2"></i> Samples ({{ caseInfo.sampleDetails?.length || 0 }})
-            </div>
-            <div class="table-responsive p-2">
-              <table class="table table-sm table-hover">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Sample No</th>
-                    <th>Material</th>
-                    <th>Tests</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let s of caseInfo.sampleDetails; let si = index">
-                    <td>{{ si + 1 }}</td>
-                    <td>{{ s.sampleNumber || '-' }}</td>
-                    <td>{{ s.materialDescription || s.description || '-' }}</td>
-                    <td>{{ s.tests?.length || 0 }}</td>
-                    <td>
-                      <span class="badge bg-success" *ngIf="!s.isCancelled">Active</span>
-                      <span class="badge bg-danger" *ngIf="s.isCancelled">Cancelled</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="alert alert-info py-2 fs-7 mb-3">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            This stage includes QuestPDF report compilation, signatory approval, and release via WhatsApp, Email, Courier, or Hand Pickup.
           </div>
         </div>
+      </div>
 
-        <div *ngIf="!caseInfo" class="text-center py-5 text-muted">
-          <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
-          <div>Case information not available.</div>
+      <!-- Tab 5: Accounts & Case Close -->
+      <div *ngIf="activeTabId === 'accounts'" class="tab-pane-body">
+        <div class="card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <h6 class="fw-semibold text-primary mb-0">
+              <i class="bi bi-bank me-2"></i> Accounts, Billing & Case Closure
+            </h6>
+            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+          </div>
+
+          <div class="case-summary-grid" *ngIf="caseInfo">
+            <div class="case-info-section">
+              <div class="case-section-title">
+                <i class="bi bi-folder2-open me-2"></i> Case Financial & Closure Summary
+              </div>
+              <div class="row g-2 p-3">
+                <div class="col-md-3 col-6">
+                  <label class="form-label-sm">Case No</label>
+                  <div class="case-info-value">{{ caseInfo.caseNo || '-' }}</div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <label class="form-label-sm">Customer Name</label>
+                  <div class="case-info-value">{{ caseInfo.customerName || '-' }}</div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <label class="form-label-sm">Collection Date</label>
+                  <div class="case-info-value">{{ caseInfo.collectionDate | date:'dd/MM/yyyy' }}</div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <label class="form-label-sm">Status</label>
+                  <div>
+                    <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

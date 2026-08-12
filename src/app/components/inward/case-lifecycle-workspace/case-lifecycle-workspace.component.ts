@@ -52,68 +52,56 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   isLoading: boolean = false;
 
   stageSteps: StageStep[] = [
-    { id: 1, label: 'Sample Inward',       icon: 'bi-box-seam',          status: 'pending' },
-    { id: 2, label: 'Sample Plan',          icon: 'bi-clipboard-check',   status: 'pending' },
-    { id: 3, label: 'Review of Request',    icon: 'bi-shield-check',      status: 'pending' },
-    { id: 4, label: 'Cutting & Machining',  icon: 'bi-scissors',          status: 'pending' },
-    { id: 5, label: 'Testing',              icon: 'bi-flask',             status: 'pending' },
-    { id: 6, label: 'Verification & Approval', icon: 'bi-patch-check',   status: 'pending' },
-    { id: 7, label: 'Report Generation',    icon: 'bi-file-earmark-text', status: 'pending' },
-    { id: 8, label: 'Case Closure',         icon: 'bi-check-circle',      status: 'pending' },
+    { id: 1, label: 'Inward',               icon: 'bi-box-seam',          status: 'pending' },
+    { id: 2, label: 'Review of Request',    icon: 'bi-shield-check',      status: 'pending' },
+    { id: 3, label: 'Testing',              icon: 'bi-flask',             status: 'pending' },
+    { id: 4, label: 'Reporting',            icon: 'bi-file-earmark-text', status: 'pending' },
+    { id: 5, label: 'Accounts & Case Close', icon: 'bi-bank',             status: 'pending' },
   ];
 
   tabs: WorkspaceTab[] = [
     {
       id: 'inward',
-      label: 'Customer & Company Info',
-      icon: 'bi-person-lines-fill',
+      label: '1. Inward',
+      icon: 'bi-box-seam',
       permission: 'CanReadSampleInward',
       isReadOnly: false,
       isVisible: true,
       isActive: true
     },
     {
-      id: 'samples',
-      label: 'Sample Details',
-      icon: 'bi-box-seam',
-      permission: 'CanReadSampleInward',
-      isReadOnly: false,
-      isVisible: true,
-      isActive: false
-    },
-    {
-      id: 'plan',
-      label: 'Plan',
-      icon: 'bi-clipboard-check',
-      permission: 'CanReadPlan',
-      isReadOnly: false,
-      isVisible: true,
-      isActive: false
-    },
-    {
       id: 'review',
-      label: 'Review of Request',
+      label: '2. Review of Request',
       icon: 'bi-shield-check',
       permission: 'CanReadReview',
       isReadOnly: false,
-      isVisible: false,
+      isVisible: true,
       isActive: false
     },
     {
-      id: 'cutting',
-      label: 'Cutting & Machining Plan',
-      icon: 'bi-scissors',
-      permission: 'CanReadSampleCutting',
+      id: 'testing',
+      label: '3. Testing',
+      icon: 'bi-flask',
+      permission: 'CanReadTestResult',
       isReadOnly: false,
-      isVisible: false,
+      isVisible: true,
       isActive: false
     },
     {
-      id: 'case',
-      label: 'Case Details',
-      icon: 'bi-folder2-open',
-      permission: 'CanReadSampleInward',
-      isReadOnly: true,
+      id: 'reporting',
+      label: '4. Reporting',
+      icon: 'bi-file-earmark-text',
+      permission: 'CanReadReport',
+      isReadOnly: false,
+      isVisible: true,
+      isActive: false
+    },
+    {
+      id: 'accounts',
+      label: '5. Accounts & Case Close',
+      icon: 'bi-bank',
+      permission: 'CanReadAccount',
+      isReadOnly: false,
       isVisible: true,
       isActive: false
     }
@@ -155,15 +143,17 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   updateStageStepperAndTabs(status: string): void {
     const s = (status || '').toLowerCase();
 
-    // Determine active stage index
+    // Determine active stage index (0-based)
     let activeStageIndex = 0;
-    if (s.includes('plan') && !s.includes('review'))      activeStageIndex = 1;
-    else if (s.includes('review'))                         activeStageIndex = 2;
-    else if (s.includes('cutting') || s.includes('prep')) activeStageIndex = 3;
-    else if (s.includes('test'))                           activeStageIndex = 4;
-    else if (s.includes('verif') || s.includes('approv')) activeStageIndex = 5;
-    else if (s.includes('report'))                         activeStageIndex = 6;
-    else if (s.includes('close') || s.includes('complet'))activeStageIndex = 7;
+    if (s.includes('review') || s.includes('plan') || s.includes('prep') || s.includes('cutting')) {
+      activeStageIndex = 1;
+    } else if (s.includes('test') || s.includes('verif')) {
+      activeStageIndex = 2;
+    } else if (s.includes('report') || s.includes('dispatch')) {
+      activeStageIndex = 3;
+    } else if (s.includes('close') || s.includes('account') || s.includes('invoice') || s.includes('complet')) {
+      activeStageIndex = 4;
+    }
 
     // Update stepper
     this.stageSteps = this.stageSteps.map((step, i) => ({
@@ -173,47 +163,44 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
              : 'pending'
     }));
 
-    // Update tab visibility & read-only based on stage and permissions
-    const canManageReview   = this.permissionService.has('CanManageReview');
-    const canManageCutting  = this.permissionService.has('CanManageSampleCutting');
-    const canManageReviewOrCutting = canManageReview || canManageCutting;
-
+    // Update tab visibility & read-only based on stage
     this.tabs = this.tabs.map(tab => {
-      let isVisible = tab.isVisible;
-      let isReadOnly = tab.isReadOnly;
+      let isVisible = true;
+      let isReadOnly = false;
 
       switch (tab.id) {
         case 'inward':
-        case 'samples':
           isVisible = this.permissionService.has('CanReadSampleInward');
-          isReadOnly = activeStageIndex >= 2; // Read-only once past inward stage
-          break;
-        case 'plan':
-          isVisible = this.permissionService.has('CanReadPlan');
-          // Plan is editable for frontdesk (stage 0,1) and reviewer (stage 2)
-          isReadOnly = activeStageIndex > 2;
+          isReadOnly = activeStageIndex >= 1; // Read-only once moved to Review stage
           break;
         case 'review':
-          isVisible = canManageReview && activeStageIndex >= 2;
-          isReadOnly = activeStageIndex > 2;
+          isVisible = this.permissionService.has('CanReadReview') || this.permissionService.has('CanReadPlan');
+          isReadOnly = activeStageIndex >= 2; // Read-only once passed verification to Testing
           break;
-        case 'cutting':
-          isVisible = canManageReviewOrCutting && activeStageIndex >= 2;
-          isReadOnly = activeStageIndex > 3;
+        case 'testing':
+          isVisible = this.permissionService.has('CanReadTestResult');
+          isReadOnly = activeStageIndex >= 3;
           break;
-        case 'case':
-          isVisible = this.permissionService.has('CanReadSampleInward');
-          isReadOnly = true;
+        case 'reporting':
+          isVisible = this.permissionService.has('CanReadReport');
+          isReadOnly = activeStageIndex >= 4;
+          break;
+        case 'accounts':
+          isVisible = this.permissionService.has('CanReadAccount');
+          isReadOnly = false;
           break;
       }
 
       return { ...tab, isVisible, isReadOnly };
     });
 
-    // Set first visible tab as active
-    const firstVisible = this.tabs.find(t => t.isVisible);
-    if (firstVisible) {
-      this.setActiveTab(firstVisible.id);
+    // Set active tab if current active tab is not visible
+    const currentActive = this.tabs.find(t => t.id === this.activeTabId && t.isVisible);
+    if (!currentActive) {
+      const firstVisible = this.tabs.find(t => t.isVisible);
+      if (firstVisible) {
+        this.setActiveTab(firstVisible.id);
+      }
     }
   }
 

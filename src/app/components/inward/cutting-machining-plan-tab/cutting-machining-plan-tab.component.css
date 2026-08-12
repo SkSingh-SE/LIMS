@@ -1,0 +1,117 @@
+.cm-tab-container {
+  padding: 0;
+}
+
+.cm-sample-card {
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+.cm-sample-header {
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  border-bottom: 2px solid var(--primary-color, #da261c);
+  padding: 10px 16px;
+  border-left: 4px solid var(--primary-color, #da261c);
+}
+
+.cm-sample-number {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--primary-color, #da261c);
+}
+
+.cm-sample-body {
+  display: flex;
+  gap: 0;
+}
+
+.cm-tests-panel {
+  flex: 1 1 60%;
+  border-right: 1px solid #e9ecef;
+  overflow: auto;
+}
+
+.cm-params-panel {
+  flex: 0 0 310px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+}
+
+.cm-panel-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  background: #fff5f5;
+  padding: 6px 12px;
+  border-bottom: 1px solid #f3d0d0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cm-test-table {
+  font-size: 0.78rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.cm-test-table thead th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: #6c757d;
+  padding: 6px 10px;
+  border-bottom: 1px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.cm-test-table tbody td {
+  padding: 5px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.78rem;
+}
+
+.test-name-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  color: #333;
+}
+
+.read-only-badge {
+  font-size: 0.72rem;
+  font-family: 'Poppins', sans-serif;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 5px 10px;
+  color: #856404;
+  text-align: center;
+}
+
+.form-label-sm {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.fs-11 {
+  font-size: 0.72rem;
+}
+
+@media (max-width: 768px) {
+  .cm-sample-body {
+    flex-direction: column;
+  }
+  .cm-params-panel {
+    flex: 1 1 auto;
+    border-right: none;
+    border-top: 1px solid #e9ecef;
+  }
+}

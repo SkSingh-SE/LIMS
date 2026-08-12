@@ -8,23 +8,23 @@
       <ul class="nav nav-tabs card-header-tabs ps-2 mb-0 border-0" id="formTabs" role="tablist">
         <li class="nav-item" role="presentation">
           <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
-            <i class="bi bi-person-lines-fill me-1"></i> Customer & Company Info
+            <i class="bi bi-person-lines-fill me-1.5"></i> Customer & Company Info
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
-            <i class="bi bi-box-seam me-1"></i> Sample Details
+            <i class="bi bi-box-seam me-1.5"></i> Sample Details
           </button>
         </li>
         <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
           <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
                   (click)="switchToPlanTab()">
-            <i class="bi bi-clipboard-check me-1"></i> Plan
+            <i class="bi bi-clipboard-check me-1.5"></i> Plan
           </button>
         </li>
         <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
           <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
-            <i class="bi bi-credit-card me-1"></i> Payment Info
+            <i class="bi bi-credit-card me-1.5"></i> Payment Info
           </button>
         </li>
       </ul>
@@ -42,22 +42,22 @@
             <i class="bi bi-stop-circle-fill me-1"></i> Report Stopped
           </span>
           <button *ngIf="!isReportStopped"
-                  type="button" class="btn btn-outline-danger btn-sm"
+                  type="button" class="btn-lims btn-lims-remove"
                   (click)="openStopReportDialog()">
             <i class="bi bi-stop-circle me-1"></i> Stop Report
           </button>
           <button *ngIf="isReportStopped"
-                  type="button" class="btn btn-outline-success btn-sm"
+                  type="button" class="btn-lims btn-lims-add"
                   (click)="onUnstopReport()">
             <i class="bi bi-play-circle me-1"></i> Unstop
           </button>
         </ng-container>
 
-        <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn btn-outline-danger btn-sm" (click)="printJobCard()">
-          <i class="bi bi-printer me-1"></i> Print Job Card
+        <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn-lims btn-lims-print" (click)="printJobCard()">
+          <i class="bi bi-printer"></i> Print Job Card
         </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
-          <i class="bi bi-arrow-left me-1"></i> Back
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
+          <i class="bi bi-arrow-left"></i> Back
         </button>
       </div>
     </div>
@@ -70,192 +70,167 @@
     <div class="tab-content" id="formTabsContent">
       <!-- TAB 1: CUSTOMER & COMPANY INFO -->
       <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
-        <fieldset class="border rounded p-3 mb-3 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-
-          >
-            Customer Details
+        <!-- ═════════════════ SECTION 1: CUSTOMER DETAILS ═════════════════ -->
+        <fieldset class="sample-section-fieldset position-relative mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
+            <i class="bi bi-building me-1"></i> Customer & Company Details
           </legend>
 
-          <!-- Customer Dropdown -->
-          <div class="row mb-3">
-            <div class="col-md-6">
+          <!-- Main Customer Search Dropdown -->
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-md-8">
               <app-searchable-dropdown
-                [placeholder]="'Type & Search Customer'"
-                [labelName]="'Select Customer'"
                 [fetchDataFn]="getCustomers"
-                [smallInput]="true"
-                (itemSelected)="onCustomerSelect($event)"
+                [labelName]="'Select Primary Customer'"
                 [required]="true"
-                [isDisabled]="isViewMode"
+                [placeholder]="'Search by Name, Code, Phone, or City...'"
+                [isDisabled]="isViewMode || isEditMode"
+                (itemSelected)="onCustomerSelect($event)"
                 [selectedItem]="sampleInwardForm.get('customerID')?.value"
               ></app-searchable-dropdown>
             </div>
           </div>
 
-          <!-- Combined Card -->
-          <div class="card border shadow-sm">
-            <div class="card-body small">
-              <!-- Customer Details Section -->
-              <div class="mb-3">
-                <div class="fw-semibold text-danger mb-2">Customer Details</div>
-                <div class="row row-cols-1 row-cols-md-4 g-3">
-                  <div>
-                    <strong>Address:</strong>
-                    {{ sampleInwardForm.get("address")?.value || "-" }}
-                  </div>
-                  <div>
-                    <strong>PIN Code:</strong>
-                    {{ sampleInwardForm.get("pinCode")?.value || "-" }}
-                    <span *ngIf="sampleInwardForm.get('pinCode')?.hasError('pattern') && sampleInwardForm.get('pinCode')?.touched" class="text-danger text-sm d-block">
-                      PIN Code must be exactly 6 digits
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Area:</strong>
-                    {{ sampleInwardForm.get("area")?.value || "-" }}
-                  </div>
-                  <div>
-                    <strong>City:</strong>
-                    {{ sampleInwardForm.get("city")?.value || "-" }}
-                  </div>
-                  <div>
-                    <strong>State:</strong>
-                    {{ sampleInwardForm.get("state")?.value || "-" }}
-                  </div>
-                  <div>
-                    <strong>Country:</strong>
-                    {{ sampleInwardForm.get("country")?.value || "India" }}
-                  </div>
-                  <div>
-                    <strong>GST No.:</strong>
-                    {{ sampleInwardForm.get("gstNo")?.value || "-" }}
-                    <span *ngIf="sampleInwardForm.get('gstNo')?.hasError('pattern') && sampleInwardForm.get('gstNo')?.touched" class="text-danger text-sm d-block">
-                      Enter valid GST No (e.g., 22AAAAA0000A1Z5)
-                    </span>
-                  </div>
+          <!-- Primary Customer Master Summary Grid -->
+          <fieldset class="sample-section-fieldset mb-2 bg-light bg-opacity-50">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-xs-78">
+              <i class="bi bi-info-circle-fill"></i> Primary Customer Details Summary
+            </legend>
+            <div class="row row-cols-1 row-cols-md-4 g-2 text-xs-78">
+                <div>
+                  <span class="text-muted"><i class="bi bi-geo-alt me-1.5 text-danger"></i> Address: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("address")?.value || "-" }}</span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-mailbox me-1.5 text-danger"></i> PIN Code: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("pinCode")?.value || "-" }}</span>
+                  <span *ngIf="sampleInwardForm.get('pinCode')?.hasError('pattern') && sampleInwardForm.get('pinCode')?.touched" class="text-danger text-sm d-block">
+                    PIN Code must be exactly 6 digits
+                  </span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-pin-map me-1.5 text-danger"></i> Area: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("area")?.value || "-" }}</span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-building me-1.5 text-danger"></i> City: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("city")?.value || "-" }}</span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-map me-1.5 text-danger"></i> State: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("state")?.value || "-" }}</span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-globe me-1.5 text-danger"></i> Country: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("country")?.value || "India" }}</span>
+                </div>
+                <div>
+                  <span class="text-muted"><i class="bi bi-receipt me-1.5 text-danger"></i> GST No.: </span>
+                  <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("gstNo")?.value || "-" }}</span>
+                  <span *ngIf="sampleInwardForm.get('gstNo')?.hasError('pattern') && sampleInwardForm.get('gstNo')?.touched" class="text-danger text-sm d-block">
+                    Enter valid GST No (e.g., 22AAAAA0000A1Z5)
+                  </span>
                 </div>
               </div>
 
-              <!-- Dispatch Mode Section
-              <div>
-                <div class="fw-semibold text-danger mb-2">Dispatch Mode</div>
-                <div formGroupName="dispatchMode" class="d-flex flex-wrap gap-4">
-                  <div class="form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="email" id="dispatchEmail" />
-                    <label class="form-check-label" for="dispatchEmail">Email</label>
-                  </div>
-                  <div class="form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="whatsapp" id="dispatchWhatsApp" />
-                    <label class="form-check-label" for="dispatchWhatsApp">WhatsApp</label>
-                  </div>
-                  <div class="form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="courier" id="dispatchCourier" />
-                    <label class="form-check-label" for="dispatchCourier">Courier</label>
-                  </div>
-                  <div class="form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="selfPick" id="dispatchSelfPick" />
-                    <label class="form-check-label" for="dispatchSelfPick">Self Pickup</label>
-                  </div>
-                </div>
-              </div> -->
-
-              <!-- Dispatch Modes -->
-              <div class="">
-                <label class="form-label">
-                  Dispatch Modes
-                  <span class="text-danger">*</span>
+              <!-- Dispatch Modes Bar -->
+              <div class="mt-2 pt-1.5 border-top">
+                <label class="form-label-sm fw-semibold text-dark mb-1 text-xs-78">
+                  <i class="bi bi-send me-1 text-danger"></i> Dispatch Modes <span class="text-danger">*</span>
                 </label>
-                <div class="d-flex flex-wrap gap-4">
-                  <div class="form-check" *ngFor="let mode of dispatchModes; index as modeIndex">
+                <div class="d-flex flex-wrap gap-2.5">
+                  <div class="form-check me-2" *ngFor="let mode of dispatchModes; index as modeIndex">
                     <input
                       id="dispatchMode-{{ modeIndex }}"
                       type="checkbox"
-                      class="form-check-input"
+                      class="form-check-input mt-1"
                       [value]="mode.id"
                       [checked]="isDispatchModeSelected(mode.id)"
                       (change)="onDispatchModeToggle($event)"
                       [disabled]="isViewMode"
                     />
-                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label form-label mt-1">{{ mode.name }}</label>
+                    <label for="dispatchMode-{{ modeIndex }}" class="form-check-label small text-dark">
+                      {{ mode.name }}
+                    </label>
                   </div>
                 </div>
-                <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger">
-                  At least one Dispatch Mode is required.
+                <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger small mt-1 text-xs-72">
+                  <i class="bi bi-exclamation-circle me-1"></i> At least one Dispatch Mode is required.
                 </div>
               </div>
-            </div>
-          </div>
+          </fieldset>
         </fieldset>
 
-        <!-- <div class="billing-note">
-          <i class="bi bi-info-circle-fill me-1"></i>
-          <strong>Billing Note:</strong>
-          All invoices will be generated as of 06:07 PM IST on Friday, July 25, 2025. Please ensure payment is cleared within 15 days from
-          the invoice date to avoid late fees.
-        </div> -->
-
-        <fieldset class="border rounded p-3 mb-2 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-
-          >
-            Contacts
+        <!-- ═════════════════ SECTION 2: CONTACTS MASTER TABLE ═════════════════ -->
+        <fieldset class="sample-section-fieldset position-relative mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
+            <i class="bi bi-people me-1"></i> Customer Contacts Master
           </legend>
-          <!-- Contact Info Table (Note 1, 2, 3: Row 2 = Accountant 'A', Row 3+ = Sub-contacts 'C') -->
+
           <div class="table-responsive" formArrayName="contacts">
-            <table class="table table-compact align-middle">
+            <table class="table table-sm align-middle table-hover mb-0 text-xs-78">
               <thead class="table-light">
-                <tr class="text-nowrap text-muted small text-center">
-                  <th class="fw-medium" style="width:50px">Type</th>
-                  <th class="fw-medium">Contact Person</th>
-                  <th class="fw-medium">Mobile Number</th>
-                  <th class="fw-medium">Email ID</th>
-                  <th class="fw-medium" style="width:60px">Bill</th>
-                  <th class="fw-medium" style="width:60px">Report</th>
+                <tr class="text-nowrap text-muted text-center">
+                  <th class="fw-semibold col-w-60">Type</th>
+                  <th class="fw-semibold text-start">Contact Person</th>
+                  <th class="fw-semibold text-start">Mobile Number</th>
+                  <th class="fw-semibold text-start">Email ID</th>
+                  <th class="fw-semibold col-w-70">Bill</th>
+                  <th class="fw-semibold col-w-70">Report</th>
                 </tr>
               </thead>
               <tbody>
-                <!-- ROW 2: ACCOUNTANT (Type 'A', Fixed position, Read-only Bill/Report) -->
+                <!-- ROW 2: ACCOUNTANT (Type 'A', Golden badge) -->
                 <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
                   <tr *ngIf="isAccountantContact(i)" class="table-warning bg-opacity-10">
                     <td class="text-center">
-                      <span class="badge bg-warning text-dark fw-bold" style="font-size:0.7rem" title="Accountant">A</span>
+                      <span class="badge bg-warning text-dark fw-bold px-2 py-1 text-xs-68" title="Accountant">A</span>
                     </td>
-                    <td class="fw-semibold">{{ contact.get("name")?.value || "-" }}</td>
-                    <td>{{ contact.get("mobileNo")?.value || "-" }}</td>
-                    <td>{{ contact.get("emailId")?.value || "-" }}</td>
+                    <td class="fw-semibold text-dark">{{ contact.get("name")?.value || "-" }}</td>
+                    <td>📞 {{ contact.get("mobileNo")?.value || "-" }}</td>
+                    <td>✉ {{ contact.get("emailId")?.value || "-" }}</td>
                     <td class="text-center">
-                      <span class="form-check d-flex align-items-center justify-content-center">
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      <span *ngIf="contact.get('sendBill')?.value" class="text-success fw-bold fs-6" title="Send Bill Allowed">
+                        <i class="bi bi-check-circle-fill"></i>
+                      </span>
+                      <span *ngIf="!contact.get('sendBill')?.value" class="text-muted fs-6" title="Send Bill Not Allowed">
+                        <i class="bi bi-dash-circle"></i>
                       </span>
                     </td>
                     <td class="text-center">
-                      <span class="form-check d-flex align-items-center justify-content-center">
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      <span *ngIf="contact.get('sendReport')?.value" class="text-success fw-bold fs-6" title="Send Report Allowed">
+                        <i class="bi bi-check-circle-fill"></i>
+                      </span>
+                      <span *ngIf="!contact.get('sendReport')?.value" class="text-muted fs-6" title="Send Report Not Allowed">
+                        <i class="bi bi-dash-circle"></i>
                       </span>
                     </td>
                   </tr>
                 </ng-container>
 
-                <!-- ROW 3+: SUB-CONTACTS (Type 'C', Read-only Bill/Report) -->
+                <!-- ROW 3+: SUB-CONTACTS (Type 'C', Secondary badge) -->
                 <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
                   <tr *ngIf="!isAccountantContact(i)">
                     <td class="text-center">
-                      <span class="badge bg-secondary" style="font-size:0.7rem" title="Contact">C</span>
+                      <span class="badge bg-secondary text-white fw-bold px-2 py-1 text-xs-68" title="Contact Person">C</span>
                     </td>
-                    <td>{{ contact.get("name")?.value || "-" }}</td>
-                    <td>{{ contact.get("mobileNo")?.value || "-" }}</td>
-                    <td>{{ contact.get("emailId")?.value || "-" }}</td>
+                    <td class="fw-medium text-dark">{{ contact.get("name")?.value || "-" }}</td>
+                    <td>📞 {{ contact.get("mobileNo")?.value || "-" }}</td>
+                    <td>✉ {{ contact.get("emailId")?.value || "-" }}</td>
                     <td class="text-center">
-                      <span class="form-check d-flex align-items-center justify-content-center">
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendBill" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      <span *ngIf="contact.get('sendBill')?.value" class="text-success fw-bold fs-6" title="Send Bill Allowed">
+                        <i class="bi bi-check-circle-fill"></i>
+                      </span>
+                      <span *ngIf="!contact.get('sendBill')?.value" class="text-muted fs-6" title="Send Bill Not Allowed">
+                        <i class="bi bi-dash-circle"></i>
                       </span>
                     </td>
                     <td class="text-center">
-                      <span class="form-check d-flex align-items-center justify-content-center">
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="sendReport" [disabled]="true" style="pointer-events: none; opacity: 0.85;" />
+                      <span *ngIf="contact.get('sendReport')?.value" class="text-success fw-bold fs-6" title="Send Report Allowed">
+                        <i class="bi bi-check-circle-fill"></i>
+                      </span>
+                      <span *ngIf="!contact.get('sendReport')?.value" class="text-muted fs-6" title="Send Report Not Allowed">
+                        <i class="bi bi-dash-circle"></i>
                       </span>
                     </td>
                   </tr>
@@ -265,35 +240,36 @@
           </div>
         </fieldset>
 
-        <div class="row g-3 mb-3">
-          <!-- ═════════════════ REPORTING TO SECTION ═════════════════ -->
+        <!-- ═════════════════ SECTION 3: REPORTING & BILLING CUSTOMERS ═════════════════ -->
+        <div class="row g-2 mb-3">
+          <!-- ── REPORTING TO SECTION ── -->
           <div class="col-md-6">
-            <fieldset class="border rounded p-3 h-100 position-relative">
-              <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center justify-content-between gap-2">
+            <fieldset class="sample-section-fieldset h-100 position-relative">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 text-sm-85">
                 <span><i class="bi bi-file-earmark-text me-1"></i> Reporting To</span>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger py-0 px-2 lh-sm" (click)="addReportingCustomerCard()">
-                  <i class="bi bi-plus-circle me-1"></i> Add Customer
+                <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addReportingCustomerCard()">
+                  <i class="bi bi-plus-circle"></i> Add Customer
                 </button>
               </legend>
 
               <div formArrayName="reportingToCustomers">
                 <div *ngFor="let card of reportingToCustomerControls.controls; let rIdx = index" [formGroupName]="rIdx"
-                     class="card border shadow-sm mb-3 bg-white">
-                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
-                    <span class="fw-semibold small text-dark text-truncate me-2" style="max-width:320px;"
+                     class="card border shadow-sm mb-2 bg-white">
+                  <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1)))">
-                      <i class="bi bi-building me-1"></i>
+                      <i class="bi bi-building me-1 text-danger"></i>
                       {{ card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1))) }}
-                      <span *ngIf="rIdx === 0" class="badge bg-primary ms-1" style="font-size:0.68rem">Primary</span>
+                      <span *ngIf="rIdx === 0" class="badge bg-primary ms-1 text-xs-68">Primary</span>
                     </span>
-                    <button *ngIf="rIdx > 0 && !isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0 ms-auto" (click)="removeReportingCustomerCard(rIdx)">
-                      <i class="bi bi-trash-fill"></i>
+                    <button *ngIf="rIdx > 0 && !isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeReportingCustomerCard(rIdx)" title="Remove Customer">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
 
                   <div class="card-body p-2">
                     <!-- Customer Search Dropdown -->
-                    <div class="mb-2">
+                    <div class="mb-1.5">
                       <app-searchable-dropdown
                         [fetchDataFn]="getCustomers"
                         [selectedItem]="card.get('customerID')?.value"
@@ -306,35 +282,49 @@
                       </app-searchable-dropdown>
                     </div>
 
-                    <!-- Customer Summary Info -->
-                    <div class="small text-muted mb-2 border-bottom pb-1" style="font-size:0.75rem">
-                      <strong>Name:</strong> {{ card.get('customerName')?.value || customerData?.name || '-' }}<br />
-                      <strong>Address:</strong> {{ card.get('address')?.value || customerData?.address || '-' }} |
-                      <strong>GST:</strong> {{ card.get('gstNo')?.value || customerData?.gstNo || '-' }}
+                    <!-- Customer Address & GST Summary (Full-Width Banner) -->
+                    <div class="customer-info-summary-box mt-2 mb-2 p-2 bg-light bg-opacity-75 border rounded-2 text-xs-75">
+                      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-start gap-1.5 flex-grow-1 min-w-0">
+                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-0.5 me-1.5"></i>
+                          <div class="lh-sm">
+                            <strong class="text-dark me-1.5"> Address: </strong>
+                            <span class="text-secondary fw-normal">{{ getFormattedFullCustomerAddress(card) }}</span>
+                          </div>
+                        </div>
+                        <span *ngIf="card.get('gstNo')?.value || (rIdx === 0 && customerData?.gstNo)" class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1 font-poppins text-xs-68 fw-semibold flex-shrink-0 ms-auto">
+                          GST: {{ card.get('gstNo')?.value || customerData?.gstNo }}
+                        </span>
+                      </div>
                     </div>
 
-                    <!-- Multi-Contact Checkbox Grid -->
-                    <div class="contacts-selection-box">
-                      <label class="form-label-sm fw-semibold text-danger mb-1" style="font-size:0.75rem">
+                    <!-- Multi-Contact Delivery Checkbox Grid (Full-Width) -->
+                    <div class="contacts-selection-box" *ngIf="hasCustomerSelected('reporting', rIdx)">
+                      <label class="form-label-sm fw-semibold text-danger mb-1 text-xs-75">
                         Select Contacts for Report Delivery: <span class="text-danger">*</span>
                       </label>
-                      <div class="d-flex flex-column gap-1 overflow-auto" style="max-height: 140px;">
-                        <div *ngFor="let contact of getCustomerContactsList('reporting', rIdx)" class="form-check small mb-0">
+                      <div class="d-flex flex-column gap-1 overflow-auto border rounded p-1.5 bg-light bg-opacity-25 max-h-140">
+                        <div *ngFor="let contact of getCustomerContactsList('reporting', rIdx); let cIdx = index" class="form-check small mb-0 p-1 rounded hover-bg d-flex align-items-center gap-2">
                           <input
                             type="checkbox"
-                            class="form-check-input"
+                            class="form-check-input flex-shrink-0 m-0"
                             [id]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)"
                             [checked]="isContactSelected('reporting', rIdx, contact.contactID || contact.id)"
                             [disabled]="isViewMode"
                             (change)="onContactToggle('reporting', rIdx, contact.contactID || contact.id, $event)"
                           />
-                          <label class="form-check-label text-dark" style="font-size:0.75rem" [for]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)">
-                            <strong>{{ contact.name }}</strong> ({{ contact.designation || 'Contact' }})
-                            <span class="text-muted ms-1">— 📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
+                          <label class="form-check-label text-dark mb-0 cursor-pointer d-flex align-items-center flex-wrap gap-1 w-100 text-xs-75" [for]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)">
+                            <strong class="text-dark me-1">{{ contact.name }}</strong>
+                            <span *ngIf="contact.isAccountant || contact.designation === 'Accountant' || (cIdx === 0 && !contact.designation)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
+                            <span *ngIf="!contact.isAccountant && contact.designation !== 'Accountant' && !(cIdx === 0 && !contact.designation)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
+                            <span class="text-muted ms-auto text-nowrap text-xs-72">📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
                           </label>
                         </div>
+                        <div *ngIf="getCustomerContactsList('reporting', rIdx).length === 0" class="text-muted small p-1 italic text-xs-72">
+                          No contacts available for selected customer.
+                        </div>
                       </div>
-                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1" style="font-size:0.72rem">
+                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1 text-xs-72">
                         <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
                       </div>
                     </div>
@@ -344,34 +334,34 @@
             </fieldset>
           </div>
 
-          <!-- ═════════════════ BILLING TO SECTION ═════════════════ -->
+          <!-- ── BILLING TO SECTION ── -->
           <div class="col-md-6">
-            <fieldset class="border rounded p-3 h-100 position-relative">
-              <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center justify-content-between gap-2">
+            <fieldset class="sample-section-fieldset h-100 position-relative">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 text-sm-85">
                 <span><i class="bi bi-receipt me-1"></i> Billing To</span>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger py-0 px-2 lh-sm" (click)="addBillingCustomerCard()">
-                  <i class="bi bi-plus-circle me-1"></i> Add Customer
+                <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addBillingCustomerCard()">
+                  <i class="bi bi-plus-circle"></i> Add Customer
                 </button>
               </legend>
 
               <div formArrayName="billingToCustomers">
                 <div *ngFor="let card of billingToCustomerControls.controls; let bIdx = index" [formGroupName]="bIdx"
-                     class="card border shadow-sm mb-3 bg-white">
-                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
-                    <span class="fw-semibold small text-dark text-truncate me-2" style="max-width:320px;"
+                     class="card border shadow-sm mb-2 bg-white">
+                  <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1)))">
-                      <i class="bi bi-building me-1"></i>
+                      <i class="bi bi-building me-1 text-danger"></i>
                       {{ card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1))) }}
-                      <span *ngIf="bIdx === 0" class="badge bg-primary ms-1" style="font-size:0.68rem">Primary</span>
+                      <span *ngIf="bIdx === 0" class="badge bg-primary ms-1 text-xs-68">Primary</span>
                     </span>
-                    <button *ngIf="bIdx > 0 && !isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0 ms-auto" (click)="removeBillingCustomerCard(bIdx)">
-                      <i class="bi bi-trash-fill"></i>
+                    <button *ngIf="bIdx > 0 && !isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeBillingCustomerCard(bIdx)" title="Remove Customer">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
 
                   <div class="card-body p-2">
                     <!-- Customer Search Dropdown -->
-                    <div class="mb-2">
+                    <div class="mb-1.5">
                       <app-searchable-dropdown
                         [fetchDataFn]="getCustomers"
                         [selectedItem]="card.get('customerID')?.value"
@@ -384,35 +374,49 @@
                       </app-searchable-dropdown>
                     </div>
 
-                    <!-- Customer Summary Info -->
-                    <div class="small text-muted mb-2 border-bottom pb-1" style="font-size:0.75rem">
-                      <strong>Name:</strong> {{ card.get('customerName')?.value || customerData?.name || '-' }}<br />
-                      <strong>Address:</strong> {{ card.get('address')?.value || customerData?.address || '-' }} |
-                      <strong>GST:</strong> {{ card.get('gstNo')?.value || customerData?.gstNo || '-' }}
+                    <!-- Customer Address & GST Summary (Full-Width Banner) -->
+                    <div class="customer-info-summary-box mt-2 mb-2 p-2 bg-light bg-opacity-75 border rounded-2 text-xs-75">
+                      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-start gap-1.5 flex-grow-1 min-w-0">
+                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-0.5 me-1.5"></i>
+                          <div class="lh-sm">
+                            <strong class="text-dark me-1.5"> Address: </strong>
+                            <span class="text-secondary fw-normal">{{ getFormattedFullCustomerAddress(card) }}</span>
+                          </div>
+                        </div>
+                        <span *ngIf="card.get('gstNo')?.value || (bIdx === 0 && customerData?.gstNo)" class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1 font-poppins text-xs-68 fw-semibold flex-shrink-0 ms-auto">
+                          GST: {{ card.get('gstNo')?.value || customerData?.gstNo }}
+                        </span>
+                      </div>
                     </div>
 
-                    <!-- Multi-Contact Checkbox Grid -->
-                    <div class="contacts-selection-box">
-                      <label class="form-label-sm fw-semibold text-danger mb-1" style="font-size:0.75rem">
+                    <!-- Multi-Contact Delivery Checkbox Grid (Full-Width) -->
+                    <div class="contacts-selection-box" *ngIf="hasCustomerSelected('billing', bIdx)">
+                      <label class="form-label-sm fw-semibold text-danger mb-1 text-xs-75">
                         Select Contacts for Bill Delivery: <span class="text-danger">*</span>
                       </label>
-                      <div class="d-flex flex-column gap-1 overflow-auto" style="max-height: 140px;">
-                        <div *ngFor="let contact of getCustomerContactsList('billing', bIdx)" class="form-check small mb-0">
+                      <div class="d-flex flex-column gap-1 overflow-auto border rounded p-1.5 bg-light bg-opacity-25 max-h-140">
+                        <div *ngFor="let contact of getCustomerContactsList('billing', bIdx); let cIdx = index" class="form-check small mb-0 p-1 rounded hover-bg d-flex align-items-center gap-2">
                           <input
                             type="checkbox"
-                            class="form-check-input"
+                            class="form-check-input flex-shrink-0 m-0"
                             [id]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)"
                             [checked]="isContactSelected('billing', bIdx, contact.contactID || contact.id)"
                             [disabled]="isViewMode"
                             (change)="onContactToggle('billing', bIdx, contact.contactID || contact.id, $event)"
                           />
-                          <label class="form-check-label text-dark" style="font-size:0.75rem" [for]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)">
-                            <strong>{{ contact.name }}</strong> ({{ contact.designation || 'Contact' }})
-                            <span class="text-muted ms-1">— 📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
+                          <label class="form-check-label text-dark mb-0 cursor-pointer d-flex align-items-center flex-wrap gap-1 w-100 text-xs-75" [for]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)">
+                            <strong class="text-dark me-1">{{ contact.name }}</strong>
+                            <span *ngIf="contact.isAccountant || contact.designation === 'Accountant' || (cIdx === 0 && !contact.designation)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
+                            <span *ngIf="!contact.isAccountant && contact.designation !== 'Accountant' && !(cIdx === 0 && !contact.designation)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
+                            <span class="text-muted ms-auto text-nowrap text-xs-72">📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
                           </label>
                         </div>
+                        <div *ngIf="getCustomerContactsList('billing', bIdx).length === 0" class="text-muted small p-1 italic text-xs-72">
+                          No contacts available for selected customer.
+                        </div>
                       </div>
-                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1" style="font-size:0.72rem">
+                      <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1 text-xs-72">
                         <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
                       </div>
                     </div>
@@ -423,39 +427,38 @@
           </div>
         </div>
 
-        <fieldset class="border rounded p-3 mb-4 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-
-          >
-            Document
+        <!-- ═════════════════ SECTION 4: SUPPORTING DOCUMENT ═════════════════ -->
+        <fieldset class="sample-section-fieldset mb-3 position-relative">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Document Attachment
           </legend>
 
           <div *ngIf="requiresSupportingDoc && !sampleInwardForm.get('requestFileName')?.value"
-               class="alert alert-warning py-1 px-2 mb-2 small">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            <strong>Document Required:</strong> Reporting To or Billing To customer differs from main customer — supporting request letter is mandatory.
+               class="alert alert-warning py-1.5 px-3 mb-2 small d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+            <div>
+              <strong>Document Required:</strong> Reporting To or Billing To customer differs from main customer — supporting request letter is mandatory.
+            </div>
           </div>
 
-          <div class="col-6, col-md-4">
-            <label class="form-label">
-              Upload Company Letter or Request Letter
+          <div class="col-12 col-md-5">
+            <label class="form-label-sm fw-semibold text-dark mb-1 text-xs-78">
+              Upload Company Letter / Request Letter
               <span *ngIf="requiresSupportingDoc" class="text-danger">*</span>
             </label>
-            <div class="">
+            <div>
               <ng-container *ngIf="sampleInwardForm.get('requestFilePath')?.value; else uploadField">
-                <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                <div class="d-flex align-items-center justify-content-between bg-light border p-2 rounded shadow-sm">
                   <span
-                    class="text-truncate me-2"
-                    type="button"
+                    class="text-truncate me-2 text-danger fw-semibold cursor-pointer"
                     (click)="openFileInNewTab(sampleInwardForm.get('requestFilePath')?.value)"
                     title="{{ sampleInwardForm.get('requestFileName')?.value }}"
                   >
-                    <i class="bi bi-file-earmark-fill"></i>
+                    <i class="bi bi-file-earmark-fill me-1"></i>
                     {{ sampleInwardForm.get("requestFileName")?.value }}
                   </span>
-                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeAttachment()">
-                    <i class="bi bi-trash-fill fs-6 me-1"></i>
+                  <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeAttachment()" title="Remove Attachment">
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </ng-container>
@@ -469,117 +472,126 @@
                   (change)="onFileUpload($event)"
                 />
               </ng-template>
-              <!-- <input type="file" class="form-control form-control-sm w-auto" (change)="onFileUpload($event)" />
-              <button type="button" class="btn btn-remove btn-sm" (click)="removeAttachment()"><i class="bi bi-trash"></i></button> -->
             </div>
           </div>
         </fieldset>
 
-        <!-- Add Go To Sample Details button -->
-        <div class="d-flex justify-content-end mt-3">
-          <button type="button" class="btn btn-add" (click)="goToSampleTab()">
-            <i class="bi bi-arrow-right me-1"></i> Sample Details
+        <!-- ═════════════════ SECTION 5: FOOTER ACTION ═════════════════ -->
+        <div class="d-flex justify-content-end mt-2 mb-1">
+          <button type="button" class="btn-lims btn-lims-next" (click)="goToSampleTab()">
+            Go to Sample Details <i class="bi bi-arrow-right ms-1"></i>
           </button>
         </div>
       </div>
 
       <!-- TAB 2: SAMPLE DETAILS -->
       <div class="tab-pane fade" id="sample" role="tabpanel" aria-labelledby="sample-tab">
-        <fieldset formArrayName="sampleDetails" class="border rounded p-3 mb-3 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
 
-          >
-            Sample Details
+        <!-- ── Top Summary & Quick Stats Bar ── -->
+        <div class="card sample-stats-card mb-3">
+          <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <span class="sample-stat-badge font-poppins text-xs-78 d-flex align-items-center gap-2">
+                <i class="bi bi-box-seam text-danger fs-6 me-1.5"></i>
+                <span class="text-secondary">Total Samples: <strong class="text-danger fs-6 ms-1">{{ sampleDetails.controls.length }}</strong></span>
+              </span>
+              <span class="sample-stat-badge font-poppins text-xs-78 d-flex align-items-center gap-2">
+                <i class="bi bi-layers-fill text-primary fs-6 me-1.5"></i>
+                <span class="text-secondary">Total Items/Qty: <strong class="text-primary fs-6 ms-1">{{ getTotalSampleQty() }}</strong></span>
+              </span>
+              <span class="sample-stat-badge font-poppins text-xs-78 d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-image-fill text-success fs-6 me-1.5"></i>
+                <span class="text-secondary">Attached Files: <strong class="text-success fs-6 ms-1">{{ getSampleFilesCount() }}</strong></span>
+              </span>
+              <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white shadow-sm px-2.5 py-1.5 font-poppins text-xs-78 d-flex align-items-center gap-1.5">
+                <i class="bi bi-lightning-charge-fill me-1.5"></i> URGENT TESTING
+              </span>
+            </div>
+
+            <!-- Note info tooltip -->
+            <span class="text-muted small text-xs-75 d-inline-flex align-items-center gap-1.5" title="Filtering Note">
+              <i class="bi bi-info-circle-fill text-danger me-1.5"></i>
+              <span>Test Plan auto-filters specs by Metal & Product Condition</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ── SECTION 1: SAMPLE REGISTER TABLE ── -->
+        <fieldset formArrayName="sampleDetails" class="sample-section-fieldset position-relative mb-4">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+            <i class="bi bi-card-list me-1"></i> Sample Registration & Identification
           </legend>
 
-          <div class="alert alert-info py-1 px-2 small mb-2">
-            <i class="bi bi-info-circle me-1"></i>
-            <strong>Note:</strong> If Metal Classification and Product Condition are selected, the Test Plan specification list will be filtered accordingly.
-            To see all specifications, either link them in Material Specification master or remove Metal Classification / Product Condition selection.
-          </div>
           <div class="table-responsive">
-            <table class="table table-compact w-100" style="table-layout: auto;">
+            <table class="table table-hover align-middle mb-2 w-100 table-auto-layout">
               <colgroup>
-                <col style="width:120px" />   <!-- Auto-Generated -->
-                <col />                        <!-- Sample Identification — flexible -->
-                <col style="width:240px" />    <!-- Chemical Sample Category -->
-                <col style="width:70px" />     <!-- Qty -->
-                <col style="width:130px" />    <!-- Image -->
-                <col style="width:50px" />     <!-- Action -->
+                <col class="col-w-150" />   <!-- Sample No -->
+                <col />                      <!-- Sample Identification & Description — flexible main column -->
+                <col class="col-w-140" />    <!-- Qty -->
+                <col class="col-w-260" />    <!-- Image / Photo Attachment -->
+                <col class="col-w-90" />     <!-- Action -->
               </colgroup>
-              <thead class="table-light">
-                <tr class="text-muted small">
-                  <th class="fw-medium text-center text-nowrap">Auto-Generated</th>
-                  <th class="fw-medium text-center text-nowrap">Sample Identification</th>
-                  <th class="fw-medium text-center text-nowrap">Chemical Sample Category</th>
-                  <th class="fw-medium text-center text-nowrap">Qty</th>
-                  <th class="fw-medium text-center text-nowrap">Image</th>
-                  <th class="fw-medium text-center">Action</th>
+              <thead>
+                <tr class="sample-table-header">
+                  <th class="text-center text-nowrap py-2">Sample No</th>
+                  <th class="text-nowrap py-2">Sample Identification & Description <span class="text-danger">*</span></th>
+                  <th class="text-center text-nowrap py-2">Qty</th>
+                  <th class="text-nowrap py-2">Image / Photo Attachment</th>
+                  <th class="text-center py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i"
                     [class.table-secondary]="sample.get('isCancelled')?.value"
                     [class.opacity-75]="sample.get('isCancelled')?.value">
-                  <td><input class="form-control form-control-sm" formControlName="sampleNo" readonly />
-                  <span *ngIf="sample.get('isCancelled')?.value"
-                          class="badge bg-secondary mt-1"
-                          style="font-size:0.7rem"
+                  <td class="text-center align-middle">
+                    <span class="sample-no-badge">
+                      {{ sample.get('sampleNo')?.value || ('Sample ' + (i+1)) }}
+                    </span>
+                    <span *ngIf="sample.get('isCancelled')?.value"
+                          class="badge bg-secondary d-block mt-1 text-xs-68"
                           [title]="'Cancellation reason: ' + sample.get('cancellationReason')?.value">
                       Cancelled
                     </span>
                   </td>
-                  <td>
-                    <input class="form-control form-control-sm" formControlName="details" placeholder="Enter details"
+                  <td class="align-middle">
+                    <input class="form-control form-control-sm border-secondary-subtle" formControlName="details" placeholder="Enter Sample Description, Heat No, Grade..."
                       [ngClass]="{'is-invalid': sample.get('details')?.invalid && (sample.get('details')?.touched || submitted)}" />
                   </td>
-                  <td>
-                    <app-searchable-dropdown
-                      [placeholder]="'Type & Search Category'"
-                      [hideLabel]="true"
-                      [smallInput]="true"
-                      [fetchDataFn]="getChemicalSampleCategories"
-                      (itemSelected)="onChemicalSampleCategorySelected($event,i)"
-                      [selectedItem]="sample.get('chemicalSampleCategoryID')?.value"
-                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
-                    ></app-searchable-dropdown>
-                  </td>
-                  <td>
-                    <div class="d-flex align-items-center gap-1">
-                      <input class="form-control form-control-sm" type="number" formControlName="quantity" min="1" style="width:48px;min-width:0"
+                  <td class="text-center align-middle">
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                      <input class="form-control form-control-sm text-center fw-bold qty-input-box" type="number" formControlName="quantity" min="1"
                              (keydown.enter)="$event.preventDefault(); sample.get('quantity')?.value > 1 && applyQty(i)" />
                       <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value && sample.get('quantity')?.value > 1"
                               type="button"
-                              class="btn btn-sm btn-outline-primary p-1 lh-1"
-                              title="Expand into {{ sample.get('quantity')?.value }} rows"
+                              class="btn-lims btn-lims-copy btn-lims-icon"
+                              title="Split into {{ sample.get('quantity')?.value }} individual rows"
                               (click)="applyQty(i)">
                         <i class="bi bi-layers-fill"></i>
                       </button>
                     </div>
                   </td>
-                  <td>
+                  <td class="align-middle py-1.5">
                     <ng-container *ngIf="sample.get('sampleFilePath')?.value || sample.get('fileName')?.value; else uploadField">
-                      <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded" style="min-width:0">
+                      <div class="sample-file-pill">
                         <span
-                          class="text-truncate me-1"
-                          style="max-width:140px; display:inline-block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle;"
+                          class="text-truncate me-1 text-dark fw-medium file-name-pill-text text-xs-75 d-inline-flex align-items-center"
                           [class.cursor-pointer]="sample.get('sampleFilePath')?.value"
                           (click)="sample.get('sampleFilePath')?.value && openFileInNewTab(sample.get('sampleFilePath')?.value)"
                           title="{{ sample.get('fileName')?.value }}"
                         >
-                          <i class="bi bi-file-earmark-image-fill text-success"></i>
-                          {{ sample.get("fileName")?.value }}
+                          <i class="bi bi-file-earmark-image-fill me-1.5 text-success fs-6 flex-shrink-0"></i>
+                          <span class="text-truncate">{{ sample.get("fileName")?.value }}</span>
                         </span>
-                        <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeSampleFile(i)">
-                          <i class="bi bi-trash-fill fs-6 me-1"></i>
+                        <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value" type="button" class="btn-lims btn-lims-remove btn-lims-icon flex-shrink-0" (click)="removeSampleFile(i)" title="Remove Image">
+                          <i class="bi bi-trash"></i>
                         </button>
                       </div>
                     </ng-container>
 
                     <ng-template #uploadField>
                       <input
-                        class="form-control form-control-sm input-file"
+                        class="form-control form-control-sm input-file-compact text-xs-75"
                         type="file"
                         accept=".jpg,.jpeg,.png"
                         [disabled]="isViewMode || !!sample.get('isCancelled')?.value"
@@ -587,48 +599,57 @@
                       />
                     </ng-template>
                   </td>
-                  <td class="text-center">
+                  <td class="text-center align-middle">
                     <div class="d-flex align-items-center justify-content-center gap-1">
                       <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value"
-                              type="button" class="btn btn-sm btn-remove" title="Delete sample"
+                              type="button" class="btn-lims btn-lims-remove btn-lims-icon" title="Delete sample row"
                               (click)="removeSample(i)">
                         <i class="bi bi-trash"></i>
                       </button>
                       <button *ngIf="canCancelThisSample(sample) && !sample.get('isCancelled')?.value && sample.get('id')?.value > 0"
-                              type="button" class="btn btn-sm btn-outline-danger p-1 lh-1"
+                              type="button" class="btn-lims btn-lims-remove btn-lims-icon"
                               title="Cancel this sample"
                               (click)="openCancelDialog(i)">
                         <i class="bi bi-x-circle"></i>
                       </button>
                     </div>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addSample()">
-            <i class="bi bi-plus-circle-dotted"></i>
-            Add Sample
-          </button>
+
+          <div *ngIf="!isViewMode" class="d-flex justify-content-start mt-2">
+            <button type="button" class="btn-lims btn-lims-add" (click)="addSample()">
+              <i class="bi bi-plus-circle"></i> Add Sample Row
+            </button>
+          </div>
         </fieldset>
 
         <!-- Cancel Sample Confirmation Dialog -->
-        <div *ngIf="showCancelDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1050">
-          <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+        <div *ngIf="showCancelDialog" class="modal d-block modal-backdrop-dark">
+          <div class="modal-dialog modal-dialog-centered modal-dialog-sm">
             <div class="modal-content shadow">
-              <div class="modal-header py-2 bg-danger text-white">
-                <h6 class="modal-title mb-0"><i class="bi bi-x-circle me-1"></i> Cancel Sample</h6>
+              <div class="modal-header card-form-header text-white">
+                <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5 fw-semibold text-white">
+                  <i class="bi bi-x-circle me-1"></i> Cancel Sample
+                </h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" (click)="showCancelDialog = false"></button>
               </div>
               <div class="modal-body py-3">
-                <p class="small text-muted mb-2">Provide a reason for cancellation (required):</p>
-                <textarea class="form-control form-control-sm" rows="3"
+                <label class="form-label-sm fw-medium text-dark mb-1.5 text-xs-78">
+                  Provide a reason for cancellation (required):
+                </label>
+                <textarea class="form-control form-control-sm text-xs-78" rows="3"
                           [(ngModel)]="cancelReason"
                           [ngModelOptions]="{standalone: true}"
                           placeholder="Enter reason..."></textarea>
               </div>
               <div class="modal-footer py-2">
-                <button type="button" class="btn btn-sm btn-secondary" (click)="showCancelDialog = false">Close</button>
-                <button type="button" class="btn btn-sm btn-danger"
+                <button type="button" class="btn-lims btn-lims-cancel" (click)="showCancelDialog = false">
+                  <i class="bi bi-x-circle me-1"></i> Close
+                </button>
+                <button type="button" class="btn-lims btn-lims-remove"
                         [disabled]="!cancelReason.trim()"
                         (click)="confirmCancelSample()">
                   <i class="bi bi-x-circle me-1"></i> Confirm Cancel
@@ -638,104 +659,188 @@
           </div>
         </div>
 
-        <!-- SECTION 2: CASE DETAILS + IDENTIFICATION INFO -->
-        <fieldset class="border rounded p-3 mb-3 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
-
-          >
-            Case & Sample Identification
+        <!-- ── SECTION 2: TRACEABILITY MATRIX (Heat No / Batch No / Lot No) ── -->
+        <fieldset class="sample-section-fieldset position-relative mb-4">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+            <i class="bi bi-diagram-3 me-1"></i> Case & Sample Traceability Attributes
           </legend>
+
+          <!-- Quick attribute insertion tags bar -->
+          <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2 mb-2 flex-wrap bg-light p-2 rounded-3 border">
+            <span class="text-secondary small fw-semibold text-xs-75">⚡ Quick Add Attribute:</span>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Heat No')">
+              + Heat No
+            </button>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Batch No')">
+              + Batch No
+            </button>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Lot No')">
+              + Lot No
+            </button>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Sealed By')">
+              + Sealed By
+            </button>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Witness By')">
+              + Witness By
+            </button>
+            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Stamp By')">
+              + Stamp By
+            </button>
+          </div>
 
           <!-- Table -->
           <div class="table-responsive mb-2">
-            <table class="table table-sm table-compact">
-              <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Description</th>
-                  <th *ngFor="let sample of sampleNumbers">
-                    <span class="fw-medium text-center">{{ sample }}</span>
+            <table class="table table-sm table-bordered align-middle mb-1">
+              <thead>
+                <tr class="sample-table-header text-nowrap">
+                  <th class="text-center col-w-200">Description / Attribute</th>
+                  <th *ngFor="let sample of sampleNumbers" class="text-center py-1.5 col-minw-140">
+                    <span class="sample-no-badge text-xs-75 badge-no-pad">
+                      {{ sample }}
+                    </span>
                   </th>
-                  <th class="fw-medium text-center">Actions</th>
+                  <th class="text-center col-w-90">Actions</th>
                 </tr>
               </thead>
               <tbody formArrayName="sampleAdditionalDetails">
                 <tr *ngFor="let row of sampleAdditionalDetails.controls; let rowIndex = index" [formGroupName]="rowIndex">
                   <td>
-                    <select class="form-select form-select-sm" formControlName="label" (change)="onLabelChange()">
-                      <option value="" disabled>Select Option</option>
+                    <select class="form-select form-select-sm border-secondary-subtle fw-medium" formControlName="label" (change)="onLabelChange()">
+                      <option value="" disabled>Select Attribute</option>
                       <option *ngFor="let option of descriptionOptions" [value]="option" [disabled]="isOptionSelected(option, rowIndex)">
                         {{ option }}
                       </option>
                     </select>
                   </td>
                   <ng-container [formArrayName]="'values'">
-                    <td *ngFor="let valueCtrl of getAdditionSampleRowValues(rowIndex)">
-                      <input type="text" class="form-control form-control-sm" [formControl]="valueCtrl" placeholder="Enter Value" [disabled]="isViewMode" />
+                    <td *ngFor="let valueCtrl of getAdditionSampleRowValues(rowIndex); let colIdx = index">
+                      <input type="text" class="form-control form-control-sm border-secondary-subtle" [formControl]="valueCtrl" placeholder="Enter Value" [disabled]="isViewMode" />
                     </td>
                   </ng-container>
-                  <td>
-                    <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-remove" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                  <td class="text-center">
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                      <button *ngIf="!isViewMode && sampleNumbers.length > 1"
+                              type="button" class="btn-lims btn-lims-copy btn-lims-icon" title="Copy 1st value to all sample columns"
+                              (click)="copyFirstValueToAll(rowIndex)">
+                        <i class="bi bi-copy"></i>
+                      </button>
+                      <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" title="Delete attribute row" (click)="sampleAdditionalDetails.removeAt(rowIndex)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="sampleAdditionalDetails.controls.length === 0">
+                  <td [attr.colspan]="sampleNumbers.length + 2" class="text-center py-3 text-muted small bg-light">
+                    <i class="bi bi-info-circle me-1 text-secondary"></i> No additional traceability attributes added. Click buttons above to add Heat No, Batch No, etc.
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addAdditionalSampleRow()">
-            <i class="bi bi-plus-circle-dotted"></i>
-            Add Additional Info
+          <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addAdditionalSampleRow()">
+            <i class="bi bi-plus-circle"></i> Add Custom Attribute Row
           </button>
         </fieldset>
 
-        <fieldset class="border rounded p-3 mb-2 position-relative">
-          <legend
-            class="w-auto px-2 fw-semibold theme-color"
+        <!-- ── SECTION 3: RECEIPT NOTES & HANDLING FLAGS ── -->
+        <div class="row g-3 mb-3">
+          <!-- Left: Receipt Note Card -->
+          <div class="col-md-7">
+            <fieldset class="sample-section-fieldset h-100 position-relative">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+                <i class="bi bi-journal-text me-1.5"></i> Sample Receipt Note & Observations
+              </legend>
 
-          >
-            Additional Information
-          </legend>
-
-          <div class="row">
-            <div class="col-4">
-              <div class="">
-                <label class="form-label">Sample Receipt Note</label>
-                <textarea
-                  class="form-control"
-                  type="text"
-                  placeholder="Enter Sample Receipt Note"
-                  formControlName="sampleReceiptNote"
-                  rows="3"
-                ></textarea>
+              <!-- Quick Template Chips & Presets Bar -->
+              <div *ngIf="!isViewMode" class="d-flex align-items-center justify-content-between gap-1.5 mb-2 flex-wrap">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                  <span class="fw-semibold text-secondary text-xs-75 me-1 d-inline-flex align-items-center">
+                    <i class="bi bi-magic me-1 text-danger"></i> Quick Presets:
+                  </span>
+                  <span class="quick-chip chip-success" (click)="appendReceiptNote('Good Condition')">
+                    <i class="bi bi-check-circle-fill text-success me-1.5"></i> Good Condition
+                  </span>
+                  <span class="quick-chip chip-primary" (click)="appendReceiptNote('Sealed in Polythene')">
+                    <i class="bi bi-box-seam-fill text-primary me-1.5"></i> Sealed in Polythene
+                  </span>
+                  <span class="quick-chip chip-info" (click)="appendReceiptNote('Machined Specimen')">
+                    <i class="bi bi-gear-fill text-info me-1.5"></i> Machined Specimen
+                  </span>
+                  <span class="quick-chip chip-warning" (click)="appendReceiptNote('Rough Surface')">
+                    <i class="bi bi-layers-half text-warning me-1.5"></i> Rough Surface
+                  </span>
+                </div>
+                <button *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value"
+                        type="button" class="btn-lims-clear-chip ms-auto"
+                        (click)="sampleInwardForm.patchValue({sampleReceiptNote: ''})"
+                        title="Clear all receipt note text">
+                  <i class="bi bi-x-circle-fill"></i> Clear Note
+                </button>
               </div>
-            </div>
-            <div class="col-8">
-              <div class="d-flex flex-column gap-2">
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input mt-1" formControlName="urgent" id="urgent" />
-                  <label class="form-check-label form-label" for="urgent">Urgent</label>
-                </div>
 
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input mt-1" formControlName="returnSample" id="returnSample" />
-                  <label class="form-check-label form-label" for="returnSample">Return Sample</label>
-                </div>
-
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input mt-1" formControlName="notDestroyed" id="notDestroyed" />
-                  <label class="form-check-label form-label" for="notDestroyed">Not to be Destroyed</label>
-                </div>
-              </div>
-            </div>
+              <textarea
+                class="form-control form-control-sm receipt-note-textarea"
+                type="text"
+                placeholder="Enter any specific sample receipt notes, packaging condition, or visual remarks..."
+                formControlName="sampleReceiptNote"
+                rows="3"
+                [disabled]="isViewMode"
+              ></textarea>
+            </fieldset>
           </div>
-        </fieldset>
+
+          <!-- Right: Handling & Priority Options -->
+          <div class="col-md-5">
+            <fieldset class="sample-section-fieldset h-100 position-relative">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+                <i class="bi bi-shield-exclamation me-1.5"></i> Special Handling & Priority
+              </legend>
+
+              <div class="d-flex flex-column gap-2 pt-1">
+                <div class="handling-option-card urgent-card" [class.active-checked]="sampleInwardForm.get('urgent')?.value">
+                  <label class="form-check-label text-dark fw-semibold mb-0 cursor-pointer d-flex align-items-center gap-2 text-sm-80 flex-grow-1" for="urgent">
+                    <i class="bi bi-lightning-charge-fill text-danger fs-6"></i>
+                    <span>Urgent Testing Priority</span>
+                  </label>
+                  <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white me-2 px-2 py-0.5 text-xs-68">
+                    <i class="bi bi-check-circle-fill me-1"></i> URGENT
+                  </span>
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="urgent" id="urgent" [disabled]="isViewMode" />
+                </div>
+
+                <div class="handling-option-card return-card" [class.active-checked]="sampleInwardForm.get('returnSample')?.value">
+                  <label class="form-check-label text-dark fw-semibold mb-0 cursor-pointer d-flex align-items-center gap-2 text-sm-80 flex-grow-1" for="returnSample">
+                    <i class="bi bi-box-arrow-left text-primary fs-6"></i>
+                    <span>Return Tested Sample to Customer</span>
+                  </label>
+                  <span *ngIf="sampleInwardForm.get('returnSample')?.value" class="badge bg-primary text-white me-2 px-2 py-0.5 text-xs-68">
+                    <i class="bi bi-check-circle-fill me-1"></i> RETURN
+                  </span>
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="returnSample" id="returnSample" [disabled]="isViewMode" />
+                </div>
+
+                <div class="handling-option-card retain-card" [class.active-checked]="sampleInwardForm.get('notDestroyed')?.value">
+                  <label class="form-check-label text-dark fw-semibold mb-0 cursor-pointer d-flex align-items-center gap-2 text-sm-80 flex-grow-1" for="notDestroyed">
+                    <i class="bi bi-shield-lock-fill text-warning fs-6"></i>
+                    <span>Retain Sample (Not to be Destroyed)</span>
+                  </label>
+                  <span *ngIf="sampleInwardForm.get('notDestroyed')?.value" class="badge bg-warning text-dark fw-bold me-2 px-2 py-0.5 text-xs-68">
+                    <i class="bi bi-check-circle-fill me-1"></i> RETAIN
+                  </span>
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="notDestroyed" id="notDestroyed" [disabled]="isViewMode" />
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-3">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle"></i> Cancel
           </button>
-          <button type="button" class="btn btn-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
-            <i class="bi bi-check-circle me-1"></i> Save
+          <button type="button" class="btn-lims btn-lims-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
+            <i class="bi bi-check-circle"></i> Save
           </button>
         </div>
       </div>
@@ -987,23 +1092,29 @@
 </div>
 
 <!-- Stop Report Confirmation Dialog -->
-<div *ngIf="showStopReportDialog" class="modal d-block" style="background:rgba(0,0,0,0.45);z-index:1055">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+<div *ngIf="showStopReportDialog" class="modal d-block modal-backdrop-dark">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-sm">
     <div class="modal-content shadow">
-      <div class="modal-header py-2 bg-danger text-white">
-        <h6 class="modal-title mb-0"><i class="bi bi-stop-circle me-1"></i> Stop Report Generation</h6>
+      <div class="modal-header card-form-header text-white">
+        <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5 fw-semibold text-white">
+          <i class="bi bi-stop-circle me-1"></i> Stop Report Generation
+        </h6>
         <button type="button" class="btn-close btn-close-white btn-sm" (click)="showStopReportDialog = false"></button>
       </div>
       <div class="modal-body py-3">
-        <p class="small text-muted mb-2">Provide a reason for stopping report generation (required):</p>
-        <textarea class="form-control form-control-sm" rows="3"
+        <label class="form-label-sm fw-medium text-dark mb-1.5 text-xs-78">
+          Provide a reason for stopping report generation (required):
+        </label>
+        <textarea class="form-control form-control-sm text-xs-78" rows="3"
                   [(ngModel)]="stopReportReasonInput"
                   [ngModelOptions]="{standalone: true}"
                   placeholder="Enter reason for stopping report..."></textarea>
       </div>
       <div class="modal-footer py-2">
-        <button type="button" class="btn btn-sm btn-secondary" (click)="showStopReportDialog = false">Close</button>
-        <button type="button" class="btn btn-sm btn-danger"
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="showStopReportDialog = false">
+          <i class="bi bi-x-circle me-1"></i> Close
+        </button>
+        <button type="button" class="btn-lims btn-lims-save"
                 [disabled]="!stopReportReasonInput.trim()"
                 (click)="confirmStopReport()">
           <i class="bi bi-stop-circle me-1"></i> Confirm Stop

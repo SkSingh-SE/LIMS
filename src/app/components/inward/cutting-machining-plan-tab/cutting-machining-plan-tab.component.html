@@ -1,0 +1,150 @@
+<div class="cm-tab-container">
+
+  <!-- Empty state -->
+  <div *ngIf="samples.length === 0" class="text-center py-5 text-muted">
+    <i class="bi bi-box-seam fs-1 d-block mb-2 text-secondary"></i>
+    <div class="fw-medium">No samples found</div>
+    <div class="small">Samples will appear here once the inward is saved.</div>
+  </div>
+
+  <!-- Per-sample card -->
+  <div *ngFor="let sample of samples; let si = index" class="cm-sample-card mb-4">
+    <!-- Sample header -->
+    <div class="cm-sample-header">
+      <div class="d-flex align-items-center gap-2">
+        <span class="cm-sample-number">Sample {{ sample.sampleNumber || (si + 1).toString().padStart(6, '0') }}</span>
+        <span class="badge fs-11" [ngClass]="getStatusBadgeClass(sample.status)">{{ sample.status || 'Active' }}</span>
+      </div>
+      <div class="text-muted small mt-1" *ngIf="sample.description">
+        ID: {{ sample.id }} &nbsp;|&nbsp; {{ sample.description }}
+      </div>
+    </div>
+
+    <!-- Sample body: two-panel layout -->
+    <div class="cm-sample-body" *ngIf="sampleForms[sample.id]">
+      <ng-container [formGroup]="sampleForms[sample.id]">
+
+        <!-- Left Panel: Test table -->
+        <div class="cm-tests-panel">
+          <div class="cm-panel-title">
+            <i class="bi bi-flask me-1"></i> Test & Size Allocation
+          </div>
+          <table class="table table-sm table-hover cm-test-table mb-0">
+            <thead>
+              <tr>
+                <th style="width:36%">Test Name</th>
+                <th style="width:30%">Product Size</th>
+                <th class="text-center" style="width:12%">Cutting</th>
+                <th class="text-center" style="width:22%">No Testing</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container formArrayName="tests">
+                <tr *ngFor="let testCtrl of getTests(sample.id).controls; let ti = index"
+                    [formGroupName]="ti">
+                  <td class="align-middle">
+                    <span class="test-name-label">{{ getTestGroup(sample.id, ti).get('testName')?.value || 'Test ' + (ti + 1) }}</span>
+                  </td>
+                  <td class="align-middle">
+                    <app-searchable-dropdown
+                      [fetchDataFn]="getProductSizeDrop"
+                      [smallInput]="true"
+                      [placeholder]="'Select Size'"
+                      [selectedItem]="getSizeSelected(sample.id, ti)"
+                      (itemSelected)="onSizeSelected($event, sample.id, ti)"
+                      [isDisabled]="isReadOnly">
+                    </app-searchable-dropdown>
+                  </td>
+                  <td class="text-center align-middle">
+                    <input type="checkbox" class="form-check-input"
+                           formControlName="requiresCutting"
+                           [attr.disabled]="isReadOnly ? true : null">
+                  </td>
+                  <td class="text-center align-middle">
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                      <input type="checkbox" class="form-check-input"
+                             formControlName="noTesting"
+                             [attr.disabled]="isReadOnly ? true : null">
+                      <span class="text-muted small">No Testing</span>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="getTests(sample.id).length === 0">
+                <td colspan="4" class="text-center text-muted small py-2">No tests allocated for this sample.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right Panel: Cutting parameters -->
+        <div class="cm-params-panel">
+          <div class="cm-panel-title">
+            <i class="bi bi-scissors me-1"></i> Cutting Parameters
+          </div>
+          <div class="row g-2 p-2">
+            <div class="col-6">
+              <label class="form-label-sm">Number of Cuts</label>
+              <input type="number" class="form-control form-control-sm"
+                     formControlName="numberOfCuts"
+                     [readOnly]="isReadOnly"
+                     placeholder="e.g. 2">
+            </div>
+            <div class="col-6">
+              <label class="form-label-sm">Cut Thickness (mm)</label>
+              <input type="number" class="form-control form-control-sm"
+                     formControlName="cutThickness"
+                     [readOnly]="isReadOnly"
+                     placeholder="e.g. 5">
+            </div>
+            <div class="col-6">
+              <label class="form-label-sm">Water Jet Cutting (mins)</label>
+              <input type="number" class="form-control form-control-sm"
+                     formControlName="waterJetCuttingMins"
+                     [readOnly]="isReadOnly"
+                     placeholder="e.g. 15">
+            </div>
+            <div class="col-6">
+              <label class="form-label-sm">EDM Cutting</label>
+              <input type="text" class="form-control form-control-sm"
+                     formControlName="edmCutting"
+                     [readOnly]="isReadOnly"
+                     placeholder="Custom">
+            </div>
+            <div class="col-6">
+              <label class="form-label-sm">Gas Cutting</label>
+              <input type="text" class="form-control form-control-sm"
+                     formControlName="gasCutting"
+                     [readOnly]="isReadOnly"
+                     placeholder="Custom">
+            </div>
+            <div class="col-6">
+              <label class="form-label-sm">Special Cutting</label>
+              <input type="text" class="form-control form-control-sm"
+                     formControlName="specialCutting"
+                     [readOnly]="isReadOnly"
+                     placeholder="Custom">
+            </div>
+          </div>
+
+          <!-- Save button -->
+          <div class="px-2 pb-2" *ngIf="!isReadOnly">
+            <button type="button" class="btn btn-sm btn-theme w-100 mt-2"
+                    (click)="saveSampleCuttingPlan(sample.id)">
+              <i class="bi bi-save me-1"></i> Save Cutting Plan
+            </button>
+          </div>
+
+          <!-- Read-only badge -->
+          <div class="px-2 pb-2 pt-1" *ngIf="isReadOnly">
+            <div class="read-only-badge">
+              <i class="bi bi-lock-fill me-1"></i> Read-Only (Completed Stage)
+            </div>
+          </div>
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+</div>

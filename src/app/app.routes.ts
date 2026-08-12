@@ -76,6 +76,7 @@ import { WorkflowListComponent } from './components/workflow/workflow-list/workf
 
 import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
 import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
+import { CaseLifecycleWorkspaceComponent } from './components/inward/case-lifecycle-workspace/case-lifecycle-workspace.component';
 import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
 import { TestResultComponent } from './components/TestResult/test-result/test-result.component';
 import { LongTermTrackingComponent } from './components/TestResult/long-term-tracking/long-term-tracking.component';
@@ -618,6 +619,7 @@ export const routes: Routes = [
             { path: 'sample/inward/create', component: SampleInwardFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'sample/case/:id', component: CaseLifecycleWorkspaceComponent },
             { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: 'config', component: ConfigManagerComponent },

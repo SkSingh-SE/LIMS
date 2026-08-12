@@ -1,0 +1,232 @@
+<div class="lifecycle-workspace">
+
+  <!-- ═══════════════════════════ HEADER BAR ═══════════════════════════ -->
+  <div class="workspace-header">
+    <div class="d-flex align-items-center gap-3">
+      <button type="button" class="btn-back" (click)="navigateToCaseList()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div>
+        <h5 class="workspace-title mb-0">
+          <i class="bi bi-folder2-open me-2"></i>
+          Sample Case Lifecycle Workspace
+          <span class="workspace-case-no ms-2" *ngIf="caseInfo?.caseNo">{{ caseInfo.caseNo }}</span>
+        </h5>
+        <div class="workspace-subtitle" *ngIf="caseInfo?.customerName">
+          <i class="bi bi-building me-1 text-muted"></i> {{ caseInfo.customerName }}
+        </div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <app-test-status-badge *ngIf="currentStageStatus" [status]="currentStageStatus"></app-test-status-badge>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ STAGE PROGRESS STEPPER ═══════════════════════ -->
+  <div class="stepper-card">
+    <div class="stepper-track">
+      <ng-container *ngFor="let step of stageSteps; let i = index">
+
+        <!-- Step node -->
+        <div class="stepper-step" [class.completed]="step.status === 'completed'"
+             [class.active]="step.status === 'active'"
+             [class.pending]="step.status === 'pending'">
+
+          <!-- Circle -->
+          <div class="step-circle">
+            <ng-container *ngIf="step.status === 'completed'">
+              <i class="bi bi-check-circle-fill text-white"></i>
+            </ng-container>
+            <ng-container *ngIf="step.status === 'active'">
+              <i class="bi bi-play-circle-fill text-white"></i>
+            </ng-container>
+            <ng-container *ngIf="step.status === 'pending'">
+              <span class="step-number">{{ step.id }}</span>
+            </ng-container>
+          </div>
+
+          <!-- Label -->
+          <div class="step-label">{{ step.label }}</div>
+        </div>
+
+        <!-- Connector line -->
+        <div *ngIf="i < stageSteps.length - 1" class="step-connector"
+             [class.connector-completed]="step.status === 'completed'"
+             [class.connector-active]="step.status === 'active'">
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ TAB NAVIGATION ═══════════════════════════ -->
+  <div class="workspace-tabs-wrapper">
+    <!-- Tab headers -->
+    <div class="workspace-tab-nav">
+      <ng-container *ngFor="let tab of visibleTabs">
+        <button
+          class="workspace-tab-btn"
+          [class.active]="tab.isActive"
+          [class.readonly-tab]="tab.isReadOnly"
+          (click)="setActiveTab(tab.id)"
+          type="button">
+          <i class="bi {{ tab.icon }} me-1"></i>
+          {{ tab.label }}
+          <span *ngIf="tab.isReadOnly" class="tab-lock-badge">
+            <i class="bi bi-lock-fill"></i>
+          </span>
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- Read-only notice banner -->
+    <div *ngIf="getActiveTab()?.isReadOnly" class="readonly-notice">
+      <i class="bi bi-lock-fill me-2"></i>
+      <strong>Read-Only Mode</strong> — This stage has been completed. Data is visible for reference only and cannot be modified.
+    </div>
+
+    <!-- ═══════════════════════════ TAB CONTENT ═══════════════════════════ -->
+    <div class="workspace-tab-content">
+
+      <!-- Tab 1: Customer & Company Info (embedded SampleInwardForm Tab 1) -->
+      <div *ngIf="activeTabId === 'inward'" class="tab-pane-body">
+        <div *ngIf="inwardId > 0">
+          <app-sample-inward-form
+            [embeddedInwardId]="inwardId"
+            [isEmbeddedMode]="true"
+            [embeddedActiveTab]="'info'"
+            [isEmbeddedReadOnly]="isTabReadOnly('inward')">
+          </app-sample-inward-form>
+        </div>
+      </div>
+
+      <!-- Tab 2: Sample Details (embedded SampleInwardForm Tab 2) -->
+      <div *ngIf="activeTabId === 'samples'" class="tab-pane-body">
+        <div *ngIf="inwardId > 0">
+          <app-sample-inward-form
+            [embeddedInwardId]="inwardId"
+            [isEmbeddedMode]="true"
+            [embeddedActiveTab]="'sample'"
+            [isEmbeddedReadOnly]="isTabReadOnly('samples')">
+          </app-sample-inward-form>
+        </div>
+      </div>
+
+      <!-- Tab 3: Plan -->
+      <div *ngIf="activeTabId === 'plan'" class="tab-pane-body">
+        <div *ngIf="inwardId > 0">
+          <app-plan-form
+            [inwardID]="inwardId"
+            [mode]="isTabReadOnly('plan') ? 'review' : 'plan'">
+          </app-plan-form>
+        </div>
+      </div>
+
+      <!-- Tab 4: Review of Request -->
+      <div *ngIf="activeTabId === 'review'" class="tab-pane-body">
+        <div *ngIf="inwardId > 0">
+          <app-review-of-request-form
+            [embeddedInwardId]="inwardId"
+            [isEmbeddedMode]="true"
+            [isEmbeddedReadOnly]="isTabReadOnly('review')">
+          </app-review-of-request-form>
+        </div>
+      </div>
+
+      <!-- Tab 5: Cutting & Machining Plan -->
+      <div *ngIf="activeTabId === 'cutting'" class="tab-pane-body">
+        <div *ngIf="inwardId > 0">
+          <app-cutting-machining-plan-tab
+            [inwardId]="inwardId"
+            [isReadOnly]="isTabReadOnly('cutting')">
+          </app-cutting-machining-plan-tab>
+        </div>
+      </div>
+
+      <!-- Tab 6: Case Details (Summary) -->
+      <div *ngIf="activeTabId === 'case'" class="tab-pane-body">
+        <div class="case-summary-grid" *ngIf="caseInfo">
+          <div class="case-info-section">
+            <div class="case-section-title">
+              <i class="bi bi-folder2-open me-2"></i> Case Information
+            </div>
+            <div class="row g-2 p-3">
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Case No</label>
+                <div class="case-info-value">{{ caseInfo.caseNo || '-' }}</div>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Collection Date</label>
+                <div class="case-info-value">{{ caseInfo.collectionDate | date:'dd/MM/yyyy' }}</div>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Status</label>
+                <div>
+                  <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Urgent</label>
+                <div>
+                  <span class="badge" [ngClass]="caseInfo.urgent ? 'bg-danger' : 'bg-secondary'">
+                    {{ caseInfo.urgent ? 'Yes' : 'No' }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6 col-12">
+                <label class="form-label-sm">Receipt Note</label>
+                <div class="case-info-value">{{ caseInfo.sampleReceiptNote || '-' }}</div>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Return Sample</label>
+                <div class="case-info-value">{{ caseInfo.returnSample ? 'Yes' : 'No' }}</div>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label-sm">Bill Required</label>
+                <div class="case-info-value">{{ caseInfo.billRequired ? 'Yes' : 'No' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="case-info-section mt-3" *ngIf="caseInfo.sampleDetails?.length">
+            <div class="case-section-title">
+              <i class="bi bi-box-seam me-2"></i> Samples ({{ caseInfo.sampleDetails?.length || 0 }})
+            </div>
+            <div class="table-responsive p-2">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Sample No</th>
+                    <th>Material</th>
+                    <th>Tests</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of caseInfo.sampleDetails; let si = index">
+                    <td>{{ si + 1 }}</td>
+                    <td>{{ s.sampleNumber || '-' }}</td>
+                    <td>{{ s.materialDescription || s.description || '-' }}</td>
+                    <td>{{ s.tests?.length || 0 }}</td>
+                    <td>
+                      <span class="badge bg-success" *ngIf="!s.isCancelled">Active</span>
+                      <span class="badge bg-danger" *ngIf="s.isCancelled">Cancelled</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!caseInfo" class="text-center py-5 text-muted">
+          <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
+          <div>Case information not available.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

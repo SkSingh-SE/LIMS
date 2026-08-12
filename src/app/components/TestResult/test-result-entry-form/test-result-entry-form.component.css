@@ -140,7 +140,7 @@
 .action-bar { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; padding:1rem 0 0; border-top:1px solid #E9ECEF; margin-top:1rem; }
 .action-btn { font-size:.82rem; padding:.45rem 1.1rem; border-radius:6px; font-weight:500; }
 .action-btn-primary { background:var(--primary-color, #da261c); color:#fff; border:none; font-weight:600; }
-.action-btn-primary:hover { background:var(--primary-hover, #d50a0ace); color:#fff; }
+.action-btn-primary:hover { background:var(--primary-hover, #b91c1c); color:#fff; }
 
 /* Modal Header — light with red accent border */
 .modal-header-red { background:#F8F9FA; color:#343A40; border-bottom:2px solid var(--primary-color, #da261c); }
@@ -161,7 +161,7 @@
 
 /* Button Overrides */
 :host .btn-primary { background:var(--primary-color, #da261c); border-color:var(--primary-color, #da261c); }
-:host .btn-primary:hover { background:var(--primary-hover, #d50a0ace); border-color:var(--primary-hover, #d50a0ace); }
+:host .btn-primary:hover { background:var(--primary-hover, #b91c1c); border-color:var(--primary-hover, #b91c1c); }
 :host .btn-outline-primary { color:var(--primary-color, #da261c); border-color:var(--primary-color, #da261c); }
 :host .btn-outline-primary:hover { background:var(--primary-color, #da261c); border-color:var(--primary-color, #da261c); color:#fff; }
 

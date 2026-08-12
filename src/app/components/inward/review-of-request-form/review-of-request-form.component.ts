@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { SampleInwardService } from '../../../services/sample-inward.service';
@@ -27,6 +27,11 @@ import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.e
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
+
+  // ─── Embedding support: used by CaseLifecycleWorkspaceComponent ───
+  @Input() embeddedInwardId: number = 0;
+  @Input() isEmbeddedMode: boolean = false;
+  @Input() isEmbeddedReadOnly: boolean = false;
   plan: any = null;
   baseUrl = environment.baseUrl;
   reviewRemark: string = '';
@@ -71,9 +76,14 @@ export class ReviewOfRequestFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.activeRoute.paramMap.subscribe((params) => {
-      this.inwardId = Number(params.get('id'));
-    });
+    // Support embedded mode from CaseLifecycleWorkspace
+    if (this.isEmbeddedMode && this.embeddedInwardId > 0) {
+      this.inwardId = this.embeddedInwardId;
+    } else {
+      this.activeRoute.paramMap.subscribe((params) => {
+        this.inwardId = Number(params.get('id'));
+      });
+    }
 
     this.fetchDropdowns();
     this.fetchSampleInwardDetails(this.inwardId);

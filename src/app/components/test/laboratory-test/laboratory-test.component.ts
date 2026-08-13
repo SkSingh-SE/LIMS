@@ -534,12 +534,14 @@ export class LaboratoryTestComponent implements OnInit {
 
   // --- FormArray FormGroups Creation Helpers ---
   createParameterGroup(p?: any): FormGroup {
-    const symbol = p?.parameter?.symbol || p?.parameterSymbol || p?.additionalValues?.Symbol || '';
-    const unit = p?.parameter?.parameterUnit?.name || p?.parameterUnit || p?.additionalValues?.Unit || '';
+    const rawName = p?.parameter?.name || p?.additionalValues?.PureName || p?.parameterName || p?.name || p?.Name || '';
+    const cleanName = rawName.replace(/\s*-\s*\((Chemical|Mechanical|Observation)\)$/i, '');
+    const symbol = p?.parameter?.symbol || p?.parameterSymbol || p?.additionalValues?.Symbol || p?.symbol || p?.Symbol || '';
+    const unit = p?.parameter?.parameterUnit?.name || p?.parameterUnit || p?.additionalValues?.Unit || p?.unitName || p?.parameterUnitName || p?.parameterUnit?.Name || '';
     return this.fb.group({
       id: [p?.id || 0],
-      parameterID: [p?.parameterID || null, Validators.required],
-      parameterName: [p?.parameter?.name || p?.parameterName || ''],
+      parameterID: [p?.parameterID || p?.parameter?.id || p?.parameter?.ID || p?.id || p?.ID || null, Validators.required],
+      parameterName: [cleanName],
       parameterSymbol: [symbol],
       parameterUnit: [unit],
       isMandatory: [p?.isMandatory || false],
@@ -1050,14 +1052,211 @@ export class LaboratoryTestComponent implements OnInit {
     }).filter(x => x !== null);
   }
 
-  getMetalName(): string {
-    const metalId = this.activeAnalysisTypeId 
+  getMetalClassificationId(): number | null {
+    let metalId = this.activeAnalysisTypeId 
       ? this.analysisTypeConfigForm?.get('metalClassificationID')?.value
       : this.subGroupConfigForm?.get('metalClassificationID')?.value;
+
+    if (!metalId && this.subGroupConfigForm?.get('metalClassificationID')?.value) {
+      metalId = this.subGroupConfigForm.get('metalClassificationID')?.value;
+    }
+    return metalId ? Number(metalId) : null;
+  }
+
+  getMetalName(): string {
+    const metalId = this.getMetalClassificationId();
     if (metalId && this.selectedSubGroupDetails?.metalClassification) {
       return this.selectedSubGroupDetails.metalClassification.name;
     }
     return '';
+  }
+
+  fetchParametersFromMetalClassification(): void {
+    const metalId = this.getMetalClassificationId();
+    if (!metalId) {
+      this.toastService.show('Please select a Metal Classification in Overview tab first.', 'warning');
+      return;
+    }
+
+    const isChemical = !!this.labTestForm.get('isChemicalTest')?.value;
+    const formGroup = this.getActiveConfigForm();
+    if (!formGroup) {
+      this.toastService.show('Please select a Subgroup or Analysis Type first.', 'warning');
+      return;
+    }
+
+    this.metalService.getParameterByMetalId(metalId).subscribe({
+      next: (params: any[]) => {
+        if (!params || params.length === 0) {
+          this.toastService.show('No parameters mapped for the selected Metal Classification.', 'info');
+          return;
+        }
+
+        const filteredParams = params.filter(p => {
+          const pType = (p.parameterType || '').trim().toLowerCase();
+          if (isChemical) {
+            return pType === 'chemical';
+          } else {
+            return pType === 'mechanical' || pType !== 'chemical';
+          }
+        });
+
+        if (filteredParams.length === 0) {
+          this.toastService.show(`No ${isChemical ? 'Chemical' : 'Mechanical'} parameters mapped in selected Metal Classification.`, 'info');
+          return;
+        }
+
+        const currentArray = formGroup.get('parameters') as FormArray;
+        let addedCount = 0;
+
+        filteredParams.forEach(p => {
+          const paramId = p.id || p.ID;
+          const exists = currentArray.controls.some(ctrl => ctrl.get('parameterID')?.value === paramId);
+          if (!exists) {
+            currentArray.push(this.createParameterGroup({
+              parameterID: paramId,
+              parameterName: p.name || p.Name,
+              parameterSymbol: p.symbol || p.Symbol || '',
+              parameterUnit: p.parameterUnit?.name || p.unitName || p.parameterUnitName || '',
+              sequence: currentArray.length
+            }));
+            addedCount++;
+          }
+        });
+
+        if (addedCount > 0) {
+          currentArray.markAsDirty();
+          this.toastService.show(`Successfully fetched and added ${addedCount} parameter(s).`, 'success');
+        } else {
+          this.toastService.show('All parameters from Metal Classification are already added.', 'info');
+        }
+      },
+      error: () => this.toastService.show('Failed to fetch parameters for Metal Classification.', 'error')
+    });
+  }
+
+  fetchTestMethodsFromMetalClassification(): void {
+    const metalId = this.getMetalClassificationId();
+    if (!metalId) {
+      this.toastService.show('Please select a Metal Classification in Overview tab first.', 'warning');
+      return;
+    }
+
+    const formGroup = this.getActiveConfigForm();
+    if (!formGroup) {
+      this.toastService.show('Please select a Subgroup or Analysis Type first.', 'warning');
+      return;
+    }
+
+    this.methodService.getTestMethodSpecificationVersionDropdown('', 0, 1000, metalId).subscribe({
+      next: (methods: any[]) => {
+        if (!methods || methods.length === 0) {
+          this.toastService.show('No test methods found for the selected Metal Classification.', 'info');
+          return;
+        }
+
+        const currentArray = formGroup.get('testMethods') as FormArray;
+        let addedCount = 0;
+
+        methods.forEach(m => {
+          const versionId = m.id;
+          const exists = currentArray.controls.some(ctrl => ctrl.get('testMethodSpecificationVersionID')?.value === versionId);
+          if (!exists) {
+            currentArray.push(this.createMethodGroup({
+              testMethodSpecificationID: m.additionalValues?.TestMethodSpecificationID || null,
+              testMethodSpecificationVersionID: versionId,
+              testMethodName: m.additionalValues?.Name || m.name || m.Name,
+              standard: m.additionalValues?.TestMethodStandard || '',
+              version: m.additionalValues?.Version || '',
+              isDefault: currentArray.length === 0
+            }));
+            addedCount++;
+          }
+        });
+
+        if (addedCount > 0) {
+          currentArray.markAsDirty();
+          this.toastService.show(`Successfully fetched and added ${addedCount} test method(s).`, 'success');
+        } else {
+          this.toastService.show('All test methods for this Metal Classification are already added.', 'info');
+        }
+      },
+      error: () => this.toastService.show('Failed to fetch test methods for Metal Classification.', 'error')
+    });
+  }
+
+  fetchSpecificationsFromMetalClassification(): void {
+    const metalId = this.getMetalClassificationId();
+    if (!metalId) {
+      this.toastService.show('Please select a Metal Classification in Overview tab first.', 'warning');
+      return;
+    }
+
+    const formGroup = this.getActiveConfigForm();
+    if (!formGroup) {
+      this.toastService.show('Please select a Subgroup or Analysis Type first.', 'warning');
+      return;
+    }
+
+    let addedGrades = 0;
+    let addedProductMasters = 0;
+
+    this.materialSpecService.getGradeDropdownByMetalId('', 0, 1000, metalId).subscribe({
+      next: (grades: any[]) => {
+        const currentArray = formGroup.get('specifications') as FormArray;
+        if (grades && grades.length > 0) {
+          grades.forEach(g => {
+            const gradeId = Number(g.id || g.GradeID);
+            const exists = currentArray.controls.some(ctrl => {
+              const val = ctrl.value;
+              return val.specificationType === 'Material' && Number(val.specificationGradeID) === gradeId;
+            });
+            if (!exists) {
+              currentArray.push(this.createSpecificationGroup({
+                id: 0,
+                specificationType: 'Material',
+                specificationGradeID: gradeId,
+                specName: g.name || g.AliasName || g.Grade || 'Material Specification'
+              }));
+              addedGrades++;
+            }
+          });
+        }
+
+        this.productMasterService.getDropdown('', 0, 1000, metalId).subscribe({
+          next: (products: any[]) => {
+            if (products && products.length > 0) {
+              products.forEach(p => {
+                const pmId = Number(p.id || p.ID);
+                const exists = currentArray.controls.some(ctrl => {
+                  const val = ctrl.value;
+                  return val.specificationType === 'Product' && Number(val.productMasterID) === pmId;
+                });
+                if (!exists) {
+                  currentArray.push(this.createSpecificationGroup({
+                    id: 0,
+                    specificationType: 'Product',
+                    productMasterID: pmId,
+                    specName: p.name || p.ProductName || p.DisplayTitle || 'Product Master'
+                  }));
+                  addedProductMasters++;
+                }
+              });
+            }
+
+            const totalAdded = addedGrades + addedProductMasters;
+            if (totalAdded > 0) {
+              currentArray.markAsDirty();
+              this.toastService.show(`Fetched ${addedGrades} material grade(s) and ${addedProductMasters} product master(s).`, 'success');
+            } else {
+              this.toastService.show('All applicable material grades and product masters are already added.', 'info');
+            }
+          },
+          error: () => this.toastService.show('Failed to fetch Product Masters.', 'error')
+        });
+      },
+      error: () => this.toastService.show('Failed to fetch Material Specification grades.', 'error')
+    });
   }
 
   getTechniqueName(techId: number): string {

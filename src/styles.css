@@ -209,6 +209,25 @@ body {
 .bg-theme {
   background-color: var(--primary-color) !important;
 }
+
+/* Custom Utility Spacing Classes */
+.gap-1-5,
+.gap-1\.5 {
+  gap: 0.375rem !important; /* 6px */
+}
+
+.me-1-5,
+.me-1\.5 {
+  margin-right: 0.375rem !important; /* 6px */
+}
+
+/* Mandatory Global Icon-to-Label Spacing Rule */
+button i.bi:not(:only-child),
+.btn i.bi:not(:only-child),
+a.btn i.bi:not(:only-child),
+.btn-lims i.bi:not(:only-child) {
+  margin-right: 6px !important;
+}
 .theme-color {
   color: var(--primary-color);
 }
@@ -3470,13 +3489,17 @@ i.bi,
   margin-right: 6px !important;
 }
 
-/* Reset margin for icon-only containers & stepper circles so icons remain perfectly centered */
-.step-circle i.bi,
-.step-circle .bi,
-.rounded-circle i.bi,
-.rounded-circle .bi,
-.btn-circle i.bi,
-.btn-circle .bi,
+/* Reset margin for icon-only containers, stepper circles & icon-only buttons so icons remain perfectly centered */
+.btn:has(> i.bi:only-child) i.bi,
+.btn:has(> .bi:only-child) .bi,
+button:has(> i.bi:only-child) i.bi,
+button:has(> .bi:only-child) .bi,
+a:has(> i.bi:only-child) i.bi,
+a:has(> .bi:only-child) .bi,
+.icon-link i.bi,
+.icon-link .bi,
+.spec-delete-btn i.bi,
+.spec-delete-btn .bi,
 .btn-lims-icon i.bi,
 .btn-lims-icon .bi,
 .btn-icon i.bi,
@@ -3485,8 +3508,16 @@ i.bi,
 .btn-delete-row .bi,
 .btn-edit-row i.bi,
 .btn-edit-row .bi,
+.step-circle i.bi,
+.step-circle .bi,
+.rounded-circle i.bi,
+.rounded-circle .bi,
+.btn-circle i.bi,
+.btn-circle .bi,
 .notif-btn i.bi,
 .notif-btn .bi,
+.nav-icon-btn i.bi,
+.nav-icon-btn .bi,
 .icon-only i.bi,
 .icon-only .bi,
 .sorting-icon-up,
@@ -3494,6 +3525,53 @@ i.bi,
 i.bi.no-space,
 .bi.no-space {
   margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* ─── GLOBAL TABLE ACTION BUTTON CENTERING SYSTEM ─── */
+td .btn:has(> i.bi:only-child),
+td .btn:has(> .bi:only-child),
+td button:has(> i.bi:only-child),
+td button:has(> .bi:only-child),
+td a.btn:has(> i.bi:only-child),
+td a.btn:has(> .bi:only-child),
+td .btn-lims-icon,
+td .spec-delete-btn,
+td .btn-delete-row,
+td .btn-edit-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+}
+
+td .btn:has(> i.bi:only-child) i,
+td .btn:has(> .bi:only-child) .bi,
+td button:has(> i.bi:only-child) i,
+td button:has(> .bi:only-child) .bi,
+td .btn-lims-icon i,
+td .spec-delete-btn i {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  font-size: 0.85rem !important;
 }
 
 /* ─── MANDATORY GLOBAL CHECKBOX VISUAL STYLING (LIMS Brand Theme) ─── */

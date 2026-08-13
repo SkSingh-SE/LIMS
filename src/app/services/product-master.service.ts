@@ -31,8 +31,8 @@ export class ProductMasterService {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 
-  getDropdown(searchTerm: string, pageNumber: number = 0, pageSize: number = 20): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getDropdown(searchTerm: string, pageNumber: number = 0, pageSize: number = 20, metalId: number = 0): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}&metalId=${metalId}`);
   }
 
   getGradeParameters(gradeId: number): Observable<any> {

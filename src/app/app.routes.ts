@@ -182,7 +182,6 @@ export const routes: Routes = [
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
-            { path: 'chemical-sample-category', loadComponent: () => import('./components/chemical-sample-category/chemical-sample-category.component').then(m => m.ChemicalSampleCategoryComponent) },
             { path: 'analysis-technique', loadComponent: () => import('./components/analysis-technique/analysis-technique.component').then(m => m.AnalysisTechniqueComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },

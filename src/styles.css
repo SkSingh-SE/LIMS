@@ -343,7 +343,7 @@ body {
 }
 
 .form-check-input:checked {
-  background-color: transparent !important;
+  background-color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
 }
 
@@ -3469,13 +3469,38 @@ i.bi,
 .bi {
   margin-right: 6px !important;
 }
+
+/* Reset margin for icon-only containers & stepper circles so icons remain perfectly centered */
+.step-circle i.bi,
+.step-circle .bi,
+.rounded-circle i.bi,
+.rounded-circle .bi,
+.btn-circle i.bi,
+.btn-circle .bi,
 .btn-lims-icon i.bi,
 .btn-lims-icon .bi,
 .btn-icon i.bi,
 .btn-icon .bi,
+.btn-delete-row i.bi,
+.btn-delete-row .bi,
+.btn-edit-row i.bi,
+.btn-edit-row .bi,
+.notif-btn i.bi,
+.notif-btn .bi,
 .icon-only i.bi,
 .icon-only .bi,
+.sorting-icon-up,
+.sorting-icon-down,
 i.bi.no-space,
 .bi.no-space {
   margin-right: 0 !important;
+}
+
+/* ─── MANDATORY GLOBAL CHECKBOX VISUAL STYLING (LIMS Brand Theme) ─── */
+.form-check-input[type="checkbox"]:checked,
+input[type="checkbox"].form-check-input:checked,
+input[type="checkbox"]:checked {
+  background-color: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e") !important;
 }

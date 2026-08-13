@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
    PLAN FORM — Compact Enhanced Design
    ═══════════════════════════════════════════════════ */
 
@@ -25,7 +25,8 @@
 }
 
 .tab-content {
-  padding: 0.55rem 0.7rem !important;
+  border: none !important;
+  padding: 0 !important;
 }
 /* ═══ INWARD DETAILS — compact strip (no card header) ═══ */
 .inward-strip {
@@ -1053,11 +1054,11 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
 
 /* ── Left panel: sample card list ── */
 .sample-list-panel {
-  width: 230px;
-  min-width: 210px;
+  width: 295px;
+  min-width: 280px;
   flex-shrink: 0;
-  border-right: 1px solid #dee2e6;
-  background: #f8f9fa;
+  border-right: 1px solid #cbd5e1;
+  background: #f8fafc;
   overflow-y: auto;
   padding: 0;
   position: relative;
@@ -1070,15 +1071,15 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
   bottom: 0;
   display: block;
   height: 32px;
-  background: linear-gradient(to bottom, transparent, #f0f2f5);
+  background: linear-gradient(to bottom, transparent, #f8fafc);
   pointer-events: none;
   margin-top: -32px;
 }
 
 /* Cards need their own padding now that panel has padding:0 */
 .sample-list-cards {
-  padding: 0.4rem;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem;
+  padding-bottom: 0.75rem;
 }
 
 /* ── Right panel: plan builder ── */
@@ -1093,25 +1094,29 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
 /* ── Sample cards in left panel ── */
 .sample-card {
   background: #fff;
-  border: 1px solid #dee2e6;
-  border-left: 3px solid transparent;
-  border-radius: 0 6px 6px 0;
-  padding: 0.45rem 0.5rem;
-  margin-bottom: 0.35rem;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.45rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .sample-card:hover {
-  border-left-color: rgba(var(--bs-primary-rgb), 0.4);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  border-left-color: rgba(218, 38, 28, 0.5);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 .sample-card.selected {
+  border-color: #fca5a5;
   border-left-color: var(--primary-color);
   border-left-width: 4px;
   background: #fff8f8;
-  box-shadow: 0 1px 5px rgba(var(--bs-primary-rgb), 0.1);
+  box-shadow: 0 3px 12px rgba(218, 38, 28, 0.12);
 }
 
 .sample-card.combined-selected {
@@ -1152,7 +1157,8 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
 .sample-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .meta-chip {
@@ -1162,6 +1168,38 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
   padding: 0.08rem 0.38rem;
   color: #495057;
   white-space: nowrap;
+}
+
+/* ── Sample master chips in left panel card ── */
+.sample-master-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-product-master {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+.chip-metal {
+  background: rgba(218, 38, 28, 0.06);
+  color: var(--primary-color);
+  border: 1px solid rgba(218, 38, 28, 0.18);
+}
+
+.chip-size {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.22);
 }
 
 /* ── Sample panel header ── */
@@ -1369,5 +1407,367 @@ hr { border-color: #f0f0f0; opacity: 0.8; margin: 0.3rem 0; }
 .sib-chevron-btn:hover {
   opacity: 1;
 }
+
+/* ── Technique Selector & Fieldset Rules (LIMS UI Standards) ── */
+.tech-check-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tech-check-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+fieldset {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 0.55rem 0.85rem !important;
+  margin-bottom: 0.75rem !important;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+legend {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--primary-color) !important;
+  padding: 0.1rem 0.4rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+/* ── Compact SM Controls & Comfortable Spacing Rules ── */
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.75rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 4px !important;
+}
+
+textarea.form-control-sm {
+  height: auto !important;
+  min-height: 50px !important;
+}
+
+.table-compact th,
+.table-compact td {
+  padding: 0.35rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+.btn-lims {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.65rem !important;
+  min-height: 28px !important;
+}
+
+/* ── Utility Helper Classes ── */
+.instruction-textarea {
+  min-height: 44px !important;
+  max-height: 60px !important;
+  resize: vertical;
+}
+
+.preset-label {
+  font-size: 0.65rem;
+}
+
+.preset-chip-btn {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.4rem !important;
+  line-height: 1.2;
+}
+
+.sample-img-box {
+  min-height: 140px;
+  max-height: 170px;
+}
+
+.sample-img-thumb {
+min-width: 38px;
+  text-align: center;
+}
+
+.btn-nav {
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #495057;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-nav:hover:not([disabled]) { background: #f8f9fa; border-color: #adb5bd; }
+.btn-nav[disabled] { opacity: 0.38; cursor: not-allowed; }
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+/* ── Combined panel header ── */
+.combined-header {
+  padding: 0.5rem 0.75rem;
+  background: #f3eeff;
+  border-bottom: 1px solid #d6baff;
+  border-top: 2px solid #6f42c1;
+}
+
+.combined-sample-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #6f42c1;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ── Combined plan tabs (purple accent) ── */
+.combined-nav { background: #fdfcff; border-bottom: 2px solid #d6baff; }
+
+.combined-nav .nav-link {
+  font-size: 0.78rem;
+  padding: 0.28rem 0.75rem;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  color: #64748b;
+  background: transparent;
+}
+
+.combined-nav .nav-link:hover { color: #6f42c1; border-bottom-color: rgba(111,66,193,0.3); }
+
+.combined-nav .nav-link.active {
+  color: #6f42c1;
+  border-bottom: 2.5px solid #6f42c1;
+  font-weight: 600;
+  background: transparent;
+}
+
+/* ── Combined plan block body ── */
+.combined-plan-block {
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #6f42c1;
+  background: #fdfcff;
+}
+
+@media (max-width: 768px) {
+  .split-layout { flex-direction: column; }
+  .sample-list-panel { width: 100%; border-right: none; border-bottom: 2px solid #e9ecef; }
+  .nav-tabs .nav-link { padding: 0.22rem 0.45rem; font-size: 0.72rem; }
+  .tab-content { padding: 0.28rem; }
+  .inward-strip-body { padding: 0.28rem 0.45rem; }
+}
+
+
+
+
+.sib-chevron-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  color: #374151;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.sib-chevron-btn:hover {
+  opacity: 1;
+}
+
+/* ── Technique Selector & Fieldset Rules (LIMS UI Standards) ── */
+.tech-check-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tech-check-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+fieldset {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 0.55rem 0.85rem !important;
+  margin-bottom: 0.75rem !important;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+legend {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--primary-color) !important;
+  padding: 0.1rem 0.4rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+/* ── Compact SM Controls & Comfortable Spacing Rules ── */
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.75rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 4px !important;
+}
+
+textarea.form-control-sm {
+  height: auto !important;
+  min-height: 50px !important;
+}
+
+.table-compact th,
+.table-compact td {
+  padding: 0.35rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+.btn-lims {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.65rem !important;
+  min-height: 28px !important;
+}
+
+/* ── Utility Helper Classes ── */
+.instruction-textarea {
+  min-height: 44px !important;
+  max-height: 60px !important;
+  resize: vertical;
+}
+
+.preset-label {
+  font-size: 0.65rem;
+}
+
+.preset-chip-btn {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.4rem !important;
+  line-height: 1.2;
+}
+
+.sample-img-box {
+  min-height: 140px;
+  max-height: 170px;
+}
+
+.sample-img-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ulr-text-sub {
+  font-size: 0.72rem;
+}
+
+/* ── Sample Thumbnail Box ── */
+.sample-thumb-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  overflow: hidden;
+  background: #fff;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.sample-thumb-box:hover {
+  transform: scale(1.06);
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.2);
+}
+
+.sample-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sample-no-img {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+/* ── Large Sample Image Box (Dedicated Column) ── */
+.sample-img-box-lg {
+  min-height: 130px;
+  max-height: 160px;
+  width: 100%;
+}
+
+.sample-img-thumb-lg {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sample-img-thumb-lg:hover {
+  transform: scale(1.03);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Sample Image Anchor Box (Full Width & Height Layout) ── */
+.sample-img-anchor-box {
+  min-height: 135px;
+  height: 100%;
+  width: 100%;
+}
+
+.sample-img-anchor-img {
+  width: 100%;
+  height: 100%;
+  min-height: 135px;
+  object-fit: cover;
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sample-img-anchor-img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
 
 

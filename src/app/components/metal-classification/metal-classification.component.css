@@ -69,12 +69,3 @@
     overflow-x: auto;
     max-width: 100%;
   }
-.chemical-config-fieldset {
-  border: 1px solid #e6e6e6;
-  border-left: 3px solid var(--primary-color);
-  background: #fafbfc;
-  border-radius: 4px;
-}
-.chemical-config-fieldset legend {
-  color: var(--primary-color);
-}

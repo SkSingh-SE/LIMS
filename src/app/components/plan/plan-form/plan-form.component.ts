@@ -22,6 +22,8 @@ import { TPIService } from '../../../services/tpi.service';
 import { TestAutoSuggestService, SmartSuggestRequest, SuggestedTestDto } from '../../../services/test-auto-suggest.service';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { ProductMasterService } from '../../../services/product-master.service';
+import { ProductSizeMasterService } from '../../../services/product-size-master.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -52,6 +54,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize);
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
+  productSizeSelectedMap: { [sampleIdx: number]: any } = {};
+  productMasterSelectedMap: { [sampleIdx: number]: any } = {};
+  metalClassificationSelectedMap: { [sampleIdx: number]: any } = {};
 
   // ── Split Panel State ──
   activeSampleIdx = 0;
@@ -179,11 +184,32 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   onCombinedGenSpecSelected(item: any, field: 'genSpec1' | 'genSpec2'): void {
-    this.combinedPlanForm.patchValue({ [field]: item?.id ?? null });
+    const newId = item?.id !== undefined && item?.id !== null ? +item.id : null;
+    const otherField = field === 'genSpec1' ? 'genSpec2' : 'genSpec1';
+    const otherValRaw = this.combinedPlanForm.get(otherField)?.value;
+    const otherVal = otherValRaw !== undefined && otherValRaw !== null ? +otherValRaw : null;
+
+    if (newId && otherVal && newId === otherVal) {
+      this.combinedPlanForm.patchValue({ [field]: null });
+      this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
+      return;
+    }
+
+    this.combinedPlanForm.patchValue({ [field]: newId });
   }
 
   onCombinedChemSpecSelected(item: any, field: 'chemSpec1' | 'chemSpec2'): void {
-    const newId = item?.id !== undefined ? +item.id : null;
+    const newId = item?.id !== undefined && item?.id !== null ? +item.id : null;
+    const otherField = field === 'chemSpec1' ? 'chemSpec2' : 'chemSpec1';
+    const otherValRaw = this.combinedPlanForm.get(otherField)?.value;
+    const otherVal = otherValRaw !== undefined && otherValRaw !== null ? +otherValRaw : null;
+
+    if (newId && otherVal && newId === otherVal) {
+      this.combinedPlanForm.patchValue({ [field]: null });
+      this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
+      return;
+    }
+
     this.combinedPlanForm.patchValue({ [field]: newId });
     const spec1 = field === 'chemSpec1' ? newId : this.combinedPlanForm.get('chemSpec1')?.value;
     const spec2 = field === 'chemSpec2' ? newId : this.combinedPlanForm.get('chemSpec2')?.value;
@@ -314,7 +340,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     private productFormService: ProductFormService,
     private tpiService: TPIService,
     private testAutoSuggestService: TestAutoSuggestService,
-    private unsavedChangesService: UnsavedChangesService) { }
+    private unsavedChangesService: UnsavedChangesService,
+    private productMasterService: ProductMasterService,
+    private productSizeMasterService: ProductSizeMasterService) { }
 
   ngOnInit(): void {
     let isRouted = false;
@@ -436,6 +464,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       testTypeIds: [[]],
       specification1: [null],
       specification2: [null],
+      methods: this.fb.array([this.createTestMethodRow(reportNo, ulrNo)]),
       elements: this.fb.array([])
     });
   }
@@ -556,6 +585,23 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const chemTests = this.getChemicalTestsArray(sampleIdx, planIdx);
     const arr = chemTests[chemIdx]?.get('elements') as FormArray;
     return arr ? arr.controls : [];
+  }
+
+  getChemicalMethodRows(sampleIdx: number, planIdx: number, chemIdx: number): FormArray {
+    const chemTests = this.getChemicalTestsArray(sampleIdx, planIdx);
+    const chemGroup = chemTests[chemIdx] as FormGroup;
+    if (!chemGroup) return this.fb.array([]);
+    let methods = chemGroup.get('methods') as FormArray;
+    if (!methods) {
+      methods = this.fb.array([]);
+      chemGroup.addControl('methods', methods);
+    }
+    return methods;
+  }
+
+  addChemicalMethodRow(sampleIdx: number, planIdx: number, chemIdx: number): void {
+    const methods = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx);
+    methods.push(this.createTestMethodRow('', ''));
   }
 
   // Added: select-all helpers for chemical elements
@@ -698,8 +744,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             metalClassificationID: s.metalClassificationID,
             metalClassificationName: s.metalClassificationName ?? '',
             productConditionID: s.productConditionID,
-            chemicalSampleCategoryID: s.chemicalSampleCategoryID ?? null,
-            chemicalSampleCategoryName: s.chemicalSampleCategoryName ?? '',
             specimenOrientationID: s.specimenOrientationID,
             productFormID: s.productFormID,
             tpiAgencyID: s.tpiAgencyID,
@@ -846,6 +890,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.metalService.getMetalClassificationDropdown(term, page, pageSize);
 
+  getProductMasterDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.productMasterService.getDropdown(term, page, pageSize);
+
+  getProductSizeDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.productSizeMasterService.getProductSizeDropdown(term, page, pageSize);
+
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
 
@@ -858,6 +908,100 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getTPIAgencies = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.tpiService.getTPIDropdown(term, page, pageSize);
 
+  // ────────────── Quick Preset Chips & Decision Engine Handlers ──────────────
+  appendInstruction(sampleIndex: number, text: string): void {
+    const sampleGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleGroup) return;
+    const ctrl = sampleGroup.get('testInstructions');
+    if (!ctrl) return;
+    const current = ctrl.value ? ctrl.value.trim() : '';
+    if (current.includes(text)) return;
+    const updated = current ? `${current}. ${text}` : text;
+    ctrl.setValue(updated);
+  }
+
+  onProductMasterSelected(item: any, sampleIndex: number): void {
+    const sampleGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleGroup) return;
+    const pmId = item?.id ?? null;
+    const pmName = item?.name ?? '';
+    sampleGroup.patchValue({
+      productMasterID: pmId,
+      productMasterName: pmName
+    });
+
+    if (pmId) {
+      this.inwardService.getProductMasterCascade(pmId).subscribe({
+        next: (res: any) => {
+          if (res?.success) {
+            if (res.metalClassificationID) {
+              sampleGroup.patchValue({
+                metalClassificationID: res.metalClassificationID,
+                metalClassificationName: res.metalClassificationName || ''
+              });
+            }
+            if (res.productSizeMasterID) {
+              sampleGroup.patchValue({
+                productSizeID: res.productSizeMasterID,
+                productSizeName: res.sizeDisplayName || 'Auto Size'
+              });
+            }
+            this.toastService.show('Product Master applied automatically.', 'success');
+          }
+        }
+      });
+    }
+  }
+
+  onProductSizeSelected(item: any, sampleIndex: number): void {
+    const sampleGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleGroup) return;
+    const sizeId = item?.id ?? null;
+    const sizeName = item?.name ?? '';
+    sampleGroup.patchValue({
+      productSizeID: sizeId,
+      productSizeName: sizeName
+    });
+
+    const pmId = sampleGroup.get('productMasterID')?.value;
+
+    if (pmId && sizeId) {
+      this.inwardService.getProductMasterSizeLimits(pmId, sizeId).subscribe({
+        next: (res: any) => {
+          if (res?.success && res.parameters?.length) {
+            this.toastService.show(`Re-resolved ${res.parameters.length} parameter limits for size ${res.sizeDisplayName || ''}.`, 'info');
+          }
+        }
+      });
+    }
+  }
+
+  // Technique-First Chemical Selection
+  availableTechniques = [
+    { code: 'OES', name: 'OES - Optical Emission Spectrometry' },
+    { code: 'WET', name: 'WET - Wet Chemical Analysis' },
+    { code: 'ICP', name: 'ICP - Inductively Coupled Plasma' },
+    { code: 'LECO', name: 'LECO - Carbon / Sulphur Analysis' },
+    { code: 'WDXRF', name: 'WDXRF - Wavelength Dispersive XRF' },
+    { code: 'EDXRF', name: 'EDXRF - Energy Dispersive XRF' }
+  ];
+
+  selectedTechniquesMap: { [key: string]: boolean } = {};
+
+  isTechniqueSelected(sampleIdx: number, techCode: string): boolean {
+    return !!this.selectedTechniquesMap[`${sampleIdx}_${techCode}`];
+  }
+
+  toggleTechnique(sampleIdx: number, techCode: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.selectedTechniquesMap[`${sampleIdx}_${techCode}`] = checked;
+
+    const metalId = this.getMetalIdForSample(sampleIdx);
+    if (checked) {
+      this.toastService.show(`Technique ${techCode} enabled for sample.`, 'info');
+    }
+  }
+
   // ────────────── Event Handlers ──────────────
   onProductConditionSelected(item: any, sampleIndex: number) {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
@@ -868,10 +1012,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   onMetalClassificationSelected(item: any, sampleIndex: number) {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleDetailGroup) return;
+    const metalId = item?.id ?? null;
     sampleDetailGroup.patchValue({
-      metalClassificationID: item?.id ?? null,
+      metalClassificationID: metalId,
       metalClassificationName: item?.name ?? ''
     });
+    if (item) {
+      this.metalClassificationSelectedMap[sampleIndex] = item;
+    } else {
+      delete this.metalClassificationSelectedMap[sampleIndex];
+    }
   }
 
   onTPISelected(item: any, sampleIndex: number) {
@@ -884,6 +1034,19 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         contactNo: item.additionalValues['contactNo'] ?? ''
       };
     } else {
+      delete this.tpiAgencyDetails[sampleIndex];
+    }
+  }
+
+  onTpiRequiredToggle(sampleIndex: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleDetailGroup) return;
+
+    sampleDetailGroup.patchValue({ tpiRequired: checked });
+
+    if (!checked) {
+      sampleDetailGroup.patchValue({ tpiAgencyID: null });
       delete this.tpiAgencyDetails[sampleIndex];
     }
   }
@@ -1192,9 +1355,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         details: [sample.details],
         metalClassificationID: [sample.metalClassificationID],
         metalClassificationName: [sample.metalClassificationName ?? ''],
+        productMasterID: [sample.productMasterID ?? null],
+        productMasterName: [sample.productMasterName ?? ''],
+        productSizeID: [sample.productSizeID ?? sample.productSizeMasterID ?? null],
+        productSizeName: [sample.productSizeName ?? sample.sizeDisplayName ?? ''],
         productConditionID: [sample.productConditionID],
-        chemicalSampleCategoryID: [sample.chemicalSampleCategoryID ?? null],
-        chemicalSampleCategoryName: [sample.chemicalSampleCategoryName ?? ''],
         specimenOrientationID: [sample.specimenOrientationID],
         productFormID: [sample.productFormID],
         tpiAgencyID: [sample.tpiAgencyID],
@@ -1358,7 +1523,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         details: s.details || '',
         productConditionID: s.productConditionID || null,
         metalClassificationID: s.metalClassificationID || null,
-        chemicalSampleCategoryID: s.chemicalSampleCategoryID ?? null,
         specimenOrientationID: s.specimenOrientationID || null,
         productFormID: s.productFormID || null,
         tpiAgencyID: s.tpiAgencyID || null,

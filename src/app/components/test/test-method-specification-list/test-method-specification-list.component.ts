@@ -61,6 +61,10 @@ export class TestMethodSpecificationListComponent implements OnInit {
     this.importStatusFilter = status;
   }
 
+  formatMessages(messages: string[] | undefined): string {
+    return messages ? messages.join('; ') : '';
+  }
+
   onImportSort(column: string): void {
     if (this.importSortColumn === column) {
       this.importSortOrder = this.importSortOrder === 'asc' ? 'desc' : 'asc';

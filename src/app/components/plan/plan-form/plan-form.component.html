@@ -1,13 +1,13 @@
-﻿<div class="container-fluid p-0" [formGroup]="planForm">
+<div class="container-fluid p-0" [formGroup]="planForm">
   <!-- Inward Details Strip -->
   <div class="inward-strip" [class.inward-strip-compact]="mode === 'plan'">
     <div class="inward-strip-header" *ngIf="mode !== 'plan'">
-      <i class="bi bi-file-earmark-text me-1"></i> Inward Details
+      <i class="bi bi-file-earmark-text me-1.5"></i> Inward Details
     </div>
     <div class="inward-strip-body">
       <div class="d-flex flex-wrap align-items-center gap-3">
         <span class="case-badge">
-          <i class="bi bi-hash"></i>{{ planForm.get("caseNo")?.value || "-" }}
+          <i class="bi bi-hash me-0.5"></i>{{ planForm.get("caseNo")?.value || "-" }}
         </span>
         <div class="info-item">
           <span class="info-label">Receipt Note:</span>
@@ -29,15 +29,15 @@
           </span>
         </div>
         <span class="conformity-divider"></span>
-        <div class="d-flex align-items-center gap-1">
-          <span class="info-label">Conformity:</span>
+        <div class="d-flex align-items-center gap-1.5">
+          <span class="info-label"><i class="bi bi-shield-check me-1 text-danger"></i>Conformity:</span>
           <select class="form-select form-select-sm compact-select" formControlName="statementOfConformity">
             <option>Applicable</option>
             <option>Not Applicable</option>
           </select>
         </div>
-        <div class="d-flex align-items-center gap-1">
-          <span class="info-label">Decision Rule:</span>
+        <div class="d-flex align-items-center gap-1.5">
+          <span class="info-label"><i class="bi bi-rulers me-1 text-danger"></i>Decision Rule:</span>
           <select class="form-select form-select-sm compact-select" formControlName="decisionRule">
             <option>Without taking MOU into account</option>
             <option>With MOU consideration</option>
@@ -48,34 +48,26 @@
     </div>
   </div>
 
-  <!-- Samples Section: Split Layout -->
-  <div *ngIf="!isViewMode && samples.length > 1" class="plan-toolbar">
-    <label class="d-flex align-items-center gap-2 mb-0 toolbar-label">
-      <input type="checkbox" [checked]="selectAllChecked" (change)="toggleSelectAll($event)">
-      <span class="small fw-semibold">Select All Samples</span>
-    </label>
-    <button *ngIf="combinedIdxs.size >= 2" type="button" class="btn btn-sm btn-primary" (click)="isCombinedMode = true">
-      <i class="bi bi-collection me-1"></i>Plan {{ combinedIdxs.size }} Selected Samples
-    </button>
-  </div>
-
   <div class="split-layout">
     <!-- ── Left: Sample Cards ── -->
     <div class="sample-list-panel">
       <!-- Panel Header (sticky) -->
       <div class="sample-panel-header">
-        <span class="sample-panel-label">SAMPLES</span>
+        <div class="d-flex align-items-center gap-1.5">
+          <input type="checkbox" class="form-check-input mt-0" [checked]="selectAllChecked" (change)="toggleSelectAll($event)" title="Select all samples for combined planning">
+          <span class="sample-panel-label"><i class="bi bi-collection ms-1 me-1 text-danger"></i>SAMPLES</span>
+        </div>
         <span class="sample-panel-count">{{ samples.length }}</span>
       </div>
 
-      <!-- Cards wrapper (provides padding, scroll fade works on parent) -->
+      <!-- Cards wrapper -->
       <div class="sample-list-cards">
         <div *ngFor="let sample of samples.controls; let i = index" class="sample-card"
           [class.selected]="!isCombinedMode && activeSampleIdx === i" [class.combined-selected]="isCombinedSelected(i)"
           (click)="onSampleCardClick(i)">
           <!-- Top row: checkbox + seq no + sample no + status badge -->
           <div class="sample-card-top">
-            <input *ngIf="!isViewMode && samples.length > 1" type="checkbox" class="sample-card-check"
+            <input *ngIf="!isViewMode && samples.length > 1" type="checkbox" class="sample-card-check form-check-input mt-0"
               [checked]="isCombinedSelected(i)" (change)="toggleCombined(i, $any($event.target).checked)"
               (click)="$event.stopPropagation()">
             <span class="sample-seq-no">#{{ i + 1 }}</span>
@@ -92,9 +84,17 @@
             {{ sample.get('details')?.value | slice:0:50 }}{{ (sample.get('details')?.value?.length > 50) ? '…' : '' }}
           </div>
 
-          <!-- Metal classification chip -->
-          <div *ngIf="sample.get('metalClassificationName')?.value" class="sample-metal-chip">
-            <i class="bi bi-layers me-1"></i>{{ sample.get('metalClassificationName')?.value }}
+          <!-- Master classification chips in sample card -->
+          <div class="d-flex flex-wrap gap-1 mt-1 mb-1.5">
+            <div *ngIf="sample.get('productMasterName')?.value" class="sample-master-chip chip-product-master" title="Product Master">
+              <i class="bi bi-award me-1"></i>{{ sample.get('productMasterName')?.value }}
+            </div>
+            <div *ngIf="sample.get('metalClassificationName')?.value" class="sample-master-chip chip-metal" title="Metal Classification">
+              <i class="bi bi-layers me-1"></i>{{ sample.get('metalClassificationName')?.value }}
+            </div>
+            <div *ngIf="sample.get('productSizeName')?.value" class="sample-master-chip chip-size" title="Product Size">
+              <i class="bi bi-ruler me-1"></i>{{ sample.get('productSizeName')?.value }}
+            </div>
           </div>
 
           <!-- Bottom meta: Qty + flag chips -->
@@ -114,7 +114,7 @@
       <!-- Empty state -->
       <div *ngIf="samples.length === 0" class="empty-state">
         <i class="bi bi-inbox empty-state-icon"></i>
-        <p class="mt-2">No samples to plan.</p>
+        <p class="mt-2 fw-semibold">No samples to plan.</p>
       </div>
 
       <!-- Individual Panel -->
@@ -123,7 +123,7 @@
         <!-- Sticky context mini-header -->
         <div class="active-sample-sticky">
           <span class="active-sample-no">
-            <i class="bi bi-box-seam me-1"></i>{{ getActiveSample().get('sampleNo')?.value }}
+            <i class="bi bi-box-seam me-1 text-danger"></i>{{ getActiveSample().get('sampleNo')?.value }}
           </span>
           <span class="badge ms-2" [ngClass]="getPlanStatusClass(getSamplePlanStatus(activeSampleIdx))">
             {{ getSamplePlanStatus(activeSampleIdx) }}
@@ -141,217 +141,146 @@
           </span>
         </div>
 
+        <!-- Sample planning container -->
         <div formArrayName="samples">
           <div [formGroupName]="activeSampleIdx" class="sample-section position-relative">
 
-            <div class="sample-detail-prep-row">
-              <div class="sample-info-block">
-                <div class="sib-layout">
+            <!-- Standardized Fieldset for Sample Details & Guidelines (Proposal B - Spacious 3-Layer Layout) -->
+            <fieldset class="mb-3">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-2">
+                <span><i class="bi bi-box-seam me-1.5"></i> Sample Details & Guidelines</span>
+                <span class="badge bg-dark ms-2.5">{{ getActiveSample().get('sampleNo')?.value }}</span>
+                <span *ngIf="getActiveSample().get('quantity')?.value" class="badge bg-secondary ms-1">
+                  Qty: {{ getActiveSample().get('quantity')?.value }}
+                </span>
+              </legend>
 
-                  <!-- Header with chevron toggle -->
-                  <div class="prep-toggle-header">
-                    <div class="prep-header-left">
-                      <span class="prep-toggle-label">
-                        <i class="bi bi-box-seam sib-icon me-1"></i>
-                        <span class="sib-sample-no">{{ getActiveSample().get('sampleNo')?.value }}</span>
-                        <span *ngIf="getActiveSample().get('quantity')?.value" class="sib-qty-chip ms-1">
-                          Qty: {{ getActiveSample().get('quantity')?.value }}
-                        </span>
+              <div class="row g-2.5 align-items-stretch">
+                <!-- LEFT COLUMN: Dedicated Full-Width Sample Image Anchor (col-md-3) -->
+                <div class="col-md-3">
+                  <div class="card p-1 border bg-light shadow-none text-center h-100 d-flex align-items-center justify-content-center overflow-hidden">
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center overflow-hidden position-relative rounded bg-white sample-img-anchor-box">
+                      <img *ngIf="getActiveSample().get('sampleFilePath')?.value"
+                        [src]="baseUrl + getActiveSample().get('sampleFilePath')?.value"
+                        [alt]="getActiveSample().get('fileName')?.value"
+                        class="img-fluid rounded cursor-pointer sample-img-anchor-img"
+                        (click)="openFileInNewTab(getActiveSample().get('sampleFilePath')?.value)"
+                        title="Click to view full image" />
+                      <div *ngIf="!getActiveSample().get('sampleFilePath')?.value" class="text-muted small py-4">
+                        <i class="bi bi-image fs-1 d-block mb-1 text-secondary opacity-50"></i>
+                        No Image Available
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RIGHT COLUMN: 3 Structured Layers (col-md-9) -->
+                <div class="col-md-9 d-flex flex-column justify-content-between gap-2">
+
+                  <!-- LAYER 1: Sample Specifications Text Banner -->
+                  <div class="sample-text-details bg-light p-2 px-2.5 rounded border small">
+                    <span *ngIf="getActiveSample().get('details')?.value">
+                      <strong class="text-secondary">Details:</strong> {{ getActiveSample().get('details')?.value }}
+                    </span>
+                    <ng-container *ngIf="getActiveSample().get('thickness')?.value || getActiveSample().get('diameter')?.value || getActiveSample().get('width')?.value || getActiveSample().get('length')?.value">
+                      <span class="text-muted mx-1">|</span>
+                      <span>
+                        <strong class="text-secondary">Dim:</strong>
+                        <ng-container *ngIf="getActiveSample().get('thickness')?.value"> T:{{ getActiveSample().get('thickness')?.value }}mm</ng-container>
+                        <ng-container *ngIf="getActiveSample().get('diameter')?.value"> D:{{ getActiveSample().get('diameter')?.value }}mm</ng-container>
+                        <ng-container *ngIf="getActiveSample().get('width')?.value"> W:{{ getActiveSample().get('width')?.value }}mm</ng-container>
+                        <ng-container *ngIf="getActiveSample().get('length')?.value"> L:{{ getActiveSample().get('length')?.value }}mm</ng-container>
                       </span>
-                    </div>
-                    <button type="button" class="sib-chevron-btn"
-                      (click)="toggleSampleInfoCollapse(activeSampleIdx)" title="Toggle sample details">
-                      <i class="bi" [class.bi-chevron-down]="sampleInfoCollapsed[activeSampleIdx]"
-                        [class.bi-chevron-up]="!sampleInfoCollapsed[activeSampleIdx]"></i>
-                    </button>
+                    </ng-container>
+                    <ng-container *ngFor="let row of getAdditionalDetailsArray(getActiveSample())">
+                      <span class="text-muted mx-1">|</span>
+                      <span><strong class="text-secondary">{{ row.get('label')?.value }}:</strong> {{ row.get('value')?.value || '-' }}</span>
+                    </ng-container>
                   </div>
 
-                  <!-- Collapsible body: row layout (col-8 left + col-4 right) -->
-                  <div class="prep-collapsible-body" [class.open]="!sampleInfoCollapsed[activeSampleIdx]">
-                    <div class="row g-3">
-                      <!-- LEFT: col-8 - Details + Dropdowns -->
-                      <div class="col-8">
-                        <div class="sample-text-details mb-2">
-                          <span *ngIf="getActiveSample().get('details')?.value">
-                            <span class="sdet-lbl">Details:</span> {{ getActiveSample().get('details')?.value }}
-                          </span>
-                          <ng-container
-                            *ngIf="getActiveSample().get('thickness')?.value || getActiveSample().get('diameter')?.value || getActiveSample().get('width')?.value || getActiveSample().get('length')?.value">
-                            <span class="sdet-sep">|</span>
-                            <span>
-                              <span class="sdet-lbl">Dim:</span>
-                              <ng-container *ngIf="getActiveSample().get('thickness')?.value"> T:{{
-                                getActiveSample().get('thickness')?.value }}mm</ng-container>
-                              <ng-container *ngIf="getActiveSample().get('diameter')?.value"> D:{{
-                                getActiveSample().get('diameter')?.value }}mm</ng-container>
-                              <ng-container *ngIf="getActiveSample().get('width')?.value"> W:{{
-                                getActiveSample().get('width')?.value }}mm</ng-container>
-                              <ng-container *ngIf="getActiveSample().get('length')?.value"> L:{{
-                                getActiveSample().get('length')?.value }}mm</ng-container>
-                            </span>
-                          </ng-container>
-                          <ng-container *ngFor="let row of getAdditionalDetailsArray(getActiveSample())">
-                            <span class="sdet-sep">|</span>
-                            <span><span class="sdet-lbl">{{ row.get('label')?.value }}:</span> {{
-                              row.get('value')?.value ||
-                              '-' }}</span>
-                          </ng-container>
-                        </div>
-                        <div class="sib-drop-group">
-                          <div class="sdrop-label">Metal Classification</div>
-                          <app-searchable-dropdown [placeholder]="'Search Metal Classification'" [hideLabel]="true"
-                            [smallInput]="true" [fetchDataFn]="getMetalDrop"
-                            (itemSelected)="onMetalClassificationSelected($event, activeSampleIdx)"
-                            [selectedItem]="getActiveSample().get('metalClassificationID')?.value"
-                            [isDisabled]="isViewMode"></app-searchable-dropdown>
-                          <div class="sdrop-label mt-2">Product Condition</div>
-                          <app-searchable-dropdown [placeholder]="'Search Product Condition'" [hideLabel]="true"
-                            [smallInput]="true" [fetchDataFn]="getProductConditionDrop"
-                            (itemSelected)="onProductConditionSelected($event, activeSampleIdx)"
-                            [selectedItem]="getActiveSample().get('productConditionID')?.value"
-                            [isDisabled]="isViewMode"></app-searchable-dropdown>
-                        </div>
-                      </div>
-
-                      <!-- RIGHT: col-4 - Thumbnail Image -->
-                      <div class="col-4 d-flex justify-content-end align-items-start">
-                        <div *ngIf="getActiveSample().get('sampleFilePath')?.value" class="sib-thumb"
-                          (click)="openFileInNewTab(getActiveSample().get('sampleFilePath')?.value)"
-                          title="View Sample Image">
-                          <img [src]="baseUrl + getActiveSample().get('sampleFilePath')?.value"
-                            [alt]="getActiveSample().get('fileName')?.value" />
-                        </div>
-                      </div>
+                  <!-- LAYER 2: Master Classification (3 Dropdowns Side-By-Side) -->
+                  <div class="row g-2">
+                    <div class="col-md-4">
+                      <app-searchable-dropdown [placeholder]="'Select Product Size Range'" [hideLabel]="false" [labelName]="'Product Size'"
+                        [smallInput]="true" [fetchDataFn]="getProductSizeDrop"
+                        (itemSelected)="onProductSizeSelected($event, activeSampleIdx)"
+                        [selectedItem]="getActiveSample().get('productSizeID')?.value"
+                        [isDisabled]="isViewMode"></app-searchable-dropdown>
+                    </div>
+                    <div class="col-md-4">
+                      <app-searchable-dropdown [placeholder]="'Search Product Master / Grade'" [hideLabel]="false" [labelName]="'Product Master'"
+                        [smallInput]="true" [fetchDataFn]="getProductMasterDrop"
+                        (itemSelected)="onProductMasterSelected($event, activeSampleIdx)"
+                        [selectedItem]="getActiveSample().get('productMasterID')?.value"
+                        [isDisabled]="isViewMode"></app-searchable-dropdown>
+                    </div>
+                    <div class="col-md-4">
+                      <app-searchable-dropdown [placeholder]="'Search Metal Classification'" [hideLabel]="false" [labelName]="'Metal Classification'"
+                        [smallInput]="true" [fetchDataFn]="getMetalDrop"
+                        (itemSelected)="onMetalClassificationSelected($event, activeSampleIdx)"
+                        [selectedItem]="getActiveSample().get('metalClassificationID')?.value"
+                        [isDisabled]="isViewMode"></app-searchable-dropdown>
                     </div>
                   </div>
 
-                </div>
-              </div>
-
-              <div class="sample-prep-block">
-                <div class="prep-toggle-header">
-                  <div class="prep-header-left">
-                    <span class="prep-toggle-label">
-                      <i class="bi bi-tools me-1"></i>Sample Preparation
-                    </span>
-                    <!-- show and hide details based on preparation required status -->
-                    <span class="prep-mini-status" *ngIf="getActiveSample().get('preparationRequired')?.value">
-                      Prep:&nbsp;<span [class.prep-mini-yes]="getActiveSample().get('preparationRequired')?.value"
-                        [class.prep-mini-no]="!getActiveSample().get('preparationRequired')?.value">{{
-                        getActiveSample().get('preparationRequired')?.value ? 'Yes' : 'No' }}</span>
-                      &nbsp;|&nbsp;Machining:&nbsp;<span
-                        [class.prep-mini-yes]="getActiveSample().get('machiningRequired')?.value"
-                        [class.prep-mini-no]="!getActiveSample().get('machiningRequired')?.value">{{
-                        getActiveSample().get('machiningRequired')?.value ? 'Yes' : 'No' }}</span>
-                      &nbsp;|&nbsp;Other:&nbsp;<span
-                        [class.prep-mini-yes]="getActiveSample().get('otherPreparation')?.value"
-                        [class.prep-mini-no]="!getActiveSample().get('otherPreparation')?.value">{{
-                        getActiveSample().get('otherPreparation')?.value ? 'Yes' : 'No' }}</span>
-                      &nbsp;|&nbsp;TPI:&nbsp;<span [class.prep-mini-yes]="getActiveSample().get('tpiRequired')?.value"
-                        [class.prep-mini-no]="!getActiveSample().get('tpiRequired')?.value">{{
-                        getActiveSample().get('tpiRequired')?.value ? 'Yes' : 'No' }}</span>
-                    </span>
-                  </div>
-                  <label class="prep-toggle">
-                    <input type="checkbox" [checked]="getActiveSample().get('preparationRequired')?.value"
-                      [disabled]="isViewMode" (change)="onPreparationRequiredToggle($event)">
-                    <span class="prep-track"></span>
-                  </label>
-                </div>
-
-                <div class="prep-collapsible-body" [class.open]="getActiveSample().get('preparationRequired')?.value">
-                  <div class="prep-section">
-
-                    <div class="prep-grid prep-grid-3">
-
-                      <div class="prep-field-block">
-                        <span class="prep-lbl">Machining</span>
-                        <div class="prep-field-controls">
-                          <label class="prep-toggle">
-                            <input type="checkbox" formControlName="machiningRequired">
-                            <span class="prep-track"></span>
-                          </label>
-                          <span class="prep-val" [class.val-yes]="getActiveSample().get('machiningRequired')?.value"
-                            [class.val-no]="!getActiveSample().get('machiningRequired')?.value">
-                            {{ getActiveSample().get('machiningRequired')?.value ? 'Yes' : 'No' }}
-                          </span>
-                          <div class="prep-amt-box"
-                            [class.disabled]="!getActiveSample().get('machiningRequired')?.value">
-                            <span class="prep-amt-prefix">₹</span>
-                            <input type="number" class="prep-amt-input" formControlName="machiningAmount"
-                              placeholder="0" min="0">
+                  <!-- LAYER 3: TPI Inspection & Special Test Instructions (Split 2 Columns) -->
+                  <div class="row g-2 align-items-stretch">
+                    <!-- TPI Sub-block (col-md-5) -->
+                    <div class="col-md-5">
+                      <div class="p-2 px-2.5 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                          <span class="fw-semibold text-dark small"><i class="bi bi-patch-check text-danger me-1"></i>TPI Inspection</span>
+                          <div class="form-check form-switch mb-0 d-flex align-items-center gap-1.5">
+                            <input class="form-check-input mt-0 cursor-pointer" type="checkbox"
+                              [checked]="getActiveSample().get('tpiRequired')?.value"
+                              (change)="onTpiRequiredToggle(activeSampleIdx, $event)"
+                              id="tpiCheck_{{activeSampleIdx}}">
+                            <label class="form-check-label small fw-semibold cursor-pointer ms-1 mb-0" for="tpiCheck_{{activeSampleIdx}}"
+                              [class.text-success]="getActiveSample().get('tpiRequired')?.value"
+                              [class.text-muted]="!getActiveSample().get('tpiRequired')?.value">
+                              {{ getActiveSample().get('tpiRequired')?.value ? 'Yes' : 'No' }}
+                            </label>
                           </div>
                         </div>
-                      </div>
-                      <div class="prep-field-block">
-                        <span class="prep-lbl">Specimen</span>
-                        <input type="text" class="prep-text-input" formControlName="specimen"
-                          placeholder="e.g. Round Bar">
-                      </div>
-                      <div class="prep-field-block">
-                        <span class="prep-lbl">Other Prep</span>
-                        <div class="prep-field-controls">
-                          <label class="prep-toggle">
-                            <input type="checkbox" formControlName="otherPreparation">
-                            <span class="prep-track"></span>
-                          </label>
-                          <span class="prep-val" [class.val-yes]="getActiveSample().get('otherPreparation')?.value"
-                            [class.val-no]="!getActiveSample().get('otherPreparation')?.value">
-                            {{ getActiveSample().get('otherPreparation')?.value ? 'Yes' : 'No' }}
-                          </span>
-                          <div class="prep-amt-box"
-                            [class.disabled]="!getActiveSample().get('otherPreparation')?.value">
-                            <span class="prep-amt-prefix">₹</span>
-                            <input type="number" class="prep-amt-input" formControlName="otherPreparationCharge"
-                              placeholder="0" min="0">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="prep-grid prep-grid-2 prep-second-row">
-                      <div class="prep-field-block tpi-toggle-block">
-                        <span class="prep-lbl">TPI</span>
-                        <div class="prep-field-controls">
-                          <label class="prep-toggle">
-                            <input type="checkbox" formControlName="tpiRequired">
-                            <span class="prep-track"></span>
-                          </label>
-                          <span class="prep-val" [class.val-yes]="getActiveSample().get('tpiRequired')?.value"
-                            [class.val-no]="!getActiveSample().get('tpiRequired')?.value">
-                            {{ getActiveSample().get('tpiRequired')?.value ? 'Yes' : 'No' }}
-                          </span>
-                        </div>
-
-                        <div class="tpi-lazy-wrapper" *ngIf="getActiveSample().get('tpiRequired')?.value">
-                          <app-searchable-dropdown [placeholder]="'Type & Search TPI Agency'" [hideLabel]="false"
+                        <div *ngIf="getActiveSample().get('tpiRequired')?.value" class="mt-1.5">
+                          <app-searchable-dropdown [placeholder]="'Type & Search TPI Agency'" [hideLabel]="true"
                             [labelName]="'TPI Agency'" [smallInput]="true" [fetchDataFn]="getTPIAgencies"
                             (itemSelected)="onTPISelected($event, activeSampleIdx)"
                             [selectedItem]="getActiveSample().get('tpiAgencyID')?.value"
                             [isDisabled]="isViewMode"></app-searchable-dropdown>
-                          <div *ngIf="tpiAgencyDetails[activeSampleIdx]" class="prep-tpi-detail">
-                            <span><i class="bi bi-telephone me-1"></i>{{ tpiAgencyDetails[activeSampleIdx].contactNo
-                              }}</span>
-                            <span><i class="bi bi-envelope me-1"></i>{{ tpiAgencyDetails[activeSampleIdx].emailId
-                              }}</span>
+                          <div *ngIf="tpiAgencyDetails[activeSampleIdx]" class="d-flex align-items-center gap-2 p-2 mt-2 bg-white rounded small border text-muted">
+                            <span class="text-dark"><i class="bi bi-telephone text-success me-1"></i>{{ tpiAgencyDetails[activeSampleIdx].contactNo }}</span>
+                            <span class="text-dark ms-auto"><i class="bi bi-envelope text-info me-1"></i>{{ tpiAgencyDetails[activeSampleIdx].emailId }}</span>
                           </div>
                         </div>
-
-                      </div>
-
-
-
-                      <div class="prep-field-block instruction-block">
-                        <span class="prep-lbl">Instructions</span>
-                        <textarea class="form-control form-control-sm" formControlName="testInstructions" rows="3"
-                          placeholder="Enter any special test instructions for this sample"></textarea>
                       </div>
                     </div>
-                  </div><!-- /.prep-section -->
+
+                    <!-- Instructions Sub-block (col-md-7) -->
+                    <div class="col-md-7">
+                      <div class="p-2 px-2.5 rounded bg-white border h-100 d-flex flex-column justify-content-between gap-1.5">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                          <label class="form-label small fw-semibold text-dark mb-0"><i class="bi bi-file-earmark-text text-danger me-1"></i>Test Instructions:</label>
+                          <div class="d-flex flex-wrap gap-1 align-items-center">
+                            <button type="button" class="btn btn-xs btn-outline-secondary preset-chip-btn"
+                              (click)="appendInstruction(activeSampleIdx, 'Preserve broken specimen')">+ Preserve</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary preset-chip-btn"
+                              (click)="appendInstruction(activeSampleIdx, 'Provide stress-strain graph')">+ Graph</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary preset-chip-btn"
+                              (click)="appendInstruction(activeSampleIdx, 'Impact test at -46°C')">+ -46°C</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary preset-chip-btn"
+                              (click)="appendInstruction(activeSampleIdx, 'Protect polished surface')">+ Protect</button>
+                          </div>
+                        </div>
+                        <textarea class="form-control form-control-sm instruction-textarea" formControlName="testInstructions" rows="3"
+                          placeholder="Enter special test guidelines or click preset buttons..."></textarea>
+                      </div>
+                    </div>
+                  </div>
 
                 </div>
               </div>
-            </div>
+            </fieldset>
 
             <!-- Test Plans -->
             <div formArrayName="testPlans">
@@ -362,25 +291,25 @@
                   <div class="version-bar">
                     <div class="d-flex align-items-center gap-2">
                       <span class="badge bg-dark version-badge">
-                        <i class="bi bi-layers me-1"></i>v{{ testPlan.get('version')?.value || 1 }}
+                        <i class="bi bi-layers me-1.5"></i>v{{ testPlan.get('version')?.value || 1 }}
                       </span>
                       <span *ngIf="testPlan.get('planStatus')?.value" class="badge"
                         [ngClass]="getPlanStatusClass(testPlan.get('planStatus')?.value)">
                         {{ getPlanStatusLabel(testPlan.get('planStatus')?.value) }}
                       </span>
                       <span *ngIf="testPlan.get('replanCount')?.value > 0" class="badge bg-warning text-dark">
-                        <i class="bi bi-arrow-repeat me-1"></i>Replanned {{ testPlan.get('replanCount')?.value }}×
+                        <i class="bi bi-arrow-repeat me-1.5"></i>Replanned {{ testPlan.get('replanCount')?.value }}×
                       </span>
                     </div>
-                    <div class="d-flex gap-1">
+                    <div class="d-flex gap-1.5">
                       <button *ngIf="testPlan.get('id')?.value > 0" type="button"
                         class="btn btn-sm btn-outline-secondary" (click)="togglePlanHistory(testPlan.get('id')?.value)"
                         title="View History">
-                        <i class="bi bi-clock-history me-1"></i>History
+                        <i class="bi bi-clock-history me-1.5"></i>History
                       </button>
                       <button *ngIf="isPlanApproved(testPlan)" type="button" class="btn btn-sm btn-outline-warning"
                         (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
-                        <i class="bi bi-arrow-repeat me-1"></i>Replan
+                        <i class="bi bi-arrow-repeat me-1.5"></i>Replan
                       </button>
                     </div>
                   </div>
@@ -389,7 +318,7 @@
                   <div *ngIf="showHistoryPanel && activeHistoryPlanId === testPlan.get('id')?.value"
                     class="history-panel">
                     <div class="history-panel-header">
-                      <span class="fw-semibold small">Plan History Timeline</span>
+                      <span class="fw-semibold small"><i class="bi bi-clock-history me-1.5 text-danger"></i>Plan History Timeline</span>
                       <button type="button" class="btn-close btn-sm" (click)="showHistoryPanel = false"></button>
                     </div>
                     <div class="history-panel-body">
@@ -410,10 +339,10 @@
                             <span class="history-type">{{ entry.changeType }}</span>
                           </div>
                           <div class="history-card-meta">
-                            <i class="bi bi-person-fill"></i> {{ entry.changedByName || 'System' }}
+                            <i class="bi bi-person-fill me-1"></i> {{ entry.changedByName || 'System' }}
                           </div>
                           <div class="history-card-meta">
-                            <i class="bi bi-clock"></i> {{ entry.changedAt | date: 'dd MMM, hh:mm a' }}
+                            <i class="bi bi-clock me-1"></i> {{ entry.changedAt | date: 'dd MMM, hh:mm a' }}
                           </div>
                           <div *ngIf="entry.remarks" class="history-card-remark">{{ entry.remarks }}</div>
                           <div *ngIf="parseFieldChanges(entry.fieldChangesJson)?.length" class="history-changes">
@@ -432,7 +361,7 @@
 
                   <!-- Approved Info -->
                   <div *ngIf="testPlan.get('approvedByName')?.value" class="approved-bar">
-                    <i class="bi bi-check-circle-fill me-1"></i>
+                    <i class="bi bi-check-circle-fill me-1.5"></i>
                     Approved by <strong>{{ testPlan.get('approvedByName')?.value }}</strong>
                     on {{ testPlan.get('approvedAt')?.value | date: 'dd MMM yyyy, hh:mm a' }}
                   </div>
@@ -443,14 +372,14 @@
                       <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'general') }"
                         (click)="setActiveTab(activeSampleIdx, planIdx, 'general')"
                         id="general-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-gear me-1"></i> General Test
+                        <i class="bi bi-gear me-1.5"></i> General Test
                       </button>
                     </li>
                     <li class="nav-item" role="presentation">
                       <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'chemical') }"
                         (click)="setActiveTab(activeSampleIdx, planIdx, 'chemical')"
                         id="chemical-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-droplet me-1"></i> Chemical Test
+                        <i class="bi bi-droplet me-1.5"></i> Chemical Test
                       </button>
                     </li>
                   </ul>
@@ -483,18 +412,17 @@
                             class="text-danger small mb-1">
                             Specification 1 and Specification 2 must be different.
                           </div>
-                          <table class="table table-sm table-compact">
+                          <table class="table table-sm table-bordered table-compact align-middle">
                             <thead class="table-light">
                               <tr class="text-nowrap text-muted small">
-                                <th class="fw-medium text-center">Sr No.</th>
+                                <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
                                 <th class="fw-medium text-center">Laboratory Test</th>
                                 <th class="fw-medium text-center">Test Method Standard</th>
-                                <th class="fw-medium text-center">Quantity</th>
-                                <th class="fw-medium text-center">
-                                  <div>Report No</div>
-                                  <div>ULR No/Cancel</div>
+                                <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
+                                <th class="fw-medium text-center" style="width: 180px;">
+                                  <div>Report No / ULR No</div>
                                 </th>
-                                <th class="fw-medium text-center">Action</th>
+                                <th class="fw-medium text-center" style="width: 60px;">Action</th>
                               </tr>
                             </thead>
                             <tbody #dropdownContainer class="dropdown-wrapper position-relative" formArrayName="methods"
@@ -502,7 +430,7 @@
                               <tr
                                 *ngFor="let method of getMethodRows(activeSampleIdx, planIdx).controls; let methodIdx = index"
                                 [formGroupName]="methodIdx">
-                                <td>{{ methodIdx + 1 }}</td>
+                                <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                                 <td>
                                   <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown"
                                     [placeholder]="'Search Lab Test'" [labelName]="'Laboratory Test'" [hideLabel]="true"
@@ -524,24 +452,24 @@
                                     [selectedItem]="method.get('standardID')?.value"
                                     [isDisabled]="isViewMode"></app-searchable-dropdown>
                                 </td>
-                                <td>
-                                  <input type="number" class="form-control form-control-sm" formControlName="quantity"
+                                <td class="text-center">
+                                  <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
                                     placeholder="Qty" />
                                 </td>
-                                <td>
-                                  <div>{{ displayUlr(method.get("reportNo")?.value) }}</div>
-                                  <div class="d-flex justify-content-center gap-3">
-                                    {{ displayUlr(method.get("ulrNo")?.value) }}
-                                    <div class="form-check mt-0">
-                                      <input type="checkbox" class="form-check-input mt-1" formControlName="cancel" />
+                                <td class="text-center">
+                                  <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value) }}</div>
+                                  <div class="d-flex justify-content-center align-items-center gap-2 text-muted ulr-text-sub">
+                                    <span>ULR: {{ displayUlr(method.get("ulrNo")?.value) }}</span>
+                                    <div class="form-check mb-0 d-inline-flex align-items-center" title="Cancel test method">
+                                      <input type="checkbox" class="form-check-input mt-0" formControlName="cancel" />
                                     </div>
                                   </div>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                   <div
                                     *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0 && !isViewMode">
-                                    <button type="button" class="btn btn-sm btn-remove"
-                                      (click)="getMethodRows(activeSampleIdx, planIdx).removeAt(methodIdx)">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                                      (click)="getMethodRows(activeSampleIdx, planIdx).removeAt(methodIdx)" title="Delete Row">
                                       <i class="bi bi-trash"></i>
                                     </button>
                                   </div>
@@ -550,30 +478,29 @@
                             </tbody>
                           </table>
                           <div class="d-flex gap-2 mt-1 plan-action-bar">
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add"
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
                               (click)="addMethodRow(activeSampleIdx, planIdx)">
-                              <i class="bi bi-plus-circle-dotted me-1"></i>Add Row
+                              <i class="bi bi-plus-circle me-1.5"></i>Add Row
                             </button>
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-secondary"
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
                               (click)="loadSuggestedTests(activeSampleIdx, planIdx)"
                               [disabled]="suggestLoading[activeSampleIdx + '_' + planIdx]">
-                              <i class="bi bi-lightbulb me-1"></i>
+                              <i class="bi bi-lightbulb me-1.5"></i>
                               <span *ngIf="suggestLoading[activeSampleIdx + '_' + planIdx]"
-                                class="spinner-border spinner-border-sm me-1"></span>
+                                class="spinner-border spinner-border-sm me-1.5"></span>
                               Auto-Suggest
                             </button>
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger ms-auto"
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto"
                               (click)="removeGeneralTest(activeSampleIdx, planIdx, 0)">
-                              <i class="bi bi-trash me-1"></i>Remove
+                              <i class="bi bi-trash me-1.5"></i>Remove Block
                             </button>
                           </div>
 
                           <!-- Auto-Suggest Panel -->
-                          <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]" class="card mt-2 border-info">
+                          <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]" class="card mt-2 border-info shadow-sm">
                             <div
                               class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
-                              <span class="fw-semibold small"><i class="bi bi-lightbulb me-1"></i>Smart Suggested
-                                Tests</span>
+                              <span class="fw-semibold small text-info-emphasis"><i class="bi bi-lightbulb me-1.5"></i>Smart Suggested Tests</span>
                               <button type="button" class="btn-close btn-sm"
                                 (click)="closeSuggestPanel(activeSampleIdx, planIdx)"></button>
                             </div>
@@ -587,7 +514,7 @@
                                 <thead class="table-light">
                                   <tr class="text-nowrap text-muted small">
                                     <th class="fw-medium text-center col-checkbox">
-                                      <input type="checkbox" (change)="toggleAllSuggestions($event)" />
+                                      <input type="checkbox" class="form-check-input mt-0" (change)="toggleAllSuggestions($event)" />
                                     </th>
                                     <th class="fw-medium">Test Name</th>
                                     <th class="fw-medium text-center">Source</th>
@@ -600,7 +527,7 @@
                                   <tr *ngFor="let suggestion of suggestedTests" class="small suggestion-row"
                                     (click)="suggestion.selected = !suggestion.selected">
                                     <td class="text-center">
-                                      <input type="checkbox" [(ngModel)]="suggestion.selected"
+                                      <input type="checkbox" class="form-check-input mt-0" [(ngModel)]="suggestion.selected"
                                         [ngModelOptions]="{ standalone: true }" (click)="$event.stopPropagation()" />
                                     </td>
                                     <td>
@@ -629,10 +556,10 @@
                                 </tbody>
                               </table>
                               <div *ngIf="suggestedTests.length > 0" class="text-end">
-                                <button type="button" class="btn btn-sm btn-primary"
+                                <button type="button" class="btn btn-sm btn-lims btn-lims-save"
                                   (click)="addSelectedSuggestedTests(activeSampleIdx, planIdx)"
                                   [disabled]="!hasSelectedSuggestions()">
-                                  <i class="bi bi-plus-circle me-1"></i>Add Selected
+                                  <i class="bi bi-plus-circle me-1.5"></i>Add Selected
                                 </button>
                               </div>
                             </div>
@@ -644,41 +571,27 @@
                     <!-- Chemical Test Tab -->
                     <div class="tab-pane fade" id="chemical-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
                       [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'chemical') }">
+                      
+                      <!-- Technique-First Checkbox Selector (Clean Inline Banner) -->
+                      <div class="p-2 mt-2 mb-2 bg-light rounded border border-light-subtle">
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                          <label *ngFor="let tech of availableTechniques" class="tech-check-item">
+                            <input type="checkbox" class="form-check-input mt-0" [id]="'tech_' + activeSampleIdx + '_' + tech.code"
+                              [checked]="isTechniqueSelected(activeSampleIdx, tech.code)"
+                              (change)="toggleTechnique(activeSampleIdx, tech.code, $event)" [disabled]="isViewMode">
+                            <span>{{ tech.name }}</span>
+                          </label>
+                        </div>
+                      </div>
+
                       <div formArrayName="chemicalTests">
                         <ng-container *ngIf="getChemicalTestsArray(activeSampleIdx, planIdx).length > 0">
                           <div
                             *ngFor="let chemTest of getChemicalTestsArray(activeSampleIdx, planIdx); let chemIdx = index"
-                            [formGroupName]="chemIdx">
-                            <div class="chemical-block">
-                              <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label fw-semibold mb-0">
-                                  <i class="bi bi-flask me-1"></i> Chemical Test - Sample No: {{
-                                  testPlan.get("sampleNo")?.value }}
-                                </label>
-                                <div class="d-flex gap-3 align-items-center">
-                                  <span class="text-muted small">Report No: <strong>{{
-                                      displayUlr(chemTest.get("reportNo")?.value) }}</strong></span>
-                                  <span class="text-muted small">ULR: <strong>{{
-                                      displayUlr(chemTest.get("ulrNo")?.value) }}</strong></span>
-                                  <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger"
-                                    (click)="removeChemicalTest(activeSampleIdx, planIdx, chemIdx)"
-                                    title="Remove this Chemical Test">
-                                    <i class="bi bi-trash me-1"></i>Remove
-                                  </button>
-                                </div>
-                              </div>
-                              <div class=" mb-2">
-                                <app-multi-select-dropdown
-                                  [labelName]="'Laboratory Test Types'"
-                                  [placeholder]="'Select chemical test types...'" 
-                                  [fetchDataFn]="getChemicalTestTypeDrop"
-                                  [selectedValues]="chemTest.get('testTypeIds')?.value"
-                                  (itemsSelected)="onChemicalTestTypesSelected($event, activeSampleIdx, planIdx, chemIdx)"
-                                  [isDisabled]="isViewMode"
-                                  [smallInput]="true">
-                                </app-multi-select-dropdown>
-                              </div>
-                              <div class="row mt-2 spec-row">
+                            [formGroupName]="chemIdx" class="p-2 bg-white rounded border mb-2">
+
+                              <!-- Specification Dropdowns Row -->
+                              <div class="row g-2 mb-2">
                                 <div class="col-md-3">
                                   <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                     [labelName]="'Specification'"
@@ -696,65 +609,121 @@
                                     [selectedItem]="chemTest.get('specification2')?.value"></app-searchable-dropdown>
                                 </div>
                               </div>
-                              <div class="mt-2"
-                                *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0">
-                                <table class="table table-sm table-compact mt-1">
+
+                              <!-- Chemical Test Table -->
+                              <div class="table-responsive mb-2">
+                                <table class="table table-sm table-bordered table-compact align-middle mb-0">
                                   <thead class="table-light">
                                     <tr class="text-nowrap text-muted small">
-                                      <th class="fw-medium text-center">Sr No.</th>
-                                      <th class="fw-medium text-center">Element</th>
-                                      <th class="fw-medium text-center">Min</th>
-                                      <th class="fw-medium text-center">Max</th>
-                                      <th class="fw-medium text-center">Unit</th>
-                                      <th class="fw-medium text-center">
-                                        <input type="checkbox"
-                                          [checked]="isAllElementsSelected(activeSampleIdx, planIdx, chemIdx)"
-                                          (change)="toggleSelectAllElements($event, activeSampleIdx, planIdx, chemIdx)"
-                                          [disabled]="isViewMode" aria-label="Select all elements" />
-                                      </th>
+                                      <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                                      <th class="fw-medium">LABORATORY TEST</th>
+                                      <th class="fw-medium">TEST METHOD STANDARD</th>
+                                      <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
+                                      <th class="fw-medium text-center" style="width: 180px;">REPORT NO / ULR NO</th>
+                                      <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
                                     </tr>
                                   </thead>
-                                  <tbody formArrayName="elements">
-                                    <tr
-                                      *ngFor="let el of getElementsArray(activeSampleIdx, planIdx, chemIdx); let elIdx = index"
-                                      [formGroupName]="elIdx">
-                                      <td>{{ elIdx + 1 }}</td>
+                                  <tbody formArrayName="methods">
+                                    <tr *ngFor="let method of getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).controls; let mIdx = index" [formGroupName]="mIdx">
+                                      <td class="text-center fw-semibold text-secondary">{{ mIdx + 1 }}</td>
                                       <td>
-                                        <app-searchable-dropdown class="w-100" [placeholder]="'Type & Search Parameter'"
-                                          [labelName]="'Parameter'" [fetchDataFn]="getParameterDrop"
-                                          (itemSelected)="onParameterSelected($event, activeSampleIdx, planIdx, chemIdx, elIdx)"
-                                          [isDisabled]="true" [hideLabel]="true"
-                                          [selectedItem]="el.get('parameterID')?.value"
-                                          [smallInput]="true"></app-searchable-dropdown>
+                                        <app-searchable-dropdown [fetchDataFn]="getChemicalTestTypeDrop"
+                                          [placeholder]="'Search Lab Test'" [labelName]="'Laboratory Test'" [hideLabel]="true"
+                                          [smallInput]="true"
+                                          [selectedItem]="method.get('testMethodID')?.value"
+                                          [isDisabled]="isViewMode"></app-searchable-dropdown>
+                                      </td>
+                                      <td>
+                                        <app-searchable-dropdown [fetchDataFn]="getTestMethodStandardDrop"
+                                          [placeholder]="'Search Standard'" [labelName]="'Standard'" [hideLabel]="true"
+                                          [smallInput]="true"
+                                          [selectedItem]="method.get('standardID')?.value"
+                                          [isDisabled]="isViewMode"></app-searchable-dropdown>
                                       </td>
                                       <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center"
-                                          formControlName="minValue" [readonly]="true" />
+                                        <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" [readonly]="isViewMode" />
                                       </td>
-                                      <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center"
-                                          formControlName="maxValue" [readonly]="true" />
-                                      </td>
-                                      <td class="text-center">
-                                        <span>{{ el.get("parameterUnit")?.value || "-" }}</span>
-                                      </td>
-                                      <td class="text-center">
-                                        <div class="form-check d-flex align-items-center justify-content-center">
-                                          <input type="checkbox" class="form-check-input" formControlName="selected" />
+                                      <td class="text-center small">
+                                        <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value) }}</div>
+                                        <div class="text-muted ulr-text-sub">
+                                          ULR: {{ displayUlr(method.get("ulrNo")?.value) }}
                                         </div>
+                                      </td>
+                                      <td class="text-center">
+                                        <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                                          (click)="getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).removeAt(mIdx)" title="Delete Row">
+                                          <i class="bi bi-trash"></i>
+                                        </button>
                                       </td>
                                     </tr>
                                   </tbody>
                                 </table>
                               </div>
+
+                              <div class="d-flex gap-2 mb-2" *ngIf="!isViewMode">
+                                <button type="button" class="btn btn-sm btn-lims btn-lims-add" (click)="addChemicalMethodRow(activeSampleIdx, planIdx, chemIdx)">
+                                  <i class="bi bi-plus-circle me-1.5"></i>Add Row
+                                </button>
+                                <button type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto" (click)="removeChemicalTest(activeSampleIdx, planIdx, chemIdx)">
+                                  <i class="bi bi-trash me-1.5"></i>Remove Chemical Block
+                                </button>
+                              </div>
+
+                              <!-- Element Matrix Table -->
+                              <div *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0">
+                                <div class="fw-semibold text-secondary small mb-1.5"><i class="bi bi-grid-3x3-gap me-1.5 text-danger"></i>Chemical Element Matrix</div>
+                                <div class="table-responsive">
+                                  <table class="table table-sm table-bordered table-compact align-middle mb-0">
+                                    <thead class="table-light">
+                                      <tr class="text-nowrap text-muted small">
+                                        <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                                        <th class="fw-medium">ELEMENT</th>
+                                        <th class="fw-medium text-center" style="width: 100px;">MIN</th>
+                                        <th class="fw-medium text-center" style="width: 100px;">MAX</th>
+                                        <th class="fw-medium text-center" style="width: 80px;">UNIT</th>
+                                        <th class="fw-medium text-center" style="width: 80px;">
+                                          <input type="checkbox" class="form-check-input mt-0"
+                                            [checked]="isAllElementsSelected(activeSampleIdx, planIdx, chemIdx)"
+                                            (change)="toggleSelectAllElements($event, activeSampleIdx, planIdx, chemIdx)"
+                                            [disabled]="isViewMode" aria-label="Select all elements" />
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody formArrayName="elements">
+                                      <tr *ngFor="let el of getElementsArray(activeSampleIdx, planIdx, chemIdx); let elIdx = index" [formGroupName]="elIdx">
+                                        <td class="text-center fw-semibold text-secondary">{{ elIdx + 1 }}</td>
+                                        <td>
+                                          <app-searchable-dropdown class="w-100" [placeholder]="'Type & Search Parameter'"
+                                            [labelName]="'Parameter'" [fetchDataFn]="getParameterDrop"
+                                            (itemSelected)="onParameterSelected($event, activeSampleIdx, planIdx, chemIdx, elIdx)"
+                                            [isDisabled]="true" [hideLabel]="true"
+                                            [selectedItem]="el.get('parameterID')?.value"
+                                            [smallInput]="true"></app-searchable-dropdown>
+                                        </td>
+                                        <td class="text-center">
+                                          <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="true" />
+                                        </td>
+                                        <td class="text-center">
+                                          <input type="number" class="form-control form-control-sm text-center" formControlName="maxValue" [readonly]="true" />
+                                        </td>
+                                        <td class="text-center small text-secondary">
+                                          <span>{{ el.get("parameterUnit")?.value || "-" }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                          <input type="checkbox" class="form-check-input mt-0" formControlName="selected" [disabled]="isViewMode" />
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
                             </div>
-                          </div>
                         </ng-container>
-                        <button
-                          *ngIf="getTestArray(activeSampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
-                          type="button" class="btn btn-sm btn-add"
+
+                        <button *ngIf="getTestArray(activeSampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
+                          type="button" class="btn btn-sm btn-lims btn-lims-add mt-1"
                           (click)="addTestBlock(activeSampleIdx, planIdx, 'chemicalTests')">
-                          <i class="bi bi-plus-circle-dotted me-1"></i>Add Chemical Test
+                          <i class="bi bi-plus-circle me-1.5"></i>Add Chemical Test
                         </button>
                       </div>
                     </div>
@@ -763,9 +732,9 @@
               </ng-container>
 
               <ng-template #addPlanBlock>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add"
+                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
                   (click)="addPlanToSample(activeSampleIdx)">
-                  <i class="bi bi-plus-circle-dotted me-1"></i>Add Plan
+                  <i class="bi bi-plus-circle me-1.5"></i>Add Plan
                 </button>
               </ng-template>
             </div>
@@ -776,9 +745,9 @@
 
       <!-- Combined Panel -->
       <div *ngIf="isCombinedMode" [formGroup]="combinedPlanForm">
-        <div class="combined-header">
+        <div class="combined-header rounded-top">
           <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-            <span class="fw-semibold small"><i class="bi bi-collection me-1"></i>Combined Plan for:</span>
+            <span class="fw-semibold small"><i class="bi bi-collection me-1.5"></i>Combined Plan for:</span>
             <span *ngFor="let idx of getCombinedIdxsArray()" class="combined-sample-tag">
               {{ samples.at(idx).get('sampleNo')?.value }}
               <button type="button" class="btn-close combined-close-btn ms-1"
@@ -796,18 +765,18 @@
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'general' }"
               (click)="combinedActiveTab = 'general'" type="button">
-              <i class="bi bi-gear me-1"></i>General Test
+              <i class="bi bi-gear me-1.5"></i>General Test
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'chemical' }"
               (click)="combinedActiveTab = 'chemical'" type="button">
-              <i class="bi bi-droplet me-1"></i>Chemical Test
+              <i class="bi bi-droplet me-1.5"></i>Chemical Test
             </button>
           </li>
         </ul>
 
-        <div class="combined-plan-block">
+        <div class="combined-plan-block rounded-bottom border-top-0">
           <!-- Combined General Test -->
           <div *ngIf="combinedActiveTab === 'general'">
             <div class="row row-cols-auto row-cols-md-2 mb-2 spec-row">
@@ -824,20 +793,20 @@
                   [selectedItem]="combinedPlanForm.get('genSpec2')?.value"></app-searchable-dropdown>
               </div>
             </div>
-            <table class="table table-sm table-compact">
+            <table class="table table-sm table-bordered table-compact align-middle">
               <thead class="table-light">
                 <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center">Sr No.</th>
+                  <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
                   <th class="fw-medium text-center">Laboratory Test</th>
                   <th class="fw-medium text-center">Test Method Standard</th>
-                  <th class="fw-medium text-center">Quantity</th>
-                  <th class="fw-medium text-center">Action</th>
+                  <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
+                  <th class="fw-medium text-center" style="width: 60px;">Action</th>
                 </tr>
               </thead>
               <tbody formArrayName="methods">
                 <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index"
                   [formGroupName]="methodIdx">
-                  <td>{{ methodIdx + 1 }}</td>
+                  <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                   <td>
                     <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown" [placeholder]="'Search Lab Test'"
                       [hideLabel]="true" [smallInput]="true"
@@ -850,21 +819,21 @@
                       (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
                       [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
                   </td>
-                  <td>
-                    <input type="number" class="form-control form-control-sm" formControlName="quantity"
+                  <td class="text-center">
+                    <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
                       placeholder="Qty" />
                   </td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-remove"
-                      (click)="getCombinedMethods().removeAt(methodIdx)">
+                  <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                      (click)="getCombinedMethods().removeAt(methodIdx)" title="Delete Row">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <button type="button" class="btn btn-sm btn-add mt-1" (click)="addCombinedMethodRow()">
-              <i class="bi bi-plus-circle-dotted me-1"></i>Add Row
+            <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1" (click)="addCombinedMethodRow()">
+              <i class="bi bi-plus-circle me-1.5"></i>Add Row
             </button>
           </div>
 
@@ -903,20 +872,20 @@
               </div>
             </div>
             <div *ngIf="getCombinedElements().length > 0" class="mt-2">
-              <table class="table table-sm table-compact">
+              <table class="table table-sm table-bordered table-compact align-middle mb-0">
                 <thead class="table-light">
                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center">Sr No.</th>
+                    <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
                     <th class="fw-medium text-center">Element</th>
-                    <th class="fw-medium text-center">Min</th>
-                    <th class="fw-medium text-center">Max</th>
-                    <th class="fw-medium text-center">Unit</th>
-                    <th class="fw-medium text-center">Select</th>
+                    <th class="fw-medium text-center" style="width: 100px;">Min</th>
+                    <th class="fw-medium text-center" style="width: 100px;">Max</th>
+                    <th class="fw-medium text-center" style="width: 80px;">Unit</th>
+                    <th class="fw-medium text-center" style="width: 60px;">Select</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="elements">
                   <tr *ngFor="let el of getCombinedElements().controls; let elIdx = index" [formGroupName]="elIdx">
-                    <td>{{ elIdx + 1 }}</td>
+                    <td class="text-center fw-semibold text-secondary">{{ elIdx + 1 }}</td>
                     <td>
                       <app-searchable-dropdown class="w-100" [placeholder]="'Parameter'"
                         [fetchDataFn]="getParameterDrop" [isDisabled]="true" [hideLabel]="true"
@@ -926,10 +895,10 @@
                         formControlName="minValue" [readonly]="true" /></td>
                     <td class="text-center"><input type="number" class="form-control form-control-sm text-center"
                         formControlName="maxValue" [readonly]="true" /></td>
-                    <td class="text-center"><span>{{ el.get("parameterUnit")?.value || "-" }}</span></td>
+                    <td class="text-center small text-secondary"><span>{{ el.get("parameterUnit")?.value || "-" }}</span></td>
                     <td class="text-center">
-                      <div class="form-check d-flex align-items-center justify-content-center">
-                        <input type="checkbox" class="form-check-input" formControlName="selected" />
+                      <div class="form-check d-flex align-items-center justify-content-center mb-0">
+                        <input type="checkbox" class="form-check-input mt-0" formControlName="selected" />
                       </div>
                     </td>
                   </tr>
@@ -940,8 +909,8 @@
 
           <!-- Apply Button -->
           <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn btn-primary btn-sm" (click)="applyCombinedPlan()">
-              <i class="bi bi-check2-all me-1"></i>Apply to {{ combinedIdxs.size }} Samples
+            <button type="button" class="btn btn-lims btn-lims-save" (click)="applyCombinedPlan()">
+              <i class="bi bi-check2-all me-1.5"></i>Apply to {{ combinedIdxs.size }} Samples
             </button>
           </div>
         </div>
@@ -950,17 +919,17 @@
     </div>
   </div>
 
-  <!-- Save/Cancel -->
-  <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-2">
-    <button type="button" class="btn btn-cancel" (click)="onCancel()">
-      <i class="bi bi-x-circle me-1"></i> Cancel
+  <!-- Save/Cancel Sticky Action Bar -->
+  <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 my-2 p-2 bg-white border-top border-2 border-danger sticky-bottom rounded shadow-sm">
+    <button type="button" class="btn btn-lims btn-lims-cancel" (click)="onCancel()">
+      <i class="bi bi-x-circle me-1.5"></i> Cancel
     </button>
-    <button *ngIf="canSavePlan()" type="button" class="btn btn-save px-4" (click)="onSave()"
+    <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()"
       [disabled]="!planForm.valid">
-      <i class="bi bi-check-circle me-1"></i> Save Plan
+      <i class="bi bi-check-circle me-1.5"></i> Save Plan
     </button>
-    <button *ngIf="canSendForReview()" type="button" class="btn btn-info" (click)="onSendForReview()">
-      <i class="bi bi-send me-1"></i> Send for Review
+    <button *ngIf="canSendForReview()" type="button" class="btn btn-lims btn-lims-primary" (click)="onSendForReview()">
+      <i class="bi bi-send me-1.5"></i> Send for Review
     </button>
   </div>
 </div>
@@ -968,26 +937,26 @@
 <!-- Empty Tabs Confirmation Dialog -->
 <div *ngIf="showEmptyTabsDialog" class="modal d-block plan-modal-backdrop">
   <div class="modal-dialog modal-dialog-centered plan-modal-sm">
-    <div class="modal-content shadow">
+    <div class="modal-content shadow-lg border-0">
       <div class="modal-header py-2 bg-warning text-dark">
-        <h6 class="modal-title mb-0"><i class="bi bi-exclamation-triangle me-1"></i> Empty Test Tabs Detected</h6>
+        <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5"><i class="bi bi-exclamation-triangle me-1"></i> Empty Test Tabs Detected</h6>
         <button type="button" class="btn-close btn-sm" (click)="showEmptyTabsDialog = false"></button>
       </div>
       <div class="modal-body py-3">
-        <p class="small mb-2">The following test tabs have no content. Remove them before submitting?</p>
+        <p class="small mb-2 text-secondary">The following test tabs have no content. Remove them before submitting?</p>
         <ul class="list-group list-group-flush small mb-0">
-          <li *ngFor="let t of emptyTabsList" class="list-group-item px-0 py-1 d-flex align-items-center gap-1">
+          <li *ngFor="let t of emptyTabsList" class="list-group-item px-0 py-1 d-flex align-items-center gap-1.5">
             <i class="bi bi-x-circle text-danger"></i>
             <strong>{{ t.sampleNo }}</strong>&nbsp;— {{ t.label }}
           </li>
         </ul>
       </div>
       <div class="modal-footer py-2 gap-2">
-        <button type="button" class="btn btn-sm btn-secondary" (click)="showEmptyTabsDialog = false">
-          <i class="bi bi-pencil me-1"></i> Go Back & Fill
+        <button type="button" class="btn btn-sm btn-lims btn-lims-secondary" (click)="showEmptyTabsDialog = false">
+          <i class="bi bi-pencil me-1.5"></i> Go Back & Fill
         </button>
-        <button type="button" class="btn btn-sm btn-warning" (click)="removeEmptyTabsAndContinue()">
-          <i class="bi bi-trash me-1"></i> Delete Empty & Continue
+        <button type="button" class="btn btn-sm btn-lims btn-lims-remove" (click)="removeEmptyTabsAndContinue()">
+          <i class="bi bi-trash me-1.5"></i> Delete Empty & Continue
         </button>
       </div>
     </div>
@@ -997,24 +966,24 @@
 <!-- Replan Request Modal -->
 <div *ngIf="showReplanModal" class="modal d-block plan-modal-backdrop" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-arrow-repeat me-2"></i>Request Replan</h5>
-        <button type="button" class="btn-close" (click)="closeReplanModal()"></button>
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header card-form-header text-white py-2">
+        <h5 class="modal-title text-white mb-0 d-flex align-items-center gap-1.5"><i class="bi bi-arrow-repeat me-1.5"></i>Request Replan</h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeReplanModal()"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body p-3">
         <div class="mb-3">
           <label class="form-label fw-semibold">Reason for Replanning <span class="text-danger">*</span></label>
-          <textarea class="form-control" rows="4" [(ngModel)]="replanReason" [ngModelOptions]="{ standalone: true }"
+          <textarea class="form-control form-control-sm" rows="4" [(ngModel)]="replanReason" [ngModelOptions]="{ standalone: true }"
             placeholder="Explain why this plan needs to be revised..."></textarea>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" (click)="closeReplanModal()">
-          <i class="bi bi-x-circle me-1"></i> Cancel
+      <div class="modal-footer py-2 gap-2">
+        <button type="button" class="btn btn-sm btn-lims btn-lims-cancel" (click)="closeReplanModal()">
+          <i class="bi bi-x-circle me-1.5"></i> Cancel
         </button>
-        <button type="button" class="btn btn-cancel" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
-          <i class="bi bi-send me-1"></i> Submit Request
+        <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
+          <i class="bi bi-send me-1.5"></i> Submit Request
         </button>
       </div>
     </div>

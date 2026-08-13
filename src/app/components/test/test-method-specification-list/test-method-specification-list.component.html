@@ -173,7 +173,7 @@
                   {{ row.status | uppercase }}
                 </span>
               </td>
-              <td class="text-danger small">{{ row.messages?.join('; ') }}</td>
+              <td class="text-danger small">{{ formatMessages(row.messages) }}</td>
             </tr>
           </tbody>
         </table>

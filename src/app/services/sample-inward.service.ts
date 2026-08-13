@@ -117,12 +117,32 @@ export class SampleInwardService {
     return this.http.post<any>(`${this.apiUrl}/approve-replan`, { replanRequestId, remarks: remarks || '' });
   }
 
+  // Decision Engine Cascade APIs
+  getProductMasterCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/product-master/${id}`);
+  }
+
+  getProductMasterSizeLimits(id: number, sizeId: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/product-master/${id}/size/${sizeId}`);
+  }
+
+  getMetalClassificationCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/metal-classification/${id}`);
+  }
+
+  getMaterialSpecCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/material-spec/${id}`);
+  }
+
+  getLabTestCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/lab-test/${id}`);
+  }
+
+  getTechniqueAnalysisTypes(techniqueId: number, metalId: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/technique/${techniqueId}/metal/${metalId}`);
+  }
+
   downloadInwardChallanPdf(inwardId: number): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${inwardId}/print-challan`, {
-      responseType: 'blob'
-    });
+    return this.http.get(`${this.apiUrl}/${inwardId}/print-challan`, { responseType: 'blob' });
   }
 }
-
-
-

@@ -6,7 +6,6 @@ import { Modal } from 'bootstrap';
 import { MetalClassificationService } from '../../services/metal-classification.service';
 import { ToastService } from '../../services/toast.service';
 import { ParameterService } from '../../services/parameter.service';
-import { AnalysisTechniqueService } from '../../services/analysis-technique.service';
 import { Observable } from 'rxjs';
 import { MultiSelectDropdownComponent } from '../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
@@ -81,12 +80,11 @@ export class MetalClassificationComponent implements OnInit {
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   formTitle = 'Metal Classification Form';
+  isCodeManuallyEdited: boolean = false;
 
   preSelectedItems = [2, 3];
 
-  billingGroups = ['FE_SPECTRO_GROUP', 'CU_SPECTRO_GROUP', 'NI_SPECTRO_GROUP', 'PRECIOUS_GROUP', 'GENERAL'];
-
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private metalclassificationService: MetalClassificationService, private toastService: ToastService, private parameterService: ParameterService, private analysisTechniqueService: AnalysisTechniqueService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private metalclassificationService: MetalClassificationService, private toastService: ToastService, private parameterService: ParameterService) {
   }
   ngOnInit() {
     this.fetchData();
@@ -97,20 +95,12 @@ export class MetalClassificationComponent implements OnInit {
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       code: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
-      parentID: [null],
       hasChemicalParams: [false],
       hasMechanicalParams: [false],
       sortOrder: [1],
       metalType: ['Normal'],
       parameterIds: [[]],
       parameters: this.fb.array([]),
-      // Chemical billing config (L3)
-      chemicalBillingGroup: [null],
-      spectroElementThreshold: [null],
-      surchargeAppliesFromElement: [null],
-      hasSpectroSpecialSurcharge: [false],
-      techniqueIds: [[]],
-      compatibleTechniques: this.fb.array([]),
     });
   }
   fetchData() {
@@ -138,16 +128,6 @@ export class MetalClassificationComponent implements OnInit {
         this.MetalClassificationForm.patchValue(response);
         this.MetalClassificationForm.patchValue({
           parameterIds: response?.parameters?.map((x:any) => x.parameterID) ?? []
-        });
-        // Rebind compatible techniques (junction → multiselect + FormArray)
-        const techItems = response?.compatibleTechniques ?? [];
-        this.MetalClassificationForm.patchValue({
-          techniqueIds: techItems.map((x: any) => x.analysisTechniqueID),
-        });
-        const techArray = this.MetalClassificationForm.get('compatibleTechniques') as FormArray;
-        techArray.clear();
-        techItems.forEach((x: any) => {
-          techArray.push(this.fb.group({ analysisTechniqueID: [x.analysisTechniqueID] }));
         });
       },
       error: (error) => {
@@ -307,6 +287,7 @@ export class MetalClassificationComponent implements OnInit {
     this.initForm();
     this.parameterReloadKey++;
     this.metalClassificationId = 0;
+    this.isCodeManuallyEdited = (type === 'edit' || type === 'view');
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -369,16 +350,6 @@ export class MetalClassificationComponent implements OnInit {
       this.MetalClassificationForm.patchValue({ parameterIds: [] });
       (this.MetalClassificationForm.get('parameters') as FormArray).clear();
     }
-    if (!isChemical) {
-      this.MetalClassificationForm.patchValue({
-        chemicalBillingGroup: null,
-        spectroElementThreshold: null,
-        surchargeAppliesFromElement: null,
-        hasSpectroSpecialSurcharge: false,
-        techniqueIds: [],
-      });
-      (this.MetalClassificationForm.get('compatibleTechniques') as FormArray).clear();
-    }
   }
 
   onParameterSelected(item: any[]) {
@@ -398,27 +369,33 @@ export class MetalClassificationComponent implements OnInit {
     this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
   }
 
-  getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.metalclassificationService.getMetalClassificationDropdown(searchTerm, pageNo, pageSize);
-  };
-
-  getAnalysisTechniqueDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.analysisTechniqueService.getAnalysisTechniqueDropdown(term, page, pageSize);
-  };
-
-  onTechniqueSelected(items: any[]) {
-    const selectIds: number[] = [];
-    const techArray = this.MetalClassificationForm.get('compatibleTechniques') as FormArray;
-    techArray.clear();
-    (items ?? []).forEach((x) => {
-      selectIds.push(x.id);
-      techArray.push(this.fb.group({ analysisTechniqueID: [x.id] }));
-    });
-    this.MetalClassificationForm.patchValue({ techniqueIds: selectIds });
+  onNameInput(): void {
+    const name = this.MetalClassificationForm.get('name')?.value;
+    if (!this.isCodeManuallyEdited || !this.MetalClassificationForm.get('code')?.value) {
+      const generatedCode = this.generateCodeFromName(name);
+      this.MetalClassificationForm.patchValue({ code: generatedCode });
+    }
   }
 
-  openLinkedMaster(route: string): void {
-    window.open(route, '_blank');
+  autoGenerateCode(): void {
+    const name = this.MetalClassificationForm.get('name')?.value;
+    if (!name || !name.trim()) {
+      this.toastService.show('Please enter a Name first to generate Code.', 'warning');
+      return;
+    }
+    const generatedCode = this.generateCodeFromName(name);
+    this.MetalClassificationForm.patchValue({ code: generatedCode });
+  }
+
+  generateCodeFromName(name: string): string {
+    if (!name || !name.trim()) return '';
+    const words = name.trim().split(/[\s-]+/).filter(w => w.length > 0);
+    if (words.length > 1) {
+      return words.map(w => w[0]).join('').toUpperCase();
+    } else if (words.length === 1) {
+      return words[0].substring(0, 3).toUpperCase();
+    }
+    return '';
   }
 
   @HostListener('window:focus')
@@ -437,17 +414,6 @@ export class MetalClassificationComponent implements OnInit {
     if (hasParams && parameterArray.length === 0) {
       this.toastService.show('Please select at least one parameter.', 'warning');
       return;
-    }
-    if (!formData.hasChemicalParams) {
-      formData = {
-        ...formData,
-        chemicalBillingGroup: null,
-        spectroElementThreshold: null,
-        surchargeAppliesFromElement: null,
-        hasSpectroSpecialSurcharge: false,
-        techniqueIds: [],
-        compatibleTechniques: [],
-      };
     }
     if (this.isEditMode) {
       this.metalclassificationService.updateMetalClassification(formData).subscribe({

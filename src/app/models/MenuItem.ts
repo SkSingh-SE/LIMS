@@ -89,9 +89,7 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 35, title: 'Laboratory Test', route: '/test', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() },
         { id: 36, title: 'Test Method Specification', route: '/test-specification', parentMenuID: 3, permissions: ['CanReadTestMethodSpecification'], children: [], color: getRandomColor() },
         { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() },
-        { id: 371, title: 'Price Dimension Type', route: '/master/price-dimension-type', parentMenuID: 3, permissions: ['CanReadPriceDimensionType'], children: [], color: getRandomColor() },
-        { id: 372, title: 'Analysis Technique', route: '/analysis-technique', parentMenuID: 3, permissions: ['CanReadAnalysisTechnique'], children: [], color: getRandomColor() },
-        { id: 373, title: 'Chemical Sample Category', route: '/chemical-sample-category', parentMenuID: 3, permissions: ['CanReadChemicalSampleCategory'], children: [], color: getRandomColor() }
+        { id: 372, title: 'Analysis Technique', route: '/analysis-technique', parentMenuID: 3, permissions: ['CanReadAnalysisTechnique'], children: [], color: getRandomColor() }
       ]
     },
     {
@@ -137,6 +135,7 @@ export function getAllMenuItems(): MenuItem[] {
       icon: 'bi-receipt-cutoff',
       color: '',
       children: [
+        { id: 371, title: 'Price Dimension Type', route: '/master/price-dimension-type', parentMenuID: 6, permissions: ['CanReadPriceDimensionType'], children: [], color: getRandomColor() },
         { id: 47, title: 'Invoice Case Config', route: '/invoice-case-config', parentMenuID: 6, permissions: ['CanReadInvoiceCaseConfig'], children: [], color: getRandomColor() },
         { id: 48, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 6, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() }
       ]

@@ -20,7 +20,6 @@ import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { ProductFormService } from '../../../services/product-form.service';
-import { ChemicalSampleCategoryService } from '../../../services/chemical-sample-category.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
@@ -113,8 +112,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private productFormService: ProductFormService,
     private unsavedChangesService: UnsavedChangesService,
     private customerPOService: CustomerPOService,
-    private accountService: AccountService,
-    private chemicalSampleCategoryService: ChemicalSampleCategoryService) { }
+    private accountService: AccountService) { }
 
   ngOnInit(): void {
     // If embedded by lifecycle workspace, use the provided inward ID
@@ -1418,8 +1416,6 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       productConditionName: [existingSample?.productConditionName || ''],
       specimenOrientationID: [existingSample?.specimenOrientationID || ''],
       specimenOrientationName: [existingSample?.specimenOrientationName || ''],
-      chemicalSampleCategoryID: [existingSample?.chemicalSampleCategoryID || null],
-      chemicalSampleCategoryName: [existingSample?.chemicalSampleCategoryName || ''],
       remarks: [existingSample?.remarks || ''],
       quantity: [existingSample?.quantity || 1],
       fileName: [existingSample?.fileName || ''],
@@ -1529,8 +1525,6 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         productConditionName: data.productConditionName,
         specimenOrientationID: data.specimenOrientationID,
         specimenOrientationName: data.specimenOrientationName,
-        chemicalSampleCategoryID: data.chemicalSampleCategoryID,
-        chemicalSampleCategoryName: data.chemicalSampleCategoryName,
         remarks: data.remarks,
         quantity: 1,
         fileName: '',
@@ -1792,17 +1786,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     });
   }
 
-  getChemicalSampleCategories = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.chemicalSampleCategoryService.getDropdown(term, page, pageSize);
-  };
 
-  onChemicalSampleCategorySelected(item: any, sampleIndex: number): void {
-    const sampleDetailGroup = this.sampleDetails.at(sampleIndex) as FormGroup;
-    sampleDetailGroup.patchValue({
-      chemicalSampleCategoryID: item?.id || null,
-      chemicalSampleCategoryName: item?.name || '',
-    });
-  }
 
   // Specimen Orientation & Product Form — commented out per client requirement
   // getSpecimenOrientationDrop = (sampleIndex: number) => {
@@ -2094,7 +2078,6 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
       formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
       formData.append(`sampleDetails[${i}].productFormID`, s.productFormID || '');
-      formData.append(`sampleDetails[${i}].chemicalSampleCategoryID`, s.chemicalSampleCategoryID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
       formData.append(`sampleDetails[${i}].quantity`, String(s.quantity || '0'));
       formData.append(`sampleDetails[${i}].thickness`, s.thickness != null ? String(s.thickness) : '');

@@ -167,10 +167,18 @@
                         <!-- Code Field -->
                         <div class="col-md-6 mb-1">
                             <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
-                            <input type="text" id="code" class="form-control" formControlName="code"
-                                placeholder="Enter Code" maxlength="50"
-                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
-                                [attr.disabled]="isViewMode ? true : null" />
+                            <div class="input-group">
+                                <input type="text" id="code" class="form-control" formControlName="code"
+                                    placeholder="Enter Code" maxlength="50"
+                                    (input)="isCodeManuallyEdited = true"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <button type="button" class="btn btn-outline-secondary"
+                                    (click)="autoGenerateCode()" title="Auto-generate Code from Name"
+                                    *ngIf="!isViewMode && !MetalClassificationForm.get('code')?.value?.trim()">
+                                    <i class="bi bi-magic me-1"></i>Auto
+                                </button>
+                            </div>
                             <app-field-error [control]="MetalClassificationForm.get('code')" label="Code" [submitted]="submitted"/>
                         </div>
                         <!-- Name Field -->
@@ -178,6 +186,7 @@
                             <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" class="form-control" formControlName="name"
                                 placeholder="Enter Name" maxlength="200"
+                                (input)="onNameInput()"
                                 [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                                 [attr.disabled]="isViewMode ? true : null" />
                             <app-field-error [control]="MetalClassificationForm.get('name')" label="Name" [submitted]="submitted"/>
@@ -187,27 +196,7 @@
                        
                     </div>
                     <div class="row">
-                        <!-- Parent Classification -->
-                        <div class="col-md-6 mb-1">
-                            <label class="form-label">Parent Classification</label>
-                            <div class="d-flex align-items-start gap-1">
-                                <div class="flex-grow-1">
-                                    <app-searchable-dropdown
-                                        [fetchDataFn]="getParentDropdown"
-                                        [selectedItem]="MetalClassificationForm.get('parentID')?.value"
-                                        (itemSelected)="MetalClassificationForm.get('parentID')?.setValue($event?.id)"
-                                        [placeholder]="'Select Parent Classification'"
-                                        [hideLabel]="true"
-                                        [isDisabled]="isViewMode">
-                                    </app-searchable-dropdown>
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
-                                    (click)="openLinkedMaster('/metal-classification')"
-                                    title="Open Metal Classification" *ngIf="!isViewMode">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </div>
-                        </div>
+
                          <!-- Metal Type -->
                         <div class="col-md-6 mb-2">
                             <label class="form-label">Metal Type</label>
@@ -264,51 +253,6 @@
                         </app-multi-select-dropdown>
                     </div>
 
-                    <!-- Chemical Testing Config (L3) — only for chemical metal bases. Children inherit if left blank. -->
-                    <fieldset *ngIf="MetalClassificationForm.get('hasChemicalParams')?.value" class="chemical-config-fieldset mt-3 p-3">
-                        <legend class="float-none w-auto px-2 fs-6 fw-medium">Chemical Testing Config</legend>
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <app-multi-select-dropdown [placeholder]="'Select valid techniques...'"
-                                    [isDisabled]="isViewMode" [labelName]="'Compatible Analysis Techniques'"
-                                    [fetchDataFn]="getAnalysisTechniqueDropdown"
-                                    [selectedValues]="MetalClassificationForm.get('techniqueIds')?.value"
-                                    (itemsSelected)="onTechniqueSelected($event)">
-                                </app-multi-select-dropdown>
-                                <small class="text-muted">Instruments valid for this metal base (OES/WET/ICP/LECO/WDXRF/EDXRF).</small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="chemicalBillingGroup" class="form-label">Billing Group</label>
-                                <select id="chemicalBillingGroup" class="form-select form-select-sm"
-                                    formControlName="chemicalBillingGroup" [attr.disabled]="isViewMode ? true : null">
-                                    <option [ngValue]="null">— None —</option>
-                                    <option *ngFor="let g of billingGroups" [ngValue]="g">{{ g }}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="spectroElementThreshold" class="form-label">Spectro Threshold</label>
-                                <input type="number" id="spectroElementThreshold" class="form-control form-control-sm"
-                                    formControlName="spectroElementThreshold" min="0" placeholder="e.g. 5"
-                                    [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-md-3">
-                                <label for="surchargeAppliesFromElement" class="form-label">Surcharge From #</label>
-                                <input type="number" id="surchargeAppliesFromElement" class="form-control form-control-sm"
-                                    formControlName="surchargeAppliesFromElement" min="0" placeholder="e.g. 3"
-                                    [attr.disabled]="isViewMode ? true : null" />
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="hasSpectroSpecialSurcharge"
-                                        formControlName="hasSpectroSpecialSurcharge"
-                                        [attr.disabled]="isViewMode ? true : null" />
-                                    <label class="form-check-label" for="hasSpectroSpecialSurcharge">
-                                        Has special-element surcharge (N/B/Ca for Fe, Ag for Cu)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
                 </div>
 
                 <!-- Modal Footer -->

@@ -273,6 +273,12 @@ export class SearchableDropdownComponent {
     this.hasValidSelection = true;
     this.itemSelected.emit(item);
     this.closeDropdown();
+
+    // If parent handler rejected the selection (e.g. duplicate specification validation), clear the label
+    if (!this.selectedItem && this.selectedItem !== 0) {
+      this.selectedLabel = '';
+      this.hasValidSelection = false;
+    }
     this.cdr.markForCheck();
   }
 

@@ -97,6 +97,14 @@
             </div>
           </div>
 
+          <!-- Configured Data Explorer Quick Trigger Button -->
+          <div class="mt-1 mb-1">
+            <button type="button" class="btn btn-xs btn-outline-danger w-100 py-0.5 extra-small fw-semibold d-flex align-items-center justify-content-center gap-1"
+              (click)="openExplorerModal(i); $event.stopPropagation()" title="Explore Configured Grades & Linked Tests for this sample">
+              <i class="bi bi-layout-sidebar-reverse me-0.5"></i>Configured Explorer
+            </button>
+          </div>
+
           <!-- Bottom meta: Qty + flag chips -->
           <div class="sample-card-meta">
             <span class="meta-chip">Qty: {{ sample.get('quantity')?.value || 0 }}</span>
@@ -433,9 +441,9 @@
                                 <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                                 <td>
                                   <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown"
-                                    [placeholder]="'Search Lab Test'" [labelName]="'Laboratory Test'" [hideLabel]="true"
+                                    [placeholder]="'Search SubGroup / Test'" [labelName]="'Laboratory Test SubGroup'" [hideLabel]="true"
                                     [smallInput]="true"
-                                    (itemSelected)="onLaboratoryTestSelected($event, activeSampleIdx, planIdx, methodIdx)"
+                                    (itemSelected)="onLabTestSubGroupSelected($event, activeSampleIdx, planIdx, methodIdx)"
                                     [selectedItem]="method.get('testMethodID')?.value"
                                     [isDisabled]="isViewMode"></app-searchable-dropdown>
                                   <div
@@ -445,7 +453,7 @@
                                   </div>
                                 </td>
                                 <td>
-                                  <app-searchable-dropdown [fetchDataFn]="getTestMethodStandardDrop"
+                                  <app-searchable-dropdown [fetchDataFn]="getStandardsForSubGroupFn(activeSampleIdx, planIdx, methodIdx)"
                                     [placeholder]="'Search Standard'" [labelName]="'Standard'" [hideLabel]="true"
                                     [smallInput]="true"
                                     (itemSelected)="onStandardSelected($event, activeSampleIdx, planIdx, methodIdx)"
@@ -489,6 +497,10 @@
                               <span *ngIf="suggestLoading[activeSampleIdx + '_' + planIdx]"
                                 class="spinner-border spinner-border-sm me-1.5"></span>
                               Auto-Suggest
+                            </button>
+                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
+                              (click)="openExplorerModal(activeSampleIdx)">
+                              <i class="bi bi-layout-sidebar-reverse me-1.5"></i>Configured Explorer
                             </button>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto"
                               (click)="removeGeneralTest(activeSampleIdx, planIdx, 0)">
@@ -915,7 +927,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -985,6 +996,36 @@
         <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
           <i class="bi bi-send me-1.5"></i> Submit Request
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Configured Data Explorer Draggable & Resizable Popup Modal -->
+<div *ngIf="showExplorerModal" class="modal d-block plan-modal-backdrop" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable plan-explorer-left-modal"
+    [ngStyle]="{ 'left.px': explorerModalLeft, 'top.px': explorerModalTop }">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header card-form-header text-white py-2 bg-danger d-flex align-items-center justify-content-between"
+        (mousedown)="startDragExplorer($event)" title="Click and drag to move window anywhere">
+        <h6 class="modal-title text-white mb-0 d-flex align-items-center gap-1.5 cursor-move">
+          <i class="bi bi-arrows-move me-1"></i> Configured Explorer — Sample #{{ getActiveSample().get('sampleNo')?.value }}
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-white bg-opacity-25 text-white extra-small"><i class="bi bi-arrows-angle-expand me-1"></i>Drag / Resize</span>
+          <button type="button" class="btn-close btn-close-white ms-2" (click)="closeExplorerModal()"></button>
+        </div>
+      </div>
+      <div class="modal-body p-3.5 bg-light" style="overflow-y: auto;">
+        <app-plan-explorer-panel
+          [productMasterId]="getActiveSample().get('productMasterID')?.value"
+          [metalClassificationId]="getActiveSample().get('metalClassificationID')?.value"
+          [activeSampleNo]="getActiveSample().get('sampleNo')?.value"
+          [activeTabType]="activeTabs[activeSampleIdx + '-0'] === 'chemical' ? 'chemical' : 'general'"
+          [isViewMode]="isViewMode"
+          (applyGradeConfig)="onApplyGradeConfig($event)"
+          (applyTestConfig)="onApplyTestConfig($event)">
+        </app-plan-explorer-panel>
       </div>
     </div>
   </div>

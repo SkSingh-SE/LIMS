@@ -1,0 +1,75 @@
+/* ── Plan Explorer Modal Content CSS ── */
+.explorer-drawer {
+  width: 100%;
+  min-width: 100%;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+}
+
+.explorer-header {
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.explorer-body {
+  flex: 1;
+}
+
+.extra-small {
+  font-size: 0.72rem !important;
+}
+
+.explorer-pills .nav-link {
+  color: #475569;
+  border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.explorer-pills .nav-link.active {
+  background-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+}
+
+.grade-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 1rem !important;
+}
+
+.grade-card:hover {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.grade-card.expanded {
+  border-color: var(--primary-color, #da261c) !important;
+}
+
+.grade-card-header {
+  padding: 0.75rem 1rem !important;
+}
+
+.grade-card-header:hover {
+  background-color: #f1f5f9;
+}
+
+.grade-card-body {
+  padding: 1.25rem !important;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.test-chip-btn {
+  transition: all 0.15s ease;
+  padding: 0.35rem 0.6rem !important;
+}
+
+.test-chip-btn:hover {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+}

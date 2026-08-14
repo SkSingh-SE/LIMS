@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
@@ -24,12 +24,14 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { ProductMasterService } from '../../../services/product-master.service';
 import { ProductSizeMasterService } from '../../../services/product-size-master.service';
+import { PlanExplorerPanelComponent } from '../plan-explorer-panel/plan-explorer-panel.component';
+import { ConfiguredGrade, ConfiguredTest } from '../../../services/plan-explorer.service';
 
 @Component({
   selector: 'app-plan-form',
   templateUrl: './plan-form.component.html',
   styleUrls: ['./plan-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, PlanExplorerPanelComponent]
 })
 export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
@@ -55,7 +57,52 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   activeTabs: { [key: string]: 'general' | 'chemical' } = {};
   tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
   productSizeSelectedMap: { [sampleIdx: number]: any } = {};
-  productMasterSelectedMap: { [sampleIdx: number]: any } = {};
+  // ── Explorer Modal Drag & Position State ──
+  showExplorerModal = false;
+  explorerModalLeft = 40; // default left position in px
+  explorerModalTop = 60;   // default top position in px
+  isDraggingExplorer = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private initialModalLeft = 40;
+  private initialModalTop = 60;
+
+  openExplorerModal(sampleIdx?: number): void {
+    if (sampleIdx !== undefined) {
+      this.activeSampleIdx = sampleIdx;
+    }
+    this.showExplorerModal = true;
+  }
+
+  closeExplorerModal(): void {
+    this.showExplorerModal = false;
+  }
+
+  startDragExplorer(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('btn-close') || target.closest('button')) return;
+
+    this.isDraggingExplorer = true;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    this.initialModalLeft = this.explorerModalLeft;
+    this.initialModalTop = this.explorerModalTop;
+    event.preventDefault();
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDragExplorer(event: MouseEvent): void {
+    if (!this.isDraggingExplorer) return;
+    const deltaX = event.clientX - this.dragStartX;
+    const deltaY = event.clientY - this.dragStartY;
+    this.explorerModalLeft = Math.max(10, this.initialModalLeft + deltaX);
+    this.explorerModalTop = Math.max(10, this.initialModalTop + deltaY);
+  }
+
+  @HostListener('document:mouseup')
+  stopDragExplorer(): void {
+    this.isDraggingExplorer = false;
+  }
   metalClassificationSelectedMap: { [sampleIdx: number]: any } = {};
 
   // ── Split Panel State ──
@@ -632,7 +679,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   addMethodRow(sampleIndex: number, planIndex: number): void {
-    this.getMethodRows(sampleIndex, planIndex).push(this.createTestMethodRow('', ''));
+    const rows = this.getMethodRows(sampleIndex, planIndex);
+    if (rows && rows.length > 0) {
+      const lastRow = rows.at(rows.length - 1);
+      if (!lastRow.get('testMethodID')?.value) {
+        this.toastService.show('Please select a Laboratory Test for the existing empty row first.', 'warning');
+        return;
+      }
+    }
+    rows.push(this.createTestMethodRow('', ''));
   }
 
   addElementRow(sampleIndex: number, planIndex: number): void {
@@ -931,6 +986,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
 
     if (pmId) {
+      this.openExplorerModal(sampleIndex);
       this.inwardService.getProductMasterCascade(pmId).subscribe({
         next: (res: any) => {
           if (res?.success) {
@@ -1017,7 +1073,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       metalClassificationID: metalId,
       metalClassificationName: item?.name ?? ''
     });
-    if (item) {
+    if (metalId) {
+      this.openExplorerModal(sampleIndex);
       this.metalClassificationSelectedMap[sampleIndex] = item;
     } else {
       delete this.metalClassificationSelectedMap[sampleIndex];
@@ -1892,6 +1949,56 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   getTestMethodStandardDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
 
+  subGroupStandardsMap: { [key: string]: any[] } = {};
+
+  getStandardsForSubGroupFn = (sampleIdx: number, planIdx: number, methodIdx: number) => {
+    return (term: string, page: number, pageSize: number): Observable<any[]> => {
+      const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
+      const mapped = this.subGroupStandardsMap[key];
+      if (mapped && mapped.length > 0) {
+        if (term && term.trim()) {
+          const t = term.toLowerCase();
+          return of(mapped.filter(m => m.name.toLowerCase().includes(t)));
+        }
+        return of(mapped);
+      }
+      return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+    };
+  };
+
+  onLabTestSubGroupSelected(item: any, sampleIdx: number, planIdx: number, methodIdx: number): void {
+    const methodRow = this.getMethodRows(sampleIdx, planIdx).at(methodIdx);
+    if (!methodRow) return;
+
+    const subGroupId = item?.id ?? null;
+    methodRow.patchValue({
+      testMethodID: subGroupId
+    });
+
+    if (subGroupId) {
+      this.laboratoryTestService.getStandardsBySubGroup(subGroupId).subscribe({
+        next: (standards: any[]) => {
+          const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
+          if (standards && standards.length === 1) {
+            // Auto-bind single configured standard
+            const single = standards[0];
+            methodRow.patchValue({
+              standardID: single.id,
+              standardName: single.name
+            });
+            this.toastService.show(`Auto-bound standard "${single.name}" for ${item.name || 'test'}.`, 'info');
+          } else if (standards && standards.length > 1) {
+            // Store multiple configured standards for dropdown filtering
+            this.subGroupStandardsMap[key] = standards;
+            this.toastService.show(`Found ${standards.length} configured standards for ${item.name || 'test'}. Please select standard.`, 'info');
+          } else {
+            delete this.subGroupStandardsMap[key];
+          }
+        }
+      });
+    }
+  }
+
   onStandardSelected(item: any, si: number, pi: number, mi: number): void {
     this.getMethodRows(si, pi).at(mi).patchValue({
       standardID: item?.id ?? null,
@@ -1909,6 +2016,188 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.combinedPlanForm.get('testTypeIds')?.setValue(items.map(i => i.id));
   }
 
+
+  onApplyGradeConfig(grade: ConfiguredGrade): void {
+    if (this.isViewMode || !grade) return;
+    const sampleIdx = this.activeSampleIdx;
+    const testPlans = this.getTestPlans(sampleIdx);
+    if (!testPlans || testPlans.length === 0) {
+      this.addPlanToSample(sampleIdx);
+    }
+    const planIdx = 0;
+
+    // 1. Process General Tests (Non-Chemical)
+    const genSection = this.getGeneralTestSection(sampleIdx, planIdx);
+    if (genSection && grade.specificationGradeID) {
+      genSection.patchValue({ specification1: grade.specificationGradeID });
+    }
+
+    const methodsArray = this.getMethodRows(sampleIdx, planIdx);
+    if (methodsArray && grade.configuredTests?.length > 0) {
+      const generalTests = grade.configuredTests.filter(t => t.testType !== 'Chemical');
+
+      generalTests.forEach(test => {
+        if (!test.laboratoryTestID) return;
+
+        // Check for empty row (testMethodID is null)
+        const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+        if (emptyRow) {
+          emptyRow.patchValue({
+            testMethodID: +test.laboratoryTestID,
+            standardID: test.testMethodStandardID || null,
+            standardName: test.testMethodStandardName || '',
+            quantity: test.quantity || 1
+          });
+        } else {
+          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          if (!exists) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({
+              testMethodID: +test.laboratoryTestID,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.quantity || 1
+            });
+            methodsArray.push(row);
+          }
+        }
+      });
+    }
+
+    // 2. Process Chemical Tests & Techniques
+    const chemicalTests = grade.configuredTests?.filter(t => t.testType === 'Chemical') || [];
+    if (chemicalTests.length > 0 || grade.chemicalElements?.length > 0) {
+      let chemTests = this.getTestArray(sampleIdx, planIdx, 'chemicalTests');
+      if (!chemTests || chemTests.length === 0) {
+        this.addTestBlock(sampleIdx, planIdx, 'chemicalTests');
+      }
+
+      const chemSection = this.getChemicalTestSection(sampleIdx, planIdx);
+      if (chemSection && grade.specificationGradeID) {
+        chemSection.patchValue({ specification1: grade.specificationGradeID });
+      }
+
+      // Automatically select ALL techniques for chemical scope
+      this.availableTechniques.forEach(tech => {
+        this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`] = true;
+      });
+
+      if (grade.chemicalElements?.length > 0 && chemSection) {
+        const elementsArray = chemSection.get('elements') as FormArray;
+        const existingMap = new Map<number, AbstractControl>();
+        elementsArray.controls.forEach(ctrl => {
+          const id = ctrl.get('parameterID')?.value;
+          if (id) existingMap.set(+id, ctrl);
+        });
+
+        grade.chemicalElements.forEach(el => {
+          if (el.parameterID && !existingMap.has(+el.parameterID)) {
+            const row = this.createElementRow();
+            row.patchValue({
+              parameterID: +el.parameterID,
+              parameterName: el.parameterName || '',
+              minValue: el.minValue ?? null,
+              maxValue: el.maxValue ?? null,
+              parameterUnitID: el.parameterUnitID || 0,
+              parameterUnit: el.parameterUnit || '',
+              selected: true
+            });
+            elementsArray.push(row);
+          }
+        });
+      }
+    }
+
+    this.planForm.markAsDirty();
+  }
+
+  onApplyTestConfig(test: ConfiguredTest): void {
+    if (this.isViewMode || !test) return;
+    const sampleIdx = this.activeSampleIdx;
+    const testPlans = this.getTestPlans(sampleIdx);
+    if (!testPlans || testPlans.length === 0) {
+      this.addPlanToSample(sampleIdx);
+    }
+    const planIdx = 0;
+
+    const isChemical = test.testType === 'Chemical' || (test.subGroup && test.subGroup.toLowerCase().includes('chemical'));
+
+    if (isChemical) {
+      // Switch to Chemical Tab for active sample
+      this.setActiveTab(sampleIdx, planIdx, 'chemical');
+
+      // Ensure Chemical Test Group exists
+      let chemTests = this.getTestArray(sampleIdx, planIdx, 'chemicalTests');
+      if (!chemTests || chemTests.length === 0) {
+        this.addTestBlock(sampleIdx, planIdx, 'chemicalTests');
+      }
+
+      // Add/Populate Chemical Test Method Row
+      const chemMethods = this.getChemicalMethodRows(sampleIdx, planIdx, 0);
+      if (chemMethods) {
+        const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+        if (emptyRow) {
+          emptyRow.patchValue({
+            testMethodID: +test.laboratoryTestID,
+            standardID: test.testMethodStandardID || null,
+            standardName: test.testMethodStandardName || '',
+            quantity: test.quantity || 1
+          });
+        } else {
+          const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          if (!exists) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({
+              testMethodID: +test.laboratoryTestID,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.quantity || 1
+            });
+            chemMethods.push(row);
+          }
+        }
+      }
+
+      // Automatically select ALL techniques for Chemical Test
+      this.availableTechniques.forEach(tech => {
+        this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`] = true;
+      });
+
+      this.toastService.show(`Applied ${test.laboratoryTestName} to Chemical Tests & selected all techniques.`, 'success');
+    } else {
+      // General Test (Non-Chemical)
+      this.setActiveTab(sampleIdx, planIdx, 'general');
+      const methodsArray = this.getMethodRows(sampleIdx, planIdx);
+      if (methodsArray && test.laboratoryTestID) {
+        const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+        if (emptyRow) {
+          emptyRow.patchValue({
+            testMethodID: +test.laboratoryTestID,
+            standardID: test.testMethodStandardID || null,
+            standardName: test.testMethodStandardName || '',
+            quantity: test.quantity || 1
+          });
+          this.toastService.show(`Applied ${test.laboratoryTestName} to General Tests.`, 'success');
+        } else {
+          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          if (!exists) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({
+              testMethodID: +test.laboratoryTestID,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.quantity || 1
+            });
+            methodsArray.push(row);
+            this.toastService.show(`Added ${test.laboratoryTestName} to General Tests.`, 'success');
+          } else {
+            this.toastService.show(`${test.laboratoryTestName} is already in the plan.`, 'info');
+          }
+        }
+      }
+    }
+    this.planForm.markAsDirty();
+  }
 
   canDeactivate(): Observable<boolean> | boolean {
     if (!this.planForm.dirty || this.saved) return true;

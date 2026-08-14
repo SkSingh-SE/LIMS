@@ -69,6 +69,10 @@ export class LaboratoryTestService {
     return this.http.get<any>(`${environment.apiUrl}/lab-test-subgroup/details/${id}`);
   }
 
+  getStandardsBySubGroup(subGroupId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/lab-test-subgroup/standards/${subGroupId}`);
+  }
+
   createSubGroup(payload: any): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/lab-test-subgroup/create`, payload);
   }

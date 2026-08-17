@@ -27,9 +27,10 @@ export class PlanExplorerPanelComponent implements OnChanges {
 
   @Output() applyGradeConfig = new EventEmitter<ConfiguredGrade>();
   @Output() applyTestConfig = new EventEmitter<ConfiguredTest>();
+  @Output() applyBatchTests = new EventEmitter<ConfiguredTest[]>();
 
   isExpanded: boolean = true;
-  activeExplorerTab: 'product' | 'metal' | 'catalog' = 'product';
+  activeExplorerTab: 'product' | 'metal' | 'labtest' = 'product';
   searchTerm: string = '';
 
   productData: ProductMasterExplorerData | null = null;
@@ -39,6 +40,18 @@ export class PlanExplorerPanelComponent implements OnChanges {
   loadingMetal: boolean = false;
 
   expandedGradeId: number | null = null;
+
+  // Client-side cache to prevent re-fetching
+  private productCache = new Map<number, ProductMasterExplorerData>();
+  private metalCache = new Map<number, MetalExplorerData>();
+
+  // Batch Multi-Test Selection
+  selectedTestsToApply = new Map<number, ConfiguredTest>();
+
+  // Tab 3: Universal Lab Test Search State
+  labTestSearchTerm: string = '';
+  labTestSearchResults: ConfiguredTest[] = [];
+  labTestSearchLoading: boolean = false;
 
   constructor(
     private explorerService: PlanExplorerService,
@@ -59,9 +72,18 @@ export class PlanExplorerPanelComponent implements OnChanges {
   }
 
   loadProductExplorer(id: number): void {
+    if (this.productCache.has(id)) {
+      this.productData = this.productCache.get(id)!;
+      if (this.productData.grades.length > 0 && !this.expandedGradeId) {
+        this.expandedGradeId = this.productData.grades[0].specificationGradeID;
+      }
+      return;
+    }
+
     this.loadingProduct = true;
     this.explorerService.getProductMasterExplorer(id).subscribe({
       next: data => {
+        this.productCache.set(id, data);
         this.productData = data;
         this.loadingProduct = false;
         if (data.grades.length > 0) {
@@ -75,9 +97,15 @@ export class PlanExplorerPanelComponent implements OnChanges {
   }
 
   loadMetalExplorer(id: number): void {
+    if (this.metalCache.has(id)) {
+      this.metalData = this.metalCache.get(id)!;
+      return;
+    }
+
     this.loadingMetal = true;
     this.explorerService.getMetalExplorer(id).subscribe({
       next: data => {
+        this.metalCache.set(id, data);
         this.metalData = data;
         this.loadingMetal = false;
       },
@@ -115,6 +143,48 @@ export class PlanExplorerPanelComponent implements OnChanges {
     if (this.isViewMode) return;
     this.applyTestConfig.emit(test);
     this.toastService.show(`Applied ${test.laboratoryTestName} to active plan tab.`, 'success');
+  }
+
+  toggleSelectTest(test: ConfiguredTest, event: Event): void {
+    event.stopPropagation();
+    if (this.selectedTestsToApply.has(test.laboratoryTestID)) {
+      this.selectedTestsToApply.delete(test.laboratoryTestID);
+    } else {
+      this.selectedTestsToApply.set(test.laboratoryTestID, test);
+    }
+  }
+
+  isTestSelected(testId: number): boolean {
+    return this.selectedTestsToApply.has(testId);
+  }
+
+  onApplySelectedTests(): void {
+    if (this.isViewMode || this.selectedTestsToApply.size === 0) return;
+    const selectedList = Array.from(this.selectedTestsToApply.values());
+    this.applyBatchTests.emit(selectedList);
+    this.toastService.show(`Applied ${selectedList.length} selected tests to plan.`, 'success');
+    this.selectedTestsToApply.clear();
+  }
+
+  clearSelectedBatch(): void {
+    this.selectedTestsToApply.clear();
+  }
+
+  searchLabTests(): void {
+    if (!this.labTestSearchTerm || this.labTestSearchTerm.trim().length < 2) {
+      this.labTestSearchResults = [];
+      return;
+    }
+    this.labTestSearchLoading = true;
+    this.explorerService.searchUniversalLabTests(this.labTestSearchTerm.trim()).subscribe({
+      next: results => {
+        this.labTestSearchResults = results || [];
+        this.labTestSearchLoading = false;
+      },
+      error: () => {
+        this.labTestSearchLoading = false;
+      }
+    });
   }
 
   getGeneralTests(tests: ConfiguredTest[] | undefined): ConfiguredTest[] {

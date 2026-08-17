@@ -7,7 +7,7 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
 }
 
 .explorer-header {
@@ -20,7 +20,7 @@
 }
 
 .extra-small {
-  font-size: 0.72rem !important;
+  font-size: 0.74rem !important;
 }
 
 .explorer-pills .nav-link {
@@ -35,41 +35,96 @@
 }
 
 .grade-card {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  margin-bottom: 1rem !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 1.25rem !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden;
 }
 
 .grade-card:hover {
-  border-color: #94a3b8 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
 }
 
 .grade-card.expanded {
   border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 4px 16px rgba(218, 38, 28, 0.08) !important;
 }
 
 .grade-card-header {
-  padding: 0.75rem 1rem !important;
+  padding: 0.85rem 1.25rem !important;
+  background-color: #ffffff;
+  transition: background-color 0.15s;
 }
 
 .grade-card-header:hover {
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
 }
 
 .grade-card-body {
-  padding: 1.25rem !important;
+  padding: 1.25rem 1.25rem 1.5rem !important;
+  background-color: #f8fafc;
+}
+
+.explorer-section-card {
+  padding: 1rem 1.15rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.test-item-row {
+  transition: all 0.15s ease;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px;
+  min-height: 36px;
+  padding: 0.4rem 0.75rem !important;
+}
+
+.test-item-row:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1 !important;
+}
+
+.chem-matrix-card {
+  margin-top: 1rem !important;
+  padding: 1rem 1.15rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.chem-element-chip {
+  padding: 0.35rem 0.65rem !important;
+  font-size: 0.73rem !important;
+  border-radius: 6px !important;
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+  transition: all 0.15s ease;
+}
+
+.chem-element-chip:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
 }
 
 .italic {
   font-style: italic;
 }
 
-.test-chip-btn {
-  transition: all 0.15s ease;
-  padding: 0.35rem 0.6rem !important;
-}
-
-.test-chip-btn:hover {
-  background-color: #16a34a !important;
-  color: #ffffff !important;
+.btn-xs {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
 }

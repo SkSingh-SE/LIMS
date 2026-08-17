@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { DepartmentService } from '../../../services/department.service';
 import { Observable, Subject } from 'rxjs';
@@ -1284,11 +1284,24 @@ export class LaboratoryTestComponent implements OnInit {
     return arr.controls.filter(ctrl => ctrl.get('specificationType')?.value === 'Product');
   }
 
+  removeSpecControl(ctrl: AbstractControl) {
+    const arr = this.getActiveSpecifications();
+    if (!arr || !ctrl) return;
+    const idx = arr.controls.indexOf(ctrl);
+    if (idx >= 0) {
+      arr.removeAt(idx);
+      arr.markAsDirty();
+    }
+  }
+
   removeSpecRowInline(id: number, type: 'Material' | 'Product' = 'Material') {
     const arr = this.getActiveSpecifications();
+    if (!arr) return;
     const idx = arr.controls.findIndex(ctrl => {
       const v = ctrl.value;
-      if (v.id && v.id === id) return true;
+      const specType = v.specificationType || (v.productMasterID ? 'Product' : 'Material');
+      if (specType !== type) return false;
+      if (v.id && Number(v.id) === Number(id)) return true;
       if (type === 'Product') {
         return Number(v.productMasterID) === Number(id) || Number(v.productSpecificationID) === Number(id);
       }

@@ -161,6 +161,13 @@
                 <span *ngIf="getActiveSample().get('quantity')?.value" class="badge bg-secondary ms-1">
                   Qty: {{ getActiveSample().get('quantity')?.value }}
                 </span>
+
+                <!-- Unknown Sample Toggle in Header Line -->
+                <div class="form-check form-switch mb-0 ms-3 extra-small d-flex align-items-center gap-1.5">
+                  <input class="form-check-input" type="checkbox" formControlName="isUnknownSample"
+                    (change)="onUnknownSampleToggle(activeSampleIdx)" id="unknownToggle{{activeSampleIdx}}">
+                  <label class="form-check-label extra-small fw-semibold text-secondary cursor-pointer" for="unknownToggle{{activeSampleIdx}}">Unknown Sample</label>
+                </div>
               </legend>
 
               <div class="row g-2.5 align-items-stretch">
@@ -216,11 +223,12 @@
                         [isDisabled]="isViewMode"></app-searchable-dropdown>
                     </div>
                     <div class="col-md-4">
-                      <app-searchable-dropdown [placeholder]="'Search Product Master / Grade'" [hideLabel]="false" [labelName]="'Product Master'"
+                      <app-searchable-dropdown [placeholder]="getActiveSample().get('isUnknownSample')?.value ? 'Unknown Sample (Optional)' : 'Search Product Master / Grade'"
+                        [hideLabel]="false" [labelName]="'Product Master'"
                         [smallInput]="true" [fetchDataFn]="getProductMasterDrop"
                         (itemSelected)="onProductMasterSelected($event, activeSampleIdx)"
                         [selectedItem]="getActiveSample().get('productMasterID')?.value"
-                        [isDisabled]="isViewMode"></app-searchable-dropdown>
+                        [isDisabled]="isViewMode || getActiveSample().get('isUnknownSample')?.value"></app-searchable-dropdown>
                     </div>
                     <div class="col-md-4">
                       <app-searchable-dropdown [placeholder]="'Search Metal Classification'" [hideLabel]="false" [labelName]="'Metal Classification'"
@@ -228,6 +236,23 @@
                         (itemSelected)="onMetalClassificationSelected($event, activeSampleIdx)"
                         [selectedItem]="getActiveSample().get('metalClassificationID')?.value"
                         [isDisabled]="isViewMode"></app-searchable-dropdown>
+                    </div>
+                  </div>
+
+                  <!-- Unknown Sample Flow Banner (Compact with reduced width) -->
+                  <div *ngIf="getActiveSample().get('isUnknownSample')?.value" class="mt-1 mb-0.5">
+                    <div class="lims-info-banner-compact">
+                      <i class="bi bi-info-circle-fill text-info"></i>
+                      <span><strong>Unknown Sample:</strong> Grade will be assigned post-testing. All master tests available.</span>
+                      <span class="badge-tbd">Grade TBD</span>
+                    </div>
+                  </div>
+
+                  <!-- Scope Master Not Configured Alert Banner (Compact) -->
+                  <div *ngIf="isScopeConfiguredMap[activeSampleIdx] === false" class="mt-1 mb-0.5">
+                    <div class="lims-warn-banner-compact">
+                      <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                      <span><strong>Notice:</strong> Scope Master not configured for this Product/Grade. Manual test selection active (no acceptance limits).</span>
                     </div>
                   </div>
 
@@ -401,7 +426,7 @@
                             <div class="">
                               <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                 [labelName]="'Specification'"
-                                [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(activeSampleIdx)"
+                                [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification1')"
                                 (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'generalTests')"
                                 [hideLabel]="false" [required]="false" [smallInput]="true" [isDisabled]="isViewMode"
                                 [selectedItem]="getGeneralTestSection(activeSampleIdx, planIdx).get('specification1')?.value"></app-searchable-dropdown>
@@ -409,7 +434,7 @@
                             <div class="">
                               <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                 [labelName]="'Specification 2'"
-                                [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(activeSampleIdx)"
+                                [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification2')"
                                 (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'generalTests')"
                                 [hideLabel]="false" [smallInput]="true" [isDisabled]="isViewMode"
                                 [selectedItem]="getGeneralTestSection(activeSampleIdx, planIdx).get('specification2')?.value || null"></app-searchable-dropdown>
@@ -425,7 +450,7 @@
                               <tr class="text-nowrap text-muted small">
                                 <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
                                 <th class="fw-medium text-center">Laboratory Test</th>
-                                <th class="fw-medium text-center">Test Method Standard</th>
+                                <th class="fw-medium text-center">Test Method Specification</th>
                                 <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
                                 <th class="fw-medium text-center" style="width: 180px;">
                                   <div>Report No / ULR No</div>
@@ -440,12 +465,41 @@
                                 [formGroupName]="methodIdx">
                                 <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                                 <td>
-                                  <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown"
+                                  <!-- Inline Grade Suggested Tests Quick-Pick Chips -->
+                                  <div *ngIf="getGradeSuggestedTests(activeSampleIdx).length > 0" class="d-flex flex-wrap gap-1 mb-1">
+                                    <span *ngFor="let sug of getGradeSuggestedTests(activeSampleIdx)"
+                                      class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 extra-small cursor-pointer d-inline-flex align-items-center gap-1"
+                                      (click)="applyGradeSuggestedTest(sug, activeSampleIdx, planIdx, methodIdx)"
+                                      title="Click to auto-fill {{ sug.laboratoryTestName }} (Grade Suggested)">
+                                      <i class="bi bi-stars text-danger"></i> {{ sug.laboratoryTestName }}
+                                    </span>
+                                  </div>
+
+                                  <app-searchable-dropdown [fetchDataFn]="buildLabTestFetchFnWithSuggestions(activeSampleIdx)"
                                     [placeholder]="'Search SubGroup / Test'" [labelName]="'Laboratory Test SubGroup'" [hideLabel]="true"
                                     [smallInput]="true"
                                     (itemSelected)="onLabTestSubGroupSelected($event, activeSampleIdx, planIdx, methodIdx)"
                                     [selectedItem]="method.get('testMethodID')?.value"
                                     [isDisabled]="isViewMode"></app-searchable-dropdown>
+                                  
+                                  <!-- Master Compliance Badge (3-State) -->
+                                  <div class="mt-1">
+                                    <span *ngIf="getActiveSample().get('isUnknownSample')?.value"
+                                      class="badge badge-lims-unknown border extra-small"
+                                      title="Unknown Sample: Grade will be determined after testing">
+                                      <i class="bi bi-question-circle me-0.5"></i>Unknown Sample (Grade TBD)
+                                    </span>
+                                    <span *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant" 
+                                      class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 extra-small">
+                                      <i class="bi bi-patch-check-fill me-0.5"></i>Master Configured
+                                    </span>
+                                    <span *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant" 
+                                      class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 extra-small"
+                                      title="Custom Selection: Non-standard override">
+                                      <i class="bi bi-exclamation-triangle-fill me-0.5 text-warning"></i>Custom Selection
+                                    </span>
+                                  </div>
+
                                   <div
                                     *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched"
                                     class="text-danger small mt-1">
@@ -453,12 +507,18 @@
                                   </div>
                                 </td>
                                 <td>
-                                  <app-searchable-dropdown [fetchDataFn]="getStandardsForSubGroupFn(activeSampleIdx, planIdx, methodIdx)"
-                                    [placeholder]="'Search Standard'" [labelName]="'Standard'" [hideLabel]="true"
+                                  <app-searchable-dropdown [fetchDataFn]="buildTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, methodIdx)"
+                                    [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'" [hideLabel]="true"
                                     [smallInput]="true"
-                                    (itemSelected)="onStandardSelected($event, activeSampleIdx, planIdx, methodIdx)"
+                                    (itemSelected)="onTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, methodIdx)"
                                     [selectedItem]="method.get('standardID')?.value"
                                     [isDisabled]="isViewMode"></app-searchable-dropdown>
+
+                                  <!-- Inline Remark Input for Custom Selection -->
+                                  <div *ngIf="complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx].isFullyCompliant" class="mt-1">
+                                    <input type="text" class="form-control form-control-sm extra-small py-0.5 border-warning"
+                                      formControlName="customRemarks" placeholder="Remark for custom selection..." />
+                                  </div>
                                 </td>
                                 <td class="text-center">
                                   <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
@@ -607,7 +667,7 @@
                                 <div class="col-md-3">
                                   <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                     [labelName]="'Specification'"
-                                    [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(activeSampleIdx)"
+                                    [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification1')"
                                     (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
                                     [hideLabel]="false" [smallInput]="true" [required]="false" [isDisabled]="isViewMode"
                                     [selectedItem]="chemTest.get('specification1')?.value"></app-searchable-dropdown>
@@ -615,7 +675,7 @@
                                 <div class="col-md-3">
                                   <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                     [labelName]="'Specification 2'"
-                                    [fetchDataFn]="getMaterialSpecificationGradeForChemicalWrapper(activeSampleIdx)"
+                                    [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification2')"
                                     (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
                                     [hideLabel]="false" [required]="false" [smallInput]="true" [isDisabled]="isViewMode"
                                     [selectedItem]="chemTest.get('specification2')?.value"></app-searchable-dropdown>
@@ -629,7 +689,7 @@
                                     <tr class="text-nowrap text-muted small">
                                       <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
                                       <th class="fw-medium">LABORATORY TEST</th>
-                                      <th class="fw-medium">TEST METHOD STANDARD</th>
+                                      <th class="fw-medium">TEST METHOD SPECIFICATION</th>
                                       <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
                                       <th class="fw-medium text-center" style="width: 180px;">REPORT NO / ULR NO</th>
                                       <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
@@ -638,20 +698,26 @@
                                   <tbody formArrayName="methods">
                                     <tr *ngFor="let method of getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).controls; let mIdx = index" [formGroupName]="mIdx">
                                       <td class="text-center fw-semibold text-secondary">{{ mIdx + 1 }}</td>
-                                      <td>
-                                        <app-searchable-dropdown [fetchDataFn]="getChemicalTestTypeDrop"
-                                          [placeholder]="'Search Lab Test'" [labelName]="'Laboratory Test'" [hideLabel]="true"
-                                          [smallInput]="true"
-                                          [selectedItem]="method.get('testMethodID')?.value"
-                                          [isDisabled]="isViewMode"></app-searchable-dropdown>
-                                      </td>
-                                      <td>
-                                        <app-searchable-dropdown [fetchDataFn]="getTestMethodStandardDrop"
-                                          [placeholder]="'Search Standard'" [labelName]="'Standard'" [hideLabel]="true"
-                                          [smallInput]="true"
-                                          [selectedItem]="method.get('standardID')?.value"
-                                          [isDisabled]="isViewMode"></app-searchable-dropdown>
-                                      </td>
+                                       <td>
+                                         <app-searchable-dropdown [fetchDataFn]="buildChemicalLabTestFetchFnWithSuggestions(activeSampleIdx)"
+                                           [placeholder]="hasSelectedTechnique(activeSampleIdx) ? 'Search Chemical Test' : 'Select Analysis Type first'" 
+                                           [labelName]="'Laboratory Test'" [hideLabel]="true"
+                                           [smallInput]="true"
+                                           (itemSelected)="onChemicalLabTestSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                           [selectedItem]="method.get('testMethodID')?.value"
+                                           [isDisabled]="isViewMode || !hasSelectedTechnique(activeSampleIdx)"></app-searchable-dropdown>
+                                         <div *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-muted fst-italic mt-0.5">
+                                           <i class="bi bi-info-circle me-1 text-secondary"></i>Select Technique / Analysis Type above to enable
+                                         </div>
+                                       </td>
+                                       <td>
+                                         <app-searchable-dropdown [fetchDataFn]="buildChemicalTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                           [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'" [hideLabel]="true"
+                                           [smallInput]="true"
+                                           (itemSelected)="onChemicalTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                           [selectedItem]="method.get('standardID')?.value"
+                                           [isDisabled]="isViewMode"></app-searchable-dropdown>
+                                       </td>
                                       <td class="text-center">
                                         <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" [readonly]="isViewMode" />
                                       </td>
@@ -683,7 +749,13 @@
 
                               <!-- Element Matrix Table -->
                               <div *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0">
-                                <div class="fw-semibold text-secondary small mb-1.5"><i class="bi bi-grid-3x3-gap me-1.5 text-danger"></i>Chemical Element Matrix</div>
+                                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                  <div class="fw-semibold text-secondary small"><i class="bi bi-grid-3x3-gap me-1.5 text-danger"></i>Chemical Element Matrix</div>
+                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-info"
+                                    (click)="loadMachineSpectroMatrix(activeSampleIdx, planIdx, getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).at(0)?.get('testMethodID')?.value)">
+                                    <i class="bi bi-cpu me-1"></i>Load Machine Spectro Matrix
+                                  </button>
+                                </div>
                                 <div class="table-responsive">
                                   <table class="table table-sm table-bordered table-compact align-middle mb-0">
                                     <thead class="table-light">
@@ -810,7 +882,7 @@
                 <tr class="text-nowrap text-muted small">
                   <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
                   <th class="fw-medium text-center">Laboratory Test</th>
-                  <th class="fw-medium text-center">Test Method Standard</th>
+                  <th class="fw-medium text-center">Test Method Specification</th>
                   <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
                   <th class="fw-medium text-center" style="width: 60px;">Action</th>
                 </tr>
@@ -826,8 +898,8 @@
                       [selectedItem]="method.get('testMethodID')?.value"></app-searchable-dropdown>
                   </td>
                   <td>
-                    <app-searchable-dropdown [fetchDataFn]="getTestMethodStandardDrop" [placeholder]="'Search Standard'"
-                      [hideLabel]="true" [smallInput]="true"
+                    <app-searchable-dropdown [fetchDataFn]="getTestMethodSpecificationDrop" [placeholder]="'Search Test Method Specification'"
+                      [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true"
                       (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
                       [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
                   </td>
@@ -1024,7 +1096,8 @@
           [activeTabType]="activeTabs[activeSampleIdx + '-0'] === 'chemical' ? 'chemical' : 'general'"
           [isViewMode]="isViewMode"
           (applyGradeConfig)="onApplyGradeConfig($event)"
-          (applyTestConfig)="onApplyTestConfig($event)">
+          (applyTestConfig)="onApplyTestConfig($event)"
+          (applyBatchTests)="onApplyBatchTests($event)">
         </app-plan-explorer-panel>
       </div>
     </div>

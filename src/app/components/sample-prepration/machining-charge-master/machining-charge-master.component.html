@@ -147,12 +147,12 @@
             </div>
           </div>
 
-          <!-- Test Method Standard -->
+          <!-- Test Method Specification -->
           <div>
             <app-searchable-dropdown-modal
-              [labelName]="'Test Method Standard'"
+              [labelName]="'Test Method Specification'"
               [fetchDataFn]="getTestMethodSpecification"
-              placeholder="Search Test Method Standard"
+              placeholder="Search Test Method Specification"
               [required]="true"
               [smallInput]="true"
               [isDisabled]="isViewMode"
@@ -160,7 +160,7 @@
               [selectedItem]="selectedStandardId"
             ></app-searchable-dropdown-modal>
             <div *ngIf="form.get('testMethodStandardID')?.touched && form.get('testMethodStandardID')?.invalid">
-              <span *ngIf="form.get('testMethodStandardID')?.hasError('required')" class="text-danger text-sm">Test Method Standard is required.</span>
+              <span *ngIf="form.get('testMethodStandardID')?.hasError('required')" class="text-danger text-sm">Test Method Specification is required.</span>
             </div>
           </div>
 

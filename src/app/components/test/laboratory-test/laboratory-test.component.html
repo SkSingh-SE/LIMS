@@ -1160,7 +1160,7 @@
                             <span class="badge bg-primary-subtle text-primary border border-primary px-2 text-xxs">Material</span>
                           </td>
                           <td class="text-center" *ngIf="!isViewMode">
-                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecRowInline(ctrl.value.id)">
+                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecControl(ctrl)">
                               <i class="bi bi-trash"></i>
                             </button>
                           </td>
@@ -1216,7 +1216,7 @@
                             <span class="badge bg-info-subtle text-info border border-info px-2 text-xxs">Product Master</span>
                           </td>
                           <td class="text-center" *ngIf="!isViewMode">
-                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecRowInline(ctrl.value.productMasterID || ctrl.value.id, 'Product')">
+                            <button type="button" class="btn btn-xs btn-outline-danger d-flex align-items-center justify-content-center m-auto" (click)="removeSpecControl(ctrl)">
                               <i class="bi bi-trash"></i>
                             </button>
                           </td>

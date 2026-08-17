@@ -11,7 +11,7 @@
       <div #menuContainer class="menu-container">
         <div *ngFor="let menu of visibleMenuItems; let i = index" #menuItem class="menu-item header-font"
           (click)="openSubMenu(menu)" [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex gap-2 align-items-center">
+          <div class="d-flex align-items-center">
             <i class="bi" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
           </div>

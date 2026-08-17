@@ -11,23 +11,28 @@
       </span>
     </div>
 
-    <!-- Mode Tabs -->
+    <!-- Mode Tabs (3 Tabs) -->
     <ul class="nav nav-pills explorer-pills small mb-0">
       <li class="nav-item">
-        <button type="button" class="nav-link py-1 px-3 extra-small fw-semibold" [class.active]="activeExplorerTab === 'product'" (click)="activeExplorerTab = 'product'">
+        <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'product'" (click)="activeExplorerTab = 'product'">
           <i class="bi bi-award me-1"></i>Product Master Scope
         </button>
       </li>
       <li class="nav-item">
-        <button type="button" class="nav-link py-1 px-3 extra-small fw-semibold" [class.active]="activeExplorerTab === 'metal'" (click)="activeExplorerTab = 'metal'">
+        <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'metal'" (click)="activeExplorerTab = 'metal'">
           <i class="bi bi-layers me-1"></i>Metal Classification Scope
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'labtest'" (click)="activeExplorerTab = 'labtest'">
+          <i class="bi bi-flask me-1"></i>Lab Test Master Scope
         </button>
       </li>
     </ul>
   </div>
 
-  <!-- Search Filter Bar -->
-  <div class="input-group input-group-sm mb-3">
+  <!-- Search Filter Bar (for Product and Metal tabs) -->
+  <div class="input-group input-group-sm mb-3" *ngIf="activeExplorerTab !== 'labtest'">
     <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
     <input type="text" class="form-control form-control-sm border-start-0 ps-0" placeholder="Type grade name, specification, or test to filter..." [(ngModel)]="searchTerm">
   </div>
@@ -57,10 +62,10 @@
           </div>
 
           <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary bg-opacity-10 text-primary border extra-small">
+            <span class="badge badge-lims-lab-scope extra-small">
               {{ grade.configuredTests.length }} Test(s) Configured
             </span>
-            <span *ngIf="grade.chemicalElements.length > 0" class="badge bg-info bg-opacity-10 text-info border extra-small">
+            <span *ngIf="grade.chemicalElements.length > 0" class="badge badge-lims-subgroup extra-small">
               {{ grade.chemicalElements.length }} Chemical Parameter(s)
             </span>
 
@@ -72,23 +77,53 @@
         </div>
 
         <!-- Grade Details Accordion Body -->
-        <div class="grade-card-body p-3 border-top bg-light" *ngIf="expandedGradeId === grade.specificationGradeID">
+        <div class="grade-card-body border-top" *ngIf="expandedGradeId === grade.specificationGradeID">
           <div class="row g-3">
 
             <!-- Non-Chemical Tests Section (SubGroup Mapping) -->
             <div class="col-md-6">
-              <div class="p-2 bg-white rounded border h-100">
-                <div class="extra-small fw-bold text-secondary text-uppercase mb-2 d-flex align-items-center justify-content-between">
-                  <span><i class="bi bi-gear-fill me-1 text-primary"></i>Non-Chemical Tests (Sub-Group Mapped)</span>
+              <div class="explorer-section-card h-100">
+                <div class="extra-small fw-bold text-secondary text-uppercase mb-2.5 d-flex align-items-center justify-content-between">
+                  <span><i class="bi bi-gear-fill me-1.5 text-primary"></i>Non-Chemical Tests (Sub-Group Mapped)</span>
                   <span class="badge bg-secondary extra-small">{{ getGeneralTests(grade.configuredTests).length }}</span>
                 </div>
-                <div class="d-flex flex-wrap gap-1.5" *ngIf="getGeneralTests(grade.configuredTests).length > 0">
-                  <span *ngFor="let test of getGeneralTests(grade.configuredTests)" class="badge bg-light text-dark border p-1.5 extra-small d-inline-flex align-items-center gap-1.5 test-chip-btn">
-                    <i class="bi bi-check-circle-fill text-success"></i>
-                    <strong class="text-dark">{{ test.laboratoryTestName }}</strong>
-                    <span *ngIf="test.subGroup" class="text-muted italic ms-1">({{ test.subGroup }})</span>
-                    <i class="bi bi-plus-circle-fill text-primary cursor-pointer ms-1 fs-6" (click)="onQuickApplyTest(test, $event)" title="Apply this test row"></i>
-                  </span>
+                <div class="d-flex flex-column gap-2" *ngIf="getGeneralTests(grade.configuredTests).length > 0">
+                  <div *ngFor="let test of getGeneralTests(grade.configuredTests)"
+                    class="test-item-row d-flex align-items-center justify-content-between extra-small">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
+                      <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
+                        [checked]="isTestSelected(test.laboratoryTestID)"
+                        (click)="toggleSelectTest(test, $event)"
+                        title="Select for batch apply">
+                      <i class="bi bi-check-circle-fill text-success flex-shrink-0"></i>
+                      <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
+                      <span *ngIf="test.subGroup" class="text-muted italic flex-shrink-0">({{ test.subGroup }})</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                      <!-- Source Tag (Short Badges with Tooltip) -->
+                      <span class="badge extra-small"
+                        [ngClass]="{
+                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope',
+                          'badge-lims-lab-scope': test.sourceTag === 'Lab Scope' || !test.sourceTag,
+                          'badge-lims-both-scope': test.sourceTag === 'Both Sources'
+                        }"
+                        [title]="test.sourceTag === 'Both Sources'
+                          ? 'Sources: PM Scope (Product Master Spec) + Lab Scope (Lab Test Mapping)'
+                          : test.sourceTag === 'PM Scope'
+                            ? 'Source: Product Master Specification Line'
+                            : 'Source: Laboratory Test Scope Mapping'">
+                        <i class="bi me-0.5" [ngClass]="{
+                          'bi-award': test.sourceTag === 'PM Scope',
+                          'bi-flask': test.sourceTag === 'Lab Scope' || !test.sourceTag,
+                          'bi-info-circle': test.sourceTag === 'Both Sources'
+                        }"></i>{{ test.sourceTag || 'Lab Scope' }}
+                      </span>
+                      <button type="button" class="btn btn-xs btn-outline-primary btn-lims-icon p-0"
+                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        <i class="bi bi-plus-lg"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div *ngIf="getGeneralTests(grade.configuredTests).length === 0" class="extra-small text-muted italic py-1">
                   No Non-Chemical tests configured.
@@ -98,18 +133,48 @@
 
             <!-- Chemical Tests Section (Analysis Type / Technique Mapping) -->
             <div class="col-md-6">
-              <div class="p-2 bg-white rounded border h-100">
-                <div class="extra-small fw-bold text-secondary text-uppercase mb-2 d-flex align-items-center justify-content-between">
-                  <span><i class="bi bi-droplet-fill me-1 text-info"></i>Chemical Tests (Analysis Type / Technique)</span>
+              <div class="explorer-section-card h-100">
+                <div class="extra-small fw-bold text-secondary text-uppercase mb-2.5 d-flex align-items-center justify-content-between">
+                  <span><i class="bi bi-droplet-fill me-1.5 text-info"></i>Chemical Tests (Analysis Type / Technique)</span>
                   <span class="badge bg-info extra-small">{{ getChemicalTests(grade.configuredTests).length }}</span>
                 </div>
-                <div class="d-flex flex-wrap gap-1.5" *ngIf="getChemicalTests(grade.configuredTests).length > 0">
-                  <span *ngFor="let test of getChemicalTests(grade.configuredTests)" class="badge bg-info bg-opacity-10 text-info border p-1.5 extra-small d-inline-flex align-items-center gap-1.5 test-chip-btn">
-                    <i class="bi bi-droplet-fill text-info"></i>
-                    <strong class="text-dark">{{ test.laboratoryTestName }}</strong>
-                    <span *ngIf="test.subGroup" class="badge bg-info text-white ms-1">{{ test.subGroup }}</span>
-                    <i class="bi bi-plus-circle-fill text-info cursor-pointer ms-1 fs-6" (click)="onQuickApplyTest(test, $event)" title="Apply this test row"></i>
-                  </span>
+                <div class="d-flex flex-column gap-2" *ngIf="getChemicalTests(grade.configuredTests).length > 0">
+                  <div *ngFor="let test of getChemicalTests(grade.configuredTests)"
+                    class="test-item-row d-flex align-items-center justify-content-between extra-small">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
+                      <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
+                        [checked]="isTestSelected(test.laboratoryTestID)"
+                        (click)="toggleSelectTest(test, $event)"
+                        title="Select for batch apply">
+                      <i class="bi bi-droplet-fill text-info flex-shrink-0"></i>
+                      <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
+                      <span *ngIf="test.subGroup" class="badge badge-lims-subgroup extra-small flex-shrink-0">{{ test.subGroup }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                      <!-- Source Tag -->
+                      <span class="badge extra-small"
+                        [ngClass]="{
+                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope',
+                          'badge-lims-lab-scope': test.sourceTag === 'Lab Scope' || !test.sourceTag,
+                          'badge-lims-both-scope': test.sourceTag === 'Both Sources'
+                        }"
+                        [title]="test.sourceTag === 'Both Sources'
+                          ? 'Sources: PM Scope (Product Master Spec) + Lab Scope (Lab Test Mapping)'
+                          : test.sourceTag === 'PM Scope'
+                            ? 'Source: Product Master Specification Line'
+                            : 'Source: Laboratory Test Scope Mapping'">
+                        <i class="bi me-0.5" [ngClass]="{
+                          'bi-award': test.sourceTag === 'PM Scope',
+                          'bi-flask': test.sourceTag === 'Lab Scope' || !test.sourceTag,
+                          'bi-info-circle': test.sourceTag === 'Both Sources'
+                        }"></i>{{ test.sourceTag || 'Lab Scope' }}
+                      </span>
+                      <button type="button" class="btn btn-xs btn-outline-info btn-lims-icon p-0"
+                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        <i class="bi bi-plus-lg"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div *ngIf="getChemicalTests(grade.configuredTests).length === 0" class="extra-small text-muted italic py-1">
                   No Chemical tests configured.
@@ -120,12 +185,12 @@
           </div>
 
           <!-- Chemical Parameters Matrix -->
-          <div *ngIf="grade.chemicalElements && grade.chemicalElements.length > 0" class="mt-3 p-2 bg-white rounded border">
-            <div class="extra-small fw-bold text-secondary text-uppercase mb-2">
-              <i class="bi bi-table me-1 text-danger"></i>Chemical Elements & Specification Limits ({{ grade.chemicalElements.length }}):
+          <div *ngIf="grade.chemicalElements && grade.chemicalElements.length > 0" class="chem-matrix-card">
+            <div class="extra-small fw-bold text-secondary text-uppercase mb-2 d-flex align-items-center gap-1.5">
+              <i class="bi bi-table text-danger"></i>Chemical Elements & Specification Limits ({{ grade.chemicalElements.length }}):
             </div>
-            <div class="d-flex flex-wrap gap-1.5">
-              <span *ngFor="let param of grade.chemicalElements" class="badge bg-light text-dark border p-1.5 extra-small">
+            <div class="d-flex flex-wrap gap-2">
+              <span *ngFor="let param of grade.chemicalElements" class="chem-element-chip">
                 <strong>{{ param.parameterName }}:</strong> {{ param.minValue ?? '0' }} - {{ param.maxValue ?? 'Max' }} {{ param.parameterUnit }}
               </span>
             </div>
@@ -172,28 +237,151 @@
         </div>
 
         <!-- Grade Details Accordion Body -->
-        <div class="grade-card-body p-3 border-top bg-light" *ngIf="expandedGradeId === grade.specificationGradeID">
+        <div class="grade-card-body border-top" *ngIf="expandedGradeId === grade.specificationGradeID">
           <div class="row g-3">
             <div class="col-md-6">
-              <div class="extra-small fw-bold text-secondary text-uppercase mb-1">Non-Chemical Tests:</div>
-              <div class="d-flex flex-wrap gap-1.5" *ngIf="getGeneralTests(grade.configuredTests).length > 0">
-                <span *ngFor="let test of getGeneralTests(grade.configuredTests)" class="badge bg-white text-dark border p-1.5 extra-small">
-                  {{ test.laboratoryTestName }} ({{ test.subGroup }})
-                </span>
+              <div class="explorer-section-card h-100">
+                <div class="extra-small fw-bold text-secondary text-uppercase mb-2.5 d-flex align-items-center justify-content-between">
+                  <span><i class="bi bi-gear-fill me-1.5 text-primary"></i>Non-Chemical Tests</span>
+                  <span class="badge bg-secondary extra-small">{{ getGeneralTests(grade.configuredTests).length }}</span>
+                </div>
+                <div class="d-flex flex-column gap-2" *ngIf="getGeneralTests(grade.configuredTests).length > 0">
+                  <div *ngFor="let test of getGeneralTests(grade.configuredTests)"
+                    class="test-item-row d-flex align-items-center justify-content-between extra-small">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
+                      <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
+                        [checked]="isTestSelected(test.laboratoryTestID)"
+                        (click)="toggleSelectTest(test, $event)"
+                        title="Select for batch apply">
+                      <i class="bi bi-gear-fill text-primary flex-shrink-0"></i>
+                      <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
+                      <span *ngIf="test.subGroup" class="text-muted italic flex-shrink-0">({{ test.subGroup }})</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                      <span class="badge badge-lims-both-scope extra-small">Metal Spec</span>
+                      <button type="button" class="btn btn-xs btn-outline-primary btn-lims-icon p-0"
+                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        <i class="bi bi-plus-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="getGeneralTests(grade.configuredTests).length === 0" class="extra-small text-muted italic py-1">
+                  No Non-Chemical tests configured.
+                </div>
               </div>
             </div>
             <div class="col-md-6">
-              <div class="extra-small fw-bold text-secondary text-uppercase mb-1">Chemical Tests:</div>
-              <div class="d-flex flex-wrap gap-1.5" *ngIf="getChemicalTests(grade.configuredTests).length > 0">
-                <span *ngFor="let test of getChemicalTests(grade.configuredTests)" class="badge bg-info bg-opacity-10 text-info border p-1.5 extra-small">
-                  {{ test.laboratoryTestName }} ({{ test.subGroup }})
-                </span>
+              <div class="explorer-section-card h-100">
+                <div class="extra-small fw-bold text-secondary text-uppercase mb-2.5 d-flex align-items-center justify-content-between">
+                  <span><i class="bi bi-droplet-fill me-1.5 text-info"></i>Chemical Tests</span>
+                  <span class="badge bg-info extra-small">{{ getChemicalTests(grade.configuredTests).length }}</span>
+                </div>
+                <div class="d-flex flex-column gap-2" *ngIf="getChemicalTests(grade.configuredTests).length > 0">
+                  <div *ngFor="let test of getChemicalTests(grade.configuredTests)"
+                    class="test-item-row d-flex align-items-center justify-content-between extra-small">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
+                      <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
+                        [checked]="isTestSelected(test.laboratoryTestID)"
+                        (click)="toggleSelectTest(test, $event)"
+                        title="Select for batch apply">
+                      <i class="bi bi-droplet-fill text-info flex-shrink-0"></i>
+                      <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
+                      <span *ngIf="test.subGroup" class="badge badge-lims-subgroup extra-small flex-shrink-0">{{ test.subGroup }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                      <span class="badge badge-lims-both-scope extra-small">Metal Spec</span>
+                      <button type="button" class="btn btn-xs btn-outline-info btn-lims-icon p-0"
+                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        <i class="bi bi-plus-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="getChemicalTests(grade.configuredTests).length === 0" class="extra-small text-muted italic py-1">
+                  No Chemical tests configured.
+                </div>
               </div>
             </div>
           </div>
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: UNIVERSAL LAB TEST MASTER SCOPE -->
+  <div *ngIf="activeExplorerTab === 'labtest'">
+    <div class="input-group input-group-sm mb-3">
+      <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control form-control-sm border-start-0 ps-0"
+        placeholder="Type test name (min 2 characters) to search all master lab tests..."
+        [(ngModel)]="labTestSearchTerm"
+        (input)="searchLabTests()">
+    </div>
+
+    <div *ngIf="labTestSearchLoading" class="text-center py-4 text-muted extra-small">
+      <span class="spinner-border spinner-border-sm me-2 text-danger"></span>Searching laboratory tests...
+    </div>
+
+    <div *ngIf="!labTestSearchLoading && labTestSearchResults.length === 0 && labTestSearchTerm.trim().length >= 2"
+      class="text-center py-4 text-muted extra-small bg-white rounded border">
+      <i class="bi bi-info-circle fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      No matching laboratory tests found for "{{ labTestSearchTerm }}".
+    </div>
+
+    <div *ngIf="!labTestSearchLoading && labTestSearchResults.length === 0 && labTestSearchTerm.trim().length < 2"
+      class="text-center py-4 text-muted extra-small bg-white rounded border">
+      <i class="bi bi-search fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      Enter at least 2 characters to search across all laboratory tests.
+    </div>
+
+    <div *ngIf="!labTestSearchLoading && labTestSearchResults.length > 0" class="p-2.5 bg-white rounded border shadow-sm">
+      <div class="extra-small fw-bold text-secondary text-uppercase mb-2 d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-flask me-1 text-info"></i>Matching Laboratory Tests</span>
+        <span class="badge bg-secondary extra-small">{{ labTestSearchResults.length }} Result(s)</span>
+      </div>
+      <div class="d-flex flex-column gap-1.5">
+        <div *ngFor="let test of labTestSearchResults"
+          class="test-item-row d-flex align-items-center justify-content-between p-1.5 px-2 rounded border bg-light extra-small">
+          <div class="d-flex align-items-center gap-1.5 overflow-hidden me-2">
+            <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
+              [checked]="isTestSelected(test.laboratoryTestID)"
+              (click)="toggleSelectTest(test, $event)"
+              title="Select for batch apply">
+            <i class="bi flex-shrink-0" [ngClass]="test.testType === 'Chemical' ? 'bi-droplet-fill text-info' : 'bi-gear-fill text-primary'"></i>
+            <strong class="text-dark text-truncate">{{ test.laboratoryTestName }}</strong>
+            <span *ngIf="test.subGroup" class="badge badge-lims-subgroup extra-small flex-shrink-0">{{ test.subGroup }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+            <span class="badge extra-small" [ngClass]="test.testType === 'Chemical' ? 'badge-lims-tech' : 'badge-lims-lab-scope'">
+              {{ test.testType }}
+            </span>
+            <button type="button" class="btn btn-xs btn-outline-danger btn-lims-icon p-0"
+              (click)="onQuickApplyTest(test, $event)"
+              title="Quick apply test to plan">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY BATCH APPLY BAR -->
+  <div *ngIf="selectedTestsToApply.size > 0"
+    class="explorer-batch-bar d-flex align-items-center justify-content-between p-2.5 border-top bg-white shadow-sm mt-3 rounded border">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-danger rounded-pill px-2">{{ selectedTestsToApply.size }}</span>
+      <span class="extra-small fw-semibold text-dark">test(s) selected for batch addition</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 extra-small" (click)="clearSelectedBatch()">
+        <i class="bi bi-x-circle me-1"></i>Clear
+      </button>
+      <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small" (click)="onApplySelectedTests()" [disabled]="isViewMode">
+        <i class="bi bi-lightning-fill me-1"></i>Apply Selected ({{ selectedTestsToApply.size }}) Tests
+      </button>
     </div>
   </div>
 

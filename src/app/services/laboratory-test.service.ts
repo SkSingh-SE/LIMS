@@ -69,8 +69,28 @@ export class LaboratoryTestService {
     return this.http.get<any>(`${environment.apiUrl}/lab-test-subgroup/details/${id}`);
   }
 
+  getTestMethodSpecificationBySubGroup(subGroupId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/lab-test-subgroup/test-method-specification/${subGroupId}`);
+  }
+
   getStandardsBySubGroup(subGroupId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/lab-test-subgroup/standards/${subGroupId}`);
+    return this.getTestMethodSpecificationBySubGroup(subGroupId);
+  }
+
+  getTestMethodSpecificationByLabTest(labTestId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/test-method-specification/${labTestId}`);
+  }
+
+  getStandardsByLabTest(labTestId: number): Observable<any[]> {
+    return this.getTestMethodSpecificationByLabTest(labTestId);
+  }
+
+  evaluateCompliance(payload: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/plan-compliance/evaluate`, payload);
+  }
+
+  getAnalysisTypeParameters(analysisTypeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/plan-compliance/analysis-type-parameters/${analysisTypeId}`);
   }
 
   createSubGroup(payload: any): Observable<any> {

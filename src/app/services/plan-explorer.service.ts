@@ -18,8 +18,12 @@ export interface ConfiguredTest {
   laboratoryTestName: string;
   testType: 'General' | 'Chemical';
   subGroup: string;
+  sourceTag?: string;
+  sourceTags?: string[];
+  testMethodSpecificationID?: number;
+  testMethodSpecificationName?: string;
   testMethodStandardID?: number;
-  testMethodStandardName: string;
+  testMethodStandardName?: string;
   quantity: number;
 }
 
@@ -29,6 +33,7 @@ export interface ConfiguredGrade {
   specificationID?: number;
   specificationName: string;
   metalClassificationName?: string;
+  isScopeConfigured?: boolean;
   configuredTests: ConfiguredTest[];
   chemicalElements: ConfiguredParameter[];
 }
@@ -54,7 +59,8 @@ export interface LabTestExplorerData {
   laboratoryTestID: number;
   laboratoryTestName: string;
   category: string;
-  standards: ConfiguredTest[];
+  testMethodSpecifications?: ConfiguredTest[];
+  standards?: ConfiguredTest[];
 }
 
 @Injectable({
@@ -75,5 +81,9 @@ export class PlanExplorerService {
 
   getLabTestExplorer(labTestId: number): Observable<LabTestExplorerData> {
     return this.http.get<LabTestExplorerData>(`${this.apiUrl}/lab-test/${labTestId}`);
+  }
+
+  searchUniversalLabTests(query: string): Observable<ConfiguredTest[]> {
+    return this.http.get<ConfiguredTest[]>(`${this.apiUrl}/universal-search?query=${encodeURIComponent(query)}`);
   }
 }

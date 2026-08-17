@@ -84,30 +84,32 @@ export class SearchableDropdownComponent {
         this.hasValidSelection = false;
         return;
       }
-      const matched = this.dropdownData.find(x => !x.isHeader && +x.id === +(typeof val === 'object' ? val?.id : val));
-      if (matched) {
-        if (this.selectedLabel.length === 0) {
-          this.selectedLabel = matched.name;
-          this.hasValidSelection = true;
-        }
-      } else if (typeof val === 'object' && val !== null && val.id !== undefined) {
+
+      const rawId = typeof val === 'object' && val !== null ? val.id : val;
+
+      if (typeof val === 'object' && val !== null && val.id !== undefined) {
         // Full object passed — use directly for rebind
         this.selectedLabel = val.name ?? val.label ?? String(val.id);
         this.hasValidSelection = true;
-        this.dropdownData = [val, ...this.dropdownData];
+        this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
         this.cdr.markForCheck();
-      } else {
+        return;
+      }
+
+      // Check if item is already in dropdownData
+      const matched = this.dropdownData.find(x => x && !x.isHeader && +x.id === +rawId);
+      if (matched) {
+        this.selectedLabel = matched.name;
+        this.hasValidSelection = true;
+        this.cdr.markForCheck();
+      } else if (rawId) {
         // Only ID passed — search by ID string (backend supports numeric ID lookup)
-        const idToFind = typeof val === 'object' ? val?.id : val;
-        this.fetchDataFn(String(idToFind), 0, 20).subscribe({
+        this.fetchDataFn(String(rawId), 0, 20).subscribe({
           next: (data: any[]) => {
-            // Use loose equality to handle number/string mismatch, ignore headers
-            const found = data.find(x => !x.isHeader && +x.id === +idToFind);
+            const found = data.find(x => x && !x.isHeader && +x.id === +rawId);
             if (found) {
-              this.dropdownData = [found, ...this.dropdownData.filter(x => x.id !== found.id)];
-              if (this.selectedLabel.length === 0) {
-                this.selectedLabel = found.name;
-              }
+              this.dropdownData = [found, ...this.dropdownData.filter(x => x && x.id !== found.id)];
+              this.selectedLabel = found.name;
               this.hasValidSelection = true;
               this.cdr.markForCheck();
             }
@@ -165,11 +167,19 @@ export class SearchableDropdownComponent {
     this.dropdownData = [];
     this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = data;
+        let list = data || [];
+        if (this.selectedItem || this.selectedItem === 0) {
+          const selId = typeof this.selectedItem === 'object' ? this.selectedItem.id : this.selectedItem;
+          if (this.selectedLabel && selId !== undefined && selId !== null) {
+            const selectedObj = { id: selId, name: this.selectedLabel };
+            list = [selectedObj, ...list.filter(x => x && x.id !== selId)];
+          }
+        }
+        this.dropdownData = list;
         this.hasMore = data.length === this.pageSize;
         this.pageNo++;
         this.loading = false;
-        this.highlightedIndex = data.length > 0 ? 0 : -1;
+        this.highlightedIndex = list.length > 0 ? 0 : -1;
         this.cdr.markForCheck();
         this.openDropdownPanel();
       },

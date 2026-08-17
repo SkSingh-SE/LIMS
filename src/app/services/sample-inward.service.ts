@@ -81,6 +81,10 @@ export class SampleInwardService {
     return this.http.post<any>(`${this.planApiUrl}/reject-replan/${requestId}`, { remarks: remarks || '' });
   }
 
+  assignGrade(payload: { sampleID: number; specificationGradeID: number; notes?: string }): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/assign-grade`, payload);
+  }
+
   updatePaymentInfo(id: number, payload: { purchaseOrderId: number | null; advancePayment: number; billRequired: boolean; advancePIRequired: boolean; holdTestingUntilPIApproved: boolean }): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${id}/payment`, payload);
   }
@@ -92,7 +96,6 @@ export class SampleInwardService {
   cancelSample(sampleDetailId: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/cancel-sample`, { sampleDetailId, reason });
   }
-
   deleteSample(sampleDetailId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete-sample/${sampleDetailId}`);
   }

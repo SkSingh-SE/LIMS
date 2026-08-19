@@ -111,7 +111,11 @@ export class LaboratoryTestComponent implements OnInit {
       this.isEditMode = this.labTestId > 0;
       this.submitted = false;
 
-      // Re-read history state mode
+      // Re-read history state mode or url
+      const currentUrl = this.router.url;
+      if (currentUrl.includes('/test/details/')) {
+        this.isViewMode = true;
+      }
       const state = history.state as { mode?: string };
       if (state) {
         if (state.mode === 'view') {
@@ -200,7 +204,7 @@ export class LaboratoryTestComponent implements OnInit {
     this.subGroupForm = this.fb.group({
       name: ['', Validators.required],
       reportTestName: ['', Validators.required],
-      testDuration: [null, [Validators.min(1)]],
+      testDuration: [1, [Validators.min(1)]],
       metalClassificationID: [null]
     });
 
@@ -213,7 +217,7 @@ export class LaboratoryTestComponent implements OnInit {
 
     this.analysisTypeForm = this.fb.group({
       name: ['', Validators.required],
-      testDuration: [null, [Validators.min(1)]],
+      testDuration: [1, [Validators.min(1)]],
       metalClassificationID: [null]
     });
   }
@@ -404,7 +408,7 @@ export class LaboratoryTestComponent implements OnInit {
       laboratoryTestID: [data.laboratoryTestID],
       name: [data.name, Validators.required],
       reportTestName: [data.reportTestName, Validators.required],
-      testDuration: [data.testDuration, [Validators.min(1)]],
+      testDuration: [data.testDuration ?? 1, [Validators.min(1)]],
       metalClassificationID: [data.metalClassificationID]
     });
 
@@ -479,7 +483,7 @@ export class LaboratoryTestComponent implements OnInit {
       id: [data.id],
       laboratoryTestSubGroupID: [data.laboratoryTestSubGroupID],
       name: [data.name, Validators.required],
-      testDuration: [data.testDuration, [Validators.min(1)]],
+      testDuration: [data.testDuration ?? 1, [Validators.min(1)]],
       metalClassificationID: [data.metalClassificationID]
     });
 
@@ -801,7 +805,12 @@ export class LaboratoryTestComponent implements OnInit {
   // --- Node CRUD Initiators ---
   startAddSubGroup() {
     this.showAddSubGroupForm = true;
-    this.subGroupForm.reset();
+    this.subGroupForm.reset({
+      name: '',
+      reportTestName: '',
+      testDuration: 1,
+      metalClassificationID: null
+    });
   }
 
   saveNewSubGroup() {
@@ -842,7 +851,11 @@ export class LaboratoryTestComponent implements OnInit {
   startAddAnalysisType() {
     if (!this.selectedSubGroup) return;
     this.showAddAnalysisTypeForm = true;
-    this.analysisTypeForm.reset();
+    this.analysisTypeForm.reset({
+      name: '',
+      testDuration: 1,
+      metalClassificationID: null
+    });
   }
 
   saveNewAnalysisType() {
@@ -968,7 +981,16 @@ export class LaboratoryTestComponent implements OnInit {
       this.labService.createLaboratoryTest(this.labTestForm.value).subscribe({
         next: (response) => {
           this.toastService.show(response.message || 'Created successfully.', 'success');
-          this.router.navigate(['/test/edit', response.id], { replaceUrl: true });
+          const newId = response.id ?? response.ID;
+          if (newId) {
+            this.labTestId = Number(newId);
+            this.isEditMode = true;
+            this.isViewMode = false;
+            this.labTestForm.patchValue({ id: newId });
+            this.loadAllTests();
+            this.loadSubGroups();
+            this.router.navigate(['/test/edit', newId], { replaceUrl: true });
+          }
         },
         error: (error) => {
           this.toastService.show(error.message || 'Creation failed.', 'error');

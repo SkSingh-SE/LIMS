@@ -3708,3 +3708,64 @@ input[type="checkbox"]:checked {
   display: inline-flex;
   align-items: center;
 }
+
+/* ── Standardized Form Field External Navigation Link & Icon ── */
+.btn-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-nav-link:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.btn-nav-link i.bi {
+  font-size: 0.72rem;
+  margin-right: 6px !important;
+}
+
+
+.btn-nav-icon,
+.btn-nav-plus,
+.btn-field-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.35));
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.05));
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.btn-nav-icon:hover,
+.btn-nav-plus:hover,
+.btn-field-add:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
+}
+
+

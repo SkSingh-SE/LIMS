@@ -115,28 +115,55 @@ export class ProductMasterFormComponent implements OnInit {
     private toastService: ToastService
   ) {}
 
+  get formTitle(): string {
+    if (this.isViewMode) return 'View Product Master Details';
+    if (this.isEditMode || this.id > 0) return 'Edit Product Master';
+    return 'Create Product Master';
+  }
+
   ngOnInit() {
     this.generateYearsList();
     this.initForm();
     this.loadPrefixOptions();
+    this.initModeFromRoute();
 
     this.route.params.subscribe((params) => {
       if (params['id']) {
         this.id = +params['id'];
-        const path = this.route.snapshot.url[0]?.path;
-        if (path === 'details') {
-          this.isViewMode = true;
-          this.form.disable();
-        } else if (path === 'edit') {
-          this.isEditMode = true;
-        }
+        this.initModeFromRoute();
         this.loadDetails();
       } else {
+        this.isEditMode = false;
+        this.isViewMode = false;
         this.addVersion();
       }
     });
 
     this.setupTitleAutoGeneration();
+  }
+
+  private initModeFromRoute() {
+    const rawId = this.route.snapshot.params['id'] || this.route.snapshot.paramMap.get('id');
+    if (rawId) {
+      this.id = +rawId;
+    }
+    const currentUrl = this.router.url || '';
+    const urlSegments = this.route.snapshot.url ? this.route.snapshot.url.map(s => s.path) : [];
+
+    const isDetails = currentUrl.includes('/details') || urlSegments.includes('details') || (this.route.snapshot.routeConfig?.path?.includes('details') ?? false);
+    const isEdit = currentUrl.includes('/edit') || urlSegments.includes('edit') || (this.route.snapshot.routeConfig?.path?.includes('edit') ?? false) || this.id > 0;
+
+    if (isDetails) {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.form?.disable();
+    } else if (isEdit) {
+      this.isEditMode = true;
+      this.isViewMode = false;
+    } else {
+      this.isEditMode = false;
+      this.isViewMode = false;
+    }
   }
 
   generateYearsList() {
@@ -686,6 +713,9 @@ export class ProductMasterFormComponent implements OnInit {
     }
 
     const payload = this.form.getRawValue();
+    if (this.id > 0) {
+      payload.id = this.id;
+    }
 
     // Attach grade & condition lists to version payloads
     payload.versions.forEach((v: any, vIdx: number) => {

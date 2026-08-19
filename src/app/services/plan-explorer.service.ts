@@ -79,6 +79,10 @@ export class PlanExplorerService {
     return this.http.get<MetalExplorerData>(`${this.apiUrl}/metal-classification/${metalId}`);
   }
 
+  getMetalClassificationExplorer(metalId: number): Observable<MetalExplorerData> {
+    return this.getMetalExplorer(metalId);
+  }
+
   getLabTestExplorer(labTestId: number): Observable<LabTestExplorerData> {
     return this.http.get<LabTestExplorerData>(`${this.apiUrl}/lab-test/${labTestId}`);
   }

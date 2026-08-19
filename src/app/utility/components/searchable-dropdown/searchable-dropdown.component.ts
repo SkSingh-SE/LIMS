@@ -151,12 +151,8 @@ export class SearchableDropdownComponent {
   }
 
   onFocus(): void {
-    // Always load and open dropdown on focus
-    if (this.dropdownData.length > 0) {
-      this.openDropdownPanel();
-    } else {
-      this.loadInitialData();
-    }
+    // Always load fresh contextual data on focus
+    this.loadInitialData();
   }
 
   /** Load data for first open / chevron click */
@@ -198,11 +194,7 @@ export class SearchableDropdownComponent {
     }
     // Focus the input so keyboard works
     this.inputRef?.nativeElement?.focus();
-    if (this.dropdownData.length > 0) {
-      this.openDropdownPanel();
-    } else {
-      this.loadInitialData();
-    }
+    this.loadInitialData();
   }
 
   openDropdownPanel(): void {

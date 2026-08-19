@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { MetalClassificationService } from '../../../services/metal-classification.service';
@@ -26,7 +26,7 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 import { ProductMasterService } from '../../../services/product-master.service';
 import { ProductSizeMasterService } from '../../../services/product-size-master.service';
 import { PlanExplorerPanelComponent } from '../plan-explorer-panel/plan-explorer-panel.component';
-import { PlanExplorerService, ConfiguredGrade, ConfiguredTest, ProductMasterExplorerData } from '../../../services/plan-explorer.service';
+import { PlanExplorerService, ConfiguredGrade, ConfiguredTest, ProductMasterExplorerData, MetalExplorerData } from '../../../services/plan-explorer.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -150,6 +150,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   onSampleCardClick(idx: number): void {
     if (this.isCombinedMode) return;
     this.activeSampleIdx = idx;
+    this.preloadExplorerForSample(idx);
   }
 
   toggleCombined(idx: number, checked: boolean): void {
@@ -882,6 +883,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
         this.updateFormFromPayload(formatted);
 
+        // Preload explorer data for all samples with productMasterID
+        for (let i = 0; i < this.samples.length; i++) {
+          this.preloadExplorerForSample(i);
+        }
+
         // Auto-create a plan for samples that have no test plans yet
         if (!this.isViewMode) {
           this.ensurePlansExist();
@@ -896,35 +902,148 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
-  // ────────────── Dropdown Data Methods ──────────────
+  preloadExplorerForSample(sampleIdx: number): void {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    const pmId = sGroup?.get('productMasterID')?.value;
+    const metalId = sGroup?.get('metalClassificationID')?.value;
+
+    if (pmId) {
+      if (!this.explorerProductDataMap[sampleIdx]) {
+        this.explorerService.getProductMasterExplorer(pmId).subscribe({
+          next: (explorerData) => {
+            this.explorerProductDataMap[sampleIdx] = explorerData;
+            if (explorerData && explorerData.grades && explorerData.grades.length > 0 && !sGroup?.get('specificationGradeID')?.value) {
+              sGroup?.patchValue({
+                specificationGradeID: explorerData.grades[0].specificationGradeID
+              });
+            }
+          }
+        });
+      }
+    } else if (metalId) {
+      if (!this.explorerMetalDataMap[sampleIdx]) {
+        this.explorerService.getMetalClassificationExplorer(metalId).subscribe({
+          next: (metalData: MetalExplorerData) => {
+            this.explorerMetalDataMap[sampleIdx] = metalData;
+          }
+        });
+      }
+    }
+  }
+
+  autoPopulateFromProductMaster(sampleIdx: number): void {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return;
+    const pmId = sGroup.get('productMasterID')?.value;
+    if (!pmId) {
+      this.toastService.show('Please select a Product Master first.', 'warning');
+      return;
+    }
+
+    const explorerData = this.explorerProductDataMap[sampleIdx];
+    if (explorerData && explorerData.grades && explorerData.grades.length > 0) {
+      const gradeId = sGroup.get('specificationGradeID')?.value;
+      const targetGrade = gradeId
+        ? explorerData.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId)
+        : explorerData.grades[0];
+
+      if (targetGrade) {
+        this.onApplyGradeConfig(targetGrade);
+        this.toastService.show(`Auto-populated plan from ${targetGrade.gradeName}.`, 'success');
+      }
+    } else {
+      this.explorerService.getProductMasterExplorer(pmId).subscribe({
+        next: (data) => {
+          this.explorerProductDataMap[sampleIdx] = data;
+          if (data && data.grades && data.grades.length > 0) {
+            this.onApplyGradeConfig(data.grades[0]);
+            this.toastService.show(`Auto-populated plan from ${data.productName || 'Product Master'}.`, 'success');
+          } else {
+            this.toastService.show('No configured grades found in this Product Master.', 'info');
+          }
+        }
+      });
+    }
+  }
+
+  hasEmptyTestPlan(sampleIdx: number, planIdx: number = 0): boolean {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return false;
+    const pmId = sGroup.get('productMasterID')?.value;
+    if (!pmId) return false;
+
+    const genTests = this.getTestArray(sampleIdx, planIdx, 'generalTests');
+    const chemTests = this.getTestArray(sampleIdx, planIdx, 'chemicalTests');
+
+    const noGen = !genTests || genTests.length === 0;
+    const noChem = !chemTests || chemTests.length === 0;
+
+    if (noGen && noChem) return true;
+
+    const methods = this.getMethodRows(sampleIdx, planIdx);
+    const hasAnyGenMethod = methods && methods.controls.some(ctrl => !!ctrl.get('testMethodID')?.value);
+    const hasAnyChemElements = chemTests && chemTests.controls.some(ct => {
+      const els = (ct as FormGroup).get('elements') as FormArray;
+      return els && els.length > 0;
+    });
+
+    return !hasAnyGenMethod && !hasAnyChemElements;
+  }
+
+  // ────────────── Dropdown Data Methods (Two-Tier Dual Base: Product Master -> Metal Classification) ──────────────
   buildSpecFetchFnWithSuggestions = (sampleIdx: number, field: string) => {
     return (term: string, page: number, pageSize: number): Observable<any[]> => {
       const metalId = this.getMetalIdForSample(sampleIdx);
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
-      const explorerData = this.explorerProductDataMap[sampleIdx];
+      const pmExplorer = this.explorerProductDataMap[sampleIdx];
+      const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+      const activeExplorer = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+        ? pmExplorer
+        : metalExplorer;
+
+      const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
 
       return this.materialSpecificationService.getGradeDropdownByMetalId(term, page, pageSize, metalId).pipe(
         map((allGrades: any[]) => {
-          if (isUnknown || !explorerData || !explorerData.grades || explorerData.grades.length === 0) {
+          if (isUnknown || !activeExplorer || !activeExplorer.grades || activeExplorer.grades.length === 0) {
             return allGrades || [];
           }
 
-          const configuredGrades = explorerData.grades.map((g: ConfiguredGrade) => ({
+          const configuredGrades = activeExplorer.grades.map((g: ConfiguredGrade) => ({
             id: g.specificationGradeID,
-            name: `${g.gradeName} (${g.specificationName || 'Configured'})`,
+            name: `${g.gradeName} (${g.specificationName || (isProductMasterBase ? 'Configured' : 'Metal Grade')})`,
             isConfigured: true
           }));
 
           const configuredIds = new Set(configuredGrades.map((g: any) => +g.id));
           const otherGrades = (allGrades || []).filter((g: any) => !configuredIds.has(+g.id));
 
+          const headerName = isProductMasterBase 
+            ? '⭐ Configured Product Master Grades' 
+            : '⭐ Configured Metal Specification Grades';
+
           const result: any[] = [];
-          if (configuredGrades.length > 0 && (!term || term.trim() === '')) {
-            result.push({ isHeader: true, name: 'Product Master Configured Grades' });
-            result.push(...configuredGrades);
-            if (otherGrades.length > 0) {
-              result.push({ isHeader: true, name: 'All Material Specifications' });
-              result.push(...otherGrades);
+          if (configuredGrades.length > 0) {
+            if (!term || term.trim() === '') {
+              result.push({ isHeader: true, name: headerName });
+              result.push(...configuredGrades);
+              if (otherGrades.length > 0) {
+                result.push({ isHeader: true, name: 'All Material Specifications' });
+                result.push(...otherGrades);
+              }
+            } else {
+              const lower = term.toLowerCase().trim();
+              const matchingConfigured = configuredGrades.filter((c: any) => c.name.toLowerCase().includes(lower));
+              if (matchingConfigured.length > 0) {
+                result.push({ isHeader: true, name: headerName });
+                result.push(...matchingConfigured);
+                if (otherGrades.length > 0) {
+                  result.push({ isHeader: true, name: 'All Material Specifications' });
+                  result.push(...otherGrades);
+                }
+              } else {
+                result.push(...(allGrades || []));
+              }
             }
           } else {
             result.push(...(allGrades || []));
@@ -938,18 +1057,24 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   buildLabTestFetchFnWithSuggestions = (sampleIdx: number) => {
     return (term: string, page: number, pageSize: number): Observable<any[]> => {
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
-      const explorerData = this.explorerProductDataMap[sampleIdx];
+      const pmExplorer = this.explorerProductDataMap[sampleIdx];
+      const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+      const activeExplorer = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+        ? pmExplorer
+        : metalExplorer;
+
+      const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
 
       return this.laboratoryTestService.getLaboratoryTestDropdownForGeneral(term, page, pageSize).pipe(
         map((allTests: any[]) => {
-          if (isUnknown || !explorerData || !explorerData.grades || explorerData.grades.length === 0) {
+          if (isUnknown || !activeExplorer || !activeExplorer.grades || activeExplorer.grades.length === 0) {
             return allTests || [];
           }
 
           const gradeId = this.getSampleGroupSafely(sampleIdx)?.get('specificationGradeID')?.value;
           const targetGrade = gradeId
-            ? explorerData.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId)
-            : explorerData.grades[0];
+            ? (activeExplorer.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId) || activeExplorer.grades[0])
+            : activeExplorer.grades[0];
 
           if (!targetGrade || !targetGrade.configuredTests || targetGrade.configuredTests.length === 0) {
             return allTests || [];
@@ -966,10 +1091,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const suggestedIds = new Set(suggestedTests.map((t: any) => +t.id));
           const otherTests = (allTests || []).filter((t: any) => !suggestedIds.has(+t.id));
 
+          const headerName = isProductMasterBase
+            ? '⭐ Suggested Laboratory Tests (Product Master Mappings)'
+            : '⭐ Suggested Laboratory Tests (Metal Classification)';
+
           const result: any[] = [];
           if (suggestedTests.length > 0) {
             if (!term || term.trim() === '') {
-              result.push({ isHeader: true, name: 'Configured / Suggested Tests' });
+              result.push({ isHeader: true, name: headerName });
               result.push(...suggestedTests);
               if (otherTests.length > 0) {
                 result.push({ isHeader: true, name: 'All Laboratory Tests' });
@@ -979,7 +1108,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               const lower = term.toLowerCase().trim();
               const matchingSuggested = suggestedTests.filter((s: any) => s.name.toLowerCase().includes(lower));
               if (matchingSuggested.length > 0) {
-                result.push({ isHeader: true, name: 'Configured / Suggested Tests' });
+                result.push({ isHeader: true, name: headerName });
                 result.push(...matchingSuggested);
                 if (otherTests.length > 0) {
                   result.push({ isHeader: true, name: 'All Laboratory Tests' });
@@ -1004,18 +1133,24 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         return of([]);
       }
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
-      const explorerData = this.explorerProductDataMap[sampleIdx];
+      const pmExplorer = this.explorerProductDataMap[sampleIdx];
+      const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+      const activeExplorer = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+        ? pmExplorer
+        : metalExplorer;
+
+      const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
 
       return this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize).pipe(
         map((allTests: any[]) => {
-          if (isUnknown || !explorerData || !explorerData.grades || explorerData.grades.length === 0) {
+          if (isUnknown || !activeExplorer || !activeExplorer.grades || activeExplorer.grades.length === 0) {
             return allTests || [];
           }
 
           const gradeId = this.getSampleGroupSafely(sampleIdx)?.get('specificationGradeID')?.value;
           const targetGrade = gradeId
-            ? explorerData.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId)
-            : explorerData.grades[0];
+            ? (activeExplorer.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId) || activeExplorer.grades[0])
+            : activeExplorer.grades[0];
 
           if (!targetGrade || !targetGrade.configuredTests || targetGrade.configuredTests.length === 0) {
             return allTests || [];
@@ -1032,10 +1167,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const suggestedIds = new Set(suggestedTests.map((t: any) => +t.id));
           const otherTests = (allTests || []).filter((t: any) => !suggestedIds.has(+t.id));
 
+          const headerName = isProductMasterBase
+            ? '⭐ Suggested Chemical Tests (Product Master Mappings)'
+            : '⭐ Suggested Chemical Tests (Metal Classification)';
+
           const result: any[] = [];
           if (suggestedTests.length > 0) {
             if (!term || term.trim() === '') {
-              result.push({ isHeader: true, name: 'Configured Chemical Tests' });
+              result.push({ isHeader: true, name: headerName });
               result.push(...suggestedTests);
               if (otherTests.length > 0) {
                 result.push({ isHeader: true, name: 'All Chemical Tests' });
@@ -1045,7 +1184,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               const lower = term.toLowerCase().trim();
               const matchingSuggested = suggestedTests.filter((s: any) => s.name.toLowerCase().includes(lower));
               if (matchingSuggested.length > 0) {
-                result.push({ isHeader: true, name: 'Configured Chemical Tests' });
+                result.push({ isHeader: true, name: headerName });
                 result.push(...matchingSuggested);
                 if (otherTests.length > 0) {
                   result.push({ isHeader: true, name: 'All Chemical Tests' });
@@ -1071,30 +1210,50 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       let rowKey = '';
       if (planIdx !== undefined && methodIdx !== undefined) {
         const row = this.getMethodRows(sampleIdx, planIdx)?.at(methodIdx);
-        testId = row?.get('testMethodID')?.value;
+        const val = row?.get('testMethodID')?.value;
+        testId = val ? +val : null;
         rowKey = `${sampleIdx}_${planIdx}_${methodIdx}`;
       }
-      const explorerData = this.explorerProductDataMap[sampleIdx];
+
+      const pmExplorer = this.explorerProductDataMap[sampleIdx];
+      const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+      const activeExplorer = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+        ? pmExplorer
+        : metalExplorer;
+
+      const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
       const mappedStandards = rowKey ? (this.subGroupStandardsMap[rowKey] || []) : [];
 
-      return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize).pipe(
-        map((allStandards: any[]) => {
+      // Fetch test-specific mapped standards (live/cached) and all test method specifications
+      const labSpecs$ = (testId && !this.labTestStandardsCache[testId])
+        ? this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).pipe(
+            tap((specs: any[]) => {
+              this.labTestStandardsCache[testId!] = specs || [];
+            }),
+            catchError(() => of([]))
+          )
+        : of(this.labTestStandardsCache[testId || 0] || []);
+
+      const allStandards$ = this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+      return forkJoin([labSpecs$, allStandards$]).pipe(
+        map(([labSpecs, allStandards]) => {
           const recommendedList: any[] = [];
           const recIds = new Set<number>();
 
-          // 1. Grade Recommended Test Method Specification from Explorer Data
-          if (!isUnknown && testId && explorerData && explorerData.grades) {
+          // 1. Grade Recommended Test Method Specification from Explorer Data (Product Master or Metal Classification)
+          if (!isUnknown && testId && activeExplorer && activeExplorer.grades) {
             const gradeId = this.getSampleGroupSafely(sampleIdx)?.get('specificationGradeID')?.value;
             const targetGrade = gradeId
-              ? explorerData.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId)
-              : explorerData.grades[0];
+              ? (activeExplorer.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId) || activeExplorer.grades[0])
+              : activeExplorer.grades[0];
 
             const matchingTest = targetGrade?.configuredTests?.find((t: ConfiguredTest) => +t.laboratoryTestID === +testId);
             const specId = matchingTest?.testMethodSpecificationID || matchingTest?.testMethodStandardID;
             const specName = matchingTest?.testMethodSpecificationName || matchingTest?.testMethodStandardName;
-            if (matchingTest && specId) {
+            if (matchingTest && specId && +specId > 0) {
               recommendedList.push({
-                id: specId,
+                id: +specId,
                 name: specName || 'Configured Test Method Specification',
                 isConfigured: true
               });
@@ -1102,12 +1261,26 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             }
           }
 
-          // 2. Test Method Specifications directly mapped to this Laboratory Test / SubGroup
+          // 2. Direct Test Mappings from LaboratoryTest Master (e.g. IS 1608 for Tensile Test)
+          if (labSpecs && labSpecs.length > 0) {
+            labSpecs.forEach((s: any) => {
+              if (s.id && !recIds.has(+s.id)) {
+                recommendedList.push({
+                  id: +s.id,
+                  name: s.name,
+                  isConfigured: true
+                });
+                recIds.add(+s.id);
+              }
+            });
+          }
+
+          // 3. Row-level cached mapped standards
           if (mappedStandards && mappedStandards.length > 0) {
             mappedStandards.forEach((s: any) => {
-              if (!recIds.has(+s.id)) {
+              if (s.id && !recIds.has(+s.id)) {
                 recommendedList.push({
-                  id: s.id,
+                  id: +s.id,
                   name: s.name,
                   isConfigured: true
                 });
@@ -1123,8 +1296,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const otherStandards = (allStandards || []).filter((s: any) => !recIds.has(+s.id));
           const result: any[] = [];
 
+          const headerTitle = isProductMasterBase 
+            ? '⭐ Configured Test Method Specifications' 
+            : '⭐ Configured Test Methods (Laboratory Test)';
+
           if (!term || term.trim() === '') {
-            result.push({ isHeader: true, name: 'Recommended Test Method Specifications' });
+            result.push({ isHeader: true, name: headerTitle });
             result.push(...recommendedList);
             if (otherStandards.length > 0) {
               result.push({ isHeader: true, name: 'All Test Method Specifications' });
@@ -1134,7 +1311,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             const lower = term.toLowerCase().trim();
             const matchingRec = recommendedList.filter((r: any) => r.name.toLowerCase().includes(lower));
             if (matchingRec.length > 0) {
-              result.push({ isHeader: true, name: 'Recommended Test Method Specifications' });
+              result.push({ isHeader: true, name: headerTitle });
               result.push(...matchingRec);
               if (otherStandards.length > 0) {
                 result.push({ isHeader: true, name: 'All Test Method Specifications' });
@@ -1154,29 +1331,47 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     return (term: string, page: number, pageSize: number): Observable<any[]> => {
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
       const methodRow = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx)?.at(mIdx);
-      const testId = methodRow?.get('testMethodID')?.value;
+      const val = methodRow?.get('testMethodID')?.value;
+      const testId = val ? +val : null;
       const rowKey = `chem_${sampleIdx}_${planIdx}_${chemIdx}_${mIdx}`;
-      const explorerData = this.explorerProductDataMap[sampleIdx];
+      const pmExplorer = this.explorerProductDataMap[sampleIdx];
+      const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+      const activeExplorer = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+        ? pmExplorer
+        : metalExplorer;
+
+      const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
       const mappedStandards = this.chemicalStandardsMap[rowKey] || [];
 
-      return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize).pipe(
-        map((allStandards: any[]) => {
+      const labSpecs$ = (testId && !this.labTestStandardsCache[testId])
+        ? this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).pipe(
+            tap((specs: any[]) => {
+              this.labTestStandardsCache[testId!] = specs || [];
+            }),
+            catchError(() => of([]))
+          )
+        : of(this.labTestStandardsCache[testId || 0] || []);
+
+      const allStandards$ = this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+      return forkJoin([labSpecs$, allStandards$]).pipe(
+        map(([labSpecs, allStandards]) => {
           const recommendedList: any[] = [];
           const recIds = new Set<number>();
 
           // 1. Grade Recommended Test Method Specification
-          if (!isUnknown && testId && explorerData && explorerData.grades) {
+          if (!isUnknown && testId && activeExplorer && activeExplorer.grades) {
             const gradeId = this.getSampleGroupSafely(sampleIdx)?.get('specificationGradeID')?.value;
             const targetGrade = gradeId
-              ? explorerData.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId)
-              : explorerData.grades[0];
+              ? (activeExplorer.grades.find((g: ConfiguredGrade) => g.specificationGradeID === +gradeId) || activeExplorer.grades[0])
+              : activeExplorer.grades[0];
 
             const matchingTest = targetGrade?.configuredTests?.find((t: ConfiguredTest) => +t.laboratoryTestID === +testId);
             const specId = matchingTest?.testMethodSpecificationID || matchingTest?.testMethodStandardID;
             const specName = matchingTest?.testMethodSpecificationName || matchingTest?.testMethodStandardName;
-            if (matchingTest && specId) {
+            if (matchingTest && specId && +specId > 0) {
               recommendedList.push({
-                id: specId,
+                id: +specId,
                 name: specName || 'Configured Test Method Specification',
                 isConfigured: true
               });
@@ -1184,12 +1379,26 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             }
           }
 
-          // 2. Test Method Specifications directly mapped to this Chemical Test
+          // 2. Direct Test Mappings from LaboratoryTest Master
+          if (labSpecs && labSpecs.length > 0) {
+            labSpecs.forEach((s: any) => {
+              if (s.id && !recIds.has(+s.id)) {
+                recommendedList.push({
+                  id: +s.id,
+                  name: s.name,
+                  isConfigured: true
+                });
+                recIds.add(+s.id);
+              }
+            });
+          }
+
+          // 3. Row-level cached mapped standards
           if (mappedStandards && mappedStandards.length > 0) {
             mappedStandards.forEach((s: any) => {
-              if (!recIds.has(+s.id)) {
+              if (s.id && !recIds.has(+s.id)) {
                 recommendedList.push({
-                  id: s.id,
+                  id: +s.id,
                   name: s.name,
                   isConfigured: true
                 });
@@ -1205,8 +1414,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const otherStandards = (allStandards || []).filter((s: any) => !recIds.has(+s.id));
           const result: any[] = [];
 
+          const headerTitle = isProductMasterBase 
+            ? '⭐ Configured Test Method Specifications' 
+            : '⭐ Configured Test Methods (Laboratory Test)';
+
           if (!term || term.trim() === '') {
-            result.push({ isHeader: true, name: 'Recommended Test Method Specifications' });
+            result.push({ isHeader: true, name: headerTitle });
             result.push(...recommendedList);
             if (otherStandards.length > 0) {
               result.push({ isHeader: true, name: 'All Test Method Specifications' });
@@ -1216,7 +1429,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             const lower = term.toLowerCase().trim();
             const matchingRec = recommendedList.filter((r: any) => r.name.toLowerCase().includes(lower));
             if (matchingRec.length > 0) {
-              result.push({ isHeader: true, name: 'Recommended Test Method Specifications' });
+              result.push({ isHeader: true, name: headerTitle });
               result.push(...matchingRec);
               if (otherStandards.length > 0) {
                 result.push({ isHeader: true, name: 'All Test Method Specifications' });
@@ -1371,6 +1584,18 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           }
         }
       });
+    } else {
+      // Product Master cleared! Switch active suggestions base to Metal Classification
+      delete this.explorerProductDataMap[sampleIndex];
+      const metalId = sampleGroup.get('metalClassificationID')?.value;
+      if (metalId) {
+        this.explorerService.getMetalClassificationExplorer(metalId).subscribe({
+          next: (metalData: MetalExplorerData) => {
+            this.explorerMetalDataMap[sampleIndex] = metalData;
+            this.toastService.show('Product Master cleared. Suggestions switched to Metal Classification base.', 'info');
+          }
+        });
+      }
     }
   }
 
@@ -1443,10 +1668,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       metalClassificationName: item?.name ?? ''
     });
     if (metalId) {
-      this.openExplorerModal(sampleIndex);
       this.metalClassificationSelectedMap[sampleIndex] = item;
+      this.explorerService.getMetalClassificationExplorer(metalId).subscribe({
+        next: (metalData: MetalExplorerData) => {
+          this.explorerMetalDataMap[sampleIndex] = metalData;
+        }
+      });
+      this.openExplorerModal(sampleIndex);
     } else {
       delete this.metalClassificationSelectedMap[sampleIndex];
+      delete this.explorerMetalDataMap[sampleIndex];
     }
   }
 
@@ -2318,6 +2549,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   complianceMap: { [key: string]: any } = {};
   isScopeConfiguredMap: { [key: string]: boolean } = {};
   explorerProductDataMap: { [sampleIdx: number]: any } = {};
+  explorerMetalDataMap: { [sampleIdx: number]: any } = {};
+  labTestStandardsCache: { [testId: number]: any[] } = {};
   gradeSuggestedSpecsMap: { [sampleIdx: number]: any[] } = {};
 
   getStandardsForSubGroupFn = (sampleIdx: number, planIdx: number, methodIdx: number) => {
@@ -2337,10 +2570,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   evaluateRowCompliance(sampleIdx: number, planIdx: number, methodIdx: number, isChemical: boolean = false): void {
     const sample = this.getSampleDetails(sampleIdx);
-    const methodRow = this.getMethodRows(sampleIdx, planIdx).at(methodIdx);
+    const methodRow = isChemical 
+      ? this.getChemicalMethodRows(sampleIdx, planIdx, 0)?.at(methodIdx)
+      : this.getMethodRows(sampleIdx, planIdx)?.at(methodIdx);
     if (!sample || !methodRow) return;
 
-    const rowKey = `${sampleIdx}_${planIdx}_${methodIdx}`;
+    const rowKey = isChemical ? `chem_${sampleIdx}_${planIdx}_0_${methodIdx}` : `${sampleIdx}_${planIdx}_${methodIdx}`;
     const payload = {
       productMasterID: sample.get('productMasterID')?.value || null,
       metalClassificationID: sample.get('metalClassificationID')?.value || null,
@@ -2394,7 +2629,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const methodRow = this.getMethodRows(sampleIdx, planIdx).at(methodIdx);
     if (!methodRow) return;
 
-    const testId = item?.id ?? null;
+    const testId = item?.id ? +item.id : null;
     methodRow.patchValue({
       testMethodID: testId
     });
@@ -2403,6 +2638,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).subscribe({
         next: (specs: any[]) => {
           const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
+          this.labTestStandardsCache[testId] = specs || [];
           if (specs && specs.length === 1) {
             // Auto-bind single configured test method specification
             const single = specs[0];
@@ -2424,6 +2660,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           this.laboratoryTestService.getTestMethodSpecificationBySubGroup(testId).subscribe({
             next: (specs: any[]) => {
               const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
+              this.labTestStandardsCache[testId] = specs || [];
               if (specs && specs.length === 1) {
                 const single = specs[0];
                 methodRow.patchValue({
@@ -2455,7 +2692,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const methodRow = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx)?.at(mIdx);
     if (!methodRow) return;
 
-    const testId = item?.id ?? null;
+    const testId = item?.id ? +item.id : null;
     methodRow.patchValue({
       testMethodID: testId
     });
@@ -2464,6 +2701,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).subscribe({
         next: (specs: any[]) => {
           const key = `chem_${sampleIdx}_${planIdx}_${chemIdx}_${mIdx}`;
+          this.labTestStandardsCache[testId] = specs || [];
           if (specs && specs.length === 1) {
             const single = specs[0];
             methodRow.patchValue({
@@ -2477,6 +2715,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           } else {
             delete this.chemicalStandardsMap[key];
           }
+          this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
+        },
+        error: () => {
+          this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
         }
       });
     }
@@ -2489,6 +2731,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       standardID: item?.id ?? null,
       standardName: item?.name ?? ''
     });
+    this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
   }
 
   onChemicalStandardSelected = this.onChemicalTestMethodSpecificationSelected;
@@ -2774,7 +3017,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     if (!sampleGroup) return [];
     if (sampleGroup.get('isUnknownSample')?.value) return [];
     const gradeId = sampleGroup.get('specificationGradeID')?.value;
-    const explorerData = this.explorerProductDataMap[sampleIdx];
+    const pmExplorer = this.explorerProductDataMap[sampleIdx];
+    const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+    const explorerData = (pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0)
+      ? pmExplorer
+      : metalExplorer;
+
     if (!explorerData || !explorerData.grades) return [];
 
     let targetGrade = gradeId

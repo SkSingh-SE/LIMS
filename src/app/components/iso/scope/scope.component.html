@@ -1,59 +1,52 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <div class="card w-100 shadow-lg">
-    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
-      <label class="text-md fw-medium ms-3">ISO Scope Form</label>
-      <a routerLink="/scope" class="btn btn-outline-light btn-sm me-3">
-        <i class="bi bi-arrow-left"></i> Back to List
+<div class="container-fluid mt-3 mb-4">
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
+      <label class="text-md fw-medium ms-2 mb-0">ISO Scope Form</label>
+      <a routerLink="/scope" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to List
       </a>
     </div>
-    <div class="card-body">
+    <div class="card-body p-3">
       <form [formGroup]="scopeForm" (ngSubmit)="onSubmit()" novalidate>
 
         <!-- Section I: Header -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
-            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">Header Information</span>
+            <i class="bi me-2" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-semibold">Header Information</span>
           </div>
           <div *ngIf="openSections['header']" class="section-body">
             <div class="row gy-3">
               <div class="col-md-6">
-                <div class="d-flex align-items-end gap-1">
-                  <div class="flex-grow-1">
-                    <app-searchable-dropdown
-                      [placeholder]="'Search Laboratory Test'"
-                      [labelName]="'Laboratory Test'"
-                      [fetchDataFn]="getLaboratoryTest"
-                      (itemSelected)="onLaboratorySelected($event)"
-                      [hideLabel]="false"
-                      [required]="true"
-                      [isDisabled]="isViewMode"
-                      [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
-                      [isInvalid]="isFieldInvalid('laboratoryTestID')"
-                    ></app-searchable-dropdown>
-                  </div>
-                  <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank"
-                    class="btn btn-outline-primary btn-sm" title="Add New Lab Test" style="margin-bottom: 2px;">
-                    <i class="bi bi-plus-lg"></i>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label form-label-sm mb-0">
+                    Laboratory Test <span class="text-danger">*</span>
+                  </label>
+                  <a
+                    *ngIf="!isViewMode"
+                    routerLink="/test/create"
+                    target="_blank"
+                    class="btn-nav-link"
+                    title="Manage Laboratory Tests"
+                  >
+                    <i class="bi bi-box-arrow-up-right me-1.5"></i> Manage Laboratory Tests
                   </a>
                 </div>
+                <app-searchable-dropdown
+                  [placeholder]="'Search Laboratory Test'"
+                  [fetchDataFn]="getLaboratoryTest"
+                  (itemSelected)="onLaboratorySelected($event)"
+                  [hideLabel]="true"
+                  [required]="true"
+                  [isDisabled]="isViewMode"
+                  [selectedItem]="scopeForm.get('laboratoryTestID')?.value"
+                  [isInvalid]="isFieldInvalid('laboratoryTestID')"
+                ></app-searchable-dropdown>
                 <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test Method" [submitted]="submitted"/>
               </div>
-              <!-- <div class="col-md-2">
-                <label class="form-label">Valid From</label>
-                <input type="date" class="form-control" formControlName="validFrom" />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Valid Until</label>
-                <input type="date" class="form-control" formControlName="validUntil" />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Next Review Date</label>
-                <input type="date" class="form-control" formControlName="nextReviewDate" />
-              </div> -->
               <div class="col-md-6">
-                <label class="form-label">Scope Remarks</label>
-                <textarea class="form-control" formControlName="scopeRemarks" rows="2" maxlength="500" placeholder="Remarks about scope coverage"></textarea>
+                <label class="form-label form-label-sm mb-1">Scope Remarks</label>
+                <textarea class="form-control form-control-sm" formControlName="scopeRemarks" rows="2" maxlength="500" placeholder="Remarks about scope coverage"></textarea>
               </div>
             </div>
           </div>
@@ -63,16 +56,16 @@
         <div formArrayName="specifications">
           <div *ngFor="let spec of specifications.controls; let i = index" [formGroupName]="i" class="accordion-section mb-3">
             <div class="section-header" (click)="toggleSpec(i)">
-              <i class="bi" [ngClass]="openSpecs[i] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="fw-bold ms-2">
+              <i class="bi me-2" [ngClass]="openSpecs[i] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-semibold">
                 {{ spec.get("testMethodSpecification")?.value || "New Specification" }}
               </span>
               <span class="ms-2 text-muted small">(Parameters: {{ parameters(i).length }})</span>
               <div class="ms-auto d-flex gap-2 align-items-center">
                 <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addSpecification(); $event.stopPropagation()">
-                  <i class="bi bi-plus-circle-dotted"></i> Add Spec
+                  <i class="bi bi-plus-circle me-1"></i> Add Spec
                 </button>
-                <button *ngIf="!isViewMode && specifications.length > 1" type="button" class="btn btn-sm btn-outline-dark" (click)="removeSpecification(i); $event.stopPropagation()">
+                <button *ngIf="!isViewMode && specifications.length > 1" type="button" class="btn btn-sm btn-outline-secondary" (click)="removeSpecification(i); $event.stopPropagation()" title="Remove Specification">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
@@ -82,58 +75,63 @@
               <!-- Test Method Specification Dropdown -->
               <div class="row gy-3 mb-3">
                 <div class="col-md-6">
-                  <div class="d-flex align-items-end gap-1">
-                    <div class="flex-grow-1">
-                      <app-searchable-dropdown
-                        class="w-100"
-                        [placeholder]="'Search Test Specification'"
-                        [labelName]="'Test Method Specification'"
-                        [fetchDataFn]="getTestMethodSpecification"
-                        (itemSelected)="onTestSpecificationSelected($event, i)"
-                        [hideLabel]="false"
-                        [required]="true"
-                        [isDisabled]="isViewMode"
-                        [selectedItem]="spec.get('testMethodSpecificationID')?.value"
-                        [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"
-                      ></app-searchable-dropdown>
-                    </div>
-                    <a *ngIf="!isViewMode" routerLink="/test-specification/create" target="_blank"
-                      class="btn btn-outline-primary btn-sm" title="Add New Test Method Specification" style="margin-bottom: 2px;">
-                      <i class="bi bi-plus-lg"></i>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label form-label-sm mb-0">
+                      Test Method Specification <span class="text-danger">*</span>
+                    </label>
+                    <a
+                      *ngIf="!isViewMode"
+                      routerLink="/test-specification/create"
+                      target="_blank"
+                      class="btn-nav-link"
+                      title="Manage Test Specifications"
+                    >
+                      <i class="bi bi-box-arrow-up-right me-1.5"></i> Manage Test Specifications
                     </a>
                   </div>
+                  <app-searchable-dropdown
+                    class="w-100"
+                    [placeholder]="'Search Test Specification'"
+                    [fetchDataFn]="getTestMethodSpecification"
+                    (itemSelected)="onTestSpecificationSelected($event, i)"
+                    [hideLabel]="true"
+                    [required]="true"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="spec.get('testMethodSpecificationID')?.value"
+                    [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"
+                  ></app-searchable-dropdown>
                   <app-field-error [control]="spec.get('testMethodSpecificationID')" label="Test Method Specification" [submitted]="submitted"/>
                 </div>
                 <div class="col-md-3" *ngIf="specVersionsMap.get(i)?.length">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <label class="form-label mb-0">Spec Version</label>
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label form-label-sm mb-0">Spec Version</label>
                     <div *ngIf="!isViewMode" class="form-check form-switch form-check-inline mb-0">
                       <input class="form-check-input" type="checkbox" [id]="'showAllVersions'+i" [checked]="showAllVersionsMap.get(i)" (change)="toggleShowAllVersions(i)">
-                      <label class="form-check-label" [for]="'showAllVersions'+i">Show All</label>
+                      <label class="form-check-label small" [for]="'showAllVersions'+i">Show All</label>
                     </div>
                   </div>
-                  <select class="form-select" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
+                  <select class="form-select form-select-sm" formControlName="testMethodSpecificationVersionID" [attr.disabled]="isViewMode ? true : null">
                     <option [ngValue]="null">-- Default --</option>
                     <option *ngFor="let v of specVersionsMap.get(i)" [ngValue]="v.id">{{ v.name }}</option>
                   </select>
                 </div>
               </div>
 
-              <!-- Parameters Table -->
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="fw-bold fs-6 mb-0">Parameters</label>
-                <div class="d-flex gap-2">
+              <!-- Parameters Table Header -->
+              <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
+                <label class="fw-semibold text-secondary small text-uppercase mb-0">Parameters</label>
+                <div class="d-flex gap-2 align-items-center">
                   <button
                     *ngIf="!isViewMode"
                     type="button"
-                    class="btn btn-sm btn-add mt-1"
+                    class="btn btn-sm btn-add"
                     (click)="addParameter(i)"
                   >
-                    <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+                    <i class="bi bi-plus-circle me-1"></i> Add Parameter
                   </button>
                   <button
                     type="button"
-                    class="btn btn-sm btn-scroll-nav mt-1"
+                    class="btn btn-sm btn-scroll-nav"
                     (click)="scrollToStart(i)"
                     title="Scroll to start"
                   >
@@ -141,7 +139,7 @@
                   </button>
                   <button
                     type="button"
-                    class="btn btn-sm btn-scroll-nav mt-1"
+                    class="btn btn-sm btn-scroll-nav"
                     (click)="scrollToEnd(i)"
                     title="Scroll to end"
                   >
@@ -191,17 +189,18 @@
                             (itemSelected)="onParameterSelected($event, i, j)"
                             [isDisabled]="isViewMode"
                             [hideLabel]="true"
+                            [smallInput]="true"
                             [selectedItem]="param.get('parameterID')?.value"
                           ></app-searchable-dropdown>
                           <a *ngIf="!isViewMode" routerLink="/parameter-category" target="_blank"
-                            class="btn btn-outline-primary btn-sm p-0" style="width:24px;height:24px;line-height:24px;text-align:center;"
-                            title="Add New Parameter">
-                            <i class="bi bi-plus-lg" style="font-size:0.7rem"></i>
+                            class="btn-nav-icon"
+                            title="Manage Parameters">
+                            <i class="bi bi-box-arrow-up-right"></i>
                           </a>
                         </div>
                       </td>
                       <td>
-                        <select class="form-select wide-input" formControlName="parameterUnitID">
+                        <select class="form-select form-select-sm wide-input" formControlName="parameterUnitID">
                           <option value="" disabled selected>Select Unit</option>
                           <option *ngFor="let unit of parameterUnits" [value]="unit.id">{{ unit.name }}</option>
                         </select>
@@ -209,7 +208,7 @@
                       <td>
                         <select
                           formControlName="qualitativeQuantitative"
-                          class="form-select wide-input"
+                          class="form-select form-select-sm wide-input"
                           [disabled]="isViewMode"
                         >
                           <option value="" disabled>Select</option>
@@ -220,14 +219,14 @@
                       <td>
                         <div class="d-flex gap-1 align-items-center">
                           <select
-                            class="form-select" style="width:60px; min-width:60px;"
+                            class="form-select form-select-sm" style="width:60px; min-width:60px;"
                             formControlName="lowerLimit"
                             [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
                           >
                             <option value="">Op</option>
                             <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
                           </select>
-                          <input type="number" class="form-control" style="width:100px;"
+                          <input type="number" class="form-control form-control-sm" style="width:100px;"
                             formControlName="lowerLimitValue" placeholder="Value"
                             [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
                         </div>
@@ -235,14 +234,14 @@
                       <td>
                         <div class="d-flex gap-1 align-items-center">
                           <select
-                            class="form-select" style="width:60px; min-width:60px;"
+                            class="form-select form-select-sm" style="width:60px; min-width:60px;"
                             formControlName="upperLimit"
                             [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
                           >
                             <option value="">Op</option>
                             <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
                           </select>
-                          <input type="number" class="form-control" style="width:100px;"
+                          <input type="number" class="form-control form-control-sm" style="width:100px;"
                             formControlName="upperLimitValue" placeholder="Value"
                             [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
                         </div>
@@ -252,6 +251,7 @@
                           [placeholder]="'Search Discipline'"
                           [labelName]="'Discipline'"
                           [fetchDataFn]="getDiscipline"
+                          [smallInput]="true"
                           (itemSelected)="onDisciplineSelected($event, i, j)"
                           [isDisabled]="isViewMode"
                           [hideLabel]="true"
@@ -260,7 +260,7 @@
                       </td>
                       <td>
                         <select
-                          class="form-select wide-input"
+                          class="form-select form-select-sm wide-input"
                           formControlName="groupID"
                           (change)="onGroupSelected($event, i, j)"
                           [disabled]="isViewMode"
@@ -271,7 +271,7 @@
                       </td>
                       <td>
                         <select
-                          class="form-select wide-input"
+                          class="form-select form-select-sm wide-input"
                           formControlName="subGroupID"
                           [disabled]="isViewMode"
                         >
@@ -289,14 +289,15 @@
                           [fetchDataFn]="getEquipment"
                           [isMultiSelect]="true"
                           [hideLabel]="true"
+                          [smallInput]="true"
                           [isDisabled]="isViewMode"
                           [selectedItem]="param.get('equipmentIDs')?.value"
                           (itemsSelected)="onEquipmentSelect($event, i, j)"
                         ></app-searchable-dropdown-modal>
                       </td>
                       <td *ngIf="!isViewMode" class="text-center">
-                        <button type="button" class="btn btn-outline-danger spec-delete-btn" (click)="removeParameter(i, j)">
-                          <i class="bi bi-trash3"></i>
+                        <button type="button" class="btn spec-delete-btn" (click)="removeParameter(i, j)" title="Remove parameter">
+                          <i class="bi bi-trash"></i>
                         </button>
                       </td>
                     </tr>
@@ -308,11 +309,16 @@
         </div>
 
         <!-- Action Buttons -->
-        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save px-3">Save</button>
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-2 border-top">
+          <button type="button" class="btn btn-cancel d-inline-flex align-items-center gap-1.5" (click)="onCancel()">
+            <i class="bi bi-x-circle"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-save px-3 d-inline-flex align-items-center gap-1.5">
+            <i class="bi bi-check-circle"></i> Save
+          </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+

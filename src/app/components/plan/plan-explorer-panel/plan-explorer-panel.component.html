@@ -2,12 +2,12 @@
   <!-- Active Context Strip & Mode Tabs -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 bg-white p-2.5 rounded border shadow-sm">
     <div class="d-flex flex-wrap align-items-center gap-2">
-      <span class="fw-semibold small text-dark"><i class="bi bi-compass text-danger me-1"></i>DataSource:</span>
+      <span class="fw-semibold small text-dark"><i class="bi bi-compass text-danger me-1.5"></i>DataSource:</span>
       <span *ngIf="productData" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 p-1.5" title="Product Master">
-        <i class="bi bi-award me-1"></i>{{ productData.productName }}
+        <i class="bi bi-award me-1.5"></i>{{ productData.productName }}
       </span>
       <span *ngIf="metalData || productData?.metalClassificationName" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 p-1.5" title="Metal Classification">
-        <i class="bi bi-layers me-1"></i>{{ productData?.metalClassificationName || metalData?.metalClassificationName }}
+        <i class="bi bi-layers me-1.5"></i>{{ productData?.metalClassificationName || metalData?.metalClassificationName }}
       </span>
     </div>
 
@@ -15,17 +15,17 @@
     <ul class="nav nav-pills explorer-pills small mb-0">
       <li class="nav-item">
         <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'product'" (click)="activeExplorerTab = 'product'">
-          <i class="bi bi-award me-1"></i>Product Master Scope
+          <i class="bi bi-award me-1.5"></i>Product Master Scope
         </button>
       </li>
       <li class="nav-item">
         <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'metal'" (click)="activeExplorerTab = 'metal'">
-          <i class="bi bi-layers me-1"></i>Metal Classification Scope
+          <i class="bi bi-layers me-1.5"></i>Metal Classification Scope
         </button>
       </li>
       <li class="nav-item">
         <button type="button" class="nav-link py-1 px-2.5 extra-small fw-semibold" [class.active]="activeExplorerTab === 'labtest'" (click)="activeExplorerTab = 'labtest'">
-          <i class="bi bi-flask me-1"></i>Lab Test Master Scope
+          <i class="bi bi-flask me-1.5"></i>Lab Test Master Scope
         </button>
       </li>
     </ul>
@@ -44,24 +44,26 @@
     </div>
 
     <div *ngIf="!loadingProduct && (!productData || productData.grades.length === 0)" class="text-center py-4 text-muted extra-small bg-white rounded border">
-      <i class="bi bi-info-circle fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      <i class="bi bi-info-circle fs-3 d-block mb-1.5 text-secondary opacity-50"></i>
       No configured grades found for selected Product Master.
     </div>
 
     <div *ngIf="!loadingProduct && productData && productData.grades.length > 0" class="grade-cards-wrapper">
       <div *ngFor="let grade of getFilteredGrades(productData.grades)" class="grade-card mb-3 border rounded bg-white shadow-sm" [class.expanded]="expandedGradeId === grade.specificationGradeID">
 
-        <!-- Grade Header Bar -->
-        <div class="grade-card-header p-2.5 d-flex align-items-center justify-content-between cursor-pointer" (click)="toggleGradeAccordion(grade.specificationGradeID)">
-          <div class="d-flex align-items-center gap-2 overflow-hidden">
-            <i class="bi bi-patch-check-fill text-danger fs-5"></i>
-            <div>
-              <div class="fw-bold text-dark small">{{ grade.gradeName }}</div>
-              <div class="text-muted extra-small"><i class="bi bi-bookmark me-1"></i>{{ grade.specificationName || 'Standard Spec' }}</div>
+        <!-- Grade Header Bar (Robust Flex Container with Anti-Collapsing Rules) -->
+        <div class="grade-card-header p-2.5 d-flex align-items-center justify-content-between gap-3 flex-nowrap cursor-pointer" (click)="toggleGradeAccordion(grade.specificationGradeID)">
+          <div class="d-flex align-items-center gap-2.5 flex-grow-1 min-w-0 me-2">
+            <i class="bi bi-patch-check-fill text-danger fs-5 flex-shrink-0"></i>
+            <div class="min-w-0 flex-grow-1">
+              <div class="fw-bold text-dark small text-truncate" [title]="grade.gradeName">{{ grade.gradeName }}</div>
+              <div class="text-muted extra-small text-truncate" [title]="grade.specificationName || 'Standard Spec'">
+                <i class="bi bi-bookmark me-1.5"></i>{{ grade.specificationName || 'Standard Spec' }}
+              </div>
             </div>
           </div>
 
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
             <span class="badge badge-lims-lab-scope extra-small">
               {{ grade.configuredTests.length }} Test(s) Configured
             </span>
@@ -69,9 +71,9 @@
               {{ grade.chemicalElements.length }} Chemical Parameter(s)
             </span>
 
-            <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small ms-2 flex-shrink-0"
+            <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small ms-1 flex-shrink-0"
               (click)="onQuickApplyGrade(grade, $event)" [disabled]="isViewMode" title="Quick Apply Specification Grade & Tests to Active Tab">
-              <i class="bi bi-lightning-fill me-1"></i>Apply to Plan
+              <i class="bi bi-lightning-fill me-1.5"></i>Apply to Plan
             </button>
           </div>
         </div>
@@ -103,17 +105,17 @@
                       <!-- Source Tag (Short Badges with Tooltip) -->
                       <span class="badge extra-small"
                         [ngClass]="{
-                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope',
+                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master',
                           'badge-lims-lab-scope': test.sourceTag === 'Lab Scope' || !test.sourceTag,
                           'badge-lims-both-scope': test.sourceTag === 'Both Sources'
                         }"
                         [title]="test.sourceTag === 'Both Sources'
-                          ? 'Sources: PM Scope (Product Master Spec) + Lab Scope (Lab Test Mapping)'
-                          : test.sourceTag === 'PM Scope'
-                            ? 'Source: Product Master Specification Line'
+                          ? 'Sources: Product Master + Lab Scope (SubGroup Mapping)'
+                          : (test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master')
+                            ? 'Source: Product Master Mapping'
                             : 'Source: Laboratory Test Scope Mapping'">
-                        <i class="bi me-0.5" [ngClass]="{
-                          'bi-award': test.sourceTag === 'PM Scope',
+                        <i class="bi me-1.5" [ngClass]="{
+                          'bi-award': test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master',
                           'bi-flask': test.sourceTag === 'Lab Scope' || !test.sourceTag,
                           'bi-info-circle': test.sourceTag === 'Both Sources'
                         }"></i>{{ test.sourceTag || 'Lab Scope' }}
@@ -154,17 +156,17 @@
                       <!-- Source Tag -->
                       <span class="badge extra-small"
                         [ngClass]="{
-                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope',
+                          'badge-lims-pm-scope': test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master',
                           'badge-lims-lab-scope': test.sourceTag === 'Lab Scope' || !test.sourceTag,
                           'badge-lims-both-scope': test.sourceTag === 'Both Sources'
                         }"
                         [title]="test.sourceTag === 'Both Sources'
-                          ? 'Sources: PM Scope (Product Master Spec) + Lab Scope (Lab Test Mapping)'
-                          : test.sourceTag === 'PM Scope'
-                            ? 'Source: Product Master Specification Line'
+                          ? 'Sources: Product Master + Lab Scope (Analysis Type Mapping)'
+                          : (test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master')
+                            ? 'Source: Product Master Mapping'
                             : 'Source: Laboratory Test Scope Mapping'">
-                        <i class="bi me-0.5" [ngClass]="{
-                          'bi-award': test.sourceTag === 'PM Scope',
+                        <i class="bi me-1.5" [ngClass]="{
+                          'bi-award': test.sourceTag === 'PM Scope' || test.sourceTag === 'Product Master',
                           'bi-flask': test.sourceTag === 'Lab Scope' || !test.sourceTag,
                           'bi-info-circle': test.sourceTag === 'Both Sources'
                         }"></i>{{ test.sourceTag || 'Lab Scope' }}
@@ -208,7 +210,7 @@
     </div>
 
     <div *ngIf="!loadingMetal && (!metalData || metalData.grades.length === 0)" class="text-center py-4 text-muted extra-small bg-white rounded border">
-      <i class="bi bi-info-circle fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      <i class="bi bi-info-circle fs-3 d-block mb-1.5 text-secondary opacity-50"></i>
       No grades found for selected Metal Classification.
     </div>
 
@@ -216,22 +218,24 @@
       <div *ngFor="let grade of getFilteredGrades(metalData.grades)" class="grade-card mb-3 border rounded bg-white shadow-sm" [class.expanded]="expandedGradeId === grade.specificationGradeID">
 
         <!-- Grade Header Bar -->
-        <div class="grade-card-header p-2.5 d-flex align-items-center justify-content-between cursor-pointer" (click)="toggleGradeAccordion(grade.specificationGradeID)">
-          <div class="d-flex align-items-center gap-2 overflow-hidden">
-            <i class="bi bi-layers-fill text-danger fs-5"></i>
-            <div>
-              <div class="fw-bold text-dark small">{{ grade.gradeName }}</div>
-              <div class="text-muted extra-small"><i class="bi bi-bookmark me-1"></i>{{ grade.specificationName }}</div>
+        <div class="grade-card-header p-2.5 d-flex align-items-center justify-content-between gap-3 flex-nowrap cursor-pointer" (click)="toggleGradeAccordion(grade.specificationGradeID)">
+          <div class="d-flex align-items-center gap-2.5 flex-grow-1 min-w-0 me-2">
+            <i class="bi bi-layers-fill text-danger fs-5 flex-shrink-0"></i>
+            <div class="min-w-0 flex-grow-1">
+              <div class="fw-bold text-dark small text-truncate" [title]="grade.gradeName">{{ grade.gradeName }}</div>
+              <div class="text-muted extra-small text-truncate" [title]="grade.specificationName || 'Standard Spec'">
+                <i class="bi bi-bookmark me-1.5"></i>{{ grade.specificationName || 'Standard Spec' }}
+              </div>
             </div>
           </div>
 
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
             <span class="badge bg-secondary bg-opacity-10 text-secondary border extra-small">
               {{ grade.configuredTests.length }} Test(s)
             </span>
-            <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small ms-2 flex-shrink-0"
+            <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small ms-1 flex-shrink-0"
               (click)="onQuickApplyGrade(grade, $event)" [disabled]="isViewMode" title="Quick Apply Grade Configuration">
-              <i class="bi bi-lightning-fill me-1"></i>Apply to Plan
+              <i class="bi bi-lightning-fill me-1.5"></i>Apply to Plan
             </button>
           </div>
         </div>
@@ -326,19 +330,19 @@
 
     <div *ngIf="!labTestSearchLoading && labTestSearchResults.length === 0 && labTestSearchTerm.trim().length >= 2"
       class="text-center py-4 text-muted extra-small bg-white rounded border">
-      <i class="bi bi-info-circle fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      <i class="bi bi-info-circle fs-3 d-block mb-1.5 text-secondary opacity-50"></i>
       No matching laboratory tests found for "{{ labTestSearchTerm }}".
     </div>
 
     <div *ngIf="!labTestSearchLoading && labTestSearchResults.length === 0 && labTestSearchTerm.trim().length < 2"
       class="text-center py-4 text-muted extra-small bg-white rounded border">
-      <i class="bi bi-search fs-3 d-block mb-1 text-secondary opacity-50"></i>
+      <i class="bi bi-search fs-3 d-block mb-1.5 text-secondary opacity-50"></i>
       Enter at least 2 characters to search across all laboratory tests.
     </div>
 
     <div *ngIf="!labTestSearchLoading && labTestSearchResults.length > 0" class="p-2.5 bg-white rounded border shadow-sm">
       <div class="extra-small fw-bold text-secondary text-uppercase mb-2 d-flex align-items-center justify-content-between">
-        <span><i class="bi bi-flask me-1 text-info"></i>Matching Laboratory Tests</span>
+        <span><i class="bi bi-flask me-1.5 text-info"></i>Matching Laboratory Tests</span>
         <span class="badge bg-secondary extra-small">{{ labTestSearchResults.length }} Result(s)</span>
       </div>
       <div class="d-flex flex-column gap-1.5">
@@ -377,10 +381,10 @@
     </div>
     <div class="d-flex align-items-center gap-2">
       <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 extra-small" (click)="clearSelectedBatch()">
-        <i class="bi bi-x-circle me-1"></i>Clear
+        <i class="bi bi-x-circle me-1.5"></i>Clear
       </button>
       <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small" (click)="onApplySelectedTests()" [disabled]="isViewMode">
-        <i class="bi bi-lightning-fill me-1"></i>Apply Selected ({{ selectedTestsToApply.size }}) Tests
+        <i class="bi bi-lightning-fill me-1.5"></i>Apply Selected ({{ selectedTestsToApply.size }}) Tests
       </button>
     </div>
   </div>

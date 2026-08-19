@@ -126,12 +126,26 @@ export class MetalClassificationComponent implements OnInit {
         if (this.metalClassificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.MetalClassificationForm.patchValue(response);
+        const paramIds: number[] = response?.parameters?.map((x: any) => x.parameterID ?? x.parameterId ?? x.ParameterID).filter((id: any) => id != null) ?? [];
         this.MetalClassificationForm.patchValue({
-          parameterIds: response?.parameters?.map((x:any) => x.parameterID) ?? []
+          parameterIds: paramIds
         });
+        const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+        parameterArray.clear();
+        paramIds.forEach(id => {
+          parameterArray.push(
+            this.fb.group({
+              MetalClassificationID: [response.id ?? 0],
+              ParameterID: [id],
+            })
+          );
+        });
+        if (this.isViewMode) {
+          this.MetalClassificationForm.disable();
+        }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        console.error('Error fetching metal classification data:', error);
       }
     });
   }
@@ -353,20 +367,21 @@ export class MetalClassificationComponent implements OnInit {
   }
 
   onParameterSelected(item: any[]) {
-    console.log("selected item", item);
-    const selectIds: number[] = [];
+    const selectIds: number[] = (item || [])
+      .map(x => x.id ?? x.ID ?? x.parameterID ?? x.ParameterID)
+      .filter((id: any) => id != null);
+    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
+
     const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
     parameterArray.clear();
-    item.forEach((x) => {
-      selectIds.push(x.id);
+    selectIds.forEach((id) => {
       parameterArray.push(
         this.fb.group({
           MetalClassificationID: [this.MetalClassificationForm.get('id')?.value || 0],
-          ParameterID: [x.id],
+          ParameterID: [id],
         })
       );
-    })
-    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
+    });
   }
 
   onNameInput(): void {
@@ -410,11 +425,22 @@ export class MetalClassificationComponent implements OnInit {
     }
     let formData = this.MetalClassificationForm.value;
     const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
-    const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
-    if (hasParams && parameterArray.length === 0) {
+    const selectedIds: number[] = this.MetalClassificationForm.get('parameterIds')?.value || [];
+
+    if (hasParams && selectedIds.length === 0) {
       this.toastService.show('Please select at least one parameter.', 'warning');
       return;
     }
+
+    if (hasParams && selectedIds.length > 0) {
+      formData.parameters = selectedIds.map((id: number) => ({
+        MetalClassificationID: formData.id || 0,
+        ParameterID: id,
+      }));
+    } else {
+      formData.parameters = [];
+    }
+
     if (this.isEditMode) {
       this.metalclassificationService.updateMetalClassification(formData).subscribe({
         next: (response) => {

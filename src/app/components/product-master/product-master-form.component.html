@@ -3,7 +3,7 @@
     <!-- Top Header -->
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
       <label class="text-md fw-medium ms-3">
-        {{ isViewMode ? 'View Product Master Details' : (isEditMode ? 'Edit Product Master' : 'Create Product Master') }}
+        {{ formTitle }}
       </label>
       <a routerLink="/product-master" class="btn btn-outline-light btn-sm cursor-pointer">
         <i class="bi bi-arrow-left me-1"></i> Back to List
@@ -33,8 +33,8 @@
                       <label class="form-label mb-0">
                         Product Size <span class="text-danger" *ngIf="form.get('isSizeApplicable')?.value">*</span>
                       </label>
-                      <a href="/product-size-master" target="_blank" class="btn btn-link p-0 text-xxs fw-semibold text-decoration-none" style="color:var(--primary-color);font-size:0.65rem;white-space:nowrap" *ngIf="!isViewMode" title="Manage Product Sizes">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                      <a href="/product-size-master" target="_blank" class="btn-nav-link" *ngIf="!isViewMode" title="Manage Product Sizes">
+                        <i class="bi bi-box-arrow-up-right"></i> Manage Sizes
                       </a>
                       <div class="form-check form-check-inline m-0 p-0 d-flex align-items-center" (click)="$event.stopPropagation()">
                         <input class="form-check-input" type="checkbox" id="noSizeCheck"
@@ -78,9 +78,9 @@
                   <div class="col-md-2">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label mb-0">Prefix <span class="text-danger">*</span></label>
-                      <span class="btn btn-sm btn-outline-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;line-height:1.4;cursor:pointer" (click)="openCustomPrefixModal()" *ngIf="!isViewMode" title="Add Custom Prefix">
-                        Add Prefixes
-                      </span>
+                      <button type="button" class="btn-nav-link" (click)="openCustomPrefixModal()" *ngIf="!isViewMode" title="Add Custom Prefix">
+                        <i class="bi bi-plus-circle"></i> Add Prefix
+                      </button>
                     </div>
                     <div class="d-flex gap-1">
                       <select class="form-select form-select-sm flex-grow-1" formControlName="gradePrefix">
@@ -91,7 +91,7 @@
 
                   <!-- Grade -->
                   <div class="col-md-3">
-                    <label class="form-label">Grade</label>
+                    <label class="form-label">Product Grade</label>
                     <input type="text" class="form-control form-control-sm" formControlName="gradeValue" placeholder="e.g. Fe500" />
                   </div>
                 </div>
@@ -188,8 +188,8 @@
                   <div class="col-md-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label mb-0">Std Org <span class="text-danger">*</span></label>
-                      <a href="/standard-organization" target="_blank" class="btn btn-link p-0 text-xxs fw-semibold text-decoration-none" style="color:var(--primary-color);font-size:0.65rem;white-space:nowrap" *ngIf="!isViewMode" title="Manage Standard Organizations">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                      <a href="/standard-organization" target="_blank" class="btn-nav-link" *ngIf="!isViewMode" title="Manage Standard Organizations">
+                        <i class="bi bi-box-arrow-up-right"></i> Manage Organizations
                       </a>
                     </div>
                     <app-searchable-dropdown
@@ -287,7 +287,7 @@
                         [hideLabel]="true">
                       </app-searchable-dropdown>
                     </div>
-                    <button type="button" class="btn btn-sm btn-theme py-1 px-3" (click)="onGradeAdded(activeVersionIndex)">
+                    <button type="button" class="btn-lims btn-lims-add py-1 px-3" (click)="onGradeAdded(activeVersionIndex)">
                       <i class="bi bi-plus-circle me-1"></i> Add Grade
                     </button>
                   </div>
@@ -531,9 +531,11 @@
 
         <!-- Sticky Footer Actions -->
         <div class="sticky-bottom bg-white p-3 border-top d-flex justify-content-end align-items-center gap-2 mt-3 shadow-sm rounded-bottom-3" *ngIf="!isViewMode">
-          <a [routerLink]="['/product-master']" class="btn btn-cancel">Cancel</a>
-          <button type="submit" class="btn btn-save">
-            <i class="bi bi-check-lg me-1"></i> Save & Publish
+          <a [routerLink]="['/product-master']" class="btn-lims btn-lims-cancel">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </a>
+          <button type="submit" class="btn-lims btn-lims-save">
+            <i class="bi bi-check-circle me-1"></i> Save & Publish
           </button>
         </div>
 

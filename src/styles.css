@@ -210,23 +210,24 @@ body {
   background-color: var(--primary-color) !important;
 }
 
-/* Custom Utility Spacing Classes */
-.gap-1-5,
-.gap-1\.5 {
-  gap: 0.375rem !important; /* 6px */
-}
-
-.me-1-5,
-.me-1\.5 {
-  margin-right: 0.375rem !important; /* 6px */
-}
-
 /* Mandatory Global Icon-to-Label Spacing Rule */
-button i.bi:not(:only-child),
-.btn i.bi:not(:only-child),
-a.btn i.bi:not(:only-child),
-.btn-lims i.bi:not(:only-child) {
-  margin-right: 6px !important;
+.nav-link i.bi,
+.btn i.bi,
+button i.bi,
+a.btn i.bi,
+.btn-lims i.bi {
+  margin-right: 6px;
+}
+
+/* Explicit icon-only buttons override (no right margin) */
+.btn-icon i.bi,
+.btn-lims-icon i.bi,
+.btn-nav-icon i.bi,
+.btn-nav-plus i.bi,
+.btn-field-add i.bi,
+.btn-circle i.bi,
+.btn-close i.bi {
+  margin-right: 0 !important;
 }
 .theme-color {
   color: var(--primary-color);
@@ -3767,5 +3768,18 @@ input[type="checkbox"]:checked {
   color: #ffffff;
   box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
 }
+
+/* ── Compact Typography Helpers ── */
+.extra-small {
+  font-size: 0.72rem !important;
+}
+.fs-7 {
+  font-size: 0.75rem !important;
+}
+.fs-8 {
+  font-size: 0.7rem !important;
+}
+
+
 
 

@@ -2,12 +2,12 @@
   <!-- Inward Details Strip -->
   <div class="inward-strip" [class.inward-strip-compact]="mode === 'plan'">
     <div class="inward-strip-header" *ngIf="mode !== 'plan'">
-      <i class="bi bi-file-earmark-text me-1.5"></i> Inward Details
+      <i class="bi bi-file-earmark-text me-2"></i> Inward Details
     </div>
     <div class="inward-strip-body">
       <div class="d-flex flex-wrap align-items-center gap-3">
         <span class="case-badge">
-          <i class="bi bi-hash me-1.5"></i>{{ planForm.get("caseNo")?.value || "-" }}
+          <i class="bi bi-hash me-2"></i>{{ planForm.get("caseNo")?.value || "-" }}
         </span>
         <div class="info-item">
           <span class="info-label">Receipt Note:</span>
@@ -29,15 +29,15 @@
           </span>
         </div>
         <span class="conformity-divider"></span>
-        <div class="d-flex align-items-center gap-1.5">
-          <span class="info-label"><i class="bi bi-shield-check me-1.5 text-danger"></i>Conformity:</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="info-label"><i class="bi bi-shield-check me-2 text-danger"></i>Conformity:</span>
           <select class="form-select form-select-sm compact-select" formControlName="statementOfConformity">
             <option>Applicable</option>
             <option>Not Applicable</option>
           </select>
         </div>
-        <div class="d-flex align-items-center gap-1.5">
-          <span class="info-label"><i class="bi bi-rulers me-1.5 text-danger"></i>Decision Rule:</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="info-label"><i class="bi bi-rulers me-2 text-danger"></i>Decision Rule:</span>
           <select class="form-select form-select-sm compact-select" formControlName="decisionRule">
             <option>Without taking MOU into account</option>
             <option>With MOU consideration</option>
@@ -53,9 +53,9 @@
     <div class="sample-list-panel">
       <!-- Panel Header (sticky) -->
       <div class="sample-panel-header">
-        <div class="d-flex align-items-center gap-1.5">
+        <div class="d-flex align-items-center gap-2">
           <input type="checkbox" class="form-check-input mt-0" [checked]="selectAllChecked" (change)="toggleSelectAll($event)" title="Select all samples for combined planning">
-          <span class="sample-panel-label"><i class="bi bi-collection ms-1 me-1.5 text-danger"></i>SAMPLES</span>
+          <span class="sample-panel-label"><i class="bi bi-collection ms-1 me-2 text-danger"></i>SAMPLES</span>
         </div>
         <span class="sample-panel-count">{{ samples.length }}</span>
       </div>
@@ -72,7 +72,7 @@
               (click)="$event.stopPropagation()">
             <span class="sample-seq-no">#{{ i + 1 }}</span>
             <span class="sample-no-badge">
-              <i class="bi bi-box-seam me-1.5"></i>{{ sample.get('sampleNo')?.value }}
+              <i class="bi bi-box-seam me-2"></i>{{ sample.get('sampleNo')?.value }}
             </span>
             <span class="sample-status-badge ms-auto" [ngClass]="getPlanStatusClass(getSamplePlanStatus(i))">
               {{ getSamplePlanStatus(i) }}
@@ -85,25 +85,18 @@
           </div>
 
           <!-- Master classification chips in sample card -->
-          <div class="d-flex flex-wrap gap-1 mt-1 mb-1.5">
+          <div class="d-flex flex-wrap gap-1 mt-1 mb-2">
             <div *ngIf="sample.get('productMasterName')?.value" class="sample-master-chip chip-product-master" title="Product Master">
-              <i class="bi bi-award me-1.5"></i>{{ sample.get('productMasterName')?.value }}
+              <i class="bi bi-award me-2"></i>{{ sample.get('productMasterName')?.value }}
             </div>
             <div *ngIf="sample.get('metalClassificationName')?.value" class="sample-master-chip chip-metal" title="Metal Classification">
-              <i class="bi bi-layers me-1.5"></i>{{ sample.get('metalClassificationName')?.value }}
+              <i class="bi bi-layers me-2"></i>{{ sample.get('metalClassificationName')?.value }}
             </div>
             <div *ngIf="sample.get('productSizeName')?.value" class="sample-master-chip chip-size" title="Product Size">
-              <i class="bi bi-ruler me-1.5"></i>{{ sample.get('productSizeName')?.value }}
+              <i class="bi bi-ruler me-2"></i>{{ sample.get('productSizeName')?.value }}
             </div>
           </div>
 
-          <!-- Configured Data Explorer Quick Trigger Button -->
-          <div class="mt-1 mb-1">
-            <button type="button" class="btn btn-xs btn-outline-danger w-100 py-0.5 extra-small fw-semibold d-flex align-items-center justify-content-center gap-1"
-              (click)="openExplorerModal(i); $event.stopPropagation()" title="Explore Configured Grades & Linked Tests for this sample">
-              <i class="bi bi-layout-sidebar-reverse me-1.5"></i>Configured Explorer
-            </button>
-          </div>
 
           <!-- Bottom meta: Qty + flag chips -->
           <div class="sample-card-meta">
@@ -131,7 +124,7 @@
         <!-- Sticky context mini-header -->
         <div class="active-sample-sticky">
           <span class="active-sample-no">
-            <i class="bi bi-box-seam me-1.5 text-danger"></i>{{ getActiveSample().get('sampleNo')?.value }}
+            <i class="bi bi-box-seam me-2 text-danger"></i>{{ getActiveSample().get('sampleNo')?.value }}
           </span>
           <span class="badge ms-2" [ngClass]="getPlanStatusClass(getSamplePlanStatus(activeSampleIdx))">
             {{ getSamplePlanStatus(activeSampleIdx) }}
@@ -156,21 +149,21 @@
             <!-- Standardized Fieldset for Sample Details & Guidelines (Proposal B - Spacious 3-Layer Layout) -->
             <fieldset class="mb-3">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-2">
-                <span><i class="bi bi-box-seam me-1.5"></i> Sample Details & Guidelines</span>
-                <span class="badge bg-dark ms-2.5">{{ getActiveSample().get('sampleNo')?.value }}</span>
+                <span><i class="bi bi-box-seam me-2"></i> Sample Details & Guidelines</span>
+                <span class="badge bg-dark ms-2">{{ getActiveSample().get('sampleNo')?.value }}</span>
                 <span *ngIf="getActiveSample().get('quantity')?.value" class="badge bg-secondary ms-1">
                   Qty: {{ getActiveSample().get('quantity')?.value }}
                 </span>
 
                 <!-- Unknown Sample Toggle in Header Line -->
-                <div class="form-check form-switch mb-0 ms-3 extra-small d-flex align-items-center gap-1.5">
+                <div class="form-check form-switch mb-0 ms-3 extra-small d-flex align-items-center gap-2">
                   <input class="form-check-input" type="checkbox" formControlName="isUnknownSample"
                     (change)="onUnknownSampleToggle(activeSampleIdx)" id="unknownToggle{{activeSampleIdx}}">
                   <label class="form-check-label extra-small fw-semibold text-secondary cursor-pointer" for="unknownToggle{{activeSampleIdx}}">Unknown Sample</label>
                 </div>
               </legend>
 
-              <div class="row g-2.5 align-items-stretch">
+              <div class="row g-2 align-items-stretch">
                 <!-- LEFT COLUMN: Dedicated Full-Width Sample Image Anchor (col-md-3) -->
                 <div class="col-md-3">
                   <div class="card p-1 border bg-light shadow-none text-center h-100 d-flex align-items-center justify-content-center overflow-hidden">
@@ -182,7 +175,7 @@
                         (click)="openFileInNewTab(getActiveSample().get('sampleFilePath')?.value)"
                         title="Click to view full image" />
                       <div *ngIf="!getActiveSample().get('sampleFilePath')?.value" class="text-muted small py-4">
-                        <i class="bi bi-image fs-1 d-block mb-1.5 text-secondary opacity-50"></i>
+                        <i class="bi bi-image fs-1 d-block mb-2 text-secondary opacity-50"></i>
                         No Image Available
                       </div>
                     </div>
@@ -193,7 +186,7 @@
                 <div class="col-md-9 d-flex flex-column justify-content-between gap-2">
 
                   <!-- LAYER 1: Sample Specifications Text Banner -->
-                  <div class="sample-text-details bg-light p-2 px-2.5 rounded border small">
+                  <div class="sample-text-details bg-light p-2 rounded border small">
                     <span *ngIf="getActiveSample().get('details')?.value">
                       <strong class="text-secondary">Details:</strong> {{ getActiveSample().get('details')?.value }}
                     </span>
@@ -240,18 +233,18 @@
                   </div>
 
                   <!-- Unknown Sample Flow Banner (Compact with reduced width) -->
-                  <div *ngIf="getActiveSample().get('isUnknownSample')?.value" class="mt-1 mb-0.5">
+                  <div *ngIf="getActiveSample().get('isUnknownSample')?.value" class="mt-1 mb-1">
                     <div class="lims-info-banner-compact">
-                      <i class="bi bi-info-circle-fill text-info me-1.5"></i>
+                      <i class="bi bi-info-circle-fill text-info me-2"></i>
                       <span><strong>Unknown Sample:</strong> Grade will be assigned post-testing. All master tests available.</span>
                       <span class="badge-tbd">Grade TBD</span>
                     </div>
                   </div>
 
                   <!-- Scope Master Not Configured Alert Banner (Compact) -->
-                  <div *ngIf="isScopeConfiguredMap[activeSampleIdx] === false" class="mt-1 mb-0.5">
+                  <div *ngIf="isScopeConfiguredMap[activeSampleIdx] === false" class="mt-1 mb-1">
                     <div class="lims-warn-banner-compact">
-                      <i class="bi bi-exclamation-triangle-fill text-warning me-1.5"></i>
+                      <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
                       <span><strong>Notice:</strong> Scope Master not configured for this Product/Grade. Manual test selection active (no acceptance limits).</span>
                     </div>
                   </div>
@@ -260,10 +253,10 @@
                   <div class="row g-2 align-items-stretch">
                     <!-- TPI Sub-block (col-md-5) -->
                     <div class="col-md-5">
-                      <div class="p-2 px-2.5 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                      <div class="p-2 rounded bg-light border h-100 d-flex flex-column justify-content-between">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                          <span class="fw-semibold text-dark small"><i class="bi bi-patch-check text-danger me-1.5"></i>TPI Inspection</span>
-                          <div class="form-check form-switch mb-0 d-flex align-items-center gap-1.5">
+                          <span class="fw-semibold text-dark small"><i class="bi bi-patch-check text-danger me-2"></i>TPI Inspection</span>
+                          <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
                             <input class="form-check-input mt-0 cursor-pointer" type="checkbox"
                               [checked]="getActiveSample().get('tpiRequired')?.value"
                               (change)="onTpiRequiredToggle(activeSampleIdx, $event)"
@@ -275,15 +268,15 @@
                             </label>
                           </div>
                         </div>
-                        <div *ngIf="getActiveSample().get('tpiRequired')?.value" class="mt-1.5">
+                        <div *ngIf="getActiveSample().get('tpiRequired')?.value" class="mt-2">
                           <app-searchable-dropdown [placeholder]="'Type & Search TPI Agency'" [hideLabel]="true"
                             [labelName]="'TPI Agency'" [smallInput]="true" [fetchDataFn]="getTPIAgencies"
                             (itemSelected)="onTPISelected($event, activeSampleIdx)"
                             [selectedItem]="getActiveSample().get('tpiAgencyID')?.value"
                             [isDisabled]="isViewMode"></app-searchable-dropdown>
                           <div *ngIf="tpiAgencyDetails[activeSampleIdx]" class="d-flex align-items-center gap-2 p-2 mt-2 bg-white rounded small border text-muted">
-                            <span class="text-dark"><i class="bi bi-telephone text-success me-1.5"></i>{{ tpiAgencyDetails[activeSampleIdx].contactNo }}</span>
-                            <span class="text-dark ms-auto"><i class="bi bi-envelope text-info me-1.5"></i>{{ tpiAgencyDetails[activeSampleIdx].emailId }}</span>
+                            <span class="text-dark"><i class="bi bi-telephone text-success me-2"></i>{{ tpiAgencyDetails[activeSampleIdx].contactNo }}</span>
+                            <span class="text-dark ms-auto"><i class="bi bi-envelope text-info me-2"></i>{{ tpiAgencyDetails[activeSampleIdx].emailId }}</span>
                           </div>
                         </div>
                       </div>
@@ -291,9 +284,9 @@
 
                     <!-- Instructions Sub-block (col-md-7) -->
                     <div class="col-md-7">
-                      <div class="p-2 px-2.5 rounded bg-white border h-100 d-flex flex-column justify-content-between gap-1.5">
+                      <div class="p-2 rounded bg-white border h-100 d-flex flex-column justify-content-between gap-2">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                          <label class="form-label small fw-semibold text-dark mb-0"><i class="bi bi-file-earmark-text text-danger me-1.5"></i>Test Instructions:</label>
+                          <label class="form-label small fw-semibold text-dark mb-0"><i class="bi bi-file-earmark-text text-danger me-2"></i>Test Instructions:</label>
                           <div class="d-flex flex-wrap gap-1 align-items-center">
                             <button type="button" class="btn btn-xs btn-outline-secondary preset-chip-btn"
                               (click)="appendInstruction(activeSampleIdx, 'Preserve broken specimen')">+ Preserve</button>
@@ -324,25 +317,25 @@
                   <div class="version-bar">
                     <div class="d-flex align-items-center gap-2">
                       <span class="badge bg-dark version-badge">
-                        <i class="bi bi-layers me-1.5"></i>v{{ testPlan.get('version')?.value || 1 }}
+                        <i class="bi bi-layers me-2"></i>v{{ testPlan.get('version')?.value || 1 }}
                       </span>
                       <span *ngIf="testPlan.get('planStatus')?.value" class="badge"
                         [ngClass]="getPlanStatusClass(testPlan.get('planStatus')?.value)">
                         {{ getPlanStatusLabel(testPlan.get('planStatus')?.value) }}
                       </span>
                       <span *ngIf="testPlan.get('replanCount')?.value > 0" class="badge bg-warning text-dark">
-                        <i class="bi bi-arrow-repeat me-1.5"></i>Replanned {{ testPlan.get('replanCount')?.value }}×
+                        <i class="bi bi-arrow-repeat me-2"></i>Replanned {{ testPlan.get('replanCount')?.value }}×
                       </span>
                     </div>
-                    <div class="d-flex gap-1.5">
+                    <div class="d-flex gap-2">
                       <button *ngIf="testPlan.get('id')?.value > 0" type="button"
                         class="btn btn-sm btn-outline-secondary" (click)="togglePlanHistory(testPlan.get('id')?.value)"
                         title="View History">
-                        <i class="bi bi-clock-history me-1.5"></i>History
+                        <i class="bi bi-clock-history me-2"></i>History
                       </button>
                       <button *ngIf="isPlanApproved(testPlan)" type="button" class="btn btn-sm btn-outline-warning"
                         (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
-                        <i class="bi bi-arrow-repeat me-1.5"></i>Replan
+                        <i class="bi bi-arrow-repeat me-2"></i>Replan
                       </button>
                     </div>
                   </div>
@@ -351,7 +344,7 @@
                   <div *ngIf="showHistoryPanel && activeHistoryPlanId === testPlan.get('id')?.value"
                     class="history-panel">
                     <div class="history-panel-header">
-                      <span class="fw-semibold small"><i class="bi bi-clock-history me-1.5 text-danger"></i>Plan History Timeline</span>
+                      <span class="fw-semibold small"><i class="bi bi-clock-history me-2 text-danger"></i>Plan History Timeline</span>
                       <button type="button" class="btn-close btn-sm" (click)="showHistoryPanel = false"></button>
                     </div>
                     <div class="history-panel-body">
@@ -372,10 +365,10 @@
                             <span class="history-type">{{ entry.changeType }}</span>
                           </div>
                           <div class="history-card-meta">
-                            <i class="bi bi-person-fill me-1"></i> {{ entry.changedByName || 'System' }}
+                            <i class="bi bi-person-fill me-2"></i> {{ entry.changedByName || 'System' }}
                           </div>
                           <div class="history-card-meta">
-                            <i class="bi bi-clock me-1"></i> {{ entry.changedAt | date: 'dd MMM, hh:mm a' }}
+                            <i class="bi bi-clock me-2"></i> {{ entry.changedAt | date: 'dd MMM, hh:mm a' }}
                           </div>
                           <div *ngIf="entry.remarks" class="history-card-remark">{{ entry.remarks }}</div>
                           <div *ngIf="parseFieldChanges(entry.fieldChangesJson)?.length" class="history-changes">
@@ -394,7 +387,7 @@
 
                   <!-- Approved Info -->
                   <div *ngIf="testPlan.get('approvedByName')?.value" class="approved-bar">
-                    <i class="bi bi-check-circle-fill me-1.5"></i>
+                    <i class="bi bi-check-circle-fill me-2"></i>
                     Approved by <strong>{{ testPlan.get('approvedByName')?.value }}</strong>
                     on {{ testPlan.get('approvedAt')?.value | date: 'dd MMM yyyy, hh:mm a' }}
                   </div>
@@ -405,20 +398,20 @@
                       <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'general') }"
                         (click)="setActiveTab(activeSampleIdx, planIdx, 'general')"
                         id="general-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-gear me-1.5"></i> General Test
+                        <i class="bi bi-gear me-2"></i> General Test
                       </button>
                     </li>
                     <li class="nav-item" role="presentation">
                       <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'chemical') }"
                         (click)="setActiveTab(activeSampleIdx, planIdx, 'chemical')"
                         id="chemical-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-droplet me-1.5"></i> Chemical Test
+                        <i class="bi bi-droplet me-2"></i> Chemical Test
                       </button>
                     </li>
                   </ul>
                   <div class="tab-content">
                     <!-- 1-Click Auto-Populate from Product Master Banner (when plan is empty) -->
-                    <div *ngIf="hasEmptyTestPlan(activeSampleIdx, planIdx) && !isViewMode" class="alert alert-light border border-danger border-opacity-25 rounded p-2 mb-2.5 d-flex align-items-center justify-content-between shadow-xs">
+                    <div *ngIf="hasEmptyTestPlan(activeSampleIdx, planIdx) && !isViewMode" class="alert alert-light border border-danger border-opacity-25 rounded p-2 mb-2 d-flex align-items-center justify-content-between shadow-xs">
                       <div class="d-flex align-items-center gap-2 extra-small text-dark">
                         <i class="bi bi-stars text-danger fs-5"></i>
                         <div>
@@ -428,7 +421,7 @@
                       </div>
                       <button type="button" class="btn btn-sm btn-lims btn-lims-save py-1 px-3 extra-small flex-shrink-0"
                         (click)="autoPopulateFromProductMaster(activeSampleIdx)">
-                        <i class="bi bi-lightning-fill me-1.5"></i>Auto-Populate Plan from Product Master
+                        <i class="bi bi-lightning-fill me-2"></i>Auto-Populate Plan from Product Master
                       </button>
                     </div>
 
@@ -483,10 +476,10 @@
                                   <!-- Inline Grade Suggested Tests Quick-Pick Chips -->
                                   <div *ngIf="getGradeSuggestedTests(activeSampleIdx).length > 0" class="d-flex flex-wrap gap-1 mb-1">
                                     <span *ngFor="let sug of getGradeSuggestedTests(activeSampleIdx)"
-                                      class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 extra-small cursor-pointer d-inline-flex align-items-center gap-1.5"
+                                      class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 extra-small cursor-pointer d-inline-flex align-items-center gap-2"
                                       (click)="applyGradeSuggestedTest(sug, activeSampleIdx, planIdx, methodIdx)"
                                       title="Click to auto-fill {{ sug.laboratoryTestName }} (Grade Suggested)">
-                                      <i class="bi bi-stars text-danger me-1.5"></i> {{ sug.laboratoryTestName }}
+                                      <i class="bi bi-stars text-danger me-2"></i> {{ sug.laboratoryTestName }}
                                     </span>
                                   </div>
 
@@ -502,16 +495,16 @@
                                     <span *ngIf="getActiveSample().get('isUnknownSample')?.value"
                                       class="badge badge-lims-unknown border extra-small"
                                       title="Unknown Sample: Grade will be determined after testing">
-                                      <i class="bi bi-question-circle me-1.5"></i>Unknown Sample (Grade TBD)
+                                      <i class="bi bi-question-circle me-2"></i>Unknown Sample (Grade TBD)
                                     </span>
                                     <span *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant" 
                                       class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 extra-small">
-                                      <i class="bi bi-patch-check-fill me-1.5"></i>Master Configured
+                                      <i class="bi bi-patch-check-fill me-2"></i>Master Configured
                                     </span>
                                     <span *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant" 
                                       class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 extra-small"
                                       title="Custom Selection: Non-standard override">
-                                      <i class="bi bi-exclamation-triangle-fill me-1.5 text-warning"></i>Custom Selection
+                                      <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>Custom Selection
                                     </span>
                                   </div>
 
@@ -531,7 +524,7 @@
 
                                   <!-- Inline Remark Input for Custom Selection -->
                                   <div *ngIf="complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx].isFullyCompliant" class="mt-1">
-                                    <input type="text" class="form-control form-control-sm extra-small py-0.5 border-warning"
+                                    <input type="text" class="form-control form-control-sm extra-small py-1 border-warning"
                                       formControlName="customRemarks" placeholder="Remark for custom selection..." />
                                   </div>
                                 </td>
@@ -563,23 +556,23 @@
                           <div class="d-flex gap-2 mt-1 plan-action-bar">
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
                               (click)="addMethodRow(activeSampleIdx, planIdx)">
-                              <i class="bi bi-plus-circle me-1.5"></i>Add Row
+                              <i class="bi bi-plus-circle me-2"></i>Add Row
                             </button>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
                               (click)="loadSuggestedTests(activeSampleIdx, planIdx)"
                               [disabled]="suggestLoading[activeSampleIdx + '_' + planIdx]">
-                              <i class="bi bi-lightbulb me-1.5"></i>
+                              <i class="bi bi-lightbulb me-2"></i>
                               <span *ngIf="suggestLoading[activeSampleIdx + '_' + planIdx]"
-                                class="spinner-border spinner-border-sm me-1.5"></span>
+                                class="spinner-border spinner-border-sm me-2"></span>
                               Auto-Suggest
                             </button>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
                               (click)="openExplorerModal(activeSampleIdx)">
-                              <i class="bi bi-layout-sidebar-reverse me-1.5"></i>Configured Explorer
+                              <i class="bi bi-layout-sidebar-reverse me-2"></i>Configured Explorer
                             </button>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto"
                               (click)="removeGeneralTest(activeSampleIdx, planIdx, 0)">
-                              <i class="bi bi-trash me-1.5"></i>Remove Block
+                              <i class="bi bi-trash me-2"></i>Remove Block
                             </button>
                           </div>
 
@@ -587,7 +580,7 @@
                           <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]" class="card mt-2 border-info shadow-sm">
                             <div
                               class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
-                              <span class="fw-semibold small text-info-emphasis"><i class="bi bi-lightbulb me-1.5"></i>Smart Suggested Tests</span>
+                              <span class="fw-semibold small text-info-emphasis"><i class="bi bi-lightbulb me-2"></i>Smart Suggested Tests</span>
                               <button type="button" class="btn-close btn-sm"
                                 (click)="closeSuggestPanel(activeSampleIdx, planIdx)"></button>
                             </div>
@@ -646,7 +639,7 @@
                                 <button type="button" class="btn btn-sm btn-lims btn-lims-save"
                                   (click)="addSelectedSuggestedTests(activeSampleIdx, planIdx)"
                                   [disabled]="!hasSelectedSuggestions()">
-                                  <i class="bi bi-plus-circle me-1.5"></i>Add Selected
+                                  <i class="bi bi-plus-circle me-2"></i>Add Selected
                                 </button>
                               </div>
                             </div>
@@ -721,8 +714,8 @@
                                            (itemSelected)="onChemicalLabTestSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
                                            [selectedItem]="method.get('testMethodID')?.value"
                                            [isDisabled]="isViewMode || !hasSelectedTechnique(activeSampleIdx)"></app-searchable-dropdown>
-                                         <div *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-muted fst-italic mt-0.5">
-                                           <i class="bi bi-info-circle me-1.5 text-secondary"></i>Select Technique / Analysis Type above to enable
+                                         <div *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-muted fst-italic mt-1">
+                                           <i class="bi bi-info-circle me-2 text-secondary"></i>Select Technique / Analysis Type above to enable
                                          </div>
                                        </td>
                                        <td>
@@ -755,20 +748,20 @@
 
                               <div class="d-flex gap-2 mb-2" *ngIf="!isViewMode">
                                 <button type="button" class="btn btn-sm btn-lims btn-lims-add" (click)="addChemicalMethodRow(activeSampleIdx, planIdx, chemIdx)">
-                                  <i class="bi bi-plus-circle me-1.5"></i>Add Row
+                                  <i class="bi bi-plus-circle me-2"></i>Add Row
                                 </button>
                                 <button type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto" (click)="removeChemicalTest(activeSampleIdx, planIdx, chemIdx)">
-                                  <i class="bi bi-trash me-1.5"></i>Remove Chemical Block
+                                  <i class="bi bi-trash me-2"></i>Remove Chemical Block
                                 </button>
                               </div>
 
                               <!-- Element Matrix Table -->
                               <div *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0">
-                                <div class="d-flex align-items-center justify-content-between mb-1.5">
-                                  <div class="fw-semibold text-secondary small"><i class="bi bi-grid-3x3-gap me-1.5 text-danger"></i>Chemical Element Matrix</div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                  <div class="fw-semibold text-secondary small"><i class="bi bi-grid-3x3-gap me-2 text-danger"></i>Chemical Element Matrix</div>
                                   <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-info"
                                     (click)="loadMachineSpectroMatrix(activeSampleIdx, planIdx, getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).at(0).get('testMethodID')?.value)">
-                                    <i class="bi bi-cpu me-1.5"></i>Load Machine Spectro Matrix
+                                    <i class="bi bi-cpu me-2"></i>Load Machine Spectro Matrix
                                   </button>
                                 </div>
                                 <div class="table-responsive">
@@ -822,7 +815,7 @@
                         <button *ngIf="getTestArray(activeSampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
                           type="button" class="btn btn-sm btn-lims btn-lims-add mt-1"
                           (click)="addTestBlock(activeSampleIdx, planIdx, 'chemicalTests')">
-                          <i class="bi bi-plus-circle me-1.5"></i>Add Chemical Test
+                          <i class="bi bi-plus-circle me-2"></i>Add Chemical Test
                         </button>
                       </div>
                     </div>
@@ -833,7 +826,7 @@
               <ng-template #addPlanBlock>
                 <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
                   (click)="addPlanToSample(activeSampleIdx)">
-                  <i class="bi bi-plus-circle me-1.5"></i>Add Plan
+                  <i class="bi bi-plus-circle me-2"></i>Add Plan
                 </button>
               </ng-template>
             </div>
@@ -846,7 +839,7 @@
       <div *ngIf="isCombinedMode" [formGroup]="combinedPlanForm">
         <div class="combined-header rounded-top">
           <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-            <span class="fw-semibold small"><i class="bi bi-collection me-1.5"></i>Combined Plan for:</span>
+            <span class="fw-semibold small"><i class="bi bi-collection me-2"></i>Combined Plan for:</span>
             <span *ngFor="let idx of getCombinedIdxsArray()" class="combined-sample-tag">
               {{ samples.at(idx).get('sampleNo')?.value }}
               <button type="button" class="btn-close combined-close-btn ms-1"
@@ -854,7 +847,7 @@
             </span>
             <button type="button" class="btn btn-sm btn-secondary ms-auto"
               (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
-              <i class="bi bi-x me-1.5"></i>Cancel Combined
+              <i class="bi bi-x me-2"></i>Cancel Combined
             </button>
           </div>
         </div>
@@ -864,13 +857,13 @@
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'general' }"
               (click)="combinedActiveTab = 'general'" type="button">
-              <i class="bi bi-gear me-1.5"></i>General Test
+              <i class="bi bi-gear me-2"></i>General Test
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'chemical' }"
               (click)="combinedActiveTab = 'chemical'" type="button">
-              <i class="bi bi-droplet me-1.5"></i>Chemical Test
+              <i class="bi bi-droplet me-2"></i>Chemical Test
             </button>
           </li>
         </ul>
@@ -932,7 +925,7 @@
               </tbody>
             </table>
             <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1" (click)="addCombinedMethodRow()">
-              <i class="bi bi-plus-circle me-1.5"></i>Add Row
+              <i class="bi bi-plus-circle me-2"></i>Add Row
             </button>
           </div>
 
@@ -1009,7 +1002,7 @@
           <!-- Apply Button -->
           <div class="d-flex justify-content-end mt-3">
             <button type="button" class="btn btn-lims btn-lims-save" (click)="applyCombinedPlan()">
-              <i class="bi bi-check2-all me-1.5"></i>Apply to {{ combinedIdxs.size }} Samples
+              <i class="bi bi-check2-all me-2"></i>Apply to {{ combinedIdxs.size }} Samples
             </button>
           </div>
         </div>
@@ -1020,14 +1013,14 @@
   <!-- Save/Cancel Sticky Action Bar -->
   <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 my-2 p-2 bg-white border-top border-2 border-danger sticky-bottom rounded shadow-sm">
     <button type="button" class="btn btn-lims btn-lims-cancel" (click)="onCancel()">
-      <i class="bi bi-x-circle me-1.5"></i> Cancel
+      <i class="bi bi-x-circle me-2"></i> Cancel
     </button>
     <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()"
       [disabled]="!planForm.valid">
-      <i class="bi bi-check-circle me-1.5"></i> Save Plan
+      <i class="bi bi-check-circle me-2"></i> Save Plan
     </button>
     <button *ngIf="canSendForReview()" type="button" class="btn btn-lims btn-lims-primary" (click)="onSendForReview()">
-      <i class="bi bi-send me-1.5"></i> Send for Review
+      <i class="bi bi-send me-2"></i> Send for Review
     </button>
   </div>
 </div>
@@ -1037,24 +1030,24 @@
   <div class="modal-dialog modal-dialog-centered plan-modal-sm">
     <div class="modal-content shadow-lg border-0">
       <div class="modal-header py-2 bg-warning text-dark">
-        <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5"><i class="bi bi-exclamation-triangle me-1.5"></i> Empty Test Tabs Detected</h6>
+        <h6 class="modal-title mb-0 d-flex align-items-center gap-2"><i class="bi bi-exclamation-triangle me-2"></i> Empty Test Tabs Detected</h6>
         <button type="button" class="btn-close btn-sm" (click)="showEmptyTabsDialog = false"></button>
       </div>
       <div class="modal-body py-3">
         <p class="small mb-2 text-secondary">The following test tabs have no content. Remove them before submitting?</p>
         <ul class="list-group list-group-flush small mb-0">
-          <li *ngFor="let t of emptyTabsList" class="list-group-item px-0 py-1 d-flex align-items-center gap-1.5">
-            <i class="bi bi-x-circle text-danger"></i>
+          <li *ngFor="let t of emptyTabsList" class="list-group-item px-0 py-1 d-flex align-items-center gap-2">
+            <i class="bi bi-x-circle text-danger me-2"></i>
             <strong>{{ t.sampleNo }}</strong>&nbsp;— {{ t.label }}
           </li>
         </ul>
       </div>
       <div class="modal-footer py-2 gap-2">
         <button type="button" class="btn btn-sm btn-lims btn-lims-secondary" (click)="showEmptyTabsDialog = false">
-          <i class="bi bi-pencil me-1.5"></i> Go Back & Fill
+          <i class="bi bi-pencil me-2"></i> Go Back & Fill
         </button>
         <button type="button" class="btn btn-sm btn-lims btn-lims-remove" (click)="removeEmptyTabsAndContinue()">
-          <i class="bi bi-trash me-1.5"></i> Delete Empty & Continue
+          <i class="bi bi-trash me-2"></i> Delete Empty & Continue
         </button>
       </div>
     </div>
@@ -1066,7 +1059,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg border-0">
       <div class="modal-header card-form-header text-white py-2">
-        <h5 class="modal-title text-white mb-0 d-flex align-items-center gap-1.5"><i class="bi bi-arrow-repeat me-1.5"></i>Request Replan</h5>
+        <h5 class="modal-title text-white mb-0 d-flex align-items-center gap-2"><i class="bi bi-arrow-repeat me-2"></i>Request Replan</h5>
         <button type="button" class="btn-close btn-close-white" (click)="closeReplanModal()"></button>
       </div>
       <div class="modal-body p-3">
@@ -1078,10 +1071,10 @@
       </div>
       <div class="modal-footer py-2 gap-2">
         <button type="button" class="btn btn-sm btn-lims btn-lims-cancel" (click)="closeReplanModal()">
-          <i class="bi bi-x-circle me-1.5"></i> Cancel
+          <i class="bi bi-x-circle me-2"></i> Cancel
         </button>
         <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="submitReplanRequest()" [disabled]="!replanReason.trim()">
-          <i class="bi bi-send me-1.5"></i> Submit Request
+          <i class="bi bi-send me-2"></i> Submit Request
         </button>
       </div>
     </div>
@@ -1095,15 +1088,15 @@
     <div class="modal-content shadow-lg border-0">
       <div class="modal-header card-form-header text-white py-2 bg-danger d-flex align-items-center justify-content-between"
         (mousedown)="startDragExplorer($event)" title="Click and drag to move window anywhere">
-        <h6 class="modal-title text-white mb-0 d-flex align-items-center gap-1.5 cursor-move">
-          <i class="bi bi-arrows-move me-1.5"></i> Configured Explorer — Sample #{{ getActiveSample().get('sampleNo')?.value }}
+        <h6 class="modal-title text-white mb-0 d-flex align-items-center gap-2 cursor-move">
+          <i class="bi bi-arrows-move me-2"></i> Configured Explorer — Sample #{{ getActiveSample().get('sampleNo')?.value }}
         </h6>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-white bg-opacity-25 text-white extra-small"><i class="bi bi-arrows-angle-expand me-1.5"></i>Drag / Resize</span>
+          <span class="badge bg-white bg-opacity-25 text-white extra-small"><i class="bi bi-arrows-angle-expand me-2"></i>Drag / Resize</span>
           <button type="button" class="btn-close btn-close-white ms-2" (click)="closeExplorerModal()"></button>
         </div>
       </div>
-      <div class="modal-body p-3.5 bg-light" style="overflow-y: auto;">
+      <div class="modal-body p-3 bg-light" style="overflow-y: auto;">
         <app-plan-explorer-panel
           [productMasterId]="getActiveSample().get('productMasterID')?.value"
           [metalClassificationId]="getActiveSample().get('metalClassificationID')?.value"

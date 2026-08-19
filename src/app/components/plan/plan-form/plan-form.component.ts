@@ -1552,7 +1552,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
 
     if (pmId) {
-      this.openExplorerModal(sampleIndex);
       this.explorerService.getProductMasterExplorer(pmId).subscribe({
         next: (explorerData) => {
           this.explorerProductDataMap[sampleIndex] = explorerData;
@@ -1674,7 +1673,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           this.explorerMetalDataMap[sampleIndex] = metalData;
         }
       });
-      this.openExplorerModal(sampleIndex);
     } else {
       delete this.metalClassificationSelectedMap[sampleIndex];
       delete this.explorerMetalDataMap[sampleIndex];

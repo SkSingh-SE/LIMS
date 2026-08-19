@@ -28,6 +28,9 @@
 }
 
 .explorer-pills .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: #475569;
   border-radius: 6px;
   transition: background-color 0.15s, color 0.15s;

@@ -14,15 +14,8 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
     styleUrl: './audit-plan-preview.component.css'
 })
 export class AuditPlanPreviewComponent implements OnInit {
-    data: any[] = [];
-    headerInfo: any = {
-        formatNo: 'F-50',
-        docNo: 'DMSPL / Level-04 / Format / F-50',
-        issueNo: '03',
-        issueDate: '01.10.2021',
-        revNo: '00',
-        revDate: '--'
-    };
+    data: any = null;
+    recordId: number = 0;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
@@ -30,22 +23,26 @@ export class AuditPlanPreviewComponent implements OnInit {
     constructor(
         private service: AuditPlanService,
         private router: Router,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private route: ActivatedRoute
     ) { }
-
     ngOnInit() {
-        this.fetchData();
+        this.route.paramMap.subscribe(params => {
+            this.recordId = Number(params.get('id'));
+            if (this.recordId > 0) this.fetchData();
+        });
     }
-
     fetchData() {
-        this.service.getAll().subscribe(resp => {
+        this.service.getById(this.recordId).subscribe(resp => {
             this.data = resp;
-            if (resp.length > 0) {
-                this.headerInfo.formatNo = resp[0].formatNo;
-                this.headerInfo.docNo = resp[0].docNo;
-            }
             setTimeout(() => this.autoDetectOrientation(), 300);
         });
+    }
+    getIsoClauseNames(clauses: any[]): string {
+        return (clauses || [])
+            .map(x => x.clauseName)
+            .filter(x => x)
+            .join(', ');
     }
 
     private autoDetectOrientation(): void {

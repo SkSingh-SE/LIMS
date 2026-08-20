@@ -6,6 +6,8 @@
   [columns]="columns"
   [data]="data()"
   [totalItems]="totalItems()"
+   [printList]="printList"
   [isLoading]="false"
   (onPageChange)="onPageChange($event)"
+     (onDelete)="deleteRecord($event)"
 ></app-nabl-register-table>

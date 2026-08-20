@@ -527,7 +527,8 @@ export const routes: Routes = [
             { path: 'master-document/create', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'master-document/edit/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'master-document/details/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent) },
-            { path: 'master-document/preview', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview/master-document-preview.component').then(m => m.MasterDocumentPreviewComponent) },
+            { path: 'master-document/preview/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview/master-document-preview.component').then(m => m.MasterDocumentPreviewComponent) },
+            { path: 'master-document/previewlist', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview-list/master-document-preview-list.component').then(m => m.MasterDocumentPreviewListComponent) },
 
             // F-44: Document Change Request Form
             { path: 'document-change-request', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-list/document-change-request-list.component').then(m => m.DocumentChangeRequestListComponent) },
@@ -541,7 +542,8 @@ export const routes: Routes = [
             { path: 'document-review/create', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'document-review/edit/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'document-review/details/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent) },
-            { path: 'document-review/preview', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview/document-review-preview.component').then(m => m.DocumentReviewPreviewComponent) },
+            { path: 'document-review/preview/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview/document-review-preview.component').then(m => m.DocumentReviewPreviewComponent) },
+            { path: 'document-review/previewlist', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview-list/document-review-preview-list.component').then(m => m.DocumentReviewPreviewListComponent) },
 
             // F-46: Risk & Opportunity Assessment
             { path: 'risk-assessment', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-list/risk-assessment-list.component').then(m => m.RiskAssessmentListComponent) },
@@ -576,7 +578,7 @@ export const routes: Routes = [
             { path: 'audit-plan/create', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'audit-plan/edit/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'audit-plan/details/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent) },
-            { path: 'audit-plan/preview', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-preview/audit-plan-preview.component').then(m => m.AuditPlanPreviewComponent) },
+            { path: 'audit-plan/preview/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-preview/audit-plan-preview.component').then(m => m.AuditPlanPreviewComponent) },
 
             // F-51: Audit Checklist & Observation
             { path: 'audit-checklist', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-list/audit-checklist-list.component').then(m => m.AuditChecklistListComponent) },

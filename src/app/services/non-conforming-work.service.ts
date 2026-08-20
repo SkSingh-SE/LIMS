@@ -15,7 +15,7 @@ export class NonConformingWorkService {
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
     }
-    
+
     getById(id: number): Observable<NonConformingWork | undefined> {
         return this.http.get<NonConformingWork>(`${this.apiUrl}/details/${id}`);
     }
@@ -38,5 +38,10 @@ export class NonConformingWorkService {
     }
     getPrintAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/nc-print-list', params || {});
+    }
+    getAuditChecklistNcrData(checklistItemId: number): Observable<any> {
+        return this.http.get<any>(
+            `${this.apiUrl}/audit-checklist-ncr/${checklistItemId}`
+        );
     }
 }

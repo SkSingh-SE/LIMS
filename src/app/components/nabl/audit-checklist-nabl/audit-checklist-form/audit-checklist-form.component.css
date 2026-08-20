@@ -6,3 +6,9 @@
 .ql-editor {
   min-height: 100px !important;
 }
+
+.locked-field {
+  pointer-events: none;
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}

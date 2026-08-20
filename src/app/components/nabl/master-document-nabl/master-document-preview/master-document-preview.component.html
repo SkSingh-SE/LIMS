@@ -12,26 +12,23 @@
   <div class="toolbar-center">
     <span class="doc-title-label">
       <i class="bi bi-file-text me-1"></i>
-      Master Document List
+      Master List Of Document 
     </span>
   </div>
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,42 +46,80 @@
 
   <app-print-frame [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="headerInfo.formatNo"
-        [mainTitle]="'MASTER LIST OF DOCUMENTS'"
-        [docNo]="headerInfo.docNo"
-        [issueNo]="headerInfo.issueNo"
-        [issueDate]="headerInfo.issueDate"
-        [revNo]="headerInfo.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'MASTER LIST OF DOCUMENTS'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <div class="doc-section mb-3">
-        <div class="sec-title">DOCUMENT LIST</div>
-        <table class="table table-bordered inner-table text-center align-middle">
+        <div class="sec-title">I. DOCUMENT DETAILS</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Document Code</td>
+              <td style="width: 25%">{{ data.documentCode }}</td>
+              <td class="lbl" style="width: 25%">Document Type</td>
+              <td style="width: 25%">{{ data.documentType }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Document Title</td>
+              <td>{{ data.documentTitle }}</td>
+              <td class="lbl"> Department</td>
+              <td>{{ data.departmentName }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Document Owner</td>
+              <td colspan="4">{{ data.documentOwner }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. VERSION & REVIEW</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Document Issue No.</td>
+              <td style="width: 25%">{{ data.currentIssue }}</td>
+              <td class="lbl" style="width: 25%">Document Revision No.</td>
+              <td style="width: 25%">{{ data.currentRevision }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Effective Date</td>
+              <td>{{ data.effectiveDate | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl"> Review Frequency</td>
+              <td>{{ data.reviewFrequency }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Next Review Date</td>
+              <td>{{ data.nextReviewDate | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl">Storage Location</td>
+              <td>{{ data.storageLocation }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. CONTROLLED COPY DISTRIBUTION</div>
+        <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
-              <th style="width:60px">Sr. No.</th>
-              <th>Document Name</th>
-              <th>Controlled Document No.</th>
-              <th style="width:120px">Issue No. / Date</th>
-              <th style="width:130px">Rev. No. / Date</th>
-              <th>Copy Holder</th>
+              <th style="width: 50px;">SN</th>
+              <th>Holder Name</th>
+              <th>Department</th>
+              <th>Location</th>
+              <th>Date Issued</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of data">
-              <td>{{ item.srNo }}</td>
-              <td class="text-start">{{ item.documentName }}</td>
-              <td>{{ item.documentNo }}</td>
-              <td>{{ item.issueNo }} / {{ item.issueDate | date: "dd-MM-yy" }}</td>
-              <td>{{ item.revNo }} / {{ item.revDate | date: "dd-MM-yy" }}</td>
-              <td>{{ item.copyHolder }}</td>
-            </tr>
-            <!-- Empty rows if needed -->
-            <tr *ngIf="data.length < 5">
-              <td colspan="6" style="height: 300px"></td>
+            <tr *ngFor="let controlledCopy of data.controlledCopies; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ controlledCopy.holderName }}</td>
+              <td>{{ controlledCopy.departmentName }}</td>
+              <td>{{ controlledCopy.location }}</td>
+              <td>{{ controlledCopy.dateIssued | date: "dd.MM.yyyy" }}</td>
             </tr>
           </tbody>
         </table>
@@ -92,12 +127,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'General Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

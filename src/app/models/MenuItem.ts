@@ -149,9 +149,137 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 48, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 6, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() }
       ]
     },
-    // ── NABL ISO 17025 section commented out ──
-    // { id: 49, title: 'Lab Scope Master', route: '/scope', parentMenuID: 7, permissions: ['CanReadLabScopeMaster'], children: [], color: getRandomColor() }
-    // ── moved Lab Scope Master to Test section ──
+   {
+      id: 7,
+      title: 'NABL ISO 17025',
+      route: '',
+      parentMenuID: null,
+      permissions: [],
+      icon: 'bi-shield-check',
+      color: '',
+      children: [
+        {
+          id: 71, title: 'General Requirements', route: '', parentMenuID: 7, permissions: [], children: [
+            { id: 7101, title: 'F-2: Confidentiality Agree.', route: '/supplier-confidentiality-agreement', parentMenuID: 71, permissions: ['CanReadConfidentialityAgreement'], children: [], color: getRandomColor() },
+            // { id: 7102, title: 'F-4: Impartiality Agree.', route: '/impartiality-agreement', parentMenuID: 71, permissions: ['CanReadImpartialityAgreement'], children: [], color: getRandomColor() },
+          ], color: getRandomColor()
+        },
+        {
+          id: 72, title: 'Structural Requirements', route: '', parentMenuID: 7, permissions: [], children: [
+            { id: 7201, title: 'Organization Chart', route: '/org-chart', parentMenuID: 72, permissions: ['CanReadOrgChart'], children: [], color: getRandomColor() },
+          ], color: getRandomColor()
+        },
+        {
+          id: 73, title: 'Resource Requirements', route: '', parentMenuID: 7, permissions: [], children: [
+            {
+              id: 7301, title: 'Personnel', route: '', parentMenuID: 73, permissions: [], children: [
+                { id: 730101, title: 'F-3: Job Description', route: '/job-description', parentMenuID: 7301, permissions: ['CanReadJobDescription'], children: [], color: getRandomColor() },
+                { id: 730102, title: 'F-4: Resp. & Authority', route: '/responsibility-authority', parentMenuID: 7301, permissions: ['CanReadRA'], children: [], color: getRandomColor() },
+                { id: 730103, title: 'F-5: Competence Req.', route: '/competence-requirement', parentMenuID: 7301, permissions: ['CanReadCompetenceRequirement'], children: [], color: getRandomColor() },
+                { id: 730109, title: 'F-6: Skill Matrix', route: '/skill-matrix', parentMenuID: 7301, permissions: ['CanReadSkillMatrix'], children: [], color: getRandomColor() },
+                { id: 730105, title: 'F-7A: Competence Report', route: '/employee/competence', parentMenuID: 7301, permissions: ['CanReadEmployeeCompetence'], children: [], color: getRandomColor() },
+                { id: 730106, title: 'F-8: Training Plan', route: '/training-plan', parentMenuID: 7301, permissions: ['CanReadTrainingPlan'], children: [], color: getRandomColor() },
+                { id: 730107, title: 'F-9: Training Attendance', route: '/training-attendance', parentMenuID: 7301, permissions: ['CanReadTrainingAttendance'], children: [], color: getRandomColor() },
+                { id: 730104, title: 'F-11: Induction Training', route: '/induction-training', parentMenuID: 7301, permissions: ['CanReadInductionTraining'], children: [], color: getRandomColor() },
+                { id: 730108, title: 'F-10: Training Effectiv.', route: '/training-effectiveness', parentMenuID: 7301, permissions: ['CanReadTrainingEffectiveness'], children: [], color: getRandomColor() },
+                { id: 730110, title: 'F-13: Employee Authorization', route: '/employee/equipment-authorization/list', parentMenuID: 7301, permissions: ['CanReadEmployeeAuthorization'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7302, title: 'Facilities & Environment', route: '', parentMenuID: 73, permissions: [], children: [
+                { id: 730201, title: 'F-12: Environment Mon.', route: '/environment-monitoring', parentMenuID: 7302, permissions: ['CanReadEnvironmentMonitoring'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7303, title: 'Equipment', route: '', parentMenuID: 73, permissions: [], children: [
+                { id: 730301, title: 'F-14: Equipment History', route: '/equipment-history-card', parentMenuID: 7303, permissions: ['CanReadEquipmentHistory'], children: [], color: getRandomColor() },
+                { id: 730302, title: 'F-15: Calibration Review', route: '/calibration-review', parentMenuID: 7303, permissions: ['CanReadCalibrationReview'], children: [], color: getRandomColor() },
+                { id: 730303, title: 'F-16: Intermediate Check', route: '/intermediate-check-records', parentMenuID: 7303, permissions: ['CanReadIntermediateCheck'], children: [], color: getRandomColor() },
+                { id: 730304, title: 'F-17: Ref. Material List', route: '/reference-material', parentMenuID: 7303, permissions: ['CanReadReferenceMaterial'], children: [], color: getRandomColor() },
+                { id: 730305, title: 'F-18: CRM Consumption', route: '/reference-material-consumption', parentMenuID: 7303, permissions: ['CanReadCRMConsumption'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7304, title: 'External Products', route: '', parentMenuID: 73, permissions: [], children: [
+                { id: 730401, title: 'F-19: Supplier Reg.', route: '/supplier-registration', parentMenuID: 7304, permissions: ['CanReadSupplierRegistration'], children: [], color: getRandomColor() },
+                { id: 730402, title: 'F-20: Approved Suppliers', route: '/approved-supplier', parentMenuID: 7304, permissions: ['CanReadApprovedSupplier'], children: [], color: getRandomColor() },
+                { id: 730403, title: 'F-21: Purchase Indent', route: '/purchase-indent', parentMenuID: 7304, permissions: ['CanReadPurchaseIndent'], children: [], color: getRandomColor() },
+                { id: 730404, title: 'F-22: Purchase Order', route: '/purchase-order', parentMenuID: 7304, permissions: ['CanReadPurchaseOrder'], children: [], color: getRandomColor() },
+                { id: 730405, title: 'F-23: Inspection Plan', route: '/product-inspection', parentMenuID: 7304, permissions: ['CanReadProductInspection'], children: [], color: getRandomColor() },
+                { id: 730406, title: 'F-24: Incoming Mat. Rec.', route: '/incoming-material', parentMenuID: 7304, permissions: ['CanReadIncomingMaterial'], children: [], color: getRandomColor() },
+                { id: 730407, title: 'F-25: Mat. Verification', route: '/purchase-material-verification', parentMenuID: 7304, permissions: ['CanReadMaterialVerification'], children: [], color: getRandomColor() },
+                { id: 730408, title: 'F-26: Supplier Eval.', route: '/supplier-evaluation', parentMenuID: 7304, permissions: ['CanReadSupplierEvaluation'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            }
+          ], color: getRandomColor()
+        },
+        {
+          id: 74, title: 'Process Requirements', route: '', parentMenuID: 7, permissions: [], children: [
+            { id: 7401, title: 'F-27: Test Request', route: '/nabl/test-request', parentMenuID: 74, permissions: ['CanReadTestRequest'], children: [], color: getRandomColor() },
+            {
+              id: 7402, title: 'Methods Management', route: '', parentMenuID: 74, permissions: [], children: [
+                { id: 740201, title: 'F-28: Test Methods', route: '/nabl/test-method', parentMenuID: 7402, permissions: ['CanReadTestMethod'], children: [], color: getRandomColor() },
+                { id: 740202, title: 'F-29: Verification', route: '/nabl/method-verification', parentMenuID: 7402, permissions: ['CanReadMethodVerification'], children: [], color: getRandomColor() },
+                { id: 740203, title: 'F-30: Validation', route: '/nabl/method-validation', parentMenuID: 7402, permissions: ['CanReadMethodValidation'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7403, title: 'Sample Handling', route: '', parentMenuID: 74, permissions: [], children: [
+                { id: 740301, title: 'F-31: Inward Register', route: '/nabl/sample-inward-register', parentMenuID: 7403, permissions: ['CanReadSampleInwardRegister'], children: [], color: getRandomColor() },
+                { id: 740302, title: 'F-32: Muster Register', route: '/nabl/sample-muster-register', parentMenuID: 7403, permissions: ['CanReadSampleMusterRegister'], children: [], color: getRandomColor() },
+                { id: 740303, title: 'F-33: Sample Label', route: '/nabl/sample-label', parentMenuID: 7403, permissions: ['CanReadSampleLabel'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            { id: 7404, title: 'F-34: Technical Raw Data', route: '/nabl/technical-raw-data', parentMenuID: 74, permissions: ['CanReadTechnicalRawData'], children: [], color: getRandomColor() },
+            { id: 7405, title: 'F-35: Uncertainty Rec.', route: '/measurement-uncertainty', parentMenuID: 74, permissions: ['CanReadUncertainty'], children: [], color: getRandomColor() },
+            {
+              id: 7406, title: 'Ensuring Validity', route: '', parentMenuID: 74, permissions: [], children: [
+                { id: 740601, title: 'F-36: PT / ILC Plan', route: '/pt-ilc-plan', parentMenuID: 7406, permissions: ['CanReadPTPlan'], children: [], color: getRandomColor() },
+                { id: 740602, title: 'F-37: QC Plan', route: '/quality-control-plan', parentMenuID: 7406, permissions: ['CanReadQCPlan'], children: [], color: getRandomColor() },
+                { id: 740603, title: 'F-38: Retesting Rec.', route: '/retesting-retained-sample', parentMenuID: 7406, permissions: ['CanReadRetesting'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            { id: 7407, title: 'F-39: Test Report', route: '/test-report', parentMenuID: 74, permissions: ['CanReadTestReport'], children: [], color: getRandomColor() },
+            { id: 7408, title: 'F-40: Complaint Reg.', route: '/complaint-register', parentMenuID: 74, permissions: ['CanReadComplaintRegister'], children: [], color: getRandomColor() },
+            { id: 7409, title: 'F-41: NC Work Records', route: '/non-conforming-work', parentMenuID: 74, permissions: ['CanReadNonConformingWork'], children: [], color: getRandomColor() },
+            { id: 750303, title: 'F-42: NC & Corr. Action', route: '/nc-corrective-action', parentMenuID: 7503, permissions: ['CanReadNCAction'], children: [], color: getRandomColor() },
+          ], color: getRandomColor()
+        },
+        {
+          id: 75, title: 'Management System', route: '', parentMenuID: 7, permissions: [], children: [
+            {
+              id: 7501, title: 'Documentation Control', route: '', parentMenuID: 75, permissions: [], children: [
+                { id: 750101, title: 'F-43: Master Document', route: '/master-document', parentMenuID: 7501, permissions: ['CanReadMasterDocument'], children: [], color: getRandomColor() },
+                // { id: 750102, title: 'F-44: Doc. Change Req.', route: '/document-change-request', parentMenuID: 7501, permissions: ['CanReadDocChangeRequest'], children: [], color: getRandomColor() },
+                { id: 750103, title: 'F-45: Doc. Review Rec.', route: '/document-review', parentMenuID: 7501, permissions: ['CanReadDocumentReview'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            { id: 7502, title: 'F-46: Risk Assessment', route: '/risk-assessment', parentMenuID: 75, permissions: ['CanReadRiskAssessment'], children: [], color: getRandomColor() },
+            {
+              id: 7503, title: 'Improvement & Actions', route: '', parentMenuID: 75, permissions: [], children: [
+                { id: 750301, title: 'F-47: Cust. Feedback', route: '/customer-feedback', parentMenuID: 7503, permissions: ['CanReadCustomerFeedback'], children: [], color: getRandomColor() },
+                { id: 750302, title: 'F-48: Feedback Analys.', route: '/feedback-analysis', parentMenuID: 7503, permissions: ['CanReadFeedbackAnalysis'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7504, title: 'Internal Audits', route: '', parentMenuID: 75, permissions: [], children: [
+                { id: 750401, title: 'F-49: Internal Auditors', route: '/internal-auditor', parentMenuID: 7504, permissions: ['CanReadInternalAuditor'], children: [], color: getRandomColor() },
+                { id: 750402, title: 'F-50: Audit Plan', route: '/audit-plan', parentMenuID: 7504, permissions: ['CanReadAuditPlan'], children: [], color: getRandomColor() },
+                { id: 750403, title: 'F-51: Audit Checklist', route: '/audit-checklist', parentMenuID: 7504, permissions: ['CanReadAuditChecklist'], children: [], color: getRandomColor() },
+                // { id: 750404, title: 'F-52: Audit Summary', route: '/audit-summary', parentMenuID: 7504, permissions: ['CanReadAuditSummary'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            },
+            {
+              id: 7505, title: 'Management Review', route: '', parentMenuID: 75, permissions: [], children: [
+                { id: 750501, title: 'F-53: Meeting Agenda', route: '/meeting-agenda', parentMenuID: 7505, permissions: ['CanReadMeetingAgenda'], children: [], color: getRandomColor() },
+                { id: 750502, title: 'F-54: Meeting Minutes', route: '/meeting-minutes', parentMenuID: 7505, permissions: ['CanReadMeetingMinutes'], children: [], color: getRandomColor() },
+              ], color: getRandomColor()
+            }
+          ], color: getRandomColor()
+        },
+        { id: 49, title: 'Lab Scope Master', route: '/scope', parentMenuID: 7, permissions: ['CanReadLabScopeMaster'], children: [], color: getRandomColor() }
+      ]
+    },
     {
       id: 9,
       title: 'Testing',

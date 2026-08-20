@@ -42,7 +42,8 @@ export class NablRegisterTableComponent {
     @Input() isLoading: boolean = false;
     @Input() showSerialNumber: boolean = true;
     @Input() showDelete: boolean = true;
-
+    @Input() showSummary: boolean = false;
+    @Input() summaryRoute: string = '';
     // --- Action Inputs ---
     @Input() showActions: boolean = true;
     @Input() showPagination: boolean = true;
@@ -236,9 +237,16 @@ export class NablRegisterTableComponent {
             default: return 'bg-dark';
         }
     }
-
     canEdit(row: any): boolean {
-        if (!this.showWorkflowActions) return true;
+
+        if (row.canEditReview !== undefined) {
+            return row.canEditReview === true;
+        }
+
+        if (!this.showWorkflowActions) {
+            return true;
+        }
+
         return row.status === 'Draft' || row.status === 'Rejected';
     }
 

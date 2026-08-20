@@ -79,7 +79,7 @@
               </ng-container>
             </td>
             <td *ngIf="showActions" class="text-center no-print">
-              <div class="d-flex justify-content-center gap-1 flex-wrap">
+              <div class="d-flex flex-nowrap align-items-center justify-content-center gap-2">
                 <!-- Route-based navigation when baseRoute is set -->
                 <ng-container *ngIf="baseRoute; else eventActions">
                   <!-- View: always available -->
@@ -101,6 +101,13 @@
                   <!-- Print Preview: always available -->
                   <a [routerLink]="[baseRoute + '/preview', row.id]" class="icon-link" title="Print Preview">
                     <i class="bi bi-printer fs-5 text-primary"></i>
+                  </a>
+                  <!-- Audit Summary -->
+                  <a *ngIf="showSummary && summaryRoute" [routerLink]="[summaryRoute, row.id]" class="icon-link"
+                    title="Audit Summary">
+
+                    <i class="bi bi-file-earmark-bar-graph fs-5 text-info"></i>
+
                   </a>
                   <!-- Delete: only Draft -->
                   <a *ngIf="showDelete && canDelete(row)" class="icon-link cursor-pointer" title="Delete"

@@ -10,7 +10,7 @@ import { DocumentReview } from '../models/document-review';
 export class DocumentReviewService {
     private apiUrl = environment.apiUrl + '/Nabl/DocumentReview';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,17 @@ export class DocumentReviewService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getNextReviewNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-review-no`);
+    }
+    getDocumentsAvailableForReview(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/available-documentlist`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
     }
 }

@@ -1,46 +1,67 @@
-import { Component, OnInit, ChangeDetectorRef, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { MasterDocumentService } from '../../../../services/master-document.service';
-import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
-import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
-import { PrintFrameComponent } from '../../print-frame/print-frame.component';
-
+import { Component, OnInit, signal, ChangeDetectorRef } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
+import { DocumentReviewService } from "../../../../services/document-review.service";
+import { NablPrintFooterComponent } from "../../nabl-print-footer/nabl-print-footer.component";
+import { NablPrintHeaderComponent } from "../../nabl-print-header/nabl-print-header.component";
+import { PrintFrameComponent } from "../../print-frame/print-frame.component";
 @Component({
-    selector: 'app-master-document-preview',
+    selector: 'app-master-document-preview-list',
     standalone: true,
     imports: [CommonModule, RouterModule, NablPrintHeaderComponent, NablPrintFooterComponent, PrintFrameComponent],
-    templateUrl: './master-document-preview.component.html',
-    styleUrl: './master-document-preview.component.css'
+    templateUrl: './document-review-preview-list.component.html',
+    styleUrl: './document-review-preview-list.component.css'
 })
-export class MasterDocumentPreviewComponent implements OnInit {
-    recordId: number = 0;
+
+export class DocumentReviewPreviewListComponent implements OnInit {
     data: any = null;
-    orientation: 'portrait' | 'landscape' = 'landscape';
+
+
+    orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
 
     constructor(
-        private service: MasterDocumentService,
-        private router: Router,
         private route: ActivatedRoute,
+        private router: Router,
+        private service: DocumentReviewService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
         this.route.paramMap.subscribe(params => {
-            this.recordId = Number(params.get('id'));
-            if (this.recordId > 0) this.fetchData();
+            this.fetchData();
         });
     }
 
     fetchData() {
-        this.service.getById(this.recordId).subscribe(resp => {
-            this.data = resp;
-            setTimeout(() => this.autoDetectOrientation(), 300);
-        });
-    }
 
+        this.service.getAll(({
+            PageNumber: 1,
+            PageSize: 100,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        })).subscribe({
+
+            next: (resp) => {
+
+                this.data = resp.items || [];
+
+                setTimeout(() => this.autoDetectOrientation(), 300);
+
+            },
+
+            error: err => {
+
+                console.error(err);
+
+            }
+
+        });
+
+    }
     private autoDetectOrientation(): void {
         if (this.orientationManual || this.orientationDetected) return;
         this.orientationDetected = true;
@@ -68,14 +89,14 @@ export class MasterDocumentPreviewComponent implements OnInit {
     resetToAuto(): void {
         this.orientationManual = false;
         this.orientationDetected = false;
-        this.orientation = 'landscape';
+        this.orientation = 'portrait';
         setTimeout(() => this.autoDetectOrientation(), 100);
     }
 
     printPage(): void {
-        document.getElementById('md-print-size')?.remove();
+        document.getElementById('ncw-print-size')?.remove();
         const styleEl = document.createElement('style');
-        styleEl.id = 'md-print-size';
+        styleEl.id = 'ncw-print-size';
         styleEl.textContent = `@page { size: A4 ${this.orientation}; }`;
         document.head.appendChild(styleEl);
         const originalTitle = document.title;

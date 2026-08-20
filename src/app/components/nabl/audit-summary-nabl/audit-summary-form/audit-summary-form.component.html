@@ -10,122 +10,496 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="summaryForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
-        <!-- Section I: Header Information -->
+      <form [formGroup]="summaryForm">
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('header')">
-            <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">I. Header Information</span>
+          <div class="section-header" (click)="toggleSection('auditPlanDetails')">
+
+            <i class="bi" [ngClass]="
+        openSections['auditPlanDetails']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'
+      ">
+            </i>
+
+            <span class="fw-bold ms-2">
+              II. Audit Plan Details
+            </span>
           </div>
-          <div *ngIf="openSections['header']" class="section-body">
-            <div class="row gy-3">
-              <div class="col-md-3">
-                <label class="form-label">
-                  Form Number
-                  <span class="text-danger">*</span>
-                </label>
-                <select class="form-select" formControlName="formatNo">
-                  <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
-                </select>
+
+          <div *ngIf="openSections['auditPlanDetails']" class="section-body">
+
+            <div class="row g-3">
+
+              <!-- LEFT CARD -->
+              <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+
+                  <div class="row gy-3">
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Audit Plan No.
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditPlanNo')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Audit Type
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditType')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Audit From
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditFrom')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Audit To
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditTo')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="text-muted small mb-1">
+                        Scope of Audit
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('scopeOfAudit')?.value || '-' }}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">
-                  Document No.
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="docNo" />
+
+
+              <!-- RIGHT CARD -->
+              <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+
+                  <div class="row gy-3">
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Planning Year
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('planningYear')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Lead Auditor
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('leadAuditor')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Audit Criteria
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditCriteria')?.value || '-' }}
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="text-muted small mb-1">
+                        Overall Audit Status
+                      </div>
+
+                      <span class="badge" [ngClass]="{
+                'bg-success':
+                  summaryForm.get('overallAuditStatus')?.value === 'Completed',
+
+                'bg-warning text-dark':
+                  summaryForm.get('overallAuditStatus')?.value === 'InProgress',
+
+                'bg-secondary':
+                  summaryForm.get('overallAuditStatus')?.value === 'Scheduled'
+              }">
+
+                        {{ summaryForm.get('overallAuditStatus')?.value || '-' }}
+
+                      </span>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="text-muted small mb-1">
+                        Audit Objective
+                      </div>
+                      <div class="fw-semibold">
+                        {{ summaryForm.get('auditObjective')?.value || '-' }}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
-              <div class="col-md-2">
-                <label class="form-label">
-                  Issue No
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="issueNo" />
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- Section III: Audit Execution Summary -->
+        <div class="d-flex d-flex-row gap-2">
+
+          <div class="accordion-section mb-3 col-6">
+            <div class="section-header" (click)="toggleSection('executionSummary')">
+
+              <i class="bi" [ngClass]="
+        openSections['executionSummary']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'
+      ">
+              </i>
+
+              <span class="fw-bold ms-2">
+                III. Audit Execution Summary
+              </span>
+            </div>
+
+            <div *ngIf="openSections['executionSummary']" class="section-body">
+
+              <div class="row gy-3">
+
+                <!-- Total Audits -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small class="text-muted">
+                          Total Audits
+                        </small>
+
+                        <h4 class="mb-0 mt-1">
+                          {{ summaryForm.get('totalAudits')?.value || 0 }}
+                        </h4>
+                      </div>
+
+                      <i class="bi bi-clipboard-data fs-3 text-primary"></i>
+
+                    </div>
+                  </div>
+                </div>
+
+
+                <!-- Completed -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small class="text-muted">
+                          Completed
+                        </small>
+
+                        <h4 class="mb-0 mt-1">
+                          {{ summaryForm.get('completed')?.value || 0 }}
+                        </h4>
+                      </div>
+
+                      <i class="bi bi-check-circle fs-3 text-success"></i>
+
+                    </div>
+                  </div>
+                </div>
+
+
+                <!-- In Progress -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small class="text-muted">
+                          In Progress
+                        </small>
+
+                        <h4 class="mb-0 mt-1">
+                          {{ summaryForm.get('inProgress')?.value || 0 }}
+                        </h4>
+                      </div>
+
+                      <i class="bi bi-clock fs-3 text-warning"></i>
+
+                    </div>
+                  </div>
+                </div>
+
+
+                <!-- Scheduled -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small class="text-muted">
+                          Scheduled
+                        </small>
+
+                        <h4 class="mb-0 mt-1">
+                          {{ summaryForm.get('scheduled')?.value || 0 }}
+                        </h4>
+                      </div>
+
+                      <i class="bi bi-calendar-event fs-3 text-info"></i>
+
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div class="col-md-2">
-                <label class="form-label">
-                  Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">
-                  Rev No
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="revNo" />
+            </div>
+          </div>
+
+
+          <!-- Section IV: Audit Findings Summary -->
+          <div class="accordion-section mb-3 col-6">
+            <div class="section-header" (click)="toggleSection('findingsSummary')">
+
+              <i class="bi" [ngClass]="
+        openSections['findingsSummary']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'
+      ">
+              </i>
+
+              <span class="fw-bold ms-2">
+                IV. Audit Findings Summary
+              </span>
+            </div>
+
+            <div *ngIf="openSections['findingsSummary']" class="section-body">
+
+              <div class="row gy-3">
+
+                <!-- Row 1 -->
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Total NCRs
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('totalNcrs')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Major NCRs
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('majorNcrs')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Minor NCRs
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('minorNcrs')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Observations
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('observations')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
+
+                <!-- Row 2 -->
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Closed NCRs
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('closedNcrs')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
+
+                <div class="col-md-4">
+                  <div class="border rounded p-3 h-100">
+                    <small class="text-muted">
+                      Pending NCRs
+                    </small>
+
+                    <h4 class="mb-0 mt-1">
+                      {{ summaryForm.get('pendingNcrs')?.value || 0 }}
+                    </h4>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Section II: Summary Details -->
+
+        <!-- Section V: Department-wise Summary -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('summaryDetails')">
-            <i class="bi" [ngClass]="openSections['summaryDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Audit Summary Details</span>
+          <div class="section-header" (click)="toggleSection('departmentSummary')">
+
+            <i class="bi" [ngClass]="
+        openSections['departmentSummary']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'
+      ">
+            </i>
+
+            <span class="fw-bold ms-2">
+              V. Department-wise Summary
+            </span>
           </div>
-          <div *ngIf="openSections['summaryDetails']" class="section-body">
-            <div class="row gy-3">
-              <div class="col-md-4">
-                <label class="form-label">
-                  Audit Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="auditDate" />
-              </div>
-              <div class="col-md-8">
-                <label class="form-label">
-                  Areas / Processes Covered
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="areasCovered" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Total Major NCs
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="number" class="form-control" formControlName="majorNCs" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Total Minor NCs
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="number" class="form-control" formControlName="minorNCs" />
-              </div>
 
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Observations Summary
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor formControlName="observationSummary" [modules]="quillModules"></quill-editor>
-              </div>
+          <div *ngIf="openSections['departmentSummary']" class="section-body">
 
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Conclusion
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor formControlName="conclusion" [modules]="quillModules"></quill-editor>
-              </div>
+            <div class="table-responsive">
+
+              <table class="table table-bordered align-middle sm-table mb-0">
+
+                <thead class="table-light text-center">
+                  <tr>
+                    <th style="width: 50px;">
+                      SN
+                    </th>
+
+                    <th>
+                      Department
+                    </th>
+
+                    <th>
+                      Total Audits
+                    </th>
+
+                    <th>
+                      Completed
+                    </th>
+
+                    <th>
+                      In Progress
+                    </th>
+
+                    <th>
+                      Scheduled
+                    </th>
+
+                    <th>
+                      Major NC
+                    </th>
+
+                    <th>
+                      Minor NC
+                    </th>
+
+                    <th>
+                      Observations
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  <tr *ngFor="let dept of departmentSummary; let i = index">
+
+                    <td class="text-center fw-bold text-secondary">
+                      {{ i + 1 }}
+                    </td>
+
+                    <td>
+                      {{ dept.departmentName }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.totalAudits }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.completed }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.inProgress }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.scheduled }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.majorNcrs }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.minorNcrs }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ dept.observations }}
+                    </td>
+
+                  </tr>
+
+                  <!-- No Data -->
+                  <tr *ngIf="departmentSummary.length === 0">
+                    <td colspan="9" class="text-center text-muted py-3">
+
+                      No department audit data available.
+
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+
             </div>
           </div>
         </div>
 
-        
-        <app-nabl-signature-section [parentForm]="summaryForm"></app-nabl-signature-section>
 
-        <!-- Footer Actions -->
-        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="summaryForm.invalid">
-            {{ isEditMode ? "Update Report" : "Save Report" }}
-          </button>
-        </div>
       </form>
     </div>
   </div>

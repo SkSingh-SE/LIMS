@@ -8,7 +8,7 @@
     <div class="toolbar-center">
         <span class="doc-title-label">
             <i class="bi bi-file-text me-1"></i>
-            Master List of Reference Material (CRM) Preview
+            Document Review Preview
         </span>
     </div>
     <div class="toolbar-right">
@@ -38,20 +38,17 @@
 <div class="nabl-preview-page">
     <app-print-frame *ngIf="data" [orientation]="orientation">
         <ng-container header>
-            <app-nabl-print-header [formatNo]="'F-17'" [mainTitle]="'MASTER LIST OF REFERENCE MATERIAL (CRM)'"
-                [docNo]="'DMSPL / Level-04 / Format / F-17'" [issueNo]="data.issueNo" [issueDate]="data.date"
-                [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
+            <app-nabl-print-header [formatNo]="'F-45'" [mainTitle]="'DOCUMENT REVIEW'"
+                [docNo]="'DMSPL / Level-04 / Format / F-45'"></app-nabl-print-header>
         </ng-container>
 
         <ng-container body>
 
             <table class="table table-bordered preview-table">
                 <colgroup>
+                    <col class="col-auto">
                     <col>
-                    <col>
-                    <col>
-                    <col>
-                    <col>
+                    <col class="w-20">
                     <col>
                     <col>
                     <col>
@@ -59,35 +56,26 @@
                 <thead>
                     <tr>
 
-
-                        <th>Details of CRM/RM</th>
-                        <th>Specification</th>
-                        <th>Date of Manufacturing of CRM/RM</th>
-                        <th>CRM Procured from / Received from</th>
-                        <th>Quantity/Size Received</th>
-                        <th>Certificate No</th>
-                        <th>Validity Date</th>
-                        <th>Traceability</th>
+                        <th>SN</th>
+                        <th>Review No.</th>
+                        <th>Review Type</th>
+                        <th>Document Name</th>
+                        <th>Last Review Date</th>
+                        <th>Next Review Date</th>
                     </tr>
                 </thead>
 
                 <tbody>
 
                     <tr *ngFor="let item of data; let i=index">
-
-                        <td>{{item.rmCode}}</td>
-                        <td>{{item.rmName}}</td>
-                        <td>
-                            {{ item.date | date:'dd.MM.yyyy' }}
-                        </td>
-                        <td>{{item.supplier}}</td>
-                        <td>{{item.initialQuantity}}</td>
-                        <td>{{item.certificateNo}}</td>
-                        <td>
-                            {{ item.validityDate | date:'dd.MM.yyyy' }}
-                        </td>
-                        <td>{{item.traceability}}</td>
+                        <td class="text-center">{{ i + 1 }}</td>
+                        <td>{{item.reviewNo}}</td>
+                        <td>{{item.reviewType}}</td>
+                        <td>{{item.documentName}}</td>
+                        <td>{{item.modifiedOn | date:'dd.MM.yyyy'}}</td>
+                        <td>{{item.nextReviewDate | date:'dd.MM.yyyy'}}</td>
                     </tr>
+
                 </tbody>
 
             </table>

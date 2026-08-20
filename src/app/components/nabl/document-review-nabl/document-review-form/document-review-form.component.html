@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -59,60 +59,423 @@
             </div>
           </div>
         </div>
-
-        <!-- Section II: Review Details -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('reviewDetails')">
-            <i class="bi" [ngClass]="openSections['reviewDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Document Review Details</span>
+          <div class="section-header" (click)="toggleSection('docInfo')">
+            <i class="bi" [ngClass]="openSections['docInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Document Information</span>
           </div>
-          <div *ngIf="openSections['reviewDetails']" class="section-body">
+          <div *ngIf="openSections['docInfo']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-2">
-                <label class="form-label">Sr. No.</label>
-                <input type="number" class="form-control" formControlName="srNo" />
+              <div class="col-md-3">
+                <label class="form-label">Document <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="documentId" (change)="onDocumentChange()"
+                  [disabled]="isEditMode || isViewMode || isFromMasterDocument">
+
+                  <option [ngValue]="null">
+                    Select Document
+                  </option>
+
+                  <option *ngFor="let document of documentList" [ngValue]="document.id || document.Id">
+
+                    {{ document.name || document.Name }}
+
+                  </option>
+
+                </select>
+                <div *ngIf="reviewForm.get('documentId')?.invalid && reviewForm.get('documentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  document is required
+                </div>
               </div>
-              <div class="col-md-10">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Document Name
-                  <span class="text-danger">*</span>
+                  Document Type
                 </label>
-                <input type="text" class="form-control" formControlName="documentName" />
+                <input type="text" class="form-control" formControlName="documentType" readonly />
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Last Review Date
-                  <span class="text-danger">*</span>
+                  Department
                 </label>
-                <input type="date" class="form-control" formControlName="lastReviewDate" />
+                <input type="text" class="form-control" formControlName="departmentDoc" readonly />
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Issue No.
+                </label>
+                <input type="text" class="form-control" formControlName="currentIssue" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Rev. No.
+                </label>
+                <input type="text" class="form-control" formControlName="currentRevision" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Effective Date </label>
+                <input type="date" class="form-control" formControlName="effectiveDate" readonly />
+              </div>
+              <div class="col-md-3">
                 <label class="form-label">
                   Next Review Date
-                  <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="nextReviewDate" />
+                <input type="date" class="form-control" formControlName="nextReviewDate" readonly />
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Review Done By
-                  <span class="text-danger">*</span>
+                  Document Owner
                 </label>
-                <input type="text" class="form-control" formControlName="reviewDoneBy" />
+                <input type="text" class="form-control" formControlName="documentOwner" readonly />
               </div>
             </div>
           </div>
         </div>
 
-        
-        <app-nabl-signature-section [parentForm]="reviewForm"></app-nabl-signature-section>
+        <!-- Section II: Review Details -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('reviewInfo')">
+            <i class="bi" [ngClass]="openSections['reviewInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III.Review Information</span>
+          </div>
+          <div *ngIf="openSections['reviewInfo']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Review No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="reviewNo" />
+                <div *ngIf="reviewForm.get('reviewNo')?.invalid && reviewForm.get('reviewNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  review number is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Review Type
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="reviewType">
+                  <option *ngFor="let type of reviewTypes" [value]="type">{{ type }}</option>
+                </select>
+                <div *ngIf="reviewForm.get('reviewType')?.invalid && reviewForm.get('reviewType')?.touched"
+                  class="text-danger text-sm mt-1">
+                  review type is required
+                </div>
+              </div>
+              <div class="col-3">
+                <app-searchable-dropdown [placeholder]="'Search Reviewer Department'" [required]="true"
+                  [labelName]="'Reviewer Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="reviewForm.get('departmentId')?.value"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div *ngIf="reviewForm.get('departmentId')?.invalid && reviewForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Status
+                </label>
+
+                <input type="text" class="form-control" formControlName="status" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('reviewDetails')">
+            <i class="bi" [ngClass]="openSections['reviewDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Review Details</span>
+          </div>
+
+          <div *ngIf="openSections['reviewDetails']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-12">
+                <label class="form-label">
+                  Review Findings / Remarks
+                  <span class="text-danger">*</span>
+                </label>
+
+                <textarea rows="3" class="form-control" formControlName="reviewFindings"></textarea>
+
+                <div *ngIf="reviewForm.get('reviewFindings')?.invalid &&
+                 reviewForm.get('reviewFindings')?.touched" class="text-danger text-sm mt-1">
+                  review findings is required
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Change Required?
+                  <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select form-select-sm" formControlName="changeRequired"
+                  (change)="onChangeRequiredChange()">
+                  <option [ngValue]="true">
+                    Yes
+                  </option>
+
+                  <option [ngValue]="false">
+                    No
+                  </option>
+
+                </select>
+
+                <div *ngIf="reviewForm.get('changeRequired')?.invalid &&
+                 reviewForm.get('changeRequired')?.touched" class="text-danger text-sm mt-1">
+                  change required is required
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- IV. Conditional Review Section -->
+        <div class="accordion-section mb-3" *ngIf="reviewForm.get('changeRequired')?.value !== null">
+
+          <div class="section-header" (click)="toggleSection('changeDetails')">
+            <i class="bi" [ngClass]="openSections['changeDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">V. Review Evaluation</span>
+          </div>
+
+          <div *ngIf="openSections['changeDetails']" class="section-body">
+            <div class="row gy-3">
+
+              <!-- Change Required = YES -->
+              <ng-container *ngIf="reviewForm.get('changeRequired')?.value === true">
+
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Reason for Change
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <textarea rows="3" class="form-control" formControlName="reasonForChange">
+          </textarea>
+
+                  <div *ngIf="reviewForm.get('reasonForChange')?.invalid &&
+                   reviewForm.get('reasonForChange')?.touched" class="text-danger text-sm mt-1">
+                    reason for change is required
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Impact of Change
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <textarea rows="3" class="form-control" formControlName="impactOfChange">
+          </textarea>
+
+                  <div *ngIf="reviewForm.get('impactOfChange')?.invalid &&
+                   reviewForm.get('impactOfChange')?.touched" class="text-danger text-sm mt-1">
+                    impact of change is required
+                  </div>
+                </div>
+
+              </ng-container>
+
+
+              <!-- Change Required = NO -->
+              <ng-container *ngIf="reviewForm.get('changeRequired')?.value === false">
+
+                <div class="col-md-12">
+                  <label class="form-label">
+                    Conclusion / Reason
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <textarea rows="3" class="form-control" formControlName="noChangeConclusion">
+          </textarea>
+
+                  <div *ngIf="reviewForm.get('noChangeConclusion')?.invalid &&
+                   reviewForm.get('noChangeConclusion')?.touched" class="text-danger text-sm mt-1">
+                    conclusion / reason is required
+                  </div>
+                </div>
+
+              </ng-container>
+
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+
+          <div class="section-header" (click)="toggleSection('relatedDcr')">
+            <i class="bi" [ngClass]="openSections['relatedDcr'] ? 'bi-chevron-down' : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">
+              VI. Related Change Request
+            </span>
+          </div>
+
+          <div *ngIf="openSections['relatedDcr']" class="section-body">
+
+            <!-- DCR NOT CREATED YET -->
+            <div *ngIf="!reviewForm.get('generatedDcrId')?.value">
+
+              <div class="alert alert-light border mb-0">
+                No change request has been raised for this review yet.
+              </div>
+
+            </div>
+
+
+            <!-- DCR ALREADY CREATED -->
+            <div *ngIf="reviewForm.get('generatedDcrId')?.value">
+
+              <div class="row gy-3">
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    Change Request No.
+                  </label>
+
+                  <input type="text" class="form-control" formControlName="generatedDcrNo" readonly />
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    Change Type
+                  </label>
+
+                  <input type="text" class="form-control" formControlName="generatedDcrChangeType" readonly />
+                </div>
+
+
+                <div class="col-md-3 d-flex align-items-end">
+
+                  <button type="button" class="btn btn-outline-primary btn-sm" (click)="viewChangeRequest()">
+                    <!-- <button type="button" class="btn btn-outline-primary btn-sm"> -->
+
+                    <i class="bi bi-eye me-1"></i>
+                    View Change Request
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- V. Review Conclusion -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('reviewConclusion')">
+            <i class="bi" [ngClass]="openSections['reviewConclusion'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">VII. Review Conclusion</span>
+          </div>
+
+          <div *ngIf="openSections['reviewConclusion']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Review Conclusion
+                  <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select form-select-sm" formControlName="reviewConclusion">
+
+                  <option value="">
+                    Select Conclusion
+                  </option>
+
+                  <option *ngFor="let item of reviewConclusionOptions" [value]="item">
+                    {{ item }}
+                  </option>
+
+                </select>
+
+                <div *ngIf="reviewForm.get('reviewConclusion')?.invalid &&
+                 reviewForm.get('reviewConclusion')?.touched" class="text-danger text-sm mt-1">
+                  review conclusion is required
+                </div>
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label">
+                  Additional Remarks
+                </label>
+
+                <textarea rows="3" class="form-control" formControlName="additionalRemarks">
+        </textarea>
+              </div>
+
+            </div>
+          </div>
+        </div>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="reviewForm.invalid">
-            {{ isEditMode ? "Update Record" : "Save Record" }}
+
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            Cancel
           </button>
+
+          <!-- CREATE MODE -->
+          <button *ngIf="!isEditMode" type="submit" class="btn btn-save">
+            Save Review
+          </button>
+
+          <!-- EDIT + Change Required YES + DCR NOT CREATED -->
+          <button *ngIf="
+      isEditMode &&
+      reviewForm.get('changeRequired')?.value === true &&
+      !reviewForm.get('generatedDcrId')?.value
+    " type="submit" class="btn btn-save">
+            Update & Raise Change Request
+          </button>
+
+          <!-- EDIT + Change Required NO
+       OR Change Required YES + DCR CREATED -->
+          <!-- EDIT + Change Required NO -->
+          <ng-container *ngIf="
+    isEditMode &&
+    reviewForm.get('changeRequired')?.value === false
+">
+
+            <button type="submit" class="btn btn-save">
+              Update Review
+            </button>
+
+            <button type="button" class="btn btn-success" (click)="onSubmit(true)">
+              Update & Approve
+            </button>
+
+          </ng-container>
+
+
+          <!-- EDIT + Change Required YES + DCR CREATED -->
+          <ng-container *ngIf="
+    isEditMode &&
+    reviewForm.get('changeRequired')?.value === true &&
+    reviewForm.get('generatedDcrId')?.value
+">
+
+            <button type="submit" class="btn btn-save">
+              Update Review
+            </button>
+
+            <button *ngIf="canEditReview" type="button" class="btn btn-success" (click)="onSubmit(true)">
+              Update & Approve
+            </button>
+
+          </ng-container>
+
         </div>
       </form>
     </div>

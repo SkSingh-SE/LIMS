@@ -34,6 +34,10 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
     recordId: number = 0;
     formTitle = 'Add New Non-Conforming Work Record';
     formNumbers = NablFormsHelper.getFormNumbers();
+    checklistId = 0;
+    checklistItemId = 0;
+    scheduleItemId = 0;
+    isChecklistNcr = false;
 
     openSections: { [key: string]: boolean } = {
         header: true,
@@ -105,6 +109,8 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         'Human Error',
         'Sample Mix-up',
         'Document Issue',
+        'Major',
+        'Minor',
         'Ohter'
     ]
     priorities = [
@@ -183,6 +189,34 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
                     },
                     error: () => { }
                 })
+                const source =
+                    this.route.snapshot.queryParamMap.get('source');
+
+                const checklistId = Number(
+                    this.route.snapshot.queryParamMap.get('checklistId')
+                );
+
+                const checklistItemId = Number(
+                    this.route.snapshot.queryParamMap.get('checklistItemId')
+                );
+
+                const scheduleItemId = Number(
+                    this.route.snapshot.queryParamMap.get('scheduleItemId')
+                );
+                this.isChecklistNcr =
+                    checklistId > 0 &&
+                    checklistItemId > 0;
+
+                if (
+                    source === 'InternalAudit' &&
+                    checklistItemId > 0
+                ) {
+                    this.loadAuditChecklistNcrData(
+                        checklistId,
+                        checklistItemId,
+                        scheduleItemId
+                    );
+                }
             }
         });
     }
@@ -211,54 +245,54 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
 
             referenceModule: [null],
             referenceId: [null],
+            checklistId: [null],
             referenceNo: [''],
 
             customerAffected: [false],
 
             description: ['', Validators.required],
-            immediateAction: [''],
-            problemDescription: [''],
+            immediateAction: ['', Validators.required],
+            problemDescription: ['', Validators.required],
 
             // Workflow
             status: ['Draft'],
             currentStep: [1],
         });
         this.investigationForm = this.fb.group({
-            assignedToEmployeeId: [null],
+            assignedToEmployeeId: [null, Validators.required],
             assignedToEmployeeName: [null],
-            investigationDate: [null],
-            investigationMethod: [''],
-            rootCause: [''],
-            investigationSummary: [''],
-            investigationDetails: [''],
+            investigationDate: [null, Validators.required],
+            investigationMethod: ['', Validators.required],
+            rootCause: ['', Validators.required],
+            investigationDetails: ['', Validators.required],
             recommendedAction: ['']
         });
         this.correctiveActionForm = this.fb.group({
 
             actionNo: [''],
-            correctiveAction: [''],
-            responsiblePersonId: [null],
+            correctiveAction: ['', Validators.required],
+            responsiblePersonId: [null, Validators.required],
             responsiblePersonName: [null],
-            targetDate: [null],
-            completionDate: [null],
-            resourcesRequired: [''],
-            preventiveAction: ['']
+            targetDate: [null, Validators.required],
+            completionDate: [null, Validators.required],
+            resourcesRequired: ['', Validators.required],
+            preventiveAction: ['', Validators.required]
         });
         this.verificationForm = this.fb.group({
-            verificationDate: [this.today],
-            verifiedByEmployeeId: [null],
+            verificationDate: [this.today, Validators.required],
+            verifiedByEmployeeId: [null, Validators.required],
             verifiedByEmployeeName: [null],
-            verificationMethod: [''],
-            observation: [''],
-            result: ['Effective'],
+            verificationMethod: ['', Validators.required],
+            observation: ['', Validators.required],
+            result: ['Effective', Validators.required],
             remarks: ['']
         });
 
         this.closureForm = this.fb.group({
-            closureDate: [this.today],
-            closedByEmployeeId: [null],
+            closureDate: [this.today, Validators.required],
+            closedByEmployeeId: [null, Validators.required],
             closedByEmployeeName: [null],
-            finalRemarks: [''],
+            finalRemarks: ['', Validators.required],
             status: ['Closed']
         });
 
@@ -269,184 +303,200 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
         this.ncForm.get('formatNo')?.disable();
         this.ncForm.get('date')?.disable();
     }
- 
+
 
     private loadRecord(): void {
 
-    this.service.getById(this.recordId).subscribe((data: any) => {
+        this.service.getById(this.recordId).subscribe((data: any) => {
 
-        if (!data) return;
+            if (!data) return;
+            if (!data) return;
 
-        // ===========================
-        // General Form
-        // ===========================
+            // ===========================
+            // Checklist NCR Link Restore
+            // ===========================
 
-        this.ncForm.patchValue({
-            ...data,
-            date: NablFormsHelper.formatDateForInput(data.date),
-            ncDate: NablFormsHelper.formatDateForInput(data.ncDate),
-            issueDate: NablFormsHelper.formatDateForInput(data.issueDate),
-            revDate: NablFormsHelper.formatDateForInput(data.revDate),
-            preparedDate: NablFormsHelper.formatDateForInput(data.preparedDate),
-            reviewedDate: NablFormsHelper.formatDateForInput(data.reviewedDate),
-            approvedDate: NablFormsHelper.formatDateForInput(data.approvedDate)
+            if (
+                data.checklistId &&
+                data.referenceModule === 'AuditChecklistItem'
+            ) {
+                this.checklistId = data.checklistId;
+                this.checklistItemId = data.referenceId;
+
+                this.isChecklistNcr = true;
+            } else {
+                this.isChecklistNcr = false;
+            }
+            // ===========================
+            // General Form
+            // ===========================
+
+            this.ncForm.patchValue({
+                ...data,
+                date: NablFormsHelper.formatDateForInput(data.date),
+                ncDate: NablFormsHelper.formatDateForInput(data.ncDate),
+                issueDate: NablFormsHelper.formatDateForInput(data.issueDate),
+                revDate: NablFormsHelper.formatDateForInput(data.revDate),
+                preparedDate: NablFormsHelper.formatDateForInput(data.preparedDate),
+                reviewedDate: NablFormsHelper.formatDateForInput(data.reviewedDate),
+                approvedDate: NablFormsHelper.formatDateForInput(data.approvedDate)
+            });
+
+            // ===========================
+            // Investigation
+            // ===========================
+
+            if (data.investigation) {
+
+                this.investigationForm.patchValue({
+
+                    assignedToEmployeeId: data.investigation.assignedToEmployeeId,
+                    assignedToEmployeeName: data.investigation.assignedToEmployeeName,
+
+                    investigationDate: NablFormsHelper.formatDateForInput(
+                        data.investigation.investigationDate
+                    ),
+
+                    investigationMethod: data.investigation.investigationMethod,
+                    rootCause: data.investigation.rootCause,
+                    contributingFactors: data.investigation.contributingFactors,
+                    investigationDetails: data.investigation.investigationDetails,
+                    recommendedAction: data.investigation.recommendedAction
+                });
+            }
+
+            // ===========================
+            // Corrective Action
+            // ===========================
+
+            if (data.correctiveAction) {
+
+                this.correctiveActionForm.patchValue({
+
+                    actionNo: data.correctiveAction.actionNo,
+                    correctiveAction: data.correctiveAction.correctiveAction,
+
+                    responsiblePersonId: data.correctiveAction.responsiblePersonId,
+                    responsiblePersonName: data.correctiveAction.responsiblePersonName,
+
+                    targetDate: NablFormsHelper.formatDateForInput(
+                        data.correctiveAction.targetDate
+                    ),
+
+                    completionDate: NablFormsHelper.formatDateForInput(
+                        data.correctiveAction.completionDate
+                    ),
+
+                    resourcesRequired: data.correctiveAction.resourcesRequired,
+                    preventiveAction: data.correctiveAction.preventiveAction
+                });
+
+            }
+            else {
+
+                this.service.getActionNo().subscribe({
+                    next: (res: any) => {
+
+                        this.correctiveActionForm.patchValue({
+                            actionNo: res.actionNo
+                        });
+
+                    }
+                });
+            }
+
+            // ===========================
+            // Verification
+            // ===========================
+
+            if (data.verification) {
+
+                this.verificationForm.patchValue({
+
+                    verificationDate: NablFormsHelper.formatDateForInput(
+                        data.verification.verificationDate
+                    ),
+
+                    verifiedByEmployeeId: data.verification.verifiedByEmployeeId,
+                    verifiedByEmployeeName: data.verification.verifiedByEmployeeName,
+
+                    verificationMethod: data.verification.verificationMethod,
+                    observation: data.verification.observation,
+                    result: data.verification.result,
+                    remarks: data.verification.remarks
+                });
+            }
+
+            // ===========================
+            // Closure
+            // ===========================
+
+            if (data.closure) {
+
+                this.closureForm.patchValue({
+
+                    closureDate: NablFormsHelper.formatDateForInput(
+                        data.closure.closureDate
+                    ),
+
+                    closedByEmployeeId: data.closure.closedByEmployeeId,
+                    closedByEmployeeName: data.closure.closedByEmployeeName,
+
+                    finalRemarks: data.closure.finalRemarks,
+                    status: data.closure.status
+                });
+            }
+
+            // ===========================
+            // Tab Status
+            // ===========================
+
+            this.tabs.forEach(t => t.status = 'pending');
+
+            for (let i = 1; i <= data.currentStep; i++) {
+
+                if (this.tabs[i - 1]) {
+                    this.tabs[i - 1].status = 'completed';
+                }
+            }
+
+            if (data.currentStep < this.tabs.length) {
+                this.tabs[data.currentStep].status = 'active';
+            }
+
+            this.activeFormKey = Math.min(data.currentStep + 1, this.tabs.length);
+
+            // ===========================
+            // View Mode Only
+            // ===========================
+
+            if (this.isViewMode) {
+
+                this.ncForm.disable();
+                this.investigationForm.disable();
+                this.correctiveActionForm.disable();
+                this.verificationForm.disable();
+                this.closureForm.disable();
+            }
+            else {
+
+                this.ncForm.enable();
+                this.investigationForm.enable();
+                this.correctiveActionForm.enable();
+                this.verificationForm.enable();
+                this.closureForm.enable();
+
+                // Header fields always readonly
+                this.ncForm.get('documentNo')?.disable();
+                this.ncForm.get('date')?.disable();
+                this.ncForm.get('issueNo')?.disable();
+                this.ncForm.get('revNo')?.disable();
+                this.ncForm.get('formatNo')?.disable();
+            }
         });
 
-        // ===========================
-        // Investigation
-        // ===========================
-
-        if (data.investigation) {
-
-            this.investigationForm.patchValue({
-
-                assignedToEmployeeId: data.investigation.assignedToEmployeeId,
-                assignedToEmployeeName: data.investigation.assignedToEmployeeName,
-
-                investigationDate: NablFormsHelper.formatDateForInput(
-                    data.investigation.investigationDate
-                ),
-
-                investigationMethod: data.investigation.investigationMethod,
-                rootCause: data.investigation.rootCause,
-                contributingFactors: data.investigation.contributingFactors,
-                investigationDetails: data.investigation.investigationDetails,
-                recommendedAction: data.investigation.recommendedAction
-            });
-        }
-
-        // ===========================
-        // Corrective Action
-        // ===========================
-
-        if (data.correctiveAction) {
-
-            this.correctiveActionForm.patchValue({
-
-                actionNo: data.correctiveAction.actionNo,
-                correctiveAction: data.correctiveAction.correctiveAction,
-
-                responsiblePersonId: data.correctiveAction.responsiblePersonId,
-                responsiblePersonName: data.correctiveAction.responsiblePersonName,
-
-                targetDate: NablFormsHelper.formatDateForInput(
-                    data.correctiveAction.targetDate
-                ),
-
-                completionDate: NablFormsHelper.formatDateForInput(
-                    data.correctiveAction.completionDate
-                ),
-
-                resourcesRequired: data.correctiveAction.resourcesRequired,
-                preventiveAction: data.correctiveAction.preventiveAction
-            });
-
-        }
-        else {
-
-            this.service.getActionNo().subscribe({
-                next: (res: any) => {
-
-                    this.correctiveActionForm.patchValue({
-                        actionNo: res.actionNo
-                    });
-
-                }
-            });
-        }
-
-        // ===========================
-        // Verification
-        // ===========================
-
-        if (data.verification) {
-
-            this.verificationForm.patchValue({
-
-                verificationDate: NablFormsHelper.formatDateForInput(
-                    data.verification.verificationDate
-                ),
-
-                verifiedByEmployeeId: data.verification.verifiedByEmployeeId,
-                verifiedByEmployeeName: data.verification.verifiedByEmployeeName,
-
-                verificationMethod: data.verification.verificationMethod,
-                observation: data.verification.observation,
-                result: data.verification.result,
-                remarks: data.verification.remarks
-            });
-        }
-
-        // ===========================
-        // Closure
-        // ===========================
-
-        if (data.closure) {
-
-            this.closureForm.patchValue({
-
-                closureDate: NablFormsHelper.formatDateForInput(
-                    data.closure.closureDate
-                ),
-
-                closedByEmployeeId: data.closure.closedByEmployeeId,
-                closedByEmployeeName: data.closure.closedByEmployeeName,
-
-                finalRemarks: data.closure.finalRemarks,
-                status: data.closure.status
-            });
-        }
-
-        // ===========================
-        // Tab Status
-        // ===========================
-
-        this.tabs.forEach(t => t.status = 'pending');
-
-        for (let i = 1; i <= data.currentStep; i++) {
-
-            if (this.tabs[i - 1]) {
-                this.tabs[i - 1].status = 'completed';
-            }
-        }
-
-        if (data.currentStep < this.tabs.length) {
-            this.tabs[data.currentStep].status = 'active';
-        }
-
-        this.activeFormKey = Math.min(data.currentStep + 1, this.tabs.length);
-
-        // ===========================
-        // View Mode Only
-        // ===========================
-
-        if (this.isViewMode) {
-
-            this.ncForm.disable();
-            this.investigationForm.disable();
-            this.correctiveActionForm.disable();
-            this.verificationForm.disable();
-            this.closureForm.disable();
-        }
-        else {
-
-            this.ncForm.enable();
-            this.investigationForm.enable();
-            this.correctiveActionForm.enable();
-            this.verificationForm.enable();
-            this.closureForm.enable();
-
-            // Header fields always readonly
-            this.ncForm.get('documentNo')?.disable();
-            this.ncForm.get('date')?.disable();
-            this.ncForm.get('issueNo')?.disable();
-            this.ncForm.get('revNo')?.disable();
-            this.ncForm.get('formatNo')?.disable();
-        }
-    });
-
-    this.selectTab(1);
-}
+        this.selectTab(1);
+    }
     selectTab(tabId: number): void {
 
         const tab = this.tabs.find(x => x.id === tabId);
@@ -740,11 +790,90 @@ export class NonConformingWorkFormComponent implements CanComponentDeactivate, O
                     'Record completed successfully',
                     'success'
                 );
+                if (
+                    this.isChecklistNcr &&
+                    this.checklistId > 0
+                ) {
+                    this.router.navigate([
+                        '/audit-checklist/edit',
+                        this.checklistId
+                    ]);
 
-                this.router.navigate(['/non-conforming-work']);
+                    return;
+                }
+
+                // Normal individual NCR
+                this.router.navigate([
+                    '/non-conforming-work'
+                ]);
+
                 break;
         }
 
+    }
+    private loadAuditChecklistNcrData(
+        checklistId: number,
+        checklistItemId: number,
+        scheduleItemId: number
+    ): void {
+
+        this.service
+            .getAuditChecklistNcrData(checklistItemId)
+            .subscribe({
+                next: (data) => {
+                    if (!data) {
+                        return;
+                    }
+
+                    this.ncForm.patchValue({
+                        source: 'Internal Audit',
+
+                        departmentId: data.departmentId,
+                        departmentName: data.departmentName,
+
+                        reportedByEmployeeId: data.auditorId,
+                        reportedByEmployeeName: data.auditorName,
+
+                        category:
+                            data.findingType === 'Major NC'
+                                ? 'Major'
+                                : 'Minor',
+
+                        referenceModule: 'AuditChecklistItem',
+                        referenceId: checklistItemId,
+                        checklistId: checklistId,
+                        referenceNo: data.checklistNo,
+
+                        description: data.objectiveEvidence,
+                        problemDescription: data.auditQuestion
+                    });
+                    if (this.isChecklistNcr) {
+                        this.ncForm.get('source')?.disable();
+                        this.ncForm.get('category')?.disable();
+                        this.ncForm.get('referenceModule')?.disable();
+                        this.ncForm.get('referenceId')?.disable();
+                        this.ncForm.get('referenceNo')?.disable();
+
+                    }
+
+
+                    // Return/reference ke liye locally rakh sakte ho
+                    this.checklistId = checklistId;
+                    this.checklistItemId = checklistItemId;
+                    this.scheduleItemId = scheduleItemId;
+                },
+
+                error: () => { }
+            });
+    }
+
+    backToChecklist(): void {
+        if (this.checklistId > 0) {
+            this.router.navigate([
+                '/audit-checklist/edit',
+                this.checklistId
+            ]);
+        }
     }
 
     onCancel() {

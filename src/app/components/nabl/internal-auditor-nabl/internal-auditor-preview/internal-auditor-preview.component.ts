@@ -14,36 +14,41 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
     styleUrl: './internal-auditor-preview.component.css'
 })
 export class InternalAuditorPreviewComponent implements OnInit {
-    data: any[] = [];
-    headerInfo: any = {
-        formatNo: 'F-49',
-        docNo: 'DMSPL / Level-04 / Format / F-49',
-        issueNo: '03',
-        issueDate: '01.10.2021',
-        revNo: '00',
-        revDate: '--'
-    };
+    data: any = null;
+    recordId: number = 0;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
-
+    isoClausesText: string = '';
+    authorizedAreasText: string = '';
     constructor(
         private service: InternalAuditorService,
         private router: Router,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private route: ActivatedRoute
     ) { }
 
     ngOnInit() {
-        this.fetchData();
+        this.route.paramMap.subscribe(params => {
+            this.recordId = Number(params.get('id'));
+            if (this.recordId > 0) this.fetchData();
+        });
     }
-
     fetchData() {
-        this.service.getAll().subscribe(resp => {
+        this.service.getById(this.recordId).subscribe(resp => {
+
             this.data = resp;
-            if (resp.length > 0) {
-                this.headerInfo.formatNo = resp[0].formatNo;
-                this.headerInfo.docNo = resp[0].docNo;
-            }
+
+            this.isoClausesText = (resp?.isoClauses || [])
+                .map((x: any) => x.clauseName)
+                .filter((x: any) => x)
+                .join(', ');
+
+            this.authorizedAreasText = (resp?.departmentList || [])
+                .map((x: any) => x.departmentName)
+                .filter((x: any) => x)
+                .join(', ');
+
             setTimeout(() => this.autoDetectOrientation(), 300);
         });
     }

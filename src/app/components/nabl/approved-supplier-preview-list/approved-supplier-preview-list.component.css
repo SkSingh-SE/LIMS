@@ -39,14 +39,14 @@
 
 /* Alignment */
 
-.preview-table td:nth-child(1),
+/* .preview-table td:nth-child(1),
 .preview-table td:nth-child(2),
 .preview-table td:nth-child(4),
 .preview-table td:nth-child(10),
 .preview-table td:nth-child(11) {
     text-align: center;
     white-space: nowrap;
-}
+} */
 
 
 /*=========================================================
@@ -250,18 +250,18 @@
 .preview-table tbody tr {
     height: auto;
 }
-
+/* 
 .preview-table td:nth-child(1),
 .preview-table td:nth-child(6),
 .preview-table td:nth-child(8) {
     text-align: center;
 }
-
+/* 
 .preview-table td:nth-child(2),
 .preview-table td:nth-child(3) {
     text-align: center;
     white-space: nowrap;
-}
+} */ */
 
 .footer-gap {
     height: 20px;

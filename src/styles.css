@@ -2234,7 +2234,9 @@ label .text-danger {
   border-color: var(--neutral-300);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   flex-shrink: 0;
-  margin-top: 0.5rem !important;
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  vertical-align: middle;
 }
 
 .form-check-input:hover {
@@ -2278,20 +2280,36 @@ label .text-danger {
   cursor: not-allowed;
 }
 
+/* form-check container - perfect flex alignment with text */
+.form-check {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  min-height: 24px;
+  padding-left: 0 !important;
+  margin-bottom: 0 !important;
+}
+.form-check .form-check-input {
+  float: none !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+}
+
 /* form-check-label */
 .form-check-label {
   cursor: pointer;
   font-size: var(--font-sm);
   color: var(--neutral-700);
   user-select: none;
-  line-height: 1.5;
+  line-height: 1.2;
+  margin-bottom: 0 !important;
 }
 
 /* Small form-check variant — used as .form-check.form-check-sm */
 .form-check-sm .form-check-input {
   width: 14px !important;
   height: 14px !important;
-  margin-top: 0.22rem !important;
+  margin-top: 0 !important;
 }
 .form-check-sm .form-check-label {
   font-size: var(--font-xs);
@@ -2299,14 +2317,22 @@ label .text-danger {
 
 /* Inline checks — even spacing */
 .form-check-inline {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 1rem;
-  margin-bottom: 0;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding-left: 0 !important;
+  margin-right: 1.25rem !important;
+  margin-bottom: 0 !important;
 }
 .form-check-inline .form-check-input {
+  margin: 0 !important;
   margin-top: 0 !important;
+  margin-left: 0 !important;
   float: none !important;
+}
+.form-check-inline .form-check-label {
+  margin-bottom: 0 !important;
+  line-height: 1.2;
 }
 
 /* ════════════════════════════════════════════════════════════════

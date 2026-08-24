@@ -1,0 +1,169 @@
+<div class="login-wrapper d-flex align-items-center justify-content-center">
+  <div class="container py-3 py-sm-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-11 col-md-10 col-lg-9 col-xl-8">
+        <div class="card login-card shadow-lg border-0 overflow-hidden">
+          <div class="row g-0 align-items-stretch">
+
+            <!-- Left Brand & Showcase Panel (Desktop & Tablet) -->
+            <div class="col-md-5 d-none d-md-flex flex-column justify-content-between p-4 brand-side text-white">
+              <!-- Top Logo -->
+              <div class="text-center pt-2">
+                <div class="brand-logo-container p-2 mb-2">
+                  <img src="/images/login_logo.png" alt="LIMS Logo" class="brand-logo img-fluid" />
+                </div>
+                <span class="badge bg-white text-danger fw-semibold px-2.5 py-1 shadow-sm mt-1">
+                  <i class="bi bi-patch-check-fill me-1"></i> ISO/IEC 17025 & NABL Ready
+                </span>
+              </div>
+
+              <!-- Middle Feature Highlights -->
+              <div class="brand-features my-auto py-3">
+                <h6 class="fw-bold text-white mb-2 text-center text-uppercase tracking-wider small">
+                  Laboratory Management
+                </h6>
+                <div class="feature-item d-flex align-items-center mb-2">
+                  <i class="bi bi-check-circle-fill text-warning me-2 fs-6"></i>
+                  <span class="small">Sample Inward & Review of Request</span>
+                </div>
+                <div class="feature-item d-flex align-items-center mb-2">
+                  <i class="bi bi-check-circle-fill text-warning me-2 fs-6"></i>
+                  <span class="small">Automated Test Calculations & Traceability</span>
+                </div>
+                <div class="feature-item d-flex align-items-center mb-2">
+                  <i class="bi bi-check-circle-fill text-warning me-2 fs-6"></i>
+                  <span class="small">Audit-Ready QuestPDF Reports & Dispatch</span>
+                </div>
+                <div class="feature-item d-flex align-items-center">
+                  <i class="bi bi-shield-lock-fill text-warning me-2 fs-6"></i>
+                  <span class="small">Role-based Secure Access & Audit Trail</span>
+                </div>
+              </div>
+
+              <!-- Bottom Footer Info -->
+              <div class="brand-footer text-center pt-2 border-top border-white-10">
+                <div class="small text-white-50">
+                  <i class="bi bi-shield-check me-1"></i> Enterprise Grade Security
+                </div>
+                <div class="text-white-50 font-monospace extra-small mt-1">
+                  &copy; {{ currentYear }} LIMS Portal
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Login Form Panel (All Devices) -->
+            <div class="col-12 col-md-7 p-3 p-sm-4 p-lg-4 bg-white d-flex flex-column justify-content-center">
+              
+              <!-- Mobile Logo (Visible on screen < 768px) -->
+              <div class="text-center d-md-none mb-3">
+                <div class="d-inline-block bg-light p-2 rounded-3 border mb-2">
+                  <img src="/images/login_logo.png" alt="LIMS Logo" class="brand-logo-mobile" />
+                </div>
+                <div>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold px-2 py-1">
+                    <i class="bi bi-patch-check-fill me-1"></i> ISO/IEC 17025 Ready
+                  </span>
+                </div>
+              </div>
+
+              <!-- Header Greeting -->
+              <div class="mb-3">
+                <h4 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                  <span>Sign In</span>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 fw-normal">Portal</span>
+                </h4>
+                <p class="text-muted small mb-0">Enter your laboratory credentials to access your workspace.</p>
+              </div>
+
+              <!-- Form -->
+              <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+                
+                <!-- Email Field -->
+                <div class="mb-2.5">
+                  <label for="email" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-envelope-at me-1"></i> Email Address
+                  </label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted border-end-0">
+                      <i class="bi bi-person"></i>
+                    </span>
+                    <input type="email" id="email" class="form-control border-start-0" 
+                           formControlName="email" placeholder="name@laboratory.com" autocomplete="email"
+                           [ngClass]="{'is-invalid': isFieldInvalid('email')}" />
+                  </div>
+                  <app-field-error [control]="loginForm.get('email')" label="Email" [submitted]="submitted"/>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-2.5">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="password" class="form-label small fw-semibold text-secondary mb-0">
+                      <i class="bi bi-key me-1"></i> Password
+                    </label>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted border-end-0">
+                      <i class="bi bi-shield-lock"></i>
+                    </span>
+                    <input [type]="showPassword() ? 'text' : 'password'" id="password" 
+                           class="form-control border-start-0 border-end-0"
+                           formControlName="password" placeholder="Enter password" autocomplete="current-password"
+                           (keyup)="checkCapsLock($event)" (keydown)="checkCapsLock($event)"
+                           [ngClass]="{'is-invalid': isFieldInvalid('password')}" />
+                    <button type="button" class="input-group-text bg-light text-muted border-start-0 cursor-pointer" 
+                            (click)="togglePassword()" tabindex="-1" title="Toggle password visibility">
+                      <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+                    </button>
+                  </div>
+                  
+                  <!-- Caps Lock Warning -->
+                  <div *ngIf="capsLockOn()" class="text-warning small mt-1 d-flex align-items-center gap-1 extra-small">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Caps Lock is ON</span>
+                  </div>
+
+                  <app-field-error [control]="loginForm.get('password')" label="Password" [submitted]="submitted"/>
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="d-flex justify-content-between align-items-center mb-3 pt-1">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" formControlName="rememberMe">
+                    <label class="form-check-label small text-secondary cursor-pointer" for="rememberMe">
+                      Remember email
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid mb-2">
+                  <button class="btn btn-lims btn-lims-primary py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2" 
+                          type="submit" [disabled]="isLoading()">
+                    <span *ngIf="isLoading()" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <i *ngIf="!isLoading()" class="bi bi-box-arrow-in-right fs-6"></i>
+                    <span>{{ isLoading() ? 'Verifying & Signing In...' : 'Sign In to LIMS' }}</span>
+                  </button>
+                </div>
+
+                <!-- Error Message -->
+                <div *ngIf="errorMessage()" class="alert alert-danger py-1.5 px-2.5 mt-2 mb-0 text-center small border-danger-subtle d-flex align-items-center justify-content-center gap-1.5" role="alert">
+                  <i class="bi bi-exclamation-circle-fill text-danger flex-shrink-0"></i>
+                  <span>{{ errorMessage() }}</span>
+                </div>
+
+                <!-- Mobile Footer -->
+                <div class="text-center d-md-none mt-3 pt-2 border-top">
+                  <div class="text-muted extra-small">
+                    &copy; {{ currentYear }} LIMS Laboratory Portal
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

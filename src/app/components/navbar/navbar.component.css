@@ -1385,3 +1385,242 @@
     font-size: 0.72rem;
     font-weight: 500;
 }
+
+/* ============================================================
+   USER PROFILE DROPDOWN (NAVBAR)
+   ============================================================ */
+.user-dropdown-wrapper {
+    position: relative;
+}
+
+.user-avatar-btn {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 30px;
+    padding: 3px 10px 3px 3px !important;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.user-avatar-btn:hover,
+.user-avatar-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.user-avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.user-initials-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: var(--primary-color, #da261c);
+    font-weight: 700;
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.user-display-name {
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-display-role {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.68rem;
+    line-height: 1.1;
+}
+
+.user-chevron {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.user-avatar-btn[aria-expanded="true"] .user-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu Container */
+.user-profile-menu {
+    min-width: 275px;
+    border-radius: 14px !important;
+    border: 1px solid #edf2f7 !important;
+    background: #ffffff;
+    box-shadow: 0 14px 38px -8px rgba(0, 0, 0, 0.18), 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+    overflow: hidden;
+    animation: userDropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top right;
+    z-index: 1060;
+}
+
+@keyframes userDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Menu Header Profile Area */
+.user-menu-header {
+    background: linear-gradient(135deg, var(--primary-50, #fef2f2) 0%, #ffffff 100%);
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.user-avatar-circle-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color, #da261c);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.user-initials-circle-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, #a81c15 100%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.status-indicator-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+}
+
+.status-indicator-dot.online {
+    background-color: #10b981;
+}
+
+.user-menu-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.user-role-badge {
+    background-color: var(--primary-50, #fef2f2);
+    color: var(--primary-color, #da261c);
+    border: 1px solid var(--primary-100, #fee2e2);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+}
+
+.user-menu-email {
+    color: #64748b;
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.user-menu-divider {
+    height: 1px;
+    background-color: #f1f5f9;
+    margin: 0;
+}
+
+/* Menu Action Items */
+.user-menu-item {
+    color: #334155 !important;
+    text-decoration: none;
+    transition: all 0.18s ease-in-out;
+    cursor: pointer;
+}
+
+.user-menu-item:hover {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    transform: translateX(2px);
+}
+
+.user-menu-item:active {
+    background-color: #f1f5f9 !important;
+}
+
+.user-menu-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+}
+
+.user-menu-item:hover .user-menu-icon-box {
+    transform: scale(1.08);
+}
+
+.icon-profile {
+    background-color: #eff6ff;
+    color: #2563eb;
+}
+
+.icon-settings {
+    background-color: #f5f3ff;
+    color: #7c3aed;
+}
+
+.icon-logout {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.user-item-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.user-item-desc {
+    font-size: 0.7rem;
+    line-height: 1.1;
+}
+
+/* Logout Item */
+.user-menu-logout:hover {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+.user-menu-logout:hover .user-item-title {
+    color: #dc2626;
+}
+

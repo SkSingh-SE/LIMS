@@ -1,22 +1,26 @@
-<div class="d-flex align-items-center justify-content-center bg-cover">
-    <div class="card login-card shadow-lg d-flex  justify-content-center">
-        <div class="row ">
-            <!-- Logo Section -->
-            <div class="col-5 logo-section d-flex align-items-center justify-content-center ms-2 ">
-                <img src="/images/login_logo.png" alt="Logo" class="img-fluid" />
+<div class="login-wrapper d-flex align-items-center justify-content-center p-3">
+    <div class="card login-card shadow-lg border-0">
+        <div class="row g-0 align-items-stretch">
+            
+            <!-- Logo Section (Left on Desktop/Tablet, Top on Mobile) -->
+            <div class="col-12 col-md-5 logo-section d-flex align-items-center justify-content-center">
+                <img src="/images/login_logo.png" alt="Logo" class="img-fluid login-logo" />
             </div>
-            <div class="col-auto ms-auto me-auto d-flex flex-column justify-content-center align-items-center py-4">
-                <div class="vr h-100 verticle-line"></div>
+
+            <!-- Vertical Divider (Visible on md screens and up) -->
+            <div class="d-none d-md-flex col-auto align-items-center py-4">
+                <div class="vr h-75 divider-line"></div>
             </div>
-            <!-- Login Form Section -->
-            <div class="col-md-6 p-4 me-2">
+
+            <!-- Login Form Section (Right on Desktop/Tablet, Bottom on Mobile) -->
+            <div class="col-12 col-md p-4 p-sm-4 p-lg-5 d-flex flex-column justify-content-center">
                 <h5 class="text-uppercase fw-bold text-dark mb-4 d-flex flex-column">
                     <span class="border-danger header-border"></span>
                     <span class="pb-1">Login</span>
                 </h5>
 
                 <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
-                    <!-- Username -->
+                    <!-- Username / Email -->
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="text" id="email" class="form-control" formControlName="email"
@@ -33,24 +37,21 @@
                                 formControlName="password" placeholder="Enter Password"
                                 aria-describedby="password-icon"
                                 [ngClass]="{'is-invalid': isFieldInvalid('password')}" />
-                            <span type="button" (click)="togglePassword()" class="input-group-text" id="password-icon"
-                            [ngClass]="{'is-invalid': isFieldInvalid('password')}"
-                            ><i class="bi"
-                                    [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i></span>
+                            <span type="button" (click)="togglePassword()" class="input-group-text cursor-pointer" id="password-icon"
+                                [ngClass]="{'is-invalid': isFieldInvalid('password')}">
+                                <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+                            </span>
                         </div>
                         <app-field-error [control]="loginForm.get('password')" label="Password" [submitted]="submitted"/>
                     </div>
 
                     <!-- Login Button -->
-                    <div class="d-grid">
-
-                        <button class="btn btn-danger" type="submit">
-                            <span *ngIf="isLoading()" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                            <span *ngIf="isLoading()" class="ms-2" role="status">Loading...</span>
-                            <span *ngIf="!isLoading()">Login</span>
-                            
-                          </button>
-                        <div *ngIf="errorMessage()" class="alert alert-danger p-1 mt-1 text-center small" role="alert">
+                    <div class="d-grid mt-4">
+                        <button class="btn btn-danger py-2 d-flex align-items-center justify-content-center" type="submit" [disabled]="isLoading()">
+                            <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>{{ isLoading() ? 'Logging in...' : 'Login' }}</span>
+                        </button>
+                        <div *ngIf="errorMessage()" class="alert alert-danger p-1 mt-2 text-center small" role="alert">
                             {{ errorMessage() }}
                         </div>
                     </div>
@@ -60,3 +61,7 @@
         </div>
     </div>
 </div>
+
+
+
+

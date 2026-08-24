@@ -852,26 +852,31 @@
 
       <!-- TAB 4: PAYMENT INFO (visible only after inward is saved) -->
       <div *ngIf="sampleId > 0" class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
-        <fieldset class="border rounded p-3 mb-4 position-relative">
-          <legend class="w-auto px-2 fw-semibold theme-color">Payment Info</legend>
-          <div class="row row-cols-1 row-cols-md-4 mb-3">
-            <div>
-              <label class="form-label">Advance Payment</label>
-              <div class="input-group">
-                <input type="number" class="form-control" formControlName="advancePayment" placeholder="Enter amount" />
-                <span class="input-group-text">Rs</span>
+        <fieldset class="sample-section-fieldset position-relative mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 text-sm-85">
+            <i class="bi bi-credit-card me-1.5"></i> Payment Information
+          </legend>
+          <div class="row g-3 align-items-start">
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
+                <i class="bi bi-currency-rupee me-1 text-danger"></i>Advance Payment
+              </label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted">₹</span>
+                <input type="number" class="form-control form-control-sm" formControlName="advancePayment" placeholder="0.00" />
               </div>
             </div>
-            <div *ngIf="showPODropdown">
+            <div *ngIf="showPODropdown" class="col-12 col-sm-6 col-md-3">
               <app-searchable-dropdown
                 [placeholder]="'Search Purchase Order'"
                 [labelName]="'Purchase Order'"
                 [fetchDataFn]="getPurchaseOrders"
                 (itemSelected)="onPOSelect($event)"
                 [isDisabled]="isViewMode"
+                [smallInput]="true"
                 [selectedItem]="sampleInwardForm.get('purchaseOrderId')?.value"
               ></app-searchable-dropdown>
-              <div *ngIf="selectedPODetails" class="mt-1 small text-muted">
+              <div *ngIf="selectedPODetails" class="mt-1 extra-small text-muted">
                 <span class="badge bg-info me-1">Amount: ₹{{ (selectedPODetails.additionalValues?.POAmount || selectedPODetails.poAmount || 0) | number:'1.2-2' }}</span>
                 <span class="badge bg-success me-1">Remaining: ₹{{ (selectedPODetails.additionalValues?.RemainingAmount || selectedPODetails.remainingAmount || 0) | number:'1.2-2' }}</span>
                 <span *ngIf="selectedPODetails.additionalValues?.ValidUntil || selectedPODetails.validUntil" class="badge bg-warning text-dark">
@@ -879,42 +884,55 @@
                 </span>
               </div>
             </div>
-            <div>
-              <label class="form-label d-block">Bill Required</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
-                <label class="form-label" for="billRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
-                <label class="form-label" for="billRequiredNo">No</label>
-              </div>
-            </div>
-            <div>
-              <label class="form-label d-block">Advance PI Required</label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredYes" formControlName="advancePIRequired" [value]="true" />
-                <label class="form-label" for="advancePIRequiredYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input mt-1" type="radio" id="advancePIRequiredNo" formControlName="advancePIRequired" [value]="false" />
-                <label class="form-label" for="advancePIRequiredNo">No</label>
+            <div class="col-12 col-sm-6 col-md-2">
+              <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
+                <i class="bi bi-receipt me-1 text-danger"></i>Bill Required
+              </label>
+              <div class="d-flex align-items-center gap-3 pt-1">
+                <div class="form-check form-check-inline mb-0">
+                  <input class="form-check-input cursor-pointer" type="radio" id="billRequiredYes" formControlName="billRequired" [value]="true" />
+                  <label class="form-check-label text-xs-78 cursor-pointer" for="billRequiredYes">Yes</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                  <input class="form-check-input cursor-pointer" type="radio" id="billRequiredNo" formControlName="billRequired" [value]="false" />
+                  <label class="form-check-label text-xs-78 cursor-pointer" for="billRequiredNo">No</label>
+                </div>
               </div>
             </div>
-            <div class="d-flex align-items-center">
-              <div class="form-check">
-                <input class="form-check-input mt-1" type="checkbox" id="holdTestingUntilPIApproved" formControlName="holdTestingUntilPIApproved" />
-                <label class="form-label" for="holdTestingUntilPIApproved">Hold Testing Until PI Approved</label>
+            <div class="col-12 col-sm-6 col-md-2">
+              <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
+                <i class="bi bi-file-earmark-text me-1 text-danger"></i>Advance PI Required
+              </label>
+              <div class="d-flex align-items-center gap-3 pt-1">
+                <div class="form-check form-check-inline mb-0">
+                  <input class="form-check-input cursor-pointer" type="radio" id="advancePIRequiredYes" formControlName="advancePIRequired" [value]="true" />
+                  <label class="form-check-label text-xs-78 cursor-pointer" for="advancePIRequiredYes">Yes</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                  <input class="form-check-input cursor-pointer" type="radio" id="advancePIRequiredNo" formControlName="advancePIRequired" [value]="false" />
+                  <label class="form-check-label text-xs-78 cursor-pointer" for="advancePIRequiredNo">No</label>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block invisible d-none d-md-block">Hold Option</label>
+              <div class="d-flex align-items-center pt-1">
+                <div class="form-check mb-0">
+                  <input class="form-check-input cursor-pointer" type="checkbox" id="holdTestingUntilPIApproved" formControlName="holdTestingUntilPIApproved" />
+                  <label class="form-check-label text-xs-78 fw-medium text-dark cursor-pointer" for="holdTestingUntilPIApproved">
+                    Hold Testing Until PI Approved
+                  </label>
+                </div>
               </div>
             </div>
           </div>
         </fieldset>
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1.5"></i> Cancel
           </button>
-          <button type="button" class="btn btn-save px-4" (click)="savePaymentInfo()">
-            <i class="bi bi-check-circle me-1"></i> Save
+          <button type="button" class="btn-lims btn-lims-save" (click)="savePaymentInfo()">
+            <i class="bi bi-check-circle me-1.5"></i> Save Payment Info
           </button>
         </div>
       </div>
